@@ -1,0 +1,248 @@
+TAREFA: CLONAR ESTE DASHBOARD COM FIDELIDADE VISUAL 1:1
+
+Use como referência visual obrigatória o arquivo: 01_dashboard_dark_reference.png.
+NÃO redesenhe, NÃO simplifique e NÃO altere proporções, textos, números, posições, espaçamentos, hierarquia, bordas, brilhos, ícones, gráficos ou estrutura. O objetivo é reproduzir o dashboard da imagem de referência em uma interface web real, responsiva e interativa.
+
+TECNOLOGIA RECOMENDADA
+- React + TypeScript + Vite.
+- Tailwind CSS ou CSS Modules.
+- Lucide React para ícones, escolhendo os ícones visualmente mais próximos da referência.
+- Recharts para gráficos.
+- Framer Motion somente para microinterações sutis.
+- Sem bibliotecas visuais que alterem o estilo original.
+
+ESTRUTURA GERAL
+- Tela desktop principal em proporção aproximada 16:9.
+- Layout dividido em sidebar fixa à esquerda e área principal à direita.
+- Fundo geral quase preto, com fotografia de montanhas escurecida na área central, preservando contraste baixo e aparência premium.
+- Paleta: preto, grafite, branco, cinza e amarelo dourado neon.
+- Visual premium, executivo, tecnológico e operacional.
+- Bordas finas douradas/cinza escuro e pequenos glows amarelos.
+- Cards translúcidos escuros com aparência de vidro fumê.
+
+PALETA VISUAL APROXIMADA
+- Fundo principal: #050607 / #08090A.
+- Sidebar: #090A0B.
+- Cards: rgba(20,20,20,0.88).
+- Bordas: rgba(255,255,255,0.16) com detalhes #F5B51B.
+- Dourado principal: #F7B719.
+- Dourado claro: #FFD05A.
+- Dourado escuro: #B6780D.
+- Texto primário: #F5F5F5.
+- Texto secundário: #A9A9A9.
+- Verde status tempo real: #24D36B.
+- Vermelho indicador lateral: #FF2D2D.
+
+SIDEBAR ESQUERDA
+Largura visual aproximada: 185 px.
+Fundo preto/grafite sólido.
+Borda direita muito sutil.
+
+Topo:
+- Texto pequeno uppercase: “CONTRATO”.
+- Número grande dourado: “460001269”.
+
+Perfil:
+- Avatar circular com borda dourada neon e glow externo.
+- Nome: “Fabricio Silva”.
+- Cargo: “Encarregado Geral”.
+- Linha separadora horizontal fina.
+
+Botão:
+- Botão arredondado “RECARREGAR” com ícone de refresh.
+- Fundo quase preto, borda cinza escura.
+
+Indicador:
+- Círculo vermelho brilhante com glow intenso abaixo do botão.
+
+Parte inferior:
+- Badge dourado “ADMIN”.
+- Rodapé fixo na sidebar com botão de configurações e botão “SAIR”.
+
+TOPO DA ÁREA PRINCIPAL
+Header horizontal, arredondado, fundo preto translúcido, borda fina.
+Altura aproximada 68–72 px.
+Itens do menu exatamente nesta ordem:
+1. Destaques
+2. Lembretes
+3. InstaCena
+4. Almoxarifado
+5. Documentos
+6. Equipamentos
+7. Segurança
+8. RH
+9. Relatório Diário Obra
+10. Meio Ambiente
+11. Planejamento
+
+Estado ativo:
+- “Destaques” em dourado.
+- Fundo muito escuro com glow dourado suave.
+- Linha inferior dourada luminosa.
+
+Ações à direita do menu:
+- Ícone circular verde.
+- Toggle/ícone de sol dourado.
+- Ícone de lua cinza.
+- Separador vertical.
+- Ícone de sair.
+
+CONTEÚDO PRINCIPAL
+Margens generosas e alinhamento rigoroso por colunas.
+
+Título:
+- Palavra “Dashboard” em fonte script/grafite expressiva, grande, dourada com leve brilho.
+- Subtítulo abaixo: “Visão geral da operação”.
+
+FILTRO DE DATA
+Card no canto superior direito, escuro, arredondado, borda fina.
+Conteúdo:
+- ícone calendário dourado
+- “02 de setembro de 2026” com “02” e “2026” em negrito
+- chevron para baixo dourado
+
+GRADE DE CARDS
+
+CARD CLIMA – COLUNA ESQUERDA SUPERIOR
+Dimensão aproximada 380 x 375 px.
+Topo:
+- Ícone pin dourado.
+- “Barcarena – Vila do Conde”.
+- ponto verde.
+- “Tempo Real”.
+
+Centro:
+- Ícone parcialmente nublado em branco/amarelo.
+- Temperatura principal enorme: “30°”.
+- Texto: “Parcialmente nublado”.
+
+Divisor horizontal.
+Linhas inferiores:
+- ícone termômetro | “Sensação” | “34°” em dourado.
+- ícone gota/chama | “Umidade” | “68%” em dourado.
+- ícone vento | “Vento” | “12 km/h” em dourado.
+Cada linha com divisor fino.
+
+CARD TOTAL DE FUNCIONÁRIOS – ESQUERDA INFERIOR
+Título: “TOTAL DE FUNCIONÁRIOS”.
+Ícone pessoas dourado no canto direito.
+Número central grande: “45”.
+Ícone de pessoas em marca d’água cinza escuro no canto inferior esquerdo.
+Glow dourado fino na borda inferior.
+
+CARD AVANÇO MENSAL – COLUNA CENTRAL
+Título: “AVANÇO MENSAL”.
+Subtítulo: “Metas do Planejamento”.
+Link no topo direito: “Ver tudo →” em dourado.
+
+Gráfico circular de progresso:
+- valor central “82%”.
+- legenda pequena “AVANÇO”.
+- trilho cinza escuro.
+- arco dourado com leve glow e gradiente de amarelo para dourado.
+
+Rodapé do card:
+- 21 / TOTAL
+- 5 / CONCLUÍDAS
+- 16 / FALTAM
+
+Barra horizontal inferior dourada, aproximadamente 82% preenchida.
+
+CARD PRESENTES HOJE – COLUNA CENTRAL DIREITA, TOPO
+Título: “PRESENTES HOJE”.
+Ícone pessoas dourado.
+Número grande: “6”.
+Gráfico de linha/área dourado escuro.
+Eixo temporal exibido: 00h, 06h, 12h, 18h, 24h.
+Linha dourada suave com pontos em alguns trechos e área escura abaixo.
+
+CARD AUSÊNCIAS – ABAIXO DE PRESENTES HOJE
+Título: “AUSÊNCIAS”.
+Ícone calendário dourado.
+Número grande: “0”.
+Gráfico de barras em dourado com intensidade variável.
+Rótulos: Seg, Ter, Qua, Qui, Sex, Sáb, Dom.
+
+CARD TRABALHO EXTERNO – ABAIXO DE AUSÊNCIAS
+Título: “TRABALHO EXTERNO”.
+Ícone pessoas dourado.
+Número grande: “0”.
+Altura compacta.
+Glow dourado suave na borda inferior.
+
+CARD EQUIPAMENTOS ATIVOS – COLUNA DIREITA
+Título em duas linhas: “EQUIPAMENTOS” / “ATIVOS”.
+Link: “Ver tudo →” em dourado.
+
+Gráfico circular grande:
+- “87%” no centro.
+- “EM USO” abaixo.
+- arco dourado com glow.
+
+Informação inferior:
+- “20” em tamanho grande.
+- “de 23” ao lado em cinza.
+- texto: “equipamentos em uso”.
+- barra horizontal inferior com 87% de preenchimento dourado.
+
+RODAPÉ GLOBAL
+Barra horizontal fixa escura na base da área principal.
+Centro:
+- logotipo “Sucena Empreendimentos” em branco e dourado.
+Direita:
+- botão grande arredondado “Assistente IA” com pequeno ícone de brilho dourado.
+- separador vertical fino.
+- botão circular WhatsApp em branco, com badge verde “4”.
+
+GRÁFICOS E INTERAÇÕES
+Todos os gráficos devem ser gráficos reais, não imagens chapadas.
+- Hover com tooltip discreto.
+- Animação de entrada de 500–800 ms.
+- Progress rings animam da posição zero até 82% e 87%.
+- Gráfico Presentes Hoje deve aceitar dados reais.
+- Gráfico Ausências deve aceitar dados por dia.
+- Barras e linha usam apenas tons dourados/cinza, respeitando o visual.
+
+RESPONSIVIDADE
+Desktop: manter composição praticamente idêntica à referência.
+Tablet: sidebar reduzível e grid reorganizado em 2 colunas.
+Mobile: sidebar vira drawer, header horizontal rolável, cards em 1 coluna, mantendo o mesmo estilo.
+Não alterar conteúdo, valores ou hierarquia.
+
+REQUISITOS DE FIDELIDADE
+- Use a imagem 01_dashboard_dark_reference.png como verdade visual absoluta.
+- Não inventar módulos ou textos adicionais.
+- Não remover nenhuma informação presente na imagem.
+- Não trocar os números.
+- Não mudar Preto + Amarelo/Dourado Neon.
+- Não clarear o fundo.
+- Não substituir os cards por componentes genéricos de biblioteca.
+- Não usar azul, roxo, vermelho ou verde como cor de destaque, exceto o verde do status “Tempo Real” e o indicador vermelho lateral já presente.
+- O resultado precisa parecer o MESMO dashboard da imagem, mas convertido em interface web real e funcional.
+
+DADOS INICIAIS FIXOS
+contrato: 460001269
+usuario: Fabricio Silva
+cargo: Encarregado Geral
+perfil: ADMIN
+local: Barcarena – Vila do Conde
+tempoReal: true
+temperatura: 30
+sensacao: 34
+umidade: 68
+vento: 12 km/h
+funcionarios: 45
+avancoMensal: 82
+totalMetas: 21
+concluidas: 5
+faltam: 16
+presentesHoje: 6
+ausencias: 0
+trabalhoExterno: 0
+equipamentosAtivosPercentual: 87
+equipamentosEmUso: 20
+totalEquipamentos: 23
+data: 02 de setembro de 2026
+
+ENTREGA
+Crie todos os componentes necessários, CSS completo, gráficos, responsividade e interações. Antes de finalizar, faça uma inspeção visual comparando com 01_dashboard_dark_reference.png e ajuste tamanhos, gaps, radius, tipografia, alinhamento e glow até ficar o mais próximo possível de 1:1.

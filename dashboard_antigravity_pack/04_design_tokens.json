@@ -1,0 +1,56 @@
+{
+  "theme": "Sucena Dark Gold Neon",
+  "colors": {
+    "background": "#050607",
+    "sidebar": "#090A0B",
+    "card": "rgba(20,20,20,0.88)",
+    "cardBorder": "rgba(255,255,255,0.16)",
+    "gold": "#F7B719",
+    "goldLight": "#FFD05A",
+    "goldDark": "#B6780D",
+    "textPrimary": "#F5F5F5",
+    "textSecondary": "#A9A9A9",
+    "statusGreen": "#24D36B",
+    "statusRed": "#FF2D2D"
+  },
+  "radius": {
+    "header": 24,
+    "card": 22,
+    "button": 18,
+    "pill": 999
+  },
+  "effects": {
+    "cardBackdropBlur": "14px",
+    "goldGlow": "0 0 12px rgba(247,183,25,.45)",
+    "goldGlowStrong": "0 0 24px rgba(247,183,25,.6)",
+    "softShadow": "0 18px 45px rgba(0,0,0,.45)"
+  },
+  "layout": {
+    "sidebarWidth": 185,
+    "desktopMinWidth": 1280,
+    "contentGap": 20
+  },
+  "data": {
+    "contract": "460001269",
+    "user": "Fabricio Silva",
+    "role": "Encarregado Geral",
+    "profile": "ADMIN",
+    "location": "Barcarena – Vila do Conde",
+    "temperature": 30,
+    "feelsLike": 34,
+    "humidity": 68,
+    "wind": "12 km/h",
+    "employees": 45,
+    "monthlyProgress": 82,
+    "goalsTotal": 21,
+    "goalsCompleted": 5,
+    "goalsRemaining": 16,
+    "presentToday": 6,
+    "absences": 0,
+    "externalWork": 0,
+    "equipmentUsage": 87,
+    "equipmentActive": 20,
+    "equipmentTotal": 23,
+    "date": "02 de setembro de 2026"
+  }
+}
