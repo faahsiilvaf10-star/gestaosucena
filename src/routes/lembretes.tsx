@@ -37,6 +37,9 @@ import { fetchReminders, createReminder, toggleReminderCompletion, fetchUsers, t
 import { format, isPast, isToday, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ReminderSheet } from '../components/ReminderSheet'
+import { LogoutOverlay } from '../components/LogoutOverlay'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { useTheme } from '../contexts/ThemeContext'
 
 export const Route = createFileRoute('/lembretes')({
   component: LembretesComponent,
@@ -60,9 +63,12 @@ function LembretesComponent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const navigate = useNavigate()
+  const { isDark } = useTheme()
 
   const [environment, setEnvironment] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [currentUser, setCurrentUser] = useState({ name: '', role: '' })
   
   useEffect(() => {
     setEnvironment(localStorage.getItem('sucena_environment') || 'barcarena')
@@ -70,6 +76,10 @@ function LembretesComponent() {
     // Check if user is admin
     supabase.auth.getUser().then(({ data }) => {
       const role = data.user?.user_metadata?.role || ''
+      setCurrentUser({
+        name: data.user?.user_metadata?.full_name || data.user?.email || 'Usuário',
+        role: role || 'Usuário'
+      })
       if (role.toLowerCase().includes('admin')) {
         setIsAdmin(true)
       }
@@ -79,8 +89,11 @@ function LembretesComponent() {
   const envColor = environment === 'barcarena' ? 'text-blue-400' : 'text-emerald-400'
   
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    navigate({ to: '/' })
+    setIsLoggingOut(true)
+    setTimeout(async () => {
+      await supabase.auth.signOut()
+      navigate({ to: '/' })
+    }, 5000)
   }
 
   const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar'>('list')
@@ -160,18 +173,19 @@ function LembretesComponent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex overflow-hidden font-sans selection:bg-purple-500/30">
+    <div className={`min-h-screen flex overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-white' : 'bg-gray-50 text-black'}`}>
+      <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
       
       {/* Sidebar */}
-      <aside className={`vt-sidebar border-r border-white/5 bg-[#09090b] flex flex-col h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-56' : 'w-20'}`}>
+      <aside className={`vt-sidebar border-r flex flex-col h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-56' : 'w-20'} ${isDark ? 'bg-[#09090b] border-white/5' : 'bg-gray-100 border-black/5'}`}>
         <div className={`pt-4 pb-2 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
           <div className={`flex items-center mb-8 ${isSidebarOpen ? 'justify-between px-2 pr-8' : 'justify-center'}`}>
             {isSidebarOpen && (
-              <img src="/logo.png" alt="Sucena Logo" className="h-10 w-auto object-contain filter brightness-0 invert" />
+              <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-10 w-auto object-contain transition-all duration-300 ${isDark ? 'filter brightness-0 invert' : ''}`} />
             )}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${isDark ? 'text-white/50 hover:text-white hover:bg-white/10' : 'text-black/50 hover:text-black hover:bg-black/10'}`}
               title={isSidebarOpen ? "Recolher menu" : "Expandir menu"}
             >
               {isSidebarOpen ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
@@ -189,16 +203,16 @@ function LembretesComponent() {
                 <MapPin size={16} className={envColor} />
                 {isSidebarOpen && (
                   <div className="flex flex-col items-start overflow-hidden text-left flex-1">
-                    <span className="text-[10px] text-white/50 font-medium uppercase tracking-wider leading-tight">Ambiente</span>
-                    <span className="text-xs font-bold text-white truncate w-full">{envName}</span>
+                    <span className={`text-[10px] font-medium uppercase tracking-wider leading-tight ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Ambiente</span>
+                    <span className={`text-xs font-bold truncate w-full ${isDark ? 'text-white' : 'text-gray-900'}`}>{envName}</span>
                   </div>
                 )}
-                {isSidebarOpen && <ArrowLeftRight size={14} className="text-white/30 ml-auto" />}
+                {isSidebarOpen && <ArrowLeftRight size={14} className={isDark ? 'text-white/30 ml-auto' : 'text-gray-400 ml-auto'} />}
               </button>
             </div>
           )}
 
-          {isSidebarOpen && <p className="text-[10px] uppercase text-white/40 font-semibold tracking-wider mb-4 px-2">Menu</p>}
+          {isSidebarOpen && <p className={`text-[10px] uppercase font-semibold tracking-wider mb-4 px-2 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>Menu</p>}
           <nav className="flex flex-col gap-1" onMouseLeave={() => setHoveredIdx(null)}>
             {sidebarLinks.map((link, idx) => {
               const Icon = link.icon
@@ -215,48 +229,47 @@ function LembretesComponent() {
                     title={!isSidebarOpen ? link.label : undefined}
                     className={`flex items-center transition-all duration-300 text-sm font-medium relative z-10 w-full ${
                       link.active 
-                        ? (isSidebarOpen ? 'sidebar-active-tab text-white' : 'sidebar-active-tab-closed text-white')
-                        : `text-white/60 hover:text-white rounded-lg ${isSidebarOpen ? 'mr-6' : ''}`
+                        ? (isSidebarOpen 
+                          ? (isDark ? 'sidebar-active-tab text-white' : 'sidebar-active-tab text-yellow-500') 
+                          : (isDark ? 'sidebar-active-tab-closed text-white' : 'sidebar-active-tab-closed text-yellow-500'))
+                        : (isDark ? `text-white/60 hover:text-white rounded-lg ${isSidebarOpen ? 'mr-6' : ''}` : `text-gray-500 hover:text-gray-900 rounded-lg ${isSidebarOpen ? 'mr-6' : ''}`)
                     } ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}
                     onClick={() => {
                       if (link.href) navigate({ to: link.href as any })
                     }}
                   >
-                    <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? 'text-white' : 'text-white/50'} />
+                    <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? (isDark ? 'text-white' : 'text-yellow-500') : (isDark ? 'text-white/50' : 'text-gray-400')} />
                     {isSidebarOpen && <span className={`whitespace-nowrap ${link.active ? 'font-tarmiles text-lg tracking-wide' : ''}`}>{link.label}</span>}
                   </button>
                 </div>
               )
             })}
           </nav>
-        </div>
-        
-        <div className={`mt-auto pt-4 pb-4 border-t border-white/5 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
+        </div>        <div className={`mt-auto pt-4 pb-4 border-t ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'} ${isDark ? 'border-white/5' : 'border-black/5'}`}>
           <nav className={`flex ${isSidebarOpen ? 'flex-row items-center gap-2 pr-6' : 'flex-col gap-1'}`}>
-
-            <button title={!isSidebarOpen ? "Configurações" : undefined} className={`flex-1 flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}>
-              <Settings size={isSidebarOpen ? 18 : 22} className="text-white/50" />
+            <button title={!isSidebarOpen ? "Configurações" : undefined} className={`flex-1 flex items-center transition-all duration-300 rounded-lg text-sm font-medium ${isDark ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'} ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}>
+              <Settings size={isSidebarOpen ? 18 : 22} className={isDark ? 'text-white/50' : 'text-gray-400'} />
               {isSidebarOpen && <span className="whitespace-nowrap">Configurações</span>}
             </button>
             <button 
               title="Sair" 
               onClick={handleLogout}
-              className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-red-400 hover:bg-red-500/10 text-sm font-medium ${isSidebarOpen ? 'p-2' : 'justify-center p-3'}`}
+              className={`flex items-center transition-all duration-300 rounded-lg text-sm font-medium hover:text-red-500 hover:bg-red-500/10 ${isDark ? 'text-white/60' : 'text-gray-500'} ${isSidebarOpen ? 'p-2' : 'justify-center p-3'}`}
             >
-              <LogOut size={isSidebarOpen ? 18 : 22} className={!isSidebarOpen ? 'text-white/50' : ''} />
+              <LogOut size={isSidebarOpen ? 18 : 22} className={!isSidebarOpen ? (isDark ? 'text-white/50' : 'text-gray-400') : ''} />
             </button>
           </nav>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="vt-main flex-1 flex overflow-hidden bg-gradient-to-br from-[#0a0a0c] to-[#09090b]">
+      <main className={`vt-main flex-1 flex overflow-hidden transition-colors duration-300 ${isDark ? 'bg-gradient-to-br from-[#0a0a0c] to-[#09090b]' : 'bg-gray-50'}`}>
         
         {/* Left Sub-Sidebar (Filtros Asana-like) */}
-        <div className="w-64 flex-shrink-0 bg-[#09090b]/50 border-r border-white/5 flex flex-col hidden md:flex">
+        <div className={`w-64 flex-shrink-0 border-r flex flex-col hidden md:flex transition-colors ${isDark ? 'bg-[#09090b]/50 border-white/5' : 'bg-white border-black/5'}`}>
           <div className="p-6">
-            <h2 className="text-white font-medium text-lg mb-1">Lembretes</h2>
-            <p className="text-white/40 text-xs">Organize tarefas e compromissos.</p>
+            <h2 className={`font-medium text-lg mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Lembretes</h2>
+            <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>Organize tarefas e compromissos.</p>
           </div>
           
           <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-6">
@@ -276,10 +289,10 @@ function LembretesComponent() {
                 <button
                   key={opt.label}
                   onClick={() => setCurrentFilter(opt.label)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentFilter === opt.label 
-                      ? 'bg-white/10 text-white font-medium' 
-                      : 'text-white/60 hover:bg-white/5 hover:text-white'
+                      ? (isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                      : (isDark ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100')
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -290,7 +303,7 @@ function LembretesComponent() {
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       opt.label === 'Atrasados' ? 'bg-red-500/20 text-red-400' : 
                       opt.label === 'Hoje' ? 'bg-indigo-500/20 text-indigo-400' :
-                      'bg-white/10 text-white/60'
+                      (isDark ? 'bg-white/10 text-white/60' : 'bg-gray-200 text-gray-600')
                     }`}>
                       {opt.count}
                     </span>
@@ -302,39 +315,50 @@ function LembretesComponent() {
         </div>
 
         {/* Reminders List Area */}
-        <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-[#0A0A0B] to-[#121214]">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0 bg-[#0A0A0B]/80 backdrop-blur-md sticky top-0 z-10">
+          <header className={`h-16 border-b px-6 flex items-center justify-between shrink-0 transition-colors ${isDark ? 'border-white/5 bg-[#09090b]/80' : 'border-black/5 bg-white/80'}`}>
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-medium text-white">{currentFilter}</h1>
+              <h1 className={`text-2xl tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: "'TarmilesAction', cursive" }}>Meus Lembretes</h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
+                {reminders.length} tarefas
+              </span>
             </div>
             
             <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <button className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${isDark ? 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10' : 'bg-gray-100 border-black/5 text-gray-700 hover:bg-gray-200'}`}>
+                <Bell size={18} />
+              </button>
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
                 <input 
                   type="text"
                   placeholder="Pesquisar..."
-                  className="bg-white/5 border border-white/10 rounded-full h-9 pl-9 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-64 transition-all"
+                  className={`border rounded-full h-9 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 w-64 transition-all ${
+                    isDark 
+                      ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+                  }`}
                 />
               </div>
               
-              <div className="flex items-center p-1 bg-white/5 rounded-lg border border-white/5">
+              <div className={`flex items-center p-1 rounded-lg border ${isDark ? 'bg-white/5 border-white/5' : 'bg-gray-100 border-gray-200'}`}>
                 <button 
                   onClick={() => setCurrentView('list')}
-                  className={`p-1.5 rounded-md transition-colors ${currentView === 'list' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/80'}`}
+                  className={`p-1.5 rounded-md transition-colors ${currentView === 'list' ? (isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm') : (isDark ? 'text-white/40 hover:text-white/80' : 'text-gray-500 hover:text-gray-900')}`}
                 >
                   <ListIcon size={16} />
                 </button>
                 <button 
                   onClick={() => setCurrentView('board')}
-                  className={`p-1.5 rounded-md transition-colors ${currentView === 'board' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/80'}`}
+                  className={`p-1.5 rounded-md transition-colors ${currentView === 'board' ? (isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm') : (isDark ? 'text-white/40 hover:text-white/80' : 'text-gray-500 hover:text-gray-900')}`}
                 >
                   <KanbanSquare size={16} />
                 </button>
                 <button 
                   onClick={() => setCurrentView('calendar')}
-                  className={`p-1.5 rounded-md transition-colors ${currentView === 'calendar' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/80'}`}
+                  className={`p-1.5 rounded-md transition-colors ${currentView === 'calendar' ? (isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm') : (isDark ? 'text-white/40 hover:text-white/80' : 'text-gray-500 hover:text-gray-900')}`}
                 >
                   <CalendarIcon size={16} />
                 </button>
@@ -347,8 +371,12 @@ function LembretesComponent() {
             <div className="max-w-4xl mx-auto space-y-4">
               
               {/* Quick Add */}
-              <div className="relative flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-white/5 group focus-within:bg-white/10 focus-within:border-indigo-500/50 transition-all">
-                <Plus size={20} className="text-white/40 group-focus-within:text-indigo-400" />
+              <div className={`relative flex items-center gap-3 p-3 rounded-xl border group transition-all ${
+                isDark 
+                  ? 'border-white/10 bg-white/5 focus-within:bg-white/10 focus-within:border-indigo-500/50' 
+                  : 'border-gray-300 bg-white focus-within:bg-gray-50 focus-within:border-indigo-400 shadow-sm'
+              }`}>
+                <Plus size={20} className={`group-focus-within:text-indigo-400 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
                 <input 
                   type="text" 
                   value={newTaskTitle}
@@ -356,7 +384,9 @@ function LembretesComponent() {
                   onKeyDown={handleQuickAdd}
                   disabled={createMutation.isPending}
                   placeholder="Adicionar um lembrete... Pressione Enter para salvar."
-                  className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm"
+                  className={`flex-1 bg-transparent focus:outline-none text-sm ${
+                    isDark ? 'text-white placeholder:text-white/40' : 'text-gray-900 placeholder:text-gray-400'
+                  }`}
                 />
               </div>
 
@@ -374,9 +404,9 @@ function LembretesComponent() {
                   ))}
                 </div>
               ) : filteredReminders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-white/40">
-                  <CheckCircle2 size={48} className="mb-4 text-white/20" />
-                  <p className="text-lg font-medium text-white/60">Tudo limpo por aqui!</p>
+                <div className={`flex flex-col items-center justify-center py-20 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                  <CheckCircle2 size={48} className={`mb-4 ${isDark ? 'text-white/20' : 'text-gray-300'}`} />
+                  <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Tudo limpo por aqui!</p>
                   <p className="text-sm">Nenhum lembrete encontrado para esta categoria.</p>
                 </div>
               ) : (
@@ -394,8 +424,8 @@ function LembretesComponent() {
                         }}
                         className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group ${
                           isCompleted 
-                            ? 'bg-transparent border-transparent opacity-50' 
-                            : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10'
+                            ? `opacity-50 ${isDark ? 'bg-transparent border-transparent' : 'bg-gray-50 border-gray-100'}` 
+                            : (isDark ? 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10' : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm')
                         }`}
                       >
                         <button 
@@ -408,13 +438,15 @@ function LembretesComponent() {
                           {isCompleted ? (
                             <CheckCircle2 size={22} className="text-indigo-400" />
                           ) : (
-                            <Circle size={22} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                            <Circle size={22} className={`${isDark ? 'text-white/20 group-hover:text-white/40' : 'text-gray-300 group-hover:text-gray-400'} transition-colors`} />
                           )}
                         </button>
                         
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-medium truncate transition-all ${
-                            isCompleted ? 'text-white/40 line-through' : 'text-white/90 group-hover:text-white'
+                            isCompleted 
+                              ? (isDark ? 'text-white/40 line-through' : 'text-gray-400 line-through') 
+                              : (isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900 group-hover:text-black')
                           }`}>
                             {reminder.title}
                           </p>
@@ -422,7 +454,7 @@ function LembretesComponent() {
                           <div className="flex items-center gap-3 mt-1.5">
                             {/* Date */}
                             {reminder.due_date && (
-                              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                              <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                                 <Clock size={12} />
                                 <span>{format(parseISO(reminder.due_date), "dd 'de' MMM", { locale: ptBR })}</span>
                               </div>

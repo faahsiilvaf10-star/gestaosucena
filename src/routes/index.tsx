@@ -1,19 +1,25 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Moon, Sun, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
+import { useTheme } from '../contexts/ThemeContext'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { useNavigate, createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
   component: Index,
 })
 
 function Index() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const navigate = useNavigate()
+  const { isDark } = useTheme()
   const [viewState, setViewState] = useState<'LOGIN' | 'REGISTER' | 'SUCCESS'>('LOGIN')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
 
   const translateAuthError = (message: string) => {
     const errorMap: Record<string, string> = {
@@ -36,8 +42,6 @@ function Index() {
     return message
   }
 
-  const isDark = theme === 'dark'
-  const navigate = useNavigate()
 
   // Form states
   const [email, setEmail] = useState('')
@@ -87,7 +91,17 @@ function Index() {
         localStorage.removeItem('sucena_saved_password')
       }
       toast.success('Login realizado com sucesso!')
-      navigate({ to: '/ambientes' })
+      
+      const userMeta = data.user?.user_metadata
+      setAuthorizedUser({ 
+        name: userMeta?.full_name || email, 
+        role: userMeta?.role || 'Usuário' 
+      })
+      setIsAuthorized(true)
+      
+      setTimeout(() => {
+        navigate({ to: '/ambientes' })
+      }, 5000)
     }
   }
 
@@ -149,6 +163,77 @@ function Index() {
   return (
     <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-white' : 'bg-gray-50 text-black'}`}>
       
+      <AnimatePresence>
+        {isAuthorized && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-[#09090b] text-white"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: 'spring' }}
+              className="flex flex-col items-center gap-6"
+            >
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 10, delay: 0.5 }}
+                className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-2"
+              >
+                <CheckCircle2 size={40} className="text-green-500" />
+              </motion.div>
+              
+              <motion.h2 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="text-4xl font-tarmiles tracking-[0.2em] text-green-400 drop-shadow-[0_0_15px_rgba(74,222,128,0.4)]"
+              >
+                AUTORIZADO
+              </motion.h2>
+              
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="text-center flex flex-col items-center"
+              >
+                <p className="text-2xl font-evantic tracking-wide text-white/90">{authorizedUser.name}</p>
+                <div className="h-px w-12 bg-white/10 my-3"></div>
+                <p className="text-xs text-white/40 uppercase tracking-[0.3em] font-medium">{authorizedUser.role}</p>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5 }}
+                className="mt-12 flex gap-3"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.2, 1, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+                  className="w-1.5 h-1.5 rounded-full bg-white/40"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.2, 1, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+                  className="w-1.5 h-1.5 rounded-full bg-white/40"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.2, 1, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
+                  className="w-1.5 h-1.5 rounded-full bg-white/40"
+                />
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       {/* Background Effects */}
       <div className={`absolute top-[-20%] left-[-10%] w-[70%] h-[70%] blur-[150px] rounded-full pointer-events-none z-0 transition-colors duration-300 ${isDark ? 'bg-blue-600/20' : 'bg-blue-400/20'}`}></div>
       <div className={`absolute top-[-20%] right-[-10%] w-[60%] h-[60%] blur-[150px] rounded-full pointer-events-none z-0 transition-colors duration-300 ${isDark ? 'bg-purple-600/20' : 'bg-purple-400/20'}`}></div>
@@ -174,7 +259,7 @@ function Index() {
         
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <img src="/logo.png" alt="Sucena Logo" className={`h-16 object-contain drop-shadow-md transition-all duration-300 ${isDark ? '' : 'brightness-0'}`} />
+          <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-16 object-contain drop-shadow-md transition-all duration-300`} />
         </div>
 
         {/* Forms & States */}
@@ -372,19 +457,7 @@ function Index() {
 
         <div className="w-[64px] flex justify-end">
           {/* Theme Toggle */}
-          <div 
-            className={`flex items-center rounded-full p-1 cursor-pointer border transition-colors ${
-              isDark ? 'bg-[#18181b] border-white/10' : 'bg-gray-200 border-black/5 shadow-inner'
-            }`}
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          >
-            <div className={`rounded-full p-1 transition-all ${isDark ? 'bg-[#27272a] shadow-sm' : ''}`}>
-              <Moon size={12} className={`transition-colors ${isDark ? 'text-blue-300' : 'text-gray-400'}`} />
-            </div>
-            <div className={`rounded-full p-1 transition-all ${!isDark ? 'bg-white shadow-sm' : ''}`}>
-              <Sun size={12} className={`transition-colors ${!isDark ? 'text-amber-500' : 'text-white/30'}`} />
-            </div>
-          </div>
+          <ThemeToggle />
         </div>
       </div>
 

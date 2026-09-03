@@ -5,8 +5,10 @@ import { CheckCircle2, Circle, Clock, Calendar as CalendarIcon, User as UserIcon
 import { format, parseISO, isPast, isToday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../contexts/ThemeContext'
 
 export function DashboardRemindersWidget() {
+  const { isDark } = useTheme()
   const queryClient = useQueryClient()
   const [snoozeReminderId, setSnoozeReminderId] = useState<string | null>(null)
   const [snoozeDate, setSnoozeDate] = useState('')
@@ -65,15 +67,15 @@ export function DashboardRemindersWidget() {
   if (activeReminders.length === 0) return null
 
   return (
-    <div className="bg-[#121214] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
+    <div className={`border rounded-2xl p-6 relative overflow-hidden transition-colors ${isDark ? 'bg-[#121214] border-white/5' : 'bg-gray-100 border-black/5 shadow-lg'}`}>
       {/* Decorative gradient */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
+      <div className={`absolute top-0 right-0 w-64 h-64 blur-[80px] rounded-full pointer-events-none ${isDark ? 'bg-indigo-500/10' : 'bg-indigo-500/5'}`} />
       
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+      <div className="flex items-center gap-3 mb-6 relative z-10">
+        <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600'}`}>
           <Clock size={20} />
         </div>
-        <h2 className="text-lg font-medium text-white/90">Lembretes para Hoje</h2>
+        <h2 className={`text-lg font-medium ${isDark ? 'text-white/90' : 'text-gray-900'}`}>Lembretes para Hoje</h2>
       </div>
 
       <div className="space-y-3 relative z-10">
@@ -83,18 +85,18 @@ export function DashboardRemindersWidget() {
           const isMe = reminder.assigned_user_id === currentUserId
 
           return (
-            <div key={reminder.id} className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group">
+            <div key={reminder.id} className={`p-4 rounded-xl border transition-colors group ${isDark ? 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]' : 'border-gray-200 bg-white hover:bg-gray-50 shadow-sm'}`}>
               <div className="flex items-start gap-4">
                 <button 
                   onClick={() => toggleMutation.mutate({ id: reminder.id, status: reminder.status })}
                   className="mt-0.5 flex-shrink-0"
                   title="Marcar como visto/concluído"
                 >
-                  <Circle size={20} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                  <Circle size={20} className={`transition-colors ${isDark ? 'text-white/20 group-hover:text-white/50' : 'text-gray-300 group-hover:text-gray-500'}`} />
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white/90 group-hover:text-white truncate">
+                  <p className={`text-sm font-medium truncate ${isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900'}`}>
                     {reminder.title}
                   </p>
                   
@@ -112,7 +114,7 @@ export function DashboardRemindersWidget() {
 
                     {/* Mention Tag */}
                     {assignee && (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-medium text-white/60">
+                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-white/5 border-white/10 text-white/60' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
                         {assignee.avatar_url ? (
                           <img src={assignee.avatar_url} className="w-3 h-3 rounded-full" />
                         ) : (
@@ -142,7 +144,7 @@ export function DashboardRemindersWidget() {
                       setSnoozeDate(reminder.due_date || '')
                       setSnoozeTime(reminder.due_time || '')
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-white/60 hover:text-white transition-colors"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}
                   >
                     Adiar
                   </button>
@@ -157,23 +159,23 @@ export function DashboardRemindersWidget() {
 
               {/* Snooze Panel inline */}
               {isSnoozing && (
-                <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap items-center gap-3">
+                <div className={`mt-4 pt-4 border-t flex flex-wrap items-center gap-3 ${isDark ? 'border-white/5' : 'border-gray-200'}`}>
                   <input 
                     type="date"
                     value={snoozeDate}
                     onChange={e => setSnoozeDate(e.target.value)}
-                    className="bg-black/20 text-sm text-white px-2 py-1.5 rounded-md border border-white/10 focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-white border-white/10 [color-scheme:dark]' : 'bg-white text-gray-900 border-gray-300'}`}
                   />
                   <input 
                     type="time"
                     value={snoozeTime}
                     onChange={e => setSnoozeTime(e.target.value)}
-                    className="bg-black/20 text-sm text-white px-2 py-1.5 rounded-md border border-white/10 focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-white border-white/10 [color-scheme:dark]' : 'bg-white text-gray-900 border-gray-300'}`}
                   />
                   <div className="flex-1" />
                   <button 
                     onClick={() => setSnoozeReminderId(null)}
-                    className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors"
+                    className={`px-3 py-1.5 text-xs transition-colors ${isDark ? 'text-white/40 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
                   >
                     Cancelar
                   </button>

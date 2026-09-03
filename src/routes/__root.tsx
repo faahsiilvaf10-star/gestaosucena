@@ -13,6 +13,19 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+
+function RootContent() {
+  const { isDark } = useTheme()
+  
+  return (
+    <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>
+      <Outlet />
+      <Toaster position="top-right" theme={isDark ? "dark" : "light"} />
+      <CustomCursor />
+    </div>
+  )
+}
 
 function NotFoundComponent() {
   return (
@@ -82,9 +95,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <CustomCursor />
-      <Outlet />
-      <Toaster />
+      <ThemeProvider>
+        <RootContent />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

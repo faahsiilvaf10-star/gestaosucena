@@ -11,6 +11,7 @@ import {
   Calendar,
   Loader2
 } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 // WMO Weather interpretation codes
 function getWeatherDetails(code: number) {
@@ -29,6 +30,7 @@ function getWeatherDetails(code: number) {
 }
 
 export function WeatherWidget() {
+  const { isDark } = useTheme()
   const [data, setData] = useState<{ temp: number; code: number; location: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -105,16 +107,16 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className="bg-[#111113]/80 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center h-[160px]">
-        <Loader2 className="animate-spin text-white/50" size={24} />
+      <div className={`rounded-2xl p-4 flex flex-col items-center justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
+        <Loader2 className={`animate-spin ${isDark ? 'text-white/50' : 'text-gray-400'}`} size={24} />
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="bg-[#111113]/80 border border-white/5 rounded-2xl p-4 flex flex-col justify-center h-[160px]">
-        <p className="text-white/50 text-sm">Clima indisponível</p>
+      <div className={`rounded-2xl p-4 flex flex-col justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
+        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
       </div>
     )
   }
@@ -122,32 +124,32 @@ export function WeatherWidget() {
   const details = getWeatherDetails(data.code)
 
   return (
-    <div className="bg-gradient-to-br from-[#1c2c36] to-[#121a22] border border-white/5 rounded-2xl p-4 flex flex-col h-[160px] shadow-lg relative overflow-hidden">
+    <div className={`rounded-2xl p-4 flex flex-col h-[160px] shadow-lg relative overflow-hidden transition-colors duration-300 ${isDark ? 'bg-gradient-to-br from-[#1c2c36] to-[#121a22] border border-white/5' : 'bg-gray-100 border border-black/5'}`}>
       {/* Decorative blurred circle */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}></div>
 
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between items-start mb-2 relative z-10">
         <div className="flex items-center gap-3">
           {details.icon}
           <div>
-            <h3 className="text-4xl font-light text-white tracking-tight">{data.temp}°C</h3>
+            <h3 className={`text-4xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{data.temp}°C</h3>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-1 mb-auto">
-        <Cloud className="text-white/50" size={14} />
-        <span className="text-white/80 text-sm font-medium">{details.label}</span>
+      <div className="flex items-center gap-2 mt-1 mb-auto relative z-10">
+        <Cloud className={isDark ? 'text-white/50' : 'text-gray-400'} size={14} />
+        <span className={`text-sm font-medium ${isDark ? 'text-white/80' : 'text-gray-600'}`}>{details.label}</span>
       </div>
 
-      <div className="border-t border-white/10 my-2 pt-2 flex flex-col gap-1">
+      <div className={`border-t my-2 pt-2 flex flex-col gap-1 relative z-10 ${isDark ? 'border-white/10' : 'border-black/5'}`}>
         <div className="flex items-center gap-2">
-          <MapPin size={12} className="text-white/50" />
-          <span className="text-xs text-white/60">{data.location}</span>
+          <MapPin size={12} className={isDark ? 'text-white/50' : 'text-gray-400'} />
+          <span className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-500'}`}>{data.location}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Calendar size={12} className="text-white/50" />
-          <span className="text-xs text-white/60 capitalize">{currentDate} {currentTime}</span>
+          <Calendar size={12} className={isDark ? 'text-white/50' : 'text-gray-400'} />
+          <span className={`text-xs capitalize ${isDark ? 'text-white/60' : 'text-gray-500'}`}>{currentDate} {currentTime}</span>
         </div>
       </div>
     </div>
