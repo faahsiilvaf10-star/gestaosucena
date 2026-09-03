@@ -84,8 +84,8 @@ function DashboardComponent() {
       
       {/* Sidebar */}
       <aside className={`border-r border-white/5 bg-[#09090b] flex flex-col h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className={`p-4 pb-2 ${isSidebarOpen ? 'px-6' : ''}`}>
-          <div className={`flex items-center mb-8 ${isSidebarOpen ? 'justify-between px-2' : 'justify-center'}`}>
+        <div className={`pt-4 pb-2 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
+          <div className={`flex items-center mb-8 ${isSidebarOpen ? 'justify-between px-2 pr-8' : 'justify-center'}`}>
             {isSidebarOpen && (
               <img src="/logo.png" alt="Sucena Logo" className="h-10 w-auto object-contain filter brightness-0 invert" />
             )}
@@ -105,30 +105,30 @@ function DashboardComponent() {
                 <button
                   key={idx}
                   title={!isSidebarOpen ? link.label : undefined}
-                  className={`flex items-center transition-all duration-300 text-sm font-medium rounded-lg ${
+                  className={`flex items-center transition-all duration-300 text-sm font-medium ${
                     link.active 
-                      ? 'bg-gradient-to-r from-white/10 to-transparent text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' 
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                      ? (isSidebarOpen ? 'sidebar-active-tab text-white' : 'sidebar-active-tab-closed text-white')
+                      : `text-white/60 hover:text-white hover:bg-white/5 rounded-lg ${isSidebarOpen ? 'mr-6' : ''}`
                   } ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}
                   onClick={() => {
                     if (link.href) window.location.href = link.href
                   }}
                 >
                   <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? 'text-white' : 'text-white/50'} />
-                  {isSidebarOpen && <span className="whitespace-nowrap">{link.label}</span>}
+                  {isSidebarOpen && <span className={`whitespace-nowrap ${link.active ? 'font-tarmiles text-lg tracking-wide' : ''}`}>{link.label}</span>}
                 </button>
               )
             })}
           </nav>
         </div>
         
-        <div className={`mt-auto p-4 pt-4 border-t border-white/5 ${isSidebarOpen ? 'px-6' : ''}`}>
+        <div className={`mt-auto pt-4 pb-4 border-t border-white/5 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
           <nav className="flex flex-col gap-1">
-            <button title={!isSidebarOpen ? "Help Center" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}>
+            <button title={!isSidebarOpen ? "Help Center" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2 mr-6' : 'justify-center p-3'}`}>
               <HelpCircle size={isSidebarOpen ? 18 : 22} className="text-white/50" />
               {isSidebarOpen && <span className="whitespace-nowrap">Help Center</span>}
             </button>
-            <button title={!isSidebarOpen ? "Preferences" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}>
+            <button title={!isSidebarOpen ? "Preferences" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2 mr-6' : 'justify-center p-3'}`}>
               <Settings size={isSidebarOpen ? 18 : 22} className="text-white/50" />
               {isSidebarOpen && <span className="whitespace-nowrap">Preferences</span>}
             </button>

@@ -11,9 +11,12 @@ export type Reminder = {
   due_date?: string
   due_time?: string
   is_recurring: boolean
+  recurrence_type?: string
+  recurrence_config?: any
   completed_at?: string
   created_at: string
   updated_at: string
+  reminder_mentions?: { user_id: string }[]
 }
 
 export type UserProfile = {
@@ -35,7 +38,7 @@ export async function fetchUsers(): Promise<UserProfile[]> {
 export async function fetchReminders(): Promise<Reminder[]> {
   const { data, error } = await supabase
     .from('reminders')
-    .select('*')
+    .select('*, reminder_mentions(user_id)')
     .order('created_at', { ascending: false })
   
   if (error) {
@@ -45,7 +48,7 @@ export async function fetchReminders(): Promise<Reminder[]> {
   return data || []
 }
 
-export async function createReminder(reminder: Partial<Reminder>) {
+export async function createReminder(reminder: Partial<Reminder>, mentions?: string[]) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Não autenticado')
 
@@ -56,10 +59,22 @@ export async function createReminder(reminder: Partial<Reminder>) {
     .single()
   
   if (error) throw error
+
+  if (mentions && mentions.length > 0) {
+    const mentionsData = mentions.map(userId => ({
+      reminder_id: data.id,
+      user_id: userId,
+      mentioned_by: userData.user.id
+    }))
+    await supabase.from('reminder_mentions').insert(mentionsData)
+  }
+
   return data
 }
 
-export async function updateReminder(id: string, updates: Partial<Reminder>) {
+export async function updateReminder(id: string, updates: Partial<Reminder>, mentions?: string[]) {
+  const { data: userData } = await supabase.auth.getUser()
+  
   const { data, error } = await supabase
     .from('reminders')
     .update(updates)
@@ -68,6 +83,22 @@ export async function updateReminder(id: string, updates: Partial<Reminder>) {
     .single()
   
   if (error) throw error
+
+  if (mentions !== undefined) {
+    // Delete old mentions
+    await supabase.from('reminder_mentions').delete().eq('reminder_id', id)
+    
+    // Insert new mentions
+    if (mentions.length > 0 && userData.user) {
+      const mentionsData = mentions.map(userId => ({
+        reminder_id: id,
+        user_id: userId,
+        mentioned_by: userData.user.id
+      }))
+      await supabase.from('reminder_mentions').insert(mentionsData)
+    }
+  }
+
   return data
 }
 

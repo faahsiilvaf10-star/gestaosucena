@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat } from 'lucide-react'
 import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder } from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
@@ -18,11 +18,14 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<Reminder['priority']>('Normal')
-  const [assignedUserId, setAssignedUserId] = useState<string | undefined>(undefined)
+  const [mentions, setMentions] = useState<string[]>([])
   const [dueDate, setDueDate] = useState('')
   const [dueTime, setDueTime] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurringDays, setRecurringDays] = useState<number[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -35,26 +38,30 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setTitle(reminder.title)
       setDescription(reminder.description || '')
       setPriority(reminder.priority)
-      setAssignedUserId(reminder.assigned_user_id)
+      setMentions(reminder.reminder_mentions?.map(m => m.user_id) || (reminder.assigned_user_id ? [reminder.assigned_user_id] : []))
       setDueDate(reminder.due_date || '')
       setDueTime(reminder.due_time || '')
       setShowDeleteConfirm(false)
+      setIsRecurring(reminder.is_recurring || false)
+      setRecurringDays(reminder.recurrence_config?.days || [])
     } else {
       setTitle('')
       setDescription('')
       setPriority('Normal')
-      setAssignedUserId(undefined)
+      setMentions([])
       setDueDate('')
       setDueTime('')
+      setIsRecurring(false)
+      setRecurringDays([])
     }
   }, [reminder, isOpen])
 
   const saveMutation = useMutation({
-    mutationFn: (data: Partial<Reminder>) => {
+    mutationFn: ({ data, mentions }: { data: Partial<Reminder>, mentions: string[] }) => {
       if (isEditing && reminder) {
-        return updateReminder(reminder.id, data)
+        return updateReminder(reminder.id, data, mentions)
       } else {
-        return createReminder({ ...data, status: 'Pendente', is_recurring: false })
+        return createReminder({ ...data, status: 'Pendente', is_recurring: data.is_recurring || false }, mentions)
       }
     },
     onSuccess: () => {
@@ -66,13 +73,28 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const handleSave = () => {
     if (!title.trim()) return
     
+    let finalMentions = mentions
+    if (mentions.includes('ALL')) {
+      finalMentions = users.map(u => u.id)
+      if (currentUserId && !finalMentions.includes(currentUserId)) {
+        finalMentions.push(currentUserId)
+      }
+    }
+
     saveMutation.mutate({
-      title,
-      description,
-      priority,
-      assigned_user_id: assignedUserId,
-      due_date: dueDate || undefined,
-      due_time: dueTime || undefined
+      data: {
+        title,
+        description,
+        priority,
+        // Mantemos assigned_user_id pro primeiro apenas por compatibilidade legada se precisar
+        assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : null,
+        due_date: dueDate || undefined,
+        due_time: dueTime || undefined,
+        is_recurring: isRecurring,
+        recurrence_type: isRecurring ? 'weekly' : null,
+        recurrence_config: isRecurring ? { days: recurringDays } : null
+      },
+      mentions: finalMentions
     })
   }
 
@@ -147,20 +169,61 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           {/* Properties Grid */}
           <div className="space-y-4">
             
-            {/* Responsável */}
-            <div className="flex items-center gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors">
+            {/* Responsáveis (Múltiplos) */}
+            <div className="flex items-start gap-4 group cursor-pointer">
+              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors pt-1">
                 <UserIcon size={16} />
-                <span>Responsável</span>
+                <span>Responsáveis</span>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex flex-wrap gap-2 mb-1">
+                  {mentions.includes('ALL') ? (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-medium border border-indigo-500/20">
+                      (Todos)
+                      <button 
+                        onClick={() => setMentions([])}
+                        className="hover:text-white transition-colors ml-1"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    mentions.map(userId => {
+                      const u = users.find(x => x.id === userId)
+                      const isMe = userId === currentUserId
+                      return (
+                        <div key={userId} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-medium border border-indigo-500/20">
+                          {isMe ? '(Eu)' : (u?.name || 'Desconhecido')}
+                          <button 
+                            onClick={() => setMentions(prev => prev.filter(id => id !== userId))}
+                            className="hover:text-white transition-colors ml-1"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
                 <select 
-                  value={assignedUserId || ''} 
-                  onChange={(e) => setAssignedUserId(e.target.value || undefined)}
+                  value="" 
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (!val) return
+                    if (val === 'ALL') {
+                      setMentions(['ALL'])
+                    } else if (!mentions.includes(val)) {
+                      setMentions(prev => [...prev.filter(id => id !== 'ALL'), val])
+                    }
+                  }}
                   className="w-full bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
                 >
-                  <option value="" className="bg-[#121214] text-white/50">Nenhum responsável</option>
-                  {users.map(u => (
+                  <option value="" className="bg-[#121214] text-white/50">+ Adicionar responsável</option>
+                  <option value="ALL" className="bg-[#121214] text-indigo-300 font-medium">(Todos)</option>
+                  {currentUserId && !mentions.includes(currentUserId) && (
+                    <option value={currentUserId} className="bg-[#121214] text-indigo-400 font-medium">(Eu)</option>
+                  )}
+                  {users.filter(u => u.id !== currentUserId && !mentions.includes(u.id)).map(u => (
                     <option key={u.id} value={u.id} className="bg-[#121214]">{u.name}</option>
                   ))}
                 </select>
@@ -186,6 +249,48 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                   onChange={(e) => setDueTime(e.target.value)}
                   className="bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
                 />
+              </div>
+            </div>
+
+            {/* Recorrência */}
+            <div className="flex items-start gap-4 group cursor-pointer">
+              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors pt-2">
+                <Repeat size={16} />
+                <span>Recorrente</span>
+              </div>
+              <div className="flex-1">
+                <div className="pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-white">
+                    <input 
+                      type="checkbox"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      className="rounded border-white/20 bg-black/50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                    />
+                    Repetir em dias específicos
+                  </label>
+                </div>
+                {isRecurring && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setRecurringDays(prev => 
+                            prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
+                          )
+                        }}
+                        className={`w-9 h-9 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
+                          recurringDays.includes(idx) 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

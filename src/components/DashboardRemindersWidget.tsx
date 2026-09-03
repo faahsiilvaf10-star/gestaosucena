@@ -29,7 +29,8 @@ export function DashboardRemindersWidget() {
   const activeReminders = reminders.filter(r => {
     if (r.status === 'Concluído' || r.status === 'Cancelado') return false
     
-    const isMine = r.creator_id === currentUserId || r.assigned_user_id === currentUserId
+    const isMentioned = r.reminder_mentions?.some(m => m.user_id === currentUserId)
+    const isMine = r.creator_id === currentUserId || r.assigned_user_id === currentUserId || isMentioned
     if (!isMine) return false
 
     // Mostrar os que têm data para hoje ou estão atrasados

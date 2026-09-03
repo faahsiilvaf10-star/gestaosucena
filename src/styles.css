@@ -1,6 +1,53 @@
 @import "tailwindcss" source(none);
 @source "../src";
 
+@font-face {
+  font-family: 'TarmilesAction';
+  src: url('/TarmilesAction_PERSONAL_USE_ONLY.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Sidebar Blending Effect */
+.sidebar-active-tab {
+  background-color: #0a0a0c;
+  position: relative;
+  border-radius: 0.75rem 0 0 0.75rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: none;
+  margin-right: -1px;
+}
+
+.sidebar-active-tab::before,
+.sidebar-active-tab::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: transparent;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.sidebar-active-tab::before {
+  top: -1.25rem;
+  border-bottom-right-radius: 1.25rem;
+  box-shadow: 0.5rem 0.5rem 0 0.5rem #0a0a0c;
+}
+
+.sidebar-active-tab::after {
+  bottom: -1.25rem;
+  border-top-right-radius: 1.25rem;
+  box-shadow: 0.5rem -0.5rem 0 0.5rem #0a0a0c;
+}
+
+.sidebar-active-tab-closed {
+  background-color: #0a0a0c;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem !important;
+}
+
 @theme {
   --color-bg: hsl(0 0% 4%);
   --color-surface: hsl(0 0% 8%);
@@ -11,6 +58,7 @@
 
   --font-body: 'Inter', sans-serif;
   --font-display: 'Instrument Serif', serif;
+  --font-tarmiles: 'TarmilesAction', sans-serif;
 
   --animate-scroll-down: scroll-down 1.5s ease-in-out infinite;
   --animate-role-fade-in: role-fade-in 0.4s ease-out;
