@@ -25,6 +25,7 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react'
+import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 export const Route = createFileRoute('/dashboard')({
@@ -32,8 +33,8 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 const sidebarLinks = [
-  { icon: LayoutDashboard, label: 'Destaques', active: true },
-  { icon: Bell, label: 'Lembretes' },
+  { icon: LayoutDashboard, label: 'Destaques', active: true, href: '/dashboard' },
+  { icon: Bell, label: 'Lembretes', href: '/lembretes' },
   { icon: Camera, label: 'InstaCena' },
   { icon: Package, label: 'Almoxarifado' },
   { icon: FileText, label: 'Documentos' },
@@ -109,6 +110,9 @@ function DashboardComponent() {
                       ? 'bg-gradient-to-r from-white/10 to-transparent text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' 
                       : 'text-white/60 hover:text-white hover:bg-white/5'
                   } ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}
+                  onClick={() => {
+                    if (link.href) window.location.href = link.href
+                  }}
                 >
                   <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? 'text-white' : 'text-white/50'} />
                   {isSidebarOpen && <span className="whitespace-nowrap">{link.label}</span>}
@@ -177,6 +181,9 @@ function DashboardComponent() {
             <KpiCard title="Action required" value="1,254" change={10} isUp={false} icon={<Activity size={16} />} />
             <KpiCard title="Resolved" value="1,245" change={10} isUp={true} icon={<Shield size={16} />} />
           </div>
+
+          {/* Lembretes / Tarefas Rápidas Widget */}
+          <DashboardRemindersWidget />
 
           {/* Middle Row (Charts) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
