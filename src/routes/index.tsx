@@ -69,8 +69,7 @@ function Index() {
       setErrorMessage(translatedError)
     } else {
       toast.success('Login realizado com sucesso!')
-      // Here you can redirect the user to a dashboard
-      // navigate({ to: '/dashboard' })
+      navigate({ to: '/dashboard' })
     }
   }
 
