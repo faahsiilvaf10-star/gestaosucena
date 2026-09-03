@@ -17,6 +17,7 @@ export type Reminder = {
   created_at: string
   updated_at: string
   reminder_mentions?: { user_id: string }[]
+  environment?: string
 }
 
 export type UserProfile = {
@@ -36,9 +37,12 @@ export async function fetchUsers(): Promise<UserProfile[]> {
 }
 
 export async function fetchReminders(): Promise<Reminder[]> {
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  
   const { data, error } = await supabase
     .from('reminders')
     .select('*, reminder_mentions(user_id)')
+    .eq('environment', env)
     .order('created_at', { ascending: false })
   
   if (error) {
@@ -49,12 +53,13 @@ export async function fetchReminders(): Promise<Reminder[]> {
 }
 
 export async function createReminder(reminder: Partial<Reminder>, mentions?: string[]) {
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Não autenticado')
 
   const { data, error } = await supabase
     .from('reminders')
-    .insert([{ ...reminder, creator_id: userData.user.id }])
+    .insert([{ ...reminder, creator_id: userData.user.id, environment: env }])
     .select()
     .single()
   

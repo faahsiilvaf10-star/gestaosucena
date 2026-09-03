@@ -1,5 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 import {
   LayoutDashboard,
   Bell,
@@ -23,9 +25,13 @@ import {
   Search,
   Activity,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  MapPin,
+  ArrowLeftRight,
+  LogOut
 } from 'lucide-react'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
+import { WeatherWidget } from '../components/WeatherWidget'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 export const Route = createFileRoute('/dashboard')({
@@ -78,12 +84,42 @@ const monthlyData = [
 
 function DashboardComponent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+  const navigate = useNavigate()
+
+  const [environment, setEnvironment] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
+  
+  useEffect(() => {
+    setEnvironment(localStorage.getItem('sucena_environment') || 'barcarena')
+    
+    // Check if user is admin
+    supabase.auth.getUser().then(({ data }) => {
+      const role = data.user?.user_metadata?.role || ''
+      if (role.toLowerCase().includes('admin')) {
+        setIsAdmin(true)
+      }
+    })
+  }, [])
+  const envName = environment === 'barcarena' ? 'BARCARENA' : 'PARAGOMINAS'
+  const envColor = environment === 'barcarena' ? 'text-blue-400' : 'text-emerald-400'
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate({ to: '/' })
+  }
+
+  const currentDate = new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white flex overflow-hidden font-sans selection:bg-purple-500/30">
       
       {/* Sidebar */}
-      <aside className={`border-r border-white/5 bg-[#09090b] flex flex-col h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+      <aside className={`vt-sidebar border-r border-white/5 bg-[#09090b] flex flex-col h-screen flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-56' : 'w-20'}`}>
         <div className={`pt-4 pb-2 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
           <div className={`flex items-center mb-8 ${isSidebarOpen ? 'justify-between px-2 pr-8' : 'justify-center'}`}>
             {isSidebarOpen && (
@@ -97,47 +133,79 @@ function DashboardComponent() {
               {isSidebarOpen ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
             </button>
           </div>
+
+          {/* Environment Indicator */}
+          {isAdmin && (
+            <div className={`mb-6 ${isSidebarOpen ? 'px-2' : 'flex justify-center'}`}>
+              <button 
+                onClick={() => navigate({ to: '/ambientes' })}
+                className={`flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/5 transition-colors rounded-lg ${isSidebarOpen ? 'px-3 py-2 w-full max-w-[190px]' : 'p-2'}`}
+                title={isSidebarOpen ? "Trocar Ambiente" : envName}
+              >
+                <MapPin size={16} className={envColor} />
+                {isSidebarOpen && (
+                  <div className="flex flex-col items-start overflow-hidden text-left flex-1">
+                    <span className="text-[10px] text-white/50 font-medium uppercase tracking-wider leading-tight">Ambiente</span>
+                    <span className="text-xs font-bold text-white truncate w-full">{envName}</span>
+                  </div>
+                )}
+                {isSidebarOpen && <ArrowLeftRight size={14} className="text-white/30 ml-auto" />}
+              </button>
+            </div>
+          )}
+
           {isSidebarOpen && <p className="text-[10px] uppercase text-white/40 font-semibold tracking-wider mb-4 px-2">Menu</p>}
-          <nav className="flex flex-col gap-1">
+          <nav className="flex flex-col gap-1" onMouseLeave={() => setHoveredIdx(null)}>
             {sidebarLinks.map((link, idx) => {
               const Icon = link.icon
               return (
-                <button
-                  key={idx}
-                  title={!isSidebarOpen ? link.label : undefined}
-                  className={`flex items-center transition-all duration-300 text-sm font-medium ${
-                    link.active 
-                      ? (isSidebarOpen ? 'sidebar-active-tab text-white' : 'sidebar-active-tab-closed text-white')
-                      : `text-white/60 hover:text-white hover:bg-white/5 rounded-lg ${isSidebarOpen ? 'mr-6' : ''}`
-                  } ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}
-                  onClick={() => {
-                    if (link.href) window.location.href = link.href
-                  }}
-                >
-                  <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? 'text-white' : 'text-white/50'} />
-                  {isSidebarOpen && <span className={`whitespace-nowrap ${link.active ? 'font-tarmiles text-lg tracking-wide' : ''}`}>{link.label}</span>}
-                </button>
+                <div key={idx} className="relative" onMouseEnter={() => setHoveredIdx(idx)}>
+                  {hoveredIdx === idx && !link.active && (
+                    <motion.div
+                      layoutId="sidebar-hover-dashboard"
+                      className={`absolute inset-0 bg-white/5 rounded-lg z-0 ${isSidebarOpen ? 'mr-6' : ''}`}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <button
+                    title={!isSidebarOpen ? link.label : undefined}
+                    className={`flex items-center transition-all duration-300 text-sm font-medium relative z-10 w-full ${
+                      link.active 
+                        ? (isSidebarOpen ? 'sidebar-active-tab text-white' : 'sidebar-active-tab-closed text-white')
+                        : `text-white/60 hover:text-white rounded-lg ${isSidebarOpen ? 'mr-6' : ''}`
+                    } ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}
+                    onClick={() => {
+                      if (link.href) navigate({ to: link.href as any })
+                    }}
+                  >
+                    <Icon size={isSidebarOpen ? 18 : 22} className={link.active ? 'text-white' : 'text-white/50'} />
+                    {isSidebarOpen && <span className={`whitespace-nowrap ${link.active ? 'font-tarmiles text-lg tracking-wide' : ''}`}>{link.label}</span>}
+                  </button>
+                </div>
               )
             })}
           </nav>
         </div>
         
         <div className={`mt-auto pt-4 pb-4 border-t border-white/5 ${isSidebarOpen ? 'pl-6 pr-0' : 'px-4'}`}>
-          <nav className="flex flex-col gap-1">
-            <button title={!isSidebarOpen ? "Help Center" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2 mr-6' : 'justify-center p-3'}`}>
-              <HelpCircle size={isSidebarOpen ? 18 : 22} className="text-white/50" />
-              {isSidebarOpen && <span className="whitespace-nowrap">Help Center</span>}
-            </button>
-            <button title={!isSidebarOpen ? "Preferences" : undefined} className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2 mr-6' : 'justify-center p-3'}`}>
+          <nav className={`flex ${isSidebarOpen ? 'flex-row items-center gap-2 pr-6' : 'flex-col gap-1'}`}>
+            <button title={!isSidebarOpen ? "Configurações" : undefined} className={`flex-1 flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium ${isSidebarOpen ? 'gap-3 px-3 py-2' : 'justify-center p-3'}`}>
               <Settings size={isSidebarOpen ? 18 : 22} className="text-white/50" />
-              {isSidebarOpen && <span className="whitespace-nowrap">Preferences</span>}
+              {isSidebarOpen && <span className="whitespace-nowrap">Configurações</span>}
+            </button>
+            <button 
+              title="Sair" 
+              onClick={handleLogout}
+              className={`flex items-center transition-all duration-300 rounded-lg text-white/60 hover:text-red-400 hover:bg-red-500/10 text-sm font-medium ${isSidebarOpen ? 'p-2' : 'justify-center p-3'}`}
+            >
+              <LogOut size={isSidebarOpen ? 18 : 22} className={!isSidebarOpen ? 'text-white/50' : ''} />
             </button>
           </nav>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden bg-gradient-to-br from-[#0a0a0c] to-[#09090b]">
+      <main className="vt-main flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden bg-gradient-to-br from-[#0a0a0c] to-[#09090b]">
         
         {/* Header */}
         <header className="h-20 border-b border-white/5 px-8 flex items-center justify-end sticky top-0 bg-[#09090b]/80 backdrop-blur-md z-10">
@@ -168,15 +236,14 @@ function DashboardComponent() {
             <h1 className="text-5xl text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ fontFamily: "'TarmilesAction', cursive" }}>
               Dashboard
             </h1>
-            <button className="h-9 px-4 rounded-lg bg-white/5 border border-white/5 flex items-center gap-2 text-sm font-medium hover:bg-white/10 transition-colors text-white/70">
-              Last 24 hours
-              <ChevronDown size={14} />
-            </button>
+            <div className="flex items-center text-white/70 capitalize font-evantic tracking-wide text-xl">
+              {currentDate}
+            </div>
           </div>
 
           {/* KPI Row */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <KpiCard title="Total Assets" value="32,268" change={10} isUp={true} icon={<ShoppingBag size={16} />} />
+            <WeatherWidget />
             <KpiCard title="Investigating" value="21,268" change={10} isUp={true} icon={<Search size={16} />} />
             <KpiCard title="Action required" value="1,254" change={10} isUp={false} icon={<Activity size={16} />} />
             <KpiCard title="Resolved" value="1,245" change={10} isUp={true} icon={<Shield size={16} />} />

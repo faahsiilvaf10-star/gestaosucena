@@ -8,6 +8,17 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Evantic';
+  src: url('/Evantic-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-evantic {
+  font-family: 'Evantic', sans-serif;
+}
+
 /* Sidebar Blending Effect */
 .sidebar-active-tab {
   background-color: #0a0a0c;
@@ -16,6 +27,19 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-right: none;
   margin-right: -1px;
+}
+
+/* View Transitions */
+.vt-sidebar {
+  view-transition-name: vt-sidebar;
+}
+.vt-main {
+  view-transition-name: vt-main;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
 }
 
 .sidebar-active-tab::before,

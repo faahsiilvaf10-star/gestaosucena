@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AmbientesRouteImport } from './routes/ambientes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LembretesRouteImport } from './routes/lembretes'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AmbientesRoute = AmbientesRouteImport.update({
+  id: '/ambientes',
+  path: '/ambientes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -31,30 +37,34 @@ const LembretesRoute = LembretesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/lembretes'
+  fullPaths: '/' | '/ambientes' | '/dashboard' | '/lembretes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/lembretes'
-  id: '__root__' | '/' | '/dashboard' | '/lembretes'
+  to: '/' | '/ambientes' | '/dashboard' | '/lembretes'
+  id: '__root__' | '/' | '/ambientes' | '/dashboard' | '/lembretes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AmbientesRoute: typeof AmbientesRoute
   DashboardRoute: typeof DashboardRoute
   LembretesRoute: typeof LembretesRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ambientes': {
+      id: '/ambientes'
+      path: '/ambientes'
+      fullPath: '/ambientes'
+      preLoaderRoute: typeof AmbientesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AmbientesRoute: AmbientesRoute,
   DashboardRoute: DashboardRoute,
   LembretesRoute: LembretesRoute,
 }

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Moon, Sun, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 
@@ -45,6 +45,17 @@ function Index() {
   const [nome, setNome] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [cargo, setCargo] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('sucena_saved_email')
+    const savedPassword = localStorage.getItem('sucena_saved_password')
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail)
+      setPassword(savedPassword)
+      setRememberMe(true)
+    }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,8 +79,15 @@ function Index() {
       toast.error('Erro ao fazer login: ' + translatedError)
       setErrorMessage(translatedError)
     } else {
+      if (rememberMe) {
+        localStorage.setItem('sucena_saved_email', email)
+        localStorage.setItem('sucena_saved_password', password)
+      } else {
+        localStorage.removeItem('sucena_saved_email')
+        localStorage.removeItem('sucena_saved_password')
+      }
       toast.success('Login realizado com sucesso!')
-      navigate({ to: '/dashboard' })
+      navigate({ to: '/ambientes' })
     }
   }
 
@@ -192,6 +210,19 @@ function Index() {
               </button>
             </div>
             
+            <div className="flex items-center gap-2 mt-2 mb-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className={`w-3.5 h-3.5 rounded border-white/10 bg-white/5 accent-[#eab308] focus:ring-0 focus:ring-offset-0 transition-colors cursor-pointer`}
+              />
+              <label htmlFor="rememberMe" className={`text-xs select-none cursor-pointer ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'} transition-colors`}>
+                Lembrar-me
+              </label>
+            </div>
+
             {errorMessage && (
               <div className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md border border-red-500/20">
                 {errorMessage}
