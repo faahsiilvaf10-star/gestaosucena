@@ -22,6 +22,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [dueDate, setDueDate] = useState('')
   const [dueTime, setDueTime] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -37,6 +38,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setAssignedUserId(reminder.assigned_user_id)
       setDueDate(reminder.due_date || '')
       setDueTime(reminder.due_time || '')
+      setShowDeleteConfirm(false)
     } else {
       setTitle('')
       setDescription('')
@@ -86,9 +88,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   })
 
   const handleDelete = () => {
-    if (confirm('Tem certeza que deseja excluir este lembrete?')) {
-      deleteMutation.mutate()
-    }
+    deleteMutation.mutate()
   }
 
   if (!isOpen) return null
@@ -228,13 +228,33 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         <div className="p-4 border-t border-white/5 flex items-center justify-between bg-[#0A0A0B]/50">
           <div>
             {isEditing && reminder?.creator_id === currentUserId && (
-              <button 
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-              >
-                {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
-              </button>
+              <>
+                {showDeleteConfirm ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/60">Tem certeza?</span>
+                    <button 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-colors"
+                    >
+                      Não
+                    </button>
+                    <button 
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending}
+                      className="px-2 py-1.5 rounded bg-red-500/20 hover:bg-red-500/30 text-xs font-medium text-red-400 transition-colors"
+                    >
+                      {deleteMutation.isPending ? 'Excluindo...' : 'Sim, excluir'}
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                  >
+                    Excluir
+                  </button>
+                )}
+              </>
             )}
           </div>
           <div className="flex items-center gap-3">
