@@ -13,6 +13,28 @@ function Index() {
   const [viewState, setViewState] = useState<'LOGIN' | 'REGISTER' | 'SUCCESS'>('LOGIN')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const translateAuthError = (message: string) => {
+    const errorMap: Record<string, string> = {
+      'Invalid login credentials': 'Email ou senha inválidos.',
+      'Email signups are disabled': 'O cadastro por email está desativado no momento.',
+      'User already registered': 'Este e-mail já está cadastrado.',
+      'Password should be at least 6 characters': 'A senha deve ter no mínimo 6 caracteres.',
+      'To security reasons, your request has been blocked': 'Por motivos de segurança, sua requisição foi bloqueada.',
+      'Email not confirmed': 'O e-mail ainda não foi confirmado.',
+    }
+    
+    // Check if the message is in our map exactly, or if it contains a substring
+    for (const [key, translated] of Object.entries(errorMap)) {
+      if (message.includes(key)) {
+        return translated
+      }
+    }
+    
+    // Se não tiver tradução específica, tenta algumas traduções genéricas ou retorna o original
+    return message
+  }
 
   const isDark = theme === 'dark'
   const navigate = useNavigate()
@@ -26,8 +48,11 @@ function Index() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage('')
     if (!email || !password) {
-      toast.error('Preencha todos os campos.')
+      const msg = 'Preencha todos os campos.'
+      toast.error(msg)
+      setErrorMessage(msg)
       return
     }
 
@@ -39,7 +64,9 @@ function Index() {
     setIsLoading(false)
 
     if (error) {
-      toast.error('Erro ao fazer login: ' + error.message)
+      const translatedError = translateAuthError(error.message)
+      toast.error('Erro ao fazer login: ' + translatedError)
+      setErrorMessage(translatedError)
     } else {
       toast.success('Login realizado com sucesso!')
       // Here you can redirect the user to a dashboard
@@ -49,8 +76,11 @@ function Index() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage('')
     if (!email || !password || !nome || !whatsapp || !cargo) {
-      toast.error('Preencha todos os campos do cadastro.')
+      const msg = 'Preencha todos os campos do cadastro.'
+      toast.error(msg)
+      setErrorMessage(msg)
       return
     }
 
@@ -69,7 +99,9 @@ function Index() {
     setIsLoading(false)
 
     if (error) {
-      toast.error('Erro ao cadastrar: ' + error.message)
+      const translatedError = translateAuthError(error.message)
+      toast.error('Erro ao cadastrar: ' + translatedError)
+      setErrorMessage(translatedError)
     } else {
       // Limpa os campos após sucesso
       setEmail('')
@@ -160,6 +192,13 @@ function Index() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            
+            {errorMessage && (
+              <div className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md border border-red-500/20">
+                {errorMessage}
+              </div>
+            )}
+
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
             </button>
@@ -170,7 +209,10 @@ function Index() {
               </a>
               <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 Não tem uma conta?{' '}
-                <span className={linkClass} onClick={() => !isLoading && setViewState('REGISTER')}>Cadastre-se</span>
+                <span className={linkClass} onClick={() => {
+                  setErrorMessage('')
+                  !isLoading && setViewState('REGISTER')
+                }}>Cadastre-se</span>
               </p>
             </div>
           </form>
@@ -237,6 +279,13 @@ function Index() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+
+            {errorMessage && (
+              <div className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md border border-red-500/20">
+                {errorMessage}
+              </div>
+            )}
+
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Cadastrar'}
             </button>
@@ -244,7 +293,10 @@ function Index() {
             <div className="flex flex-col items-center gap-4 mt-6">
               <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 Já tem uma conta?{' '}
-                <span className={linkClass} onClick={() => !isLoading && setViewState('LOGIN')}>Entre agora</span>
+                <span className={linkClass} onClick={() => {
+                  setErrorMessage('')
+                  !isLoading && setViewState('LOGIN')
+                }}>Entre agora</span>
               </p>
             </div>
           </form>
