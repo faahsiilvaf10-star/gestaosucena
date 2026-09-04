@@ -41,13 +41,13 @@ function DashboardComponent() {
         {/* Title & Controls */}
         <div className="flex items-center justify-between mb-8 mt-2">
           <div>
-            <h1 className="text-[54px] font-tarmiles font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+            <h1 className={`text-[54px] font-tarmiles font-bold tracking-tight ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`} style={{ lineHeight: '1' }}>
               Dashboard
             </h1>
-            <p className="text-white/70 text-sm mt-1 ml-1 font-medium">Visão geral da operação</p>
+            <p className={`text-sm mt-1 ml-1 font-medium ${isDark ? 'text-white/70' : 'text-gray-500'}`}>Visão geral da operação</p>
           </div>
-          <div className="flex items-center gap-2 font-evantic tracking-wide text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-            <CalendarDays size={24} className="opacity-80" />
+          <div className={`flex items-center gap-2 font-evantic tracking-wide text-2xl ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]' : 'text-gray-900 drop-shadow-none'}`}>
+            <CalendarDays size={24} className={isDark ? "opacity-80" : "opacity-60"} />
             {currentDate}
           </div>
         </div>

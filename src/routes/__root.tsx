@@ -22,7 +22,7 @@ function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
-  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes')
+  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena')
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>

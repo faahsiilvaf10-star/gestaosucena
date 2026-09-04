@@ -14,11 +14,12 @@ import { useChat } from '../contexts/ChatContext'
 import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { ChatSidebar } from './ChatSidebar'
+import { ThemeToggle } from './ThemeToggle'
 
 const headerLinks = [
   { label: 'Destaques', href: '/dashboard', isHighlight: true },
   { label: 'Lembretes', href: '/lembretes' },
-  { label: 'InstaCena', href: '#' },
+  { label: 'InstaCena', href: '/instacena' },
   { label: 'Almoxarifado', href: '#' },
   { label: 'Documentos', href: '#' },
   { label: 'Equipamentos', href: '#' },
@@ -76,7 +77,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-transparent text-white' : 'bg-transparent text-black'}`}>
+    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-white' : 'bg-gray-50 text-gray-900'}`}>
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
 
       {/* Universal Top Gradient Backdrop */}
@@ -225,6 +226,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Bottom Right: Actions and Status */}
         <div className="flex items-center gap-6">
           
+          <ThemeToggle />
+
           {/* Chat Icon with Badge */}
           <button 
             onClick={toggleSidebar}

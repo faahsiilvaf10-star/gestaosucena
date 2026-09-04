@@ -12,7 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AmbientesRouteImport } from './routes/ambientes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
+import { Route as InstacenaIndexRouteImport } from './routes/instacena/index'
+import { Route as InstacenaUsernameRouteImport } from './routes/instacena/$username'
+import { Route as InstacenaExplorarRouteImport } from './routes/instacena/explorar'
+import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,43 +34,110 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InstacenaRoute = InstacenaRouteImport.update({
+  id: '/instacena',
+  path: '/instacena',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LembretesRoute = LembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
   getParentRoute: () => rootRouteImport,
+} as any)
+const InstacenaIndexRoute = InstacenaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InstacenaRoute,
+} as any)
+const InstacenaUsernameRoute = InstacenaUsernameRouteImport.update({
+  id: '/$username',
+  path: '/$username',
+  getParentRoute: () => InstacenaRoute,
+} as any)
+const InstacenaExplorarRoute = InstacenaExplorarRouteImport.update({
+  id: '/explorar',
+  path: '/explorar',
+  getParentRoute: () => InstacenaRoute,
+} as any)
+const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
+  id: '/reels',
+  path: '/reels',
+  getParentRoute: () => InstacenaRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
+  '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/instacena/$username': typeof InstacenaUsernameRoute
+  '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/reels': typeof InstacenaReelsRoute
+  '/instacena/': typeof InstacenaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
+  '/instacena/$username': typeof InstacenaUsernameRoute
+  '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/reels': typeof InstacenaReelsRoute
+  '/instacena': typeof InstacenaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
   '/dashboard': typeof DashboardRoute
+  '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/instacena/$username': typeof InstacenaUsernameRoute
+  '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/reels': typeof InstacenaReelsRoute
+  '/instacena/': typeof InstacenaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ambientes' | '/dashboard' | '/lembretes'
+  fullPaths:
+    | '/'
+    | '/ambientes'
+    | '/dashboard'
+    | '/instacena'
+    | '/lembretes'
+    | '/instacena/$username'
+    | '/instacena/explorar'
+    | '/instacena/reels'
+    | '/instacena/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ambientes' | '/dashboard' | '/lembretes'
-  id: '__root__' | '/' | '/ambientes' | '/dashboard' | '/lembretes'
+  to:
+    | '/'
+    | '/ambientes'
+    | '/dashboard'
+    | '/lembretes'
+    | '/instacena/$username'
+    | '/instacena/explorar'
+    | '/instacena/reels'
+    | '/instacena'
+  id:
+    | '__root__'
+    | '/'
+    | '/ambientes'
+    | '/dashboard'
+    | '/instacena'
+    | '/lembretes'
+    | '/instacena/$username'
+    | '/instacena/explorar'
+    | '/instacena/reels'
+    | '/instacena/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AmbientesRoute: typeof AmbientesRoute
   DashboardRoute: typeof DashboardRoute
+  InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
 }
 
@@ -92,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/instacena': {
+      id: '/instacena'
+      path: '/instacena'
+      fullPath: '/instacena'
+      preLoaderRoute: typeof InstacenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lembretes': {
       id: '/lembretes'
       path: '/lembretes'
@@ -99,13 +178,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LembretesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/instacena/': {
+      id: '/instacena/'
+      path: '/'
+      fullPath: '/instacena/'
+      preLoaderRoute: typeof InstacenaIndexRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
+    '/instacena/$username': {
+      id: '/instacena/$username'
+      path: '/$username'
+      fullPath: '/instacena/$username'
+      preLoaderRoute: typeof InstacenaUsernameRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
+    '/instacena/explorar': {
+      id: '/instacena/explorar'
+      path: '/explorar'
+      fullPath: '/instacena/explorar'
+      preLoaderRoute: typeof InstacenaExplorarRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
+    '/instacena/reels': {
+      id: '/instacena/reels'
+      path: '/reels'
+      fullPath: '/instacena/reels'
+      preLoaderRoute: typeof InstacenaReelsRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
   }
 }
+
+interface InstacenaRouteChildren {
+  InstacenaUsernameRoute: typeof InstacenaUsernameRoute
+  InstacenaExplorarRoute: typeof InstacenaExplorarRoute
+  InstacenaReelsRoute: typeof InstacenaReelsRoute
+  InstacenaIndexRoute: typeof InstacenaIndexRoute
+}
+
+const InstacenaRouteChildren: InstacenaRouteChildren = {
+  InstacenaUsernameRoute: InstacenaUsernameRoute,
+  InstacenaExplorarRoute: InstacenaExplorarRoute,
+  InstacenaReelsRoute: InstacenaReelsRoute,
+  InstacenaIndexRoute: InstacenaIndexRoute,
+}
+
+const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
+  InstacenaRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AmbientesRoute: AmbientesRoute,
   DashboardRoute: DashboardRoute,
+  InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
 }
 export const routeTree = rootRouteImport
