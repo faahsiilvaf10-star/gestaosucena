@@ -111,19 +111,11 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    background-color: hsl(0 0% 4%);
+    background-color: #000;
     color: hsl(0 0% 96%);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: 
-      linear-gradient(to top, rgba(10,10,12, 1) 0%, rgba(10,10,12, 0.85) 25%, rgba(10,10,12, 0) 60%),
-      linear-gradient(to bottom, rgba(10,10,12, 0.5) 0%, rgba(10,10,12, 0.2) 100%), 
-      url('/chalkboard_bg.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
   }
 }
 

@@ -83,71 +83,97 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className={`absolute top-0 left-0 right-0 h-32 pointer-events-none z-40 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent' : 'bg-gradient-to-b from-white via-white/80 to-transparent'}`} />
       
       {/* Top Navigation Bar — Fixed */}
-      <header className="min-h-[64px] py-2 shrink-0 flex items-center px-4 z-50 sticky top-0 bg-transparent">
-        
-        {/* Left Section: Contrato & Profile Badge */}
-        <div className="flex items-center h-full shrink-0">
-          <div className="flex items-center justify-center gap-1.5 mr-4 md:mr-6 relative h-full px-2">
-            <FileText size={12} className={isDark ? "text-white/60" : "text-gray-500"} />
-            <div className="flex flex-col justify-center leading-none">
-              <span className={`text-[7px] uppercase tracking-wider font-semibold ${isDark ? 'text-white/50' : 'text-gray-500'} mb-[2px]`}>Contrato</span>
-              <span className={`text-[11px] md:text-xs font-bold tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`}>460001269</span>
-            </div>
-            
-            {/* Hanging Profile Badge - Seamlessly merged */}
-            <div className="absolute top-[47px] left-0 w-full h-[76px] rounded-b-full flex flex-col items-center justify-center z-10 bg-transparent">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden shadow-inner">
-                <img src="https://i.pravatar.cc/150?u=sucena" alt="Profile" className="w-full h-full object-cover" />
+      <div className="pt-3 px-3 md:px-6 sticky top-0 z-50 w-full mb-8">
+        <div className="w-full relative filter drop-shadow-[0_0_1px_rgba(250,204,21,0.8)] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]">
+          <header className={`h-[38px] rounded-[19px] flex items-stretch pl-3 pr-4 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-white'}`}>
+                  {/* Left Section: Contrato Text & Hanging Profile */}
+            <div className="flex flex-col items-center justify-center relative h-full shrink-0 mr-4 md:mr-6 min-w-[96px]">
+              
+              {/* Text Container */}
+              <div className="flex items-center justify-center gap-1.5 h-full z-20 relative">
+                <FileText size={12} className={isDark ? "text-white/60" : "text-gray-500"} />
+                <div className="flex flex-col justify-center leading-none">
+                  <span className={`text-[7px] uppercase tracking-wider font-semibold ${isDark ? 'text-white/50' : 'text-gray-500'} mb-[2px]`}>Contrato</span>
+                  <span className={`text-[11px] md:text-xs font-bold tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`}>460001269</span>
+                </div>
+              </div>
+              
+              {/* Hanging Profile U-Shape Tab with Seam-Free Outward Curves */}
+              <div className="absolute top-[38px] left-1/2 -translate-x-1/2 w-[56px] h-[53px] z-10">
+                
+                {/* Main U-shape background - Overlaps bar by 1px to prevent drop-shadow seams */}
+                <div className={`absolute top-[-1px] left-0 right-0 bottom-0 rounded-b-[28px] -z-10 ${isDark ? 'bg-[#0a0a0c]' : 'bg-white'}`} />
+                
+                {/* Left inverted corner - Overlaps bar and U-shape by 1px */}
+                <svg className={`absolute top-[-1px] -left-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-white'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M100,0 L0,0 C55.23,0 100,44.77 100,100 Z" />
+                </svg>
+                
+                {/* Right inverted corner - Overlaps bar and U-shape by 1px */}
+                <svg className={`absolute top-[-1px] -right-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-white'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M0,0 L100,0 C44.77,0 0,44.77 0,100 Z" />
+                </svg>
+
+                {/* Profile Image - Centered and Concentric */}
+                <div className="absolute top-[3px] left-[6px] w-[44px] h-[44px] rounded-full overflow-hidden border border-[#1a1a1c] z-20">
+                  <img src="https://i.pravatar.cc/150?u=sucena" alt="Profile" className="w-full h-full object-cover" />
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
         {/* Center Section: Navigation Links */}
-        <nav className="flex-1 flex items-center justify-between gap-1 px-2 py-4 w-full overflow-x-auto hide-scrollbar">
+        <nav className="flex-1 flex items-center justify-between gap-1 md:gap-1.5 px-2 py-2 w-full overflow-x-auto hide-scrollbar">
           {headerLinks.map((link, idx) => {
             const isActive = currentPath === link.href
             
-            if (link.isHighlight) {
+            const renderLink = () => {
+              if (link.isHighlight) {
+                return (
+                  <button
+                    onClick={() => link.href && navigate({ to: link.href as any })}
+                    className={`transition-all whitespace-nowrap inline-block font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide scale-y-[1.15] origin-bottom ${
+                      isActive
+                        ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]"
+                        : `${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                )
+              }
+              
+              if (link.isEmergency) {
+                return (
+                  <button
+                    onClick={() => link.href && navigate({ to: link.href as any })}
+                    className="font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:text-red-400 transition-all whitespace-nowrap inline-block scale-y-[1.15] origin-bottom"
+                  >
+                    {link.label}
+                  </button>
+                )
+              }
+              
               return (
                 <button
-                  key={idx}
                   onClick={() => link.href && navigate({ to: link.href as any })}
-                  className={`transition-all whitespace-nowrap inline-block ${
-                    isActive
-                      ? "font-tarmiles text-[clamp(14px,1.5vw,24px)] text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.5)] tracking-wide"
-                      : `font-sans font-bold uppercase text-[clamp(7px,0.7vw,13px)] tracking-widest scale-y-[1.3] origin-bottom ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
+                  className={`transition-all whitespace-nowrap inline-block font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide scale-y-[1.15] origin-bottom ${
+                    isActive 
+                      ? `text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]` 
+                      : `${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
                   }`}
                 >
                   {link.label}
                 </button>
               )
             }
-            
-            if (link.isEmergency) {
-              return (
-                <button
-                  key={idx}
-                  onClick={() => link.href && navigate({ to: link.href as any })}
-                  className="font-sans font-bold uppercase text-[clamp(7px,0.7vw,13px)] tracking-widest text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:text-red-400 transition-all whitespace-nowrap inline-block scale-y-[1.3] origin-bottom"
-                >
-                  {link.label}
-                </button>
-              )
-            }
-            
+
             return (
-              <button
-                key={idx}
-                onClick={() => link.href && navigate({ to: link.href as any })}
-                className={`transition-all whitespace-nowrap inline-block ${
-                  isActive 
-                    ? `font-tarmiles tracking-wide text-[clamp(14px,1.5vw,24px)] text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]` 
-                    : `font-sans font-bold uppercase text-[clamp(7px,0.7vw,13px)] tracking-widest scale-y-[1.3] origin-bottom ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
-                }`}
-              >
-                {link.label}
-              </button>
+              <div key={idx} className="flex items-center gap-1 md:gap-1.5 shrink-0">
+                {renderLink()}
+                {idx < headerLinks.length - 1 && (
+                  <span className={`text-[9px] scale-y-[0.8] mb-[2px] ${isDark ? 'text-white/20' : 'text-gray-400/40'}`}>-</span>
+                )}
+              </div>
             )
           })}
           
@@ -155,8 +181,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <button className="flex items-center justify-center w-5 h-5 xl:w-6 xl:h-6 rounded-full bg-green-600 text-white hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(22,163,74,0.5)] shrink-0 ml-1">
             <PlusCircle size={14} strokeWidth={3} />
           </button>
-        </nav>
-      </header>
+          </nav>
+          </header>
+        </div>
+      </div>
 
       {/* Main Scrollable Content */}
       <main className="vt-main flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0 mb-14 px-4 md:px-12 lg:px-24 xl:px-32">
@@ -226,22 +254,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {/* Bottom Right: Background SVG Element */}
-        <div className="absolute right-0 bottom-0 pointer-events-none opacity-20 transition-opacity duration-300">
-          <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M200 200V0C89.543 0 0 89.543 0 200H200Z" fill={isDark ? "url(#corner-gradient-dark)" : "url(#corner-gradient-light)"} />
-            <defs>
-              <linearGradient id="corner-gradient-dark" x1="200" y1="0" x2="0" y2="200" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366f1" stopOpacity="0.4" />
-                <stop offset="1" stopColor="#6366f1" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="corner-gradient-light" x1="200" y1="0" x2="0" y2="200" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366f1" stopOpacity="0.15" />
-                <stop offset="1" stopColor="#6366f1" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+
       </footer>
 
       {/* Logout Confirmation Modal */}
