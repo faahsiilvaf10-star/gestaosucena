@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { LogoutOverlay } from './LogoutOverlay'
 import { useTheme } from '../contexts/ThemeContext'
+import { MonthlyColorsModal } from './MonthlyColorsModal'
+import { useMonthlyColors } from '../hooks/useMonthlyColors'
 
 const headerLinks = [
   { label: 'Destaques', href: '/dashboard', isHighlight: true },
@@ -33,7 +35,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
   const [currentUser, setCurrentUser] = useState({ name: '', role: '' })
+  
+  const { currentColor } = useMonthlyColors()
+
+  const colorStyles = {
+    red: { dot: 'bg-red-500', ping: 'bg-red-400' },
+    blue: { dot: 'bg-blue-500', ping: 'bg-blue-400' },
+    yellow: { dot: 'bg-yellow-500', ping: 'bg-yellow-400' },
+    green: { dot: 'bg-green-500', ping: 'bg-green-400' }
+  }
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -180,15 +192,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
 
           {/* Status Dot */}
-          <div className="flex items-center gap-2">
+          <button 
+            className={`flex items-center gap-2 p-3 -m-3 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} relative z-10`}
+            onClick={() => {
+              console.log("Status dot clicked. Opening MonthlyColorsModal...")
+              setShowMonthlyColorsModal(true)
+            }}
+            title="Configurar cores mensais"
+          >
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${colorStyles[currentColor as keyof typeof colorStyles]?.ping || 'bg-red-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colorStyles[currentColor as keyof typeof colorStyles]?.dot || 'bg-red-500'}`}></span>
             </span>
-            <span className={`text-[11px] font-medium tracking-wide ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
-              Cor proibida: Vermelha
-            </span>
-          </div>
+          </button>
         </div>
 
         {/* Bottom Right: Background SVG Element */}
@@ -233,6 +249,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
+
+      {/* Monthly Colors Modal */}
+      <MonthlyColorsModal 
+        isOpen={showMonthlyColorsModal} 
+        onClose={() => setShowMonthlyColorsModal(false)} 
+      />
 
     </div>
   )
