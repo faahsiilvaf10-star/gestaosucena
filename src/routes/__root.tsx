@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { ChatProvider } from "../contexts/ChatContext";
 
 import { AppLayout } from "../components/AppLayout";
 
@@ -108,7 +109,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RootContent />
+        <ChatProvider>
+          <RootContent />
+        </ChatProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

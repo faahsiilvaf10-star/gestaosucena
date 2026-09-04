@@ -10,6 +10,10 @@ import { LogoutOverlay } from './LogoutOverlay'
 import { useTheme } from '../contexts/ThemeContext'
 import { MonthlyColorsModal } from './MonthlyColorsModal'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
+import { useChat } from '../contexts/ChatContext'
+import { usePresence } from '../hooks/usePresence'
+import { useChatRealtime } from '../hooks/useChatRealtime'
+import { ChatSidebar } from './ChatSidebar'
 
 const headerLinks = [
   { label: 'Destaques', href: '/dashboard', isHighlight: true },
@@ -36,7 +40,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
-  const [currentUser, setCurrentUser] = useState({ name: '', role: '' })
+  const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '' })
+  
+  const { toggleSidebar, unreadCountGlobally } = useChat()
+  usePresence(currentUser.id)
+  useChatRealtime(currentUser.id)
   
   const { currentColor } = useMonthlyColors()
 
@@ -51,6 +59,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(({ data }) => {
       const role = data.user?.user_metadata?.role || ''
       setCurrentUser({
+        id: data.user?.id || '',
         name: data.user?.user_metadata?.full_name || data.user?.email || 'Usuário',
         role: role || 'Usuário'
       })
@@ -154,6 +163,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
+      {/* Chat Sidebar Overlay */}
+      {currentUser.id && <ChatSidebar currentUserId={currentUser.id} />}
+
       {/* Bottom Status Bar */}
       <footer className={`fixed bottom-0 left-0 right-0 h-9 z-50 flex items-center justify-between px-6 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-white/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}>
         
@@ -186,9 +198,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-6">
           
           {/* Chat Icon with Badge */}
-          <button className={`relative transition-colors ${isDark ? 'text-white/80 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <span className="absolute -top-1.5 -right-1.5 bg-gray-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
+          <button 
+            onClick={toggleSidebar}
+            className={`relative transition-colors ${isDark ? 'text-white/80 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            {unreadCountGlobally > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
+              </span>
+            )}
           </button>
 
           {/* Status Dot */}
