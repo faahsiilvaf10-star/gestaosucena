@@ -86,7 +86,7 @@ function DashboardComponent() {
                 <circle cx="50" cy="50" r="42" fill="none" stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"} strokeWidth="8" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke={isDark ? "#fff" : "#111"} strokeWidth="8" strokeDasharray="264" strokeDashoffset="34" strokeLinecap="round" />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none mb-6">
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
                 <span className={`font-sans font-bold tracking-tight text-5xl ${isDark ? 'text-white' : 'text-gray-900'}`}>87%</span>
                 <span className={`text-[9px] uppercase tracking-wider font-semibold mt-1 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>AVANÇO</span>
               </div>
@@ -94,6 +94,7 @@ function DashboardComponent() {
 
             <div className="grid grid-cols-3 gap-2 mt-8 mb-4 px-2">
               <div className="flex flex-col items-center">
+                <div className="h-[12px]"></div>
                 <span className={`font-sans font-bold tracking-tight text-3xl ${isDark ? 'text-white' : 'text-gray-800'}`}>11</span>
                 <span className={`text-[8px] uppercase tracking-wider font-bold mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>TOTAL</span>
               </div>

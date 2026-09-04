@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react'
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useNavigate, useRouter, useLocation } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import {
   FileText,
@@ -27,7 +27,8 @@ const headerLinks = [
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const router = useRouter()
-  const [currentPath, setCurrentPath] = useState(window.location.pathname)
+  const location = useLocation()
+  const currentPath = location.pathname
   const { isDark } = useTheme()
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)

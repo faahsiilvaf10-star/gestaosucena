@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchReminders, toggleReminderCompletion, updateReminder, fetchUsers } from '../lib/api-reminders'
-import { CheckCircle2, Circle, Clock, Calendar as CalendarIcon, User as UserIcon } from 'lucide-react'
+import { CheckCircle2, Circle, Clock, Calendar as CalendarIcon, User as UserIcon, Users } from 'lucide-react'
 import { format, parseISO, isPast, isToday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '../lib/supabase'
@@ -13,6 +13,16 @@ export function DashboardRemindersWidget() {
   const [snoozeReminderId, setSnoozeReminderId] = useState<string | null>(null)
   const [snoozeDate, setSnoozeDate] = useState('')
   const [snoozeTime, setSnoozeTime] = useState('')
+  const [crossedOutIds, setCrossedOutIds] = useState<Set<string>>(new Set())
+
+  const toggleCrossedOut = (id: string) => {
+    setCrossedOutIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   // Fetch data
   const { data: reminders = [] } = useQuery({ queryKey: ['reminders'], queryFn: fetchReminders })
@@ -81,24 +91,43 @@ export function DashboardRemindersWidget() {
       <div className="space-y-3 relative z-10">
         {activeReminders.map(reminder => {
           const isSnoozing = snoozeReminderId === reminder.id
-          const assignee = getUserDetails(reminder.assigned_user_id)
-          const isMe = reminder.assigned_user_id === currentUserId
+          const isCrossedOut = crossedOutIds.has(reminder.id)
+          const mentionedUserIds = reminder.reminder_mentions?.map(m => m.user_id) || []
+          const allResponsibleIds = Array.from(new Set([reminder.assigned_user_id, ...mentionedUserIds].filter(Boolean) as string[]))
 
           return (
             <div key={reminder.id} className={`p-4 rounded-xl border transition-colors group ${isDark ? 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]' : 'border-gray-200 bg-white hover:bg-gray-50 shadow-sm'}`}>
               <div className="flex items-start gap-4">
                 <button 
-                  onClick={() => toggleMutation.mutate({ id: reminder.id, status: reminder.status })}
+                  onClick={() => toggleCrossedOut(reminder.id)}
                   className="mt-0.5 flex-shrink-0"
-                  title="Marcar como visto/concluído"
+                  title="Riscar tarefa"
                 >
-                  <Circle size={20} className={`transition-colors ${isDark ? 'text-white/20 group-hover:text-white/50' : 'text-gray-300 group-hover:text-gray-500'}`} />
+                  {isCrossedOut ? (
+                    <CheckCircle2 size={20} className="text-indigo-500" />
+                  ) : (
+                    <Circle size={20} className={`transition-colors ${isDark ? 'text-white/20 group-hover:text-white/50' : 'text-gray-300 group-hover:text-gray-500'}`} />
+                  )}
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900'}`}>
+                  <p className={`text-sm font-medium truncate transition-all ${
+                    isCrossedOut 
+                      ? (isDark ? 'text-white/40 line-through' : 'text-gray-500 line-through') 
+                      : (isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900')
+                  }`}>
                     {reminder.title}
                   </p>
+                  
+                  {reminder.description && (
+                    <p className={`text-xs mt-0.5 line-clamp-1 transition-all ${
+                      isCrossedOut
+                        ? (isDark ? 'text-white/30 line-through' : 'text-gray-400 line-through')
+                        : (isDark ? 'text-white/60 group-hover:text-white/80' : 'text-gray-500')
+                    }`}>
+                      {reminder.description}
+                    </p>
+                  )}
                   
                   <div className="flex flex-wrap items-center gap-3 mt-2">
                     {/* Time */}
@@ -112,17 +141,37 @@ export function DashboardRemindersWidget() {
                       </div>
                     )}
 
-                    {/* Mention Tag */}
-                    {assignee && (
-                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-white/5 border-white/10 text-white/60' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
-                        {assignee.avatar_url ? (
-                          <img src={assignee.avatar_url} className="w-3 h-3 rounded-full" />
-                        ) : (
-                          <UserIcon size={10} />
-                        )}
-                        <span>{isMe ? 'Você' : assignee.name}</span>
-                      </div>
-                    )}
+                    {/* Mention Tags */}
+                    {(() => {
+                      // Se tem pelo menos 1 usuário e o número de responsáveis é igual (ou maior, por segurança) ao total de usuários, 
+                      // ou se contém a string 'ALL' explicitamente (legado/fallback).
+                      const isEveryone = (users.length > 0 && allResponsibleIds.length >= users.length) || allResponsibleIds.includes('ALL')
+
+                      if (isEveryone) {
+                        return (
+                          <div key="ALL" className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-indigo-100 border-indigo-200 text-indigo-600'}`}>
+                            <Users size={10} />
+                            <span>Todos</span>
+                          </div>
+                        )
+                      }
+
+                      return allResponsibleIds.map(userId => {
+                        const user = getUserDetails(userId)
+                        if (!user) return null
+                        const isMeUser = user.id === currentUserId
+                        return (
+                          <div key={user.id} className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-white/5 border-white/10 text-white/60' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} className="w-3 h-3 rounded-full" />
+                            ) : (
+                              <UserIcon size={10} />
+                            )}
+                            <span>{isMeUser ? 'Você' : user.name}</span>
+                          </div>
+                        )
+                      })
+                    })()}
                     
                     {/* Priority */}
                     {reminder.priority !== 'Normal' && (
