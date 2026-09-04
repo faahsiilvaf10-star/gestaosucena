@@ -71,7 +71,12 @@ export async function createReminder(reminder: Partial<Reminder>, mentions?: str
       user_id: userId,
       mentioned_by: userData.user.id
     }))
-    await supabase.from('reminder_mentions').insert(mentionsData)
+    const { error: mentionsError } = await supabase.from('reminder_mentions').insert(mentionsData)
+    if (mentionsError) {
+      console.error("Erro ao inserir menções:", mentionsError)
+      // Throw para avisar o front
+      throw mentionsError
+    }
   }
 
   return data
@@ -100,7 +105,8 @@ export async function updateReminder(id: string, updates: Partial<Reminder>, men
         user_id: userId,
         mentioned_by: userData.user.id
       }))
-      await supabase.from('reminder_mentions').insert(mentionsData)
+      const { error: mentionsError } = await supabase.from('reminder_mentions').insert(mentionsData)
+      if (mentionsError) throw mentionsError
     }
   }
 

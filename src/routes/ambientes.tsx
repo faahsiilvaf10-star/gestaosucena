@@ -20,24 +20,25 @@ function AmbientesComponent() {
       id: 'barcarena',
       name: 'BARCARENA HYDRO',
       description: 'Ambiente de gestão e operações da unidade Barcarena.',
-      color: 'from-blue-600 to-indigo-800',
-      iconColor: 'text-blue-400'
+      pinColor: '#c9a84c',
     },
     {
       id: 'paragominas',
       name: 'PARAGOMINAS HYDRO',
       description: 'Ambiente de gestão e operações da unidade Paragominas.',
-      color: 'from-emerald-600 to-teal-800',
-      iconColor: 'text-emerald-400'
+      pinColor: '#c9a84c',
     }
   ]
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+    <div
+      className="min-h-screen text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans"
+      style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 35%, #050505 100%)' }}
+    >
       
-      {/* Background Decor */}
-      <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
-      
+      {/* Golden glow at top */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[250px] rounded-full blur-[120px] opacity-15 pointer-events-none" style={{ background: 'radial-gradient(ellipse, #c9a84c 0%, transparent 70%)' }} />
+
       <div className="text-center mb-12 z-10">
         <img src="/logo.png" alt="Sucena Logo" className="h-14 mx-auto mb-8 filter brightness-0 invert opacity-80" />
         <h1 className="text-3xl font-light tracking-tight mb-3">Selecione o Ambiente</h1>
@@ -53,26 +54,40 @@ function AmbientesComponent() {
             onMouseEnter={() => setHoveredEnv(env.id)}
             onMouseLeave={() => setHoveredEnv(null)}
             onClick={() => handleSelectEnvironment(env.id)}
-            className={`relative overflow-hidden rounded-2xl border transition-all duration-500 text-left p-8 flex flex-col group
-              ${hoveredEnv === env.id ? 'border-white/30 scale-[1.02] shadow-2xl shadow-black/50' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}
-            `}
+            className="relative overflow-hidden rounded-2xl text-left p-8 flex flex-col group transition-all duration-500"
+            style={{
+              background: 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
+              border: '1px solid rgba(201,168,76,0.25)',
+              boxShadow: hoveredEnv === env.id
+                ? '0 0 30px rgba(201,168,76,0.15), inset 0 1px 0 rgba(201,168,76,0.2)'
+                : 'inset 0 1px 0 rgba(201,168,76,0.1)',
+              transform: hoveredEnv === env.id ? 'scale(1.02)' : 'scale(1)',
+            }}
           >
-            {/* Gradient Background */}
-            <div 
-              className={`absolute inset-0 bg-gradient-to-br ${env.color} opacity-0 transition-opacity duration-500 ${hoveredEnv === env.id ? 'opacity-20' : ''}`}
+            {/* Top golden shine line */}
+            <div
+              className="absolute top-0 left-0 right-0 h-[1px]"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)' }}
             />
-            
+
             <div className="relative z-10">
-              <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 border border-white/10 transition-colors ${hoveredEnv === env.id ? 'bg-white/10' : ''}`}>
-                <MapPin className={env.iconColor} size={24} />
+              {/* Icon box */}
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(201,168,76,0.3)',
+                }}
+              >
+                <MapPin size={22} style={{ color: env.pinColor }} />
               </div>
               
-              <h2 className="text-2xl font-bold tracking-tight mb-2 group-hover:text-white transition-colors">{env.name}</h2>
-              <p className="text-white/60 text-sm leading-relaxed mb-8">
+              <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">{env.name}</h2>
+              <p className="text-white/50 text-sm leading-relaxed mb-8">
                 {env.description}
               </p>
               
-              <div className="mt-auto flex items-center text-sm font-medium text-white/50 group-hover:text-white transition-colors">
+              <div className="mt-auto flex items-center text-sm font-semibold transition-colors" style={{ color: '#c9a84c' }}>
                 Entrar no ambiente
                 <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
               </div>

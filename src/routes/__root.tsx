@@ -15,12 +15,23 @@ import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 
+import { AppLayout } from "../components/AppLayout";
+
 function RootContent() {
   const { isDark } = useTheme()
+  const router = useRouter()
+  const path = router.state.location.pathname
+  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes')
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>
-      <Outlet />
+      {isAppRoute ? (
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
+      ) : (
+        <Outlet />
+      )}
       <Toaster position="top-right" theme={isDark ? "dark" : "light"} />
       <CustomCursor />
     </div>
@@ -62,14 +73,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Michael Smith — Portfolio" },
+      { title: "Sucena Empreendimentos" },
       { name: "description", content: "Designing seamless digital interactions by focusing on the unique nuances which bring systems to life." },
-      { property: "og:title", content: "Michael Smith — Portfolio" },
+      { property: "og:title", content: "Sucena Empreendimentos" },
       { property: "og:description", content: "A creative, fullstack, and founder portfolio." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "icon", href: "/sucenaicon.ico" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat } from 'lucide-react'
 import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder } from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -67,6 +68,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] })
       onClose()
+    },
+    onError: (err: any) => {
+      console.error("Erro ao salvar:", err)
+      alert("Erro ao salvar o lembrete: " + (err.message || "Erro desconhecido. Verifique as permissões do banco de dados."))
     }
   })
 
@@ -115,16 +120,16 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] transition-opacity"
         onClick={onClose}
       />
       
       {/* Sheet */}
-      <div className="fixed inset-y-0 right-0 w-full md:w-[500px] bg-[#121214] border-l border-white/10 z-50 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0">
+      <div className="fixed inset-y-0 right-0 w-full md:w-[500px] bg-[#121214] border-l border-white/10 z-[120] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/5">
@@ -380,6 +385,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         </div>
 
       </div>
-    </>
+    </>,
+    document.body
   )
 }
