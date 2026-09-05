@@ -138,7 +138,7 @@ function LembretesComponent() {
         </div>
 
         {/* Toolbar & Filters */}
-        <div className={`rounded-2xl border p-4 flex items-center justify-between transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10'}`}>
+        <div className={`rounded-2xl border p-4 flex items-center justify-between transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10'}`}>
           <div className="flex items-center gap-2">
             {filterOptions.map((opt) => (
               <button
@@ -174,7 +174,7 @@ function LembretesComponent() {
                 className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-64 transition-all ${
                   isDark 
                     ? 'bg-black/20 border-white/10 text-white placeholder:text-white/30' 
-                    : 'bg-white/50 border-black/10 text-gray-900 placeholder:text-gray-500'
+                    : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500'
                 }`}
               />
             </div>
@@ -182,13 +182,13 @@ function LembretesComponent() {
         </div>
 
         {/* Reminders List Area */}
-        <div className={`rounded-2xl border transition-colors overflow-hidden ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10'}`}>
+        <div className={`rounded-2xl border transition-colors overflow-hidden ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10'}`}>
           <div className="p-6">
             
             <div className={`relative flex items-center gap-3 p-3 rounded-xl border group transition-all mb-6 ${
               isDark 
                 ? 'border-white/10 bg-black/20 focus-within:bg-black/40 focus-within:border-yellow-500/50' 
-                : 'border-black/10 bg-white/50 focus-within:bg-white focus-within:border-yellow-500 shadow-sm'
+                : 'border-black/10 bg-[#faf9f6]/70 focus-within:bg-white focus-within:border-yellow-500 shadow-sm'
             }`}>
               <Plus size={20} className={`group-focus-within:text-yellow-500 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
               <input 
@@ -238,7 +238,7 @@ function LembretesComponent() {
                       className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group ${
                         isCompleted 
                           ? `opacity-50 ${isDark ? 'bg-black/10 border-white/5' : 'bg-black/5 border-black/5'}` 
-                          : (isDark ? 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10' : 'border-black/5 bg-white/50 hover:bg-white hover:border-black/10')
+                          : (isDark ? 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10' : 'border-black/5 bg-[#faf9f6]/70 hover:bg-white hover:border-black/10')
                       }`}
                     >
                       <button 

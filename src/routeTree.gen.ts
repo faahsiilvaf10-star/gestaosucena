@@ -11,12 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AmbientesRouteImport } from './routes/ambientes'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
 import { Route as InstacenaIndexRouteImport } from './routes/instacena/index'
 import { Route as InstacenaUsernameRouteImport } from './routes/instacena/$username'
 import { Route as InstacenaExplorarRouteImport } from './routes/instacena/explorar'
+import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
+import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 
 const IndexRoute = IndexRouteImport.update({
@@ -27,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const AmbientesRoute = AmbientesRouteImport.update({
   id: '/ambientes',
   path: '/ambientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -59,6 +67,16 @@ const InstacenaExplorarRoute = InstacenaExplorarRouteImport.update({
   path: '/explorar',
   getParentRoute: () => InstacenaRoute,
 } as any)
+const InstacenaPerfilRoute = InstacenaPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => InstacenaRoute,
+} as any)
+const InstacenaPesquisaRoute = InstacenaPesquisaRouteImport.update({
+  id: '/pesquisa',
+  path: '/pesquisa',
+  getParentRoute: () => InstacenaRoute,
+} as any)
 const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
   id: '/reels',
   path: '/reels',
@@ -68,21 +86,27 @@ const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/perfil': typeof InstacenaPerfilRoute
+  '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/instacena/': typeof InstacenaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/perfil': typeof InstacenaPerfilRoute
+  '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/instacena': typeof InstacenaIndexRoute
 }
@@ -90,11 +114,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ambientes': typeof AmbientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
+  '/instacena/perfil': typeof InstacenaPerfilRoute
+  '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/instacena/': typeof InstacenaIndexRoute
 }
@@ -103,32 +130,41 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/ambientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/instacena'
     | '/lembretes'
     | '/instacena/$username'
     | '/instacena/explorar'
+    | '/instacena/perfil'
+    | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/instacena/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ambientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/lembretes'
     | '/instacena/$username'
     | '/instacena/explorar'
+    | '/instacena/perfil'
+    | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/instacena'
   id:
     | '__root__'
     | '/'
     | '/ambientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/instacena'
     | '/lembretes'
     | '/instacena/$username'
     | '/instacena/explorar'
+    | '/instacena/perfil'
+    | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/instacena/'
   fileRoutesById: FileRoutesById
@@ -136,6 +172,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AmbientesRoute: typeof AmbientesRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
@@ -155,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/ambientes'
       fullPath: '/ambientes'
       preLoaderRoute: typeof AmbientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -199,6 +243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InstacenaExplorarRouteImport
       parentRoute: typeof InstacenaRoute
     }
+    '/instacena/perfil': {
+      id: '/instacena/perfil'
+      path: '/perfil'
+      fullPath: '/instacena/perfil'
+      preLoaderRoute: typeof InstacenaPerfilRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
+    '/instacena/pesquisa': {
+      id: '/instacena/pesquisa'
+      path: '/pesquisa'
+      fullPath: '/instacena/pesquisa'
+      preLoaderRoute: typeof InstacenaPesquisaRouteImport
+      parentRoute: typeof InstacenaRoute
+    }
     '/instacena/reels': {
       id: '/instacena/reels'
       path: '/reels'
@@ -212,6 +270,8 @@ declare module '@tanstack/react-router' {
 interface InstacenaRouteChildren {
   InstacenaUsernameRoute: typeof InstacenaUsernameRoute
   InstacenaExplorarRoute: typeof InstacenaExplorarRoute
+  InstacenaPerfilRoute: typeof InstacenaPerfilRoute
+  InstacenaPesquisaRoute: typeof InstacenaPesquisaRoute
   InstacenaReelsRoute: typeof InstacenaReelsRoute
   InstacenaIndexRoute: typeof InstacenaIndexRoute
 }
@@ -219,6 +279,8 @@ interface InstacenaRouteChildren {
 const InstacenaRouteChildren: InstacenaRouteChildren = {
   InstacenaUsernameRoute: InstacenaUsernameRoute,
   InstacenaExplorarRoute: InstacenaExplorarRoute,
+  InstacenaPerfilRoute: InstacenaPerfilRoute,
+  InstacenaPesquisaRoute: InstacenaPesquisaRoute,
   InstacenaReelsRoute: InstacenaReelsRoute,
   InstacenaIndexRoute: InstacenaIndexRoute,
 }
@@ -230,6 +292,7 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AmbientesRoute: AmbientesRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,

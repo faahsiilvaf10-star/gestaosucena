@@ -107,7 +107,7 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className={`rounded-2xl p-4 flex flex-col items-center justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
+      <div className={`rounded-2xl p-4 flex flex-col items-center justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
         <Loader2 className={`animate-spin ${isDark ? 'text-white/50' : 'text-gray-400'}`} size={24} />
       </div>
     )
@@ -115,7 +115,7 @@ export function WeatherWidget() {
 
   if (error || !data) {
     return (
-      <div className={`rounded-2xl p-4 flex flex-col justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
+      <div className={`rounded-2xl p-4 flex flex-col justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
         <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
       </div>
     )
@@ -124,7 +124,7 @@ export function WeatherWidget() {
   const details = getWeatherDetails(data.code)
 
   return (
-    <div className={`rounded-2xl p-4 flex flex-col h-[160px] shadow-lg relative overflow-hidden transition-colors duration-300 ${isDark ? 'bg-gradient-to-br from-[#1c2c36] to-[#121a22] border border-white/5' : 'bg-gray-100 border border-black/5'}`}>
+    <div className={`rounded-2xl p-4 flex flex-col h-[160px] shadow-lg relative overflow-hidden transition-colors duration-300 ${isDark ? 'bg-gradient-to-br from-[#1c2c36] to-[#121a22] border border-white/5' : 'bg-[#faf9f6] border border-black/5'}`}>
       {/* Decorative blurred circle */}
       <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}></div>
 

@@ -14,7 +14,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Load preference on mount
     const saved = localStorage.getItem('sucena_theme')
     if (saved) {
-      setIsDark(saved === 'dark')
+      const isDarkMode = saved === 'dark'
+      setIsDark(isDarkMode)
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    } else {
+      // If no preference, but default is dark (true)
+      document.documentElement.classList.add('dark')
     }
   }, [])
 
@@ -23,12 +32,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const newTheme = !prev
       localStorage.setItem('sucena_theme', newTheme ? 'dark' : 'light')
       
-      // Update global body classes if we wanted to use Tailwind's `dark:` classes
-      // if (newTheme) {
-      //   document.documentElement.classList.add('dark')
-      // } else {
-      //   document.documentElement.classList.remove('dark')
-      // }
+      // Update global body classes for Tailwind's `dark:` classes
+      if (newTheme) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
       
       return newTheme
     })

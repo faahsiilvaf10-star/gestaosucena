@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @source "../src";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+
 
 @font-face {
   font-family: 'Evantic';

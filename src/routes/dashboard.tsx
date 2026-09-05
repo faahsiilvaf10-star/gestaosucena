@@ -42,7 +42,7 @@ function DashboardComponent() {
         <div className="flex items-center justify-between mb-8 mt-2">
           <div>
             <h1 className={`text-[54px] font-tarmiles font-bold tracking-tight ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`} style={{ lineHeight: '1' }}>
-              Dashboard
+              Início
             </h1>
             <p className={`text-sm mt-1 ml-1 font-medium ${isDark ? 'text-white/70' : 'text-gray-500'}`}>Visão geral da operação</p>
           </div>
@@ -60,7 +60,7 @@ function DashboardComponent() {
             <WeatherWidget />
             
             {/* Total Func Card */}
-            <div className={`flex-1 rounded-2xl border p-6 flex flex-col justify-between relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-lg'}`}>
+            <div className={`flex-1 rounded-2xl border p-6 flex flex-col justify-between relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-lg'}`}>
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t pointer-events-none from-white/[0.03]" />
               <h3 className={`text-center text-[10px] font-bold uppercase tracking-widest pt-4 ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Total de Funcionários</h3>
               <div className="flex justify-center items-center flex-1 w-full relative z-10 pt-4">
@@ -72,7 +72,7 @@ function DashboardComponent() {
           </div>
 
           {/* Column 2: Avanço Mensal */}
-          <div className={`rounded-2xl border p-6 flex flex-col relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-lg'}`}>
+          <div className={`rounded-2xl border p-6 flex flex-col relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-lg'}`}>
             <div className="flex justify-between items-start mb-1">
               <div>
                 <h3 className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-gray-800'}`}>Avanço Mensal</h3>
@@ -126,7 +126,7 @@ function DashboardComponent() {
           <div className="flex flex-col gap-4">
             
             {/* Presentes */}
-            <div className={`rounded-2xl border p-4 flex flex-col relative overflow-hidden h-40 transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-sm'}`}>
+            <div className={`rounded-2xl border p-4 flex flex-col relative overflow-hidden h-40 transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-sm'}`}>
               <div className="flex justify-between items-start z-10">
                 <h3 className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Presentes Hoje</h3>
                 <Calendar size={12} className={isDark ? "text-white/40" : "text-gray-400"} />
@@ -145,7 +145,7 @@ function DashboardComponent() {
             </div>
 
             {/* Ausências */}
-            <div className={`rounded-2xl border p-4 flex flex-col relative overflow-hidden h-40 transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-sm'}`}>
+            <div className={`rounded-2xl border p-4 flex flex-col relative overflow-hidden h-40 transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-sm'}`}>
               <div className="flex justify-between items-start z-10">
                 <h3 className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Ausências</h3>
                 <Clock size={12} className={isDark ? "text-white/40" : "text-gray-400"} />
@@ -164,7 +164,7 @@ function DashboardComponent() {
             </div>
 
             {/* Trabalho Externo */}
-            <div className={`rounded-2xl border p-4 flex flex-col transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-sm'}`}>
+            <div className={`rounded-2xl border p-4 flex flex-col transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-sm'}`}>
               <div className="flex justify-between items-start">
                 <h3 className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Trabalho Externo</h3>
                 <LogOut size={12} className={isDark ? "text-white/40" : "text-gray-400"} />
@@ -177,7 +177,7 @@ function DashboardComponent() {
           </div>
 
           {/* Column 4: Equipamentos Ativos */}
-          <div className={`rounded-2xl border p-6 flex flex-col relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-white/60 backdrop-blur-md border-black/10 shadow-lg'}`}>
+          <div className={`rounded-2xl border p-6 flex flex-col relative overflow-hidden transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10 shadow-lg'}`}>
             <div className="flex justify-between items-start mb-1">
               <h3 className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-gray-800'}`}>Equipamentos Ativos</h3>
               <button className={`text-[10px] font-bold transition-colors uppercase tracking-wider ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-700 hover:text-yellow-500'}`}>Ver tudo &rarr;</button>

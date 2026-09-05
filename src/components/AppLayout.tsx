@@ -41,7 +41,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
-  const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '' })
+  const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '', avatarUrl: '' })
   
   const { toggleSidebar, unreadCountGlobally } = useChat()
   usePresence(currentUser.id)
@@ -58,13 +58,30 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      const role = data.user?.user_metadata?.role || ''
-      setCurrentUser({
-        id: data.user?.id || '',
-        name: data.user?.user_metadata?.full_name || data.user?.email || 'Usuário',
-        role: role || 'Usuário'
-      })
+      if (data.user) {
+        const role = data.user.user_metadata?.role || ''
+        setCurrentUser({
+          id: data.user.id || '',
+          name: data.user.user_metadata?.full_name || data.user.email || 'Usuário',
+          role: role || 'Usuário',
+          avatarUrl: data.user.user_metadata?.avatar_url || ''
+        })
+      }
     })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const role = session.user.user_metadata?.role || ''
+        setCurrentUser({
+          id: session.user.id || '',
+          name: session.user.user_metadata?.full_name || session.user.email || 'Usuário',
+          role: role || 'Usuário',
+          avatarUrl: session.user.user_metadata?.avatar_url || ''
+        })
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleLogoutConfirm = async () => {
@@ -77,16 +94,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-white' : 'bg-[#f4f3f0] text-gray-900'}`}>
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
 
       {/* Universal Top Gradient Backdrop */}
-      <div className={`absolute top-0 left-0 right-0 h-32 pointer-events-none z-40 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent' : 'bg-gradient-to-b from-white via-white/80 to-transparent'}`} />
+      <div className={`absolute top-0 left-0 right-0 h-32 pointer-events-none z-40 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent' : 'bg-gradient-to-b from-[#f4f3f0] via-[#f4f3f0]/80 to-transparent'}`} />
       
       {/* Top Navigation Bar — Fixed */}
       <div className="pt-3 px-3 md:px-6 sticky top-0 z-50 w-full mb-8">
         <div className="w-full relative filter drop-shadow-[0_0_1px_rgba(250,204,21,0.8)] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]">
-          <header className={`h-[38px] rounded-[19px] flex items-stretch pl-3 pr-4 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-white'}`}>
+          <header className={`h-[38px] rounded-[19px] flex items-stretch pl-3 pr-4 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#faf9f6]'}`}>
                   {/* Left Section: Contrato Text & Hanging Profile */}
             <div className="flex flex-col items-center justify-center relative h-full shrink-0 mr-4 md:mr-6 min-w-[96px]">
               
@@ -103,22 +120,32 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="absolute top-[38px] left-1/2 -translate-x-1/2 w-[56px] h-[53px] z-10">
                 
                 {/* Main U-shape background - Overlaps bar by 1px to prevent drop-shadow seams */}
-                <div className={`absolute top-[-1px] left-0 right-0 bottom-0 rounded-b-[28px] -z-10 ${isDark ? 'bg-[#0a0a0c]' : 'bg-white'}`} />
+                <div className={`absolute top-[-1px] left-0 right-0 bottom-0 rounded-b-[28px] -z-10 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#faf9f6]'}`} />
                 
                 {/* Left inverted corner - Overlaps bar and U-shape by 1px */}
-                <svg className={`absolute top-[-1px] -left-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-white'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg className={`absolute top-[-1px] -left-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-[#faf9f6]'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path d="M100,0 L0,0 C55.23,0 100,44.77 100,100 Z" />
                 </svg>
                 
                 {/* Right inverted corner - Overlaps bar and U-shape by 1px */}
-                <svg className={`absolute top-[-1px] -right-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-white'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg className={`absolute top-[-1px] -right-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-[#faf9f6]'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path d="M0,0 L100,0 C44.77,0 0,44.77 0,100 Z" />
                 </svg>
 
                 {/* Profile Image - Centered and Concentric */}
-                <div className="absolute top-[3px] left-[6px] w-[44px] h-[44px] rounded-full overflow-hidden border border-[#1a1a1c] z-20">
-                  <img src="https://i.pravatar.cc/150?u=sucena" alt="Profile" className="w-full h-full object-cover" />
-                </div>
+                <button 
+                  onClick={() => navigate({ to: '/configuracoes' })}
+                  className="absolute top-[3px] left-[6px] w-[44px] h-[44px] rounded-full overflow-hidden border border-[#1a1a1c] z-20 hover:scale-105 transition-transform"
+                  title="Configurações de Perfil"
+                >
+                  {currentUser.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold text-sm">
+                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -196,7 +223,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {currentUser.id && <ChatSidebar currentUserId={currentUser.id} />}
 
       {/* Bottom Status Bar */}
-      <footer className={`fixed bottom-0 left-0 right-0 h-9 z-50 flex items-center justify-between px-6 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-white/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}>
+      <footer className={`fixed bottom-0 left-0 right-0 h-9 z-50 flex items-center justify-between px-6 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}>
         
         {/* Bottom Left: Logout and Action Icons */}
         <div className="flex items-center gap-4">
