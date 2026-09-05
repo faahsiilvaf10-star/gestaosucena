@@ -283,12 +283,21 @@ function FeedRoute() {
 
   // Publish Post
   const handleStoryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0 && currentUser) {
+    try {
+      if (!e.target.files || e.target.files.length === 0) {
+        alert('Nenhum arquivo selecionado.');
+        return;
+      }
+      
+      if (!currentUser) {
+        alert('Usuário não identificado. Tente recarregar a página.');
+        return;
+      }
+
       const file = e.target.files[0]
       setIsUploadingStory(true)
 
-      // Se for vídeo, checamos duração localmente criando um elemento de vídeo rápido
-      if (file.type.startsWith('video/')) {
+      if (file.type && file.type.startsWith('video/')) {
         const video = document.createElement('video')
         video.preload = 'metadata'
         video.onloadedmetadata = async () => {
@@ -298,10 +307,17 @@ function FeedRoute() {
           }
           await uploadStory(file)
         }
+        video.onerror = async () => {
+          // Se falhar ao ler metadata do video, sobe assim mesmo
+          await uploadStory(file)
+        }
         video.src = URL.createObjectURL(file)
       } else {
         await uploadStory(file)
       }
+    } catch (err: any) {
+      alert(`Erro interno antes do upload: ${err.message}`);
+      setIsUploadingStory(false);
     }
   }
 
@@ -311,14 +327,14 @@ function FeedRoute() {
       const fileName = `story-${currentUser.user_id}-${Date.now()}.${fileExt}`
       
       const { data, error } = await supabase.storage
-        .from('instacena-posts')
-        .upload(fileName, file)
+        .from('posts')
+        .upload(`stories/${fileName}`, file)
         
       if (error) throw error
 
       const { data: urlData } = supabase.storage
-        .from('instacena-posts')
-        .getPublicUrl(fileName)
+        .from('posts')
+        .getPublicUrl(`stories/${fileName}`)
 
       const mediaType = file.type.startsWith('video/') ? 'video' : 'image'
 
@@ -334,12 +350,25 @@ function FeedRoute() {
         
       if (insertError) throw insertError
       
-      // Refresh
-      window.location.reload()
+      // Update local state without reloading
+      setStories(prev => {
+         const existingGroupIndex = prev.findIndex(g => g.user.user_id === currentUser.user_id)
+         const storyWithProfile = { ...newStory, social_profiles: currentUser }
+         
+         if (existingGroupIndex >= 0) {
+            const newGroups = [...prev]
+            newGroups[existingGroupIndex].stories.push(storyWithProfile)
+            return newGroups
+         } else {
+            return [{ user: currentUser, stories: [storyWithProfile] }, ...prev]
+         }
+      })
       
-    } catch (err) {
+      alert('Story publicado com sucesso!')
+      
+    } catch (err: any) {
       console.error('Erro ao postar story', err)
-      alert('Ocorreu um erro ao postar seu story.')
+      alert(`Ocorreu um erro ao postar seu story: ${err?.message || 'Erro desconhecido'}`)
     } finally {
       setIsUploadingStory(false)
       if (storyFileInputRef.current) storyFileInputRef.current.value = ''

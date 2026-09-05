@@ -22,7 +22,8 @@ interface StoryViewerProps {
   currentUserId: string | null
 }
 
-const STORY_DURATION_MS = 30000 // 30 seconds
+const PHOTO_DURATION_MS = 15000 // 15 seconds for photos
+const MAX_VIDEO_DURATION_MS = 30000 // 30 seconds for videos
 
 export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUserId }: StoryViewerProps) {
   const [currentUserIndex, setCurrentUserIndex] = useState(initialUserIndex)
@@ -61,7 +62,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
     progressInterval.current = setInterval(() => {
       const elapsed = Date.now() - startTime.current + accumulatedTime.current;
-      const percentage = (elapsed / STORY_DURATION_MS) * 100;
+      const percentage = (elapsed / PHOTO_DURATION_MS) * 100;
       
       if (percentage >= 100) {
         setProgress(100);
@@ -80,14 +81,14 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
   const handleVideoTimeUpdate = () => {
     if (!videoRef.current || activeStory?.media_type !== 'video' || isPaused || showViews) return;
     
-    // We base the percentage on 30s limit, OR the video's actual duration if it's shorter than 30s.
-    const duration = Math.min(videoRef.current.duration * 1000, STORY_DURATION_MS);
+    // We base the percentage on video duration (max 30s)
+    const duration = Math.min(videoRef.current.duration * 1000, MAX_VIDEO_DURATION_MS);
     const currentTime = videoRef.current.currentTime * 1000;
     
     const percentage = (currentTime / duration) * 100;
     setProgress(percentage);
 
-    if (currentTime >= STORY_DURATION_MS || currentTime >= videoRef.current.duration * 1000) {
+    if (currentTime >= MAX_VIDEO_DURATION_MS || currentTime >= videoRef.current.duration * 1000) {
        handleNext();
     }
   }
@@ -185,13 +186,35 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
      return `${diffHrs} h`;
   }
 
+  const handleDeleteStory = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPaused(true);
+    if (videoRef.current) videoRef.current.pause();
+
+    if (window.confirm("Tem certeza que deseja excluir este story para todos?")) {
+      try {
+        const { error } = await supabase.from('social_stories').delete().eq('id', activeStory.id);
+        if (error) throw error;
+        
+        window.location.reload();
+      } catch (err: any) {
+        alert("Erro ao excluir story: " + err.message);
+        setIsPaused(false);
+        if (videoRef.current) videoRef.current.play();
+      }
+    } else {
+      setIsPaused(false);
+      if (videoRef.current) videoRef.current.play();
+    }
+  }
+
   if (!activeGroup || !activeStory) return null;
 
   const isMyStory = activeStory.user_id === currentUserId;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-       <button onClick={onClose} className="absolute top-4 right-4 z-[60] p-2 bg-black/50 hover:bg-black rounded-full text-white transition-colors">
+    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
+       <button onClick={onClose} className="absolute top-6 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-white transition-colors">
          <X size={24} />
        </button>
        
@@ -203,7 +226,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
          onTouchEnd={() => { setIsPaused(false); if (videoRef.current) videoRef.current.play(); }}
        >
          {/* Progress Bars */}
-         <div className="absolute top-2 left-2 right-2 z-20 flex gap-1">
+         <div className="absolute top-4 left-2 right-2 z-[9000] flex gap-1">
            {activeGroup.stories.map((s, idx) => (
              <div key={s.id} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
                <div 
@@ -217,20 +240,32 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
          </div>
 
          {/* Header */}
-         <div className="absolute top-6 left-4 right-4 z-20 flex items-center gap-3">
-           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 border border-white/20">
-             {activeGroup.user?.avatar_url ? (
-               <img src={activeGroup.user.avatar_url} className="w-full h-full object-cover" />
-             ) : (
-               <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
-                 {activeGroup.user?.display_name?.charAt(0) || '?'}
-               </div>
-             )}
+         <div className="absolute top-8 left-4 right-4 z-[9000] flex items-center justify-between">
+           <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 border border-white/20">
+               {activeGroup.user?.avatar_url ? (
+                 <img src={activeGroup.user.avatar_url} className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+                   {activeGroup.user?.display_name?.charAt(0) || '?'}
+                 </div>
+               )}
+             </div>
+             <div className="flex items-center gap-2 text-white drop-shadow-md">
+               <span className="font-bold">{activeGroup.user?.display_name || activeGroup.user?.username || 'Usuário'}</span>
+               <span className="text-sm opacity-80">• {formatTimeAgo(activeStory.created_at)}</span>
+             </div>
            </div>
-           <div className="flex items-center gap-2 text-white drop-shadow-md">
-             <span className="font-bold">{activeGroup.user?.display_name || activeGroup.user?.username || 'Usuário'}</span>
-             <span className="text-sm opacity-80">• {formatTimeAgo(activeStory.created_at)}</span>
-           </div>
+
+           {isMyStory && (
+             <button 
+               onClick={handleDeleteStory}
+               className="p-2 bg-black/30 hover:bg-red-500/80 rounded-full text-white transition-colors mr-10"
+               title="Excluir story"
+             >
+               <Trash2 size={20} />
+             </button>
+           )}
          </div>
 
          {/* Navigation Overlay (Click left 30% for prev, right 70% for next) */}
