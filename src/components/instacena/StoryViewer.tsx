@@ -38,6 +38,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
   const [viewsLog, setViewsLog] = useState<any[]>([])
   const [showViews, setShowViews] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const activeGroup = usersGroups[currentUserIndex]
   const activeStory = activeGroup?.stories[currentStoryIndex]
@@ -75,11 +76,11 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
     return () => {
       if (progressInterval.current) clearInterval(progressInterval.current);
     }
-  }, [activeStory, isPaused, currentUserIndex, currentStoryIndex, showViews]);
+  }, [activeStory, isPaused, currentUserIndex, currentStoryIndex, showViews, showDeleteConfirm]);
 
   // Handle Video Time Update to enforce 30s limit
   const handleVideoTimeUpdate = () => {
-    if (!videoRef.current || activeStory?.media_type !== 'video' || isPaused || showViews) return;
+    if (!videoRef.current || activeStory?.media_type !== 'video' || isPaused || showViews || showDeleteConfirm) return;
     
     // We base the percentage on video duration (max 30s)
     const duration = Math.min(videoRef.current.duration * 1000, MAX_VIDEO_DURATION_MS);
@@ -186,26 +187,31 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
      return `${diffHrs} h`;
   }
 
-  const handleDeleteStory = async (e: React.MouseEvent) => {
+  const handleDeleteStory = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsPaused(true);
     if (videoRef.current) videoRef.current.pause();
+    setShowDeleteConfirm(true);
+  }
 
-    if (window.confirm("Tem certeza que deseja excluir este story para todos?")) {
-      try {
-        const { error } = await supabase.from('social_stories').delete().eq('id', activeStory.id);
-        if (error) throw error;
-        
-        window.location.reload();
-      } catch (err: any) {
-        alert("Erro ao excluir story: " + err.message);
-        setIsPaused(false);
-        if (videoRef.current) videoRef.current.play();
-      }
-    } else {
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from('social_stories').delete().eq('id', activeStory.id);
+      if (error) throw error;
+      
+      window.location.reload();
+    } catch (err: any) {
+      alert("Erro ao excluir story: " + err.message);
+      setShowDeleteConfirm(false);
       setIsPaused(false);
       if (videoRef.current) videoRef.current.play();
     }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setIsPaused(false);
+    if (videoRef.current) videoRef.current.play();
   }
 
   if (!activeGroup || !activeStory) return null;
@@ -331,8 +337,45 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
                  )}
                </div>
              </div>
+                 </div>
+               </div>
+             </div>
            </div>
          )}
+
+         {/* Custom Delete Confirmation Modal */}
+         {showDeleteConfirm && (
+           <div className="absolute inset-0 z-[10000] flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={cancelDelete}>
+             <div 
+               className="bg-white dark:bg-[#262626] rounded-xl w-full max-w-[320px] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 shadow-2xl border border-black/10 dark:border-white/10"
+               onClick={(e) => e.stopPropagation()}
+             >
+               <div className="p-6 text-center flex flex-col items-center">
+                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 text-red-500">
+                   <Trash2 size={24} />
+                 </div>
+                 <h3 className="font-bold text-lg text-black dark:text-white mb-2">Excluir Story?</h3>
+                 <p className="text-gray-500 text-sm">Tem certeza que deseja excluir este story para todos? Esta ação não pode ser desfeita.</p>
+               </div>
+               
+               <div className="flex border-t border-black/10 dark:border-white/10">
+                 <button 
+                   onClick={cancelDelete}
+                   className="flex-1 py-4 font-semibold text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-r border-black/10 dark:border-white/10"
+                 >
+                   Cancelar
+                 </button>
+                 <button 
+                   onClick={confirmDelete}
+                   className="flex-1 py-4 font-bold text-red-500 hover:bg-red-500/10 transition-colors"
+                 >
+                   Excluir
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
+
        </div>
     </div>
   )
