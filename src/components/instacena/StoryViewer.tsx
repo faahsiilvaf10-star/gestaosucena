@@ -214,7 +214,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-       <button onClick={onClose} className="absolute top-6 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-white transition-colors">
+       <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-white transition-colors">
          <X size={24} />
        </button>
        
@@ -226,7 +226,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
          onTouchEnd={() => { setIsPaused(false); if (videoRef.current) videoRef.current.play(); }}
        >
          {/* Progress Bars */}
-         <div className="absolute top-4 left-2 right-2 z-[9000] flex gap-1">
+         <div className="absolute top-16 left-2 right-2 z-[9000] flex gap-1">
            {activeGroup.stories.map((s, idx) => (
              <div key={s.id} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
                <div 
@@ -240,7 +240,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
          </div>
 
          {/* Header */}
-         <div className="absolute top-8 left-4 right-4 z-[9000] flex items-center justify-between">
+         <div className="absolute top-20 left-4 right-4 z-[9000] flex items-center justify-between">
            <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 border border-white/20">
                {activeGroup.user?.avatar_url ? (
