@@ -337,9 +337,6 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
                  )}
                </div>
              </div>
-                 </div>
-               </div>
-             </div>
            </div>
          )}
 

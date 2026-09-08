@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut } from 'lucide-react'
+import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
 import { Area, Point } from 'react-easy-crop/types'
@@ -54,6 +54,7 @@ function FeedRoute() {
   
   const [posts, setPosts] = useState<any[]>([])
   const [loadingPosts, setLoadingPosts] = useState(true)
+  const [postToDelete, setPostToDelete] = useState<string | null>(null)
 
   // Inline Post Editor State
   const [caption, setCaption] = useState('')
@@ -375,6 +376,22 @@ function FeedRoute() {
     }
   }
 
+  const handleDeletePost = (postId: string) => {
+    setPostToDelete(postId)
+  }
+
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    
+    const { error } = await supabase.from('social_posts').delete().eq('id', postToDelete)
+    if (!error) {
+      setPosts(prev => prev.filter(p => p.id !== postToDelete))
+      setPostToDelete(null)
+    } else {
+      alert("Erro ao excluir post: " + error.message)
+    }
+  }
+
   const handlePublish = async () => {
     if (!currentUser) return
     if (!caption.trim() && !selectedFile) return
@@ -656,26 +673,37 @@ function FeedRoute() {
           posts.map(post => (
             <article key={post.id} className="flex flex-col gap-3 bg-white dark:bg-[#1a1a1b] p-4 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
               {/* Post Header */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-black/5 dark:border-white/10 shrink-0">
-                  {post.social_profiles?.avatar_url ? (
-                    <img src={post.social_profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <User size={20} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-[15px]">{post.social_profiles?.display_name || 'Usuário'}</span>
-                  <span className="text-[12px] text-gray-500">
-                    {formatPostTime(post.created_at)} • 
-                    <span className="capitalize ml-1">{post.visibility === 'public' ? 'Público' : post.visibility}</span>
-                    {post.location && (
-                      <span className="ml-1 font-semibold text-blue-500"> • {post.location}</span>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-black/5 dark:border-white/10 shrink-0">
+                    {post.social_profiles?.avatar_url ? (
+                      <img src={post.social_profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <User size={20} />
+                      </div>
                     )}
-                  </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-[15px]">{post.social_profiles?.display_name || 'Usuário'}</span>
+                    <span className="text-[12px] text-gray-500">
+                      {formatPostTime(post.created_at)} • 
+                      <span className="capitalize ml-1">{post.visibility === 'public' ? 'Público' : post.visibility}</span>
+                      {post.location && (
+                        <span className="ml-1 font-semibold text-blue-500"> • {post.location}</span>
+                      )}
+                    </span>
+                  </div>
                 </div>
+                {post.user_id === currentUser?.user_id && (
+                  <button 
+                    onClick={() => handleDeletePost(post.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                    title="Excluir postagem"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
 
               {/* Post Caption */}
@@ -784,6 +812,35 @@ function FeedRoute() {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {postToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setPostToDelete(null) }}>
+          <div className="bg-white dark:bg-[#262626] rounded-xl p-6 max-w-sm w-full text-center shadow-xl animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-black dark:text-white">Excluir Postagem</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
+              Tem certeza que deseja excluir esta postagem? Ela será removida para todos os usuários e não poderá ser recuperada.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setPostToDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg font-bold border border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 rounded-lg font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

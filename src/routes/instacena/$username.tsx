@@ -341,9 +341,9 @@ function ProfileRoute() {
       </div>
 
       {/* Grid Content */}
-      {posts.length > 0 ? (
+      {posts.filter(p => p.social_post_media && p.social_post_media.length > 0).length > 0 ? (
         <div className="grid grid-cols-3 gap-1 md:gap-[4px]">
-          {posts.map((post) => {
+          {posts.filter(p => p.social_post_media && p.social_post_media.length > 0).map((post) => {
             const firstMedia = post.social_post_media?.[0]
             const isVideo = firstMedia?.media_type === 'video'
             const hasMultiple = post.social_post_media?.length > 1

@@ -10,11 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AlmoxarifadoRouteImport } from './routes/almoxarifado'
 import { Route as AmbientesRouteImport } from './routes/ambientes'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
+import { Route as AlmoxarifadoIndexRouteImport } from './routes/almoxarifado/index'
+import { Route as AlmoxarifadoAduboRouteImport } from './routes/almoxarifado/adubo'
+import { Route as AlmoxarifadoAspersoresRouteImport } from './routes/almoxarifado/aspersores'
+import { Route as AlmoxarifadoEstoqueRouteImport } from './routes/almoxarifado/estoque'
+import { Route as AlmoxarifadoNotasFiscaisRouteImport } from './routes/almoxarifado/notas-fiscais'
+import { Route as AlmoxarifadoPedidosRouteImport } from './routes/almoxarifado/pedidos'
+import { Route as AlmoxarifadoRequisicaoRouteImport } from './routes/almoxarifado/requisicao'
+import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/index'
+import { Route as EquipamentosTodosRouteImport } from './routes/equipamentos/todos'
 import { Route as InstacenaIndexRouteImport } from './routes/instacena/index'
 import { Route as InstacenaUsernameRouteImport } from './routes/instacena/$username'
 import { Route as InstacenaExplorarRouteImport } from './routes/instacena/explorar'
@@ -25,6 +36,11 @@ import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlmoxarifadoRoute = AlmoxarifadoRouteImport.update({
+  id: '/almoxarifado',
+  path: '/almoxarifado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AmbientesRoute = AmbientesRouteImport.update({
@@ -42,6 +58,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EquipamentosRoute = EquipamentosRouteImport.update({
+  id: '/equipamentos',
+  path: '/equipamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InstacenaRoute = InstacenaRouteImport.update({
   id: '/instacena',
   path: '/instacena',
@@ -51,6 +72,52 @@ const LembretesRoute = LembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AlmoxarifadoIndexRoute = AlmoxarifadoIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoAduboRoute = AlmoxarifadoAduboRouteImport.update({
+  id: '/adubo',
+  path: '/adubo',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoAspersoresRoute = AlmoxarifadoAspersoresRouteImport.update({
+  id: '/aspersores',
+  path: '/aspersores',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoEstoqueRoute = AlmoxarifadoEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoNotasFiscaisRoute =
+  AlmoxarifadoNotasFiscaisRouteImport.update({
+    id: '/notas-fiscais',
+    path: '/notas-fiscais',
+    getParentRoute: () => AlmoxarifadoRoute,
+  } as any)
+const AlmoxarifadoPedidosRoute = AlmoxarifadoPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoRequisicaoRoute = AlmoxarifadoRequisicaoRouteImport.update({
+  id: '/requisicao',
+  path: '/requisicao',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const EquipamentosIndexRoute = EquipamentosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EquipamentosRoute,
+} as any)
+const EquipamentosTodosRoute = EquipamentosTodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => EquipamentosRoute,
 } as any)
 const InstacenaIndexRoute = InstacenaIndexRouteImport.update({
   id: '/',
@@ -85,16 +152,27 @@ const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/almoxarifado': typeof AlmoxarifadoRouteWithChildren
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
+  '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
+  '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
+  '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
+  '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
+  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
+  '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/almoxarifado/': typeof AlmoxarifadoIndexRoute
+  '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -103,42 +181,73 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/lembretes': typeof LembretesRoute
+  '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
+  '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
+  '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
+  '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
+  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
+  '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/almoxarifado': typeof AlmoxarifadoIndexRoute
+  '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/almoxarifado': typeof AlmoxarifadoRouteWithChildren
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
+  '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
+  '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
+  '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
+  '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
+  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
+  '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
   '/instacena/explorar': typeof InstacenaExplorarRoute
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/almoxarifado/': typeof AlmoxarifadoIndexRoute
+  '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/almoxarifado'
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
+    | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/almoxarifado/adubo'
+    | '/almoxarifado/aspersores'
+    | '/almoxarifado/estoque'
+    | '/almoxarifado/notas-fiscais'
+    | '/almoxarifado/pedidos'
+    | '/almoxarifado/requisicao'
+    | '/equipamentos/todos'
     | '/instacena/$username'
     | '/instacena/explorar'
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/almoxarifado/'
+    | '/equipamentos/'
     | '/instacena/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -147,33 +256,55 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/lembretes'
+    | '/almoxarifado/adubo'
+    | '/almoxarifado/aspersores'
+    | '/almoxarifado/estoque'
+    | '/almoxarifado/notas-fiscais'
+    | '/almoxarifado/pedidos'
+    | '/almoxarifado/requisicao'
+    | '/equipamentos/todos'
     | '/instacena/$username'
     | '/instacena/explorar'
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/almoxarifado'
+    | '/equipamentos'
     | '/instacena'
   id:
     | '__root__'
     | '/'
+    | '/almoxarifado'
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
+    | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/almoxarifado/adubo'
+    | '/almoxarifado/aspersores'
+    | '/almoxarifado/estoque'
+    | '/almoxarifado/notas-fiscais'
+    | '/almoxarifado/pedidos'
+    | '/almoxarifado/requisicao'
+    | '/equipamentos/todos'
     | '/instacena/$username'
     | '/instacena/explorar'
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/almoxarifado/'
+    | '/equipamentos/'
     | '/instacena/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlmoxarifadoRoute: typeof AlmoxarifadoRouteWithChildren
   AmbientesRoute: typeof AmbientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
+  EquipamentosRoute: typeof EquipamentosRouteWithChildren
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
 }
@@ -185,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/almoxarifado': {
+      id: '/almoxarifado'
+      path: '/almoxarifado'
+      fullPath: '/almoxarifado'
+      preLoaderRoute: typeof AlmoxarifadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ambientes': {
@@ -208,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/equipamentos': {
+      id: '/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/equipamentos'
+      preLoaderRoute: typeof EquipamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/instacena': {
       id: '/instacena'
       path: '/instacena'
@@ -221,6 +366,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/lembretes'
       preLoaderRoute: typeof LembretesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/almoxarifado/': {
+      id: '/almoxarifado/'
+      path: '/'
+      fullPath: '/almoxarifado/'
+      preLoaderRoute: typeof AlmoxarifadoIndexRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/adubo': {
+      id: '/almoxarifado/adubo'
+      path: '/adubo'
+      fullPath: '/almoxarifado/adubo'
+      preLoaderRoute: typeof AlmoxarifadoAduboRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/aspersores': {
+      id: '/almoxarifado/aspersores'
+      path: '/aspersores'
+      fullPath: '/almoxarifado/aspersores'
+      preLoaderRoute: typeof AlmoxarifadoAspersoresRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/estoque': {
+      id: '/almoxarifado/estoque'
+      path: '/estoque'
+      fullPath: '/almoxarifado/estoque'
+      preLoaderRoute: typeof AlmoxarifadoEstoqueRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/notas-fiscais': {
+      id: '/almoxarifado/notas-fiscais'
+      path: '/notas-fiscais'
+      fullPath: '/almoxarifado/notas-fiscais'
+      preLoaderRoute: typeof AlmoxarifadoNotasFiscaisRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/pedidos': {
+      id: '/almoxarifado/pedidos'
+      path: '/pedidos'
+      fullPath: '/almoxarifado/pedidos'
+      preLoaderRoute: typeof AlmoxarifadoPedidosRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/requisicao': {
+      id: '/almoxarifado/requisicao'
+      path: '/requisicao'
+      fullPath: '/almoxarifado/requisicao'
+      preLoaderRoute: typeof AlmoxarifadoRequisicaoRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/equipamentos/': {
+      id: '/equipamentos/'
+      path: '/'
+      fullPath: '/equipamentos/'
+      preLoaderRoute: typeof EquipamentosIndexRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
+    '/equipamentos/todos': {
+      id: '/equipamentos/todos'
+      path: '/todos'
+      fullPath: '/equipamentos/todos'
+      preLoaderRoute: typeof EquipamentosTodosRouteImport
+      parentRoute: typeof EquipamentosRoute
     }
     '/instacena/': {
       id: '/instacena/'
@@ -267,6 +475,44 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AlmoxarifadoRouteChildren {
+  AlmoxarifadoAduboRoute: typeof AlmoxarifadoAduboRoute
+  AlmoxarifadoAspersoresRoute: typeof AlmoxarifadoAspersoresRoute
+  AlmoxarifadoEstoqueRoute: typeof AlmoxarifadoEstoqueRoute
+  AlmoxarifadoNotasFiscaisRoute: typeof AlmoxarifadoNotasFiscaisRoute
+  AlmoxarifadoPedidosRoute: typeof AlmoxarifadoPedidosRoute
+  AlmoxarifadoRequisicaoRoute: typeof AlmoxarifadoRequisicaoRoute
+  AlmoxarifadoIndexRoute: typeof AlmoxarifadoIndexRoute
+}
+
+const AlmoxarifadoRouteChildren: AlmoxarifadoRouteChildren = {
+  AlmoxarifadoAduboRoute: AlmoxarifadoAduboRoute,
+  AlmoxarifadoAspersoresRoute: AlmoxarifadoAspersoresRoute,
+  AlmoxarifadoEstoqueRoute: AlmoxarifadoEstoqueRoute,
+  AlmoxarifadoNotasFiscaisRoute: AlmoxarifadoNotasFiscaisRoute,
+  AlmoxarifadoPedidosRoute: AlmoxarifadoPedidosRoute,
+  AlmoxarifadoRequisicaoRoute: AlmoxarifadoRequisicaoRoute,
+  AlmoxarifadoIndexRoute: AlmoxarifadoIndexRoute,
+}
+
+const AlmoxarifadoRouteWithChildren = AlmoxarifadoRoute._addFileChildren(
+  AlmoxarifadoRouteChildren,
+)
+
+interface EquipamentosRouteChildren {
+  EquipamentosTodosRoute: typeof EquipamentosTodosRoute
+  EquipamentosIndexRoute: typeof EquipamentosIndexRoute
+}
+
+const EquipamentosRouteChildren: EquipamentosRouteChildren = {
+  EquipamentosTodosRoute: EquipamentosTodosRoute,
+  EquipamentosIndexRoute: EquipamentosIndexRoute,
+}
+
+const EquipamentosRouteWithChildren = EquipamentosRoute._addFileChildren(
+  EquipamentosRouteChildren,
+)
+
 interface InstacenaRouteChildren {
   InstacenaUsernameRoute: typeof InstacenaUsernameRoute
   InstacenaExplorarRoute: typeof InstacenaExplorarRoute
@@ -291,9 +537,11 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlmoxarifadoRoute: AlmoxarifadoRouteWithChildren,
   AmbientesRoute: AmbientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
+  EquipamentosRoute: EquipamentosRouteWithChildren,
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
 }

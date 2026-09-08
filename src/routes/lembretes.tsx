@@ -117,7 +117,7 @@ function LembretesComponent() {
         {/* Title & Controls */}
         <div className="flex items-center justify-between mb-8 mt-2">
           <div>
-            <h1 className="text-[54px] font-tarmiles font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+            <h1 className="text-[54px] font-display italic tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
               Lembretes
             </h1>
             <p className="text-white/70 text-sm mt-1 ml-1 font-medium">Organize tarefas e compromissos</p>

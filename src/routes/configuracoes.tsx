@@ -138,7 +138,7 @@ function ConfiguracoesRoute() {
       <div className="max-w-4xl mx-auto py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Configurações de Perfil</h1>
+          <h1 className="text-[54px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Configurações de Perfil</h1>
           <p className="text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
         </div>
 

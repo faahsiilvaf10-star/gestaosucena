@@ -23,6 +23,10 @@
   font-family: 'Evantic', sans-serif;
 }
 
+.font-tarmiles {
+  font-family: 'TarmilesAction', serif;
+}
+
 /* Sidebar Blending Effect */
 .sidebar-active-tab {
   background-color: #0a0a0c;
