@@ -38,6 +38,7 @@ import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 import { Route as RhIndexRouteImport } from './routes/rh/index'
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
 import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
+import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -186,6 +187,11 @@ const RhListaPresencaRoute = RhListaPresencaRouteImport.update({
   path: '/lista-presenca',
   getParentRoute: () => RhRoute,
 } as any)
+const RhRelatorioPresencaRoute = RhRelatorioPresencaRouteImport.update({
+  id: '/relatorio-presenca',
+  path: '/relatorio-presenca',
+  getParentRoute: () => RhRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/instacena/reels': typeof InstacenaReelsRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
+  '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/instacena/reels': typeof InstacenaReelsRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
+  '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/instacena/reels': typeof InstacenaReelsRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
+  '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/instacena/reels'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
+    | '/rh/relatorio-presenca'
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/instacena/reels'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
+    | '/rh/relatorio-presenca'
     | '/almoxarifado'
     | '/equipamentos'
     | '/instacena'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/instacena/reels'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
+    | '/rh/relatorio-presenca'
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
@@ -586,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhListaPresencaRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/relatorio-presenca': {
+      id: '/rh/relatorio-presenca'
+      path: '/relatorio-presenca'
+      fullPath: '/rh/relatorio-presenca'
+      preLoaderRoute: typeof RhRelatorioPresencaRouteImport
+      parentRoute: typeof RhRoute
+    }
   }
 }
 
@@ -656,12 +675,14 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 interface RhRouteChildren {
   RhEfetivoRoute: typeof RhEfetivoRoute
   RhListaPresencaRoute: typeof RhListaPresencaRoute
+  RhRelatorioPresencaRoute: typeof RhRelatorioPresencaRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
   RhEfetivoRoute: RhEfetivoRoute,
   RhListaPresencaRoute: RhListaPresencaRoute,
+  RhRelatorioPresencaRoute: RhRelatorioPresencaRoute,
   RhIndexRoute: RhIndexRoute,
 }
 

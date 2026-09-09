@@ -15,6 +15,7 @@ import {
   Trash2,
   Check,
   Lock,
+  Unlock,
   Edit2,
   Copy,
   FileText
@@ -287,8 +288,18 @@ function RhListaPresencaPage() {
   const [isLocked, setIsLocked] = useState(false)
   const [isAddingArea, setIsAddingArea] = useState(false)
   const [newAreaName, setNewAreaName] = useState('')
-  const [customAreas, setCustomAreas] = useState<string[]>([])
-  const [deletedAreas, setDeletedAreas] = useState<string[]>([])
+  const [customAreas, setCustomAreas] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rh_custom_areas')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [deletedAreas, setDeletedAreas] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rh_deleted_areas')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const [areaToDelete, setAreaToDelete] = useState<string | null>(null)
   
   // To track date for the attendance
@@ -554,10 +565,18 @@ function RhListaPresencaPage() {
     if (!areaToDelete) return;
     
     // Add to deleted
-    setDeletedAreas(prev => [...prev, areaToDelete])
+    setDeletedAreas(prev => {
+      const next = [...prev, areaToDelete]
+      localStorage.setItem('rh_deleted_areas', JSON.stringify(next))
+      return next
+    })
     
     // Remove from custom if it was custom
-    setCustomAreas(prev => prev.filter(a => a !== areaToDelete))
+    setCustomAreas(prev => {
+      const next = prev.filter(a => a !== areaToDelete)
+      localStorage.setItem('rh_custom_areas', JSON.stringify(next))
+      return next
+    })
     
     // Remove anyone in that area
     setColaboradores(prev => prev.filter(c => (c.setor || 'Sem Área') !== areaToDelete))
@@ -658,7 +677,11 @@ function RhListaPresencaPage() {
                   onKeyDown={e => {
                     if (e.key === 'Enter' && newAreaName.trim()) {
                       const finalName = newAreaName.trim();
-                      setCustomAreas(prev => [...prev, finalName])
+                      setCustomAreas(prev => {
+                        const next = [...prev, finalName];
+                        localStorage.setItem('rh_custom_areas', JSON.stringify(next));
+                        return next;
+                      });
                       setActiveTab(finalName)
                       setNewAreaName('')
                       setIsAddingArea(false)
@@ -669,7 +692,11 @@ function RhListaPresencaPage() {
                   onBlur={() => {
                     if (newAreaName.trim()) {
                       const finalName = newAreaName.trim();
-                      setCustomAreas(prev => [...prev, finalName])
+                      setCustomAreas(prev => {
+                        const next = [...prev, finalName];
+                        localStorage.setItem('rh_custom_areas', JSON.stringify(next));
+                        return next;
+                      });
                       setActiveTab(finalName)
                     }
                     setNewAreaName('')

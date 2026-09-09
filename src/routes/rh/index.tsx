@@ -7,7 +7,7 @@ export const Route = createFileRoute('/rh/')({
 
 const HUB_ITEMS = [
   { name: 'Efetivo', icon: Users, href: '/rh/efetivo' },
-  { name: 'Relatório de Presença', icon: ClipboardList, href: '#' },
+  { name: 'Relatório de Presença', icon: ClipboardList, href: '/rh/relatorio-presenca' },
   { name: 'Lista de Presença', icon: FileBarChart, href: '/rh/lista-presenca' },
   { name: 'Calendário Hydro', icon: CalendarDays, href: '#' },
 ]
