@@ -56,7 +56,22 @@ const ausenciasData = [
 
 function DashboardComponent() {
   const { isDark } = useTheme()
+  const [totalFuncionarios, setTotalFuncionarios] = useState<number | string>('...')
   
+  useEffect(() => {
+    const fetchTotal = async () => {
+      try {
+        const { count, error } = await supabase.from('rh_efetivo').select('*', { count: 'exact', head: true })
+        if (!error) {
+          setTotalFuncionarios(count || 0)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchTotal()
+  }, [])
+
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
@@ -99,7 +114,7 @@ function DashboardComponent() {
                 <CardTitle className="text-center text-[10px] uppercase tracking-widest pt-4 text-muted-foreground">Total de Funcionários</CardTitle>
                 <div className="flex justify-center items-center flex-1 w-full relative z-10 pt-4">
                   <span className="font-sans font-bold tracking-tight text-6xl">
-                    45
+                    {totalFuncionarios}
                   </span>
                 </div>
               </CardContent>

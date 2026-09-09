@@ -36,6 +36,8 @@ import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
 import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 import { Route as RhIndexRouteImport } from './routes/rh/index'
+import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
+import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -174,6 +176,16 @@ const RhIndexRoute = RhIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RhRoute,
 } as any)
+const RhEfetivoRoute = RhEfetivoRouteImport.update({
+  id: '/efetivo',
+  path: '/efetivo',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhListaPresencaRoute = RhListaPresencaRouteImport.update({
+  id: '/lista-presenca',
+  path: '/lista-presenca',
+  getParentRoute: () => RhRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -199,6 +211,8 @@ export interface FileRoutesByFullPath {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/efetivo': typeof RhEfetivoRoute
+  '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
@@ -224,6 +238,8 @@ export interface FileRoutesByTo {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/efetivo': typeof RhEfetivoRoute
+  '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
@@ -254,6 +270,8 @@ export interface FileRoutesById {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/efetivo': typeof RhEfetivoRoute
+  '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
@@ -285,6 +303,8 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/efetivo'
+    | '/rh/lista-presenca'
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
@@ -310,6 +330,8 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/efetivo'
+    | '/rh/lista-presenca'
     | '/almoxarifado'
     | '/equipamentos'
     | '/instacena'
@@ -339,6 +361,8 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/efetivo'
+    | '/rh/lista-presenca'
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
@@ -548,6 +572,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/efetivo': {
+      id: '/rh/efetivo'
+      path: '/efetivo'
+      fullPath: '/rh/efetivo'
+      preLoaderRoute: typeof RhEfetivoRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/lista-presenca': {
+      id: '/rh/lista-presenca'
+      path: '/lista-presenca'
+      fullPath: '/rh/lista-presenca'
+      preLoaderRoute: typeof RhListaPresencaRouteImport
+      parentRoute: typeof RhRoute
+    }
   }
 }
 
@@ -616,10 +654,14 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 )
 
 interface RhRouteChildren {
+  RhEfetivoRoute: typeof RhEfetivoRoute
+  RhListaPresencaRoute: typeof RhListaPresencaRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
+  RhEfetivoRoute: RhEfetivoRoute,
+  RhListaPresencaRoute: RhListaPresencaRoute,
   RhIndexRoute: RhIndexRoute,
 }
 
