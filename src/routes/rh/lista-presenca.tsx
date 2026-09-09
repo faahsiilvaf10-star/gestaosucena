@@ -15,11 +15,13 @@ import {
   Trash2,
   Check,
   Lock,
-  Unlock,
   Edit2,
-  Copy
+  Copy,
+  FileText
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export const Route = createFileRoute('/rh/lista-presenca')({
   component: RhListaPresencaPage,
@@ -349,8 +351,10 @@ function RhListaPresencaPage() {
             status: p ? p.status : 'PRESENTE',
             setor: p ? p.area : c.setor
           }
-        }))
-        setIsLocked(true)
+        }).filter(c => c.status !== 'REMOVIDO'))
+        
+        const isUnlocked = localStorage.getItem(`rh_unlocked_${attendanceDate}`) === 'true'
+        setIsLocked(!isUnlocked)
       } else {
         // Nenhuma lista para hoje. Buscar áreas do último dia salvo para reaproveitar
         const { data: latestDateData } = await supabase
@@ -399,8 +403,24 @@ function RhListaPresencaPage() {
     }))
   }
 
-  const handleRemoveColaborador = (id: string) => {
+  const handleRemoveColaborador = async (id: string) => {
     if (isLocked) return;
+    
+    // Marcar como REMOVIDO no banco para que não volte no reload (se estiver no mesmo dia)
+    try {
+      const colab = colaboradores.find(c => c.id === id)
+      if (colab) {
+        await supabase.from('rh_presencas').upsert({
+          data: attendanceDate,
+          area: colab.setor || 'Sem Área',
+          funcionario_id: id,
+          status: 'REMOVIDO'
+        }, { onConflict: 'data,funcionario_id' })
+      }
+    } catch(e) {
+      console.error(e)
+    }
+
     setColaboradores(prev => prev.filter(c => c.id !== id))
     toast.success('Colaborador removido da lista')
   }
@@ -462,12 +482,51 @@ function RhListaPresencaPage() {
       }
       
       setIsLocked(true)
+      localStorage.removeItem(`rh_unlocked_${attendanceDate}`)
       toast.success('Lista de presença salva com sucesso!', { id: toastId })
     } catch (err: any) {
       console.error('ERRO AO SALVAR:', err)
-      toast.dismiss(toastId)
-      toast.error('Erro ao salvar: ' + (err?.message || 'Erro desconhecido'))
+      toast.error(err.message || 'Erro desconhecido ao salvar lista', { id: toastId })
     }
+  }
+
+  const handleGeneratePDF = () => {
+    const doc = new jsPDF()
+    
+    doc.setFontSize(18)
+    doc.text('Relatório de Presença - Sucena', 14, 20)
+    
+    doc.setFontSize(12)
+    const dataFormatada = attendanceDate.split('-').reverse().join('/')
+    doc.text(`Data: ${dataFormatada}`, 14, 28)
+    
+    const tableData = colaboradores
+      .filter(c => c.status !== 'REMOVIDO')
+      .map(c => [
+        c.nome,
+        c.cargo || '-',
+        c.setor || 'Sem Área',
+        c.status
+      ])
+      
+    // Ordenar por Status -> Área -> Nome
+    tableData.sort((a, b) => {
+      if (a[3] !== b[3]) return a[3].localeCompare(b[3])
+      if (a[2] !== b[2]) return a[2].localeCompare(b[2])
+      return a[0].localeCompare(b[0])
+    })
+    
+    autoTable(doc, {
+      startY: 35,
+      head: [['Nome', 'Cargo', 'Área', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [40, 40, 40] },
+      alternateRowStyles: { fillColor: [240, 240, 240] }
+    })
+    
+    doc.save(`Relatorio_Presenca_${attendanceDate}.pdf`)
+    toast.success('PDF gerado com sucesso!')
   }
 
   const markAll = (statusToSet: string) => {
@@ -684,7 +743,13 @@ function RhListaPresencaPage() {
                   </button>
                   
                   {isLocked ? (
-                    <button onClick={() => setIsLocked(false)} className="px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors">
+                    <button 
+                      onClick={() => {
+                        setIsLocked(false)
+                        localStorage.setItem(`rh_unlocked_${attendanceDate}`, 'true')
+                      }} 
+                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors"
+                    >
                       <Unlock size={14} /> Editar
                     </button>
                   ) : (
@@ -695,6 +760,9 @@ function RhListaPresencaPage() {
                   
                   <button onClick={() => setIsPreviewOpen(true)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors">
                     <Eye size={14} /> Pré-visualizar
+                  </button>
+                  <button onClick={handleGeneratePDF} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/20 flex items-center gap-2 whitespace-nowrap transition-colors">
+                    <FileText size={14} /> Baixar PDF
                   </button>
                 </div>
               </div>

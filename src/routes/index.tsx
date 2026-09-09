@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -20,6 +21,7 @@ function Index() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const translateAuthError = (message: string) => {
     const errorMap: Record<string, string> = {
@@ -70,11 +72,21 @@ function Index() {
       setErrorMessage(msg)
       return
     }
+    
+    if (!turnstileToken) {
+      const msg = 'Por favor, marque a caixa "Sou humano".'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
 
     setIsLoading(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: turnstileToken
+      }
     })
     setIsLoading(false)
 
@@ -114,12 +126,20 @@ function Index() {
       setErrorMessage(msg)
       return
     }
+    
+    if (!turnstileToken) {
+      const msg = 'Por favor, marque a caixa "Sou humano".'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
 
     setIsLoading(true)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        captchaToken: turnstileToken,
         data: {
           full_name: nome,
           whatsapp: whatsapp,
@@ -380,6 +400,22 @@ function Index() {
               </div>
             )}
 
+
+            <div className="flex justify-center my-4">
+              <Turnstile 
+                siteKey="0x4AAAAAAEuMRRevAbfgvL7z"
+                onSuccess={(token) => {
+                  setTurnstileToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => setErrorMessage('Erro na verificação do Cloudflare.')}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
+            </div>
+
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
             </button>
@@ -483,6 +519,22 @@ function Index() {
                 {errorMessage}
               </div>
             )}
+
+
+            <div className="flex justify-center my-4">
+              <Turnstile 
+                siteKey="0x4AAAAAAEuMRRevAbfgvL7z"
+                onSuccess={(token) => {
+                  setTurnstileToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => setErrorMessage('Erro na verificação do Cloudflare.')}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
+            </div>
 
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Cadastrar'}
