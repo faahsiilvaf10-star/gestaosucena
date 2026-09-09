@@ -26,7 +26,7 @@ interface Equipment {
   id: string
   name: string
   plate_tag: string
-  equipment_inspections?: EquipmentInspection[]
+  equipment_inspections?: EquipmentInspection | EquipmentInspection[] | null
 }
 
 // Local state for editing an equipment's inspections
@@ -148,7 +148,7 @@ function VistoriaPage() {
   }
 
   const startEditing = (eq: Equipment) => {
-    const ins = eq.equipment_inspections?.[0]
+    const ins = Array.isArray(eq.equipment_inspections) ? eq.equipment_inspections[0] : eq.equipment_inspections
     setEditingEqs(prev => ({
       ...prev,
       [eq.id]: {
@@ -223,7 +223,7 @@ function VistoriaPage() {
         if (!matchName && !matchPlate) return false
       }
       
-      const ins = eq.equipment_inspections?.[0]
+      const ins = Array.isArray(eq.equipment_inspections) ? eq.equipment_inspections[0] : eq.equipment_inspections
       const docs = [
         { type: 'Laudo Opacidade', expiry: ins?.opacity_report_expiry },
         { type: 'Laudo Mecânico', expiry: ins?.mechanical_report_expiry },
@@ -264,7 +264,7 @@ function VistoriaPage() {
     let totalDocs = 0
 
     equipments.forEach(eq => {
-      const ins = eq.equipment_inspections?.[0]
+      const ins = Array.isArray(eq.equipment_inspections) ? eq.equipment_inspections[0] : eq.equipment_inspections
       const dates = [
         ins?.opacity_report_expiry,
         ins?.mechanical_report_expiry,
@@ -415,7 +415,7 @@ function VistoriaPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredEquipments.map(eq => {
-                  const ins = eq.equipment_inspections?.[0]
+                  const ins = Array.isArray(eq.equipment_inspections) ? eq.equipment_inspections[0] : eq.equipment_inspections
                   const isEditing = !!editingEqs[eq.id]
                   const isSaving = savingEqs[eq.id]
                   const editData = editingEqs[eq.id]

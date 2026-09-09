@@ -17,7 +17,7 @@ interface Equipment {
   id: string
   name: string
   plate_tag: string
-  equipment_inspections?: EquipmentInspection[]
+  equipment_inspections?: EquipmentInspection | EquipmentInspection[] | null
 }
 
 function getDaysRemaining(dateString: string | null | undefined): number | null {
@@ -91,7 +91,7 @@ export function DashboardVistoriasWidget() {
     }> = []
 
     equipments.forEach(eq => {
-      const ins = eq.equipment_inspections?.[0]
+      const ins = Array.isArray(eq.equipment_inspections) ? eq.equipment_inspections[0] : eq.equipment_inspections
       if (!ins) return
 
       const docs = [
