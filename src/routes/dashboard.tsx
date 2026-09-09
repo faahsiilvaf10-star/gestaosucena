@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { WeatherWidget } from '../components/WeatherWidget'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
+import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { CalendarDays, LogOut, CheckCircle2, Clock, Calendar, Check, AlertCircle, ArrowUp } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
@@ -225,9 +226,14 @@ function DashboardComponent() {
 
         </div>
 
-        {/* Linha dos Lembretes */}
-        <div className="mt-6 w-full lg:w-1/2">
-          <DashboardRemindersWidget />
+        {/* Bottom Widgets Row */}
+        <div className="mt-6 w-full flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-1/2">
+            <DashboardRemindersWidget />
+          </div>
+          <div className="w-full lg:w-1/2">
+            <DashboardVistoriasWidget />
+          </div>
         </div>
 
       </div>

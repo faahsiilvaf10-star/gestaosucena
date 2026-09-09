@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import { 
   Search, Filter, Eye, Pencil, RefreshCw, AlertCircle, CheckCircle2,
-  Settings, Car, Truck
+  Settings, Car, Truck, Plus, Check
 } from 'lucide-react'
 
 export const Route = createFileRoute('/equipamentos/todos')({
@@ -36,12 +36,18 @@ function TodosEquipamentosPage() {
   const [selectedEq, setSelectedEq] = useState<Equipment | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   
   // Edit Form
   const [editStatus, setEditStatus] = useState('')
   const [editName, setEditName] = useState('')
   const [editPlate, setEditPlate] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+
+  // Add Form
+  const [newName, setNewName] = useState('')
+  const [newPlate, setNewPlate] = useState('')
+  const [newType, setNewType] = useState('Caminhão Pipa')
 
   const fetchEquipments = async () => {
     try {
@@ -123,6 +129,37 @@ function TodosEquipamentosPage() {
     }
   }
 
+  const handleSaveNew = async () => {
+    if (!newName.trim() || !newPlate.trim()) {
+      alert('Nome e Placa / Tag são obrigatórios.')
+      return
+    }
+    setIsSaving(true)
+    try {
+      const { error: insertError } = await supabase
+        .from('eq_equipments')
+        .insert({
+          name: newName.trim(),
+          plate_tag: newPlate.trim(),
+          type: newType.trim() || 'Caminhão Pipa',
+          status: 'Sem status'
+        })
+
+      if (insertError) throw insertError
+      
+      setIsAddModalOpen(false)
+      setNewName('')
+      setNewPlate('')
+      setNewType('Caminhão Pipa')
+      fetchEquipments()
+    } catch (err: any) {
+      console.error('Error adding equipment:', err)
+      alert('Erro ao cadastrar equipamento. Talvez a placa já exista?')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
       if (filterStatus !== 'Todos' && eq.status !== filterStatus) {
@@ -172,7 +209,7 @@ function TodosEquipamentosPage() {
   }
 
   return (
-    <div className={`flex flex-col h-full overflow-hidden ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -181,19 +218,28 @@ function TodosEquipamentosPage() {
             <p className="text-sm md:text-base opacity-70">Gerenciamento e acompanhamento da frota</p>
             <p className="text-xs opacity-50 mt-1">{equipments.length} equipamentos cadastrados</p>
           </div>
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full text-sm font-medium hover:bg-white dark:hover:bg-white/10 transition-colors self-start md:self-auto"
-          >
-            <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-            Atualizar
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto w-full md:w-auto mt-4 md:mt-0">
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex justify-center items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <Plus size={16} />
+              Novo Equipamento
+            </button>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className="flex justify-center items-center gap-2 px-4 py-2.5 bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full text-sm font-medium hover:bg-white dark:hover:bg-white/10 transition-colors"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              Atualizar
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6 h-full">
+      <div className="flex-1 px-4 md:px-8 pb-8">
+        <div className="max-w-6xl mx-auto flex flex-col gap-6">
           
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -242,7 +288,7 @@ function TodosEquipamentosPage() {
           </div>
 
           {/* List/Table Area */}
-          <div className={`flex-1 flex flex-col rounded-2xl border overflow-hidden transition-colors ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/45 border-black/10 backdrop-blur-md'}`}>
+          <div className={`flex flex-col rounded-2xl border overflow-hidden transition-colors ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/45 border-black/10 backdrop-blur-md'}`}>
             {loading && !equipments.length ? (
               <div className="flex-1 flex flex-col gap-4 p-6">
                 {[1,2,3,4,5].map(i => (
@@ -265,7 +311,7 @@ function TodosEquipamentosPage() {
             ) : (
               <>
                 {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto flex-1">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
@@ -304,7 +350,7 @@ function TodosEquipamentosPage() {
                 </div>
 
                 {/* Mobile Cards */}
-                <div className="md:hidden flex flex-col gap-3 p-4 flex-1 overflow-y-auto">
+                <div className="md:hidden flex flex-col gap-3 p-4">
                   {filteredEquipments.map(eq => (
                     <div key={eq.id} className={`w-full p-4 rounded-2xl border flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                       <div className="flex items-start justify-between gap-2">
@@ -443,6 +489,65 @@ function TodosEquipamentosPage() {
                 className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+            <h2 className="text-3xl font-display italic mb-6">Novo Equipamento</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Equipamento (Ex: PIPA 09) <span className="text-red-500">*</span></label>
+                <input 
+                  type="text"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  placeholder="Nome do equipamento"
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Placa / Tag <span className="text-red-500">*</span></label>
+                <input 
+                  type="text"
+                  value={newPlate}
+                  onChange={e => setNewPlate(e.target.value)}
+                  placeholder="ABC1D23"
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-mono uppercase ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Tipo / Categoria</label>
+                <input 
+                  type="text"
+                  value={newType}
+                  onChange={e => setNewType(e.target.value)}
+                  placeholder="Caminhão Pipa"
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSaveNew}
+                disabled={isSaving}
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+              >
+                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Cadastrar'}
               </button>
             </div>
           </div>
