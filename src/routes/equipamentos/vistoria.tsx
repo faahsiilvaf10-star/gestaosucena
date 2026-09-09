@@ -108,11 +108,12 @@ function VistoriaPage() {
       const { data, error: sbError } = await supabase
         .from('eq_equipments')
         .select(`
-          id, name, plate_tag,
+          id, name, plate_tag, category,
           equipment_inspections (
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry, updated_at
           )
         `)
+        .or('category.neq.Jardinagem,category.is.null')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError

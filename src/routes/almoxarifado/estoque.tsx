@@ -115,7 +115,7 @@ function AlmoxarifadoRoute() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 w-full max-w-7xl mx-auto h-[calc(100vh-140px)]">
+    <div className="flex flex-col gap-6 py-6 w-full max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -164,7 +164,7 @@ function AlmoxarifadoRoute() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+      <div className="flex-1">
         {loading ? (
           <div className="flex justify-center items-center h-40">Carregando dados...</div>
         ) : (
@@ -219,7 +219,7 @@ function AlmoxarifadoRoute() {
               });
 
               return (
-              <div className="flex flex-col gap-4 animate-in fade-in duration-300 h-full">
+              <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />

@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
+import { Route as RhRouteImport } from './routes/rh'
 import { Route as AlmoxarifadoIndexRouteImport } from './routes/almoxarifado/index'
 import { Route as AlmoxarifadoAduboRouteImport } from './routes/almoxarifado/adubo'
 import { Route as AlmoxarifadoAspersoresRouteImport } from './routes/almoxarifado/aspersores'
@@ -34,6 +35,7 @@ import { Route as InstacenaExplorarRouteImport } from './routes/instacena/explor
 import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
 import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
+import { Route as RhIndexRouteImport } from './routes/rh/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -73,6 +75,11 @@ const InstacenaRoute = InstacenaRouteImport.update({
 const LembretesRoute = LembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RhRoute = RhRouteImport.update({
+  id: '/rh',
+  path: '/rh',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlmoxarifadoIndexRoute = AlmoxarifadoIndexRouteImport.update({
@@ -162,6 +169,11 @@ const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
   path: '/reels',
   getParentRoute: () => InstacenaRoute,
 } as any)
+const RhIndexRoute = RhIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RhRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -172,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/rh': typeof RhRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
@@ -189,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
+  '/rh/': typeof RhIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +227,7 @@ export interface FileRoutesByTo {
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
+  '/rh': typeof RhIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +239,7 @@ export interface FileRoutesById {
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/rh': typeof RhRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
@@ -241,6 +257,7 @@ export interface FileRoutesById {
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
+  '/rh/': typeof RhIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -253,6 +270,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/rh'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
@@ -270,6 +288,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
+    | '/rh/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -294,6 +313,7 @@ export interface FileRouteTypes {
     | '/almoxarifado'
     | '/equipamentos'
     | '/instacena'
+    | '/rh'
   id:
     | '__root__'
     | '/'
@@ -304,6 +324,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/rh'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
@@ -321,6 +342,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/'
     | '/equipamentos/'
     | '/instacena/'
+    | '/rh/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -332,6 +354,7 @@ export interface RootRouteChildren {
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
+  RhRoute: typeof RhRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -390,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/lembretes'
       fullPath: '/lembretes'
       preLoaderRoute: typeof LembretesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rh': {
+      id: '/rh'
+      path: '/rh'
+      fullPath: '/rh'
+      preLoaderRoute: typeof RhRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/almoxarifado/': {
@@ -511,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InstacenaReelsRouteImport
       parentRoute: typeof InstacenaRoute
     }
+    '/rh/': {
+      id: '/rh/'
+      path: '/'
+      fullPath: '/rh/'
+      preLoaderRoute: typeof RhIndexRouteImport
+      parentRoute: typeof RhRoute
+    }
   }
 }
 
@@ -578,6 +615,16 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
   InstacenaRouteChildren,
 )
 
+interface RhRouteChildren {
+  RhIndexRoute: typeof RhIndexRoute
+}
+
+const RhRouteChildren: RhRouteChildren = {
+  RhIndexRoute: RhIndexRoute,
+}
+
+const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlmoxarifadoRoute: AlmoxarifadoRouteWithChildren,
@@ -587,6 +634,7 @@ const rootRouteChildren: RootRouteChildren = {
   EquipamentosRoute: EquipamentosRouteWithChildren,
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
+  RhRoute: RhRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

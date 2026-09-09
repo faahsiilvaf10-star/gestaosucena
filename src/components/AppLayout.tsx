@@ -24,7 +24,7 @@ const headerLinks = [
   { label: 'Documentos', href: '#' },
   { label: 'Equipamentos', href: '/equipamentos' },
   { label: 'Segurança', href: '#' },
-  { label: 'RH', href: '#' },
+  { label: 'RH', href: '/rh' },
   { label: 'Relatório Diário Obra', href: '#' },
   { label: 'Meio Ambiente', href: '#' },
   { label: 'Planejamento', href: '#' },

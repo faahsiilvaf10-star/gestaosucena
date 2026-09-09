@@ -51,11 +51,12 @@ export function DashboardVistoriasWidget() {
       const { data, error } = await supabase
         .from('eq_equipments')
         .select(`
-          id, name, plate_tag,
+          id, name, plate_tag, category,
           equipment_inspections (
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry
           )
         `)
+        .or('category.neq.Jardinagem,category.is.null')
       if (!error && data) {
         setEquipments(data)
       }

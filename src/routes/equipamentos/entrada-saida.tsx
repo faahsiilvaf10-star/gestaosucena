@@ -4,9 +4,11 @@ import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import { 
   Search, Filter, ArrowRightToLine, ArrowRightFromLine, RefreshCw, AlertCircle, 
-  History, Clock, LogIn, LogOut, Info, Truck
+  History, Clock, LogIn, LogOut, Info, Truck, FileDown, Calendar
 } from 'lucide-react'
 import { toast } from 'sonner' // Assuming sonner is the toast library used
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export const Route = createFileRoute('/equipamentos/entrada-saida')({
   component: EntradaSaidaPage,
@@ -16,7 +18,10 @@ interface Equipment {
   id: string
   name: string
   plate_tag: string
+  category?: string
   location_status?: 'inside' | 'outside' // Added by schema
+  last_exit_reason?: string
+  last_exit_description?: string
   updated_at: string
 }
 
@@ -46,7 +51,9 @@ function EntradaSaidaPage() {
   
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('Todos')
+  const [filterCategory, setFilterCategory] = useState<string>('Todas as categorias')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Modals
@@ -54,6 +61,12 @@ function EntradaSaidaPage() {
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
   const [isExitModalOpen, setIsExitModalOpen] = useState(false)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+
+  // Report Modal
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportStartDate, setReportStartDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   
   const [eqHistory, setEqHistory] = useState<Movement[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
@@ -61,12 +74,13 @@ function EntradaSaidaPage() {
   // Exit Form
   const [exitReason, setExitReason] = useState('')
   const [exitDescription, setExitDescription] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
   const [actionDateTime, setActionDateTime] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   const getLocalDatetime = () => {
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    return (new Date(Date.now() - tzoffset)).toISOString().slice(0, 16);
+    const now = new Date()
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+    return now.toISOString().slice(0, 16)
   }
 
   const fetchEquipments = async () => {
@@ -76,7 +90,7 @@ function EntradaSaidaPage() {
       
       const { data, error: sbError } = await supabase
         .from('eq_equipments')
-        .select('id, name, plate_tag, location_status, updated_at')
+        .select('*')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError
@@ -104,6 +118,19 @@ function EntradaSaidaPage() {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving && !isGeneratingReport) {
+        setIsEntryModalOpen(false)
+        setIsExitModalOpen(false)
+        setIsHistoryModalOpen(false)
+        setIsReportModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isSaving, isGeneratingReport])
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -187,6 +214,8 @@ function EntradaSaidaPage() {
         .from('eq_equipments')
         .update({
           location_status: 'inside',
+          last_exit_reason: null,
+          last_exit_description: null,
           updated_at: new Date(actionDateTime).toISOString()
         })
         .eq('id', selectedEq.id)
@@ -252,6 +281,8 @@ function EntradaSaidaPage() {
         .from('eq_equipments')
         .update({
           location_status: 'outside',
+          last_exit_reason: exitReason,
+          last_exit_description: exitDescription.trim() || null,
           updated_at: new Date(actionDateTime).toISOString()
         })
         .eq('id', selectedEq.id)
@@ -270,12 +301,114 @@ function EntradaSaidaPage() {
     }
   }
 
+  const generatePDFReport = async () => {
+    if (!reportStartDate || !reportEndDate) {
+      toast.error('Selecione as datas inicial e final.')
+      return
+    }
+
+    setIsGeneratingReport(true)
+    try {
+      const startDate = new Date(`${reportStartDate}T00:00:00`)
+      const endDate = new Date(`${reportEndDate}T23:59:59`)
+
+      const { data: movements, error } = await supabase
+        .from('eq_movements')
+        .select(`
+          *,
+          eq_equipments (
+            name,
+            plate_tag,
+            category
+          )
+        `)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+
+      if (!movements || movements.length === 0) {
+        toast.info('Nenhuma movimentação encontrada neste período.')
+        return
+      }
+
+      const doc = new jsPDF()
+
+      try {
+        const img = new Image()
+        img.src = '/logo-relatorio.png'
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+        })
+        const imgWidth = 30
+        const imgHeight = imgWidth * (img.height / img.width)
+        doc.addImage(img, 'PNG', 14, 10, imgWidth, imgHeight)
+        
+        doc.setFontSize(16)
+        doc.text('Relatório de Entradas e Saídas', 14, 10 + imgHeight + 8)
+        doc.setFontSize(10)
+        doc.text(`Período: ${reportStartDate.split('-').reverse().join('/')} até ${reportEndDate.split('-').reverse().join('/')}`, 14, 10 + imgHeight + 14)
+        
+        autoTable(doc, {
+          startY: 10 + imgHeight + 20,
+          head: [['Data/Hora', 'Equipamento', 'Placa/Tag', 'Tipo', 'Motivo', 'Observações']],
+          body: movements.map(m => [
+            new Date(m.created_at).toLocaleString('pt-BR'),
+            (m.eq_equipments as any)?.name || '-',
+            (m.eq_equipments as any)?.plate_tag || '-',
+            m.movement_type === 'entry' ? 'ENTRADA' : 'SAÍDA',
+            m.movement_type === 'exit' ? (EXIT_REASONS.find(r => r.value === m.exit_reason)?.label || m.exit_reason || '-') : '-',
+            m.description || '-'
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [8, 102, 255] },
+          styles: { fontSize: 8 },
+          columnStyles: { 5: { cellWidth: 'auto' } }
+        })
+      } catch (e) {
+        doc.setFontSize(16)
+        doc.text('Relatório de Entradas e Saídas', 14, 20)
+        doc.setFontSize(10)
+        doc.text(`Período: ${reportStartDate.split('-').reverse().join('/')} até ${reportEndDate.split('-').reverse().join('/')}`, 14, 28)
+        
+        autoTable(doc, {
+          startY: 35,
+          head: [['Data/Hora', 'Equipamento', 'Placa/Tag', 'Tipo', 'Motivo', 'Observações']],
+          body: movements.map(m => [
+            new Date(m.created_at).toLocaleString('pt-BR'),
+            (m.eq_equipments as any)?.name || '-',
+            (m.eq_equipments as any)?.plate_tag || '-',
+            m.movement_type === 'entry' ? 'ENTRADA' : 'SAÍDA',
+            m.movement_type === 'exit' ? (EXIT_REASONS.find(r => r.value === m.exit_reason)?.label || m.exit_reason || '-') : '-',
+            m.description || '-'
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [8, 102, 255] },
+          styles: { fontSize: 8 },
+          columnStyles: { 5: { cellWidth: 'auto' } }
+        })
+      }
+
+      doc.save(`relatorio_movimentacoes_${reportStartDate}_a_${reportEndDate}.pdf`)
+      toast.success('Relatório gerado com sucesso!')
+      setIsReportModalOpen(false)
+    } catch (err) {
+      console.error('Error generating report:', err)
+      toast.error('Erro ao gerar relatório.')
+    } finally {
+      setIsGeneratingReport(false)
+    }
+  }
+
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
       const isInside = eq.location_status !== 'outside' // Default to inside if null
       
       if (filterStatus === 'Dentro da Obra' && !isInside) return false
       if (filterStatus === 'Fora da Obra' && isInside) return false
+      if (filterCategory !== 'Todas as categorias' && eq.category !== filterCategory) return false
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -285,7 +418,7 @@ function EntradaSaidaPage() {
       }
       return true
     })
-  }, [equipments, filterStatus, searchQuery])
+  }, [equipments, filterStatus, filterCategory, searchQuery])
 
   // Derived Metrics
   const metrics = useMemo(() => {
@@ -313,14 +446,23 @@ function EntradaSaidaPage() {
             <h1 className="text-4xl md:text-5xl font-display italic tracking-tight mb-2">Controle de Entrada e Saída</h1>
             <p className="text-sm md:text-base opacity-70">Controle dos equipamentos dentro e fora da obra</p>
           </div>
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full text-sm font-medium hover:bg-white dark:hover:bg-white/10 transition-colors self-start md:self-auto"
-          >
-            <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-            Atualizar
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto">
+            <button 
+              onClick={() => setIsReportModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-600/20 rounded-full text-sm font-semibold hover:bg-blue-600/20 transition-colors"
+            >
+              <FileDown size={16} />
+              Relatório
+            </button>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full text-sm font-medium hover:bg-white dark:hover:bg-white/10 transition-colors"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              Atualizar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -348,10 +490,34 @@ function EntradaSaidaPage() {
             </div>
             <div className="relative">
               <button 
-                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowFilterMenu(false); }}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+              >
+                <Filter size={18} /> <span>{filterCategory === 'Todas as categorias' ? 'Categoria' : filterCategory}</span> {filterCategory !== 'Todas as categorias' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
+              </button>
+              {showCategoryMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowCategoryMenu(false)} />
+                  <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl border z-50 overflow-hidden py-1 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10'}`}>
+                    {['Todas as categorias', 'Equipamento Pesado', 'Leve', 'Jardinagem', 'Canteiro'].map(f => (
+                      <button 
+                        key={f}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategory === f ? 'font-bold bg-black/5 dark:bg-white/5' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        onClick={() => { setFilterCategory(f); setShowCategoryMenu(false); }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="relative">
+              <button 
+                onClick={() => { setShowFilterMenu(!showFilterMenu); setShowCategoryMenu(false); }}
                 className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
-                <Filter size={18} /> <span>{filterStatus === 'Todos' ? 'Filtros' : filterStatus}</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
+                <Filter size={18} /> <span>{filterStatus === 'Todos' ? 'Status' : filterStatus}</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
               {showFilterMenu && (
                 <>
@@ -402,7 +568,8 @@ function EntradaSaidaPage() {
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
-                        <th className="p-4">SITUAÇÃO</th>
+                        <th className="p-4">CATEGORIA</th>
+                        <th className="p-4">STATUS</th>
                         <th className="p-4">ÚLTIMA MOVIMENTAÇÃO</th>
                         <th className="p-4 text-right">AÇÕES</th>
                       </tr>
@@ -414,14 +581,24 @@ function EntradaSaidaPage() {
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
                             <td className="p-4 font-bold text-base">{eq.name}</td>
                             <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag}</td>
+                            <td className="p-4">{eq.category || '-'}</td>
                             <td className="p-4">
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                isInside 
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                                  : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                              }`}>
-                                {isInside ? 'Dentro da Obra' : 'Fora da Obra'}
-                              </span>
+                              <div className="relative group/tooltip inline-block">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                  isInside 
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer'
+                                }`}>
+                                  {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
+                                </span>
+                                {!isInside && eq.last_exit_description && (
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                                    <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
+                                    {eq.last_exit_description}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black dark:border-t-white"></div>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="p-4 opacity-70 text-xs flex items-center gap-1">
                               <Clock size={12} /> {new Date(eq.updated_at).toLocaleString('pt-BR')}
@@ -469,6 +646,7 @@ function EntradaSaidaPage() {
                           <div>
                             <h3 className="font-bold text-lg">{eq.name}</h3>
                             <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag}</div>
+                            <div className="text-xs opacity-70 mt-1">{eq.category || 'Sem categoria'}</div>
                           </div>
                           <div>
                             <button onClick={() => handleOpenHistory(eq)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg opacity-70">
@@ -477,14 +655,23 @@ function EntradaSaidaPage() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between mt-1">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                isInside 
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                                  : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                              }`}>
-                            {isInside ? 'Dentro da Obra' : 'Fora da Obra'}
-                          </span>
+                        <div className="flex items-start justify-between mt-1">
+                          <div className="relative group/tooltip">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                  isInside 
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer'
+                                }`}>
+                              {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
+                            </span>
+                            {!isInside && eq.last_exit_description && (
+                              <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                                <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
+                                {eq.last_exit_description}
+                                <div className="absolute top-full left-4 border-4 border-transparent border-t-black dark:border-t-white"></div>
+                              </div>
+                            )}
+                          </div>
                           <span className="text-[10px] opacity-50 flex items-center gap-1">
                              <Clock size={10} /> {new Date(eq.updated_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
                           </span>
@@ -718,6 +905,54 @@ function EntradaSaidaPage() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Report Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
+          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+            <h2 className="text-2xl font-display italic mb-2">Relatório PDF</h2>
+            <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-2"><Calendar size={14} /> Data Inicial</label>
+                <input 
+                  type="date"
+                  value={reportStartDate}
+                  onChange={e => setReportStartDate(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 [color-scheme:dark]' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-2"><Calendar size={14} /> Data Final</label>
+                <input 
+                  type="date"
+                  value={reportEndDate}
+                  onChange={e => setReportEndDate(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 [color-scheme:dark]' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <button 
+                onClick={() => setIsReportModalOpen(false)}
+                disabled={isGeneratingReport}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={generatePDFReport}
+                disabled={isGeneratingReport}
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+              >
+                {isGeneratingReport ? <RefreshCw size={18} className="animate-spin" /> : <><FileDown size={18} /> Baixar PDF</>}
+              </button>
             </div>
           </div>
         </div>

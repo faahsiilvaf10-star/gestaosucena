@@ -4,7 +4,11 @@ CREATE TABLE IF NOT EXISTS public.eq_equipments (
     name TEXT NOT NULL,
     plate_tag TEXT NOT NULL UNIQUE,
     type TEXT,
+    category TEXT DEFAULT 'Equipamento Pesado',
     status TEXT DEFAULT 'Sem status',
+    location_status TEXT DEFAULT 'inside',
+    last_exit_reason TEXT,
+    last_exit_description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );

@@ -7,6 +7,14 @@ import {
   Settings, Car, Truck, Plus, Check
 } from 'lucide-react'
 
+const EXIT_REASONS = [
+  { value: 'preventive_maintenance', label: 'Manutenção Preventiva' },
+  { value: 'corrective_maintenance', label: 'Manutenção Corretiva' },
+  { value: 'inspection', label: 'Vistoria' },
+  { value: 'external_service', label: 'Serviço Externo' },
+  { value: 'other', label: 'Outro' },
+]
+
 export const Route = createFileRoute('/equipamentos/todos')({
   component: TodosEquipamentosPage,
 })
@@ -16,7 +24,11 @@ interface Equipment {
   name: string
   plate_tag: string
   type: string
-  status: string
+  status?: string // kept for legacy
+  category?: string
+  location_status?: 'inside' | 'outside'
+  last_exit_reason?: string
+  last_exit_description?: string
   created_at: string
   updated_at: string
 }
@@ -39,15 +51,16 @@ function TodosEquipamentosPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   
   // Edit Form
-  const [editStatus, setEditStatus] = useState('')
   const [editName, setEditName] = useState('')
   const [editPlate, setEditPlate] = useState('')
+  const [editCategory, setEditCategory] = useState('Equipamento Pesado')
   const [isSaving, setIsSaving] = useState(false)
 
   // Add Form
   const [newName, setNewName] = useState('')
   const [newPlate, setNewPlate] = useState('')
   const [newType, setNewType] = useState('Caminhão Pipa')
+  const [newCategory, setNewCategory] = useState('Equipamento Pesado')
 
   const fetchEquipments = async () => {
     try {
@@ -85,6 +98,18 @@ function TodosEquipamentosPage() {
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving) {
+        setIsViewModalOpen(false)
+        setIsEditModalOpen(false)
+        setIsAddModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isSaving])
+
   const handleRefresh = () => {
     setIsRefreshing(true)
     fetchEquipments()
@@ -97,9 +122,9 @@ function TodosEquipamentosPage() {
 
   const handleOpenEdit = (eq: Equipment) => {
     setSelectedEq(eq)
-    setEditStatus(eq.status || 'Sem status')
     setEditName(eq.name || '')
     setEditPlate(eq.plate_tag || '')
+    setEditCategory(eq.category || 'Equipamento Pesado')
     setIsEditModalOpen(true)
   }
 
@@ -112,7 +137,7 @@ function TodosEquipamentosPage() {
         .update({
           name: editName,
           plate_tag: editPlate,
-          status: editStatus,
+          category: editCategory,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedEq.id)
@@ -142,7 +167,7 @@ function TodosEquipamentosPage() {
           name: newName.trim(),
           plate_tag: newPlate.trim(),
           type: newType.trim() || 'Caminhão Pipa',
-          status: 'Sem status'
+          category: newCategory
         })
 
       if (insertError) throw insertError
@@ -151,6 +176,7 @@ function TodosEquipamentosPage() {
       setNewName('')
       setNewPlate('')
       setNewType('Caminhão Pipa')
+      setNewCategory('Equipamento Pesado')
       fetchEquipments()
     } catch (err: any) {
       console.error('Error adding equipment:', err)
@@ -162,7 +188,10 @@ function TodosEquipamentosPage() {
 
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
-      if (filterStatus !== 'Todos' && eq.status !== filterStatus) {
+      const isInside = eq.location_status !== 'outside'
+      const eqStatus = isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+
+      if (filterStatus !== 'Todos' && eqStatus !== filterStatus) {
         return false
       }
       if (searchQuery) {
@@ -182,9 +211,10 @@ function TodosEquipamentosPage() {
     let stopped = 0
 
     equipments.forEach(eq => {
-      if (eq.status === 'Em operação') operation++
-      else if (eq.status === 'Manutenção') maintenance++
-      else if (eq.status === 'Parado') stopped++
+      const isInside = eq.location_status !== 'outside'
+      if (isInside) operation++
+      else if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') maintenance++
+      else stopped++
     })
 
     return {
@@ -195,17 +225,29 @@ function TodosEquipamentosPage() {
     }
   }, [equipments])
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Em operação':
-        return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"><CheckCircle2 size={12} /> {status}</span>
-      case 'Manutenção':
-        return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"><Settings size={12} /> {status}</span>
-      case 'Parado':
-        return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"><AlertCircle size={12} /> {status}</span>
-      default:
-        return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300">{status || 'Sem status'}</span>
-    }
+  const getStatusBadge = (eq: Equipment) => {
+    const isInside = eq.location_status !== 'outside'
+    const statusText = isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+
+    return (
+      <div className="relative group/tooltip inline-block">
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+          isInside 
+            ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+            : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer'
+        }`}>
+          {isInside ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+          {statusText}
+        </span>
+        {!isInside && eq.last_exit_description && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+            <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
+            {eq.last_exit_description}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black dark:border-t-white"></div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -245,8 +287,8 @@ function TodosEquipamentosPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <MetricCard title="Total" value={metrics.total} />
             <MetricCard title="Em Operação" value={metrics.operation} />
-            <MetricCard title="Manutenção" value={metrics.maintenance} />
-            <MetricCard title="Parados" value={metrics.stopped} />
+            <MetricCard title="Em Manutenção" value={metrics.maintenance} />
+            <MetricCard title="Outros Parados" value={metrics.stopped} />
           </div>
 
           {/* Controls */}
@@ -272,7 +314,7 @@ function TodosEquipamentosPage() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
                   <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl border z-50 overflow-hidden py-1 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10'}`}>
-                    {['Todos', 'Em operação', 'Manutenção', 'Parado', 'Sem status'].map(f => (
+                    {['Todos', 'Operando', 'Manutenção Preventiva', 'Manutenção Corretiva', 'Vistoria', 'Serviço Externo', 'Outro', 'Fora da Obra'].map(f => (
                       <button 
                         key={f}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterStatus === f ? 'font-bold bg-black/5 dark:bg-white/5' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
@@ -317,6 +359,7 @@ function TodosEquipamentosPage() {
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
+                        <th className="p-4">CATEGORIA</th>
                         <th className="p-4">STATUS</th>
                         <th className="p-4">ÚLTIMA ATUALIZAÇÃO</th>
                         <th className="p-4 text-right">AÇÕES</th>
@@ -327,7 +370,8 @@ function TodosEquipamentosPage() {
                         <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
                           <td className="p-4 font-medium">{eq.name}</td>
                           <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag}</td>
-                          <td className="p-4">{getStatusBadge(eq.status)}</td>
+                          <td className="p-4">{eq.category || '-'}</td>
+                          <td className="p-4">{getStatusBadge(eq)}</td>
                           <td className="p-4 opacity-60 text-xs">{new Date(eq.updated_at).toLocaleString('pt-BR')}</td>
                           <td className="p-4 text-right flex items-center justify-end gap-2">
                             <button 
@@ -335,12 +379,6 @@ function TodosEquipamentosPage() {
                               className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                             >
                               <Eye size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleOpenEdit(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
-                            >
-                              <Pencil size={18} />
                             </button>
                           </td>
                         </tr>
@@ -357,8 +395,9 @@ function TodosEquipamentosPage() {
                         <div>
                           <h3 className="font-bold text-lg">{eq.name}</h3>
                           <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag}</div>
+                          <div className="text-xs opacity-70 mt-1">{eq.category || 'Sem categoria'}</div>
                         </div>
-                        <div>{getStatusBadge(eq.status)}</div>
+                        <div>{getStatusBadge(eq)}</div>
                       </div>
                       
                       <div className="flex items-center justify-between mt-2 pt-3 border-t border-black/5 dark:border-white/5">
@@ -368,9 +407,6 @@ function TodosEquipamentosPage() {
                         <div className="flex gap-2">
                           <button onClick={() => handleOpenView(eq)} className={`p-2 rounded-lg bg-black/5 dark:bg-white/5`}>
                             <Eye size={16} />
-                          </button>
-                          <button onClick={() => handleOpenEdit(eq)} className={`p-2 rounded-lg bg-black/5 dark:bg-white/5`}>
-                            <Pencil size={16} />
                           </button>
                         </div>
                       </div>
@@ -406,6 +442,10 @@ function TodosEquipamentosPage() {
                     <div className="text-[10px] opacity-50 uppercase mb-1">Tipo</div>
                     <div className="font-semibold">{selectedEq.type || 'N/A'}</div>
                   </div>
+                  <div className={`col-span-2 p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                    <div className="text-[10px] opacity-50 uppercase mb-1">Categoria</div>
+                    <div className="font-semibold">{selectedEq.category || 'N/A'}</div>
+                  </div>
                 </div>
               </div>
 
@@ -414,7 +454,7 @@ function TodosEquipamentosPage() {
                 <div className={`p-4 rounded-xl space-y-3 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
                   <div className="flex justify-between items-center">
                     <span className="text-sm opacity-70">Status Atual</span>
-                    {getStatusBadge(selectedEq.status)}
+                    {getStatusBadge(selectedEq)}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm opacity-70">Última Atualização</span>
@@ -462,16 +502,16 @@ function TodosEquipamentosPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold opacity-70 mb-1">Status</label>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Categoria</label>
                 <select
-                  value={editStatus}
-                  onChange={e => setEditStatus(e.target.value)}
+                  value={editCategory}
+                  onChange={e => setEditCategory(e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border outline-none appearance-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
                 >
-                  <option value="Sem status">Sem status</option>
-                  <option value="Em operação">Em operação</option>
-                  <option value="Manutenção">Manutenção</option>
-                  <option value="Parado">Parado</option>
+                  <option value="Equipamento Pesado">Equipamento Pesado</option>
+                  <option value="Leve">Leve</option>
+                  <option value="Jardinagem">Jardinagem</option>
+                  <option value="Canteiro">Canteiro</option>
                 </select>
               </div>
             </div>
@@ -532,6 +572,19 @@ function TodosEquipamentosPage() {
                   placeholder="Caminhão Pipa"
                   className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Categoria</label>
+                <select
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none appearance-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                >
+                  <option value="Equipamento Pesado">Equipamento Pesado</option>
+                  <option value="Leve">Leve</option>
+                  <option value="Jardinagem">Jardinagem</option>
+                  <option value="Canteiro">Canteiro</option>
+                </select>
               </div>
             </div>
             
