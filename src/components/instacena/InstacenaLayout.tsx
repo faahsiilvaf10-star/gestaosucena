@@ -52,8 +52,9 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
             INSTACENA
           </h1>
           <div className="flex items-center gap-4">
-            <Link to="/instacena/notificacoes">
-              <Heart size={24} />
+            {/* @ts-expect-error - Route might not be properly typed in TanStack yet */}
+            <Link to="/instacena/notificacoes" className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+              <Heart size={20} />
             </Link>
           </div>
         </header>

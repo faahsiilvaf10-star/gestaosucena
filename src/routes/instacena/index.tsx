@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
-import { Area, Point } from 'react-easy-crop/types'
+import { Area, Point } from 'react-easy-crop'
 import { getCroppedImg } from '../../lib/cropImage'
 import { StoryViewer } from '../../components/instacena/StoryViewer'
 
@@ -265,11 +265,11 @@ function FeedRoute() {
   const handleConfirmCrop = async () => {
     if (previewUrl && croppedAreaPixels) {
       try {
-        const croppedImageBlob = await getCroppedImg(previewUrl, croppedAreaPixels)
-        const croppedUrl = URL.createObjectURL(croppedImageBlob)
+        const croppedImageBlob: Blob | null = await getCroppedImg(previewUrl, croppedAreaPixels)
+        const croppedUrl = URL.createObjectURL(croppedImageBlob!)
         
         // Substitui o arquivo selecionado pelo arquivo cortado
-        const croppedFile = new File([croppedImageBlob], selectedFile?.name || 'cropped.jpg', { type: 'image/jpeg' })
+        const croppedFile = new File([croppedImageBlob!], selectedFile?.name || 'cropped.jpg', { type: 'image/jpeg' })
         setSelectedFile(croppedFile)
         
         // Atualiza o preview e sai do modo de corte

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import { X, Check, ZoomIn, ZoomOut } from 'lucide-react'
-import { Point, Area } from 'react-easy-crop/types'
+import { Point, Area } from 'react-easy-crop'
 
 interface AvatarCropperModalProps {
   isOpen: boolean

@@ -65,9 +65,9 @@ export function useChatRealtime(currentUserId?: string) {
               .eq('user_id', currentUserId)
               .then()
           } else {
-            // Aumenta o contador global se for pra mim (a RLS garante que eu só recebo da minha conversa)
-            setUnreadCountGlobally(prev => prev + 1)
-            // Tocar som opcional aqui
+            if (payload.new.conversation_id !== activeConversation) {
+              setUnreadCountGlobally((prev: number) => prev + 1)
+            }  // Tocar som opcional aqui
           }
         }
       )

@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { getConversationMessages, Message } from '../../lib/api-chat'
 import { format, isToday, isYesterday } from 'date-fns'
 import { ChatComposer } from './ChatComposer'
-import ptBR from 'date-fns/locale/pt-BR'
+import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
 
 function formatMessageDate(dateString: string) {
   const d = new Date(dateString)

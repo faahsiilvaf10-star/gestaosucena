@@ -26,25 +26,39 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
       // 2. Pega a presença online atual do banco
       const { data: presence } = await supabase.from('user_presence').select('*')
       
-      const mappedUsers = (users || []).map(u => {
+      const usersMap = (users || []).reduce((acc: any, u: any) => {
         const p = presence?.find(p => p.user_id === u.id)
         return {
-          ...u,
-          isOnline: p?.is_online || false,
-          lastSeen: p?.last_seen || null
+          ...acc,
+          [u.id]: {
+            ...u,
+            isOnline: p?.is_online || false,
+            lastSeen: p?.last_seen || null
+          }
         }
-      })
+      }, {})
       
       // Remove a nós mesmos da lista e ordena os online primeiro
-      const filtered = mappedUsers.filter(u => u.id !== currentUserId)
-      filtered.sort((a, b) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
+      const filtered = Object.values(usersMap).filter((u: any) => u.id !== currentUserId)
+      filtered.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
       
       setOnlineUsers(filtered)
       
       // 3. Pega conversas existentes
       const convs = await getConversations()
       // Filtra para as minhas conversas
-      const myConvs = convs.filter(c => c.participants?.some((p: any) => p.user_id === currentUserId))
+      const myConvs = convs.filter((c: any) => c.participants?.some((p: any) => p.user_id === currentUserId))
+        .map((conv: any) => {
+          const activeUsers = conv.participants.filter((p: any) => p.user_id !== currentUserId).map((p: any) => usersMap[p.user_id])
+          const title = conv.is_group ? conv.title : activeUsers[0]?.name || 'Usuário Desconhecido'
+          return {
+            ...conv,
+            displayTitle: title,
+            users: activeUsers
+          }
+        })
+        .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      
       setConversations(myConvs)
       
       setLoading(false)
@@ -54,13 +68,13 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
 
     // Inscrever-se para presenças alteradas e novas mensagens afetando a ordem da lista
     const presenceSub = supabase.channel('presence_list')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_presence' }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_presence' }, (payload: any) => {
         setOnlineUsers(prev => {
           const updated = [...prev]
           const idx = updated.findIndex(u => u.id === payload.new.user_id)
           if (idx > -1) {
             updated[idx] = { ...updated[idx], isOnline: payload.new.is_online, lastSeen: payload.new.last_seen }
-            updated.sort((a, b) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
+            updated.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
           }
           return updated
         })
@@ -126,12 +140,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
           <h3 className="text-[11px] uppercase tracking-wider font-bold mb-3 text-gray-500">Recentes</h3>
           <div className="space-y-1">
             {conversations.map(conv => {
-              // Encontra o "outro" participante
-              const otherPart = conv.participants?.find((p: any) => p.user_id !== currentUserId)
-              // Localiza nos onlineUsers pra pegar nome/foto
-              const otherUser = onlineUsers.find(u => u.id === otherPart?.user_id)
-              
-              if (!otherUser) return null
+              const otherUser = conv.users[0]
               
               const lastMsg = conv.last_message
               const isMe = lastMsg?.sender_id === currentUserId

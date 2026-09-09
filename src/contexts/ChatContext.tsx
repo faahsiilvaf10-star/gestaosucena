@@ -4,7 +4,7 @@ interface ChatContextData {
   isSidebarOpen: boolean
   setIsSidebarOpen: (isOpen: boolean) => void
   unreadCountGlobally: number
-  setUnreadCountGlobally: (count: number) => void
+  setUnreadCountGlobally: React.Dispatch<React.SetStateAction<number>>
   activeConversation: string | null
   setActiveConversation: (id: string | null) => void
   toggleSidebar: () => void

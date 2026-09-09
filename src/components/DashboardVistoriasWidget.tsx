@@ -53,7 +53,7 @@ export function DashboardVistoriasWidget() {
         .select(`
           id, name, plate_tag,
           equipment_inspections (
-            opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry
+            id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry
           )
         `)
       if (!error && data) {

@@ -49,7 +49,7 @@ function LembretesComponent() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: createReminder,
+    mutationFn: (variables: { reminder: Partial<Reminder>; mentions?: string[] }) => createReminder(variables.reminder, variables.mentions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] })
       setNewTaskTitle('')
@@ -66,10 +66,12 @@ function LembretesComponent() {
   const handleQuickAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
       createMutation.mutate({
-        title: newTaskTitle.trim(),
-        status: 'Pendente',
-        priority: 'Normal',
-        is_recurring: false
+        reminder: {
+          title: newTaskTitle.trim(),
+          status: 'Pendente',
+          priority: 'Normal',
+          is_recurring: false
+        }
       })
     }
   }

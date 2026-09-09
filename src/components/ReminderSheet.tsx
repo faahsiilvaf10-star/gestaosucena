@@ -92,12 +92,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         description,
         priority,
         // Mantemos assigned_user_id pro primeiro apenas por compatibilidade legada se precisar
-        assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : null,
+        assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : undefined,
         due_date: dueDate || undefined,
         due_time: dueTime || undefined,
         is_recurring: isRecurring,
-        recurrence_type: isRecurring ? 'weekly' : null,
-        recurrence_config: isRecurring ? { days: recurringDays } : null
+        recurrence_type: isRecurring ? 'weekly' : undefined,
+        recurrence_config: isRecurring ? { days: recurringDays } : undefined
       },
       mentions: finalMentions
     })

@@ -4,7 +4,7 @@ import { AppLayout } from '../components/AppLayout'
 import { supabase } from '../lib/supabase'
 import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
 import { getCroppedImg } from '../lib/cropImage'
-import { Area } from 'react-easy-crop/types'
+import { Area } from 'react-easy-crop'
 import { Camera, Loader2, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export const Route = createFileRoute('/configuracoes')({
