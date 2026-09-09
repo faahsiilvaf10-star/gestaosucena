@@ -431,15 +431,32 @@ function Index() {
                 disabled={isLoading}
               />
             </div>
-            <div>
-              <input 
-                type="text" 
-                placeholder="Cargo" 
-                className={inputClass} 
+            <div className="relative">
+              <select 
+                className={`${inputClass} appearance-none`}
                 value={cargo}
                 onChange={(e) => setCargo(e.target.value)}
                 disabled={isLoading}
-              />
+              >
+                <option value="" disabled hidden>Selecione um Cargo</option>
+                <option value="Preposto">Preposto</option>
+                <option value="Encarregado Geral">Encarregado Geral</option>
+                <option value="Encarregado I">Encarregado I</option>
+                <option value="Encarregado II">Encarregado II</option>
+                <option value="Técnico de Segurança I">Técnico de Segurança I</option>
+                <option value="Técnico de Segurança II">Técnico de Segurança II</option>
+                <option value="Técnico Meio Ambiente">Técnico Meio Ambiente</option>
+                <option value="Aux. Administrativo">Aux. Administrativo</option>
+                <option value="Aux. Almoxarifado">Aux. Almoxarifado</option>
+                <option value="Planejador">Planejador</option>
+                <option value="Engenheiro Civil">Engenheiro Civil</option>
+                <option value="Engenheiro de Planejamento">Engenheiro de Planejamento</option>
+                <option value="Técnico de Planejamento">Técnico de Planejamento</option>
+                <option value="Engenheiro de Segurança">Engenheiro de Segurança</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
             </div>
             <div className="relative">
               <input 
