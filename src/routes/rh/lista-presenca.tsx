@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { 
@@ -78,11 +78,9 @@ function AddCollaboratorModal({
 
   if (!isOpen) return null
 
-  // Filtra efetivo baseado na busca e remove os que já estão na lista da área atual
+  // Filtra efetivo baseado na busca e remove os que já estão na lista (em QUALQUER área)
   const currentAreaIds = new Set(
-    currentColaboradores
-      .filter(c => (c.setor || 'Sem Área') === currentArea)
-      .map(c => c.id)
+    currentColaboradores.map(c => c.id)
   )
   
   const filteredEfetivo = efetivo.filter(c => {
@@ -285,7 +283,7 @@ function RhListaPresencaPage() {
   const [activeTab, setActiveTab] = useState<string>('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [isLocked, setIsLocked] = useState(false)
+  const [lockedAreas, setLockedAreas] = useState<string[]>([])
   const [isAddingArea, setIsAddingArea] = useState(false)
   const [newAreaName, setNewAreaName] = useState('')
   const [customAreas, setCustomAreas] = useState<string[]>(() => {
@@ -302,10 +300,18 @@ function RhListaPresencaPage() {
   })
   const [areaToDelete, setAreaToDelete] = useState<string | null>(null)
   
-  // To track date for the attendance
-  const [attendanceDate, setAttendanceDate] = useState<string>(new Date().toISOString().split('T')[0])
+  // To track date for the attendance (using local date, not UTC)
+  const getLocalDate = () => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }
+  const [attendanceDate, setAttendanceDate] = useState<string>(getLocalDate())
+
+  // Ref to track when initial data loading is done (prevents overwriting drafts during load)
+  const initialLoadDone = useRef(false)
 
   useEffect(() => {
+    initialLoadDone.current = false
     fetchDados()
   }, [attendanceDate])
 
@@ -319,19 +325,14 @@ function RhListaPresencaPage() {
       
       if (error) throw error
       
-      // Initially, everyone is present unless fetched otherwise from DB for today.
+      // Map efetivo data (used as lookup in fetchPresencas)
       const mappedData: Colaborador[] = (data || []).map(d => ({
         ...d,
+        setor: (!d.setor || d.setor.toUpperCase().includes('BARCARENA')) ? 'Área Gabião' : d.setor,
         status: 'PRESENTE'
       }))
-
-      setColaboradores(mappedData)
-      
-      // Auto-select first tab
-      const defaultAreas = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
-      setActiveTab(defaultAreas[0])
         
-      // Fetch saved attendance for today if any
+      // Fetch saved attendance for today if any (this is what actually sets colaboradores)
       await fetchPresencas(mappedData)
       
     } catch (err) {
@@ -351,60 +352,88 @@ function RhListaPresencaPage() {
         
       if (error) throw error
       
-      if (data && data.length > 0) {
-        // Lista já salva para esta data
-        const presencaMap = new Map(data.map(d => [d.funcionario_id, d]))
-        
-        setColaboradores(currentColaboradores.map(c => {
-          const p = presencaMap.get(c.id)
-          return {
-            ...c,
-            status: p ? p.status : 'PRESENTE',
-            setor: p ? p.area : c.setor
-          }
-        }).filter(c => c.status !== 'REMOVIDO'))
-        
-        const isUnlocked = localStorage.getItem(`rh_unlocked_${attendanceDate}`) === 'true'
-        setIsLocked(!isUnlocked)
-      } else {
-        // Nenhuma lista para hoje. Buscar áreas do último dia salvo para reaproveitar
-        const { data: latestDateData } = await supabase
-          .from('rh_presencas')
-          .select('data')
-          .lt('data', attendanceDate)
-          .order('data', { ascending: false })
-          .limit(1)
+      let nextColaboradores: Colaborador[] = []
+      let draftLoaded = false
+      const defaultAreas = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
+      
+      let newLockedAreas: string[] = []
+      const draftStr = localStorage.getItem(`rh_draft_${attendanceDate}`)
 
-        if (latestDateData && latestDateData.length > 0) {
-          const latestDate = latestDateData[0].data
-          const { data: pastRecords } = await supabase
-            .from('rh_presencas')
-            .select('funcionario_id, area')
-            .eq('data', latestDate)
-
-          if (pastRecords && pastRecords.length > 0) {
-            const areaMap = new Map(pastRecords.map(d => [d.funcionario_id, d.area]))
-            
-            setColaboradores(currentColaboradores.map(c => ({
-              ...c,
-              setor: areaMap.has(c.id) ? areaMap.get(c.id)! : c.setor,
-              status: 'PRESENTE' // Todo mundo começa presente no novo dia
-            })))
-          }
-        } else {
-          // Se não tiver dia anterior nenhum (ex: primeiro dia de uso)
-          setColaboradores(currentColaboradores)
+      if (draftStr !== null) {
+        try {
+          nextColaboradores = JSON.parse(draftStr)
+          draftLoaded = true
+        } catch (e) {
+          console.error("Erro ao ler rascunho:", e)
         }
-        
-        setIsLocked(false)
       }
+
+      if (!draftLoaded) {
+        if (data && data.length > 0) {
+          // Lista já salva para esta data no banco — mostrar SOMENTE os funcionários salvos
+          const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
+          
+          nextColaboradores = data
+            .filter(d => d.status !== 'REMOVIDO')
+            .map(d => {
+              const emp = efetivoMap.get(d.funcionario_id)
+              let finalArea = d.area
+              if (!finalArea || finalArea.toUpperCase().includes('BARCARENA')) finalArea = 'Área Gabião'
+              return {
+                id: d.funcionario_id,
+                nome: emp ? emp.nome : 'Desconhecido',
+                cargo: emp ? emp.cargo : null,
+                setor: finalArea,
+                status: d.status
+              }
+            })
+        } else {
+          // Nenhuma lista para hoje — começar VAZIA
+          // O usuário adiciona os colaboradores manualmente
+          nextColaboradores = []
+        }
+      }
+
+      // Bloqueia as áreas que vieram do banco (exceto as que o usuário desbloqueou manualmente no cache)
+      if (data && data.length > 0) {
+        const dbAreas = Array.from(new Set(data.map(d => d.area || 'Sem Área')))
+        newLockedAreas = dbAreas.filter(area => localStorage.getItem(`rh_unlocked_${attendanceDate}_${area}`) !== 'true')
+      }
+
+      setLockedAreas(newLockedAreas)
+
+      setColaboradores(nextColaboradores)
+
+      // Auto-select first tab that has employees
+      const areasFromColabs = Array.from(new Set(nextColaboradores.map(c => c.setor).filter(Boolean) as string[]))
+      const allAreasSet = new Set([...defaultAreas, ...areasFromColabs, ...customAreas])
+      deletedAreas.forEach(a => {
+        if (!areasFromColabs.includes(a)) {
+          allAreasSet.delete(a)
+        }
+      })
+      const availableAreas = Array.from(allAreasSet)
+      
+      const firstAreaWithEmployees = availableAreas.find(a => nextColaboradores.some(c => (c.setor || 'Sem Área') === a))
+      setActiveTab(firstAreaWithEmployees || availableAreas[0] || 'Sem Área')
+
+      // Mark initial load as done so draft saving can begin
+      initialLoadDone.current = true
+
     } catch (err) {
       console.error(err)
     }
   }
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    if (isLocked) return;
+  // Save to draft whenever there are changes (only after initial load)
+  useEffect(() => {
+    if (initialLoadDone.current) {
+      localStorage.setItem(`rh_draft_${attendanceDate}`, JSON.stringify(colaboradores))
+    }
+  }, [colaboradores, attendanceDate])
+
+  const handleStatusChange = (id: string, newStatus: 'PRESENTE' | 'AUSENTE' | 'EXTERNO' | 'ATESTADO') => {
+    if (lockedAreas.includes(activeTab)) return;
     setColaboradores(prev => prev.map(c => {
       if (c.id === id) {
         // Se clicar no mesmo status que já está marcado, desmarca e volta a ser PRESENTE
@@ -414,24 +443,9 @@ function RhListaPresencaPage() {
     }))
   }
 
-  const handleRemoveColaborador = async (id: string) => {
-    if (isLocked) return;
+  const handleRemoveColaborador = (id: string) => {
+    if (lockedAreas.includes(activeTab)) return;
     
-    // Marcar como REMOVIDO no banco para que não volte no reload (se estiver no mesmo dia)
-    try {
-      const colab = colaboradores.find(c => c.id === id)
-      if (colab) {
-        await supabase.from('rh_presencas').upsert({
-          data: attendanceDate,
-          area: colab.setor || 'Sem Área',
-          funcionario_id: id,
-          status: 'REMOVIDO'
-        }, { onConflict: 'data,funcionario_id' })
-      }
-    } catch(e) {
-      console.error(e)
-    }
-
     setColaboradores(prev => prev.filter(c => c.id !== id))
     toast.success('Colaborador removido da lista')
   }
@@ -465,36 +479,38 @@ function RhListaPresencaPage() {
   }
 
   const handleSalvar = async () => {
-    const toastId = toast.loading('Salvando lista de presença...')
+    const toastId = toast.loading(`Salvando ${activeTab}...`)
     try {
-      // Prepare records for UPSERT based on current selected tab OR all tabs
-      // Let's save all tabs at once for the current date.
-      const recordsToUpsert = colaboradores.map(c => ({
-        data: attendanceDate,
-        area: c.setor || 'Sem Área',
-        funcionario_id: c.id,
-        status: c.status
-      }))
-      
-      if (recordsToUpsert.length === 0) {
-        toast.dismiss(toastId)
-        toast.error('Não há colaboradores para salvar.')
-        return;
-      }
-      
-      // Upsert: Because we have a UNIQUE constraint on (data, funcionario_id), 
-      // Supabase .upsert() will correctly update existing or insert new.
-      const { error } = await supabase
+      // Deletar registros APENAS da área atual e data atual
+      const { error: delError } = await supabase
         .from('rh_presencas')
-        .upsert(recordsToUpsert, { onConflict: 'data,funcionario_id' })
-        
-      if (error) {
-        throw error;
+        .delete()
+        .eq('data', attendanceDate)
+        .eq('area', activeTab)
+
+      if (delError) throw delError;
+
+      // Prepare records for the active tab only
+      const recordsToInsert = colaboradores
+        .filter(c => (c.setor || 'Sem Área') === activeTab)
+        .map(c => ({
+          data: attendanceDate,
+          area: c.setor || 'Sem Área',
+          funcionario_id: c.id,
+          status: c.status
+        }))
+      
+      if (recordsToInsert.length > 0) {
+        const { error } = await supabase
+          .from('rh_presencas')
+          .insert(recordsToInsert)
+          
+        if (error) throw error;
       }
       
-      setIsLocked(true)
-      localStorage.removeItem(`rh_unlocked_${attendanceDate}`)
-      toast.success('Lista de presença salva com sucesso!', { id: toastId })
+      setLockedAreas(prev => [...prev, activeTab])
+      localStorage.removeItem(`rh_unlocked_${attendanceDate}_${activeTab}`)
+      toast.success(`${activeTab} salva com sucesso!`, { id: toastId })
     } catch (err: any) {
       console.error('ERRO AO SALVAR:', err)
       toast.error(err.message || 'Erro desconhecido ao salvar lista', { id: toastId })
@@ -556,8 +572,12 @@ function RhListaPresencaPage() {
   const areasFromColaboradores = Array.from(new Set(colaboradores.map(c => c.setor).filter(Boolean) as string[]))
   const allAreasSet = new Set([...defaultAreas, ...areasFromColaboradores, ...customAreas])
   
-  // Remove deleted areas
-  deletedAreas.forEach(a => allAreasSet.delete(a))
+  // Remove deleted areas ONLY if they don't have employees
+  deletedAreas.forEach(a => {
+    if (!areasFromColaboradores.includes(a)) {
+      allAreasSet.delete(a)
+    }
+  })
   
   const areas = Array.from(allAreasSet)
   
@@ -759,21 +779,21 @@ function RhListaPresencaPage() {
                 </div>
                 
                 <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-                  <button onClick={() => markAll('PRESENTE')} disabled={isLocked} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => markAll('PRESENTE')} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos presentes
                   </button>
-                  <button onClick={() => markAll('AUSENTE')} disabled={isLocked} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos ausentes
                   </button>
-                  <button onClick={() => setIsAddModalOpen(true)} disabled={isLocked} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} /> Adicionar colaborador
                   </button>
                   
-                  {isLocked ? (
+                  {lockedAreas.includes(activeTab) ? (
                     <button 
                       onClick={() => {
-                        setIsLocked(false)
-                        localStorage.setItem(`rh_unlocked_${attendanceDate}`, 'true')
+                        setLockedAreas(prev => prev.filter(a => a !== activeTab))
+                        localStorage.setItem(`rh_unlocked_${attendanceDate}_${activeTab}`, 'true')
                       }} 
                       className="px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors"
                     >
@@ -781,7 +801,7 @@ function RhListaPresencaPage() {
                     </button>
                   ) : (
                     <button onClick={handleSalvar} className="px-4 py-2.5 rounded-full text-xs font-bold bg-white text-black hover:bg-gray-200 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors">
-                      <Save size={14} /> Salvar
+                      <Save size={14} /> Salvar {activeTab}
                     </button>
                   )}
                   
@@ -803,7 +823,7 @@ function RhListaPresencaPage() {
                 ) : filteredColaboradores.length === 0 ? (
                   <div className="py-12 flex flex-col items-center justify-center gap-4 text-white/50 mt-4">
                     <p>Nenhum colaborador nesta área.</p>
-                    <button onClick={() => setIsAddModalOpen(true)} disabled={isLocked} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-white/10 hover:bg-white/20 text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-white/10 hover:bg-white/20 text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                       <Plus size={16} /> Adicionar colaborador
                     </button>
                   </div>
@@ -842,17 +862,17 @@ function RhListaPresencaPage() {
                               
                               {/* Invisible clickable overlays to handle the logic easily without messing with native inputs */}
                               <div className="absolute opacity-0">
-                                <input type="radio" checked={c.status === 'AUSENTE'} onChange={() => !isLocked && handleStatusChange(c.id, 'AUSENTE')} disabled={isLocked} />
-                                <input type="radio" checked={c.status === 'EXTERNO'} onChange={() => !isLocked && handleStatusChange(c.id, 'EXTERNO')} disabled={isLocked} />
-                                <input type="radio" checked={c.status === 'ATESTADO'} onChange={() => !isLocked && handleStatusChange(c.id, 'ATESTADO')} disabled={isLocked} />
+                                <input type="radio" checked={c.status === 'AUSENTE'} onChange={() => !lockedAreas.includes(activeTab) && handleStatusChange(c.id, 'AUSENTE')} disabled={lockedAreas.includes(activeTab)} />
+                                <input type="radio" checked={c.status === 'EXTERNO'} onChange={() => !lockedAreas.includes(activeTab) && handleStatusChange(c.id, 'EXTERNO')} disabled={lockedAreas.includes(activeTab)} />
+                                <input type="radio" checked={c.status === 'ATESTADO'} onChange={() => !lockedAreas.includes(activeTab) && handleStatusChange(c.id, 'ATESTADO')} disabled={lockedAreas.includes(activeTab)} />
                               </div>
                             </div>
 
                             {/* Transparent click areas over the custom radios for better UX */}
                             <div className="absolute w-24 h-14 z-10 flex flex-col">
-                               <div className={`flex-1 ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'AUSENTE')}></div>
-                               <div className={`flex-1 ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'EXTERNO')}></div>
-                               <div className={`flex-1 ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'ATESTADO')}></div>
+                               <div className={`flex-1 ${lockedAreas.includes(activeTab) ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'AUSENTE')}></div>
+                               <div className={`flex-1 ${lockedAreas.includes(activeTab) ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'EXTERNO')}></div>
+                               <div className={`flex-1 ${lockedAreas.includes(activeTab) ? 'cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => handleStatusChange(c.id, 'ATESTADO')}></div>
                             </div>
 
                             <div className="flex flex-col pl-4">
@@ -881,7 +901,7 @@ function RhListaPresencaPage() {
                               </div>
                             )}
                             
-                            <button onClick={() => handleRemoveColaborador(c.id)} disabled={isLocked} className="text-white/20 hover:text-white/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Remover da lista">
+                            <button onClick={() => handleRemoveColaborador(c.id)} disabled={lockedAreas.includes(activeTab)} className="text-white/20 hover:text-white/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Remover da lista">
                               <Trash2 size={16} />
                             </button>
                           </div>

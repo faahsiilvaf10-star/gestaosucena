@@ -22,10 +22,16 @@ type Presenca = {
 
 function RelatorioPresencaPage() {
   const { isDark } = useTheme()
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const getLocalDate = () => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }
+  const [date, setDate] = useState<string>(getLocalDate())
   const [registros, setRegistros] = useState<Presenca[]>([])
   const [loading, setLoading] = useState(false)
   const [hasData, setHasData] = useState(false)
+
+  const [totalEfetivo, setTotalEfetivo] = useState(0)
 
   useEffect(() => {
     fetchRelatorio()
@@ -34,7 +40,17 @@ function RelatorioPresencaPage() {
   const fetchRelatorio = async () => {
     setLoading(true)
     try {
-      // 1. Fetch presenças for date
+      // 1. Fetch efetivo to get names, cargos, and total count
+      const { data: efetivo, error: efetivoError } = await supabase
+        .from('rh_efetivo')
+        .select('id, nome, cargo')
+        
+      if (efetivoError) throw efetivoError
+
+      setTotalEfetivo(efetivo.length)
+      const efetivoMap = new Map(efetivo.map(e => [e.id, { nome: e.nome, cargo: e.cargo }]))
+
+      // 2. Fetch presenças for date
       const { data: presencas, error: presencasError } = await supabase
         .from('rh_presencas')
         .select('*')
@@ -49,24 +65,18 @@ function RelatorioPresencaPage() {
         return
       }
 
-      // 2. Fetch efetivo to get names and cargos
-      const { data: efetivo, error: efetivoError } = await supabase
-        .from('rh_efetivo')
-        .select('id, nome, cargo')
-        
-      if (efetivoError) throw efetivoError
-
-      const efetivoMap = new Map(efetivo.map(e => [e.id, { nome: e.nome, cargo: e.cargo }]))
-
-      // 3. Merge and filter out REMOVIDO
+      // 3. Merge and filter out REMOVIDO and only allow specified statuses
+      const allowedStatuses = ['PRESENTE', 'AUSENTE', 'EXTERNO', 'ATESTADO']
       const merged: Presenca[] = presencas
-        .filter(p => p.status !== 'REMOVIDO')
+        .filter(p => p.status !== 'REMOVIDO' && allowedStatuses.includes(p.status))
         .map(p => {
           const emp = efetivoMap.get(p.funcionario_id)
+          let area = p.area
+          if (!area || area.toUpperCase().includes('BARCARENA')) area = 'Área Gabião'
           return {
             id: p.id,
             funcionario_id: p.funcionario_id,
-            area: p.area,
+            area,
             status: p.status,
             nome: emp ? emp.nome : 'Desconhecido',
             cargo: emp ? emp.cargo : null
@@ -96,33 +106,45 @@ function RelatorioPresencaPage() {
       return
     }
 
-    const doc = new jsPDF()
-    
-    doc.setFontSize(18)
-    doc.text('Relatório de Presença - Sucena', 14, 20)
-    
-    doc.setFontSize(12)
-    const dataFormatada = date.split('-').reverse().join('/')
-    doc.text(`Data: ${dataFormatada}`, 14, 28)
-    
-    const tableData = registros.map(c => [
-      c.nome,
-      c.cargo || '-',
-      c.area || 'Sem Área',
-      c.status
-    ])
-    
-    autoTable(doc, {
-      startY: 35,
-      head: [['Nome', 'Cargo', 'Área', 'Status']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [40, 40, 40] },
-      alternateRowStyles: { fillColor: [240, 240, 240] }
-    })
-    
-    doc.save(`Relatorio_Presenca_${date}.pdf`)
-    toast.success('PDF gerado com sucesso!')
+    const generate = (logoImg?: HTMLImageElement) => {
+      const doc = new jsPDF()
+      
+      if (logoImg) {
+        doc.addImage(logoImg, 'PNG', 165, 10, 30, 15)
+      }
+      
+      doc.setFontSize(16)
+      doc.text('Relatório de Presença - Sucena', 14, 18)
+      
+      doc.setFontSize(10)
+      const dataFormatada = date.split('-').reverse().join('/')
+      doc.text(`Data: ${dataFormatada}`, 14, 25)
+      
+      const tableData = registros.map(c => [
+        c.nome,
+        c.cargo || '-',
+        c.area || 'Sem Área',
+        c.status
+      ])
+      
+      autoTable(doc, {
+        startY: 32,
+        head: [['Nome', 'Cargo', 'Área', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [40, 40, 40], fontSize: 9 },
+        alternateRowStyles: { fillColor: [240, 240, 240] }
+      })
+      
+      doc.save(`Relatorio_Presenca_${date}.pdf`)
+      toast.success('PDF gerado com sucesso!')
+    }
+
+    const img = new Image()
+    img.src = '/logo-relatorio.png'
+    img.onload = () => generate(img)
+    img.onerror = () => generate()
   }
 
   const presentes = registros.filter(r => r.status === 'PRESENTE').length
@@ -172,49 +194,47 @@ function RelatorioPresencaPage() {
         </div>
 
         {/* Stats */}
-        {hasData && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 dark:text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Total</p>
-                <p className="text-2xl font-bold">{registros.length}</p>
-              </div>
-              <Users className="text-gray-400 dark:text-white/20" size={28} />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Total</p>
+              <p className="text-2xl font-bold">{totalEfetivo}</p>
             </div>
-            
-            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-green-700 dark:text-green-400 text-xs font-medium uppercase tracking-wider mb-1">Presentes</p>
-                <p className="text-green-600 dark:text-green-500 text-2xl font-bold">{presentes}</p>
-              </div>
-              <CheckCircle2 className="text-green-500/50" size={28} />
-            </div>
-            
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-red-700 dark:text-red-400 text-xs font-medium uppercase tracking-wider mb-1">Ausentes</p>
-                <p className="text-red-600 dark:text-red-500 text-2xl font-bold">{ausentes}</p>
-              </div>
-              <XCircle className="text-red-500/50" size={28} />
-            </div>
-
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-amber-700 dark:text-amber-400 text-xs font-medium uppercase tracking-wider mb-1">Externo</p>
-                <p className="text-amber-600 dark:text-amber-500 text-2xl font-bold">{externos}</p>
-              </div>
-              <Activity className="text-amber-500/50" size={28} />
-            </div>
-
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-purple-700 dark:text-purple-400 text-xs font-medium uppercase tracking-wider mb-1">Atestado</p>
-                <p className="text-purple-600 dark:text-purple-500 text-2xl font-bold">{atestados}</p>
-              </div>
-              <Activity className="text-purple-500/50" size={28} />
-            </div>
+            <Users className="text-gray-400 dark:text-white/20" size={28} />
           </div>
-        )}
+          
+          <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-green-700 dark:text-green-400 text-xs font-medium uppercase tracking-wider mb-1">Presentes</p>
+              <p className="text-green-600 dark:text-green-500 text-2xl font-bold">{presentes}</p>
+            </div>
+            <CheckCircle2 className="text-green-500/50" size={28} />
+          </div>
+          
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-red-700 dark:text-red-400 text-xs font-medium uppercase tracking-wider mb-1">Ausentes</p>
+              <p className="text-red-600 dark:text-red-500 text-2xl font-bold">{ausentes}</p>
+            </div>
+            <XCircle className="text-red-500/50" size={28} />
+          </div>
+
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-amber-700 dark:text-amber-400 text-xs font-medium uppercase tracking-wider mb-1">Externo</p>
+              <p className="text-amber-600 dark:text-amber-500 text-2xl font-bold">{externos}</p>
+            </div>
+            <Activity className="text-amber-500/50" size={28} />
+          </div>
+
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-purple-700 dark:text-purple-400 text-xs font-medium uppercase tracking-wider mb-1">Atestado</p>
+              <p className="text-purple-600 dark:text-purple-500 text-2xl font-bold">{atestados}</p>
+            </div>
+            <Activity className="text-purple-500/50" size={28} />
+          </div>
+        </div>
 
         {/* Content */}
         <div className="flex-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 rounded-3xl overflow-hidden flex flex-col">

@@ -192,15 +192,16 @@ function DashboardComponent() {
                   <PolarGrid className="stroke-muted/30" />
                   <Radar
                     dataKey="desktop"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-desktop)"
+                    fill="#00d4ff"
+                    fillOpacity={0.4}
+                    stroke="#00d4ff"
                     strokeWidth={2}
                     dot={{
                       r: 4,
                       fillOpacity: 1,
+                      fill: "#00d4ff"
                     }}
-                    style={{ filter: 'drop-shadow(0px 0px 8px rgba(37,99,235,0.5))' }}
+                    style={{ filter: 'drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.8))' }}
                   />
                 </RadarChart>
               </ChartContainer>
