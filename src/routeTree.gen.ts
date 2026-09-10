@@ -36,6 +36,7 @@ import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
 import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 import { Route as RhIndexRouteImport } from './routes/rh/index'
+import { Route as RhCalendarioHydroRouteImport } from './routes/rh/calendario-hydro'
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
 import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
@@ -177,6 +178,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RhRoute,
 } as any)
+const RhCalendarioHydroRoute = RhCalendarioHydroRouteImport.update({
+  id: '/calendario-hydro',
+  path: '/calendario-hydro',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhEfetivoRoute = RhEfetivoRouteImport.update({
   id: '/efetivo',
   path: '/efetivo',
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
@@ -584,6 +596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/calendario-hydro': {
+      id: '/rh/calendario-hydro'
+      path: '/calendario-hydro'
+      fullPath: '/rh/calendario-hydro'
+      preLoaderRoute: typeof RhCalendarioHydroRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/efetivo': {
       id: '/rh/efetivo'
       path: '/efetivo'
@@ -673,6 +692,7 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 )
 
 interface RhRouteChildren {
+  RhCalendarioHydroRoute: typeof RhCalendarioHydroRoute
   RhEfetivoRoute: typeof RhEfetivoRoute
   RhListaPresencaRoute: typeof RhListaPresencaRoute
   RhRelatorioPresencaRoute: typeof RhRelatorioPresencaRoute
@@ -680,6 +700,7 @@ interface RhRouteChildren {
 }
 
 const RhRouteChildren: RhRouteChildren = {
+  RhCalendarioHydroRoute: RhCalendarioHydroRoute,
   RhEfetivoRoute: RhEfetivoRoute,
   RhListaPresencaRoute: RhListaPresencaRoute,
   RhRelatorioPresencaRoute: RhRelatorioPresencaRoute,

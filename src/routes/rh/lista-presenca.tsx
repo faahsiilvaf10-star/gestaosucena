@@ -785,6 +785,19 @@ function RhListaPresencaPage() {
                   <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos ausentes
                   </button>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('Deseja limpar a lista atual? Isso removerá todos os colaboradores não salvos.')) {
+                        localStorage.removeItem(`rh_draft_${attendanceDate}`);
+                        setColaboradores([]);
+                        toast.success('Lista limpa com sucesso!');
+                      }
+                    }} 
+                    disabled={lockedAreas.includes(activeTab) || colaboradores.filter(c => (c.setor || 'Sem Área') === activeTab).length === 0} 
+                    className="px-4 py-2.5 rounded-full text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Limpar Lista
+                  </button>
                   <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} /> Adicionar colaborador
                   </button>

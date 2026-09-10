@@ -83,12 +83,8 @@ function RelatorioPresencaPage() {
           }
         })
         
-      // Order by Status -> Area -> Nome
-      merged.sort((a, b) => {
-        if (a.status !== b.status) return a.status.localeCompare(b.status)
-        if (a.area !== b.area) return a.area.localeCompare(b.area)
-        return a.nome.localeCompare(b.nome)
-      })
+      // Order alphabetically by Nome
+      merged.sort((a, b) => a.nome.localeCompare(b.nome))
 
       setRegistros(merged)
       setHasData(merged.length > 0)
