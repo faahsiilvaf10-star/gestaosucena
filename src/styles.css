@@ -87,6 +87,7 @@
   --color-muted: hsl(0 0% 53%);
   --color-stroke: hsl(0 0% 12%);
   --color-accent: hsl(0 0% 96%);
+  --color-accent-foreground: hsl(0 0% 4%);
   
   --color-popover: hsl(0 0% 8%);
   --color-popover-foreground: hsl(0 0% 96%);

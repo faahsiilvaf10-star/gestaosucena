@@ -42,6 +42,8 @@ import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-p
 import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
 import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado/pedidos/$id'
 import { Route as AlmoxarifadoPedidosNovoRouteImport } from './routes/almoxarifado/pedidos/novo'
+import { Route as AlmoxarifadoRequisicoesIndexRouteImport } from './routes/almoxarifado/requisicoes/index'
+import { Route as AlmoxarifadoRequisicoesNovaRouteImport } from './routes/almoxarifado/requisicoes/nova'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -211,6 +213,18 @@ const AlmoxarifadoPedidosNovoRoute = AlmoxarifadoPedidosNovoRouteImport.update({
   path: '/pedidos/novo',
   getParentRoute: () => AlmoxarifadoRoute,
 } as any)
+const AlmoxarifadoRequisicoesIndexRoute =
+  AlmoxarifadoRequisicoesIndexRouteImport.update({
+    id: '/requisicoes/',
+    path: '/requisicoes/',
+    getParentRoute: () => AlmoxarifadoRoute,
+  } as any)
+const AlmoxarifadoRequisicoesNovaRoute =
+  AlmoxarifadoRequisicoesNovaRouteImport.update({
+    id: '/requisicoes/nova',
+    path: '/requisicoes/nova',
+    getParentRoute: () => AlmoxarifadoRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -245,7 +259,9 @@ export interface FileRoutesByFullPath {
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
   '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
+  '/almoxarifado/requisicoes/': typeof AlmoxarifadoRequisicoesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -276,7 +292,9 @@ export interface FileRoutesByTo {
   '/rh': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
   '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosIndexRoute
+  '/almoxarifado/requisicoes': typeof AlmoxarifadoRequisicoesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -312,7 +330,9 @@ export interface FileRoutesById {
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
   '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
+  '/almoxarifado/requisicoes/': typeof AlmoxarifadoRequisicoesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -349,7 +369,9 @@ export interface FileRouteTypes {
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/requisicoes/nova'
     | '/almoxarifado/pedidos/'
+    | '/almoxarifado/requisicoes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -380,7 +402,9 @@ export interface FileRouteTypes {
     | '/rh'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/requisicoes/nova'
     | '/almoxarifado/pedidos'
+    | '/almoxarifado/requisicoes'
   id:
     | '__root__'
     | '/'
@@ -415,7 +439,9 @@ export interface FileRouteTypes {
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/requisicoes/nova'
     | '/almoxarifado/pedidos/'
+    | '/almoxarifado/requisicoes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -663,6 +689,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlmoxarifadoPedidosNovoRouteImport
       parentRoute: typeof AlmoxarifadoRoute
     }
+    '/almoxarifado/requisicoes/': {
+      id: '/almoxarifado/requisicoes/'
+      path: '/requisicoes'
+      fullPath: '/almoxarifado/requisicoes/'
+      preLoaderRoute: typeof AlmoxarifadoRequisicoesIndexRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/requisicoes/nova': {
+      id: '/almoxarifado/requisicoes/nova'
+      path: '/requisicoes/nova'
+      fullPath: '/almoxarifado/requisicoes/nova'
+      preLoaderRoute: typeof AlmoxarifadoRequisicoesNovaRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
   }
 }
 
@@ -675,7 +715,9 @@ interface AlmoxarifadoRouteChildren {
   AlmoxarifadoIndexRoute: typeof AlmoxarifadoIndexRoute
   AlmoxarifadoPedidosIdRoute: typeof AlmoxarifadoPedidosIdRoute
   AlmoxarifadoPedidosNovoRoute: typeof AlmoxarifadoPedidosNovoRoute
+  AlmoxarifadoRequisicoesNovaRoute: typeof AlmoxarifadoRequisicoesNovaRoute
   AlmoxarifadoPedidosIndexRoute: typeof AlmoxarifadoPedidosIndexRoute
+  AlmoxarifadoRequisicoesIndexRoute: typeof AlmoxarifadoRequisicoesIndexRoute
 }
 
 const AlmoxarifadoRouteChildren: AlmoxarifadoRouteChildren = {
@@ -687,7 +729,9 @@ const AlmoxarifadoRouteChildren: AlmoxarifadoRouteChildren = {
   AlmoxarifadoIndexRoute: AlmoxarifadoIndexRoute,
   AlmoxarifadoPedidosIdRoute: AlmoxarifadoPedidosIdRoute,
   AlmoxarifadoPedidosNovoRoute: AlmoxarifadoPedidosNovoRoute,
+  AlmoxarifadoRequisicoesNovaRoute: AlmoxarifadoRequisicoesNovaRoute,
   AlmoxarifadoPedidosIndexRoute: AlmoxarifadoPedidosIndexRoute,
+  AlmoxarifadoRequisicoesIndexRoute: AlmoxarifadoRequisicoesIndexRoute,
 }
 
 const AlmoxarifadoRouteWithChildren = AlmoxarifadoRoute._addFileChildren(

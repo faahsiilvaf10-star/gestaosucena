@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PurchaseOrderForm } from '@/components/pedidos/PurchaseOrderForm'
-import { ArrowLeft, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Loader2 } from 'lucide-react'
+import { useNextPurchaseOrderNumber } from '@/hooks/usePurchaseOrders'
 
 export const Route = createFileRoute('/almoxarifado/pedidos/novo')({
   component: NovoPedidoPage,
 })
 
 function NovoPedidoPage() {
+  const { data: nextNumber, isLoading } = useNextPurchaseOrderNumber()
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -19,16 +22,21 @@ function NovoPedidoPage() {
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <ShoppingCart className="w-8 h-8 text-primary" />
-            Novo Pedido de Compra
+            Novo Pedido de Compra 
+            {isLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground ml-2" />
+            ) : nextNumber ? (
+              <span className="text-muted-foreground ml-2">#{nextNumber.toString().padStart(4, '0')}</span>
+            ) : null}
           </h2>
           <p className="text-muted-foreground">
-            Crie uma nova solicitação. O número do pedido será gerado automaticamente.
+            Crie uma nova solicitação. O número do pedido exibido é uma estimativa e será confirmado ao salvar.
           </p>
         </div>
       </div>
 
       <div className="mt-8">
-        <PurchaseOrderForm />
+        <PurchaseOrderForm nextNumber={nextNumber} />
       </div>
     </div>
   )

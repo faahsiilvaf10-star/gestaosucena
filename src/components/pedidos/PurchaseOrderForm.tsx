@@ -20,6 +20,10 @@ import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 // import { useAuth } from '@/hooks/useAuth' // Asumindo que existe, usaremos para preencher solicitante
 
+interface PurchaseOrderFormProps {
+  nextNumber?: number;
+}
+
 // Constantes
 const CATEGORIAS = ['EPI', 'Ferramentas', 'Materiais', 'Produtos Químicos', 'Peças', 'Jardinagem', 'Irrigação', 'Escritório', 'Outros']
 const UNIDADES = ['UN', 'PAR', 'CX', 'PCT', 'KG', 'L', 'M', 'M²', 'M³', 'ROLO', 'KIT', 'OUTRO']
@@ -45,7 +49,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export function PurchaseOrderForm() {
+export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
   const navigate = useNavigate()
   // const { user } = useAuth() // Em um caso real teríamos o user id aqui
   const mockUserId = '00000000-0000-0000-0000-000000000000' // Placeholder se auth não estiver implementado ou não disponível diretamente
@@ -56,6 +60,7 @@ export function PurchaseOrderForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [formDataForConfirm, setFormDataForConfirm] = useState<FormValues | null>(null)
+  const [cargoFilter, setCargoFilter] = useState<string>('Todos')
 
   // Fetch de Responsáveis Autorizados
   const { data: responsaveis, isLoading: isLoadingResponsaveis } = useQuery({
@@ -64,14 +69,21 @@ export function PurchaseOrderForm() {
       const { data, error } = await supabase
         .from('rh_efetivo')
         .select('id, nome, cargo')
-        .in('cargo', ['Almoxarife', 'Auxiliar Administrativo'])
-        .eq('status', 'Ativo')
+        .or('cargo.ilike.%almoxarif%,cargo.ilike.%auxiliar administrativo%')
+        .ilike('status', 'Ativo')
         .order('nome')
       
       if (error) throw error
       return data || []
     }
   })
+
+  const responsaveisFiltrados = responsaveis?.filter(r => {
+    if (cargoFilter === 'Todos') return true
+    if (cargoFilter === 'Almoxarife' && r.cargo?.toLowerCase().includes('almoxarif')) return true
+    if (cargoFilter === 'Auxiliar Administrativo' && r.cargo?.toLowerCase().includes('auxiliar administrativo')) return true
+    return false
+  }) || []
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -223,13 +235,27 @@ export function PurchaseOrderForm() {
             </div>
 
             <div className="space-y-2">
+              <Label>Cargo do Responsável</Label>
+              <Select onValueChange={(val) => { setCargoFilter(val); form.setValue('responsible_id', ''); }} value={cargoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Todos">Todos (Ambos)</SelectItem>
+                  <SelectItem value="Auxiliar Administrativo">Auxiliar Administrativo</SelectItem>
+                  <SelectItem value="Almoxarife">Almoxarife</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>Responsável <span className="text-destructive">*</span></Label>
               <Select onValueChange={(val) => form.setValue('responsible_id', val)} value={form.watch('responsible_id')}>
                 <SelectTrigger>
                   <SelectValue placeholder={isLoadingResponsaveis ? "Carregando..." : "Selecionar responsável..."} />
                 </SelectTrigger>
                 <SelectContent>
-                  {responsaveis?.map(r => (
+                  {responsaveisFiltrados.map(r => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.nome} — {r.cargo}
                     </SelectItem>
@@ -417,7 +443,8 @@ export function PurchaseOrderForm() {
         {/* Resumo e Ações */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-end bg-card p-6 rounded-xl border shadow-sm sticky bottom-4 z-10">
           <div className="text-sm text-muted-foreground mr-auto hidden md:block">
-            Verifique todos os campos antes de enviar. O número do pedido será gerado ao confirmar.
+            Verifique todos os campos antes de enviar.
+            {nextNumber && <span> Pedido estimado: <strong>#{nextNumber.toString().padStart(4, '0')}</strong></span>}
           </div>
           
           <Button 
@@ -487,7 +514,11 @@ export function PurchaseOrderForm() {
               </div>
               
               <p className="text-sm text-muted-foreground text-center mt-4">
-                O número do pedido será gerado automaticamente.
+                {nextNumber ? (
+                  <>Este pedido será registrado como <strong>#{nextNumber.toString().padStart(4, '0')}</strong>.</>
+                ) : (
+                  "O número do pedido será confirmado ao salvar."
+                )}
               </p>
             </div>
             

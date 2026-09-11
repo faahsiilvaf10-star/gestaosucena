@@ -9,7 +9,7 @@ const HUB_ITEMS = [
   { name: 'Estoque', icon: Package, href: '/almoxarifado/estoque' },
   { name: 'Notas Fiscais', icon: ReceiptText, href: '/almoxarifado/notas-fiscais' },
   { name: 'Pedidos', icon: ShoppingCart, href: '/almoxarifado/pedidos' },
-  { name: 'Requisição', icon: ShieldCheck, href: '/almoxarifado/requisicao' },
+  { name: 'Requisição', icon: ShieldCheck, href: '/almoxarifado/requisicoes' },
   { name: 'Adubo', icon: Sprout, href: '/almoxarifado/adubo' },
   { name: 'Aspersores', icon: MapPin, href: '/almoxarifado/aspersores' },
 ]

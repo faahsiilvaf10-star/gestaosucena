@@ -92,6 +92,28 @@ export function usePurchaseOrderById(id: string) {
   })
 }
 
+export function useNextPurchaseOrderNumber() {
+  return useQuery({
+    queryKey: ['next_purchase_order_number'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('al_purchase_orders')
+        .select('order_number')
+        .not('order_number', 'is', null)
+        .order('order_number', { ascending: false })
+        .limit(1)
+
+      if (error) {
+        console.error('Error fetching next order number:', error)
+        return 1 // Fallback
+      }
+
+      if (!data || data.length === 0) return 1
+      return (data[0].order_number || 0) + 1
+    },
+  })
+}
+
 export function useCreatePurchaseOrder() {
   const queryClient = useQueryClient()
 
