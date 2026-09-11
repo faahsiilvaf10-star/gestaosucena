@@ -513,25 +513,6 @@ export function EpiRequisitionForm() {
          </Button>
       </div>
 
-      {/* O Template Invisível para o Canvas */}
-      <EpiReceiptTemplate 
-        ref={templateRef}
-        date={new Date()}
-        authorizerName={authorizer?.nome || ''}
-        authorizerMatricula={authorizer?.matricula || ''}
-        employeeName={employee?.nome || ''}
-        employeeRole={employee?.cargo || ''}
-        employeeMatricula={employee?.matricula || ''}
-        destinationArea={destinationArea}
-        reason={reason}
-        items={items.map(it => ({
-          name: epiProducts?.find(p => p.id === it.productId)?.name || '',
-          quantity: it.quantity
-        })).filter(i => i.name)}
-        authorizerSignature={finalSigs.auth}
-        employeeSignature={finalSigs.emp}
-      />
-
     </div>
   );
 }
