@@ -8,14 +8,145 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEpiProducts, useCreateEpiRequisition } from '@/hooks/useEpiRequisitions';
-import { EpiReceiptTemplate } from './EpiReceiptTemplate';
-import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { Search, ChevronsUpDown, Check, AlertCircle, Save } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+
+// Gera um recibo em PNG via Canvas nativo (sem dependência de html-to-image)
+function generateReceiptPng(
+  employee: { nome: string; cargo?: string; matricula?: string },
+  authorizer: { nome: string },
+  items: Array<{ productId: string; quantity: number }>,
+  products: Array<{ id: string; name: string }>,
+  authSig: string | null,
+  empSig: string | null,
+  date: string
+): Promise<string> {
+  return new Promise((resolve) => {
+    const W = 800;
+    const lineH = 28;
+    const padX = 40;
+    const rows = items.length;
+    const H = 440 + rows * lineH + 180;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    // background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // header bar
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, W, 80);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px Arial';
+    ctx.fillText('REQUISIÇÃO DE EPI / UNIFORME', padX, 50);
+    ctx.font = '14px Arial';
+    ctx.fillText(`Data: ${date}`, W - 180, 50);
+
+    let y = 110;
+    ctx.fillStyle = '#111';
+
+    // Employee info
+    ctx.font = 'bold 15px Arial';
+    ctx.fillText('FUNCIONÁRIO', padX, y);
+    ctx.font = '14px Arial';
+    y += 24;
+    ctx.fillText(`Nome: ${employee.nome}`, padX, y);
+    y += 22;
+    ctx.fillText(`Cargo: ${employee.cargo || '-'}`, padX, y);
+    y += 22;
+    ctx.fillText(`Matrícula: ${employee.matricula || '-'}`, padX, y);
+    y += 22;
+    ctx.fillText(`Autorizado por: ${authorizer.nome}`, padX, y);
+
+    y += 40;
+    // divider
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX, y);
+    ctx.lineTo(W - padX, y);
+    ctx.stroke();
+    y += 20;
+
+    // Items table header
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(padX, y, W - padX * 2, 30);
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 13px Arial';
+    ctx.fillText('ITEM', padX + 8, y + 20);
+    ctx.fillText('QUANTIDADE', W - 180, y + 20);
+    y += 30;
+
+    // Items rows
+    ctx.font = '13px Arial';
+    items.forEach((item, idx) => {
+      const prod = products.find(p => p.id === item.productId);
+      const bg = idx % 2 === 0 ? '#fafafa' : '#ffffff';
+      ctx.fillStyle = bg;
+      ctx.fillRect(padX, y, W - padX * 2, lineH);
+      ctx.fillStyle = '#222';
+      ctx.fillText(prod?.name || item.productId, padX + 8, y + 19);
+      ctx.fillText(String(item.quantity), W - 150, y + 19);
+      y += lineH;
+    });
+
+    y += 40;
+    // divider
+    ctx.strokeStyle = '#ccc';
+    ctx.beginPath();
+    ctx.moveTo(padX, y);
+    ctx.lineTo(W - padX, y);
+    ctx.stroke();
+    y += 30;
+
+    // Signatures
+    const sigW = (W - padX * 3) / 2;
+    const sigH = 90;
+
+    // Authorizer sig
+    ctx.font = 'bold 12px Arial';
+    ctx.fillStyle = '#555';
+    ctx.fillText('Assinatura do Autorizador', padX, y);
+    y += 8;
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padX, y, sigW, sigH);
+    if (authSig) {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, padX + 4, y + 4, sigW - 8, sigH - 8); };
+      img.src = authSig;
+    }
+    ctx.fillStyle = '#222';
+    ctx.font = '12px Arial';
+    ctx.fillText(authorizer.nome, padX + 4, y + sigH + 16);
+
+    // Employee sig
+    const empX = padX * 2 + sigW;
+    ctx.fillStyle = '#555';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('Assinatura do Recebedor', empX, y - 8);
+    ctx.strokeStyle = '#aaa';
+    ctx.strokeRect(empX, y, sigW, sigH);
+    if (empSig) {
+      const img2 = new Image();
+      img2.onload = () => { ctx.drawImage(img2, empX + 4, y + 4, sigW - 8, sigH - 8); };
+      img2.src = empSig;
+    }
+    ctx.fillStyle = '#222';
+    ctx.font = '12px Arial';
+    ctx.fillText(employee.nome, empX + 4, y + sigH + 16);
+
+    // Give images time to load then resolve
+    setTimeout(() => resolve(canvas.toDataURL('image/png')), 300);
+  });
+}
 
 // Helper component para buscar a última data de retirada
 function LastRequisitionDate({ employeeId, productId }: { employeeId: string, productId: string }) {
@@ -78,9 +209,7 @@ export function EpiRequisitionForm() {
   
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
-  const templateRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [finalSigs, setFinalSigs] = useState<{ auth: string | null, emp: string | null }>({ auth: null, emp: null });
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -122,24 +251,23 @@ export function EpiRequisitionForm() {
     const toastId = toast.loading('Gerando recibo e salvando requisição...');
 
     try {
-      // 1. Prepare data for template - use getCanvas() instead of getTrimmedCanvas() to avoid trim-canvas Vite bug
       const authorizerSigBase64 = authorizerSigRef.current?.getCanvas().toDataURL('image/png') || null;
       const employeeSigBase64 = employeeSigRef.current?.getCanvas().toDataURL('image/png') || null;
       
-      setFinalSigs({ auth: authorizerSigBase64, emp: employeeSigBase64 });
-
-      // Template is already populated via props. We just need to wait a tick for React to render it if any state changed.
-      await new Promise(r => setTimeout(r, 200));
-
-      // 2. Generate PNG via html-to-image
-      if (!templateRef.current) throw new Error("Template ref not found");
+      const dateStr = format(new Date(), 'dd/MM/yyyy');
       
-      const receiptBase64 = await toPng(templateRef.current, {
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-      });
+      // Gera PNG via Canvas nativo — sem html-to-image, sem erros de CORS/CSS
+      const receiptBase64 = await generateReceiptPng(
+        { nome: employee!.nome, cargo: employee!.cargo, matricula: employee!.matricula },
+        { nome: authorizer!.nome },
+        validItems,
+        epiProducts || [],
+        authorizerSigBase64,
+        employeeSigBase64,
+        dateStr
+      );
 
-      // 3. Submit to Supabase
+      // Salva no Supabase
       await createMutation.mutateAsync({
         authorizer_id: authorizerId,
         employee_id: employeeId,
@@ -150,8 +278,6 @@ export function EpiRequisitionForm() {
       });
 
       toast.success('Recibo gerado e salvo com sucesso!', { id: toastId });
-      
-      // Cleanup & Redirect
       navigate({ to: '/almoxarifado/requisicoes' });
     } catch (err: any) {
       console.error(err);
