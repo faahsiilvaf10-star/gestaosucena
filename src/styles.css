@@ -87,7 +87,14 @@
   --color-muted: hsl(0 0% 53%);
   --color-stroke: hsl(0 0% 12%);
   --color-accent: hsl(0 0% 96%);
-
+  
+  --color-popover: hsl(0 0% 8%);
+  --color-popover-foreground: hsl(0 0% 96%);
+  --color-card: hsl(0 0% 8%);
+  --color-card-foreground: hsl(0 0% 96%);
+  
+  --color-primary: hsl(0 0% 96%);
+  --color-primary-foreground: hsl(0 0% 4%);
   --font-body: 'Inter', sans-serif;
   --font-display: 'Instrument Serif', serif;
   --font-tarmiles: 'TarmilesAction', sans-serif;

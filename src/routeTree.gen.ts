@@ -23,7 +23,6 @@ import { Route as AlmoxarifadoAduboRouteImport } from './routes/almoxarifado/adu
 import { Route as AlmoxarifadoAspersoresRouteImport } from './routes/almoxarifado/aspersores'
 import { Route as AlmoxarifadoEstoqueRouteImport } from './routes/almoxarifado/estoque'
 import { Route as AlmoxarifadoNotasFiscaisRouteImport } from './routes/almoxarifado/notas-fiscais'
-import { Route as AlmoxarifadoPedidosRouteImport } from './routes/almoxarifado/pedidos'
 import { Route as AlmoxarifadoRequisicaoRouteImport } from './routes/almoxarifado/requisicao'
 import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/index'
 import { Route as EquipamentosEntradaSaidaRouteImport } from './routes/equipamentos/entrada-saida'
@@ -40,6 +39,9 @@ import { Route as RhCalendarioHydroRouteImport } from './routes/rh/calendario-hy
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
 import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
+import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
+import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado/pedidos/$id'
+import { Route as AlmoxarifadoPedidosNovoRouteImport } from './routes/almoxarifado/pedidos/novo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,11 +114,6 @@ const AlmoxarifadoNotasFiscaisRoute =
     path: '/notas-fiscais',
     getParentRoute: () => AlmoxarifadoRoute,
   } as any)
-const AlmoxarifadoPedidosRoute = AlmoxarifadoPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => AlmoxarifadoRoute,
-} as any)
 const AlmoxarifadoRequisicaoRoute = AlmoxarifadoRequisicaoRouteImport.update({
   id: '/requisicao',
   path: '/requisicao',
@@ -198,6 +195,22 @@ const RhRelatorioPresencaRoute = RhRelatorioPresencaRouteImport.update({
   path: '/relatorio-presenca',
   getParentRoute: () => RhRoute,
 } as any)
+const AlmoxarifadoPedidosIndexRoute =
+  AlmoxarifadoPedidosIndexRouteImport.update({
+    id: '/pedidos/',
+    path: '/pedidos/',
+    getParentRoute: () => AlmoxarifadoRoute,
+  } as any)
+const AlmoxarifadoPedidosIdRoute = AlmoxarifadoPedidosIdRouteImport.update({
+  id: '/pedidos/$id',
+  path: '/pedidos/$id',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const AlmoxarifadoPedidosNovoRoute = AlmoxarifadoPedidosNovoRouteImport.update({
+  id: '/pedidos/novo',
+  path: '/pedidos/novo',
+  getParentRoute: () => AlmoxarifadoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -213,7 +226,6 @@ export interface FileRoutesByFullPath {
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
-  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -231,6 +243,9 @@ export interface FileRoutesByFullPath {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/rh/': typeof RhIndexRoute
+  '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
+  '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -242,7 +257,6 @@ export interface FileRoutesByTo {
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
-  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -260,6 +274,9 @@ export interface FileRoutesByTo {
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
   '/rh': typeof RhIndexRoute
+  '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
+  '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -276,7 +293,6 @@ export interface FileRoutesById {
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
-  '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -294,6 +310,9 @@ export interface FileRoutesById {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/rh/': typeof RhIndexRoute
+  '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
+  '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
+  '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -311,7 +330,6 @@ export interface FileRouteTypes {
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
-    | '/almoxarifado/pedidos'
     | '/almoxarifado/requisicao'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/todos'
@@ -329,6 +347,9 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/rh/'
+    | '/almoxarifado/pedidos/$id'
+    | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/pedidos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -340,7 +361,6 @@ export interface FileRouteTypes {
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
-    | '/almoxarifado/pedidos'
     | '/almoxarifado/requisicao'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/todos'
@@ -358,6 +378,9 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/rh'
+    | '/almoxarifado/pedidos/$id'
+    | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/pedidos'
   id:
     | '__root__'
     | '/'
@@ -373,7 +396,6 @@ export interface FileRouteTypes {
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
-    | '/almoxarifado/pedidos'
     | '/almoxarifado/requisicao'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/todos'
@@ -391,6 +413,9 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/rh/'
+    | '/almoxarifado/pedidos/$id'
+    | '/almoxarifado/pedidos/novo'
+    | '/almoxarifado/pedidos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -505,13 +530,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlmoxarifadoNotasFiscaisRouteImport
       parentRoute: typeof AlmoxarifadoRoute
     }
-    '/almoxarifado/pedidos': {
-      id: '/almoxarifado/pedidos'
-      path: '/pedidos'
-      fullPath: '/almoxarifado/pedidos'
-      preLoaderRoute: typeof AlmoxarifadoPedidosRouteImport
-      parentRoute: typeof AlmoxarifadoRoute
-    }
     '/almoxarifado/requisicao': {
       id: '/almoxarifado/requisicao'
       path: '/requisicao'
@@ -624,6 +642,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhRelatorioPresencaRouteImport
       parentRoute: typeof RhRoute
     }
+    '/almoxarifado/pedidos/': {
+      id: '/almoxarifado/pedidos/'
+      path: '/pedidos'
+      fullPath: '/almoxarifado/pedidos/'
+      preLoaderRoute: typeof AlmoxarifadoPedidosIndexRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/pedidos/$id': {
+      id: '/almoxarifado/pedidos/$id'
+      path: '/pedidos/$id'
+      fullPath: '/almoxarifado/pedidos/$id'
+      preLoaderRoute: typeof AlmoxarifadoPedidosIdRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/almoxarifado/pedidos/novo': {
+      id: '/almoxarifado/pedidos/novo'
+      path: '/pedidos/novo'
+      fullPath: '/almoxarifado/pedidos/novo'
+      preLoaderRoute: typeof AlmoxarifadoPedidosNovoRouteImport
+      parentRoute: typeof AlmoxarifadoRoute
+    }
   }
 }
 
@@ -632,9 +671,11 @@ interface AlmoxarifadoRouteChildren {
   AlmoxarifadoAspersoresRoute: typeof AlmoxarifadoAspersoresRoute
   AlmoxarifadoEstoqueRoute: typeof AlmoxarifadoEstoqueRoute
   AlmoxarifadoNotasFiscaisRoute: typeof AlmoxarifadoNotasFiscaisRoute
-  AlmoxarifadoPedidosRoute: typeof AlmoxarifadoPedidosRoute
   AlmoxarifadoRequisicaoRoute: typeof AlmoxarifadoRequisicaoRoute
   AlmoxarifadoIndexRoute: typeof AlmoxarifadoIndexRoute
+  AlmoxarifadoPedidosIdRoute: typeof AlmoxarifadoPedidosIdRoute
+  AlmoxarifadoPedidosNovoRoute: typeof AlmoxarifadoPedidosNovoRoute
+  AlmoxarifadoPedidosIndexRoute: typeof AlmoxarifadoPedidosIndexRoute
 }
 
 const AlmoxarifadoRouteChildren: AlmoxarifadoRouteChildren = {
@@ -642,9 +683,11 @@ const AlmoxarifadoRouteChildren: AlmoxarifadoRouteChildren = {
   AlmoxarifadoAspersoresRoute: AlmoxarifadoAspersoresRoute,
   AlmoxarifadoEstoqueRoute: AlmoxarifadoEstoqueRoute,
   AlmoxarifadoNotasFiscaisRoute: AlmoxarifadoNotasFiscaisRoute,
-  AlmoxarifadoPedidosRoute: AlmoxarifadoPedidosRoute,
   AlmoxarifadoRequisicaoRoute: AlmoxarifadoRequisicaoRoute,
   AlmoxarifadoIndexRoute: AlmoxarifadoIndexRoute,
+  AlmoxarifadoPedidosIdRoute: AlmoxarifadoPedidosIdRoute,
+  AlmoxarifadoPedidosNovoRoute: AlmoxarifadoPedidosNovoRoute,
+  AlmoxarifadoPedidosIndexRoute: AlmoxarifadoPedidosIndexRoute,
 }
 
 const AlmoxarifadoRouteWithChildren = AlmoxarifadoRoute._addFileChildren(
