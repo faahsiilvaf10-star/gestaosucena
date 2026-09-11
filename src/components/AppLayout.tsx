@@ -21,7 +21,7 @@ const headerLinks = [
   { label: 'Lembretes', href: '/lembretes' },
   { label: 'InstaCena', href: '/instacena' },
   { label: 'Almoxarifado', href: '/almoxarifado' },
-  { label: 'Documentos', href: '#' },
+  { label: 'Documentos', href: '/documentos' },
   { label: 'Equipamentos', href: '/equipamentos' },
   { label: 'Segurança', href: '#' },
   { label: 'RH', href: '/rh' },
@@ -112,7 +112,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <FileText size={12} className={isDark ? "text-white/60" : "text-gray-500"} />
                 <div className="flex flex-col justify-center leading-none">
                   <span className={`text-[7px] uppercase tracking-wider font-semibold ${isDark ? 'text-white/50' : 'text-gray-500'} mb-[2px]`}>Contrato</span>
-                  <span className={`text-[11px] md:text-xs font-bold tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`}>460001269</span>
+                  <span className={`text-[11px] md:text-xs font-bold tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`}>4600012690</span>
                 </div>
               </div>
               

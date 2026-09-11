@@ -24,6 +24,7 @@ import { Route as AlmoxarifadoAspersoresRouteImport } from './routes/almoxarifad
 import { Route as AlmoxarifadoEstoqueRouteImport } from './routes/almoxarifado/estoque'
 import { Route as AlmoxarifadoNotasFiscaisRouteImport } from './routes/almoxarifado/notas-fiscais'
 import { Route as AlmoxarifadoRequisicaoRouteImport } from './routes/almoxarifado/requisicao'
+import { Route as DocumentosIndexRouteImport } from './routes/documentos/index'
 import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/index'
 import { Route as EquipamentosEntradaSaidaRouteImport } from './routes/equipamentos/entrada-saida'
 import { Route as EquipamentosTodosRouteImport } from './routes/equipamentos/todos'
@@ -120,6 +121,11 @@ const AlmoxarifadoRequisicaoRoute = AlmoxarifadoRequisicaoRouteImport.update({
   id: '/requisicao',
   path: '/requisicao',
   getParentRoute: () => AlmoxarifadoRoute,
+} as any)
+const DocumentosIndexRoute = DocumentosIndexRouteImport.update({
+  id: '/documentos/',
+  path: '/documentos/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const EquipamentosIndexRoute = EquipamentosIndexRouteImport.update({
   id: '/',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
+  '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/rh/': typeof RhIndexRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
+  '/documentos': typeof DocumentosIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
   '/rh': typeof RhIndexRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
+  '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/rh/': typeof RhIndexRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/almoxarifado/'
+    | '/documentos/'
     | '/equipamentos/'
     | '/instacena/'
     | '/rh/'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/almoxarifado'
+    | '/documentos'
     | '/equipamentos'
     | '/instacena'
     | '/rh'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/almoxarifado/'
+    | '/documentos/'
     | '/equipamentos/'
     | '/instacena/'
     | '/rh/'
@@ -454,6 +466,7 @@ export interface RootRouteChildren {
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
   RhRoute: typeof RhRouteWithChildren
+  DocumentosIndexRoute: typeof DocumentosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/almoxarifado/requisicao'
       preLoaderRoute: typeof AlmoxarifadoRequisicaoRouteImport
       parentRoute: typeof AlmoxarifadoRoute
+    }
+    '/documentos/': {
+      id: '/documentos/'
+      path: '/documentos'
+      fullPath: '/documentos/'
+      preLoaderRoute: typeof DocumentosIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/equipamentos/': {
       id: '/equipamentos/'
@@ -806,6 +826,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
   RhRoute: RhRouteWithChildren,
+  DocumentosIndexRoute: DocumentosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -18,7 +18,9 @@ import { cn } from '@/lib/utils';
 // Gera um recibo em PNG via Canvas nativo (sem dependência de html-to-image)
 function generateReceiptPng(
   employee: { nome: string; cargo?: string; matricula?: string },
-  authorizer: { nome: string },
+  authorizer: { nome: string; matricula?: string },
+  destinationArea: string,
+  reason: string,
   items: Array<{ productId: string; quantity: number }>,
   products: Array<{ id: string; name: string }>,
   authSig: string | null,
@@ -27,124 +29,163 @@ function generateReceiptPng(
 ): Promise<string> {
   return new Promise((resolve) => {
     const W = 800;
-    const lineH = 28;
     const padX = 40;
-    const rows = items.length;
-    const H = 440 + rows * lineH + 180;
+    const itemsRows = Math.max(1, items.length);
+    const H = 650 + itemsRows * 30;
+    
+    const scale = 2; // Aumenta a resolução para impressão
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = W * scale;
+    canvas.height = H * scale;
     const ctx = canvas.getContext('2d')!;
+    
+    ctx.scale(scale, scale);
 
-    // background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
 
-    // header bar
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, W, 80);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px Arial';
-    ctx.fillText('REQUISIÇÃO DE EPI / UNIFORME', padX, 50);
-    ctx.font = '14px Arial';
-    ctx.fillText(`Data: ${date}`, W - 180, 50);
+    const drawLine = (x1: number, y1: number, x2: number, y2: number, color = '#999') => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    };
 
-    let y = 110;
-    ctx.fillStyle = '#111';
+    const drawText = (text: string, x: number, y: number, font = '14px Arial', color = '#333') => {
+      ctx.font = font;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+    };
 
-    // Employee info
-    ctx.font = 'bold 15px Arial';
-    ctx.fillText('FUNCIONÁRIO', padX, y);
-    ctx.font = '14px Arial';
-    y += 24;
-    ctx.fillText(`Nome: ${employee.nome}`, padX, y);
-    y += 22;
-    ctx.fillText(`Cargo: ${employee.cargo || '-'}`, padX, y);
-    y += 22;
-    ctx.fillText(`Matrícula: ${employee.matricula || '-'}`, padX, y);
-    y += 22;
-    ctx.fillText(`Autorizado por: ${authorizer.nome}`, padX, y);
+    const imgLogo = new Image();
+    imgLogo.crossOrigin = 'anonymous';
+    imgLogo.src = '/logo-relatorio.png';
 
-    y += 40;
-    // divider
-    ctx.strokeStyle = '#ccc';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padX, y);
-    ctx.lineTo(W - padX, y);
-    ctx.stroke();
-    y += 20;
+    const drawContent = () => {
+      try {
+        ctx.drawImage(imgLogo, padX, 30, 180, 50);
+      } catch (e) {
+        // logo fallback
+      }
 
-    // Items table header
-    ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(padX, y, W - padX * 2, 30);
-    ctx.fillStyle = '#111';
-    ctx.font = 'bold 13px Arial';
-    ctx.fillText('ITEM', padX + 8, y + 20);
-    ctx.fillText('QUANTIDADE', W - 180, y + 20);
-    y += 30;
+      drawText('CONTRATO: 4600012690', W - padX - 160, 60, '12px Arial', '#666');
+      drawLine(padX, 90, W - padX, 90, '#ccc');
+      drawText('REQUISIÇÃO DE EPI', W / 2 - 120, 140, 'bold 24px Arial', '#333');
 
-    // Items rows
-    ctx.font = '13px Arial';
-    items.forEach((item, idx) => {
-      const prod = products.find(p => p.id === item.productId);
-      const bg = idx % 2 === 0 ? '#fafafa' : '#ffffff';
-      ctx.fillStyle = bg;
-      ctx.fillRect(padX, y, W - padX * 2, lineH);
-      ctx.fillStyle = '#222';
-      ctx.fillText(prod?.name || item.productId, padX + 8, y + 19);
-      ctx.fillText(String(item.quantity), W - 150, y + 19);
-      y += lineH;
-    });
+      let y = 190;
+      const col2X = W / 2 + 20; 
+      const col1LineEnd = col2X + 40; 
+      const col2LineStart = col2X + 60;
 
-    y += 40;
-    // divider
-    ctx.strokeStyle = '#ccc';
-    ctx.beginPath();
-    ctx.moveTo(padX, y);
-    ctx.lineTo(W - padX, y);
-    ctx.stroke();
-    y += 30;
+      // ROW 1
+      drawText('DATA:', padX, y, 'bold 14px Arial');
+      drawText(date, padX + 50, y, '14px Arial');
+      drawLine(padX, y + 5, col1LineEnd, y + 5);
 
-    // Signatures
-    const sigW = (W - padX * 3) / 2;
-    const sigH = 90;
+      drawText('ÁREA DESTINO:', col2LineStart, y, 'bold 14px Arial');
+      drawText(destinationArea, col2LineStart + 115, y, '14px Arial');
+      drawLine(col2LineStart, y + 5, W - padX, y + 5);
+      y += 40;
 
-    // Authorizer sig
-    ctx.font = 'bold 12px Arial';
-    ctx.fillStyle = '#555';
-    ctx.fillText('Assinatura do Autorizador', padX, y);
-    y += 8;
-    ctx.strokeStyle = '#aaa';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padX, y, sigW, sigH);
-    if (authSig) {
-      const img = new Image();
-      img.onload = () => { ctx.drawImage(img, padX + 4, y + 4, sigW - 8, sigH - 8); };
-      img.src = authSig;
-    }
-    ctx.fillStyle = '#222';
-    ctx.font = '12px Arial';
-    ctx.fillText(authorizer.nome, padX + 4, y + sigH + 16);
+      // ROW 2
+      drawText('AUTORIZADO POR:', padX, y, 'bold 14px Arial');
+      drawText(authorizer.nome.toUpperCase(), padX + 140, y, '14px Arial');
+      drawLine(padX, y + 5, col1LineEnd, y + 5);
 
-    // Employee sig
-    const empX = padX * 2 + sigW;
-    ctx.fillStyle = '#555';
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText('Assinatura do Recebedor', empX, y - 8);
-    ctx.strokeStyle = '#aaa';
-    ctx.strokeRect(empX, y, sigW, sigH);
-    if (empSig) {
-      const img2 = new Image();
-      img2.onload = () => { ctx.drawImage(img2, empX + 4, y + 4, sigW - 8, sigH - 8); };
-      img2.src = empSig;
-    }
-    ctx.fillStyle = '#222';
-    ctx.font = '12px Arial';
-    ctx.fillText(employee.nome, empX + 4, y + sigH + 16);
+      drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
+      drawText(authorizer.matricula || '-', col2LineStart + 90, y, '14px Arial');
+      drawLine(col2LineStart, y + 5, W - padX, y + 5);
+      y += 40;
 
-    // Give images time to load then resolve
-    setTimeout(() => resolve(canvas.toDataURL('image/png')), 300);
+      // ROW 3
+      drawText('MOTIVO:', padX, y, 'bold 14px Arial');
+      drawText(reason, padX + 65, y, '14px Arial');
+      drawLine(padX, y + 5, W - padX, y + 5);
+      y += 40;
+
+      // ROW 4
+      drawText('FUNCIONÁRIO(A):', padX, y, 'bold 14px Arial');
+      drawText(employee.nome.toUpperCase(), padX + 130, y, '14px Arial');
+      drawLine(padX, y + 5, W - padX, y + 5);
+      y += 40;
+
+      // ROW 5
+      drawText('FUNÇÃO:', padX, y, 'bold 14px Arial');
+      drawText((employee.cargo || '-').toUpperCase(), padX + 70, y, '14px Arial');
+      drawLine(padX, y + 5, col1LineEnd, y + 5);
+
+      drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
+      drawText(employee.matricula || '-', col2LineStart + 90, y, '14px Arial');
+      drawLine(col2LineStart, y + 5, W - padX, y + 5);
+      y += 40;
+
+      // Table Header (EPI gray bar)
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(padX, y, W - padX * 2, 30);
+      ctx.strokeStyle = '#ddd';
+      ctx.strokeRect(padX, y, W - padX * 2, 30);
+      drawText('EPI', padX + 12, y + 20, 'bold 16px Arial');
+      y += 30;
+
+      // Table Subheader
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fillRect(padX, y, W - padX * 2, 30);
+      ctx.strokeRect(padX, y, W - padX * 2, 30);
+      const col1W = 576;
+      ctx.strokeRect(padX, y, col1W, 30);
+      drawText('EPI / Uniforme', padX + 12, y + 20, 'bold 14px Arial');
+      drawText('Qtd', padX + col1W + 50, y + 20, 'bold 14px Arial');
+      y += 30;
+
+      // Items
+      ctx.fillStyle = '#ffffff';
+      if (items.length > 0) {
+        items.forEach(item => {
+          const prod = products.find(p => p.id === item.productId);
+          ctx.strokeRect(padX, y, W - padX * 2, 30);
+          ctx.strokeRect(padX, y, col1W, 30);
+          drawText(prod?.name || item.productId, padX + 12, y + 20, '14px Arial');
+          drawText(String(item.quantity), padX + col1W + 60, y + 20, '14px Arial');
+          y += 30;
+        });
+      } else {
+        ctx.strokeRect(padX, y, W - padX * 2, 30);
+        ctx.strokeRect(padX, y, col1W, 30);
+        drawText('Nenhum item selecionado.', padX + 12, y + 20, '14px Arial');
+        drawText('-', padX + col1W + 60, y + 20, '14px Arial');
+        y += 30;
+      }
+
+      y += 80;
+
+      // Signatures
+      const sigW = 250;
+      const centerL = padX + (W / 2 - padX) / 2;
+      const centerR = W / 2 + (W / 2 - padX) / 2;
+
+      if (authSig) {
+        const img = new Image();
+        img.onload = () => { ctx.drawImage(img, centerL - sigW / 2, y - 60, sigW, 60); };
+        img.src = authSig;
+      }
+      drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
+      drawText('ASSINATURA DO AUTORIZADOR', centerL - 100, y + 20, '12px Arial');
+
+      if (empSig) {
+        const img2 = new Image();
+        img2.onload = () => { ctx.drawImage(img2, centerR - sigW / 2, y - 60, sigW, 60); };
+        img2.src = empSig;
+      }
+      drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
+      drawText('ASSINATURA DO FUNCIONÁRIO', centerR - 95, y + 20, '12px Arial');
+
+      setTimeout(() => resolve(canvas.toDataURL('image/png')), 300);
+    };
+
+    imgLogo.onload = drawContent;
+    imgLogo.onerror = drawContent;
   });
 }
 
@@ -259,7 +300,9 @@ export function EpiRequisitionForm() {
       // Gera PNG via Canvas nativo — sem html-to-image, sem erros de CORS/CSS
       const receiptBase64 = await generateReceiptPng(
         { nome: employee!.nome, cargo: employee!.cargo, matricula: employee!.matricula },
-        { nome: authorizer!.nome },
+        { nome: authorizer!.nome, matricula: authorizer!.matricula },
+        destinationArea || 'Almoxarifado',
+        reason || '.',
         validItems,
         epiProducts || [],
         authorizerSigBase64,
@@ -288,7 +331,7 @@ export function EpiRequisitionForm() {
   };
 
   return (
-    <div className="space-y-8 pb-20 relative">
+    <div className="space-y-8 relative">
       <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
         <h3 className="text-xl font-bold border-b pb-4">Dados da Requisição</h3>
         
@@ -501,8 +544,8 @@ export function EpiRequisitionForm() {
         </div>
       </div>
 
-      {/* Fixed Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg flex justify-end gap-4 z-50">
+      {/* Footer Actions */}
+      <div className="flex justify-end gap-4 pt-4 mt-8 mb-8 border-t">
          <div className="flex items-center text-sm text-muted-foreground mr-auto hidden sm:flex">
            <AlertCircle className="w-4 h-4 mr-2" />
            Isso irá abater do estoque e gerar um comprovante PNG inalterável.

@@ -37,7 +37,7 @@ export const EpiReceiptTemplate = forwardRef<HTMLDivElement, ReceiptData>((props
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <img src="/logo.png" alt="Logo" style={{ height: '50px', objectFit: 'contain' }} />
+        <img src="/logo-relatorio.png" alt="Logo" style={{ height: '50px', objectFit: 'contain' }} />
         <div style={{ fontSize: '12px', color: '#666' }}>CONTRATO: 4600012690</div>
       </div>
       
@@ -89,10 +89,13 @@ export const EpiReceiptTemplate = forwardRef<HTMLDivElement, ReceiptData>((props
       {/* Items Table */}
       <div style={{ marginTop: '30px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
-          <thead style={{ backgroundColor: '#e9ecef' }}>
-            <tr>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd', width: '80%' }}>EPI / Uniforme</th>
-              <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', width: '20%' }}>Qtd</th>
+          <thead>
+            <tr style={{ backgroundColor: '#e2e8f0' }}>
+              <th colSpan={2} style={{ padding: '10px 12px', textAlign: 'left', border: '1px solid #ddd', fontSize: '16px', color: '#333' }}>EPI</th>
+            </tr>
+            <tr style={{ backgroundColor: '#f1f5f9' }}>
+              <th style={{ padding: '10px 12px', textAlign: 'left', border: '1px solid #ddd', width: '80%', fontSize: '14px', color: '#333' }}>EPI / Uniforme</th>
+              <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid #ddd', width: '20%', fontSize: '14px', color: '#333' }}>Qtd</th>
             </tr>
           </thead>
           <tbody>
