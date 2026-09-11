@@ -172,9 +172,14 @@ export function PurchaseOrderForm() {
     }
   }
 
+  const onError = (errors: any) => {
+    console.error("Erros de validação:", errors)
+    toast.error('Preencha os campos obrigatórios corretamente.')
+  }
+
   return (
     <div className="space-y-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
         
         {/* Dados do Pedido */}
         <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
@@ -422,7 +427,7 @@ export function PurchaseOrderForm() {
             onClick={form.handleSubmit(() => {
               setFormDataForConfirm(form.getValues())
               handleConfirmSubmit('Rascunho')
-            })}
+            }, onError)}
             disabled={isSubmitting}
           >
             <Save className="w-4 h-4 mr-2" />
