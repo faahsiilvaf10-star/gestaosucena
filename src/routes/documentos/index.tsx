@@ -36,20 +36,15 @@ function DocumentosIndex() {
           <button
             key={cargo.id}
             onClick={() => setSelectedCargo(cargo)}
-            className={`group relative flex flex-col items-center justify-center p-10 rounded-3xl transition-all duration-300 overflow-hidden ${
-              isDark 
-                ? 'bg-[#121214] border border-white/5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] hover:bg-[#1a1a1c] hover:border-white/10 hover:-translate-y-1 hover:shadow-[0_12px_32px_-8px_rgba(250,204,21,0.15)]' 
-                : 'bg-white border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.1)]'
-            }`}
+            className="group relative flex flex-col items-center justify-center p-10 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
           >
-            {/* Background glow effect on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
-            
-            <div className={`p-4 rounded-2xl mb-6 transition-transform duration-500 group-hover:scale-110 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
-              <cargo.icon className={`w-8 h-8 ${isDark ? 'text-white' : 'text-gray-900'}`} strokeWidth={1.5} />
+            {/* Ícone */}
+            <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
+              <cargo.icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
             </div>
             
-            <h3 className="font-serif text-xl tracking-wide font-medium text-center">
+            {/* Texto */}
+            <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center">
               {cargo.name}
             </h3>
           </button>
