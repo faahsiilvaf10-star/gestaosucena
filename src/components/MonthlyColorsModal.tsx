@@ -31,7 +31,10 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
       {/* Outer Modal Container with Golden Glow Border */}
       <div 
         className={`relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-6 
-          ${isDark ? 'bg-[#0f1014] text-gray-900 dark:text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-gray-900 text-gray-900 dark:text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]'}
+          ${isDark 
+            ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' 
+            : 'bg-white text-black shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]'
+          }
         `}
         onClick={e => e.stopPropagation()}
       >
@@ -45,7 +48,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
             e.stopPropagation()
             onClose()
           }}
-          className={`absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full transition-colors hover:bg-white/10 z-50 cursor-pointer`}
+          className={`absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full transition-colors z-50 cursor-pointer ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-black/10 text-black'}`}
           title="Fechar"
         >
           <X size={20} />
@@ -67,12 +70,15 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
               <div 
                 key={month} 
                 className={`p-3 md:p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 md:gap-3 transition-colors 
-                  bg-[#16171b] border-white/5 hover:border-white/10
+                  ${isDark 
+                    ? 'bg-[#16171b] border-white/5 hover:border-white/10' 
+                    : 'bg-gray-50 border-black/5 hover:border-black/10'
+                  }
                 `}
               >
                 <div className="text-center">
                   <h3 className="font-bold text-[15px] md:text-[16px] leading-tight mb-0.5">{month}</h3>
-                  <p className="text-[11px] text-gray-900 dark:text-white/50">{activeColorData.name}</p>
+                  <p className={`text-[11px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>{activeColorData.name}</p>
                 </div>
                 
                 <div className="flex items-center justify-center gap-2.5 h-8">
@@ -87,7 +93,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
                           rounded-full flex items-center justify-center 
                           ${colorData.bg} 
                           ${isActive 
-                            ? `w-7 h-7 ring-[1px] ring-offset-[3px] ring-offset-[#16171b] ${colorData.ring} ${colorData.glow}` 
+                            ? `w-7 h-7 ring-[1px] ring-offset-[3px] ${isDark ? 'ring-offset-[#16171b]' : 'ring-offset-gray-50'} ${colorData.ring} ${colorData.glow}` 
                             : 'w-4 h-4 md:w-5 md:h-5 opacity-50'
                           }
                         `}
