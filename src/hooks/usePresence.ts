@@ -20,7 +20,8 @@ export function usePresence(userId?: string) {
     markOnline()
 
     // Realtime Presence para online status instantâneo (muito mais rápido que banco)
-    const channel = supabase.channel('global_presence')
+    const channelName = `global_presence_${userId}_${Date.now()}_${Math.random()}`
+    const channel = supabase.channel(channelName)
     presenceChannelRef.current = channel
 
     channel
