@@ -7,6 +7,7 @@ import { getConversationMessages, Message } from '../../lib/api-chat'
 import { format, isToday, isYesterday } from 'date-fns'
 import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
+import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
 function formatMessageDate(dateString: string) {
   const d = new Date(dateString)
@@ -20,6 +21,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
   const { setActiveConversation } = useChat()
   const [messages, setMessages] = useState<Message[]>([])
   const [contactName, setContactName] = useState('Carregando...')
+  const [contactRole, setContactRole] = useState('')
   const [contactStatus, setContactStatus] = useState('')
   const [contactAvatar, setContactAvatar] = useState('')
   
@@ -57,6 +59,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         const otherUser = users?.find((u: any) => u.id === otherUserId)
         if (otherUser) {
           setContactName(otherUser.name)
+          setContactRole(otherUser.role || '')
           setContactAvatar(otherUser.avatar_url || '')
         }
         
@@ -140,7 +143,10 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
           </div>
           
           <div className="flex flex-col leading-tight max-w-[200px]">
-            <span className="font-semibold text-sm truncate" title={contactName}>{contactName}</span>
+            <span className="font-semibold text-sm truncate flex items-center" title={contactName}>
+              {contactName}
+              {isAdmin(contactName, contactRole) && <VerifiedBadge />}
+            </span>
             <span className={`text-xs truncate ${contactStatus === 'Online' ? 'text-[#D6A72B]' : 'text-gray-500'}`}>{contactStatus}</span>
           </div>
         </div>

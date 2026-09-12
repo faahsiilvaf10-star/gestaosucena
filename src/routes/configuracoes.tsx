@@ -6,6 +6,7 @@ import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
 import { getCroppedImg } from '../lib/cropImage'
 import { Area } from 'react-easy-crop'
 import { Camera, Loader2, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { VerifiedBadge, isAdmin } from '../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/configuracoes')({
   component: ConfiguracoesRoute,
@@ -22,6 +23,7 @@ function ConfiguracoesRoute() {
   const [whatsapp, setWhatsapp] = useState('')
   const [password, setPassword] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [role, setRole] = useState('')
   
   // Image Cropping
   const [imageSrc, setImageSrc] = useState<string | null>(null)
@@ -36,6 +38,7 @@ function ConfiguracoesRoute() {
         setEmail(user.email || '')
         setWhatsapp(user.user_metadata?.whatsapp || '')
         setAvatarUrl(user.user_metadata?.avatar_url || '')
+        setRole(user.user_metadata?.role || '')
       }
       setLoading(false)
     }
@@ -186,7 +189,10 @@ function ConfiguracoesRoute() {
                 />
               </div>
               
-              <h3 className="font-bold text-lg">{name || 'Usuário'}</h3>
+              <h3 className="font-bold text-lg flex items-center justify-center gap-1">
+                {name || 'Usuário'}
+                {isAdmin(name, role) && <VerifiedBadge />}
+              </h3>
               <p className="text-sm text-gray-900 dark:text-white/50 break-all">{email}</p>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { User, Check, CheckCheck } from 'lucide-react'
 import { format } from 'date-fns'
+import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
 // Utilizaremos dados locais de teste se a RPC original falhar para não quebrar.
 export function ConversationList({ currentUserId }: { currentUserId: string }) {
@@ -125,7 +126,10 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                 )}
               </div>
               <div className="flex-1 text-left overflow-hidden">
-                <p className={`text-sm font-semibold truncate ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{user.name}</p>
+                <p className={`text-sm font-semibold truncate flex items-center ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                  {user.name}
+                  {isAdmin(user.name, user.role) && <VerifiedBadge />}
+                </p>
                 <p className={`text-xs truncate ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>
                   {user.isOnline ? 'Online' : 'Offline'}
                 </p>
@@ -172,7 +176,10 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   
                   <div className="flex-1 text-left overflow-hidden border-b pb-3 pt-1 border-black/5 dark:border-white/5">
                     <div className="flex justify-between items-center mb-1">
-                      <p className={`text-[15px] font-semibold truncate ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{otherUser.name}</p>
+                      <p className={`text-[15px] font-semibold truncate flex items-center ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                        {otherUser.name}
+                        {isAdmin(otherUser.name, otherUser.role) && <VerifiedBadge />}
+                      </p>
                       <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500')}`}>{msgTime}</span>
                     </div>
                     

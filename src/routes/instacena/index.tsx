@@ -6,6 +6,7 @@ import Cropper from 'react-easy-crop'
 import { Area, Point } from 'react-easy-crop'
 import { getCroppedImg } from '../../lib/cropImage'
 import { StoryViewer } from '../../components/instacena/StoryViewer'
+import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/instacena/')({
   component: FeedRoute,
@@ -468,7 +469,10 @@ function FeedRoute() {
         {/* User Info (Visible when editing) */}
         {isEditing && (
           <div className="flex items-center gap-2 mb-2 animate-in fade-in duration-300">
-            <span className="font-semibold text-sm">{currentUser?.display_name}</span>
+            <span className="font-semibold text-sm flex items-center">
+              {currentUser?.display_name}
+              {isAdmin(currentUser?.display_name) && <VerifiedBadge />}
+            </span>
             <div className="bg-gray-100 dark:bg-white/10 text-[10px] font-semibold px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400">
               Público
             </div>
@@ -645,8 +649,9 @@ function FeedRoute() {
                 )}
               </div>
               
-              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-gray-900 dark:text-white leading-tight z-10 break-words line-clamp-2 shadow-sm">
-                {group.user.display_name || group.user.username || 'Usuário'}
+              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-gray-900 dark:text-white leading-tight z-10 shadow-sm flex items-center">
+                <span className="truncate">{group.user.display_name || group.user.username || 'Usuário'}</span>
+                {isAdmin(group.user.display_name || group.user.username) && <VerifiedBadge size={12} />}
               </span>
             </div>
           )
@@ -685,7 +690,10 @@ function FeedRoute() {
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-bold text-[15px]">{post.social_profiles?.display_name || 'Usuário'}</span>
+                    <span className="font-bold text-[15px] flex items-center">
+                      {post.social_profiles?.display_name || 'Usuário'}
+                      {isAdmin(post.social_profiles?.display_name) && <VerifiedBadge />}
+                    </span>
                     <span className="text-[12px] text-gray-500">
                       {formatPostTime(post.created_at)} • 
                       <span className="capitalize ml-1">{post.visibility === 'public' ? 'Público' : post.visibility}</span>

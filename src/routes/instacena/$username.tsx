@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Settings, Grid, Film, Bookmark, UserCheck, MessageCircle, Heart, Image as ImageIcon, MapPin, BadgeCheck, X, Trash2 } from 'lucide-react'
+import { Settings, Grid, Film, Bookmark, UserCheck, MessageCircle, Heart, Image as ImageIcon, MapPin, X, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/instacena/$username')({
   component: ProfileRoute,
@@ -228,8 +229,10 @@ function ProfileRoute() {
           
           {/* Row 1: Username & Settings */}
           <div className="flex items-center gap-4">
-            <h2 className="text-xl md:text-[22px] font-semibold tracking-tight">{profile.username}</h2>
-            {profile.is_verified && <BadgeCheck size={18} className="text-blue-500" fill="currentColor" />}
+            <h2 className="text-xl md:text-[22px] font-semibold tracking-tight flex items-center gap-1">
+              {profile.username}
+              {isAdmin(profile.display_name || profile.username) && <VerifiedBadge size={18} />}
+            </h2>
             {isOwnProfile && (
               <button className="p-1.5 hover:opacity-70 transition-opacity">
                 <Settings size={22} />

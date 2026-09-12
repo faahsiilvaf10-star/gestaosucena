@@ -8,6 +8,7 @@ import {
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
 import { GlobalSearchModal } from './GlobalSearchModal'
+import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
 
 interface UserInfo {
   id: string
@@ -267,7 +268,10 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             <span className="sucena-drawer-avatar-online" />
           </div>
           <div className="sucena-drawer-user-info">
-            <span className="sucena-drawer-user-name">{currentUser.name || 'Usuário'}</span>
+            <span className="sucena-drawer-user-name flex items-center gap-1">
+              <span className="truncate">{currentUser.name || 'Usuário'}</span>
+              {isAdmin(currentUser.name, currentUser.role) && <VerifiedBadge size={14} />}
+            </span>
             <span className="sucena-drawer-user-role">{currentUser.role || 'Usuário'}</span>
           </div>
           <ChevronRight size={16} className="sucena-drawer-user-chevron" />
