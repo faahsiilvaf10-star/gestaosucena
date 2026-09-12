@@ -36,6 +36,7 @@ function RhEfetivoPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [selectedColaborador, setSelectedColaborador] = useState<EfetivoItem | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -386,8 +387,12 @@ function RhEfetivoPage() {
                 </thead>
                 <tbody className="divide-y divide-black/5 dark:divide-white/5">
                   {filteredItems.map(item => (
-                    <tr key={item.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                      <td className="p-4 font-mono text-xs w-40">
+                    <tr 
+                      key={item.id} 
+                      onClick={() => setSelectedColaborador(item)}
+                      className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <td className="p-4 font-mono text-xs w-40" onClick={e => e.stopPropagation()}>
                         {userEmail === 'ffaahsiilva@gmail.com' ? (
                           <input 
                             type="text"
@@ -428,6 +433,59 @@ function RhEfetivoPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Detalhes do Colaborador */}
+      {selectedColaborador && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-[#1a1a1b] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 shrink-0">
+              <div>
+                <h2 className="text-xl font-bold">{selectedColaborador.nome}</h2>
+                <p className="text-sm text-gray-500 mt-1">{selectedColaborador.cargo || 'Sem cargo'}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedColaborador(null)}
+                className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.status}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.matricula || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data de Admissão</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.data_admissao ? selectedColaborador.data_admissao.split('-').reverse().join('/') : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Setor</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.setor || '-'}</p>
+                </div>
+                
+                {selectedColaborador.raw_data && Object.entries(selectedColaborador.raw_data).map(([key, value]) => {
+                  // Skip existing fields
+                  if (['nome', 'cargo', 'matricula', 'data de admissão', 'status', 'setor'].includes(key.toLowerCase())) return null;
+                  if (value === null || value === undefined || value === '') return null;
+                  
+                  return (
+                    <div key={key} className="col-span-1 sm:col-span-2">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{key}</p>
+                      <p className="font-medium text-[15px] whitespace-pre-wrap">{String(value)}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
