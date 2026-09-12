@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { AppLayout } from '../components/AppLayout'
+
 import { supabase } from '../lib/supabase'
 import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
 import { getCroppedImg } from '../lib/cropImage'
@@ -134,7 +134,7 @@ function ConfiguracoesRoute() {
   }
 
   return (
-    <AppLayout>
+    <>
       <div className="max-w-4xl mx-auto py-4 sm:py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         <div className="mb-8">
@@ -298,7 +298,7 @@ function ConfiguracoesRoute() {
           onCropComplete={handleCropComplete}
         />
       )}
-    </AppLayout>
+    </>
   )
 }
 
