@@ -294,14 +294,14 @@ function RhEfetivoPage() {
   })
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto flex-1">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
+              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-gray-900 dark:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
               <h1 className="text-[54px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Efetivo</h1>
@@ -320,7 +320,7 @@ function RhEfetivoPage() {
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-700 text-gray-900 dark:text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
             >
               <FileSpreadsheet size={18} />
               {isImporting ? 'Lendo...' : 'Importar Planilha'}
@@ -431,3 +431,4 @@ function RhEfetivoPage() {
     </div>
   )
 }
+

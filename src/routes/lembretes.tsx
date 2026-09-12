@@ -117,15 +117,16 @@ function LembretesComponent() {
 
 
         {/* Title & Controls */}
-        <div className="flex items-center justify-between mb-8 mt-2">
-          <div>
-            <h1 className="text-[54px] font-display italic tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+        {/* Title & Controls */}
+        <div className="relative flex flex-col md:flex-row items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex flex-col items-center justify-center text-center">
+            <h1 className="text-[54px] font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
               Lembretes
             </h1>
-            <p className="text-white/70 text-sm mt-1 ml-1 font-medium">Organize tarefas e compromissos</p>
+            <p className="text-gray-900 dark:text-white/70 text-sm mt-1 font-medium">Organize tarefas e compromissos</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="mt-4 md:mt-0 md:absolute md:right-0 flex items-center gap-4">
             <button 
               onClick={() => {
                 setReminderToEdit(null)
@@ -148,8 +149,8 @@ function LembretesComponent() {
                 onClick={() => setCurrentFilter(opt.label)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   currentFilter === opt.label 
-                    ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-gray-900')
-                    : (isDark ? 'text-white/50 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5')
+                    ? (isDark ? 'bg-white/10 text-gray-900 dark:text-white' : 'bg-black/5 text-gray-900')
+                    : (isDark ? 'text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5')
                 }`}
               >
                 {opt.label === 'Favoritos' && <Star size={14} />}
@@ -158,7 +159,7 @@ function LembretesComponent() {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     opt.label === 'Atrasados' ? 'bg-red-500/20 text-red-400' : 
                     opt.label === 'Hoje' ? 'bg-blue-500/20 text-blue-400' :
-                    (isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-gray-600')
+                    (isDark ? 'bg-white/10 text-gray-900 dark:text-white/60' : 'bg-black/10 text-gray-600')
                   }`}>
                     {opt.count}
                   </span>
@@ -169,13 +170,13 @@ function LembretesComponent() {
 
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+              <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-400'}`} />
               <input 
                 type="text"
                 placeholder="Pesquisar..."
                 className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-64 transition-all ${
                   isDark 
-                    ? 'bg-black/20 border-white/10 text-white placeholder:text-white/30' 
+                    ? 'bg-black/20 border-white/10 text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30' 
                     : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500'
                 }`}
               />
@@ -192,7 +193,7 @@ function LembretesComponent() {
                 ? 'border-white/10 bg-black/20 focus-within:bg-black/40 focus-within:border-yellow-500/50' 
                 : 'border-black/10 bg-[#faf9f6]/70 focus-within:bg-white focus-within:border-yellow-500 shadow-sm'
             }`}>
-              <Plus size={20} className={`group-focus-within:text-yellow-500 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+              <Plus size={20} className={`group-focus-within:text-yellow-500 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-400'}`} />
               <input 
                 type="text" 
                 value={newTaskTitle}
@@ -201,7 +202,7 @@ function LembretesComponent() {
                 disabled={createMutation.isPending}
                 placeholder="Adicionar um lembrete rápido... Pressione Enter para salvar."
                 className={`flex-1 bg-transparent focus:outline-none text-sm ${
-                  isDark ? 'text-white placeholder:text-white/40' : 'text-gray-900 placeholder:text-gray-500'
+                  isDark ? 'text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/40' : 'text-gray-900 placeholder:text-gray-500'
                 }`}
               />
             </div>
@@ -219,9 +220,9 @@ function LembretesComponent() {
                 ))}
               </div>
             ) : filteredReminders.length === 0 ? (
-              <div className={`flex flex-col items-center justify-center py-20 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                <CheckCircle2 size={48} className={`mb-4 ${isDark ? 'text-white/20' : 'text-gray-300'}`} />
-                <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>Tudo limpo por aqui!</p>
+              <div className={`flex flex-col items-center justify-center py-20 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500'}`}>
+                <CheckCircle2 size={48} className={`mb-4 ${isDark ? 'text-gray-900 dark:text-white/20' : 'text-gray-300'}`} />
+                <p className={`text-lg font-medium ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-600'}`}>Tudo limpo por aqui!</p>
                 <p className="text-sm">Nenhum lembrete encontrado para esta categoria.</p>
               </div>
             ) : (
@@ -253,22 +254,22 @@ function LembretesComponent() {
                         {isCompleted ? (
                           <CheckCircle2 size={22} className="text-yellow-500" />
                         ) : (
-                          <Circle size={22} className={`${isDark ? 'text-white/20 group-hover:text-white/40' : 'text-gray-400 group-hover:text-gray-600'} transition-colors`} />
+                          <Circle size={22} className={`${isDark ? 'text-gray-900 dark:text-white/20 group-hover:text-gray-900 dark:text-white/40' : 'text-gray-400 group-hover:text-gray-600'} transition-colors`} />
                         )}
                       </button>
                       
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate transition-all ${
                           isCompleted 
-                            ? (isDark ? 'text-white/40 line-through' : 'text-gray-500 line-through') 
-                            : (isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900 group-hover:text-black')
+                            ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') 
+                            : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900 group-hover:text-black')
                         }`}>
                           {reminder.title}
                         </p>
                         
                         <div className="flex items-center gap-3 mt-1.5">
                           {reminder.due_date && (
-                            <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                            <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500'}`}>
                               <Clock size={12} />
                               <span>{format(parseISO(reminder.due_date), "dd 'de' MMM", { locale: ptBR })}</span>
                             </div>
@@ -294,7 +295,7 @@ function LembretesComponent() {
                           {assignee.avatar_url ? (
                             <img src={assignee.avatar_url} alt={assignee.name} className="w-full h-full object-cover" />
                           ) : (
-                            <UserIcon size={14} className="text-white/50" />
+                            <UserIcon size={14} className="text-gray-900 dark:text-white/50" />
                           )}
                         </div>
                       )}
@@ -317,3 +318,5 @@ function LembretesComponent() {
     </>
   )
 }
+
+

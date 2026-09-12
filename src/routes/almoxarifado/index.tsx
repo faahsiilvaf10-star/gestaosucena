@@ -16,13 +16,15 @@ const HUB_ITEMS = [
 
 function AlmoxarifadoHub() {
   return (
-    <div className="flex flex-col h-full p-4 md:p-8 overflow-hidden bg-transparent">
-      <div className="max-w-6xl w-full h-full mx-auto flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full overflow-hidden bg-transparent">
+      <div className="max-w-6xl w-full h-full mx-auto flex flex-col items-center justify-start mt-2">
         
         {/* Title */}
-        <div className="flex items-center gap-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-
-          <h1 className="text-5xl font-display italic tracking-tight text-gray-900 dark:text-white">Almoxarifado</h1>
+        <div className="flex flex-col items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+          <h1 className="text-[54px] font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+            Almoxarifado
+          </h1>
+          <p className="text-gray-900 dark:text-white/70 text-sm mt-1 font-medium">Controle de estoque, notas fiscais e requisições</p>
         </div>
 
         {/* Grid of buttons */}
@@ -47,3 +49,5 @@ function AlmoxarifadoHub() {
     </div>
   )
 }
+
+

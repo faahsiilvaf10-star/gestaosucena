@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -289,7 +290,7 @@ function VistoriaPage() {
   }, [equipments])
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4 relative z-20">
@@ -335,7 +336,7 @@ function VistoriaPage() {
               <input 
                 type="text" 
                 placeholder="Buscar equipamento ou placa/tag..." 
-                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-gray-900 dark:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -344,7 +345,7 @@ function VistoriaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowTypeFilter(!showTypeFilter); setShowStatusFilter(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto min-w-[200px] ${filterType !== 'Todas as vistorias' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto min-w-[200px] ${filterType !== 'Todas as vistorias' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <FileCheck size={18} /> <span className="truncate">{filterType}</span> {filterType !== 'Todas as vistorias' && <span className="w-2 h-2 rounded-full bg-white ml-1 shrink-0"></span>}
               </button>
@@ -369,7 +370,7 @@ function VistoriaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowStatusFilter(!showStatusFilter); setShowTypeFilter(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto min-w-[220px] ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto min-w-[220px] ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterStatus === 'Todos' ? 'Status' : filterStatus}</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1 shrink-0"></span>}
               </button>
@@ -404,7 +405,7 @@ function VistoriaPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center rounded-2xl border bg-white/50 dark:bg-white/5 backdrop-blur-md">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl font-display mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -503,7 +504,7 @@ function VistoriaPage() {
                             <button 
                               onClick={() => handleSave(eq)}
                               disabled={isSaving}
-                              className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                              className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-blue-600 text-gray-900 dark:text-white hover:bg-blue-700 transition-colors shadow-sm"
                             >
                               {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
                               Salvar Alterações
@@ -565,12 +566,10 @@ function DocRow({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-h-[32px]">
         {isEditing ? (
           <div className="w-full">
-            <input 
-              type="date"
+            <DateInput 
               value={editValue || ''}
-              onChange={(e) => onChange(e.target.value)}
-              className={`w-full p-2.5 rounded-lg border outline-none text-sm font-semibold ${isDark ? 'bg-black/40 border-white/20 focus:border-white/50 color-scheme-dark' : 'bg-white border-black/20 focus:border-black/50'}`}
-              style={isDark ? { colorScheme: 'dark' } : {}}
+              onChange={(val) => onChange(val)}
+              className={`w-full p-2.5 rounded-lg border outline-none text-sm font-semibold ${isDark ? 'bg-black/40 border-white/20 focus:border-white/50' : 'bg-white border-black/20 focus:border-black/50'}`}
             />
           </div>
         ) : (
@@ -621,3 +620,5 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     </div>
   )
 }
+
+

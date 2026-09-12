@@ -240,7 +240,7 @@ function TodosEquipamentosPage() {
           {statusText}
         </span>
         {!isInside && eq.last_exit_description && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
             <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
             {eq.last_exit_description}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black dark:border-t-white"></div>
@@ -251,7 +251,7 @@ function TodosEquipamentosPage() {
   }
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -263,7 +263,7 @@ function TodosEquipamentosPage() {
           <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto w-full md:w-auto mt-4 md:mt-0">
             <button 
               onClick={() => setIsAddModalOpen(true)}
-              className="flex justify-center items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
+              className="flex justify-center items-center gap-2 px-5 py-2.5 bg-blue-600 text-gray-900 dark:text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Plus size={16} />
               Novo Equipamento
@@ -298,7 +298,7 @@ function TodosEquipamentosPage() {
               <input 
                 type="text" 
                 placeholder="Buscar equipamento ou placa/tag..." 
-                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-gray-900 dark:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -306,7 +306,7 @@ function TodosEquipamentosPage() {
             <div className="relative">
               <button 
                 onClick={() => setShowFilterMenu(!showFilterMenu)}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center gap-2 transition-colors ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center gap-2 transition-colors ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span className="hidden md:inline">Filtros</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
@@ -341,7 +341,7 @@ function TodosEquipamentosPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl font-display mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -355,7 +355,7 @@ function TodosEquipamentosPage() {
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-gray-900 dark:text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
@@ -376,7 +376,7 @@ function TodosEquipamentosPage() {
                           <td className="p-4 text-right flex items-center justify-end gap-2">
                             <button 
                               onClick={() => handleOpenView(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-gray-900 dark:text-white/70 hover:text-gray-900 dark:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                             >
                               <Eye size={18} />
                             </button>
@@ -423,7 +423,7 @@ function TodosEquipamentosPage() {
       {isViewModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-3xl font-display italic mb-6">Detalhes</h2>
             
             <div className="space-y-6">
@@ -467,7 +467,7 @@ function TodosEquipamentosPage() {
             
             <button 
               onClick={() => setIsViewModalOpen(false)}
-              className="mt-8 w-full py-3 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
+              className="mt-8 w-full py-3 rounded-xl bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
             >
               Fechar
             </button>
@@ -479,7 +479,7 @@ function TodosEquipamentosPage() {
       {isEditModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-3xl font-display italic mb-6">Editar Equipamento</h2>
             
             <div className="space-y-4">
@@ -526,7 +526,7 @@ function TodosEquipamentosPage() {
               <button 
                 onClick={handleSaveEdit}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Salvar'}
               </button>
@@ -539,7 +539,7 @@ function TodosEquipamentosPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-3xl font-display italic mb-6">Novo Equipamento</h2>
             
             <div className="space-y-4">
@@ -598,7 +598,7 @@ function TodosEquipamentosPage() {
               <button 
                 onClick={handleSaveNew}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Cadastrar'}
               </button>
@@ -620,3 +620,5 @@ function MetricCard({ title, value }: { title: string, value: number }) {
     </div>
   )
 }
+
+

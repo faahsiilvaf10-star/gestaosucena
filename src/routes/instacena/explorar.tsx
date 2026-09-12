@@ -135,11 +135,11 @@ function ExplorarRoute() {
                 />
                 
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center gap-6">
-                   <div className="flex items-center gap-2 text-white font-bold">
+                   <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold">
                      <Heart className="fill-white" size={20} />
                      <span>{post.likes_count}</span>
                    </div>
-                   <div className="flex items-center gap-2 text-white font-bold">
+                   <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold">
                      <MessageCircle className="fill-white" size={20} />
                      <span>{post.comments_count}</span>
                    </div>
@@ -154,7 +154,7 @@ function ExplorarRoute() {
       {selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
           <div className="bg-white dark:bg-[#262626] rounded-xl max-w-5xl w-full max-h-[90vh] min-h-[500px] overflow-hidden flex flex-col md:flex-row relative animate-in zoom-in-95 shadow-2xl">
-            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-white bg-black/50 rounded-full p-2 hover:bg-black transition-colors">
+            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-gray-900 dark:text-white bg-black/50 rounded-full p-2 hover:bg-black transition-colors">
               <X size={20} />
             </button>
             
@@ -221,3 +221,5 @@ function ExplorarRoute() {
     </div>
   )
 }
+
+

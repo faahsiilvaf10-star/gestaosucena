@@ -51,14 +51,14 @@ function CalendarioHydroPage() {
   const weekDays = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-[#111111] text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-[#111111] text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto flex-1">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
+              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-gray-900 dark:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
               <h1 className="text-[42px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>
@@ -129,11 +129,11 @@ function CalendarioHydroPage() {
                     
                     if (isCurrentMonth) {
                       if (isFeriado) {
-                        bgClass = "bg-red-600 dark:bg-red-500 text-white font-bold"
-                        textClass = "text-white"
+                        bgClass = "bg-red-600 dark:bg-red-500 text-gray-900 dark:text-white font-bold"
+                        textClass = "text-gray-900 dark:text-white"
                       } else if (isPrensado) {
-                        bgClass = "bg-gray-400 dark:bg-gray-500 text-white font-bold"
-                        textClass = "text-white"
+                        bgClass = "bg-gray-400 dark:bg-gray-500 text-gray-900 dark:text-white font-bold"
+                        textClass = "text-gray-900 dark:text-white"
                       } else if (isWeekend) {
                         bgClass = "bg-gray-100 dark:bg-white/5"
                         textClass = "text-gray-500 dark:text-gray-400 font-medium"
@@ -188,3 +188,4 @@ function CalendarioHydroPage() {
     </div>
   )
 }
+

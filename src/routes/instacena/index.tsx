@@ -501,7 +501,7 @@ function FeedRoute() {
           <div className="relative w-full rounded-lg border border-black/10 dark:border-white/10 overflow-hidden mt-2 animate-in fade-in zoom-in-95">
             <button 
               onClick={handleRemoveMedia}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-gray-900 dark:text-white flex items-center justify-center hover:bg-black/70 transition-colors z-10"
             >
               <X size={16} />
             </button>
@@ -528,7 +528,7 @@ function FeedRoute() {
             
             {/* Cropper Controls Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/60 backdrop-blur-sm flex flex-col gap-3">
-               <div className="flex items-center gap-3 text-white">
+               <div className="flex items-center gap-3 text-gray-900 dark:text-white">
                  <ZoomOut size={18} />
                  <input
                    type="range"
@@ -542,10 +542,10 @@ function FeedRoute() {
                  <ZoomIn size={18} />
                </div>
                <div className="flex justify-between">
-                 <button onClick={handleRemoveMedia} className="text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                 <button onClick={handleRemoveMedia} className="text-gray-900 dark:text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
                    Cancelar
                  </button>
-                 <button onClick={handleConfirmCrop} className="bg-[#0866ff] hover:bg-[#0756d6] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors">
+                 <button onClick={handleConfirmCrop} className="bg-[#0866ff] hover:bg-[#0756d6] text-gray-900 dark:text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors">
                    <Check size={16} /> Confirmar
                  </button>
                </div>
@@ -577,7 +577,7 @@ function FeedRoute() {
             <button
               onClick={handlePublish}
               disabled={isSubmitting || isCropping}
-              className="w-full bg-[#0866ff] hover:bg-[#0756d6] disabled:opacity-50 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+              className="w-full bg-[#0866ff] hover:bg-[#0756d6] disabled:opacity-50 text-gray-900 dark:text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 'Publicar'}
             </button>
@@ -611,7 +611,7 @@ function FeedRoute() {
              )}
              {isUploadingStory && (
                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                 <Loader2 size={24} className="text-white animate-spin" />
+                 <Loader2 size={24} className="text-gray-900 dark:text-white animate-spin" />
                </div>
              )}
           </div>
@@ -645,7 +645,7 @@ function FeedRoute() {
                 )}
               </div>
               
-              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-white leading-tight z-10 break-words line-clamp-2 shadow-sm">
+              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-gray-900 dark:text-white leading-tight z-10 break-words line-clamp-2 shadow-sm">
                 {group.user.display_name || group.user.username || 'Usuário'}
               </span>
             </div>
@@ -833,7 +833,7 @@ function FeedRoute() {
               </button>
               <button 
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2.5 rounded-lg font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-lg font-bold bg-red-500 text-gray-900 dark:text-white hover:bg-red-600 transition-colors"
               >
                 Excluir
               </button>
@@ -844,3 +844,5 @@ function FeedRoute() {
     </div>
   )
 }
+
+

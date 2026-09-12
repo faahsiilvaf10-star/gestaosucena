@@ -128,7 +128,7 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
         {/* Header */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
           <h2 className="font-bold text-lg text-gray-900 dark:text-white">Importar Planilha de Estoque</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -213,7 +213,7 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
               <p className="text-gray-500 mb-8">Todos os itens foram adicionados ao estoque com sucesso.</p>
               <button 
                 onClick={onSuccess}
-                className="px-6 py-2.5 bg-[#0866ff] text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors"
+                className="px-6 py-2.5 bg-[#0866ff] text-gray-900 dark:text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors"
               >
                 Voltar para o Almoxarifado
               </button>
@@ -238,7 +238,7 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
               <button 
                 onClick={handleImport}
                 disabled={loading}
-                className="px-6 py-2.5 bg-[#0866ff] text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#0866ff] text-gray-900 dark:text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors flex items-center gap-2"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                 Confirmar Importação
@@ -251,3 +251,5 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
     </div>
   )
 }
+
+

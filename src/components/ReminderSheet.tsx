@@ -4,6 +4,8 @@ import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat
 import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder } from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { DateInput } from './ui/DateInput'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface ReminderSheetProps {
   isOpen: boolean
@@ -13,6 +15,7 @@ interface ReminderSheetProps {
 }
 
 export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderSheetProps) {
+  const { isDark } = useTheme()
   const queryClient = useQueryClient()
   const isEditing = !!reminder
 
@@ -129,13 +132,13 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       />
       
       {/* Sheet */}
-      <div className="fixed inset-y-0 right-0 w-full md:w-[500px] bg-[#121214] border-l border-white/10 z-[120] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0">
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'} border-l z-[120] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0`}>
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             <button 
-              className="p-2 rounded-lg hover:bg-white/5 text-white/40 transition-colors"
+              className="p-2 rounded-lg hover:bg-white/5 text-gray-900 dark:text-white/40 transition-colors"
             >
               {isEditing && reminder?.status === 'Concluído' ? (
                 <CheckCircle2 size={24} className="text-indigo-500" />
@@ -143,14 +146,14 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                 <Circle size={24} className="hover:text-indigo-400" />
               )}
             </button>
-            <span className="text-sm font-medium text-white/50">
+            <span className="text-sm font-medium text-gray-900 dark:text-white/50">
               {isEditing ? 'Detalhes do Lembrete' : 'Novo Lembrete'}
             </span>
           </div>
           
           <button 
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 text-white/60 transition-colors"
+            className="p-2 rounded-lg hover:bg-white/10 text-gray-900 dark:text-white/60 transition-colors"
           >
             <X size={20} />
           </button>
@@ -166,7 +169,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nome da tarefa"
-              className="w-full bg-transparent text-2xl font-semibold text-white placeholder:text-white/20 focus:outline-none"
+              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/20 focus:outline-none"
               autoFocus
             />
           </div>
@@ -176,7 +179,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
             
             {/* Responsáveis (Múltiplos) */}
             <div className="flex items-start gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors pt-1">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors pt-1">
                 <UserIcon size={16} />
                 <span>Responsáveis</span>
               </div>
@@ -187,7 +190,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                       (Todos)
                       <button 
                         onClick={() => setMentions([])}
-                        className="hover:text-white transition-colors ml-1"
+                        className="hover:text-gray-900 dark:text-white transition-colors ml-1"
                       >
                         <X size={12} />
                       </button>
@@ -201,7 +204,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                           {isMe ? '(Eu)' : (u?.name || 'Desconhecido')}
                           <button 
                             onClick={() => setMentions(prev => prev.filter(id => id !== userId))}
-                            className="hover:text-white transition-colors ml-1"
+                            className="hover:text-gray-900 dark:text-white transition-colors ml-1"
                           >
                             <X size={12} />
                           </button>
@@ -221,15 +224,15 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                       setMentions(prev => [...prev.filter(id => id !== 'ALL'), val])
                     }
                   }}
-                  className="w-full bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                  className="w-full bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
                 >
-                  <option value="" className="bg-[#121214] text-white/50">+ Adicionar responsável</option>
-                  <option value="ALL" className="bg-[#121214] text-indigo-300 font-medium">(Todos)</option>
+                  <option value="" className={isDark ? "bg-[#121214] text-white/50" : "bg-white text-gray-500"}>+ Adicionar responsável</option>
+                  <option value="ALL" className={isDark ? "bg-[#121214] text-indigo-300 font-medium" : "bg-white text-indigo-600 font-medium"}>(Todos)</option>
                   {currentUserId && !mentions.includes(currentUserId) && (
-                    <option value={currentUserId} className="bg-[#121214] text-indigo-400 font-medium">(Eu)</option>
+                    <option value={currentUserId} className={isDark ? "bg-[#121214] text-indigo-400 font-medium" : "bg-white text-indigo-600 font-medium"}>(Eu)</option>
                   )}
                   {users.filter(u => u.id !== currentUserId && !mentions.includes(u.id)).map(u => (
-                    <option key={u.id} value={u.id} className="bg-[#121214]">{u.name}</option>
+                    <option key={u.id} value={u.id} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>{u.name}</option>
                   ))}
                 </select>
               </div>
@@ -237,35 +240,34 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
             {/* Data e Hora de Vencimento */}
             <div className="flex items-center gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors">
                 <Calendar size={16} />
                 <span>Data e Hora</span>
               </div>
               <div className="flex-1 flex items-center gap-2">
-                <input 
-                  type="date" 
+                <DateInput 
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
+                  onChange={(val) => setDueDate(val)}
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors cursor-pointer"
                 />
                 <input 
                   type="time" 
                   value={dueTime}
                   onChange={(e) => setDueTime(e.target.value)}
-                  className="bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
                 />
               </div>
             </div>
 
             {/* Recorrência */}
             <div className="flex items-start gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors pt-2">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors pt-2">
                 <Repeat size={16} />
                 <span>Recorrente</span>
               </div>
               <div className="flex-1">
                 <div className="pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-white">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-white">
                     <input 
                       type="checkbox"
                       checked={isRecurring}
@@ -287,8 +289,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                         }}
                         className={`w-9 h-9 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
                           recurringDays.includes(idx) 
-                            ? 'bg-indigo-600 text-white' 
-                            : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                            ? 'bg-indigo-600 text-gray-900 dark:text-white' 
+                            : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white'
                         }`}
                       >
                         {day}
@@ -301,7 +303,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
             {/* Prioridade */}
             <div className="flex items-center gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-white/40 group-hover:text-white/70 transition-colors">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors">
                 <Tag size={16} />
                 <span>Prioridade</span>
               </div>
@@ -309,12 +311,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                 <select 
                   value={priority} 
                   onChange={(e) => setPriority(e.target.value as any)}
-                  className="bg-transparent text-sm text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
                 >
-                  <option value="Baixa" className="bg-[#121214]">Baixa</option>
-                  <option value="Normal" className="bg-[#121214]">Normal</option>
-                  <option value="Alta" className="bg-[#121214]">Alta</option>
-                  <option value="Urgente" className="bg-[#121214]">Urgente</option>
+                  <option value="Baixa" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Baixa</option>
+                  <option value="Normal" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Normal</option>
+                  <option value="Alta" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Alta</option>
+                  <option value="Urgente" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Urgente</option>
                 </select>
               </div>
             </div>
@@ -323,12 +325,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
           {/* Description */}
           <div className="pt-4 border-t border-white/5">
-            <h3 className="text-sm font-medium text-white/70 mb-3">Descrição</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white/70 mb-3">Descrição</h3>
             <textarea 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="O que precisa ser feito?"
-              className="w-full h-32 bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
+              className="w-full h-32 bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
             />
           </div>
 
@@ -341,10 +343,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               <>
                 {showDeleteConfirm ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/60">Tem certeza?</span>
+                    <span className="text-xs text-gray-900 dark:text-white/60">Tem certeza?</span>
                     <button 
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-colors"
+                      className="px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 text-xs font-medium text-gray-900 dark:text-white transition-colors"
                     >
                       Não
                     </button>
@@ -370,14 +372,14 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           <div className="flex items-center gap-3">
             <button 
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 dark:text-white/60 hover:text-gray-900 dark:text-white hover:bg-white/5 transition-colors"
             >
               Cancelar
             </button>
             <button 
               onClick={handleSave}
               disabled={!title.trim() || saveMutation.isPending}
-              className="px-6 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+              className="px-6 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-gray-900 dark:text-white transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
             >
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </button>
@@ -389,3 +391,5 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
     document.body
   )
 }
+
+

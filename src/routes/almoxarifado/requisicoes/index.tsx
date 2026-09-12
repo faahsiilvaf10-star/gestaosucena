@@ -77,7 +77,7 @@ function RequisicoesList() {
           </p>
         </div>
         <Link to="/almoxarifado/requisicoes/nova">
-          <Button className="bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
+          <Button className="bg-green-600 hover:bg-green-700 text-gray-900 dark:text-white font-bold gap-2">
             <Plus size={18} />
             Nova Requisição
           </Button>
@@ -215,7 +215,7 @@ function RequisicoesList() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!reqToDelete} onOpenChange={() => setReqToDelete(null)}>
-        <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:rounded-2xl">
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-gray-900 dark:text-white sm:rounded-2xl">
           <DialogTitle className="text-xl">Excluir Requisição</DialogTitle>
           <div className="py-4 text-zinc-300">
             Tem certeza que deseja excluir a requisição de <strong>{reqToDelete?.name}</strong>?
@@ -223,10 +223,10 @@ function RequisicoesList() {
             Essa ação removerá o histórico e <strong>retornará todos os itens dessa requisição para o estoque</strong> automaticamente.
           </div>
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button variant="outline" className="text-white border-zinc-700 hover:bg-zinc-800 hover:text-white" onClick={() => setReqToDelete(null)}>Cancelar</Button>
+            <Button variant="outline" className="text-gray-900 dark:text-white border-zinc-700 hover:bg-zinc-800 hover:text-gray-900 dark:text-white" onClick={() => setReqToDelete(null)}>Cancelar</Button>
             <Button 
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-gray-900 dark:text-white"
               onClick={async () => {
                 if (reqToDelete) {
                   await deleteMutation.mutateAsync(reqToDelete.id)
@@ -243,3 +243,4 @@ function RequisicoesList() {
     </div>
   )
 }
+

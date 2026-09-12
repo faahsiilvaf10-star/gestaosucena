@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
+import { Route as MeioAmbienteRouteImport } from './routes/meio-ambiente'
 import { Route as RhRouteImport } from './routes/rh'
 import { Route as AlmoxarifadoIndexRouteImport } from './routes/almoxarifado/index'
 import { Route as AlmoxarifadoAduboRouteImport } from './routes/almoxarifado/adubo'
@@ -35,6 +36,8 @@ import { Route as InstacenaExplorarRouteImport } from './routes/instacena/explor
 import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
 import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
+import { Route as MeioAmbienteIndexRouteImport } from './routes/meio-ambiente/index'
+import { Route as MeioAmbienteConsumoRouteImport } from './routes/meio-ambiente/consumo'
 import { Route as RhIndexRouteImport } from './routes/rh/index'
 import { Route as RhCalendarioHydroRouteImport } from './routes/rh/calendario-hydro'
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
@@ -84,6 +87,11 @@ const InstacenaRoute = InstacenaRouteImport.update({
 const LembretesRoute = LembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeioAmbienteRoute = MeioAmbienteRouteImport.update({
+  id: '/meio-ambiente',
+  path: '/meio-ambiente',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RhRoute = RhRouteImport.update({
@@ -178,6 +186,16 @@ const InstacenaReelsRoute = InstacenaReelsRouteImport.update({
   path: '/reels',
   getParentRoute: () => InstacenaRoute,
 } as any)
+const MeioAmbienteIndexRoute = MeioAmbienteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MeioAmbienteRoute,
+} as any)
+const MeioAmbienteConsumoRoute = MeioAmbienteConsumoRouteImport.update({
+  id: '/consumo',
+  path: '/consumo',
+  getParentRoute: () => MeioAmbienteRoute,
+} as any)
 const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -241,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
   '/rh': typeof RhRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
@@ -255,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -263,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
+  '/meio-ambiente/': typeof MeioAmbienteIndexRoute
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -289,6 +310,7 @@ export interface FileRoutesByTo {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -297,6 +319,7 @@ export interface FileRoutesByTo {
   '/documentos': typeof DocumentosIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
+  '/meio-ambiente': typeof MeioAmbienteIndexRoute
   '/rh': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -314,6 +337,7 @@ export interface FileRoutesById {
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
+  '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
   '/rh': typeof RhRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
@@ -328,6 +352,7 @@ export interface FileRoutesById {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -336,6 +361,7 @@ export interface FileRoutesById {
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
+  '/meio-ambiente/': typeof MeioAmbienteIndexRoute
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -354,6 +380,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/meio-ambiente'
     | '/rh'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
@@ -368,6 +395,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/consumo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -376,6 +404,7 @@ export interface FileRouteTypes {
     | '/documentos/'
     | '/equipamentos/'
     | '/instacena/'
+    | '/meio-ambiente/'
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -402,6 +431,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/consumo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -410,6 +440,7 @@ export interface FileRouteTypes {
     | '/documentos'
     | '/equipamentos'
     | '/instacena'
+    | '/meio-ambiente'
     | '/rh'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -426,6 +457,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
+    | '/meio-ambiente'
     | '/rh'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
@@ -440,6 +472,7 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/consumo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -448,6 +481,7 @@ export interface FileRouteTypes {
     | '/documentos/'
     | '/equipamentos/'
     | '/instacena/'
+    | '/meio-ambiente/'
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -465,6 +499,7 @@ export interface RootRouteChildren {
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
+  MeioAmbienteRoute: typeof MeioAmbienteRouteWithChildren
   RhRoute: typeof RhRouteWithChildren
   DocumentosIndexRoute: typeof DocumentosIndexRoute
 }
@@ -525,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/lembretes'
       fullPath: '/lembretes'
       preLoaderRoute: typeof LembretesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meio-ambiente': {
+      id: '/meio-ambiente'
+      path: '/meio-ambiente'
+      fullPath: '/meio-ambiente'
+      preLoaderRoute: typeof MeioAmbienteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rh': {
@@ -652,6 +694,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/instacena/reels'
       preLoaderRoute: typeof InstacenaReelsRouteImport
       parentRoute: typeof InstacenaRoute
+    }
+    '/meio-ambiente/': {
+      id: '/meio-ambiente/'
+      path: '/'
+      fullPath: '/meio-ambiente/'
+      preLoaderRoute: typeof MeioAmbienteIndexRouteImport
+      parentRoute: typeof MeioAmbienteRoute
+    }
+    '/meio-ambiente/consumo': {
+      id: '/meio-ambiente/consumo'
+      path: '/consumo'
+      fullPath: '/meio-ambiente/consumo'
+      preLoaderRoute: typeof MeioAmbienteConsumoRouteImport
+      parentRoute: typeof MeioAmbienteRoute
     }
     '/rh/': {
       id: '/rh/'
@@ -798,6 +854,20 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
   InstacenaRouteChildren,
 )
 
+interface MeioAmbienteRouteChildren {
+  MeioAmbienteConsumoRoute: typeof MeioAmbienteConsumoRoute
+  MeioAmbienteIndexRoute: typeof MeioAmbienteIndexRoute
+}
+
+const MeioAmbienteRouteChildren: MeioAmbienteRouteChildren = {
+  MeioAmbienteConsumoRoute: MeioAmbienteConsumoRoute,
+  MeioAmbienteIndexRoute: MeioAmbienteIndexRoute,
+}
+
+const MeioAmbienteRouteWithChildren = MeioAmbienteRoute._addFileChildren(
+  MeioAmbienteRouteChildren,
+)
+
 interface RhRouteChildren {
   RhCalendarioHydroRoute: typeof RhCalendarioHydroRoute
   RhEfetivoRoute: typeof RhEfetivoRoute
@@ -825,6 +895,7 @@ const rootRouteChildren: RootRouteChildren = {
   EquipamentosRoute: EquipamentosRouteWithChildren,
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
+  MeioAmbienteRoute: MeioAmbienteRouteWithChildren,
   RhRoute: RhRouteWithChildren,
   DocumentosIndexRoute: DocumentosIndexRoute,
 }

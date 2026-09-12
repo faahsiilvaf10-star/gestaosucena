@@ -124,8 +124,8 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                 )}
               </div>
               <div className="flex-1 text-left overflow-hidden">
-                <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
-                <p className={`text-xs truncate ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                <p className={`text-sm font-semibold truncate ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{user.name}</p>
+                <p className={`text-xs truncate ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>
                   {user.isOnline ? 'Online' : 'Offline'}
                 </p>
               </div>
@@ -171,12 +171,12 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   
                   <div className="flex-1 text-left overflow-hidden border-b pb-3 pt-1 border-black/5 dark:border-white/5">
                     <div className="flex justify-between items-center mb-1">
-                      <p className={`text-[15px] font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{otherUser.name}</p>
-                      <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-white/40' : 'text-gray-500')}`}>{msgTime}</span>
+                      <p className={`text-[15px] font-semibold truncate ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{otherUser.name}</p>
+                      <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500')}`}>{msgTime}</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <p className={`text-[13px] truncate pr-2 flex items-center gap-1 ${unread ? (isDark ? 'text-white' : 'text-gray-900 font-medium') : (isDark ? 'text-white/50' : 'text-gray-500')}`}>
+                      <p className={`text-[13px] truncate pr-2 flex items-center gap-1 ${unread ? (isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900 font-medium') : (isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500')}`}>
                         {isMe && (
                            lastMsg.status === 'read' ? <CheckCheck size={14} className="text-blue-400" /> :
                            lastMsg.status === 'delivered' ? <CheckCheck size={14} className="text-gray-400" /> :
@@ -186,7 +186,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                       </p>
                       
                       {unread && (
-                        <div className="w-5 h-5 rounded-full bg-[#D6A72B] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-[#D6A72B] flex items-center justify-center text-[10px] font-bold text-gray-900 dark:text-white shrink-0">
                           1
                         </div>
                       )}
@@ -201,3 +201,5 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
     </div>
   )
 }
+
+

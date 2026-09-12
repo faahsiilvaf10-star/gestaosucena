@@ -22,7 +22,7 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
   ]
 
   return (
-    <div className={`w-full flex h-full ${isDark ? 'text-white' : 'text-gray-900'}`}>
+    <div className={`w-full flex h-full ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
       
       {/* Desktop Sidebar (Left) */}
       <aside className="hidden md:flex flex-col w-[200px] lg:w-[244px] h-full border-r border-black/10 dark:border-white/10 px-4 py-8 shrink-0 sticky top-0">
@@ -78,3 +78,4 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
     </div>
   )
 }
+

@@ -8,7 +8,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState(true) // Default to dark
+  const [isDark, setIsDark] = useState(false) // Default to light
 
   useEffect(() => {
     // Load preference on mount
@@ -22,8 +22,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         document.documentElement.classList.remove('dark')
       }
     } else {
-      // If no preference, but default is dark (true)
-      document.documentElement.classList.add('dark')
+      // If no preference, default is light (false)
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 

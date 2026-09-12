@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -159,7 +160,7 @@ function RelatorioPresencaPage() {
   }
 
   return (
-    <div className={`flex flex-col h-full min-h-screen ${isDark ? 'bg-[#111111] text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8`}>
+    <div className={`flex flex-col h-full min-h-screen ${isDark ? 'bg-[#111111] text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8`}>
       <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
         
         {/* Header */}
@@ -173,16 +174,15 @@ function RelatorioPresencaPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <input 
-              type="date"
+            <DateInput 
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(val) => setDate(val)}
               className="bg-transparent border border-gray-300 dark:border-white/10 rounded-xl px-4 py-2 outline-none focus:border-[#0866ff] transition-colors"
             />
             <button 
               onClick={handleGeneratePDF}
               disabled={!hasData}
-              className="px-5 py-2.5 rounded-xl font-semibold bg-[#0866ff] hover:bg-[#0866ff]/90 text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl font-semibold bg-[#0866ff] hover:bg-[#0866ff]/90 text-gray-900 dark:text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileText size={18} /> Gerar PDF
             </button>
@@ -270,3 +270,5 @@ function RelatorioPresencaPage() {
     </div>
   )
 }
+
+

@@ -167,7 +167,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         {groupedMessages.map((group, gIdx) => (
           <div key={gIdx} className="space-y-3">
             <div className="flex flex-col items-center sticky top-2 z-10 my-4">
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-white/50 border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-gray-900 dark:text-white/50 border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
                 {group.date}
               </span>
             </div>
@@ -181,8 +181,8 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
                   <div className={`
                     max-w-[85%] md:max-w-[75%] rounded-2xl p-2.5 shadow-sm relative group
                     ${isMine 
-                      ? (isDark ? 'bg-[#25200F] text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') 
-                      : (isDark ? 'bg-[#202126] text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5')
+                      ? (isDark ? 'bg-[#25200F] text-gray-900 dark:text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') 
+                      : (isDark ? 'bg-[#202126] text-gray-900 dark:text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5')
                     }
                   `}>
                     {msg.type === 'text' && (
@@ -234,3 +234,5 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
     </div>
   )
 }
+
+

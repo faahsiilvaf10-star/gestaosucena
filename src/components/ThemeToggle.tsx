@@ -15,8 +15,10 @@ export function ThemeToggle() {
         <Moon size={14} className={`transition-colors ${isDark ? 'text-blue-300' : 'text-gray-400'}`} />
       </div>
       <div className={`rounded-full p-1 transition-all ${!isDark ? 'bg-white shadow-sm' : ''}`}>
-        <Sun size={14} className={`transition-colors ${!isDark ? 'text-amber-500' : 'text-white/30'}`} />
+        <Sun size={14} className={`transition-colors ${!isDark ? 'text-amber-500' : 'text-gray-900 dark:text-white/30'}`} />
       </div>
     </div>
   )
 }
+
+

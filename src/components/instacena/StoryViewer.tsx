@@ -220,7 +220,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-       <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-white transition-colors">
+       <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-gray-900 dark:text-white transition-colors">
          <X size={24} />
        </button>
        
@@ -252,12 +252,12 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
                {activeGroup.user?.avatar_url ? (
                  <img src={activeGroup.user.avatar_url} className="w-full h-full object-cover" />
                ) : (
-                 <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+                 <div className="w-full h-full flex items-center justify-center text-gray-900 dark:text-white text-xs font-bold">
                    {activeGroup.user?.display_name?.charAt(0) || '?'}
                  </div>
                )}
              </div>
-             <div className="flex items-center gap-2 text-white drop-shadow-md">
+             <div className="flex items-center gap-2 text-gray-900 dark:text-white drop-shadow-md">
                <span className="font-bold">{activeGroup.user?.display_name || activeGroup.user?.username || 'Usuário'}</span>
                <span className="text-sm opacity-80">• {formatTimeAgo(activeStory.created_at)}</span>
              </div>
@@ -266,7 +266,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
            {isMyStory && (
              <button 
                onClick={handleDeleteStory}
-               className="p-2 bg-black/30 hover:bg-red-500/80 rounded-full text-white transition-colors mr-10"
+               className="p-2 bg-black/30 hover:bg-red-500/80 rounded-full text-gray-900 dark:text-white transition-colors mr-10"
                title="Excluir story"
              >
                <Trash2 size={20} />
@@ -302,7 +302,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center">
              <button 
                onClick={(e) => { e.stopPropagation(); setShowViews(true); setIsPaused(true); if(videoRef.current) videoRef.current.pause(); }}
-               className="flex flex-col items-center gap-1 text-white hover:opacity-80 transition-opacity"
+               className="flex flex-col items-center gap-1 text-gray-900 dark:text-white hover:opacity-80 transition-opacity"
              >
                <Eye size={24} />
                <span className="text-xs font-bold">{viewsLog.length} {viewsLog.length === 1 ? 'visualização' : 'visualizações'}</span>
@@ -377,3 +377,5 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
     </div>
   )
 }
+
+

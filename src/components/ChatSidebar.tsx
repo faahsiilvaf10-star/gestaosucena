@@ -35,7 +35,7 @@ export function ChatSidebar({ currentUserId }: { currentUserId: string }) {
       <div 
         className={`fixed top-0 right-0 h-[100dvh] z-[100] transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex
           ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
-          ${isDark ? 'bg-[#090A0C] border-l border-white/5 text-white' : 'bg-gray-50 border-l border-black/5 text-gray-900'}
+          ${isDark ? 'bg-[#090A0C] border-l border-white/5 text-gray-900 dark:text-white' : 'bg-gray-50 border-l border-black/5 text-gray-900'}
         `}
         style={{
           width: isSidebarOpen ? (isExpanded ? 'min(100vw, 850px)' : 'min(100vw, 400px)') : 'min(100vw, 400px)'
@@ -64,7 +64,7 @@ export function ChatSidebar({ currentUserId }: { currentUserId: string }) {
           <div className="px-4 pb-3 shrink-0">
             <div className={`relative flex items-center rounded-lg overflow-hidden ${isDark ? 'bg-[#15161A]' : 'bg-white border shadow-sm'}`}>
               <div className="absolute left-3">
-                <Search size={16} className={isDark ? "text-white/40" : "text-gray-400"} />
+                <Search size={16} className={isDark ? "text-gray-900 dark:text-white/40" : "text-gray-400"} />
               </div>
               <input 
                 type="text"
@@ -90,3 +90,5 @@ export function ChatSidebar({ currentUserId }: { currentUserId: string }) {
     </>
   )
 }
+
+

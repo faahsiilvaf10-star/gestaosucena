@@ -21,9 +21,9 @@ function getWeatherDetails(code: number) {
   if (code === 45 || code === 48) return { label: 'Neblina', icon: <CloudFog className="text-gray-400" size={32} /> }
   if (code >= 51 && code <= 55) return { label: 'Garoa', icon: <CloudDrizzle className="text-blue-300" size={32} /> }
   if (code >= 61 && code <= 65) return { label: 'Chuva', icon: <CloudRain className="text-blue-400" size={32} /> }
-  if (code >= 71 && code <= 77) return { label: 'Neve', icon: <CloudSnow className="text-white" size={32} /> }
+  if (code >= 71 && code <= 77) return { label: 'Neve', icon: <CloudSnow className="text-gray-900 dark:text-white" size={32} /> }
   if (code >= 80 && code <= 82) return { label: 'Pancadas de Chuva', icon: <CloudRain className="text-blue-500" size={32} /> }
-  if (code >= 85 && code <= 86) return { label: 'Tempestade de Neve', icon: <CloudSnow className="text-white" size={32} /> }
+  if (code >= 85 && code <= 86) return { label: 'Tempestade de Neve', icon: <CloudSnow className="text-gray-900 dark:text-white" size={32} /> }
   if (code >= 95 && code <= 99) return { label: 'Tempestade', icon: <CloudLightning className="text-yellow-500" size={32} /> }
   
   return { label: 'Desconhecido', icon: <Cloud className="text-gray-400" size={32} /> }
@@ -108,7 +108,7 @@ export function WeatherWidget() {
   if (loading) {
     return (
       <div className={`rounded-2xl p-4 flex flex-col items-center justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
-        <Loader2 className={`animate-spin ${isDark ? 'text-white/50' : 'text-gray-400'}`} size={24} />
+        <Loader2 className={`animate-spin ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'}`} size={24} />
       </div>
     )
   }
@@ -116,7 +116,7 @@ export function WeatherWidget() {
   if (error || !data) {
     return (
       <div className={`rounded-2xl p-4 flex flex-col justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
-        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
+        <p className={`text-sm ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
       </div>
     )
   }
@@ -132,26 +132,28 @@ export function WeatherWidget() {
         <div className="flex items-center gap-3">
           {details.icon}
           <div>
-            <h3 className={`text-4xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{data.temp}°C</h3>
+            <h3 className={`text-4xl font-light tracking-tight ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{data.temp}°C</h3>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mt-1 mb-auto relative z-10">
-        <Cloud className={isDark ? 'text-white/50' : 'text-gray-400'} size={14} />
-        <span className={`text-sm font-medium ${isDark ? 'text-white/80' : 'text-gray-600'}`}>{details.label}</span>
+        <Cloud className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} size={14} />
+        <span className={`text-sm font-medium ${isDark ? 'text-gray-900 dark:text-white/80' : 'text-gray-600'}`}>{details.label}</span>
       </div>
 
       <div className={`border-t my-2 pt-2 flex flex-col gap-1 relative z-10 ${isDark ? 'border-white/10' : 'border-black/5'}`}>
         <div className="flex items-center gap-2">
-          <MapPin size={12} className={isDark ? 'text-white/50' : 'text-gray-400'} />
-          <span className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-500'}`}>{data.location}</span>
+          <MapPin size={12} className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} />
+          <span className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>{data.location}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Calendar size={12} className={isDark ? 'text-white/50' : 'text-gray-400'} />
-          <span className={`text-xs capitalize ${isDark ? 'text-white/60' : 'text-gray-500'}`}>{currentDate} {currentTime}</span>
+          <Calendar size={12} className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} />
+          <span className={`text-xs capitalize ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>{currentDate} {currentTime}</span>
         </div>
       </div>
     </div>
   )
 }
+
+

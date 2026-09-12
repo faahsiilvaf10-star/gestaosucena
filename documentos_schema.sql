@@ -3,22 +3,28 @@ insert into storage.buckets (id, name, public)
 values ('documentos_cargos', 'documentos_cargos', true)
 on conflict (id) do nothing;
 
+-- Tentar deletar políticas se existirem com esses nomes específicos
+DROP POLICY IF EXISTS "Public Access documentos_cargos" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Insert documentos_cargos" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Update Delete documentos_cargos" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Delete documentos_cargos" ON storage.objects;
+
 -- Permitir leitura pública dos arquivos
-create policy "Public Access"
+create policy "Public Access documentos_cargos"
   on storage.objects for select
   using ( bucket_id = 'documentos_cargos' );
 
 -- Permitir insert para usuários autenticados
-create policy "Auth Insert"
+create policy "Auth Insert documentos_cargos"
   on storage.objects for insert
   with check ( bucket_id = 'documentos_cargos' and auth.role() = 'authenticated' );
 
 -- Permitir update/delete para usuários autenticados
-create policy "Auth Update Delete"
+create policy "Auth Update Delete documentos_cargos"
   on storage.objects for update
   using ( bucket_id = 'documentos_cargos' and auth.role() = 'authenticated' );
 
-create policy "Auth Delete"
+create policy "Auth Delete documentos_cargos"
   on storage.objects for delete
   using ( bucket_id = 'documentos_cargos' and auth.role() = 'authenticated' );
 

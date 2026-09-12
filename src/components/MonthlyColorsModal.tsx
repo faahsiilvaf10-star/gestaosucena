@@ -31,7 +31,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
       {/* Outer Modal Container with Golden Glow Border */}
       <div 
         className={`relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-6 
-          ${isDark ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-gray-900 text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]'}
+          ${isDark ? 'bg-[#0f1014] text-gray-900 dark:text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-gray-900 text-gray-900 dark:text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]'}
         `}
         onClick={e => e.stopPropagation()}
       >
@@ -72,7 +72,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
               >
                 <div className="text-center">
                   <h3 className="font-bold text-[15px] md:text-[16px] leading-tight mb-0.5">{month}</h3>
-                  <p className="text-[11px] text-white/50">{activeColorData.name}</p>
+                  <p className="text-[11px] text-gray-900 dark:text-white/50">{activeColorData.name}</p>
                 </div>
                 
                 <div className="flex items-center justify-center gap-2.5 h-8">
@@ -106,3 +106,5 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
     </div>
   )
 }
+
+

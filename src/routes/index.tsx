@@ -166,7 +166,7 @@ function Index() {
 
   const inputClass = `w-full rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${
     isDark 
-      ? 'bg-[#18181b]/80 border-white/10 border text-white placeholder-white/40 focus:border-white/30 focus:ring-white/30' 
+      ? 'bg-[#18181b]/80 border-white/10 border text-gray-900 dark:text-white placeholder-white/40 focus:border-white/30 focus:ring-white/30' 
       : 'bg-white/80 border-black/10 border text-black placeholder-black/40 focus:border-black/30 focus:ring-black/30 shadow-sm'
   }`
 
@@ -181,7 +181,7 @@ function Index() {
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
 
   return (
-    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-white' : 'bg-gray-50 text-black'}`}>
+    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-gray-900 dark:text-white' : 'bg-gray-50 text-black'}`}>
       
       <AnimatePresence>
         {isAuthorized && (
@@ -190,7 +190,7 @@ function Index() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-[100] flex flex-col items-center justify-center text-white overflow-hidden"
+            className="absolute inset-0 z-[100] flex flex-col items-center justify-center text-gray-900 dark:text-white overflow-hidden"
             style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 40%, #050505 100%)' }}
           >
             {/* Subtle golden glow at top */}
@@ -245,7 +245,7 @@ function Index() {
                 initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.85 }}
-                className="text-lg text-white/70 font-light mb-3"
+                className="text-lg text-gray-900 dark:text-white/70 font-light mb-3"
               >
                 Bem-vindo ao sistema
               </motion.p>
@@ -266,7 +266,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-2xl font-bold text-white tracking-wide">{authorizedUser.name}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               
@@ -284,20 +284,20 @@ function Index() {
                 {/* ACESSO SEGURO */}
                 <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                   <Shield size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">ACESSO SEGURO</p>
-                  <p className="text-[10px] text-white/40">Seus dados protegidos</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">ACESSO SEGURO</p>
+                  <p className="text-[10px] text-gray-900 dark:text-white/40">Seus dados protegidos</p>
                 </div>
                 {/* USUÁRIO VERIFICADO */}
                 <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                   <UserCircle2 size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">USUÁRIO VERIFICADO</p>
-                  <p className="text-[10px] text-white/40">Permissões confirmadas</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">USUÁRIO VERIFICADO</p>
+                  <p className="text-[10px] text-gray-900 dark:text-white/40">Permissões confirmadas</p>
                 </div>
                 {/* SESSÃO INICIADA */}
                 <div className="flex flex-col items-center justify-center py-6 px-3">
                   <Clock size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">SESSÃO INICIADA</p>
-                  <p className="text-[10px] text-white/40">Agora mesmo</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">SESSÃO INICIADA</p>
+                  <p className="text-[10px] text-gray-900 dark:text-white/40">Agora mesmo</p>
                 </div>
               </motion.div>
 
@@ -308,7 +308,7 @@ function Index() {
                 transition={{ delay: 1.5 }}
                 className="flex flex-col items-center gap-2"
               >
-                <p className="text-xs text-white/40">Sua sessão está protegida e monitorada.</p>
+                <p className="text-xs text-gray-900 dark:text-white/40">Sua sessão está protegida e monitorada.</p>
                 <div className="flex items-center gap-1.5">
                   <Lock size={13} style={{ color: '#c9a84c' }} />
                   <p className="text-xs font-semibold" style={{ color: '#c9a84c' }}>Ambiente 100% seguro</p>
@@ -373,7 +373,7 @@ function Index() {
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/40 hover:text-white/80' : 'text-black/40 hover:text-black/80'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-gray-900 dark:text-white/40 hover:text-gray-900 dark:text-white/80' : 'text-black/40 hover:text-black/80'}`}
                 title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 disabled={isLoading}
               >
@@ -389,7 +389,7 @@ function Index() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className={`w-3.5 h-3.5 rounded border-white/10 bg-white/5 accent-[#eab308] focus:ring-0 focus:ring-offset-0 transition-colors cursor-pointer`}
               />
-              <label htmlFor="rememberMe" className={`text-xs select-none cursor-pointer ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'} transition-colors`}>
+              <label htmlFor="rememberMe" className={`text-xs select-none cursor-pointer ${isDark ? 'text-gray-900 dark:text-white/60 hover:text-gray-900 dark:text-white/80' : 'text-black/60 hover:text-black/80'} transition-colors`}>
                 Lembrar-me
               </label>
             </div>
@@ -424,7 +424,7 @@ function Index() {
               <a href="#" className={linkClass}>
                 Esqueceu a senha?
               </a>
-              <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
                 Não tem uma conta?{' '}
                 <span className={linkClass} onClick={() => {
                   setErrorMessage('')
@@ -506,7 +506,7 @@ function Index() {
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/40 hover:text-white/80' : 'text-black/40 hover:text-black/80'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-gray-900 dark:text-white/40 hover:text-gray-900 dark:text-white/80' : 'text-black/40 hover:text-black/80'}`}
                 title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 disabled={isLoading}
               >
@@ -541,7 +541,7 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
                 Já tem uma conta?{' '}
                 <span className={linkClass} onClick={() => {
                   setErrorMessage('')
@@ -559,10 +559,10 @@ function Index() {
             </div>
             
             <div className="space-y-2">
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h2 className={`text-2xl font-bold ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
                 Cadastro Concluído!
               </h2>
-              <p className={`text-sm px-4 leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+              <p className={`text-sm px-4 leading-relaxed ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-600'}`}>
                 Sua conta foi criada com sucesso. Verifique seu e-mail para confirmação se necessário.
               </p>
             </div>
@@ -571,8 +571,8 @@ function Index() {
               onClick={() => setViewState('LOGIN')}
               className={`w-full max-w-[280px] rounded-lg px-4 py-3 text-sm font-medium transition-all mt-6 border ${
                 isDark
-                  ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/50 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                  : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-white shadow-md'
+                  ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/50 text-gray-900 dark:text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                  : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-gray-900 dark:text-white shadow-md'
               }`}
             >
               Fazer Login Agora
@@ -586,7 +586,7 @@ function Index() {
       <div className="absolute bottom-0 left-0 w-full p-6 flex justify-between items-center z-10">
         <div className="w-[64px]"></div> {/* Spacer */}
         
-        <p className={`text-[11px] flex-1 text-center font-light transition-colors ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+        <p className={`text-[11px] flex-1 text-center font-light transition-colors ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-black/40'}`}>
           © 2026 Sucena Empreendimentos. Todos os direitos reservados.
         </p>
 
@@ -599,3 +599,5 @@ function Index() {
     </div>
   )
 }
+
+

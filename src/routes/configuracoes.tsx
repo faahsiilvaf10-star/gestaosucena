@@ -139,7 +139,7 @@ function ConfiguracoesRoute() {
         
         <div className="mb-8">
           <h1 className="text-[54px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Configurações de Perfil</h1>
-          <p className="text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
+          <p className="text-gray-900 dark:text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
         </div>
 
         {message && (
@@ -157,9 +157,9 @@ function ConfiguracoesRoute() {
           
           {/* Avatar Section */}
           <div className="lg:col-span-1">
-            <div className="bg-[#121214] border border-white/5 p-6 rounded-2xl flex flex-col items-center text-center">
+            <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 p-6 rounded-2xl flex flex-col items-center text-center">
               <div className="relative group mb-4">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#1a1a1c] bg-[#1a1a1c]">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 dark:border-[#1a1a1c] bg-gray-100 dark:bg-[#1a1a1c]">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -187,13 +187,13 @@ function ConfiguracoesRoute() {
               </div>
               
               <h3 className="font-bold text-lg">{name || 'Usuário'}</h3>
-              <p className="text-sm text-white/50 break-all">{email}</p>
+              <p className="text-sm text-gray-900 dark:text-white/50 break-all">{email}</p>
             </div>
           </div>
 
           {/* Form Section */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSaveProfile} className="bg-[#121214] border border-white/5 rounded-2xl p-6 md:p-8 space-y-8">
+            <form onSubmit={handleSaveProfile} className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 rounded-2xl p-6 md:p-8 space-y-8">
               
               {loading ? (
                 <div className="flex justify-center py-12">
@@ -207,30 +207,30 @@ function ConfiguracoesRoute() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-white/60 pl-1">Nome Completo</label>
+                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">Nome Completo</label>
                         <input
                           type="text"
                           value={name}
                           onChange={e => setName(e.target.value)}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="Seu nome"
                         />
                       </div>
                       
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-white/60 pl-1">WhatsApp</label>
+                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">WhatsApp</label>
                         <input
                           type="tel"
                           value={whatsapp}
                           onChange={e => setWhatsapp(e.target.value)}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="(11) 99999-9999"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <hr className="border-white/5" />
+                  <hr className="border-gray-200 dark:border-white/5" />
 
                   {/* Segurança e Acesso */}
                   <div className="space-y-4">
@@ -238,26 +238,26 @@ function ConfiguracoesRoute() {
                     
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-white/60 pl-1">E-mail de Login</label>
+                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">E-mail de Login</label>
                         <input
                           type="email"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="seu@email.com"
                         />
                       </div>
                       
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-white/60 pl-1">Nova Senha</label>
+                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">Nova Senha</label>
                         <input
                           type="password"
                           value={password}
                           onChange={e => setPassword(e.target.value)}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="Deixe em branco para não alterar"
                         />
-                        <p className="text-[11px] text-white/40 pl-1">Apenas preencha se desejar trocar sua senha atual.</p>
+                        <p className="text-[11px] text-gray-900 dark:text-white/40 pl-1">Apenas preencha se desejar trocar sua senha atual.</p>
                       </div>
                     </div>
                   </div>
@@ -300,3 +300,5 @@ function ConfiguracoesRoute() {
     </AppLayout>
   )
 }
+
+

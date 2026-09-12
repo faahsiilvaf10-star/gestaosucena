@@ -196,7 +196,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
             <button onClick={() => stopRecording(true)} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
               <span className="text-sm">Cancelar</span>
             </button>
-            <button onClick={() => stopRecording(false)} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+            <button onClick={() => stopRecording(false)} className="p-2 bg-red-500 text-gray-900 dark:text-white rounded-full hover:bg-red-600 transition-colors">
               <Send size={18} className="ml-0.5" />
             </button>
           </div>
@@ -206,7 +206,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
         <>
           <button 
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? (showEmojiPicker ? 'text-[#D6A72B] bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5') : (showEmojiPicker ? 'text-yellow-600 bg-gray-200' : 'text-gray-500 hover:bg-gray-200')}`}
+            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? (showEmojiPicker ? 'text-[#D6A72B] bg-white/10' : 'text-gray-400 hover:text-gray-900 dark:text-white hover:bg-white/5') : (showEmojiPicker ? 'text-yellow-600 bg-gray-200' : 'text-gray-500 hover:bg-gray-200')}`}
           >
             <Smile size={22} />
           </button>
@@ -214,7 +214,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200'} ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200'} ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
           >
             <Paperclip size={22} />
           </button>
@@ -242,8 +242,8 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
             onClick={inputText ? handleSendText : startRecording}
             className={`p-3 shrink-0 rounded-full transition-all ${
               inputText 
-                ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-white hover:bg-[#008f6f]') 
-                : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200')
+                ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-gray-900 dark:text-white hover:bg-[#008f6f]') 
+                : (isDark ? 'text-gray-400 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200')
             }`}
           >
             {inputText ? <Send size={20} className="ml-1" /> : <Mic size={22} />}
@@ -253,3 +253,4 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
     </div>
   )
 }
+

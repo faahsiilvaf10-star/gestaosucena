@@ -15,6 +15,7 @@ import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { ChatSidebar } from './ChatSidebar'
 import { ThemeToggle } from './ThemeToggle'
+import { WindowsNavbar } from './WindowsNavbar'
 
 const headerLinks = [
   { label: 'Destaques', href: '/dashboard', isHighlight: true },
@@ -26,7 +27,7 @@ const headerLinks = [
   { label: 'Segurança', href: '#' },
   { label: 'RH', href: '/rh' },
   { label: 'Relatório Diário Obra', href: '#' },
-  { label: 'Meio Ambiente', href: '#' },
+  { label: 'Meio Ambiente', href: '/meio-ambiente' },
   { label: 'Planejamento', href: '#' },
   { label: 'Emergência', href: '#', isEmergency: true },
 ]
@@ -94,125 +95,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-white' : 'bg-[#f4f3f0] text-gray-900'}`}>
+    <div className={`h-screen max-h-[100dvh] flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-gray-900 dark:text-white' : 'bg-[#f4f3f0] text-gray-900'}`}>
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
 
       {/* Universal Top Gradient Backdrop */}
       <div className={`absolute top-0 left-0 right-0 h-32 pointer-events-none z-40 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent' : 'bg-gradient-to-b from-[#f4f3f0] via-[#f4f3f0]/80 to-transparent'}`} />
       
-      {/* Top Navigation Bar — Fixed */}
-      <div className="pt-3 px-3 md:px-6 sticky top-0 z-50 w-full mb-8">
-        <div className="w-full relative filter drop-shadow-[0_0_1px_rgba(250,204,21,0.8)] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]">
-          <header className={`h-[38px] rounded-[19px] flex items-stretch pl-3 pr-4 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#faf9f6]'}`}>
-                  {/* Left Section: Contrato Text & Hanging Profile */}
-            <div className="flex flex-col items-center justify-center relative h-full shrink-0 mr-4 md:mr-6 min-w-[96px]">
-              
-              {/* Text Container */}
-              <div className="flex items-center justify-center gap-1.5 h-full z-20 relative">
-                <FileText size={12} className={isDark ? "text-white/60" : "text-gray-500"} />
-                <div className="flex flex-col justify-center leading-none">
-                  <span className={`text-[7px] uppercase tracking-wider font-semibold ${isDark ? 'text-white/50' : 'text-gray-500'} mb-[2px]`}>Contrato</span>
-                  <span className={`text-[11px] md:text-xs font-bold tracking-wide ${isDark ? 'text-white' : 'text-gray-900'}`}>4600012690</span>
-                </div>
-              </div>
-              
-              {/* Hanging Profile U-Shape Tab with Seam-Free Outward Curves */}
-              <div className="absolute top-[38px] left-1/2 -translate-x-1/2 w-[56px] h-[53px] z-10">
-                
-                {/* Main U-shape background - Overlaps bar by 1px to prevent drop-shadow seams */}
-                <div className={`absolute top-[-1px] left-0 right-0 bottom-0 rounded-b-[28px] -z-10 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#faf9f6]'}`} />
-                
-                {/* Left inverted corner - Overlaps bar and U-shape by 1px */}
-                <svg className={`absolute top-[-1px] -left-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-[#faf9f6]'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M100,0 L0,0 C55.23,0 100,44.77 100,100 Z" />
-                </svg>
-                
-                {/* Right inverted corner - Overlaps bar and U-shape by 1px */}
-                <svg className={`absolute top-[-1px] -right-[13px] w-[14px] h-[14px] -z-10 ${isDark ? 'text-[#0a0a0c]' : 'text-[#faf9f6]'}`} fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M0,0 L100,0 C44.77,0 0,44.77 0,100 Z" />
-                </svg>
-
-                {/* Profile Image - Centered and Concentric */}
-                <button 
-                  onClick={() => navigate({ to: '/configuracoes' })}
-                  className="absolute top-[3px] left-[6px] w-[44px] h-[44px] rounded-full overflow-hidden border border-[#1a1a1c] z-20 hover:scale-105 transition-transform"
-                  title="Configurações de Perfil"
-                >
-                  {currentUser.avatarUrl ? (
-                    <img src={currentUser.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold text-sm">
-                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
-                    </div>
-                  )}
-                </button>
-              </div>
-            </div>
-
-        {/* Center Section: Navigation Links */}
-        <nav className="flex-1 flex items-center justify-between gap-1 md:gap-1.5 px-2 py-2 w-full overflow-x-auto hide-scrollbar">
-          {headerLinks.map((link, idx) => {
-            const isActive = currentPath === link.href
-            
-            const renderLink = () => {
-              if (link.isHighlight) {
-                return (
-                  <button
-                    onClick={() => link.href && navigate({ to: link.href as any })}
-                    className={`transition-all whitespace-nowrap inline-block font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide scale-y-[1.15] origin-bottom ${
-                      isActive
-                        ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]"
-                        : `${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                )
-              }
-              
-              if (link.isEmergency) {
-                return (
-                  <button
-                    onClick={() => link.href && navigate({ to: link.href as any })}
-                    className="font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:text-red-400 transition-all whitespace-nowrap inline-block scale-y-[1.15] origin-bottom"
-                  >
-                    {link.label}
-                  </button>
-                )
-              }
-              
-              return (
-                <button
-                  onClick={() => link.href && navigate({ to: link.href as any })}
-                  className={`transition-all whitespace-nowrap inline-block font-sans font-bold uppercase text-[clamp(7px,0.75vw,10px)] tracking-wide scale-y-[1.15] origin-bottom ${
-                    isActive 
-                      ? `text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]` 
-                      : `${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
-                  }`}
-                >
-                  {link.label}
-                </button>
-              )
-            }
-
-            return (
-              <div key={idx} className="flex items-center gap-1 md:gap-1.5 shrink-0">
-                {renderLink()}
-                {idx < headerLinks.length - 1 && (
-                  <span className={`text-[9px] scale-y-[0.8] mb-[2px] ${isDark ? 'text-white/20' : 'text-gray-400/40'}`}>-</span>
-                )}
-              </div>
-            )
-          })}
-          
-          {/* CIPA Icon */}
-          <button className="flex items-center justify-center w-5 h-5 xl:w-6 xl:h-6 rounded-full bg-green-600 text-white hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(22,163,74,0.5)] shrink-0 ml-1">
-            <PlusCircle size={14} strokeWidth={3} />
-          </button>
-          </nav>
-          </header>
-        </div>
-      </div>
+      {/* Top Navigation Bar — Windows 11 Liquid Glass */}
+      <WindowsNavbar currentUser={currentUser} />
 
       {/* Main Scrollable Content */}
       <main className="vt-main flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-0 mb-14 px-4 md:px-12 lg:px-24 xl:px-32">
@@ -229,7 +119,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setShowLogoutConfirm(true)}
-            className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
+            className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-900 dark:text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
           >
             <LogOut size={13} />
             SAIR
@@ -237,7 +127,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           
 
           <button 
-            className={`flex items-center justify-center p-1.5 rounded-lg transition-colors ${isDark ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
+            className={`flex items-center justify-center p-1.5 rounded-lg transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
             title="Recarregar"
             onClick={() => window.location.reload()}
           >
@@ -253,16 +143,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Bottom Right: Actions and Status */}
         <div className="flex items-center gap-6">
           
-          <ThemeToggle />
+          {/* ThemeToggle removed as requested */}
 
           {/* Chat Icon with Badge */}
           <button 
             onClick={toggleSidebar}
-            className={`relative transition-colors ${isDark ? 'text-white/80 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            className={`relative transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white' : 'text-gray-700 hover:text-gray-900'}`}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             {unreadCountGlobally > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-gray-900 dark:text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                 {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
               </span>
             )}
@@ -291,19 +181,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className={`p-6 rounded-2xl w-full max-w-sm border shadow-2xl ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
-            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
-            <p className={`text-sm mb-6 ${isDark ? 'text-white/70' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
+            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
+            <p className={`text-sm mb-6 ${isDark ? 'text-gray-900 dark:text-white/70' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
             
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setShowLogoutConfirm(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
               >
                 Cancelar
               </button>
               <button 
                 onClick={handleLogoutConfirm}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-500 text-gray-900 dark:text-white transition-colors"
               >
                 Sair
               </button>
@@ -321,3 +211,5 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </div>
   )
 }
+
+

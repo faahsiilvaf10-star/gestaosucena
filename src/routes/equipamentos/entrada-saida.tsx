@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -9,6 +10,11 @@ import {
 import { toast } from 'sonner' // Assuming sonner is the toast library used
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
+import { Calendar as CalendarUI } from '../../components/ui/calendar'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { cn } from '../../lib/utils'
 
 export const Route = createFileRoute('/equipamentos/entrada-saida')({
   component: EntradaSaidaPage,
@@ -437,8 +443,20 @@ function EntradaSaidaPage() {
     }
   }, [equipments])
 
+  const parsedActionDate = actionDateTime ? new Date(actionDateTime) : new Date();
+  const actionTimeStr = actionDateTime && actionDateTime.includes('T') ? actionDateTime.split('T')[1].substring(0,5) : "00:00";
+
+  const updateActionDateTime = (newDate?: Date, newTime?: string) => {
+    const d = newDate || parsedActionDate;
+    const t = newTime !== undefined ? newTime : actionTimeStr;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setActionDateTime(`${year}-${month}-${day}T${t}`);
+  };
+
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -483,7 +501,7 @@ function EntradaSaidaPage() {
               <input 
                 type="text" 
                 placeholder="Buscar equipamento ou placa/tag..." 
-                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-gray-900 dark:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -491,7 +509,7 @@ function EntradaSaidaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowFilterMenu(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterCategory === 'Todas as categorias' ? 'Categoria' : filterCategory}</span> {filterCategory !== 'Todas as categorias' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
@@ -515,7 +533,7 @@ function EntradaSaidaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowFilterMenu(!showFilterMenu); setShowCategoryMenu(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterStatus === 'Todos' ? 'Status' : filterStatus}</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
@@ -550,7 +568,7 @@ function EntradaSaidaPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl font-display mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -564,7 +582,7 @@ function EntradaSaidaPage() {
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-gray-900 dark:text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
@@ -592,7 +610,7 @@ function EntradaSaidaPage() {
                                   {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                                 </span>
                                 {!isInside && eq.last_exit_description && (
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
                                     <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
                                     {eq.last_exit_description}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black dark:border-t-white"></div>
@@ -607,7 +625,7 @@ function EntradaSaidaPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button 
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-gray-900 dark:text-white/70 hover:text-gray-900 dark:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                                   title="Histórico"
                                 >
                                   <History size={18} />
@@ -615,14 +633,14 @@ function EntradaSaidaPage() {
                                 {isInside ? (
                                   <button 
                                     onClick={() => handleOpenExit(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-lg font-bold text-xs hover:opacity-90 transition-opacity"
+                                    className="flex items-center gap-2 px-4 py-2 bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black rounded-lg font-bold text-xs hover:opacity-90 transition-opacity"
                                   >
                                     <ArrowRightFromLine size={14} /> REGISTRAR SAÍDA
                                   </button>
                                 ) : (
                                   <button 
                                     onClick={() => handleOpenEntry(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-gray-900 dark:text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors"
                                   >
                                     <ArrowRightToLine size={14} /> REGISTRAR ENTRADA
                                   </button>
@@ -665,7 +683,7 @@ function EntradaSaidaPage() {
                               {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                             </span>
                             {!isInside && eq.last_exit_description && (
-                              <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black dark:bg-white text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                              <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
                                 <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
                                 {eq.last_exit_description}
                                 <div className="absolute top-full left-4 border-4 border-transparent border-t-black dark:border-t-white"></div>
@@ -681,14 +699,14 @@ function EntradaSaidaPage() {
                            {isInside ? (
                               <button 
                                 onClick={() => handleOpenExit(eq)}
-                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-black text-white dark:bg-white dark:text-black rounded-xl font-bold text-sm hover:opacity-90 transition-opacity min-h-[44px]"
+                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black rounded-xl font-bold text-sm hover:opacity-90 transition-opacity min-h-[44px]"
                               >
                                 <ArrowRightFromLine size={16} /> REGISTRAR SAÍDA
                               </button>
                             ) : (
                               <button 
                                 onClick={() => handleOpenEntry(eq)}
-                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors min-h-[44px]"
+                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-blue-600 text-gray-900 dark:text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors min-h-[44px]"
                               >
                                 <ArrowRightToLine size={16} /> REGISTRAR ENTRADA
                               </button>
@@ -708,7 +726,7 @@ function EntradaSaidaPage() {
       {isEntryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEntryModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-500">
               <LogIn size={28} />
               <h2 className="text-2xl font-display italic">Registrar Entrada</h2>
@@ -723,12 +741,30 @@ function EntradaSaidaPage() {
             <div className="space-y-4 mb-8">
               <div className="flex flex-col gap-2 pb-3 border-b border-black/10 dark:border-white/10">
                 <label className="text-sm opacity-70 font-semibold">Data / Hora da Entrada</label>
-                <input 
-                  type="datetime-local" 
-                  value={actionDateTime}
-                  onChange={e => setActionDateTime(e.target.value)}
-                  className={`w-full p-3 rounded-xl border outline-none font-semibold ${isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10'}`}
-                />
+                <div className="flex gap-2 w-full">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={cn("flex-1 p-3 rounded-xl border flex items-center justify-between font-semibold", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}>
+                        {format(parsedActionDate, 'dd/MM/yyyy', { locale: ptBR })}
+                        <Calendar className="w-4 h-4 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarUI
+                        mode="single"
+                        selected={parsedActionDate}
+                        onSelect={(d) => d && updateActionDateTime(d, undefined)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <input 
+                    type="time" 
+                    value={actionTimeStr}
+                    onChange={(e) => updateActionDateTime(undefined, e.target.value)}
+                    className={cn("w-32 p-3 rounded-xl border outline-none font-semibold text-center", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}
+                  />
+                </div>
               </div>
             </div>
             
@@ -743,7 +779,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={handleConfirmEntry}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 min-h-[44px]"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-bold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 min-h-[44px]"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'CONFIRMAR ENTRADA'}
               </button>
@@ -756,7 +792,7 @@ function EntradaSaidaPage() {
       {isExitModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsExitModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-500">
               <LogOut size={28} />
               <h2 className="text-2xl font-display italic">Registrar Saída</h2>
@@ -770,12 +806,30 @@ function EntradaSaidaPage() {
 
             <div className="mb-6 pb-4 border-b border-black/10 dark:border-white/10">
               <label className="block text-sm font-semibold mb-2">Data / Hora da Saída</label>
-              <input 
-                type="datetime-local" 
-                value={actionDateTime}
-                onChange={e => setActionDateTime(e.target.value)}
-                className={`w-full p-3 rounded-xl border outline-none font-semibold ${isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10'}`}
-              />
+              <div className="flex gap-2 w-full">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className={cn("flex-1 p-3 rounded-xl border flex items-center justify-between font-semibold", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}>
+                      {format(parsedActionDate, 'dd/MM/yyyy', { locale: ptBR })}
+                      <Calendar className="w-4 h-4 opacity-50" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarUI
+                      mode="single"
+                      selected={parsedActionDate}
+                      onSelect={(d) => d && updateActionDateTime(d, undefined)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <input 
+                  type="time" 
+                  value={actionTimeStr}
+                  onChange={(e) => updateActionDateTime(undefined, e.target.value)}
+                  className={cn("w-32 p-3 rounded-xl border outline-none font-semibold text-center", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}
+                />
+              </div>
             </div>
 
             <div className="space-y-5">
@@ -825,7 +879,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={handleConfirmExit}
                 disabled={isSaving || !exitReason}
-                className={`flex-1 py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 min-h-[44px] ${!exitReason ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-white/10 dark:text-white/30' : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 min-h-[44px] ${!exitReason ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-white/10 dark:text-white/30' : 'bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black hover:opacity-90'}`}
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'CONFIRMAR SAÍDA'}
               </button>
@@ -838,7 +892,7 @@ function EntradaSaidaPage() {
       {isHistoryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
-          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-display italic">Histórico de Movimentação</h2>
@@ -913,27 +967,25 @@ function EntradaSaidaPage() {
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
-          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-2xl font-display italic mb-2">Relatório PDF</h2>
             <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-2"><Calendar size={14} /> Data Inicial</label>
-                <input 
-                  type="date"
+                <DateInput 
                   value={reportStartDate}
-                  onChange={e => setReportStartDate(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 [color-scheme:dark]' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  onChange={val => setReportStartDate(val)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-2"><Calendar size={14} /> Data Final</label>
-                <input 
-                  type="date"
+                <DateInput 
                   value={reportEndDate}
-                  onChange={e => setReportEndDate(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 [color-scheme:dark]' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  onChange={val => setReportEndDate(val)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
                 />
               </div>
             </div>
@@ -949,7 +1001,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={generatePDFReport}
                 disabled={isGeneratingReport}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
               >
                 {isGeneratingReport ? <RefreshCw size={18} className="animate-spin" /> : <><FileDown size={18} /> Baixar PDF</>}
               </button>
@@ -982,3 +1034,5 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     </div>
   )
 }
+
+

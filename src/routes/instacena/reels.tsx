@@ -161,9 +161,9 @@ function ReelsRoute() {
   return (
     <div className="h-full w-full max-w-[450px] mx-auto bg-black flex flex-col overflow-y-auto snap-y snap-mandatory hide-scrollbar relative">
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-white">Carregando reels...</div>
+        <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-white">Carregando reels...</div>
       ) : posts.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-white/50">
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-900 dark:text-white/50">
           <Film size={48} className="mb-4" />
           <p>Nenhum vídeo encontrado.</p>
         </div>
@@ -187,32 +187,32 @@ function ReelsRoute() {
             <div className="absolute right-4 bottom-24 z-10 flex flex-col items-center gap-6">
               <button onClick={() => handleLike(post)} className="flex flex-col items-center gap-1 group">
                 <div className="p-3 bg-black/20 rounded-full group-hover:bg-black/40 transition-colors backdrop-blur-sm">
-                  <Heart size={28} className={post.isLikedByMe ? "fill-red-500 text-red-500" : "text-white"} />
+                  <Heart size={28} className={post.isLikedByMe ? "fill-red-500 text-red-500" : "text-gray-900 dark:text-white"} />
                 </div>
-                <span className="text-white text-xs font-bold shadow-black drop-shadow-md">{post.likes_count}</span>
+                <span className="text-gray-900 dark:text-white text-xs font-bold shadow-black drop-shadow-md">{post.likes_count}</span>
               </button>
               
               <button onClick={() => setCommentingPost(post)} className="flex flex-col items-center gap-1 group">
                 <div className="p-3 bg-black/20 rounded-full group-hover:bg-black/40 transition-colors backdrop-blur-sm">
-                  <MessageCircle size={28} className="text-white" />
+                  <MessageCircle size={28} className="text-gray-900 dark:text-white" />
                 </div>
-                <span className="text-white text-xs font-bold shadow-black drop-shadow-md">{post.comments_count}</span>
+                <span className="text-gray-900 dark:text-white text-xs font-bold shadow-black drop-shadow-md">{post.comments_count}</span>
               </button>
               
               <button onClick={() => handleDownload(post.social_post_media[0].media_url, post.id)} className="flex flex-col items-center gap-1 group" title="Baixar vídeo">
                 <div className="p-3 bg-black/20 rounded-full group-hover:bg-black/40 transition-colors backdrop-blur-sm">
-                  <Send size={28} className="text-white" />
+                  <Send size={28} className="text-gray-900 dark:text-white" />
                 </div>
               </button>
               
               <button className="flex flex-col items-center gap-1 group">
                 <div className="p-3 bg-black/20 rounded-full group-hover:bg-black/40 transition-colors backdrop-blur-sm">
-                  <Bookmark size={28} className="text-white" />
+                  <Bookmark size={28} className="text-gray-900 dark:text-white" />
                 </div>
               </button>
               
               <button className="p-2">
-                <MoreVertical size={24} className="text-white" />
+                <MoreVertical size={24} className="text-gray-900 dark:text-white" />
               </button>
               
               {/* Audio Track Icon */}
@@ -221,7 +221,7 @@ function ReelsRoute() {
                    <img src={post.social_profiles.avatar_url} alt="Audio" className="w-full h-full object-cover" />
                  ) : (
                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                     <Music size={16} className="text-white" />
+                     <Music size={16} className="text-gray-900 dark:text-white" />
                    </div>
                  )}
               </div>
@@ -234,24 +234,24 @@ function ReelsRoute() {
                    {post.social_profiles?.avatar_url ? (
                      <img src={post.social_profiles.avatar_url} alt="User" className="w-full h-full object-cover" />
                    ) : (
-                     <div className="w-full h-full flex items-center justify-center text-white">
+                     <div className="w-full h-full flex items-center justify-center text-gray-900 dark:text-white">
                        <User size={20} />
                      </div>
                    )}
                 </div>
-                <span className="text-white font-bold text-[15px] drop-shadow-md">
+                <span className="text-gray-900 dark:text-white font-bold text-[15px] drop-shadow-md">
                   {post.social_profiles?.display_name || post.social_profiles?.username || 'Usuário'}
                 </span>
-                <button className="px-3 py-1 bg-transparent border border-white text-white rounded-lg text-xs font-bold ml-2">Seguir</button>
+                <button className="px-3 py-1 bg-transparent border border-white text-gray-900 dark:text-white rounded-lg text-xs font-bold ml-2">Seguir</button>
               </div>
               
               {post.caption && (
-                <p className="text-white text-sm drop-shadow-md line-clamp-2">
+                <p className="text-gray-900 dark:text-white text-sm drop-shadow-md line-clamp-2">
                   {post.caption}
                 </p>
               )}
               
-              <div className="flex items-center gap-2 text-white/90">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white/90">
                 <Music size={14} />
                 <span className="text-xs marquee drop-shadow-md">Áudio original - {post.social_profiles?.username || 'desconhecido'}</span>
               </div>
@@ -310,3 +310,5 @@ function ReelsRoute() {
     </div>
   )
 }
+
+

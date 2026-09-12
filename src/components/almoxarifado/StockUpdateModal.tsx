@@ -58,7 +58,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
           </h2>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:text-white transition-colors"
           >
             <X size={24} />
           </button>
@@ -107,7 +107,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
               <button
                 type="submit"
                 disabled={loading}
-                className={`px-4 py-2 text-sm font-bold text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm
+                className={`px-4 py-2 text-sm font-bold text-gray-900 dark:text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm
                   ${type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
                   ${loading ? 'opacity-70 cursor-not-allowed' : ''}
                 `}
@@ -122,3 +122,5 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
     </div>
   )
 }
+
+

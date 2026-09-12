@@ -81,21 +81,21 @@
 }
 
 @theme {
-  --color-bg: hsl(0 0% 4%);
-  --color-surface: hsl(0 0% 8%);
-  --color-text-primary: hsl(0 0% 96%);
-  --color-muted: hsl(0 0% 53%);
-  --color-stroke: hsl(0 0% 12%);
-  --color-accent: hsl(0 0% 96%);
-  --color-accent-foreground: hsl(0 0% 4%);
+  --color-bg: var(--theme-bg);
+  --color-surface: var(--theme-surface);
+  --color-text-primary: var(--theme-text-primary);
+  --color-muted: var(--theme-muted);
+  --color-stroke: var(--theme-stroke);
+  --color-accent: var(--theme-accent);
+  --color-accent-foreground: var(--theme-accent-foreground);
   
-  --color-popover: hsl(0 0% 8%);
-  --color-popover-foreground: hsl(0 0% 96%);
-  --color-card: hsl(0 0% 8%);
-  --color-card-foreground: hsl(0 0% 96%);
+  --color-popover: var(--theme-popover);
+  --color-popover-foreground: var(--theme-popover-foreground);
+  --color-card: var(--theme-card);
+  --color-card-foreground: var(--theme-card-foreground);
   
-  --color-primary: hsl(0 0% 96%);
-  --color-primary-foreground: hsl(0 0% 4%);
+  --color-primary: var(--theme-primary);
+  --color-primary-foreground: var(--theme-primary-foreground);
   --font-body: 'Inter', sans-serif;
   --font-display: 'Instrument Serif', serif;
   --font-tarmiles: 'TarmilesAction', sans-serif;
@@ -123,9 +123,47 @@
 }
 
 @layer base {
+  :root {
+    --theme-bg: hsl(0 0% 98%);
+    --theme-surface: hsl(0 0% 100%);
+    --theme-text-primary: hsl(0 0% 4%);
+    --theme-muted: hsl(0 0% 45%);
+    --theme-stroke: hsl(0 0% 90%);
+    --theme-accent: hsl(0 0% 4%);
+    --theme-accent-foreground: hsl(0 0% 96%);
+    
+    --theme-popover: hsl(0 0% 100%);
+    --theme-popover-foreground: hsl(0 0% 4%);
+    --theme-card: hsl(0 0% 100%);
+    --theme-card-foreground: hsl(0 0% 4%);
+    
+    --theme-primary: hsl(0 0% 4%);
+    --theme-primary-foreground: hsl(0 0% 96%);
+  }
+
+  .dark {
+    --theme-bg: hsl(0 0% 4%);
+    --theme-surface: hsl(0 0% 8%);
+    --theme-text-primary: hsl(0 0% 96%);
+    --theme-muted: hsl(0 0% 53%);
+    --theme-stroke: hsl(0 0% 12%);
+    --theme-accent: hsl(0 0% 96%);
+    --theme-accent-foreground: hsl(0 0% 4%);
+    
+    --theme-popover: hsl(0 0% 8%);
+    --theme-popover-foreground: hsl(0 0% 96%);
+    --theme-card: hsl(0 0% 8%);
+    --theme-card-foreground: hsl(0 0% 96%);
+    
+    --theme-primary: hsl(0 0% 96%);
+    --theme-primary-foreground: hsl(0 0% 4%);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
+    background-color: var(--theme-bg);
+    color: var(--theme-text-primary);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

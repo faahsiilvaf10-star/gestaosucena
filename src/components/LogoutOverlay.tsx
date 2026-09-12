@@ -16,7 +16,7 @@ export function LogoutOverlay({ isVisible, userName, userRole }: LogoutOverlayPr
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center text-white overflow-hidden"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center text-gray-900 dark:text-white overflow-hidden"
           style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 40%, #050505 100%)' }}
         >
           {/* Subtle golden glow at top */}
@@ -70,7 +70,7 @@ export function LogoutOverlay({ isVisible, userName, userRole }: LogoutOverlayPr
               transition={{ delay: 1 }}
               className="text-center flex flex-col items-center"
             >
-              <p className="text-2xl font-bold text-white tracking-wide">{userName}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">{userName}</p>
               <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-3" style={{ color: '#c9a84c' }}>{userRole}</p>
             </motion.div>
             
@@ -105,3 +105,4 @@ export function LogoutOverlay({ isVisible, userName, userRole }: LogoutOverlayPr
     </AnimatePresence>
   )
 }
+

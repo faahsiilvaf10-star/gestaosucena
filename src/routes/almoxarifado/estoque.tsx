@@ -131,7 +131,7 @@ function AlmoxarifadoRoute() {
           </button>
           <button 
             onClick={() => setShowNewItemModal(true)}
-            className="bg-[#0866ff] hover:bg-[#0756d6] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm text-sm"
+            className="bg-[#0866ff] hover:bg-[#0756d6] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm text-sm"
           >
             <Plus size={18} /> Novo Item
           </button>
@@ -153,7 +153,7 @@ function AlmoxarifadoRoute() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
-              className={`flex items-center gap-2 px-4 py-3 font-semibold text-sm transition-colors relative whitespace-nowrap ${isActive ? 'text-[#0866ff] dark:text-[#38bdf8]' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+              className={`flex items-center gap-2 px-4 py-3 font-semibold text-sm transition-colors relative whitespace-nowrap ${isActive ? 'text-[#0866ff] dark:text-[#38bdf8]' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-900 dark:text-white'}`}
             >
               <Icon size={16} />
               {tab.label}
@@ -234,7 +234,7 @@ function AlmoxarifadoRoute() {
                   <div className="relative">
                     <button 
                       onClick={() => setShowFilterMenu(!showFilterMenu)}
-                      className={`border px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors ${filterStatus !== 'all' ? 'bg-[#0866ff] text-white border-[#0866ff]' : 'bg-white dark:bg-[#1a1a1b] border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}
+                      className={`border px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors ${filterStatus !== 'all' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : 'bg-white dark:bg-[#1a1a1b] border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}
                     >
                       <Filter size={18} /> Filtros {filterStatus !== 'all' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
                     </button>
@@ -373,3 +373,4 @@ function MetricCard({ title, value }: { title: string, value: string | number })
 }
 
 const DollarSignIcon = (props: any) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+
