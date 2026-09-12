@@ -15,10 +15,19 @@ function AmbientesComponent() {
     navigate({ to: '/dashboard' })
   }
 
-  const environments = [
+  type Environment = {
+    id: string
+    name: string
+    description: string
+    pinColor: string
+    contract?: string
+  }
+
+  const environments: Environment[] = [
     {
       id: 'barcarena',
       name: 'BARCARENA HYDRO',
+      contract: 'Contrato 4600012690',
       description: 'Ambiente de gestão e operações da unidade Barcarena.',
       pinColor: '#c9a84c',
     },
@@ -83,6 +92,11 @@ function AmbientesComponent() {
               </div>
               
               <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">{env.name}</h2>
+              {env.contract && (
+                <div className="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-[#c9a84c] rounded-md w-fit mb-3 border border-[#c9a84c]/30">
+                  {env.contract}
+                </div>
+              )}
               <p className="text-white/50 text-sm leading-relaxed mb-8">
                 {env.description}
               </p>

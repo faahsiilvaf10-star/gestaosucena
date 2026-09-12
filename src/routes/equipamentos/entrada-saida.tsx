@@ -600,7 +600,7 @@ function EntradaSaidaPage() {
                         return (
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
                             <td className="p-4 font-bold text-base">{eq.name}</td>
-                            <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag}</td>
+                            <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</td>
                             <td className="p-4">{eq.category || '-'}</td>
                             <td className="p-4">
                               <div className="relative group/tooltip inline-block">
@@ -665,7 +665,7 @@ function EntradaSaidaPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-bold text-lg">{eq.name}</h3>
-                            <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag}</div>
+                            <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</div>
                             <div className="text-xs opacity-70 mt-1">{eq.category || 'Sem categoria'}</div>
                           </div>
                           <div>
@@ -737,7 +737,7 @@ function EntradaSaidaPage() {
             <div className={`p-4 rounded-2xl mb-6 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
               <div className="text-sm opacity-60 uppercase tracking-wider mb-1">Equipamento</div>
               <div className="text-xl font-bold">{selectedEq.name}</div>
-              <div className="font-mono text-sm opacity-70 uppercase mt-1">{selectedEq.plate_tag}</div>
+              <div className="font-mono text-sm opacity-70 uppercase mt-1">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</div>
             </div>
 
             <div className="space-y-4 mb-8">
@@ -803,7 +803,7 @@ function EntradaSaidaPage() {
             <div className={`p-4 rounded-2xl mb-6 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
               <div className="text-sm opacity-60 uppercase tracking-wider mb-1">Equipamento</div>
               <div className="text-xl font-bold">{selectedEq.name}</div>
-              <div className="font-mono text-sm opacity-70 uppercase mt-1">{selectedEq.plate_tag}</div>
+              <div className="font-mono text-sm opacity-70 uppercase mt-1">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</div>
             </div>
 
             <div className="mb-6 pb-4 border-b border-black/10 dark:border-white/10">
@@ -898,7 +898,7 @@ function EntradaSaidaPage() {
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-display italic">Histórico de Movimentação</h2>
-                <div className="text-sm opacity-70 mt-1 font-bold">{selectedEq.name} <span className="font-mono text-xs opacity-70 uppercase ml-2">{selectedEq.plate_tag}</span></div>
+                <div className="text-sm opacity-70 mt-1 font-bold">{selectedEq.name} <span className="font-mono text-xs opacity-70 uppercase ml-2">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</span></div>
               </div>
               <button onClick={() => setIsHistoryModalOpen(false)} className={`p-2 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/5 hover:bg-black/10'}`}>
                 <ArrowRightFromLine size={20} className="rotate-180" />

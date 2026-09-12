@@ -31,7 +31,7 @@ export const MENU_ITEMS = [
   { id: 'equipamentos', label: 'Equipamentos', href: '/equipamentos', icon: Truck, routeMatch: '/equipamentos' },
   { id: 'seguranca', label: 'Segurança', href: '#', icon: ShieldCheck, routeMatch: '/seguranca' },
   { id: 'rh', label: 'RH', href: '/rh', icon: Users, routeMatch: '/rh' },
-  { id: 'relatorio', label: 'Relatório Diário Obra', href: '#', icon: BarChart2, routeMatch: '/relatorio' },
+  { id: 'relatorio', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
   { id: 'meio-ambiente', label: 'Meio Ambiente', href: '/meio-ambiente', icon: Leaf, routeMatch: '/meio-ambiente' },
   { id: 'planejamento', label: 'Planejamento', href: '#', icon: Calendar, routeMatch: '/planejamento' },
   { id: 'emergencia', label: 'Emergência', href: '#', icon: TriangleAlert, routeMatch: '/emergencia', isEmergency: true },

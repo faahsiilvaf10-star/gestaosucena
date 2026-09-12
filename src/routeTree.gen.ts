@@ -38,6 +38,10 @@ import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesqui
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 import { Route as MeioAmbienteIndexRouteImport } from './routes/meio-ambiente/index'
 import { Route as MeioAmbienteConsumoRouteImport } from './routes/meio-ambiente/consumo'
+import { Route as RelatorioObraIndexRouteImport } from './routes/relatorio-obra/index'
+import { Route as RelatorioObraGabiaoRouteImport } from './routes/relatorio-obra/gabiao'
+import { Route as RelatorioObraJardinagemRouteImport } from './routes/relatorio-obra/jardinagem'
+import { Route as RelatorioObraRdoRouteImport } from './routes/relatorio-obra/rdo'
 import { Route as RhIndexRouteImport } from './routes/rh/index'
 import { Route as RhCalendarioHydroRouteImport } from './routes/rh/calendario-hydro'
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
@@ -196,6 +200,26 @@ const MeioAmbienteConsumoRoute = MeioAmbienteConsumoRouteImport.update({
   path: '/consumo',
   getParentRoute: () => MeioAmbienteRoute,
 } as any)
+const RelatorioObraIndexRoute = RelatorioObraIndexRouteImport.update({
+  id: '/relatorio-obra/',
+  path: '/relatorio-obra/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioObraGabiaoRoute = RelatorioObraGabiaoRouteImport.update({
+  id: '/relatorio-obra/gabiao',
+  path: '/relatorio-obra/gabiao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioObraJardinagemRoute = RelatorioObraJardinagemRouteImport.update({
+  id: '/relatorio-obra/jardinagem',
+  path: '/relatorio-obra/jardinagem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatorioObraRdoRoute = RelatorioObraRdoRouteImport.update({
+  id: '/relatorio-obra/rdo',
+  path: '/relatorio-obra/rdo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -275,6 +299,9 @@ export interface FileRoutesByFullPath {
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
+  '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
+  '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -284,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
+  '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -311,6 +339,9 @@ export interface FileRoutesByTo {
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
+  '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
+  '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -320,6 +351,7 @@ export interface FileRoutesByTo {
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
   '/meio-ambiente': typeof MeioAmbienteIndexRoute
+  '/relatorio-obra': typeof RelatorioObraIndexRoute
   '/rh': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -353,6 +385,9 @@ export interface FileRoutesById {
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
+  '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
+  '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
   '/rh/calendario-hydro': typeof RhCalendarioHydroRoute
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
@@ -362,6 +397,7 @@ export interface FileRoutesById {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
+  '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
@@ -396,6 +432,9 @@ export interface FileRouteTypes {
     | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/meio-ambiente/consumo'
+    | '/relatorio-obra/gabiao'
+    | '/relatorio-obra/jardinagem'
+    | '/relatorio-obra/rdo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -405,6 +444,7 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/meio-ambiente/'
+    | '/relatorio-obra/'
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -432,6 +472,9 @@ export interface FileRouteTypes {
     | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/meio-ambiente/consumo'
+    | '/relatorio-obra/gabiao'
+    | '/relatorio-obra/jardinagem'
+    | '/relatorio-obra/rdo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -441,6 +484,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/meio-ambiente'
+    | '/relatorio-obra'
     | '/rh'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -473,6 +517,9 @@ export interface FileRouteTypes {
     | '/instacena/pesquisa'
     | '/instacena/reels'
     | '/meio-ambiente/consumo'
+    | '/relatorio-obra/gabiao'
+    | '/relatorio-obra/jardinagem'
+    | '/relatorio-obra/rdo'
     | '/rh/calendario-hydro'
     | '/rh/efetivo'
     | '/rh/lista-presenca'
@@ -482,6 +529,7 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/meio-ambiente/'
+    | '/relatorio-obra/'
     | '/rh/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
@@ -501,7 +549,11 @@ export interface RootRouteChildren {
   LembretesRoute: typeof LembretesRoute
   MeioAmbienteRoute: typeof MeioAmbienteRouteWithChildren
   RhRoute: typeof RhRouteWithChildren
+  RelatorioObraGabiaoRoute: typeof RelatorioObraGabiaoRoute
+  RelatorioObraJardinagemRoute: typeof RelatorioObraJardinagemRoute
+  RelatorioObraRdoRoute: typeof RelatorioObraRdoRoute
   DocumentosIndexRoute: typeof DocumentosIndexRoute
+  RelatorioObraIndexRoute: typeof RelatorioObraIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,6 +761,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeioAmbienteConsumoRouteImport
       parentRoute: typeof MeioAmbienteRoute
     }
+    '/relatorio-obra/': {
+      id: '/relatorio-obra/'
+      path: '/relatorio-obra'
+      fullPath: '/relatorio-obra/'
+      preLoaderRoute: typeof RelatorioObraIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio-obra/gabiao': {
+      id: '/relatorio-obra/gabiao'
+      path: '/relatorio-obra/gabiao'
+      fullPath: '/relatorio-obra/gabiao'
+      preLoaderRoute: typeof RelatorioObraGabiaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio-obra/jardinagem': {
+      id: '/relatorio-obra/jardinagem'
+      path: '/relatorio-obra/jardinagem'
+      fullPath: '/relatorio-obra/jardinagem'
+      preLoaderRoute: typeof RelatorioObraJardinagemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorio-obra/rdo': {
+      id: '/relatorio-obra/rdo'
+      path: '/relatorio-obra/rdo'
+      fullPath: '/relatorio-obra/rdo'
+      preLoaderRoute: typeof RelatorioObraRdoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rh/': {
       id: '/rh/'
       path: '/'
@@ -897,7 +977,11 @@ const rootRouteChildren: RootRouteChildren = {
   LembretesRoute: LembretesRoute,
   MeioAmbienteRoute: MeioAmbienteRouteWithChildren,
   RhRoute: RhRouteWithChildren,
+  RelatorioObraGabiaoRoute: RelatorioObraGabiaoRoute,
+  RelatorioObraJardinagemRoute: RelatorioObraJardinagemRoute,
+  RelatorioObraRdoRoute: RelatorioObraRdoRoute,
   DocumentosIndexRoute: DocumentosIndexRoute,
+  RelatorioObraIndexRoute: RelatorioObraIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

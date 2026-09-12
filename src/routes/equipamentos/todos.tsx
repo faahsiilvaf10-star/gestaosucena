@@ -396,7 +396,7 @@ function TodosEquipamentosPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h3 className="font-bold text-lg">{eq.name}</h3>
-                          <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag}</div>
+                          <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</div>
                           <div className="text-xs opacity-70 mt-1">{eq.category || 'Sem categoria'}</div>
                         </div>
                         <div>{getStatusBadge(eq)}</div>
@@ -440,7 +440,7 @@ function TodosEquipamentosPage() {
                   </div>
                   <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
                     <div className="text-[10px] opacity-50 uppercase mb-1">Placa / Tag</div>
-                    <div className="font-mono text-sm whitespace-nowrap tabular-nums">{selectedEq.plate_tag}</div>
+                    <div className="font-mono text-sm whitespace-nowrap tabular-nums">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</div>
                   </div>
                   <div className={`col-span-2 p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
                     <div className="text-[10px] opacity-50 uppercase mb-1">Tipo</div>

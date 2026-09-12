@@ -672,7 +672,7 @@ function RhListaPresencaPage() {
                   key={area}
                   className={`flex items-center rounded-full transition-colors whitespace-nowrap pl-4 pr-1 py-1.5
                     ${isActive 
-                      ? 'bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black' 
+                      ? 'bg-black text-white dark:bg-white dark:text-black' 
                       : 'bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300'}`}
                 >
                   <button onClick={() => setActiveTab(area)} className="text-sm font-semibold flex items-center gap-2 pr-2 border-r border-current border-opacity-20">
@@ -761,7 +761,7 @@ function RhListaPresencaPage() {
 
               {/* Toolbar */}
               <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
-                <div className="relative w-full md:w-80">
+                <div className="relative w-full md:w-56">
                   <input 
                     type="text" 
                     placeholder="Buscar por nome ou função..." 
