@@ -19,7 +19,7 @@ function MeioAmbienteHub() {
         
         {/* Title */}
         <div className="flex flex-col items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
-          <h1 className="text-[54px] font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+          <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
             Meio Ambiente
           </h1>
           <p className="text-gray-900 dark:text-white/70 text-sm mt-1 font-medium">Gestão de recursos hídricos e resíduos</p>

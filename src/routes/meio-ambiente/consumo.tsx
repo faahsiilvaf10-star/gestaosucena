@@ -33,7 +33,9 @@ function ConsumoAbastecimentoPage() {
         {/* Left Side: Text and Chart */}
         <div className="flex-1 w-full flex flex-col gap-8 animate-in fade-in slide-in-from-left-8 duration-700">
           <div>
-            <h1 className={`text-[54px] font-display italic tracking-tight leading-none mb-2 ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-sm'}`}>
+            <h1 className={`font-display italic tracking-tight leading-none mb-2 ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-sm'}`}
+              style={{ fontSize: 'clamp(24px, 7vw, 54px)' }}
+            >
               Consumo & Abastecimento
             </h1>
             <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>

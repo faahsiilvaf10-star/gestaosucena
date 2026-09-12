@@ -26,7 +26,7 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
       
       {/* Desktop Sidebar (Left) */}
       <aside className="hidden md:flex flex-col w-[200px] lg:w-[244px] h-full border-r border-black/10 dark:border-white/10 px-4 py-8 shrink-0 sticky top-0">
-        <h1 className="text-[54px] font-display italic tracking-tight px-2 mb-8" style={{ lineHeight: '1' }}>
+        <h1 className="font-display italic tracking-tight px-2 mb-8" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           INSTACENA
         </h1>
 

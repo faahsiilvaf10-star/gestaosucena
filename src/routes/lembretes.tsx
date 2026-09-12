@@ -112,7 +112,7 @@ function LembretesComponent() {
 
   return (
     <>
-      <div className={`p-8 pb-24 space-y-6 max-w-[1600px] w-full mx-auto relative z-10 transition-colors duration-300`}>
+      <div className={`p-4 sm:p-8 pb-24 space-y-4 sm:space-y-6 max-w-[1600px] w-full mx-auto relative z-10 transition-colors duration-300`}>
         
 
 
@@ -120,7 +120,9 @@ function LembretesComponent() {
         {/* Title & Controls */}
         <div className="relative flex flex-col md:flex-row items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col items-center justify-center text-center">
-            <h1 className="text-[54px] font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ lineHeight: '1' }}>
+            <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center"
+              style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
+            >
               Lembretes
             </h1>
             <p className="text-gray-900 dark:text-white/70 text-sm mt-1 font-medium">Organize tarefas e compromissos</p>
@@ -141,13 +143,13 @@ function LembretesComponent() {
         </div>
 
         {/* Toolbar & Filters */}
-        <div className={`rounded-2xl border p-4 flex items-center justify-between transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10'}`}>
-          <div className="flex items-center gap-2">
+        <div className={`rounded-2xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10'}`}>
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             {filterOptions.map((opt) => (
               <button
                 key={opt.label}
                 onClick={() => setCurrentFilter(opt.label)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   currentFilter === opt.label 
                     ? (isDark ? 'bg-white/10 text-gray-900 dark:text-white' : 'bg-black/5 text-gray-900')
                     : (isDark ? 'text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5')
@@ -174,7 +176,7 @@ function LembretesComponent() {
               <input 
                 type="text"
                 placeholder="Pesquisar..."
-                className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-64 transition-all ${
+                className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full sm:w-64 transition-all ${
                   isDark 
                     ? 'bg-black/20 border-white/10 text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30' 
                     : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500'

@@ -296,7 +296,9 @@ function VistoriaPage() {
       <div className="flex-none p-4 md:p-8 pb-4 relative z-20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-display italic tracking-tight mb-2">Controle de Vistorias</h1>
+            <h1 className="font-display italic tracking-tight mb-2"
+              style={{ fontSize: 'clamp(22px, 6vw, 48px)' }}
+            >Controle de Vistorias</h1>
             <p className="text-sm md:text-base opacity-70">Documentação, inspeções e vencimentos da frota</p>
           </div>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -614,7 +616,7 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     <div className={`p-4 md:p-5 rounded-2xl border transition-colors flex flex-col justify-between ${colorClass}`}>
       <div className="text-[10px] md:text-xs font-bold opacity-60 uppercase tracking-widest leading-tight">{title}</div>
       <div className="flex items-baseline gap-2 mt-3">
-        <div className="text-3xl md:text-5xl font-display font-bold tabular-nums">{value}</div>
+        <div className="font-display font-bold tabular-nums metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
         {total !== undefined && <div className="text-sm md:text-lg opacity-50 font-display">/ {total}</div>}
       </div>
     </div>

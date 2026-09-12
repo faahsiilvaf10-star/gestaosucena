@@ -88,7 +88,7 @@ function PedidosPage() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-center">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Total de Pedidos</h3>

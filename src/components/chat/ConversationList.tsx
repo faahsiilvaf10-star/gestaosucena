@@ -67,7 +67,8 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
     fetchUsers()
 
     // Inscrever-se para presenças alteradas e novas mensagens afetando a ordem da lista
-    const presenceSub = supabase.channel('presence_list')
+    const channelName = `presence_list_${currentUserId}_${Date.now()}_${Math.random()}`
+    const presenceSub = supabase.channel(channelName)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_presence' }, (payload: any) => {
         setOnlineUsers(prev => {
           const updated = [...prev]

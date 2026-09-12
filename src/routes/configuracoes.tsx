@@ -135,10 +135,10 @@ function ConfiguracoesRoute() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="max-w-4xl mx-auto py-4 sm:py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         <div className="mb-8">
-          <h1 className="text-[54px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Configurações de Perfil</h1>
+          <h1 className="font-display italic tracking-tight" style={{ fontSize: 'clamp(24px, 7vw, 54px)', lineHeight: '1' }}>Configurações de Perfil</h1>
           <p className="text-gray-900 dark:text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
         </div>
 
@@ -262,11 +262,12 @@ function ConfiguracoesRoute() {
                     </div>
                   </div>
 
-                  <div className="pt-4 flex justify-end">
+                  <div className="pt-4 flex flex-col sm:flex-row sm:justify-end gap-3">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ minHeight: 44 }}
                     >
                       {saving ? (
                         <>

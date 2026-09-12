@@ -256,7 +256,9 @@ function TodosEquipamentosPage() {
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-display italic tracking-tight mb-2">Todos Equipamentos</h1>
+            <h1 className="font-display italic tracking-tight mb-2"
+            style={{ fontSize: 'clamp(24px, 7vw, 48px)' }}
+          >Todos Equipamentos</h1>
             <p className="text-sm md:text-base opacity-70">Gerenciamento e acompanhamento da frota</p>
             <p className="text-xs opacity-50 mt-1">{equipments.length} equipamentos cadastrados</p>
           </div>
@@ -423,7 +425,9 @@ function TodosEquipamentosPage() {
       {isViewModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full rounded-3xl p-5 md:p-8 shadow-2xl overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}
+            style={{ maxHeight: 'calc(100dvh - 24px)', maxWidth: 448 }
+          }>
             <h2 className="text-3xl font-display italic mb-6">Detalhes</h2>
             
             <div className="space-y-6">
@@ -467,7 +471,8 @@ function TodosEquipamentosPage() {
             
             <button 
               onClick={() => setIsViewModalOpen(false)}
-              className="mt-8 w-full py-3 rounded-xl bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
+              className="mt-6 w-full py-3 rounded-xl bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
+              style={{ minHeight: 44 }}
             >
               Fechar
             </button>
@@ -614,9 +619,9 @@ function TodosEquipamentosPage() {
 function MetricCard({ title, value }: { title: string, value: number }) {
   const { isDark } = useTheme()
   return (
-    <div className={`p-4 md:p-6 rounded-2xl border transition-colors ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-sm'}`}>
+    <div className={`p-4 rounded-2xl border transition-colors ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-sm'}`}>
       <div className="text-xs font-bold opacity-50 uppercase tracking-widest">{title}</div>
-      <div className="text-4xl md:text-5xl font-display mt-2">{value}</div>
+      <div className="font-display mt-2 metric-value" style={{ fontSize: 'clamp(28px, 7vw, 48px)' }}>{value}</div>
     </div>
   )
 }

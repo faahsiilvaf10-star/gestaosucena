@@ -1045,83 +1045,13 @@
 }
 
 /* ==========================================================
-   TABLETS / MOBILE
+   TABLETS / MOBILE (desktop viewport only — fallback para navbar
+   que só aparece em lg:block)
    ========================================================== */
 
 @media (max-width: 800px) {
   .sucena-navbar {
-    width: calc(100% - 12px);
-
-    min-height: 78px;
-
-    margin: 6px;
-
-    padding: 0 6px;
-
     border-radius: 20px;
-  }
-
-  .nav-contract {
-    min-width: 90px;
-    width: 90px;
-
-    padding-right: 8px;
-  }
-
-  .contract-icon {
-    display: none;
-  }
-
-  .contract-label {
-    font-size: 7px;
-  }
-
-  .contract-number {
-    font-size: 10px;
-  }
-
-  .nav-avatar-area {
-    padding-left: 0;
-  }
-
-  .nav-avatar {
-    width: 34px;
-    height: 34px;
-  }
-
-  .nav-item {
-    min-width: 72px;
-
-    padding:
-      9px 8px;
-
-    border-radius: 18px;
-  }
-
-  .nav-item-icon svg {
-    width: 19px;
-    height: 19px;
-  }
-
-  .nav-item-text {
-    font-size: 8px;
-  }
-
-  .liquid-indicator {
-    border-radius: 20px;
-  }
-
-  .nav-actions {
-    padding-left: 5px;
-  }
-
-  .nav-actions::before {
-    margin-right: 3px;
-  }
-
-  .nav-action-btn {
-    width: 34px;
-    height: 34px;
   }
 }
 
@@ -1184,4 +1114,665 @@
     brightness(1.1);
 }
 
+/* ==========================================================
+   MOBILE HEADER — aparece em < 1024px
+   ========================================================== */
 
+.sucena-mobile-header {
+  position: relative;
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  width: 100%;
+
+  height: 56px;
+  min-height: 56px;
+  flex-shrink: 0;
+
+  padding: 0 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 12px));
+  padding-right: max(12px, env(safe-area-inset-right, 12px));
+  padding-top: max(0px, env(safe-area-inset-top, 0px));
+
+  background: rgba(8, 16, 30, 0.88);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+
+/* SOL (light) */
+:root:not(.dark) .sucena-mobile-header {
+  background: rgba(244, 243, 240, 0.94);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.sucena-mobile-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 44px;
+  min-height: 44px;
+
+  border-radius: 12px;
+
+  color: #c9a84c;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  transition: background 180ms ease, transform 120ms ease;
+}
+
+.sucena-mobile-hamburger:hover {
+  background: rgba(201, 168, 76, 0.1);
+}
+
+.sucena-mobile-hamburger:active {
+  transform: scale(0.93);
+}
+
+:root:not(.dark) .sucena-mobile-hamburger {
+  color: #6b5a2d;
+}
+
+.sucena-mobile-title {
+  flex: 1;
+  min-width: 0;
+
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+
+  color: #f5f8ff;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root:not(.dark) .sucena-mobile-title {
+  color: #1a1a1a;
+}
+
+.sucena-mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sucena-mobile-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 44px;
+  min-height: 44px;
+
+  border-radius: 12px;
+
+  color: #9eacc3;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.sucena-mobile-action-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sucena-mobile-action-btn:active {
+  transform: scale(0.93);
+}
+
+:root:not(.dark) .sucena-mobile-action-btn {
+  color: #555;
+}
+
+:root:not(.dark) .sucena-mobile-action-btn:hover {
+  color: #111;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sucena-mobile-theme-btn {
+  color: #c9a84c;
+}
+
+:root:not(.dark) .sucena-mobile-theme-btn {
+  color: #a68434;
+}
+
+
+/* ==========================================================
+   DRAWER — Menu lateral mobile
+   ========================================================== */
+
+/* Backdrop */
+.sucena-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+
+  pointer-events: none;
+  transition:
+    background 300ms ease,
+    backdrop-filter 300ms ease;
+}
+
+.sucena-drawer-backdrop--open {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: all;
+}
+
+/* Drawer panel */
+.sucena-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 60;
+
+  width: min(300px, 86vw);
+  height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+  overscroll-behavior: contain;
+
+  transform: translateX(-100%);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Padding safe area iOS */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.sucena-drawer--open {
+  transform: translateX(0);
+}
+
+/* Dark theme drawer */
+.sucena-drawer--dark {
+  background: linear-gradient(
+    180deg,
+    rgba(12, 16, 24, 0.98) 0%,
+    rgba(8, 12, 18, 0.99) 100%
+  );
+  border-right: 1px solid rgba(201, 168, 76, 0.2);
+  box-shadow:
+    4px 0 40px rgba(0, 0, 0, 0.6),
+    1px 0 0 rgba(201, 168, 76, 0.1);
+}
+
+/* Light theme drawer */
+.sucena-drawer--light {
+  background: linear-gradient(
+    180deg,
+    rgba(250, 249, 246, 0.98) 0%,
+    rgba(244, 243, 240, 0.99) 100%
+  );
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Drawer Header */
+.sucena-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 16px 12px;
+  flex-shrink: 0;
+}
+
+.sucena-drawer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sucena-drawer-contract {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.sucena-drawer-contract-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8a98af;
+}
+
+.sucena-drawer--light .sucena-drawer-contract-label {
+  color: #8a8a8a;
+}
+
+.sucena-drawer-contract-number {
+  font-size: 11px;
+  font-weight: 750;
+  color: #c9a84c;
+}
+
+.sucena-drawer--light .sucena-drawer-contract-number {
+  color: #a68434;
+}
+
+.sucena-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 44px;
+  min-height: 44px;
+
+  border-radius: 12px;
+
+  color: #9eacc3;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.sucena-drawer-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sucena-drawer--light .sucena-drawer-close {
+  color: #666;
+}
+
+.sucena-drawer--light .sucena-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+}
+
+.sucena-drawer-close:active {
+  transform: scale(0.9);
+}
+
+/* Drawer User */
+.sucena-drawer-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 16px;
+  margin: 0 8px;
+
+  border-radius: 14px;
+
+  cursor: pointer;
+
+  transition: background 180ms ease;
+}
+
+.sucena-drawer-user:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sucena-drawer--light .sucena-drawer-user:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.sucena-drawer-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.sucena-drawer-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.sucena-drawer-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1.5px solid rgba(201, 168, 76, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c9a84c;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.sucena-drawer-avatar-online {
+  position: absolute;
+  right: -1px;
+  bottom: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #18df7a;
+  border: 2px solid rgba(10, 14, 22, 0.9);
+  box-shadow: 0 0 6px rgba(24, 223, 122, 0.5);
+}
+
+.sucena-drawer--light .sucena-drawer-avatar-online {
+  border-color: rgba(244, 243, 240, 0.9);
+}
+
+.sucena-drawer-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sucena-drawer-user-name {
+  font-size: 14px;
+  font-weight: 650;
+  color: #f5f8ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sucena-drawer--light .sucena-drawer-user-name {
+  color: #111;
+}
+
+.sucena-drawer-user-role {
+  font-size: 11px;
+  color: #8a98af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sucena-drawer--light .sucena-drawer-user-role {
+  color: #777;
+}
+
+.sucena-drawer-user-chevron {
+  color: #4a5568;
+  flex-shrink: 0;
+}
+
+.sucena-drawer--light .sucena-drawer-user-chevron {
+  color: #aaa;
+}
+
+/* Divider */
+.sucena-drawer-divider {
+  height: 1px;
+  margin: 8px 16px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  flex-shrink: 0;
+}
+
+.sucena-drawer--light .sucena-drawer-divider {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 0.1),
+    transparent
+  );
+}
+
+/* Nav Menu */
+.sucena-drawer-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 8px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  scrollbar-width: none;
+}
+
+.sucena-drawer-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Nav Item */
+.sucena-drawer-item {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  width: 100%;
+
+  min-height: 48px;
+
+  padding: 10px 14px;
+  border-radius: 14px;
+
+  color: #9eacc3;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 120ms ease;
+}
+
+.sucena-drawer-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.sucena-drawer-item:active {
+  transform: scale(0.98);
+}
+
+.sucena-drawer--light .sucena-drawer-item {
+  color: #555;
+}
+
+.sucena-drawer--light .sucena-drawer-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #111;
+}
+
+/* Item ativo */
+.sucena-drawer-item--active {
+  background: rgba(201, 168, 76, 0.12);
+  color: #e4c771;
+  font-weight: 650;
+}
+
+.sucena-drawer-item--active:hover {
+  background: rgba(201, 168, 76, 0.18);
+  color: #ffe08a;
+}
+
+.sucena-drawer--light .sucena-drawer-item--active {
+  background: rgba(166, 132, 52, 0.12);
+  color: #8a6c28;
+}
+
+.sucena-drawer--light .sucena-drawer-item--active:hover {
+  background: rgba(166, 132, 52, 0.18);
+  color: #6b5220;
+}
+
+/* Item emergência */
+.sucena-drawer-item--emergency {
+  color: #ff5060;
+}
+
+.sucena-drawer--light .sucena-drawer-item--emergency {
+  color: #cc2030;
+}
+
+.sucena-drawer-item-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sucena-drawer-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sucena-drawer-item-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c9a84c;
+  flex-shrink: 0;
+}
+
+.sucena-drawer--light .sucena-drawer-item-active-dot {
+  background: #a68434;
+}
+
+/* Drawer Footer */
+.sucena-drawer-footer {
+  padding: 8px 8px 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sucena-drawer--light .sucena-drawer-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.sucena-drawer-theme-toggle,
+.sucena-drawer-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 48px;
+
+  padding: 10px 14px;
+  border-radius: 14px;
+
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.sucena-drawer-theme-toggle {
+  color: #c9a84c;
+}
+
+.sucena-drawer-theme-toggle:hover {
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.sucena-drawer--light .sucena-drawer-theme-toggle {
+  color: #8a6c28;
+}
+
+.sucena-drawer--light .sucena-drawer-theme-toggle:hover {
+  background: rgba(166, 132, 52, 0.06);
+}
+
+.sucena-drawer-logout {
+  color: #ff6070;
+}
+
+.sucena-drawer-logout:hover {
+  background: rgba(255, 60, 80, 0.08);
+}
+
+.sucena-drawer--light .sucena-drawer-logout {
+  color: #cc2030;
+}
+
+.sucena-drawer--light .sucena-drawer-logout:hover {
+  background: rgba(200, 20, 40, 0.06);
+}
+
+.sucena-drawer-theme-toggle:active,
+.sucena-drawer-logout:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================
+   PREFERS-REDUCED-MOTION — Drawer
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .sucena-drawer {
+    transition: transform 100ms ease;
+  }
+
+  .sucena-drawer-backdrop {
+    transition: background 100ms ease;
+  }
+}
+
+/* ==========================================================
+   DESKTOP OVERRIDES
+   ========================================================== */
+@media (min-width: 1024px) {
+  .sucena-mobile-header,
+  .sucena-drawer,
+  .sucena-drawer-backdrop {
+    display: none !important;
+  }
+}

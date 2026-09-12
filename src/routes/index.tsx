@@ -230,11 +230,12 @@ function Index() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="text-3xl md:text-5xl font-extrabold tracking-[0.08em] uppercase mb-4 whitespace-nowrap"
+                className="font-extrabold tracking-[0.08em] uppercase mb-4 whitespace-nowrap"
                 style={{ 
                   color: '#c9a84c',
                   textShadow: '0 0 40px rgba(201,168,76,0.3)',
-                  fontFamily: 'Inter, sans-serif'
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 'clamp(20px, 6vw, 42px)'
                 }}
               >
                 ACESSO AUTORIZADO
@@ -266,7 +267,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-5xl text-white tracking-wide mb-1" style={{ fontFamily: 'TarmilesAction, sans-serif' }}>{authorizedUser.name}</p>
+                <p className="text-white tracking-wide mb-1" style={{ fontFamily: 'TarmilesAction, sans-serif', fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               

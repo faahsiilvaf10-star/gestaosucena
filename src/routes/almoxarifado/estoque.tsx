@@ -119,7 +119,7 @@ function AlmoxarifadoRoute() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[54px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Almoxarifado</h1>
+          <h1 className="font-display italic tracking-tight" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>Almoxarifado</h1>
           <p className="text-sm text-gray-500">Gestão completa de estoque, EPIs, ferramentas e materiais.</p>
         </div>
         <div className="flex gap-2">
@@ -367,7 +367,7 @@ function MetricCard({ title, value }: { title: string, value: string | number })
   return (
     <div className="bg-white dark:bg-[#1a1a1b] p-4 rounded-xl border border-black/5 dark:border-white/5 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</span>
-      <div className="text-5xl font-display mt-1">{value}</div>
+      <div className="font-display mt-1 metric-value" style={{ fontSize: 'clamp(28px, 7vw, 48px)' }}>{value}</div>
     </div>
   )
 }

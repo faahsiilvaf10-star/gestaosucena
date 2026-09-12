@@ -3,13 +3,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-
+/* ============================================================
+   FONTES LOCAIS — com font-display: swap para performance
+   ============================================================ */
 
 @font-face {
   font-family: 'Evantic';
   src: url('/Evantic-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -17,6 +20,7 @@
   src: url('/TarmilesAction_PERSONAL_USE_ONLY.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 .font-evantic {
@@ -27,7 +31,10 @@
   font-family: 'TarmilesAction', serif;
 }
 
-/* Sidebar Blending Effect */
+/* ============================================================
+   SIDEBAR BLENDING EFFECT (Desktop only)
+   ============================================================ */
+
 .sidebar-active-tab {
   background-color: #0a0a0c;
   position: relative;
@@ -80,6 +87,10 @@
   border-radius: 0.75rem !important;
 }
 
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+
 @theme {
   --color-bg: var(--theme-bg);
   --color-surface: var(--theme-surface);
@@ -105,6 +116,9 @@
   --animate-gradient-shift: gradient-shift 6s ease infinite;
 }
 
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
 
 @keyframes scroll-down {
   0% { transform: translateY(-100%); }
@@ -121,6 +135,10 @@
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+/* ============================================================
+   BASE — RESET + TEMA
+   ============================================================ */
 
 @layer base {
   :root {
@@ -139,6 +157,23 @@
     
     --theme-primary: hsl(0 0% 4%);
     --theme-primary-foreground: hsl(0 0% 96%);
+
+    /* Safe area insets — preenchidos automaticamente pelo browser */
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+
+    /* Z-index system */
+    --z-background: 0;
+    --z-content: 10;
+    --z-sticky: 20;
+    --z-topbar: 50;
+    --z-drawer: 60;
+    --z-dropdown: 70;
+    --z-toast: 80;
+    --z-modal: 90;
+    --z-overlay: 100;
   }
 
   .dark {
@@ -159,16 +194,70 @@
     --theme-primary-foreground: hsl(0 0% 4%);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  /* ============================================================
+     RESET GLOBAL — CRITICAL MOBILE FIX
+     ============================================================ */
+
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Evita scroll horizontal em toda a aplicação */
+    overflow-x: hidden;
+    max-width: 100%;
+    /* Scroll suave */
+    scroll-behavior: smooth;
+    /* Texto mais legível em mobile */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
+    /* Evita scroll horizontal */
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+
     background-color: var(--theme-bg);
     color: var(--theme-text-primary);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* Padding de safe area para iPhone com notch/home indicator */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  /* Filhos flex/grid nunca devem ultrapassar o pai */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Inputs mobile com font-size mínimo para evitar zoom no iOS */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
   }
 }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
 
 @utility accent-gradient {
   background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%);
@@ -192,25 +281,56 @@
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+/* ============================================================
+   SCROLLBAR — Desktop apenas
+   ============================================================ */
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background: #0a0a0c;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #1f1f22;
+    border: 3px solid #0a0a0c;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #2a2a2e;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #0a0a0c; 
+/* Mobile: scrollbar invisível para mais espaço */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  background-color: #1f1f22;
-  border-radius: 10px;
-  border: 3px solid #0a0a0c;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: #2a2a2e;
-}
+/* ============================================================
+   UTILITÁRIOS DE SCROLL
+   ============================================================ */
 
 .hide-scrollbar {
   scrollbar-width: none;
@@ -220,23 +340,264 @@
   display: none;
 }
 
+/* Scroll horizontal apenas dentro do elemento (tabelas, etc) */
+.scroll-x-only {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   GLASS EFFECTS — Adaptado para Mobile
+   ============================================================ */
+
 .bg-glass {
-  background: rgba(10, 10, 12, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(10, 10, 12, 0.75);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .card-glass {
-  background: rgba(20, 20, 22, 0.4);
+  background: rgba(20, 20, 22, 0.5);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.03);
 }
+
+/* Mobile: reduz blur para melhor performance */
+@media (max-width: 767px) {
+  .bg-glass {
+    background: rgba(10, 10, 12, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .card-glass {
+    background: rgba(20, 20, 22, 0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
+/* ============================================================
+   TIPOGRAFIA
+   ============================================================ */
 
 .text-gradient {
   background: linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Título de página responsivo */
+.page-title {
+  font-size: clamp(28px, 8vw, 54px);
+  line-height: 1;
+}
+
+/* ============================================================
+   MODAIS — Mobile-safe
+   ============================================================ */
+
+/* Todo modal deve usar esta classe */
+.modal-mobile-safe {
+  width: calc(100% - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  margin: 12px;
+}
+
+/* ============================================================
+   TOUCH TARGETS — Mínimo 44x44px
+   ============================================================ */
+
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   CURSOR CUSTOMIZADO — Somente em dispositivos com mouse preciso
+   ============================================================ */
+
+/* Em dispositivos touch, ocultar cursor customizado */
+@media (pointer: coarse) {
+  .custom-cursor,
+  .cursor-dot,
+  .cursor-outline {
+    display: none !important;
+  }
+
+  /* Restaurar cursor padrão */
+  * {
+    cursor: auto !important;
+  }
+
+  button,
+  a,
+  [role="button"],
+  [tabindex] {
+    cursor: pointer !important;
+  }
+}
+
+/* ============================================================
+   PREFERS-REDUCED-MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   BREAKPOINTS PADRONIZADOS (para referência nos comentários)
+   
+   celular muito pequeno: max-width: 359px
+   celular:               360px - 767px
+   tablet:                768px - 1023px
+   desktop:               1024px+
+   ============================================================ */
+
+/* ============================================================
+   MOBILE GLOBAL FIXES
+   ============================================================ */
+
+/* Prevenir overflow em flex/grid filhos */
+@media (max-width: 1023px) {
+  /* Todo flex child deve respeitar o container */
+  .flex > * {
+    min-width: 0;
+  }
+
+  /* Todo grid child deve respeitar o container */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Textos longos nunca ultrapassam o container */
+  p, span, h1, h2, h3, h4, h5, h6, label, td, th {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  /* Placas/tags específicas - nunca quebram linha */
+  .plate-tag {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Números/métricas nunca quebram */
+  .metric-value {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Sombras reduzidas para performance */
+  .shadow-2xl {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .shadow-xl {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+/* ============================================================
+   ANIMAÇÕES — Otimizadas para mobile
+   ============================================================ */
+
+/* Manter apenas transform e opacity em mobile (GPU-accelerated) */
+@media (max-width: 767px) {
+  /* Desabilitar animações decorativas pesadas */
+  .animate-pulse-glow,
+  .glow-infinite,
+  .background-animate {
+    animation: none !important;
+  }
+  
+  /* Manter apenas fade e slide simples */
+  .animate-in {
+    animation-duration: 200ms !important;
+  }
+}
+
+/* ============================================================
+   TABELAS — Mobile: scroll horizontal interno apenas
+   ============================================================ */
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* O overflow horizontal fica DENTRO desta div, não na página */
+}
+
+.table-responsive table {
+  min-width: 600px; /* Tabela mantém largura mínima dentro do scroll */
+}
+
+/* ============================================================
+   FORMULÁRIOS MOBILE
+   ============================================================ */
+
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    min-height: 44px;
+    font-size: 16px !important; /* Evita zoom no iOS */
+    padding: 10px 14px;
+  }
+
+  button,
+  [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Labels sempre acima */
+  label {
+    display: block;
+    margin-bottom: 6px;
+  }
+}
+
+/* ============================================================
+   BOTTOM SAFE AREA — iPhone home indicator
+   ============================================================ */
+
+.pb-safe {
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+}
+
+.mb-safe {
+  margin-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+}
+
+/* ============================================================
+   GRÁFICOS — Sempre 100% width
+   ============================================================ */
+
+.recharts-responsive-container,
+.recharts-wrapper {
+  max-width: 100% !important;
+}
+
+@media (max-width: 767px) {
+  .recharts-wrapper {
+    font-size: 10px;
+  }
 }

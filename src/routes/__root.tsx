@@ -22,7 +22,7 @@ function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
-  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente')
+  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes')
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>
@@ -34,6 +34,7 @@ function RootContent() {
         <Outlet />
       )}
       <Toaster position="top-right" theme={isDark ? "dark" : "light"} />
+      {/* CustomCursor apenas em dispositivos com mouse (não touch) */}
       <CustomCursor />
     </div>
   )
@@ -73,7 +74,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Sucena Empreendimentos" },
       { name: "description", content: "Designing seamless digital interactions by focusing on the unique nuances which bring systems to life." },
       { property: "og:title", content: "Sucena Empreendimentos" },
@@ -86,7 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&display=swap&font-display=swap" },
     ],
   }),
   shellComponent: RootShell,

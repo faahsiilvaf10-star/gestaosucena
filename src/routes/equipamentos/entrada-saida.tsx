@@ -461,7 +461,9 @@ function EntradaSaidaPage() {
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-display italic tracking-tight mb-2">Controle de Entrada e Saída</h1>
+            <h1 className="font-display italic tracking-tight mb-2"
+              style={{ fontSize: 'clamp(20px, 6vw, 48px)' }}
+            >Controle de Entrada e Saída</h1>
             <p className="text-sm md:text-base opacity-70">Controle dos equipamentos dentro e fora da obra</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto">
@@ -488,7 +490,7 @@ function EntradaSaidaPage() {
         <div className="max-w-6xl mx-auto flex flex-col gap-6">
           
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <MetricCard title="Dentro da Obra" value={metrics.inside} total={metrics.total} color="green" />
             <MetricCard title="Fora da Obra" value={metrics.outside} total={metrics.total} color="red" />
             <MetricCard title="Total Cadastrado" value={metrics.total} color="default" />
@@ -633,7 +635,7 @@ function EntradaSaidaPage() {
                                 {isInside ? (
                                   <button 
                                     onClick={() => handleOpenExit(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black rounded-lg font-bold text-xs hover:opacity-90 transition-opacity"
+                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors"
                                   >
                                     <ArrowRightFromLine size={14} /> REGISTRAR SAÍDA
                                   </button>
@@ -699,7 +701,7 @@ function EntradaSaidaPage() {
                            {isInside ? (
                               <button 
                                 onClick={() => handleOpenExit(eq)}
-                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black rounded-xl font-bold text-sm hover:opacity-90 transition-opacity min-h-[44px]"
+                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors min-h-[44px]"
                               >
                                 <ArrowRightFromLine size={16} /> REGISTRAR SAÍDA
                               </button>
@@ -879,7 +881,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={handleConfirmExit}
                 disabled={isSaving || !exitReason}
-                className={`flex-1 py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 min-h-[44px] ${!exitReason ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-white/10 dark:text-white/30' : 'bg-black text-gray-900 dark:text-white dark:bg-white dark:text-black hover:opacity-90'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 min-h-[44px] ${!exitReason ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-white/10 dark:text-white/30' : 'bg-red-600 text-white hover:bg-red-700'}`}
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'CONFIRMAR SAÍDA'}
               </button>
@@ -1028,7 +1030,7 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     <div className={`p-5 rounded-2xl border transition-colors flex flex-col justify-between ${colorClass}`}>
       <div className="text-xs font-bold opacity-60 uppercase tracking-widest">{title}</div>
       <div className="flex items-baseline gap-2 mt-3">
-        <div className="text-4xl md:text-5xl font-display font-bold">{value}</div>
+        <div className="font-display font-bold metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
         {total !== undefined && <div className="text-lg opacity-50 font-display">/ {total}</div>}
       </div>
     </div>
