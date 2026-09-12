@@ -436,7 +436,7 @@ function RhEfetivoPage() {
 
       {/* Modal de Detalhes do Colaborador */}
       {selectedColaborador && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-[#1a1a1b] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 shrink-0">
               <div>
@@ -470,14 +470,27 @@ function RhEfetivoPage() {
                 </div>
                 
                 {selectedColaborador.raw_data && Object.entries(selectedColaborador.raw_data).map(([key, value]) => {
-                  // Skip existing fields
-                  if (['nome', 'cargo', 'matricula', 'data de admissão', 'status', 'setor'].includes(key.toLowerCase())) return null;
+                  // Skip existing/duplicated fields
+                  const ignoreList = [
+                    'nome', 'cargo', 'matricula', 'data de admissão', 'status', 'setor',
+                    'qtd', '45 dias', '90 dias', 'função', 'admissão', 'localidade', 'colaborador'
+                  ];
+                  if (ignoreList.includes(key.toLowerCase().trim())) return null;
                   if (value === null || value === undefined || value === '') return null;
+                  
+                  let displayValue = String(value);
+                  // Format Excel serial dates (numbers between 30000 and 70000)
+                  const numValue = Number(value);
+                  if (!isNaN(numValue) && numValue > 30000 && numValue < 70000 && (key.toLowerCase().includes('data') || key.toLowerCase().includes('nascimento'))) {
+                     const date = new Date((numValue - 25569) * 86400 * 1000);
+                     date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+                     displayValue = date.toLocaleDateString('pt-BR');
+                  }
                   
                   return (
                     <div key={key} className="col-span-1 sm:col-span-2">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{key}</p>
-                      <p className="font-medium text-[15px] whitespace-pre-wrap">{String(value)}</p>
+                      <p className="font-medium text-[15px] whitespace-pre-wrap">{displayValue}</p>
                     </div>
                   )
                 })}
