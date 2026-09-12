@@ -32,7 +32,7 @@ function AmbientesComponent() {
 
   return (
     <div
-      className="min-h-screen text-gray-900 dark:text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans"
+      className="min-h-screen text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans"
       style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 35%, #050505 100%)' }}
     >
       
@@ -42,7 +42,7 @@ function AmbientesComponent() {
       <div className="text-center mb-12 z-10">
         <img src="/logo.png" alt="Sucena Logo" className="h-14 mx-auto mb-8 filter brightness-0 invert opacity-80" />
         <h1 className="text-3xl font-light tracking-tight mb-3">Selecione o Ambiente</h1>
-        <p className="text-gray-900 dark:text-white/50 max-w-md mx-auto text-sm">
+        <p className="text-white/50 max-w-md mx-auto text-sm">
           Escolha qual unidade você deseja acessar. Os dados são isolados para cada ambiente.
         </p>
       </div>
@@ -82,8 +82,8 @@ function AmbientesComponent() {
                 <MapPin size={22} style={{ color: env.pinColor }} />
               </div>
               
-              <h2 className="text-2xl font-bold tracking-tight mb-2 text-gray-900 dark:text-white">{env.name}</h2>
-              <p className="text-gray-900 dark:text-white/50 text-sm leading-relaxed mb-8">
+              <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">{env.name}</h2>
+              <p className="text-white/50 text-sm leading-relaxed mb-8">
                 {env.description}
               </p>
               

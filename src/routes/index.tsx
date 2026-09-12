@@ -245,7 +245,7 @@ function Index() {
                 initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.85 }}
-                className="text-lg text-gray-900 dark:text-white/70 font-light mb-3"
+                className="text-lg text-white/70 font-light mb-3"
               >
                 Bem-vindo ao sistema
               </motion.p>
@@ -266,7 +266,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">{authorizedUser.name}</p>
+                <p className="text-2xl font-bold text-white tracking-wide">{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               
@@ -284,20 +284,20 @@ function Index() {
                 {/* ACESSO SEGURO */}
                 <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                   <Shield size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">ACESSO SEGURO</p>
-                  <p className="text-[10px] text-gray-900 dark:text-white/40">Seus dados protegidos</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">ACESSO SEGURO</p>
+                  <p className="text-[10px] text-white/40">Seus dados protegidos</p>
                 </div>
                 {/* USUÁRIO VERIFICADO */}
                 <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                   <UserCircle2 size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">USUÁRIO VERIFICADO</p>
-                  <p className="text-[10px] text-gray-900 dark:text-white/40">Permissões confirmadas</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">USUÁRIO VERIFICADO</p>
+                  <p className="text-[10px] text-white/40">Permissões confirmadas</p>
                 </div>
                 {/* SESSÃO INICIADA */}
                 <div className="flex flex-col items-center justify-center py-6 px-3">
                   <Clock size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-white/90 mb-1">SESSÃO INICIADA</p>
-                  <p className="text-[10px] text-gray-900 dark:text-white/40">Agora mesmo</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">SESSÃO INICIADA</p>
+                  <p className="text-[10px] text-white/40">Agora mesmo</p>
                 </div>
               </motion.div>
 
@@ -308,7 +308,7 @@ function Index() {
                 transition={{ delay: 1.5 }}
                 className="flex flex-col items-center gap-2"
               >
-                <p className="text-xs text-gray-900 dark:text-white/40">Sua sessão está protegida e monitorada.</p>
+                <p className="text-xs text-white/40">Sua sessão está protegida e monitorada.</p>
                 <div className="flex items-center gap-1.5">
                   <Lock size={13} style={{ color: '#c9a84c' }} />
                   <p className="text-xs font-semibold" style={{ color: '#c9a84c' }}>Ambiente 100% seguro</p>
