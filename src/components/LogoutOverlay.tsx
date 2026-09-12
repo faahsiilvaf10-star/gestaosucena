@@ -70,7 +70,7 @@ export function LogoutOverlay({ isVisible, userName, userRole }: LogoutOverlayPr
               transition={{ delay: 1 }}
               className="text-center flex flex-col items-center"
             >
-              <p className="text-2xl font-bold text-white tracking-wide">{userName}</p>
+              <p className="text-2xl font-bold text-white tracking-wide" style={{ fontFamily: 'TarmilesAction, sans-serif' }}>{userName}</p>
               <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-3" style={{ color: '#c9a84c' }}>{userRole}</p>
             </motion.div>
             

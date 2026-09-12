@@ -266,7 +266,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-2xl font-bold text-white tracking-wide">{authorizedUser.name}</p>
+                <p className="text-2xl font-bold text-white tracking-wide" style={{ fontFamily: 'TarmilesAction, sans-serif' }}>{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               
