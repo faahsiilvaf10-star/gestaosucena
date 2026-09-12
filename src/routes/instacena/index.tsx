@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2, Edit2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
 import { Area, Point } from 'react-easy-crop'
@@ -72,6 +72,7 @@ function FeedRoute() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const [editingComment, setEditingComment] = useState<{ id: string, text: string } | null>(null)
 
   const loadPosts = async (userProfile = currentUser) => {
     setLoadingPosts(true)
@@ -230,6 +231,37 @@ function FeedRoute() {
       user_id: currentUser.user_id,
       content: text.trim()
     })
+  }
+
+  const handleCommentDelete = async (postId: string, commentId: string) => {
+    // Atualização Otimista
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments_count: Math.max(0, p.comments_count - 1),
+          stitched_comments: p.stitched_comments.filter((c: any) => c.id !== commentId)
+        }
+      }
+      return p
+    }))
+    await supabase.from('social_comments').delete().eq('id', commentId)
+  }
+
+  const handleCommentEdit = async (postId: string, commentId: string, newText: string) => {
+    if (!newText.trim()) return;
+    // Atualização Otimista
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          stitched_comments: p.stitched_comments.map((c: any) => c.id === commentId ? { ...c, content: newText.trim() } : c)
+        }
+      }
+      return p
+    }))
+    setEditingComment(null)
+    await supabase.from('social_comments').update({ content: newText.trim() }).eq('id', commentId)
   }
 
   const firstName = currentUser?.display_name?.split(' ')[0] || 'Visitante'
@@ -776,9 +808,37 @@ function FeedRoute() {
                             </div>
                           )}
                         </div>
-                        <div className="bg-gray-100 dark:bg-white/5 rounded-2xl px-3 py-1.5 text-[14px] flex flex-col max-w-[90%]">
-                          <span className="font-bold text-[13px] leading-tight">{comment.social_profiles?.display_name || 'Usuário'}</span>
-                          <span className="leading-tight mt-0.5">{comment.content}</span>
+                        <div className="bg-gray-100 dark:bg-white/5 rounded-2xl px-3 py-1.5 text-[14px] flex flex-col max-w-[90%] relative group">
+                          <span className="font-bold text-[13px] leading-tight flex items-center gap-1">
+                            {comment.social_profiles?.display_name || 'Usuário'}
+                            {isAdmin(comment.social_profiles?.display_name) && <VerifiedBadge size={12} />}
+                          </span>
+                          
+                          {editingComment?.id === comment.id ? (
+                            <div className="flex gap-2 items-center mt-1 w-full min-w-[200px]">
+                              <input 
+                                autoFocus
+                                value={editingComment.text}
+                                onChange={e => setEditingComment({ ...editingComment, text: e.target.value })}
+                                onKeyDown={e => e.key === 'Enter' && handleCommentEdit(post.id, comment.id, editingComment.text)}
+                                className="bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 rounded px-2 py-1 outline-none text-sm w-full dark:text-white"
+                              />
+                              <button onClick={() => setEditingComment(null)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"><X size={14}/></button>
+                              <button onClick={() => handleCommentEdit(post.id, comment.id, editingComment.text)} className="text-blue-500 font-bold text-xs">Salvar</button>
+                            </div>
+                          ) : (
+                            <span className="leading-tight mt-0.5">{comment.content}</span>
+                          )}
+
+                          {/* Ações (Aparecem no hover) */}
+                          {!editingComment && (comment.user_id === currentUser?.user_id || isAdmin(currentUser?.display_name)) && (
+                            <div className="hidden group-hover:flex items-center gap-2 absolute -right-12 top-1/2 -translate-y-1/2 bg-white dark:bg-[#1a1a1b] shadow-sm border border-black/5 dark:border-white/10 rounded-full px-2 py-1 z-10">
+                              {comment.user_id === currentUser?.user_id && (
+                                <button onClick={() => setEditingComment({ id: comment.id, text: comment.content })} className="text-gray-400 hover:text-blue-500 transition-colors" title="Editar comentário"><Edit2 size={12}/></button>
+                              )}
+                              <button onClick={() => handleCommentDelete(post.id, comment.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Excluir comentário"><Trash2 size={12}/></button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
