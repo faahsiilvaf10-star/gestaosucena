@@ -13,8 +13,8 @@ export function VerifiedBadge({ className = "", size = 16 }: { className?: strin
 
 export function isAdmin(name?: string, role?: string) {
   if (!name && !role) return false;
-  const n = name?.toLowerCase() || '';
-  const r = role?.toLowerCase() || '';
+  const n = name?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
+  const r = role?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
   // Consider Fabricio Silva as admin, plus any role containing admin
-  return n.includes('fabricio silva') || r.includes('admin');
+  return n.includes('fabricio silva') || r.includes('admin') || r.includes('diretor');
 }
