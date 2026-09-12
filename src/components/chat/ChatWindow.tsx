@@ -68,7 +68,8 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
       }
 
       // 3. Inscreve-se no canal de Realtime para ESTA conversa
-      channel = supabase.channel(`chat_${conversationId}`)
+      const channelName = `chat_${conversationId}_${Date.now()}_${Math.random()}`
+      channel = supabase.channel(channelName)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },

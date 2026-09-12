@@ -37,7 +37,8 @@ export function useChatRealtime(currentUserId?: string) {
     fetchUnreadCount()
 
     // Inscreve-se nas mensagens novas direcionadas às minhas conversas
-    const messagesChannel = supabase.channel('chat_messages_updates')
+    const channelName = `chat_messages_updates_${currentUserId}_${Date.now()}_${Math.random()}`
+    const messagesChannel = supabase.channel(channelName)
       .on(
         'postgres_changes',
         {
