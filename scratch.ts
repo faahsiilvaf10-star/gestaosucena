@@ -1,11 +1,11 @@
-import { supabase } from './src/lib/supabase';
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE'
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_KEY_HERE'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function test() {
-  const { data, error } = await supabase.from('rh_efetivo').select('cargo');
-  if (error) console.error(error);
-  else {
-    const cargos = [...new Set(data.map(d => d.cargo))];
-    console.log("Cargos:", cargos);
-  }
+  console.log('Querying eq_equipments status...')
 }
-test();
+
+test()

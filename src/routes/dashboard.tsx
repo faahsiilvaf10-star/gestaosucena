@@ -6,11 +6,10 @@ import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { CalendarDays } from 'lucide-react'
-import { ResponsiveContainer, BarChart, Bar } from 'recharts'
-import { Card, CardContent, CardTitle } from '../components/ui/card'
 import { useQuery } from '@tanstack/react-query'
-import { subDays, addDays, format, getMonth, getDate } from 'date-fns'
-import { Gift } from 'lucide-react'
+import { subDays, addDays, format, getMonth } from 'date-fns'
+import { Gift, MapPin } from 'lucide-react'
+import '../dashboard.css'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
@@ -18,6 +17,7 @@ export const Route = createFileRoute('/dashboard')({
 
 function DashboardComponent() {
   const { isDark } = useTheme()
+  const hojeDay = new Date().getDate()
   
   // Buscar lista de presença real (últimos 7 dias)
   const { data: chartData } = useQuery({
@@ -167,8 +167,6 @@ function DashboardComponent() {
   .filter((a: any) => a.month === getMonth(new Date()))
   .sort((a: any, b: any) => a.day - b.day)
 
-  const hojeDay = getDate(new Date())
-
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
@@ -181,13 +179,21 @@ function DashboardComponent() {
     year: 'numeric'
   })
 
-  return (
-    <div className={`min-h-screen font-sans selection:bg-purple-500/30 transition-colors duration-300 relative`}>
-      {/* Dashboard Grid */}
-      <div className="py-4 pb-8 sm:py-8 sm:pb-24 space-y-4 sm:space-y-6 max-w-[1600px] w-full mx-auto relative z-10">
+  // Calcular porcentagens para os gráficos donut
+  const totalFuncNum = typeof totalFuncionarios === 'number' ? totalFuncionarios : 0
+  const pctPresenca = totalFuncNum > 0 ? Math.round((todayData.presentes / totalFuncNum) * 100) : 0
+  const pctAusencia = totalFuncNum > 0 ? Math.round((todayData.ausencias / totalFuncNum) * 100) : 0
+  
+  const eqTotal = (eqData?.operacao || 0) + (eqData?.manutencao || 0)
+  const pctOperacao = eqTotal > 0 ? Math.round(((eqData?.operacao || 0) / eqTotal) * 100) : 0
+  const pctManutencao = eqTotal > 0 ? Math.round(((eqData?.manutencao || 0) / eqTotal) * 100) : 0
 
+  return (
+    <div className="dashboard-page selection:bg-blue-500/30">
+      <div className="dashboard-container">
+        
         {/* Title & Date — responsivo */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-8 mt-1 sm:mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-8 mt-1 sm:mt-2 px-2 sm:px-0">
           <div>
             <h1
               className={`font-display italic tracking-tight ${isDark ? 'text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`}
@@ -210,174 +216,211 @@ function DashboardComponent() {
           </div>
         </div>
 
-        {/* Main Grid — responsivo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="dashboard-grid">
           
-          {/* Coluna 1: Clima + Total Funcionários */}
-          <div className="flex flex-col gap-4 sm:gap-6">
-            <WeatherWidget />
+          {/* WEATHER */}
+          <WeatherWidget />
+
+          {/* PRESENÇA */}
+          <div className="dashboard-card card-presence">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-green">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3 className="card-title">PRESENTES HOJE</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="donut-wrapper">
+              <div className="donut" style={{ "--value": pctPresenca, "--accent": "var(--green)", "--track": "rgba(32, 199, 108, 0.15)" } as any}>
+                <div className="donut-content">
+                  <div className="donut-number">{todayData.presentes}</div>
+                  <div className="donut-total">de {totalFuncionarios}</div>
+                </div>
+              </div>
+              <div className="percent-box percent-green">
+                <strong>{pctPresenca}%</strong>
+                <span>de presença</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ANIVERSARIANTES */}
+          <div className="dashboard-card card-birthday">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-purple">
+                  <Gift size={20} />
+                </div>
+                <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="birthday-list">
+              {aniversariantesMes.length > 0 ? (
+                aniversariantesMes.slice(0, 3).map((aniv: any, idx: number) => (
+                  <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>
+                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
+                    <span className="birthday-day">Dia {String(aniv.day).padStart(2, '0')}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center mt-4">Nenhum neste mês</div>
+              )}
+            </div>
+          </div>
+
+          {/* OPERAÇÃO */}
+          <div className="dashboard-card card-operation">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                </div>
+                <h3 className="card-title">EM OPERAÇÃO</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="donut-wrapper">
+              <div className="donut" style={{ "--value": pctOperacao, "--accent": "var(--blue)", "--track": "rgba(22, 119, 255, 0.15)" } as any}>
+                <div className="donut-content">
+                  <div className="donut-number">{eqData?.operacao || 0}</div>
+                  <div className="donut-total">de {eqTotal}</div>
+                </div>
+              </div>
+              <div className="percent-box percent-blue">
+                <strong>{pctOperacao}%</strong>
+                <span>em operação</span>
+              </div>
+            </div>
+          </div>
+
+          {/* TOTAL FUNCIONARIOS */}
+          <div className="dashboard-card card-total">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3 className="card-title">TOTAL DE FUNCIONÁRIOS</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="big-number">{totalFuncionarios}</div>
+            <div className="big-number-label">colaboradores</div>
             
-            {/* Total Funcionários */}
-            <Card className="flex-1 flex flex-col justify-between overflow-hidden shadow-md">
-              <CardContent className="flex-1 flex flex-col p-4 sm:p-6">
-                <CardTitle className="text-center text-[10px] uppercase tracking-widest pt-2 sm:pt-4 text-muted-foreground">
-                  Total de Funcionários
-                </CardTitle>
-                <div className="flex justify-center items-center flex-1 w-full relative z-10 pt-3 sm:pt-4">
-                  <span
-                    className="font-sans font-bold tracking-tight metric-value"
-                    style={{ fontSize: 'clamp(36px, 10vw, 60px)' }}
-                  >
-                    {totalFuncionarios}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+            <svg className="employee-decoration" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
 
-          {/* Coluna 2: Presença (mobile empilha, desktop coluna) */}
-          <div className="flex flex-col gap-4 sm:gap-6">
-            <Card className="overflow-hidden shadow-md">
-              <CardContent className="p-4 sm:p-6">
-                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                  Presentes Hoje
-                </CardTitle>
-                <div className="flex items-end justify-between gap-2">
-                  <span className="font-bold text-4xl sm:text-5xl text-green-500 metric-value">
-                    {todayData.presentes}
-                  </span>
-                  <div className="flex-1 min-w-0" style={{ height: 60 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={presentesData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Bar dataKey="val" fill="#22c55e" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+          {/* AUSÊNCIAS */}
+          <div className="dashboard-card card-absence">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-red">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden shadow-md">
-              <CardContent className="p-4 sm:p-6">
-                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                  Ausências
-                </CardTitle>
-                <div className="flex items-end justify-between gap-2">
-                  <span className="font-bold text-4xl sm:text-5xl text-red-500 metric-value">
-                    {todayData.ausencias}
-                  </span>
-                  <div className="flex-1 min-w-0" style={{ height: 60 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={ausenciasData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Bar dataKey="val" fill="#ef4444" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                <h3 className="card-title">AUSÊNCIAS</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="donut-wrapper">
+              <div className="donut" style={{ "--value": pctAusencia, "--accent": "var(--red)", "--track": "rgba(242, 55, 89, 0.15)" } as any}>
+                <div className="donut-content">
+                  <div className="donut-number">{todayData.ausencias}</div>
+                  <div className="donut-total">de {totalFuncionarios}</div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="percent-box percent-red">
+                <strong>{pctAusencia}%</strong>
+                <span>de ausências</span>
+              </div>
+            </div>
           </div>
 
-
-
-          {/* Coluna 4: Aniversariantes do Mês */}
-          <div className="flex flex-col gap-4 sm:gap-6">
-            <Card className="flex-1 flex flex-col overflow-hidden shadow-md">
-              <CardContent className="flex-1 p-4 sm:p-6 flex flex-col">
-                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                  <Gift size={14} /> Aniversariantes do Mês
-                </CardTitle>
-                <div className="flex flex-col gap-2 overflow-y-auto max-h-[140px] pr-2 custom-scrollbar">
-                  {aniversariantesMes.length > 0 ? (
-                    aniversariantesMes.map((aniv: any, idx: number) => (
-                      <div 
-                        key={idx} 
-                        className={`flex justify-between items-center p-2 rounded-md text-sm ${aniv.day === hojeDay ? 'bg-black text-white font-bold' : 'bg-gray-50 text-gray-700'}`}
-                      >
-                        <span className="line-clamp-1 capitalize flex-1">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
-                        <span className="ml-2 whitespace-nowrap">Dia {String(aniv.day).padStart(2, '0')}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-400">Nenhum aniversariante encontrado neste mês.</span>
-                  )}
+          {/* MANUTENÇÃO */}
+          <div className="dashboard-card card-maintenance">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className="icon-box icon-orange">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="card-title">EM MANUTENÇÃO</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="donut-wrapper">
+              <div className="donut" style={{ "--value": pctManutencao, "--accent": "var(--orange)", "--track": "rgba(255, 114, 0, 0.15)" } as any}>
+                <div className="donut-content">
+                  <div className="donut-number">{eqData?.manutencao || 0}</div>
+                  <div className="donut-total">de {eqTotal}</div>
+                </div>
+              </div>
+              <div className="percent-box percent-orange">
+                <strong>{pctManutencao}%</strong>
+                <span>em manutenção</span>
+              </div>
+            </div>
           </div>
 
-          {/* Coluna 5: Equipamentos */}
-          <div className="flex flex-col gap-4 sm:gap-6">
-            <Card className="flex-1 flex flex-col justify-between overflow-hidden shadow-md">
-              <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-center">
-                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/><path d="M12 2v20"/><path d="M2 12h20"/></svg>
-                  Em Operação
-                </CardTitle>
-                <div className="flex flex-col items-center">
-                  <span className="font-bold text-4xl sm:text-5xl text-blue-500 metric-value">
-                    {eqData?.operacao || 0}
-                  </span>
+          {/* DDS HOJE */}
+          <div className="dashboard-card card-dds">
+            <div className="dds-card-content">
+              <div className="dds-main">
+                <div className="icon-box icon-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <div className="dds-label text-blue-600">DDS Hoje</div>
+                  <div className="dds-status capitalize">{typeof ddsData?.hoje?.palestrante === 'string' ? ddsData.hoje.palestrante.toLowerCase() : ddsData?.hoje?.palestrante || 'Livre'}</div>
+                  <div className="dds-theme">Tema: {ddsData?.hoje?.tema || 'Sem tema agendado'}</div>
+                </div>
+              </div>
+              <div className="dds-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
 
-            <Card className="flex-1 flex flex-col justify-between overflow-hidden shadow-md">
-              <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-center">
-                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14 7 3-3 4 4-3 3-4-4Z"/><path d="M12 11.5 5 19l-3 3 3-3 7-7"/><path d="m17.5 13-3-3"/><path d="m10.5 16-3-3"/></svg>
-                  Em Manutenção
-                </CardTitle>
-                <div className="flex flex-col items-center">
-                  <span className="font-bold text-4xl sm:text-5xl text-orange-500 metric-value">
-                    {eqData?.manutencao || 0}
-                  </span>
+          {/* DDS AMANHÃ */}
+          <div className="dashboard-card card-dds">
+            <div className="dds-card-content">
+              <div className="dds-main">
+                <div className="icon-box icon-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <div className="dds-label text-blue-600">DDS Amanhã</div>
+                  <div className="dds-status capitalize">{typeof ddsData?.amanha?.palestrante === 'string' ? ddsData.amanha.palestrante.toLowerCase() : ddsData?.amanha?.palestrante || 'Livre'}</div>
+                  <div className="dds-theme">Tema: {ddsData?.amanha?.tema || 'Sem tema agendado'}</div>
+                </div>
+              </div>
+              <div className="dds-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
           </div>
 
         </div>
 
-        {/* Bottom Widgets Row — empilhados em mobile */}
-        <div className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6">
+        {/* BOTTOM WIDGETS */}
+        <div className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 mt-6">
           <div className="w-full lg:w-1/2">
             <DashboardRemindersWidget />
           </div>
-          <div className="w-full lg:w-1/2 flex flex-col gap-4 sm:gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="flex-1 flex flex-col justify-between overflow-hidden shadow-md">
-                <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-center">
-                  <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                    DDS Hoje
-                  </CardTitle>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-xl sm:text-2xl text-black line-clamp-2 leading-tight capitalize">
-                      {typeof ddsData?.hoje?.palestrante === 'string' ? ddsData.hoje.palestrante.toLowerCase() : ddsData?.hoje?.palestrante || 'Carregando...'}
-                    </span>
-                    <span className="text-sm text-gray-500 mt-1 line-clamp-1">
-                      Tema: {ddsData?.hoje?.tema || '-'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="flex-1 flex flex-col justify-between overflow-hidden shadow-md">
-                <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-center">
-                  <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                    DDS Amanhã
-                  </CardTitle>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-xl sm:text-2xl text-black line-clamp-2 leading-tight capitalize">
-                      {typeof ddsData?.amanha?.palestrante === 'string' ? ddsData.amanha.palestrante.toLowerCase() : ddsData?.amanha?.palestrante || 'Carregando...'}
-                    </span>
-                    <span className="text-sm text-gray-500 mt-1 line-clamp-1">
-                      Tema: {ddsData?.amanha?.tema || '-'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="w-full lg:w-1/2">
             <DashboardVistoriasWidget />
           </div>
         </div>

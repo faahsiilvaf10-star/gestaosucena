@@ -107,16 +107,16 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className={`rounded-2xl p-4 flex flex-col justify-center min-h-[140px] w-full transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
-        <Loader2 className={`animate-spin ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'}`} size={24} />
+      <div className="dashboard-card card-weather flex flex-col justify-center items-center">
+        <Loader2 className={`animate-spin ${isDark ? 'text-white/50' : 'text-gray-400'}`} size={24} />
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className={`rounded-2xl p-4 flex flex-col justify-center h-[160px] transition-colors ${isDark ? 'bg-[#111113]/80 border border-white/5' : 'bg-[#faf9f6] border-black/5 shadow-sm'}`}>
-        <p className={`text-sm ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
+      <div className="dashboard-card card-weather flex flex-col justify-center items-center">
+        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Clima indisponível</p>
       </div>
     )
   }
@@ -124,32 +124,33 @@ export function WeatherWidget() {
   const details = getWeatherDetails(data.code)
 
   return (
-    <div className={`rounded-2xl p-4 flex flex-col min-h-[150px] w-full shadow-md relative overflow-hidden transition-colors duration-300 ${isDark ? 'bg-gradient-to-br from-[#1c2c36] to-[#121a22] border border-white/5' : 'bg-[#faf9f6] border border-black/5'}`}>
-      {/* Decorative blurred circle */}
-      <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}></div>
+    <div className="dashboard-card card-weather">
+      <div className="card-header" style={{ justifyContent: 'flex-end', marginBottom: '10px' }}>
+        <button className="card-menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
 
-      <div className="flex justify-between items-start mb-2 relative z-10">
-        <div className="flex items-center gap-3">
+      <div className="weather-main">
+        <div className="weather-icon">
           {details.icon}
-          <div>
-            <h3 className={`text-4xl font-light tracking-tight ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{data.temp}°C</h3>
-          </div>
+        </div>
+        <div>
+          <div className="weather-temp">{data.temp}°C</div>
+          <div className="weather-status">{details.label}</div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-1 mb-auto relative z-10">
-        <Cloud className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} size={14} />
-        <span className={`text-sm font-medium ${isDark ? 'text-gray-900 dark:text-white/80' : 'text-gray-600'}`}>{details.label}</span>
-      </div>
+      <div className="weather-divider"></div>
 
-      <div className={`border-t my-2 pt-2 flex flex-col gap-1 relative z-10 ${isDark ? 'border-white/10' : 'border-black/5'}`}>
-        <div className="flex items-center gap-2">
-          <MapPin size={12} className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} />
-          <span className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>{data.location}</span>
+      <div className="weather-info">
+        <div className="weather-row">
+          <MapPin size={16} />
+          {data.location}
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar size={12} className={isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-400'} />
-          <span className={`text-xs capitalize ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>{currentDate} {currentTime}</span>
+        <div className="weather-row">
+          <Calendar size={16} />
+          {currentDate} {currentTime}
         </div>
       </div>
     </div>
