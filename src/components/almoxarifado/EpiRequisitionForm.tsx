@@ -445,18 +445,20 @@ export function EpiRequisitionForm() {
                 </div>
                 
                 {isSelected && (
-                  <div className="pl-7 flex items-center space-x-3 animate-in fade-in zoom-in duration-200">
-                    <Label className="text-xs text-muted-foreground">Qtd:</Label>
-                    <Input 
-                      type="number" 
-                      className="w-20 h-8 text-sm" 
-                      min="1" 
-                      max={p.current_quantity}
-                      value={item?.quantity || 1} 
-                      onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
-                    />
+                  <div className="pl-7 flex flex-wrap items-center gap-3 animate-in fade-in zoom-in duration-200">
+                    <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
+                      <Input 
+                        type="number" 
+                        className="w-16 h-8 text-sm" 
+                        min="1" 
+                        max={p.current_quantity}
+                        value={item?.quantity || 1} 
+                        onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
+                      />
+                    </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-medium text-destructive">Estoque: {p.current_quantity} unidade(s)</span>
+                      <span className="text-[10px] font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
                       {employeeId && <LastRequisitionDate employeeId={employeeId} productId={p.id} />}
                     </div>
                   </div>
@@ -476,31 +478,33 @@ export function EpiRequisitionForm() {
             const isSelected = items.some(i => i.productId === p.id);
             const item = items.find(i => i.productId === p.id);
             return (
-              <div key={p.id} className="flex items-center space-x-4">
-                <div className="w-48">
-                  <Label className="font-semibold">{p.name}:</Label>
+              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pb-4 sm:pb-0 border-b sm:border-b-0 border-border">
+                <div className="sm:w-48">
+                  <Label className="font-semibold text-base sm:text-sm">{p.name}:</Label>
                 </div>
-                <div className="flex items-center space-x-3 flex-1">
-                  <Checkbox 
-                    id={`unif-${p.id}`} 
-                    checked={isSelected} 
-                    onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
-                    disabled={p.current_quantity <= 0}
-                  />
-                  <Label htmlFor={`unif-${p.id}`} className="text-sm cursor-pointer">Selecionar</Label>
+                <div className="flex flex-wrap items-center gap-4 flex-1">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`unif-${p.id}`} 
+                      checked={isSelected} 
+                      onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
+                      disabled={p.current_quantity <= 0}
+                    />
+                    <Label htmlFor={`unif-${p.id}`} className="text-sm cursor-pointer whitespace-nowrap">Selecionar</Label>
+                  </div>
                   
                   {isSelected && (
-                    <div className="flex items-center space-x-3 ml-4">
-                      <Label className="text-xs text-muted-foreground">Qtd:</Label>
+                    <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
                       <Input 
                         type="number" 
-                        className="w-20 h-8 text-sm" 
+                        className="w-16 h-8 text-sm" 
                         min="1" 
                         max={p.current_quantity}
                         value={item?.quantity || 1} 
                         onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
                       />
-                      <span className="text-xs text-destructive">Estoque: {p.current_quantity}</span>
+                      <span className="text-xs font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
                     </div>
                   )}
                 </div>
@@ -523,11 +527,11 @@ export function EpiRequisitionForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
             <Label className="text-center font-bold">ASSINATURA DO AUTORIZADOR</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
               <SignatureCanvas 
                 ref={authorizerSigRef} 
                 penColor="black"
-                canvasProps={{ width: 380, height: 150, className: 'sigCanvas' }} 
+                canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
               />
             </div>
             <span className="text-sm text-muted-foreground">{authorizer?.nome || 'Selecione o autorizador'}</span>
@@ -535,11 +539,11 @@ export function EpiRequisitionForm() {
 
           <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
             <Label className="text-center font-bold">ASSINATURA DO FUNCIONÁRIO</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
               <SignatureCanvas 
                 ref={employeeSigRef} 
                 penColor="black"
-                canvasProps={{ width: 380, height: 150, className: 'sigCanvas' }} 
+                canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
               />
             </div>
             <span className="text-sm text-muted-foreground">{employee?.nome || 'Selecione o funcionário'}</span>
