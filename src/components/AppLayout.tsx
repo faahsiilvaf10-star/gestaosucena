@@ -83,8 +83,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
 
-      {/* Universal Top Gradient Backdrop */}
-      <div className={`absolute top-0 left-0 right-0 h-32 pointer-events-none z-40 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent' : 'bg-gradient-to-b from-[#f4f3f0] via-[#f4f3f0]/80 to-transparent'}`} />
+
       
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
       <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />

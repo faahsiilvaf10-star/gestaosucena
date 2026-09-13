@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2, Edit2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
@@ -7,6 +7,17 @@ import { Area, Point } from 'react-easy-crop'
 import { getCroppedImg } from '../../lib/cropImage'
 import { StoryViewer } from '../../components/instacena/StoryViewer'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
+
+// Helper para renderizar negrito simples com **texto**
+export const renderCaption = (text: string) => {
+  if (!text) return null;
+  return text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+};
 
 export const Route = createFileRoute('/instacena/')({
   component: FeedRoute,
@@ -748,7 +759,7 @@ function FeedRoute() {
 
               {/* Post Caption */}
               {post.caption && (
-                <p className="text-[15px] mt-1 whitespace-pre-wrap">{post.caption}</p>
+                <p className="text-[15px] mt-1 whitespace-pre-wrap">{renderCaption(post.caption)}</p>
               )}
 
               {/* Post Image/Video */}

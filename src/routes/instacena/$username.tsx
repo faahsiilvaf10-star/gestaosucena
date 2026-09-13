@@ -3,6 +3,7 @@ import { Settings, Grid, Film, Bookmark, UserCheck, MessageCircle, Heart, Image 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
+import { renderCaption } from './index'
 
 export const Route = createFileRoute('/instacena/$username')({
   component: ProfileRoute,
@@ -426,8 +427,8 @@ function ProfileRoute() {
                    </div>
                 </div>
                 {selectedPost.caption && (
-                  <div className="text-sm text-black dark:text-white whitespace-pre-wrap">
-                    {selectedPost.caption}
+                  <div className="p-4 border-b border-black/5 dark:border-white/5">
+                    <p className="text-[15px] whitespace-pre-wrap">{renderCaption(selectedPost.caption)}</p>
                   </div>
                 )}
               </div>

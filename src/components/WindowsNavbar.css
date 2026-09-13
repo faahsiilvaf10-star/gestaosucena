@@ -76,6 +76,7 @@
     );
 
   border: 1px solid var(--nav-border);
+  border-bottom-color: transparent; /* Funde suavemente sem marcação */
 
   backdrop-filter: blur(28px) saturate(155%);
   -webkit-backdrop-filter: blur(28px) saturate(155%);
@@ -83,8 +84,7 @@
   box-shadow:
     0 18px 50px rgba(0, 0, 0, 0.52),
     0 8px 26px rgba(120, 95, 30, 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 -1px 0 rgba(201, 168, 76, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
 
   overflow: hidden;
 
@@ -113,30 +113,10 @@
   z-index: -1;
 }
 
-/* leve iluminação inferior */
+/* leve iluminação inferior — REMOVIDA para não criar marcação visível abaixo da barra */
 
 .sucena-navbar::after {
-  content: "";
-
-  position: absolute;
-
-  left: 12%;
-  right: 12%;
-  bottom: -35px;
-
-  height: 70px;
-
-  background: radial-gradient(
-    ellipse at center,
-    rgba(201, 168, 76, 0.18),
-    transparent 68%
-  );
-
-  filter: blur(20px);
-
-  pointer-events: none;
-
-  z-index: -1;
+  content: none;
 }
 
 /* ==========================================================

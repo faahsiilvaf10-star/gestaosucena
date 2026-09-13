@@ -11,8 +11,8 @@
 
   --glass-bg: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.72),
-    rgba(255, 255, 255, 0.38)
+    rgba(242, 245, 249, 0.95),
+    rgba(235, 240, 245, 0.85)
   );
 
   --glass-border: rgba(255, 255, 255, 0.82);
@@ -173,16 +173,16 @@ body {
 }
 
 .card-weather,
-.card-presence,
 .card-birthday,
-.card-operation {
+.card-operation,
+.card-maintenance {
   grid-column: span 3;
   min-height: 275px;
 }
 
 .card-total,
-.card-absence,
-.card-maintenance {
+.card-presence,
+.card-absence {
   grid-column: span 4;
   min-height: 225px;
 }
