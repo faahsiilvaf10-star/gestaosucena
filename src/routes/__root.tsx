@@ -22,7 +22,7 @@ function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
-  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra')
+  const isAppRoute = path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca')
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>

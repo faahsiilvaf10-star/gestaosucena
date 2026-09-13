@@ -11,7 +11,7 @@ import { useEpiProducts, useCreateEpiRequisition } from '@/hooks/useEpiRequisiti
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { Search, ChevronsUpDown, Check, AlertCircle, Save } from 'lucide-react';
+import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 
@@ -251,6 +251,7 @@ export function EpiRequisitionForm() {
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [step, setStep] = useState(1);
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -331,8 +332,10 @@ export function EpiRequisitionForm() {
   };
 
   return (
-    <div className="space-y-8 relative">
-      <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
+    <div className="max-w-5xl mx-auto py-8 px-4 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* Employee Info */}
+      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step !== 1 && "hidden md:block")}>
         <h3 className="text-xl font-bold border-b pb-4">Dados da Requisição</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -415,7 +418,7 @@ export function EpiRequisitionForm() {
       </div>
 
       {/* EPI Selection */}
-      <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
+      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step !== 1 && "hidden md:block")}>
         <div className="border-b pb-4">
           <h3 className="text-xl font-bold">EPI</h3>
         </div>
@@ -511,14 +514,14 @@ export function EpiRequisitionForm() {
       </div>
 
       {/* Signatures */}
-      <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
+      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step === 1 && "hidden md:block")}>
         <div className="flex justify-between items-center border-b pb-4">
           <h3 className="text-xl font-bold">Assinaturas</h3>
           <Button type="button" variant="ghost" size="sm" onClick={clearSignatures}>Limpar Assinaturas</Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-2 flex flex-col items-center">
+          <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
             <Label className="text-center font-bold">ASSINATURA DO AUTORIZADOR</Label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm">
               <SignatureCanvas 
@@ -530,7 +533,7 @@ export function EpiRequisitionForm() {
             <span className="text-sm text-muted-foreground">{authorizer?.nome || 'Selecione o autorizador'}</span>
           </div>
 
-          <div className="space-y-2 flex flex-col items-center">
+          <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
             <Label className="text-center font-bold">ASSINATURA DO FUNCIONÁRIO</Label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm">
               <SignatureCanvas 
@@ -544,9 +547,30 @@ export function EpiRequisitionForm() {
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="flex justify-end gap-4 pt-4 mt-8 mb-8 border-t">
-         <div className="flex items-center text-sm text-muted-foreground mr-auto hidden sm:flex">
+      {/* Mobile Steps Controls */}
+      <div className="flex md:hidden justify-between mt-6">
+        {step === 1 && (
+          <Button type="button" variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
+        )}
+        {step > 1 && (
+          <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+          </Button>
+        )}
+        {step < 3 ? (
+          <Button type="button" className="ml-auto" onClick={() => setStep(step + 1)}>
+            Próximo <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        ) : (
+          <Button onClick={handleGenerateAndSubmit} disabled={isGenerating} className="ml-auto bg-green-600 hover:bg-green-700">
+            {isGenerating ? 'Salvando...' : 'Salvar'}
+          </Button>
+        )}
+      </div>
+
+      {/* Footer Actions (Desktop) */}
+      <div className="hidden md:flex justify-end gap-4 pt-4 mt-8 mb-8 border-t">
+         <div className="flex items-center text-sm text-muted-foreground mr-auto">
            <AlertCircle className="w-4 h-4 mr-2" />
            Isso irá abater do estoque e gerar um comprovante PNG inalterável.
          </div>

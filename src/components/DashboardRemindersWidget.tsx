@@ -49,11 +49,11 @@ export function DashboardRemindersWidget() {
     // Se é recorrente, usamos a regra de recorrência para saber se é hoje
     if (r.is_recurring) {
       if (r.recurrence_type === 'daily') return true;
-      if (r.recurrence_type === 'weekly' && r.recurrence_config?.days) {
+      if (r.recurrence_type === 'weekly' && Array.isArray(r.recurrence_config?.days)) {
         const todayDay = getDay(new Date()); // 0 (Domingo) a 6 (Sábado)
         return r.recurrence_config.days.some((d: any) => Number(d) === todayDay);
       }
-      if (r.recurrence_type === 'monthly' && r.recurrence_config?.days) {
+      if (r.recurrence_type === 'monthly' && Array.isArray(r.recurrence_config?.days)) {
         const todayDate = getDate(new Date());
         return r.recurrence_config.days.some((d: any) => Number(d) === todayDate);
       }

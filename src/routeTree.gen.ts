@@ -14,11 +14,13 @@ import { Route as AlmoxarifadoRouteImport } from './routes/almoxarifado'
 import { Route as AmbientesRouteImport } from './routes/ambientes'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmergenciaRouteImport } from './routes/emergencia'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
 import { Route as MeioAmbienteRouteImport } from './routes/meio-ambiente'
 import { Route as RhRouteImport } from './routes/rh'
+import { Route as SegurancaRouteImport } from './routes/seguranca'
 import { Route as AlmoxarifadoIndexRouteImport } from './routes/almoxarifado/index'
 import { Route as AlmoxarifadoAduboRouteImport } from './routes/almoxarifado/adubo'
 import { Route as AlmoxarifadoAspersoresRouteImport } from './routes/almoxarifado/aspersores'
@@ -47,6 +49,8 @@ import { Route as RhCalendarioHydroRouteImport } from './routes/rh/calendario-hy
 import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
 import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
+import { Route as SegurancaIndexRouteImport } from './routes/seguranca/index'
+import { Route as SegurancaDdsRouteImport } from './routes/seguranca/dds'
 import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
 import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado/pedidos/$id'
 import { Route as AlmoxarifadoPedidosNovoRouteImport } from './routes/almoxarifado/pedidos/novo'
@@ -78,6 +82,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmergenciaRoute = EmergenciaRouteImport.update({
+  id: '/emergencia',
+  path: '/emergencia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EquipamentosRoute = EquipamentosRouteImport.update({
   id: '/equipamentos',
   path: '/equipamentos',
@@ -101,6 +110,11 @@ const MeioAmbienteRoute = MeioAmbienteRouteImport.update({
 const RhRoute = RhRouteImport.update({
   id: '/rh',
   path: '/rh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SegurancaRoute = SegurancaRouteImport.update({
+  id: '/seguranca',
+  path: '/seguranca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlmoxarifadoIndexRoute = AlmoxarifadoIndexRouteImport.update({
@@ -245,6 +259,16 @@ const RhRelatorioPresencaRoute = RhRelatorioPresencaRouteImport.update({
   path: '/relatorio-presenca',
   getParentRoute: () => RhRoute,
 } as any)
+const SegurancaIndexRoute = SegurancaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SegurancaRoute,
+} as any)
+const SegurancaDdsRoute = SegurancaDdsRouteImport.update({
+  id: '/dds',
+  path: '/dds',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const AlmoxarifadoPedidosIndexRoute =
   AlmoxarifadoPedidosIndexRouteImport.update({
     id: '/pedidos/',
@@ -280,11 +304,13 @@ export interface FileRoutesByFullPath {
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
+  '/emergencia': typeof EmergenciaRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
   '/rh': typeof RhRouteWithChildren
+  '/seguranca': typeof SegurancaRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
@@ -306,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/dds': typeof SegurancaDdsRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
@@ -313,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
   '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
+  '/seguranca/': typeof SegurancaIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
@@ -324,6 +352,7 @@ export interface FileRoutesByTo {
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
+  '/emergencia': typeof EmergenciaRoute
   '/lembretes': typeof LembretesRoute
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
@@ -346,6 +375,7 @@ export interface FileRoutesByTo {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/dds': typeof SegurancaDdsRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/documentos': typeof DocumentosIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
@@ -353,6 +383,7 @@ export interface FileRoutesByTo {
   '/meio-ambiente': typeof MeioAmbienteIndexRoute
   '/relatorio-obra': typeof RelatorioObraIndexRoute
   '/rh': typeof RhIndexRoute
+  '/seguranca': typeof SegurancaIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
@@ -366,11 +397,13 @@ export interface FileRoutesById {
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
+  '/emergencia': typeof EmergenciaRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
   '/rh': typeof RhRouteWithChildren
+  '/seguranca': typeof SegurancaRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
@@ -392,6 +425,7 @@ export interface FileRoutesById {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/dds': typeof SegurancaDdsRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
@@ -399,6 +433,7 @@ export interface FileRoutesById {
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
   '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
+  '/seguranca/': typeof SegurancaIndexRoute
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
@@ -413,11 +448,13 @@ export interface FileRouteTypes {
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
+    | '/emergencia'
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
     | '/meio-ambiente'
     | '/rh'
+    | '/seguranca'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
@@ -439,6 +476,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/dds'
     | '/almoxarifado/'
     | '/documentos/'
     | '/equipamentos/'
@@ -446,6 +484,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente/'
     | '/relatorio-obra/'
     | '/rh/'
+    | '/seguranca/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
@@ -457,6 +496,7 @@ export interface FileRouteTypes {
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
+    | '/emergencia'
     | '/lembretes'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
@@ -479,6 +519,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/dds'
     | '/almoxarifado'
     | '/documentos'
     | '/equipamentos'
@@ -486,6 +527,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente'
     | '/relatorio-obra'
     | '/rh'
+    | '/seguranca'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
@@ -498,11 +540,13 @@ export interface FileRouteTypes {
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
+    | '/emergencia'
     | '/equipamentos'
     | '/instacena'
     | '/lembretes'
     | '/meio-ambiente'
     | '/rh'
+    | '/seguranca'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
@@ -524,6 +568,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/dds'
     | '/almoxarifado/'
     | '/documentos/'
     | '/equipamentos/'
@@ -531,6 +576,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente/'
     | '/relatorio-obra/'
     | '/rh/'
+    | '/seguranca/'
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
@@ -544,11 +590,13 @@ export interface RootRouteChildren {
   AmbientesRoute: typeof AmbientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
+  EmergenciaRoute: typeof EmergenciaRoute
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
   MeioAmbienteRoute: typeof MeioAmbienteRouteWithChildren
   RhRoute: typeof RhRouteWithChildren
+  SegurancaRoute: typeof SegurancaRouteWithChildren
   RelatorioObraGabiaoRoute: typeof RelatorioObraGabiaoRoute
   RelatorioObraJardinagemRoute: typeof RelatorioObraJardinagemRoute
   RelatorioObraRdoRoute: typeof RelatorioObraRdoRoute
@@ -593,6 +641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/emergencia': {
+      id: '/emergencia'
+      path: '/emergencia'
+      fullPath: '/emergencia'
+      preLoaderRoute: typeof EmergenciaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/equipamentos': {
       id: '/equipamentos'
       path: '/equipamentos'
@@ -626,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: '/rh'
       fullPath: '/rh'
       preLoaderRoute: typeof RhRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seguranca': {
+      id: '/seguranca'
+      path: '/seguranca'
+      fullPath: '/seguranca'
+      preLoaderRoute: typeof SegurancaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/almoxarifado/': {
@@ -824,6 +886,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhRelatorioPresencaRouteImport
       parentRoute: typeof RhRoute
     }
+    '/seguranca/': {
+      id: '/seguranca/'
+      path: '/'
+      fullPath: '/seguranca/'
+      preLoaderRoute: typeof SegurancaIndexRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
+    '/seguranca/dds': {
+      id: '/seguranca/dds'
+      path: '/dds'
+      fullPath: '/seguranca/dds'
+      preLoaderRoute: typeof SegurancaDdsRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/almoxarifado/pedidos/': {
       id: '/almoxarifado/pedidos/'
       path: '/pedidos'
@@ -966,17 +1042,33 @@ const RhRouteChildren: RhRouteChildren = {
 
 const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 
+interface SegurancaRouteChildren {
+  SegurancaDdsRoute: typeof SegurancaDdsRoute
+  SegurancaIndexRoute: typeof SegurancaIndexRoute
+}
+
+const SegurancaRouteChildren: SegurancaRouteChildren = {
+  SegurancaDdsRoute: SegurancaDdsRoute,
+  SegurancaIndexRoute: SegurancaIndexRoute,
+}
+
+const SegurancaRouteWithChildren = SegurancaRoute._addFileChildren(
+  SegurancaRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlmoxarifadoRoute: AlmoxarifadoRouteWithChildren,
   AmbientesRoute: AmbientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
+  EmergenciaRoute: EmergenciaRoute,
   EquipamentosRoute: EquipamentosRouteWithChildren,
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
   MeioAmbienteRoute: MeioAmbienteRouteWithChildren,
   RhRoute: RhRouteWithChildren,
+  SegurancaRoute: SegurancaRouteWithChildren,
   RelatorioObraGabiaoRoute: RelatorioObraGabiaoRoute,
   RelatorioObraJardinagemRoute: RelatorioObraJardinagemRoute,
   RelatorioObraRdoRoute: RelatorioObraRdoRoute,

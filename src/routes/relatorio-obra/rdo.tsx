@@ -156,12 +156,28 @@ function RDOPage() {
         console.error("Error loading main rdo data", e);
       }
     } else {
-      setEmpresa('Sucena Empreendimentos');
-      setContrato('460001269');
-      setGerencia('Hydro');
-      setLideranca('Eng. Luís Araújo');
-      setTst('Itamar Junior e Alexssandro Chaves');
-      setLocal('Alunorte Barcarena');
+      let defaults = {
+        empresa: 'Sucena Empreendimentos',
+        contrato: '460001269',
+        gerencia: 'Hydro',
+        lideranca: 'Eng. Luís Araújo',
+        tst: 'Itamar Junior e Alexssandro Chaves',
+        local: 'Alunorte Barcarena'
+      };
+      const savedDefaults = localStorage.getItem('main_rdo_defaults');
+      if (savedDefaults) {
+        try {
+          const p = JSON.parse(savedDefaults);
+          defaults = { ...defaults, ...p };
+        } catch(e) {}
+      }
+
+      setEmpresa(defaults.empresa);
+      setContrato(defaults.contrato);
+      setGerencia(defaults.gerencia);
+      setLideranca(defaults.lideranca);
+      setTst(defaults.tst);
+      setLocal(defaults.local);
       setHorario(defaultHorario);
       setClimaManha('Sol');
       setClimaTarde('Sol');
@@ -195,6 +211,9 @@ function RDOPage() {
       isLocked: true
     };
     localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(dataToSave));
+    localStorage.setItem('main_rdo_defaults', JSON.stringify({
+      empresa, contrato, gerencia, lideranca, tst, local
+    }));
     updateSavedDates();
     setIsLocked(true);
     toast.success('RDO salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
