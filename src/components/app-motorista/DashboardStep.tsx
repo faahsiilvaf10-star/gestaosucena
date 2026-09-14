@@ -245,10 +245,10 @@ export default function DashboardStep() {
   )
 
   const getStatusColors = () => {
-    if (activeStatus === 'paused') return { bg: 'bg-orange-500 dark:bg-orange-600 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PAUSA / ALMOÇO', timeLabel: 'Tempo de Pausa' }
-    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-amber-50', dot: 'bg-amber-200', label: 'AGUARDANDO', timeLabel: 'Tempo Aguardando' }
-    if (activeStatus === 'raining') return { bg: 'bg-blue-500 dark:bg-blue-600 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-200', label: 'CHUVA', timeLabel: 'Tempo em Chuva' }
-    if (activeStatus === 'fueling') return { bg: 'bg-orange-600 dark:bg-orange-700 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'ABASTECENDO VEÍCULO', timeLabel: 'Tempo Abastecendo' }
+    if (activeStatus === 'paused') return { bg: 'bg-orange-500 dark:bg-orange-600 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - PAUSA/ALMOÇO', timeLabel: 'Tempo de Pausa' }
+    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-amber-50', dot: 'bg-amber-200', label: 'PARADO - AGUARDANDO', timeLabel: 'Tempo Aguardando' }
+    if (activeStatus === 'raining') return { bg: 'bg-blue-500 dark:bg-blue-600 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-200', label: 'PARADO - CHUVA', timeLabel: 'Tempo em Chuva' }
+    if (activeStatus === 'fueling') return { bg: 'bg-orange-600 dark:bg-orange-700 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - ABASTECENDO', timeLabel: 'Tempo Abastecendo' }
     
     if (activeStatus !== 'operating') {
       const customColor = localStorage.getItem('app_motorista_active_status_color') || 'bg-emerald-600'
@@ -257,9 +257,13 @@ export default function DashboardStep() {
         bg: customColor, 
         text: isLight ? 'text-gray-900' : 'text-white', 
         dot: isLight ? 'bg-gray-900' : 'bg-white', 
-        label: activeStatus.toUpperCase(), 
+        label: `EM OPERAÇÃO - ${activeStatus.toUpperCase()}`, 
         timeLabel: 'Tempo na Atividade' 
       }
+    }
+
+    if (activeWaterPoint) {
+      return { bg: 'bg-blue-600 dark:bg-blue-800 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-300', label: 'EM OPERAÇÃO - CARREGANDO ÁGUA', timeLabel: 'Tempo Total' }
     }
 
     return { bg: 'bg-emerald-600 dark:bg-emerald-800 shadow-emerald-500/20', text: 'text-emerald-50', dot: 'bg-emerald-300', label: 'EM OPERAÇÃO', timeLabel: 'Tempo Total' }
