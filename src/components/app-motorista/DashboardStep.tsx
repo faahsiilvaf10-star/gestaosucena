@@ -58,7 +58,6 @@ export default function DashboardStep() {
       title !== 'Deslogar' && 
       title !== 'Finalizar Jornada' && 
       title !== 'Parar Atividade Atual' &&
-      title !== 'Registrar Anomalia' &&
       title !== 'Abastecer';
 
     if (isStartingNewActivity && activeStatus !== 'operating') {
@@ -873,13 +872,6 @@ export default function DashboardStep() {
               'bg-orange-500', 
               () => handleStatusChange(activeStatus === 'fueling' ? 'operating' : 'fueling')
             )}
-          />
-
-          <ActionButton 
-            icon={AlertOctagon} 
-            label="Anomalia" 
-            color={{ bg: 'bg-red-100 dark:bg-red-500/20', text: 'text-red-600 dark:text-red-400' }}
-            onClick={() => confirmAction('Registrar Anomalia', 'bg-red-500', () => alert('Modal Registrar Anomalia'))}
           />
 
           <ActionButton 
