@@ -11,7 +11,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
   const [helperName, setHelperName] = useState('')
   const [km, setKm] = useState('')
   const [horimeter, setHorimeter] = useState('')
-  const [fuel, setFuel] = useState('100') // percentage
+  const [fuel, setFuel] = useState(() => localStorage.getItem('app_motorista_fuel_level') || '100') // percentage
 
   // Mock checklist items
   const [checklist, setChecklist] = useState([
@@ -83,6 +83,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         { time: nowISO, name: 'Aguardando', type: 'Status Inicial', color: 'bg-amber-500' }
       ]))
 
+      localStorage.setItem('app_motorista_fuel_level', fuel)
       localStorage.setItem('app_motorista_current_step', 'dashboard')
       onFinish()
     } catch (err) {

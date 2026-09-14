@@ -33,7 +33,7 @@ export default function DashboardStep() {
   // Finish Shift State
   const [endKm, setEndKm] = useState('')
   const [endHorimeter, setEndHorimeter] = useState('')
-  const [endFuel, setEndFuel] = useState('100')
+  const [endFuel, setEndFuel] = useState(() => localStorage.getItem('app_motorista_fuel_level') || '100')
   const [loadingFinish, setLoadingFinish] = useState(false)
 
   // Confirmation Modal State
@@ -299,6 +299,8 @@ export default function DashboardStep() {
         type: 'pos-operacional',
         status: 'aprovado'
       })
+
+      localStorage.setItem('app_motorista_fuel_level', endFuel)
 
       // Update Equipment status to "Disponível"
       await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside' })
