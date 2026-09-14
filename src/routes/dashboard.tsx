@@ -161,7 +161,7 @@ function DashboardComponent() {
       let manutencaoList: any[] = []
       
       data?.forEach(eq => {
-        const isVehicle = eq.type === 'Leve' || eq.type === 'Pesado'
+        const isVehicle = eq.type === 'Leve' || eq.type === 'Equipamento Pesado'
         
         if (isVehicle) {
           const isInside = eq.location_status !== 'outside'
