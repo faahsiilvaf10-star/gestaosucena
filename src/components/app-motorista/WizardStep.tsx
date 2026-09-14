@@ -89,6 +89,15 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         { time: nowISO, name: 'Aguardando', type: 'Status Inicial', color: 'bg-amber-500' }
       ]))
 
+      saveOfflineFirst('eq_status_history', 'INSERT', {
+        dispatch_id: newDispatchId,
+        equipment_id: equipmentId,
+        driver_id: userId,
+        previous_status: 'Jornada Iniciada',
+        new_status: 'Aguardando',
+        created_at: nowISO
+      }).catch(console.error)
+
       localStorage.setItem('app_motorista_fuel_level', fuel)
       localStorage.setItem('app_motorista_current_step', 'dashboard')
       onFinish()

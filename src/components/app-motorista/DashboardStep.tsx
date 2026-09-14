@@ -190,6 +190,15 @@ export default function DashboardStep() {
       tl.push({ time: stop.toISOString(), name: `Abastecimento de Água (${activeWaterPoint})`, type: 'Finalizado (Auto)', color: 'bg-emerald-500' })
       localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
       
+      saveOfflineFirst('eq_status_history', 'INSERT', {
+        dispatch_id: dispatch?.id,
+        equipment_id: equipmentId,
+        driver_id: dispatch?.driver_id || (JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id),
+        previous_status: `Abastecimento de Água (${activeWaterPoint})`,
+        new_status: 'Finalizado (Auto)',
+        created_at: stop.toISOString()
+      }).catch(console.error)
+
       setActiveWaterPoint(null)
       setWaterLoadStartTime(null)
       localStorage.removeItem('app_motorista_water_point')
@@ -222,6 +231,15 @@ export default function DashboardStep() {
       color: eventColor
     })
     localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
+
+    saveOfflineFirst('eq_status_history', 'INSERT', {
+      dispatch_id: dispatch?.id,
+      equipment_id: equipmentId,
+      driver_id: dispatch?.driver_id || (JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id),
+      previous_status: activeStatus,
+      new_status: eventName,
+      created_at: now.toISOString()
+    }).catch(console.error)
 
     localStorage.setItem('app_motorista_active_status', newStatus)
     if (color) {
@@ -319,6 +337,15 @@ export default function DashboardStep() {
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
       
+      saveOfflineFirst('eq_status_history', 'INSERT', {
+        dispatch_id: dispatch?.id,
+        equipment_id: equipmentId,
+        driver_id: dispatch?.driver_id || (JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id),
+        previous_status: activeStatus,
+        new_status: 'Jornada Finalizada',
+        created_at: new Date().toISOString()
+      }).catch(console.error)
+
       // Limpar estados de status e timers
       localStorage.removeItem('app_motorista_active_status')
       localStorage.removeItem('app_motorista_active_status_color')

@@ -6,7 +6,7 @@ import {
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
   Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp
 } from 'lucide-react'
-import { format, subDays, addDays } from 'date-fns'
+import { format, subDays, addDays, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export const Route = createFileRoute('/equipamentos/painel-motorista')({
@@ -24,6 +24,7 @@ function PainelMotoristaPage() {
   const [emTrabalhoCount, setEmTrabalhoCount] = useState(0)
   const [totalPesadosCount, setTotalPesadosCount] = useState(0)
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
+  const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
 
   // Fullscreen handler
   const toggleFullscreen = () => {
@@ -65,6 +66,23 @@ function PainelMotoristaPage() {
       setTotalPesadosCount(total)
       setEmTrabalhoCount(operandoList.length)
       setActiveVehicles(operandoList)
+
+      // 2. Busca histórico do dia
+      const todayStart = startOfDay(new Date()).toISOString()
+      const { data: histories, error: hError } = await supabase
+        .from('eq_status_history')
+        .select('*')
+        .gte('created_at', todayStart)
+        .order('created_at', { ascending: true })
+
+      if (!hError && histories) {
+        const hMap: Record<string, any[]> = {}
+        histories.forEach(h => {
+          if (!hMap[h.equipment_id]) hMap[h.equipment_id] = []
+          hMap[h.equipment_id].push(h)
+        })
+        setVehicleHistories(hMap)
+      }
 
     } catch (error) {
       console.error('Erro ao buscar dados do painel do motorista:', error)
@@ -215,7 +233,7 @@ function PainelMotoristaPage() {
           </div>
         ) : (
           activeVehicles.map(vehicle => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            <VehicleCard key={vehicle.id} vehicle={vehicle} history={vehicleHistories[vehicle.id] || []} />
           ))
         )}
       </div>
@@ -242,7 +260,7 @@ function MetricCard({ title, value, total, color }: { title: string, value: numb
   )
 }
 
-function VehicleCard({ vehicle }: { vehicle: any }) {
+function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -330,16 +348,29 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
           {/* Timeline Panel */}
           <div className="md:w-2/3">
             <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4 uppercase tracking-wider opacity-80">Linha do Tempo</h4>
-            <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
-              
-              <TimelineItem time="07:10" title="Saída da garagem" subtitle="Base SUCENA" status="completed" />
-              <TimelineItem time="07:18" title="Em deslocamento" status="completed" />
-              <TimelineItem time="07:42" title="Ponto 01 - Chegada" subtitle="Faixa 04" status="completed" />
-              <TimelineItem time="07:45" title="Atividade iniciada" subtitle="Irrigação" status="completed" />
-              <TimelineItem time="08:25" title="Ponto 02 - Chegada" subtitle="Faixa 04 - Setor B" status="completed" />
-              <TimelineItem time="10:15" title="Atividade pendente" subtitle="Gabião" status="pending" isLast />
+            {history.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhuma atividade registrada para hoje.</p>
+            ) : (
+              <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
+                {history.map((h, i) => {
+                  let mappedStatus: 'completed' | 'in-progress' | 'pending' | 'anomaly' = 'completed'
+                  if (h.new_status === 'Aguardando' || h.new_status === 'Pausa / Almoço') mappedStatus = 'pending'
+                  if (h.new_status === 'Chuva' || h.new_status.includes('Abastecendo')) mappedStatus = 'anomaly'
+                  if (h.new_status.includes('Operação')) mappedStatus = 'in-progress'
 
-            </div>
+                  return (
+                    <TimelineItem 
+                      key={h.id}
+                      time={format(new Date(h.created_at), 'HH:mm')} 
+                      title={h.new_status} 
+                      subtitle={h.previous_status && h.previous_status !== h.new_status ? `Anterior: ${h.previous_status}` : undefined} 
+                      status={mappedStatus} 
+                      isLast={i === history.length - 1} 
+                    />
+                  )
+                })}
+              </div>
+            )}
           </div>
 
         </div>
