@@ -329,7 +329,11 @@ export function EpiRequisitionForm() {
         if (settings.requisitionAlerts?.enabled && settings.url && settings.token) {
           const groupId = settings.requisitionAlerts.specificGroupId || settings.groupId;
           if (groupId) {
-             const caption = `📦 *Nova Requisição Finalizada*\nFuncionário(a): *${employee?.nome}*\nAutorizado por: *${authorizer?.nome}*\n\nVeja o comprovante anexo.`;
+             const itemsList = validItems.map(it => {
+               const prod = epiProducts?.find(p => p.id === it.productId);
+               return `- ${it.quantity}x ${prod?.name || 'Desconhecido'}`;
+             }).join('\n');
+             const caption = `📦 *Nova Requisição Finalizada*\nFuncionário(a): *${employee?.nome}*\nAutorizado por: *${authorizer?.nome}*\n\n*Itens Retirados:*\n${itemsList}\n\nVeja o comprovante anexo.`;
              await sendWhatsappMediaOnServer({
                data: {
                  url: settings.url,
