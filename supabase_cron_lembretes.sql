@@ -210,6 +210,10 @@ BEGIN
           -- ENVIA NO PRIVADO (Criador + Mencionados)
           -- Incluir o criador
           SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
+          -- Fallback: se o criador não tem WhatsApp cadastrado, usa o adminPhone das configurações
+          IF v_phone IS NULL OR v_phone = '' THEN
+            v_phone := v_settings->>'adminPhone';
+          END IF;
           IF v_phone IS NOT NULL AND v_phone != '' THEN
             v_phones := array_append(v_phones, v_phone);
           END IF;

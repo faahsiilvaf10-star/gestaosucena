@@ -789,6 +789,19 @@ function AdminRoute() {
             </div>
 
             <div>
+              <label className="block text-sm font-semibold mb-2">📱 Telefone do Administrador (privado)</label>
+              <input 
+                type="text" 
+                value={whatsappSettings.adminPhone || ''}
+                onChange={e => setWhatsappSettings({...whatsappSettings, adminPhone: e.target.value})}
+                disabled={isWhatsappLocked}
+                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                placeholder="Ex: 5591999999999"
+              />
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Telefone do admin para receber lembretes privados (somente para você). Formato: DDI+DDD+Número, sem espaços. Ex: <strong>5591999998888</strong></p>
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold mb-2">Intervalo entre envios (segundos)</label>
               <input 
                 type="number" 

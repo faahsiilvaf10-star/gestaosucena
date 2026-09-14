@@ -50,6 +50,7 @@ export type WhatsappSettings = {
   token: string;
   groupId: string;
   interval: number;
+  adminPhone?: string;
   ddsReminders?: {
     enabled_0600: boolean;
     enabled_1600: boolean;
@@ -71,6 +72,7 @@ const defaultWhatsappSettings: WhatsappSettings = {
   token: '',
   groupId: '',
   interval: 30,
+  adminPhone: '',
   ddsReminders: {
     enabled_0600: false,
     enabled_1600: false,
