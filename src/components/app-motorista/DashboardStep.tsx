@@ -254,10 +254,11 @@ export default function DashboardStep() {
     
     if (activeStatus !== 'operating') {
       const customColor = localStorage.getItem('app_motorista_active_status_color') || 'bg-emerald-600'
+      const isLight = customColor.includes('bg-white')
       return { 
         bg: customColor, 
-        text: 'text-white', 
-        dot: 'bg-white', 
+        text: isLight ? 'text-gray-900' : 'text-white', 
+        dot: isLight ? 'bg-gray-900' : 'bg-white', 
         label: activeStatus.toUpperCase(), 
         timeLabel: 'Tempo na Atividade' 
       }
@@ -518,13 +519,13 @@ export default function DashboardStep() {
 
   if (viewState === 'new_activity') {
     const activities = [
-      { name: 'Lavagem Mirante', icon: Waves, color: 'bg-[#179FB9]' },
-      { name: 'Irrigação Carretel', icon: Droplet, color: 'bg-[#2563EB]' },
-      { name: 'Irrigação Faixa 3, 4 e 5', icon: Sprout, color: 'bg-[#059669]' },
-      { name: 'Abastecimento do Tanque de Irrigação', icon: Fuel, color: 'bg-[#6366F1]' },
-      { name: 'Lavagem Vertedouro', icon: Waves, color: 'bg-[#0D9488]' },
-      { name: 'Umectação de Vias', icon: CloudRain, color: 'bg-[#0284C7]' },
-      { name: 'Lavagem de Carro', icon: Car, color: 'bg-[#475569]' },
+      { name: 'Lavagem Mirante', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
+      { name: 'Irrigação Carretel', icon: Droplet, color: 'bg-white border border-gray-200 text-gray-900' },
+      { name: 'Irrigação Faixa 3, 4 e 5', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
+      { name: 'Abastecimento do Tanque de Irrigação', icon: Fuel, color: 'bg-white border border-gray-200 text-gray-900' },
+      { name: 'Lavagem Vertedouro', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
+      { name: 'Umectação de Vias', icon: CloudRain, color: 'bg-white border border-gray-200 text-gray-900' },
+      { name: 'Lavagem de Carro', icon: Car, color: 'bg-zinc-900 border border-zinc-800 text-white' },
     ]
 
     return (
@@ -569,15 +570,16 @@ export default function DashboardStep() {
               <button
                 key={act.name}
                 onClick={() => {
-                  confirmAction(act.name, act.color.replace('bg-', 'bg-'), () => {
+                  const modalColor = act.color.includes('bg-white') ? 'bg-gray-900' : act.color.split(' ')[0]
+                  confirmAction(act.name, modalColor, () => {
                     handleStatusChange(act.name, act.color)
                     setViewState('operating')
                   })
                 }}
-                className={`w-full ${isActive ? 'bg-red-600' : act.color} rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform shadow-sm ${isActive ? 'animate-pulse ring-2 ring-red-400 shadow-[0_0_20px_rgba(220,38,38,0.6)]' : ''}`}
+                className={`w-full ${isActive ? 'bg-red-600 text-white border-transparent' : act.color} rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform shadow-sm ${isActive ? 'animate-pulse ring-2 ring-red-400 shadow-[0_0_20px_rgba(220,38,38,0.6)]' : ''}`}
               >
-                <act.icon size={24} className="text-white shrink-0" />
-                <span className="text-white font-bold text-left text-sm md:text-base leading-tight">
+                <act.icon size={24} className="shrink-0" />
+                <span className="font-bold text-left text-sm md:text-base leading-tight">
                   {act.name} {isActive && <span className="text-xs font-normal opacity-80 ml-2">(Em andamento)</span>}
                 </span>
               </button>
@@ -602,7 +604,7 @@ export default function DashboardStep() {
     <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-20">
       
       {/* HEADER WIDGET */}
-      <div className={`${sColors.bg} p-6 rounded-b-[40px] text-white shadow-xl mb-6 transition-colors duration-500`}>
+      <div className={`${sColors.bg} ${sColors.text} p-6 rounded-b-[40px] shadow-xl mb-6 transition-colors duration-500`}>
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className={`${sColors.text} font-semibold text-xs tracking-wider uppercase mb-1 flex items-center gap-1.5 opacity-90`}>
@@ -619,16 +621,16 @@ export default function DashboardStep() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setViewState('history')} className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors" title="Histórico">
-              <History size={22} className="text-white" />
+            <button onClick={() => setViewState('history')} className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Histórico">
+              <History size={22} className={sColors.text} />
             </button>
-            <button onClick={() => confirmAction('Deslogar', 'bg-red-600', handleLogout, 'Sair')} className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors" title="Deslogar">
-              <LogOut size={22} className="text-white" />
+            <button onClick={() => confirmAction('Deslogar', 'bg-red-600', handleLogout, 'Sair')} className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Deslogar">
+              <LogOut size={22} className={sColors.text} />
             </button>
           </div>
         </div>
 
-        <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20">
+        <div className={`${sColors.text === 'text-white' ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'} rounded-2xl p-4 backdrop-blur-md border`}>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className={`${sColors.text} opacity-80 text-xs font-semibold mb-1`}>Início da Jornada</div>
@@ -642,7 +644,7 @@ export default function DashboardStep() {
             </div>
           </div>
           {dispatch?.helper_name && (
-            <div className="mt-3 pt-3 border-t border-white/10">
+            <div className={`mt-3 pt-3 border-t ${sColors.text === 'text-white' ? 'border-white/10' : 'border-black/10'}`}>
               <div className={`${sColors.text} opacity-80 text-xs font-semibold mb-0.5`}>Ajudante</div>
               <div className="text-sm font-bold">{dispatch.helper_name}</div>
             </div>
