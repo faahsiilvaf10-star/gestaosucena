@@ -14,6 +14,8 @@ import { format } from 'date-fns';
 import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { getWhatsappSettings } from '@/lib/settings';
+import { sendWhatsappMediaOnServer } from '@/server/whatsapp';
 
 // Gera um recibo em PNG via Canvas nativo (sem dependência de html-to-image)
 function generateReceiptPng(
@@ -320,6 +322,29 @@ export function EpiRequisitionForm() {
         items: validItems.map(it => ({ product_id: it.productId, quantity: it.quantity })),
         receipt_image_base64: receiptBase64
       });
+
+      // Dispara envio automático no WhatsApp se estiver habilitado
+      try {
+        const settings = await getWhatsappSettings();
+        if (settings.requisitionAlerts?.enabled && settings.url && settings.token) {
+          const groupId = settings.requisitionAlerts.specificGroupId || settings.groupId;
+          if (groupId) {
+             const caption = `📦 *Nova Requisição Finalizada*\nFuncionário(a): *${employee?.nome}*\nAutorizado por: *${authorizer?.nome}*\n\nVeja o comprovante anexo.`;
+             await sendWhatsappMediaOnServer({
+               data: {
+                 url: settings.url,
+                 token: settings.token,
+                 instanceId: settings.instanceId,
+                 phone: groupId,
+                 caption,
+                 base64Media: receiptBase64
+               }
+             });
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao enviar whatsapp automático", err);
+      }
 
       toast.success('Recibo gerado e salvo com sucesso!', { id: toastId });
       navigate({ to: '/almoxarifado/requisicoes' });

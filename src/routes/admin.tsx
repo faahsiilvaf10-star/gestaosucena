@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone } from 'lucide-react'
+import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'
@@ -886,6 +886,56 @@ function AdminRoute() {
                 
                 <p className={`text-xs mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                   Requisitos: integração W-API habilitada, palestrante com usuário interno cadastrado e número de WhatsApp preenchido no perfil. Lembre-se de salvar a configuração após alterar estes botões.
+                </p>
+              </div>
+            </div>
+
+            {/* Nova Seção: Envio Automático de Requisições */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Send size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Envio Automático de Requisições
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Quando habilitado, ao finalizar uma requisição (EPI ou Material) o sistema envia automaticamente para o <strong>grupo configurado</strong> uma mensagem com os detalhes dos itens e a <strong>imagem da requisição</strong>, respeitando o intervalo de segurança configurado.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, enabled: !prev.requisitionAlerts?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.requisitionAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.requisitionAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio automático ao finalizar uma requisição</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.requisitionAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.requisitionAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.requisitionAlerts?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363406691114696@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
+                
+                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Requisitos: integração W-API habilitada e ID do grupo preenchido. Lembre-se de salvar a configuração após alterar este botão.
                 </p>
               </div>
             </div>
