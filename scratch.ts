@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL_HERE'
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_KEY_HERE'
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createClient('https://svacqjpyjniejqfmuwhl.supabase.co', 'sb_publishable_OhDMp29ICi6tpYWqBT67tQ_EJ1cAla0')
 
-async function test() {
-  console.log('Querying eq_equipments status...')
+async function run() {
+  const { data, error } = await supabase.from('eq_equipments').select('*').like('name', 'CP%')
+  if (error) console.error(error)
+  else console.log(JSON.stringify(data, null, 2))
 }
-
-test()
+run()

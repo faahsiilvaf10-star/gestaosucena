@@ -1,18 +1,51 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
-  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp
+  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit
 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import * as htmlToImage from 'html-to-image'
+import { jsPDF } from 'jspdf'
 import { format, subDays, addDays, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DRIVERS } from '@/components/app-motorista/LoginStep'
+import ParteDiariaReport from '@/components/app-motorista/ParteDiariaReport'
 
 export const Route = createFileRoute('/equipamentos/parte-diaria')({
   component: ParteDiariaPage,
 })
+
+const translateStatus = (status: string | null | undefined): string => {
+  if (!status) return 'Sem status'
+  const rawStatusLower = status.toLowerCase().trim()
+  if (rawStatusLower === 'waiting') return 'Aguardando'
+  if (rawStatusLower === 'operating') return 'Em operação'
+  if (rawStatusLower === 'paused') return 'Pausa / Almoço'
+  if (rawStatusLower === 'raining') return 'Chuva'
+  if (rawStatusLower === 'fueling') return 'Abastecendo'
+  return status
+}
 
 function ParteDiariaPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -26,6 +59,7 @@ function ParteDiariaPage() {
   const [totalPesadosCount, setTotalPesadosCount] = useState(0)
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
+  const [vehicleDispatches, setVehicleDispatches] = useState<Record<string, any>>({})
 
   // Fullscreen handler
   const toggleFullscreen = () => {
@@ -62,8 +96,8 @@ function ParteDiariaPage() {
       if (pesadosError) throw pesadosError
       
       const total = pesados?.length || 0
-      // No sistema de Frota, "Operando" é definido quando location_status é diferente de 'outside'
-      const operandoList = pesados?.filter(eq => eq.location_status !== 'outside') || []
+      // Mostrar todos os equipamentos pesados na lista, mantendo o status apontado pelo motorista
+      const operandoList = pesados || []
       
       setTotalPesadosCount(total)
       setActiveVehicles(operandoList)
@@ -84,17 +118,27 @@ function ParteDiariaPage() {
         })
         setVehicleHistories(hMap)
 
+        // Busca dispatches do dia (para km e combustível inicial)
+        const { data: dispatches } = await supabase
+          .from('eq_driver_dispatch')
+          .select('*')
+          .gte('shift_start_time', todayStart)
+          .order('shift_start_time', { ascending: true })
+
+        const dMap: Record<string, any> = {}
+        if (dispatches) {
+          dispatches.forEach(d => {
+            // Guarda sempre o último dispatch do dia para o equipamento
+            dMap[d.equipment_id] = d
+          })
+        }
+        setVehicleDispatches(dMap)
+
         let countAtividade = 0
         operandoList.forEach(vehicle => {
           const vHistory = hMap[vehicle.id] || []
           const lastH = vHistory.length > 0 ? vHistory[vHistory.length - 1] : null
-          let currentStatus = lastH ? lastH.new_status : (vehicle.status || 'Sem status')
-
-          if (currentStatus === 'waiting') currentStatus = 'Aguardando'
-          if (currentStatus === 'operating') currentStatus = 'Em operação'
-          if (currentStatus === 'paused') currentStatus = 'Pausa / Almoço'
-          if (currentStatus === 'raining') currentStatus = 'Chuva'
-          if (currentStatus === 'fueling') currentStatus = 'Abastecendo'
+          let currentStatus = translateStatus(lastH ? lastH.new_status : (vehicle.status || 'Sem status'))
 
           const statusLower = currentStatus.toLowerCase()
           
@@ -131,6 +175,24 @@ function ParteDiariaPage() {
       subscription.unsubscribe()
     }
   }, [])
+
+  const handleClearJourney = async (vehicleId: string) => {
+    try {
+      const todayStart = startOfDay(new Date()).toISOString()
+      const { error } = await supabase
+        .from('eq_status_history')
+        .delete()
+        .eq('equipment_id', vehicleId)
+        .gte('created_at', todayStart)
+
+      if (error) throw error
+      
+      fetchDashboardData()
+    } catch (err) {
+      console.error('Failed to clear journey', err)
+      alert('Erro ao apagar jornada do dia.')
+    }
+  }
 
   // Countdown timer
   useEffect(() => {
@@ -260,7 +322,14 @@ function ParteDiariaPage() {
           </div>
         ) : (
           activeVehicles.map(vehicle => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} history={vehicleHistories[vehicle.id] || []} />
+            <VehicleCard 
+              key={vehicle.id} 
+              vehicle={vehicle} 
+              history={vehicleHistories[vehicle.id] || []} 
+              dispatch={vehicleDispatches[vehicle.id]}
+              onClearJourney={() => handleClearJourney(vehicle.id)} 
+              onRefresh={fetchDashboardData}
+            />
           ))
         )}
       </div>
@@ -287,18 +356,95 @@ function MetricCard({ title, value, total, color }: { title: string, value: numb
   )
 }
 
-function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] }) {
+function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefresh }: { vehicle: any, history?: any[], dispatch?: any, onClearJourney: () => void, onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editKmInicial, setEditKmInicial] = useState('')
+  const [editKmFinal, setEditKmFinal] = useState('')
+  const [editHoriInicial, setEditHoriInicial] = useState('')
+  const [editHoriFinal, setEditHoriFinal] = useState('')
+
+  const openEditModal = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditKmInicial(dispatch?.odometer_start?.toString() || '')
+    setEditKmFinal(dispatch?.odometer_end?.toString() || vehicle.current_km?.toString() || '')
+    setEditHoriInicial(dispatch?.horimeter_start?.toString() || '')
+    setEditHoriFinal(dispatch?.horimeter_end?.toString() || vehicle.current_horimeter?.toString() || '')
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveCorrection = async () => {
+    try {
+      await supabase.from('eq_equipments').update({
+        current_km: editKmFinal ? parseFloat(editKmFinal) : null,
+        current_horimeter: editHoriFinal ? parseFloat(editHoriFinal) : null
+      }).eq('id', vehicle.id)
+
+      if (dispatch?.id) {
+        await supabase.from('eq_driver_dispatch').update({
+          odometer_start: editKmInicial ? parseFloat(editKmInicial) : null,
+          odometer_end: editKmFinal ? parseFloat(editKmFinal) : null,
+          horimeter_start: editHoriInicial ? parseFloat(editHoriInicial) : null,
+          horimeter_end: editHoriFinal ? parseFloat(editHoriFinal) : null
+        }).eq('id', dispatch.id)
+      }
+      
+      setIsEditModalOpen(false)
+      onRefresh()
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao salvar correções')
+    }
+  }
+
+  const downloadPNG = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!reportRef.current) return
+    
+    try {
+      await new Promise(r => setTimeout(r, 500))
+      const dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2 })
+      const link = document.createElement('a')
+      link.download = `parte-diaria-${vehicle.plate_tag || vehicle.name}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (err: any) {
+      console.error('Failed to download PNG', err)
+      alert(`Erro ao gerar PNG: ${err.message || err}`)
+    }
+  }
+
+  const downloadPDF = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!reportRef.current) return
+    
+    try {
+      await new Promise(r => setTimeout(r, 500))
+      const dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2, backgroundColor: '#ffffff' })
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4'
+      })
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      
+      // Calculate height maintaining aspect ratio
+      const imgProps = pdf.getImageProperties(dataUrl)
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`parte-diaria-${vehicle.plate_tag || vehicle.name}.pdf`)
+    } catch (err: any) {
+      console.error('Failed to download PDF', err)
+      alert(`Erro ao gerar PDF: ${err.message || err}`)
+    }
+  }
 
   const lastHistory = history.length > 0 ? history[history.length - 1] : null
-  let currentStatus = lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status')
-
-  // Tradução de fallback caso o banco de dados tenha valores em inglês
-  if (currentStatus === 'waiting') currentStatus = 'Aguardando'
-  if (currentStatus === 'operating') currentStatus = 'Em operação'
-  if (currentStatus === 'paused') currentStatus = 'Pausa / Almoço'
-  if (currentStatus === 'raining') currentStatus = 'Chuva'
-  if (currentStatus === 'fueling') currentStatus = 'Abastecendo'
+  let currentStatus = translateStatus(lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status'))
 
   const driverId = lastHistory ? lastHistory.driver_id : null
   const driverName = driverId ? DRIVERS.find(d => d.id === driverId)?.name || 'Desconhecido' : 'Motorista não atribuído'
@@ -332,7 +478,7 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
   }
 
   return (
-    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-sm transition-all duration-300 overflow-hidden">
+    <div ref={cardRef} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-sm transition-all duration-300 overflow-hidden">
       {/* Header Row */}
       <div 
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors gap-4"
@@ -355,17 +501,96 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
           </div>
         </div>
 
-        <div className="flex items-center gap-6 w-full sm:w-auto">
-          <div className="flex-1 sm:w-48">
-            <div className="flex justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-              <span>Progresso</span>
-              <span>0 / 0 (0%)</span>
-            </div>
-            <div className="h-2 w-full bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }}></div>
-            </div>
-          </div>
+        <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
           
+          <div className="hidden sm:flex items-center gap-2">
+            
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-gray-200 dark:border-zinc-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors mr-2"
+              title="Corrigir KM/Horímetro"
+              onClick={openEditModal}
+            >
+              <Edit size={14} /> Corrigir
+            </button>
+            
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+              <DialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900 dark:text-gray-100">Corrigir KM e Horímetro</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">KM Inicial</label>
+                    <input type="number" value={editKmInicial} onChange={e => setEditKmInicial(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">KM Final</label>
+                    <input type="number" value={editKmFinal} onChange={e => setEditKmFinal(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">Hori. Inicial</label>
+                    <input type="number" value={editHoriInicial} onChange={e => setEditHoriInicial(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">Hori. Final</label>
+                    <input type="number" value={editHoriFinal} onChange={e => setEditHoriFinal(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800">Cancelar</button>
+                  <button onClick={handleSaveCorrection} className="px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700">Salvar</button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors mr-2"
+                  title="Limpar jornada do dia"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-gray-900 dark:text-gray-100 text-lg font-bold">Limpar Jornada do Dia</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+                    Tem certeza que deseja apagar toda a jornada de hoje deste equipamento? Isso removerá o histórico e não pode ser desfeito.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800" onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="bg-red-600 text-white hover:bg-red-700 border-none" 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onClearJourney()
+                    }}
+                  >
+                    Sim, apagar jornada
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-gray-200 dark:border-zinc-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              onClick={downloadPNG}
+              title="Baixar como PNG"
+            >
+              <Download size={14} /> PNG
+            </button>
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-red-600 dark:text-red-400 border border-gray-200 dark:border-zinc-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              onClick={downloadPDF}
+              title="Baixar como PDF"
+            >
+              <Download size={14} /> PDF
+            </button>
+          </div>
+
           <button 
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
             onClick={(e) => {
@@ -391,7 +616,7 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
             <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-xl text-sm">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Placa</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.plate_tag || '-'}</p>
+                <p className="font-semibold text-gray-900 dark:text-white uppercase">{vehicle.plate_tag || '-'}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Tipo</p>
@@ -406,6 +631,68 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
                 <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_km || '-'}</p>
               </div>
             </div>
+            
+            {/* Determinar configurações da imagem baseado no tipo */}
+            {(() => {
+              const vehicleName = (vehicle.name || '').toUpperCase();
+              const isMunck = vehicleName.startsWith('CM');
+              const isOnibus = vehicleName.startsWith('OB');
+              
+              const truckImage = isMunck ? '/logomunk.png?v=1' : (isOnibus ? '/logoonibus.png?v=1' : '/logopipa.png?v=2');
+              
+              // Coordenadas da Placa (Pipa vs Munck vs Onibus)
+              const plateTop = isMunck ? '71.0%' : (isOnibus ? '74.5%' : '72.8%');
+              const plateLeft = isMunck ? '87.2%' : (isOnibus ? '84.5%' : '85.5%');
+              const plateScale = 'scale(1.0, 1.4)';
+              
+              // Coordenadas da Tag (Pipa vs Munck vs Onibus)
+              const tagTop = isMunck ? '57.4%' : (isOnibus ? '49.3%' : '57.2%');
+              const tagLeft = isMunck ? '61.3%' : (isOnibus ? '45.8%' : '57.4%');
+
+              return (
+                <div className="w-full rounded-xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm mt-4 bg-gray-50 dark:bg-zinc-800/50 flex items-center justify-center relative">
+                  <img 
+                    src={truckImage} 
+                    alt={vehicle.name || "Caminhão"} 
+                    className="w-full h-auto object-cover"
+                  />
+                  
+                  {/* Placa na imagem */}
+                  {vehicle.plate_tag && (
+                    <div 
+                      id="plate-overlay"
+                      className="absolute flex items-center justify-center font-bold text-black uppercase"
+                      style={{
+                        top: plateTop,
+                        left: plateLeft,
+                        width: '11%',
+                        height: '4%',
+                        fontSize: 'clamp(0.2rem, 0.4vw, 0.5rem)',
+                        transform: `translate(-50%, -50%) skewX(-2deg) rotate(-2deg) ${plateScale}`
+                      }}
+                    >
+                      {vehicle.plate_tag}
+                    </div>
+                  )}
+
+                  {/* Tag na Porta */}
+                  {vehicle.name && (
+                    <div 
+                      id="tag-overlay"
+                      className="absolute font-black text-black opacity-90 text-center"
+                      style={{
+                        top: tagTop,
+                        left: tagLeft,
+                        fontSize: 'clamp(0.4rem, 0.9vw, 0.9rem)',
+                        transform: 'translate(-50%, -50%) rotate(-2deg)'
+                      }}
+                    >
+                      {vehicle.name}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Timeline Panel */}
@@ -414,29 +701,56 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
             {history.length === 0 ? (
               <p className="text-sm text-gray-500">Nenhuma atividade registrada para hoje.</p>
             ) : (
-              <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
-                {history.map((h, i) => {
-                  let mappedStatus: 'completed' | 'in-progress' | 'pending' | 'anomaly' = 'completed'
-                  if (h.new_status === 'Aguardando' || h.new_status === 'Pausa / Almoço') mappedStatus = 'pending'
-                  if (h.new_status === 'Chuva' || h.new_status.includes('Abastecendo')) mappedStatus = 'anomaly'
-                  if (h.new_status.includes('Operação')) mappedStatus = 'in-progress'
+              <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
+                  {history.map((h, i) => {
+                    const translatedNewStatus = translateStatus(h.new_status)
+                    const translatedPrevStatus = translateStatus(h.previous_status)
+                    let mappedStatus: 'completed' | 'in-progress' | 'pending' | 'anomaly' = 'completed'
+                    if (translatedNewStatus === 'Aguardando' || translatedNewStatus === 'Pausa / Almoço') mappedStatus = 'pending'
+                    if (translatedNewStatus === 'Chuva' || translatedNewStatus.includes('Abastecendo')) mappedStatus = 'anomaly'
+                    if (translatedNewStatus.includes('Operação')) mappedStatus = 'in-progress'
 
-                  return (
-                    <TimelineItem 
-                      key={h.id}
-                      time={format(new Date(h.created_at), 'HH:mm')} 
-                      title={h.new_status} 
-                      subtitle={h.previous_status && h.previous_status !== h.new_status ? `Anterior: ${h.previous_status}` : undefined} 
-                      status={mappedStatus} 
-                      isLast={i === history.length - 1} 
-                    />
-                  )
-                })}
+                    return (
+                      <TimelineItem 
+                        key={h.id}
+                        time={format(new Date(h.created_at), 'HH:mm')} 
+                        title={translatedNewStatus} 
+                        subtitle={translatedPrevStatus && translatedPrevStatus !== translatedNewStatus ? `Anterior: ${translatedPrevStatus}` : undefined} 
+                        status={mappedStatus} 
+                        isLast={i === history.length - 1} 
+                      />
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
 
         </div>
+      </div>
+
+      <div style={{ position: 'fixed', top: '-10000px', left: 0, zIndex: -1000 }}>
+        <ParteDiariaReport
+          ref={reportRef}
+          motorista={driverName}
+          ajudante={dispatch?.helper_name || '-'}
+          data={new Date()}
+          equipamentoNome={vehicle.type || 'Equipamento'}
+          placa={vehicle.plate_tag || '-'}
+          obra={vehicle.brand ? `OBRA: ${vehicle.brand}` : '4600012690'}
+          kmInicial={dispatch?.odometer_start || '-'}
+          kmFinal={dispatch?.odometer_end || dispatch?.odometer_start || vehicle.current_km || '-'}
+          horimetroInicial={dispatch?.horimeter_start || '-'}
+          horimetroFinal={dispatch?.horimeter_end || dispatch?.horimeter_start || vehicle.current_horimeter || '-'}
+          abastecimentoInicial={dispatch?.fuel_start_percent || '-'}
+          abastecimentoFinal={dispatch?.fuel_end_percent || '-'}
+          timeline={history.map((h: any) => ({
+            time: h.created_at,
+            name: h.new_status,
+            type: 'Status Alterado'
+          }))}
+        />
       </div>
     </div>
   )

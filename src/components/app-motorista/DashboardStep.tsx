@@ -383,9 +383,6 @@ export default function DashboardStep() {
       // Update Equipment status to "Disponível"
       await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside' })
 
-      // Generate Report before removing dispatch
-      await generateReport()
-
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
       
@@ -763,22 +760,7 @@ export default function DashboardStep() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 space-y-3 custom-scrollbar pb-24">
-          {activeStatus !== 'operating' && activeStatus !== 'paused' && activeStatus !== 'waiting' && activeStatus !== 'raining' && (
-            <button
-              onClick={() => {
-                confirmAction('Parar Atividade Atual', 'bg-red-500', () => {
-                  handleStatusChange('operating')
-                  setViewState('operating')
-                })
-              }}
-              className="w-full bg-gray-800 dark:bg-zinc-800 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform shadow-sm mb-4 border border-gray-700"
-            >
-              <Square size={24} className="text-gray-300 shrink-0" />
-              <span className="text-gray-200 font-bold text-left text-sm md:text-base leading-tight">
-                Parar Atividade Atual
-              </span>
-            </button>
-          )}
+
 
           {activities.map(act => {
             const isActive = activeStatus === act.name;
@@ -926,19 +908,19 @@ export default function DashboardStep() {
           )}
 
           <ActionButton 
-            icon={activeStatus === 'fueling' ? Play : Fuel} 
-            label={activeStatus === 'fueling' ? "Retomar" : "Abastecer"} 
+            icon={Fuel} 
+            label="Abastecer" 
             color={{ bg: 'bg-orange-100 dark:bg-orange-500/20', text: 'text-orange-600 dark:text-orange-400' }}
-            onClick={() => confirmAction(
-              activeStatus === 'fueling' ? 'Retomar Operação' : 'Abastecer', 
-              'bg-orange-500', 
-              () => handleStatusChange(activeStatus === 'fueling' ? 'operating' : 'fueling')
-            )}
+            onClick={() => {
+              if (activeStatus !== 'fueling') {
+                confirmAction('Abastecer', 'bg-orange-500', () => handleStatusChange('fueling'))
+              }
+            }}
           />
 
           <ActionButton 
             icon={MapPin}
-            label="ENTRADA/S AÍDA"
+            label="ENTRADA/SAÍDA"
             color={{ bg: 'bg-gray-200 dark:bg-zinc-800', text: 'text-gray-800 dark:text-gray-200' }}
             onClick={() => {
               setGateReason('')
@@ -950,36 +932,36 @@ export default function DashboardStep() {
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <ActionButton 
-            icon={activeStatus === 'paused' ? Play : Utensils} 
-            label={activeStatus === 'paused' ? "Retomar" : "PAUSA/ALMOÇO"} 
+            icon={Utensils} 
+            label="PAUSA/ALMOÇO" 
             color={{ bg: 'bg-orange-100 dark:bg-orange-500/20', text: 'text-orange-600 dark:text-orange-400' }}
-            onClick={() => confirmAction(
-              activeStatus === 'paused' ? 'Retomar Operação' : 'Pausa / Almoço', 
-              'bg-orange-500', 
-              () => handleStatusChange(activeStatus === 'paused' ? 'operating' : 'paused')
-            )}
+            onClick={() => {
+              if (activeStatus !== 'paused') {
+                confirmAction('Pausa / Almoço', 'bg-orange-500', () => handleStatusChange('paused'))
+              }
+            }}
           />
 
           <ActionButton 
-            icon={activeStatus === 'waiting' ? Play : Clock} 
-            label={activeStatus === 'waiting' ? "Retomar" : "AGUARDANDO"} 
+            icon={Clock} 
+            label="AGUARDANDO" 
             color={{ bg: 'bg-amber-100 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400' }}
-            onClick={() => confirmAction(
-              activeStatus === 'waiting' ? 'Retomar Operação' : 'Aguardar', 
-              'bg-amber-500', 
-              () => handleStatusChange(activeStatus === 'waiting' ? 'operating' : 'waiting')
-            )}
+            onClick={() => {
+              if (activeStatus !== 'waiting') {
+                confirmAction('Aguardar', 'bg-amber-500', () => handleStatusChange('waiting'))
+              }
+            }}
           />
           
           <ActionButton 
-            icon={activeStatus === 'raining' ? Play : CloudRain} 
-            label={activeStatus === 'raining' ? "Retomar" : "CHUVA"} 
+            icon={CloudRain} 
+            label="CHUVA" 
             color={{ bg: 'bg-blue-100 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' }}
-            onClick={() => confirmAction(
-              activeStatus === 'raining' ? 'Retomar Operação' : 'Registrar Chuva', 
-              'bg-blue-500', 
-              () => handleStatusChange(activeStatus === 'raining' ? 'operating' : 'raining')
-            )}
+            onClick={() => {
+              if (activeStatus !== 'raining') {
+                confirmAction('Registrar Chuva', 'bg-blue-500', () => handleStatusChange('raining'))
+              }
+            }}
           />
 
           <ActionButton 
