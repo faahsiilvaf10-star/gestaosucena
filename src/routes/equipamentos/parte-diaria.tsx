@@ -88,7 +88,14 @@ function ParteDiariaPage() {
         operandoList.forEach(vehicle => {
           const vHistory = hMap[vehicle.id] || []
           const lastH = vHistory.length > 0 ? vHistory[vHistory.length - 1] : null
-          const currentStatus = lastH ? lastH.new_status : (vehicle.status || 'Sem status')
+          let currentStatus = lastH ? lastH.new_status : (vehicle.status || 'Sem status')
+
+          if (currentStatus === 'waiting') currentStatus = 'Aguardando'
+          if (currentStatus === 'operating') currentStatus = 'Em operação'
+          if (currentStatus === 'paused') currentStatus = 'Pausa / Almoço'
+          if (currentStatus === 'raining') currentStatus = 'Chuva'
+          if (currentStatus === 'fueling') currentStatus = 'Abastecendo'
+
           const statusLower = currentStatus.toLowerCase()
           
           let isAtividade = true
@@ -291,7 +298,15 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
   const [expanded, setExpanded] = useState(false)
 
   const lastHistory = history.length > 0 ? history[history.length - 1] : null
-  const currentStatus = lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status')
+  let currentStatus = lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status')
+
+  // Tradução de fallback caso o banco de dados tenha valores em inglês
+  if (currentStatus === 'waiting') currentStatus = 'Aguardando'
+  if (currentStatus === 'operating') currentStatus = 'Em operação'
+  if (currentStatus === 'paused') currentStatus = 'Pausa / Almoço'
+  if (currentStatus === 'raining') currentStatus = 'Chuva'
+  if (currentStatus === 'fueling') currentStatus = 'Abastecendo'
+
   const driverId = lastHistory ? lastHistory.driver_id : null
   const driverName = driverId ? DRIVERS.find(d => d.id === driverId)?.name || 'Desconhecido' : 'Motorista não atribuído'
 
