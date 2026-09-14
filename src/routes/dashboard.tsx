@@ -157,29 +157,34 @@ function DashboardComponent() {
       
       let operacaoCount = 0
       let manutencaoCount = 0
+      let totalVehicles = 0
+      let totalEquipments = 0
       let operacaoList: any[] = []
       let manutencaoList: any[] = []
       
       data?.forEach(eq => {
+        totalEquipments++
         const isVehicle = eq.category === 'Leve' || eq.category === 'Equipamento Pesado'
         
         if (isVehicle) {
+          totalVehicles++
           const isInside = eq.location_status !== 'outside'
           if (isInside) {
             operacaoCount++
             operacaoList.push(eq)
           }
-          else if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') {
-            manutencaoCount++
-            manutencaoList.push(eq)
-          }
+        }
+
+        if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') {
+          manutencaoCount++
+          manutencaoList.push(eq)
         }
       })
       
       operacaoList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
       manutencaoList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
       
-      return { operacao: operacaoCount, manutencao: manutencaoCount, operacaoList, manutencaoList }
+      return { operacao: operacaoCount, manutencao: manutencaoCount, operacaoList, manutencaoList, totalVehicles, totalEquipments }
     }
   })
 
@@ -255,9 +260,11 @@ function DashboardComponent() {
   const pctPresenca = totalFuncNum > 0 ? Math.round((todayData.presentes / totalFuncNum) * 100) : 0
   const pctAusencia = totalFuncNum > 0 ? Math.round((todayData.ausencias / totalFuncNum) * 100) : 0
   
-  const eqTotal = (eqData?.operacao || 0) + (eqData?.manutencao || 0)
-  const pctOperacao = eqTotal > 0 ? Math.round(((eqData?.operacao || 0) / eqTotal) * 100) : 0
-  const pctManutencao = eqTotal > 0 ? Math.round(((eqData?.manutencao || 0) / eqTotal) * 100) : 0
+  const totalVehiclesNum = eqData?.totalVehicles || 0
+  const totalEquipmentsNum = eqData?.totalEquipments || 0
+  
+  const pctOperacao = totalVehiclesNum > 0 ? Math.round(((eqData?.operacao || 0) / totalVehiclesNum) * 100) : 0
+  const pctManutencao = totalEquipmentsNum > 0 ? Math.round(((eqData?.manutencao || 0) / totalEquipmentsNum) * 100) : 0
 
   const firstName = currentUser?.user_metadata?.full_name
     ? currentUser.user_metadata.full_name.split(' ')[0]
@@ -434,7 +441,7 @@ function DashboardComponent() {
               <div className="donut" style={{ "--value": pctOperacao, "--accent": "var(--blue)", "--track": "rgba(22, 119, 255, 0.15)" } as any}>
                 <div className="donut-content">
                   <div className="donut-number">{eqData?.operacao || 0}</div>
-                  <div className="donut-total">de {eqTotal}</div>
+                  <div className="donut-total">de {totalVehiclesNum}</div>
                 </div>
               </div>
               <div className="percent-box percent-blue">
@@ -484,7 +491,7 @@ function DashboardComponent() {
               <div className="donut" style={{ "--value": pctManutencao, "--accent": "var(--orange)", "--track": "rgba(255, 114, 0, 0.15)" } as any}>
                 <div className="donut-content">
                   <div className="donut-number">{eqData?.manutencao || 0}</div>
-                  <div className="donut-total">de {eqTotal}</div>
+                  <div className="donut-total">de {totalEquipmentsNum}</div>
                 </div>
               </div>
               <div className="percent-box percent-orange">
