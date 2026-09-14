@@ -19,7 +19,11 @@ export default function DashboardStep() {
       : new Date()
   )
   const [elapsedStatusTime, setElapsedStatusTime] = useState('00:00:00')
-  const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history'>('operating')
+  const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history' | 'gate'>('operating')
+
+  // Gate State
+  const [gateReason, setGateReason] = useState('')
+  const [gateDescription, setGateDescription] = useState('')
 
   // Water Loading State
   const [activeWaterPoint, setActiveWaterPoint] = useState<string | null>(localStorage.getItem('app_motorista_water_point'))
@@ -375,6 +379,111 @@ export default function DashboardStep() {
 
   if (!equipment) {
     return <div className="min-h-full flex items-center justify-center p-6 bg-gray-50 dark:bg-zinc-950 text-gray-500">Carregando painel...</div>
+  }
+
+  if (viewState === 'gate') {
+    const isExit = equipment?.location_status === 'inside'
+    const title = isExit ? 'SAÍDA DE EQUIPAMENTO' : 'ENTRADA DE EQUIPAMENTO'
+    
+    const handleGateSubmit = async () => {
+      if (isExit && !gateReason) {
+        alert('Selecione um motivo para a saída.')
+        return
+      }
+      setLoadingFinish(true)
+      try {
+        const driverData = localStorage.getItem('app_motorista_driver')
+        const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+        
+        await saveOfflineFirst('eq_movements', 'INSERT', {
+          equipment_id: equipmentId,
+          movement_type: isExit ? 'exit' : 'entry',
+          exit_reason: isExit ? gateReason : null,
+          description: isExit ? gateDescription : null,
+          created_by: driverName,
+          created_at: new Date().toISOString()
+        })
+
+        await saveOfflineFirst('eq_equipments', 'UPDATE', {
+          id: equipmentId,
+          location_status: isExit ? 'outside' : 'inside',
+          last_exit_reason: isExit ? gateReason : null,
+          last_exit_description: isExit ? gateDescription : null,
+          updated_at: new Date().toISOString()
+        })
+        
+        setEquipment((prev: any) => ({ ...prev, location_status: isExit ? 'outside' : 'inside' }))
+        
+        alert(`Equipamento registrado como ${isExit ? 'FORA' : 'DENTRO'} da obra.`)
+        setViewState('operating')
+      } catch (err) {
+        console.error(err)
+        alert('Erro ao registrar movimentação')
+      } finally {
+        setLoadingFinish(false)
+      }
+    }
+
+    return (
+      <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-6 relative">
+        <div className="p-6 pb-2">
+          <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-1 active:opacity-70">
+            &larr; Voltar
+          </button>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 flex items-center justify-center">
+              <MapPin size={24} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{title}</h2>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 pt-0 custom-scrollbar pb-24">
+          {isExit ? (
+            <>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Motivo da Saída</label>
+                <select 
+                  value={gateReason}
+                  onChange={e => setGateReason(e.target.value)}
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-gray-900 dark:text-white"
+                >
+                  <option value="">Selecione um motivo...</option>
+                  <option value="preventive_maintenance">Manutenção Preventiva</option>
+                  <option value="corrective_maintenance">Manutenção Corretiva</option>
+                  <option value="inspection">Vistoria</option>
+                  <option value="external_service">Serviço Externo</option>
+                  <option value="other">Outro</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Observações (Opcional)</label>
+                <input 
+                  type="text" 
+                  value={gateDescription}
+                  onChange={e => setGateDescription(e.target.value)}
+                  placeholder="Detalhes..."
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-gray-900 dark:text-white"
+                />
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              O equipamento está atualmente registrado como fora da obra. Deseja registrar o seu retorno?
+            </p>
+          )}
+
+          <button 
+            onClick={handleGateSubmit}
+            disabled={loadingFinish}
+            className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+          >
+            {loadingFinish ? <Loader2 className="animate-spin" size={24} /> : 'CONFIRMAR'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (viewState === 'history') {
@@ -771,6 +880,17 @@ export default function DashboardStep() {
             label="Anomalia" 
             color={{ bg: 'bg-red-100 dark:bg-red-500/20', text: 'text-red-600 dark:text-red-400' }}
             onClick={() => confirmAction('Registrar Anomalia', 'bg-red-500', () => alert('Modal Registrar Anomalia'))}
+          />
+
+          <ActionButton 
+            icon={MapPin}
+            label="ENTRADA/S AÍDA"
+            color={{ bg: 'bg-gray-200 dark:bg-zinc-800', text: 'text-gray-800 dark:text-gray-200' }}
+            onClick={() => {
+              setGateReason('')
+              setGateDescription('')
+              setViewState('gate')
+            }}
           />
         </div>
 
