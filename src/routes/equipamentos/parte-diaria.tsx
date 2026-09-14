@@ -66,7 +66,6 @@ function ParteDiariaPage() {
       const operandoList = pesados?.filter(eq => eq.location_status !== 'outside') || []
       
       setTotalPesadosCount(total)
-      setEmTrabalhoCount(operandoList.length)
       setActiveVehicles(operandoList)
 
       // 2. Busca histórico do dia
@@ -84,6 +83,32 @@ function ParteDiariaPage() {
           hMap[h.equipment_id].push(h)
         })
         setVehicleHistories(hMap)
+
+        let countAtividade = 0
+        operandoList.forEach(vehicle => {
+          const vHistory = hMap[vehicle.id] || []
+          const lastH = vHistory.length > 0 ? vHistory[vHistory.length - 1] : null
+          const currentStatus = lastH ? lastH.new_status : (vehicle.status || 'Sem status')
+          const statusLower = currentStatus.toLowerCase()
+          
+          let isAtividade = true
+          if (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline')) {
+            isAtividade = false
+          } else if (
+            statusLower.includes('chuva') || 
+            statusLower.includes('abastec') || 
+            statusLower.includes('aguardando') || 
+            statusLower.includes('pausa')
+          ) {
+            isAtividade = false
+          }
+          
+          if (isAtividade) countAtividade++
+        })
+        
+        setEmTrabalhoCount(countAtividade)
+      } else {
+        setEmTrabalhoCount(0)
       }
 
     } catch (error) {
