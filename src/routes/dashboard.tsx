@@ -176,6 +176,9 @@ function DashboardComponent() {
         }
       })
       
+      operacaoList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
+      manutencaoList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
+      
       return { operacao: operacaoCount, manutencao: manutencaoCount, operacaoList, manutencaoList }
     }
   })
