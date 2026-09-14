@@ -24,6 +24,8 @@ DECLARE
   v_req_id_private bigint;
   v_target_group text;
   v_speaker_phone text;
+  v_speaker_name text;
+  v_tema_str text;
   v_enabled boolean;
 BEGIN
   -- Carregar configurações do WhatsApp
@@ -60,20 +62,31 @@ BEGIN
     RETURN; -- Nenhum DDS agendado
   END IF;
 
-  -- Buscar número de WhatsApp do palestrante (se existir)
-  SELECT raw_user_meta_data->>'whatsapp' INTO v_speaker_phone
+  -- Buscar número de WhatsApp e Nome do palestrante (se existir)
+  SELECT raw_user_meta_data->>'whatsapp',
+         COALESCE(raw_user_meta_data->>'nome', raw_user_meta_data->>'full_name', 'Não informado') 
+  INTO v_speaker_phone, v_speaker_name
   FROM auth.users 
   WHERE id = v_dds.palestrante_id;
+
+  -- Tratar o tema
+  IF v_dds.tema IS NOT NULL AND trim(v_dds.tema) != '' THEN
+    v_tema_str := 'Tema: *' || v_dds.tema || '*';
+  ELSE
+    v_tema_str := 'Tema: *A definir*';
+  END IF;
 
   -- Formatar Mensagem
   IF is_today THEN
     v_message := '🟢 *Gestão Sucena - Lembrete Automático*' || chr(10) || chr(10) ||
-                 'Bom dia! Passando para lembrar que *hoje é o seu dia* de ministrar o DDS.' || chr(10) ||
-                 'Tema: *' || v_dds.tema || '*';
+                 'Bom dia! Passando para lembrar que *hoje* é o dia do DDS.' || chr(10) ||
+                 'Palestrante: *' || v_speaker_name || '*' || chr(10) ||
+                 v_tema_str;
   ELSE
     v_message := '🟢 *Gestão Sucena - Aviso Prévio*' || chr(10) || chr(10) ||
-                 'Boa tarde! Passando para lembrar que *amanhã* é você quem irá ministrar o DDS.' || chr(10) ||
-                 'Tema: *' || v_dds.tema || '*';
+                 'Boa tarde! Passando para lembrar que *amanhã* é o dia do DDS.' || chr(10) ||
+                 'Palestrante: *' || v_speaker_name || '*' || chr(10) ||
+                 v_tema_str;
   END IF;
 
   -- Preparar o Endpoint
