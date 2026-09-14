@@ -14,15 +14,10 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
       let baseUrl = data.url.trim()
       if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
 
-      // Determina endpoint baseado no tipo da URL (w-api vs evolution puro)
-      let endpoint = `${baseUrl}/message/sendMedia/${data.instanceId}`
-      
+      // Determina endpoint (a URL salva nas configs é a baseUrl)
+      let baseEndpoint = `${baseUrl}/message/sendMedia/${data.instanceId}`;
       if (baseUrl.includes('painel.w-api.app')) {
-        endpoint = `https://api.w-api.app/v1/messages/sendMedia?instanceId=${data.instanceId}`
-      } else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) {
-        endpoint = `${baseUrl}/v1/messages/sendMedia?instanceId=${data.instanceId}`
-      } else if (baseUrl.includes('api.w-api.app')) {
-        endpoint = `${baseUrl}/messages/sendMedia?instanceId=${data.instanceId}`
+        baseEndpoint = `https://api.w-api.app/message/sendMedia/${data.instanceId}`;
       }
 
       // Base64 gerado pelo canvas vem como "data:image/png;base64,iVBORw0KGgo..."
@@ -41,7 +36,7 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
         media: pureBase64
       }
 
-      const res = await fetch(endpoint, {
+      let res = await fetch(baseEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,6 +45,29 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
         },
         body: JSON.stringify(payload)
       })
+
+      if (res.status === 404) {
+        // Fallback for different W-API / Evolution versions
+        const fallbacks = [
+          baseEndpoint.replace('/message/sendMedia/', '/messages/sendMedia/'),
+          `${baseUrl}/v1/messages/sendMedia?instanceId=${data.instanceId}`,
+          `${baseUrl}/messages/sendMedia?instanceId=${data.instanceId}`,
+          `${baseUrl}/v1/message/sendMedia/${data.instanceId}`
+        ]
+
+        for (const fb of fallbacks) {
+          res = await fetch(fb, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.token}`,
+              'apikey': data.token
+            },
+            body: JSON.stringify(payload)
+          })
+          if (res.ok) break;
+        }
+      }
 
       const text = await res.text()
       if (!res.ok) {
