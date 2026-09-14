@@ -807,11 +807,14 @@ function AdminRoute() {
                     <button
                       onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, enabled_0600: !prev.ddsReminders?.enabled_0600 } }))}
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${whatsappSettings.ddsReminders?.enabled_0600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_0600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_0600 ? 'translate-x-6' : 'translate-x-0'}`} />
                     </button>
-                    <span className="font-semibold text-sm">Lembrete às 06:00h do dia do DDS (hoje é o seu dia)</span>
+                    <div>
+                      <span className="font-semibold text-sm block">Lembrete às 06:00h do dia do DDS (hoje é o seu dia)</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia somente no grupo do DDS</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_0600 ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
@@ -833,11 +836,14 @@ function AdminRoute() {
                     <button
                       onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, enabled_1600: !prev.ddsReminders?.enabled_1600 } }))}
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${whatsappSettings.ddsReminders?.enabled_1600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_1600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_1600 ? 'translate-x-6' : 'translate-x-0'}`} />
                     </button>
-                    <span className="font-semibold text-sm">Aviso 1 dia antes às 16:00h (você palestra amanhã)</span>
+                    <div>
+                      <span className="font-semibold text-sm block">Aviso 1 dia antes às 16:00h (você palestra amanhã)</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia somente no WhatsApp privado do palestrante</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_1600 ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>

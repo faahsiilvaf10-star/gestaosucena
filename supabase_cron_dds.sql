@@ -86,14 +86,8 @@ BEGIN
     v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
   END IF;
 
-  -- Determinar o grupo de destino
-  v_target_group := v_settings->'ddsReminders'->>'specificGroupId';
-  IF v_target_group IS NULL OR v_target_group = '' THEN
-    v_target_group := v_settings->>'groupId';
-  END IF;
-
-  -- 1. Enviar para o Grupo (se configurado)
-  IF v_target_group IS NOT NULL AND v_target_group != '' THEN
+  -- 1. Enviar para o Grupo (Apenas no dia do DDS às 06:00)
+  IF is_today AND v_target_group IS NOT NULL AND v_target_group != '' THEN
     v_payload_group := jsonb_build_object(
       'number', v_target_group,
       'phone', v_target_group,
@@ -111,8 +105,8 @@ BEGIN
     ) INTO v_req_id_group;
   END IF;
 
-  -- 2. Enviar para o Palestrante no privado (se o número estiver cadastrado)
-  IF v_speaker_phone IS NOT NULL AND v_speaker_phone != '' THEN
+  -- 2. Enviar para o Palestrante no privado (Apenas no aviso prévio às 16:00)
+  IF NOT is_today AND v_speaker_phone IS NOT NULL AND v_speaker_phone != '' THEN
     -- Remove caracteres não numéricos para garantir formato válido (opcional, dependendo de como salvam)
     -- Assumindo que a W-API entende números do Brasil se vier formatado razoavelmente.
     
