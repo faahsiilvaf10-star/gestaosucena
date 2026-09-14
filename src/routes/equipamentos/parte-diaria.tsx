@@ -273,17 +273,29 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
   let statusColor = 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-400 border-gray-200 dark:border-zinc-700'
   let statusDot = 'bg-gray-500'
   let statusLabel = 'Parado'
+  
+  const statusLower = currentStatus.toLowerCase()
 
-  if (currentStatus.includes('Operação')) {
-    statusColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-    statusDot = 'bg-emerald-500'
-    statusLabel = 'Em atividade'
-  } else if (currentStatus === 'Chuva' || currentStatus.includes('Abastecendo') || currentStatus.includes('Abastecimento')) {
+  // Se for finalizada ou sem status, fica cinza
+  if (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline')) {
+    statusLabel = 'Sem status'
+  }
+  // Status de Pausa / Parado -> Laranja
+  else if (
+    statusLower.includes('chuva') || 
+    statusLower.includes('abastec') || 
+    statusLower.includes('aguardando') || 
+    statusLower.includes('pausa')
+  ) {
     statusColor = 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-200 dark:border-orange-500/30'
     statusDot = 'bg-orange-500'
     statusLabel = 'Parado'
-  } else if (currentStatus === 'Sem status' || currentStatus === 'Jornada Finalizada') {
-    statusLabel = 'Sem status'
+  } 
+  // Qualquer outra atividade (Operando, Irrigação, Nova atividade, etc) -> Verde
+  else {
+    statusColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+    statusDot = 'bg-emerald-500'
+    statusLabel = 'Em atividade'
   }
 
   return (
