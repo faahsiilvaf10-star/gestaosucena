@@ -653,16 +653,8 @@ export default function DashboardStep() {
                 onClick={() => {
                   if (isActive) {
                     confirmAction(`Parar Abastecimento (${point})`, 'bg-emerald-500', () => {
-                      setActiveWaterPoint(null)
-                      setWaterLoadStartTime(null)
-                      localStorage.removeItem('app_motorista_water_point')
-                      localStorage.removeItem('app_motorista_water_start')
-                      
-                      const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-                      tl.push({ time: new Date().toISOString(), name: `Abastecimento de Água (${point})`, type: 'Finalizado', color: 'bg-emerald-500' })
-                      localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
-                      
-                      handleStatusChange('operating')
+                      // O handleStatusChange já identifica o activeWaterPoint e cria o evento Finalizado (Auto)
+                      handleStatusChange('waiting')
                       setViewState('operating')
                     })
                   } else {
