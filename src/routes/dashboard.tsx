@@ -152,7 +152,7 @@ function DashboardComponent() {
   const { data: eqData } = useQuery({
     queryKey: ['equipments_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('eq_equipments').select('location_status, last_exit_reason, name, plate_tag, type, updated_at')
+      const { data, error } = await supabase.from('eq_equipments').select('location_status, last_exit_reason, name, plate_tag, type, category, updated_at')
       if (error) throw error
       
       let operacaoCount = 0
@@ -161,7 +161,7 @@ function DashboardComponent() {
       let manutencaoList: any[] = []
       
       data?.forEach(eq => {
-        const isVehicle = eq.type === 'Leve' || eq.type === 'Equipamento Pesado'
+        const isVehicle = eq.category === 'Leve' || eq.category === 'Equipamento Pesado'
         
         if (isVehicle) {
           const isInside = eq.location_status !== 'outside'
