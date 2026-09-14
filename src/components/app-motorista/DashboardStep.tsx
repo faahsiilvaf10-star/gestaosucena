@@ -160,7 +160,7 @@ export default function DashboardStep() {
       
       setElapsedTime(`${hours}:${mins}:${secs}`)
 
-      if (activeStatus !== 'operating' && statusStartTime) {
+      if (statusStartTime) {
         const sDiff = differenceInSeconds(now, statusStartTime)
         const sHours = Math.floor(sDiff / 3600).toString().padStart(2, '0')
         const sMins = Math.floor((sDiff % 3600) / 60).toString().padStart(2, '0')
@@ -197,7 +197,7 @@ export default function DashboardStep() {
     }
 
     setActiveStatus(newStatus)
-    setStatusStartTime(newStatus === 'operating' ? null : now)
+    setStatusStartTime(now)
     
     // Save to timeline
     const timeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
@@ -228,12 +228,7 @@ export default function DashboardStep() {
       localStorage.removeItem('app_motorista_active_status_color')
     }
 
-    if (newStatus === 'operating') {
-      localStorage.removeItem('app_motorista_status_start')
-      setElapsedStatusTime('00:00:00')
-    } else {
-      localStorage.setItem('app_motorista_status_start', now.toISOString())
-    }
+    localStorage.setItem('app_motorista_status_start', now.toISOString())
   }
 
   const ActionButton = ({ icon: Icon, label, color, onClick, className = '' }: any) => (
@@ -639,16 +634,24 @@ export default function DashboardStep() {
         </div>
 
         <div className={`${sColors.text === 'text-white' ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'} rounded-2xl p-4 backdrop-blur-md border`}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <div className={`${sColors.text} opacity-80 text-xs font-semibold mb-1`}>Início da Jornada</div>
-              <div className="text-lg font-bold">
+              <div className={`${sColors.text} opacity-80 text-[11px] font-semibold mb-1 uppercase tracking-wider`}>Jornada</div>
+              <div className="text-base md:text-lg font-bold">
                 {dispatch?.shift_start_time ? format(new Date(dispatch.shift_start_time), 'HH:mm') : '--:--'}
               </div>
             </div>
             <div>
-              <div className={`${sColors.text} opacity-80 text-xs font-semibold mb-1`}>{sColors.timeLabel}</div>
-              <div className="text-lg font-bold font-mono tracking-wider">{activeStatus !== 'operating' ? elapsedStatusTime : elapsedTime}</div>
+              <div className={`${sColors.text} opacity-80 text-[11px] font-semibold mb-1 uppercase tracking-wider`}>Status</div>
+              <div className="text-base md:text-lg font-bold">
+                {statusStartTime ? format(statusStartTime, 'HH:mm') : '--:--'}
+              </div>
+            </div>
+            <div>
+              <div className={`${sColors.text} opacity-80 text-[11px] font-semibold mb-1 text-right uppercase tracking-wider`}>{sColors.timeLabel}</div>
+              <div className="text-base md:text-lg font-bold font-mono tracking-wider text-right">
+                {activeStatus !== 'operating' ? elapsedStatusTime : elapsedTime}
+              </div>
             </div>
           </div>
           {dispatch?.helper_name && (
