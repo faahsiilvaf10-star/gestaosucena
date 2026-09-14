@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useChat } from '../contexts/ChatContext'
 import { Message } from '../lib/api-chat'
 
 export function useChatRealtime(currentUserId?: string) {
-  const { setUnreadCountGlobally, activeConversation } = useChat()
+  const { setUnreadCountGlobally, activeChats } = useChat()
+  const activeChatsRef = useRef(activeChats)
+  
+  useEffect(() => {
+    activeChatsRef.current = activeChats
+  }, [activeChats])
 
   useEffect(() => {
     if (!currentUserId) return
@@ -53,7 +58,7 @@ export function useChatRealtime(currentUserId?: string) {
           if (newMessage.sender_id === currentUserId) return
           
           // Se eu estiver com a conversa aberta, marca como lida imediatamente
-          if (activeConversation === newMessage.conversation_id && document.visibilityState === 'visible') {
+          if (activeChatsRef.current.includes(newMessage.conversation_id) && document.visibilityState === 'visible') {
             // Marca como visualizada
             supabase.from('messages')
               .update({ status: 'read' })
@@ -62,11 +67,11 @@ export function useChatRealtime(currentUserId?: string) {
               
             supabase.from('conversation_participants')
               .update({ last_read_message_id: newMessage.id, last_read_at: new Date().toISOString() })
-              .eq('conversation_id', activeConversation)
+              .eq('conversation_id', newMessage.conversation_id)
               .eq('user_id', currentUserId)
               .then()
           } else {
-            if (payload.new.conversation_id !== activeConversation) {
+            if (!activeChatsRef.current.includes(newMessage.conversation_id)) {
               setUnreadCountGlobally((prev: number) => prev + 1)
             }  // Tocar som opcional aqui
           }
@@ -77,5 +82,5 @@ export function useChatRealtime(currentUserId?: string) {
     return () => {
       supabase.removeChannel(messagesChannel)
     }
-  }, [currentUserId, activeConversation, setUnreadCountGlobally])
+  }, [currentUserId, setUnreadCountGlobally])
 }

@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { WeatherWidget } from '../components/WeatherWidget'
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/dashboard')({
 
 function DashboardComponent() {
   const { isDark } = useTheme()
+  const navigate = useNavigate()
   const hojeDay = new Date().getDate()
   
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -550,13 +551,16 @@ function DashboardComponent() {
           )}
 
           {/* DDS HOJE */}
-          <div className="dashboard-card card-dds relative">
+          <div 
+            className="dashboard-card card-dds relative cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+          >
             <div className="dds-card-content w-full">
               <div className="dds-main w-full pr-12">
                 {ddsData?.hoje?.postedMedia ? (
                   <div 
                     className="w-24 sm:w-32 rounded-xl overflow-hidden shrink-0 shadow-sm border border-gray-100/50 cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setExpandedImage(ddsData.hoje.postedMedia)}
+                    onClick={(e) => { e.stopPropagation(); setExpandedImage(ddsData.hoje.postedMedia); }}
                   >
                     <img src={ddsData.hoje.postedMedia} alt="DDS Realizado" className="w-full h-auto object-contain" />
                   </div>
@@ -577,7 +581,7 @@ function DashboardComponent() {
                       <div className="dds-theme">Tema: {ddsData?.hoje?.tema || 'Sem tema agendado'}</div>
                     </div>
                     <button 
-                      onClick={() => setIsDdsModalOpen(true)}
+                      onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
                       className="hidden sm:flex text-xs items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-1.5 rounded-lg font-semibold transition-colors border border-blue-500/20 shrink-0"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -586,7 +590,7 @@ function DashboardComponent() {
                   </div>
                   {/* Botão Mobile */}
                   <button 
-                    onClick={() => setIsDdsModalOpen(true)}
+                    onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
                     className="sm:hidden mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-2 rounded-lg font-semibold transition-colors border border-blue-500/20"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -601,7 +605,10 @@ function DashboardComponent() {
           </div>
 
           {/* DDS AMANHÃ */}
-          <div className="dashboard-card card-dds">
+          <div 
+            className="dashboard-card card-dds cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+          >
             <div className="dds-card-content">
               <div className="dds-main">
                 {ddsData?.amanha?.palestrante?.avatar ? (

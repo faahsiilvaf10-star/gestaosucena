@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlmoxarifadoRouteImport } from './routes/almoxarifado'
 import { Route as AmbientesRouteImport } from './routes/ambientes'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
@@ -60,6 +61,11 @@ import { Route as AlmoxarifadoRequisicoesNovaRouteImport } from './routes/almoxa
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlmoxarifadoRoute = AlmoxarifadoRouteImport.update({
@@ -300,6 +306,7 @@ const AlmoxarifadoRequisicoesNovaRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/almoxarifado': typeof AlmoxarifadoRouteWithChildren
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -349,6 +356,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/almoxarifado': typeof AlmoxarifadoRouteWithChildren
   '/ambientes': typeof AmbientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -444,6 +453,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/almoxarifado'
     | '/ambientes'
     | '/configuracoes'
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/ambientes'
     | '/configuracoes'
     | '/dashboard'
@@ -536,6 +547,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/almoxarifado'
     | '/ambientes'
     | '/configuracoes'
@@ -586,6 +598,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AlmoxarifadoRoute: typeof AlmoxarifadoRouteWithChildren
   AmbientesRoute: typeof AmbientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/almoxarifado': {
@@ -1058,6 +1078,7 @@ const SegurancaRouteWithChildren = SegurancaRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AlmoxarifadoRoute: AlmoxarifadoRouteWithChildren,
   AmbientesRoute: AmbientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,

@@ -5,8 +5,9 @@ interface ChatContextData {
   setIsSidebarOpen: (isOpen: boolean) => void
   unreadCountGlobally: number
   setUnreadCountGlobally: React.Dispatch<React.SetStateAction<number>>
-  activeConversation: string | null
-  setActiveConversation: (id: string | null) => void
+  activeChats: string[]
+  openChat: (id: string) => void
+  closeChat: (id: string) => void
   toggleSidebar: () => void
 }
 
@@ -15,9 +16,25 @@ const ChatContext = createContext<ChatContextData>({} as ChatContextData)
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [unreadCountGlobally, setUnreadCountGlobally] = useState(0)
-  const [activeConversation, setActiveConversation] = useState<string | null>(null)
+  const [activeChats, setActiveChats] = useState<string[]>([])
 
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev)
+
+  const openChat = (id: string) => {
+    setActiveChats(prev => {
+      // Se já está aberto, traz para frente se necessário, mas como é array lado a lado, apenas garante que está lá.
+      if (prev.includes(id)) return prev;
+      // Adiciona o novo ID. Limita a, por exemplo, 3 conversas simultâneas na tela? 
+      // Por simplicidade de Facebook, vamos manter até 3 abertas, removendo a mais antiga.
+      const newChats = [...prev, id];
+      if (newChats.length > 3) newChats.shift();
+      return newChats;
+    })
+  }
+
+  const closeChat = (id: string) => {
+    setActiveChats(prev => prev.filter(chatId => chatId !== id))
+  }
 
   // Ocultar barra de rolagem do body quando o chat está aberto no mobile (opcional)
   useEffect(() => {
@@ -38,8 +55,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsSidebarOpen,
         unreadCountGlobally,
         setUnreadCountGlobally,
-        activeConversation,
-        setActiveConversation,
+        activeChats,
+        openChat,
+        closeChat,
         toggleSidebar,
       }}
     >

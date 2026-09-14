@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, MoreVertical, Search, Play } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Search, Play, Minus, User } from 'lucide-react'
 import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { supabase } from '../../lib/supabase'
-import { getConversationMessages, Message } from '../../lib/api-chat'
+import { getConversationMessages, clearConversation, Message } from '../../lib/api-chat'
 import { format, isToday, isYesterday } from 'date-fns'
 import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
@@ -18,12 +18,14 @@ function formatMessageDate(dateString: string) {
 
 export function ChatWindow({ currentUserId, conversationId }: { currentUserId: string, conversationId: string }) {
   const { isDark } = useTheme()
-  const { setActiveConversation } = useChat()
+  const { closeChat } = useChat()
   const [messages, setMessages] = useState<Message[]>([])
   const [contactName, setContactName] = useState('Carregando...')
   const [contactRole, setContactRole] = useState('')
   const [contactStatus, setContactStatus] = useState('')
   const [contactAvatar, setContactAvatar] = useState('')
+  const [showOptions, setShowOptions] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
   
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -40,7 +42,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
 
     const loadData = async () => {
       // 1. Carrega as mensagens
-      const msgs = await getConversationMessages(conversationId)
+      const msgs = await getConversationMessages(conversationId, currentUserId)
       // As mensagens vêm mais recentes primeiro (order: created_at desc)
       setMessages(msgs.reverse())
       setTimeout(scrollToBottom, 100)
@@ -122,41 +124,95 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
     }
   })
 
+  const handleClearConversation = async () => {
+    if (confirm('Tem certeza que deseja limpar as mensagens desta conversa da sua tela?')) {
+      await clearConversation(conversationId, currentUserId)
+      setMessages([])
+      setShowOptions(false)
+    }
+  }
+
+  if (isMinimized) {
+    return (
+      <div 
+        onClick={() => setIsMinimized(false)}
+        className="pointer-events-auto w-[52px] h-[52px] rounded-full shadow-xl cursor-pointer hover:scale-105 transition-transform border-2 border-[#D6A72B] flex items-center justify-center bg-gray-200 shrink-0 relative mb-1"
+        title={contactName}
+      >
+        {contactAvatar ? (
+          <img src={contactAvatar} alt={contactName} className="w-full h-full object-cover rounded-full" />
+        ) : (
+          <User size={24} className="text-gray-400" />
+        )}
+        {contactStatus === 'Online' && (
+          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white dark:border-[#111216]" />
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">
-      {/* HEADER */}
-      <div className={`h-16 shrink-0 px-4 flex items-center justify-between border-b z-10 ${isDark ? 'border-white/5 bg-[#111216]' : 'border-black/5 bg-white'}`}>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setActiveConversation(null)}
-            className="md:hidden p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
+    <div className={`pointer-events-auto shadow-2xl flex flex-col transition-all duration-300 rounded-t-xl ${isDark ? 'bg-[#111216] border border-white/10' : 'bg-white border border-black/10'}`} style={{ width: '330px', height: '450px', maxHeight: 'calc(100vh - 100px)' }}>
+      <div className="flex flex-col h-full w-full overflow-hidden relative rounded-t-xl">
+        {/* HEADER */}
+      <div className={`h-[52px] shrink-0 px-3 flex items-center justify-between border-b z-20 shadow-sm ${isDark ? 'border-white/5 bg-[#1A1B20]' : 'border-black/5 bg-gray-50'}`}>
+        <div className="flex items-center gap-2 overflow-hidden flex-1 cursor-pointer">
           
-          <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-            {contactAvatar ? (
-              <img src={contactAvatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-               <span className="text-gray-500 font-bold">{contactName.substring(0,2).toUpperCase()}</span>
+          <div className="relative shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              {contactAvatar ? (
+                <img src={contactAvatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                 <span className="text-gray-500 font-bold text-xs">{contactName.substring(0,2).toUpperCase()}</span>
+              )}
+            </div>
+            {contactStatus === 'Online' && (
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-current" style={{ borderColor: isDark ? '#1A1B20' : '#F9FAFB' }} />
             )}
           </div>
           
-          <div className="flex flex-col leading-tight max-w-[200px]">
-            <span className="font-semibold text-sm truncate flex items-center" title={contactName}>
+          <div className="flex flex-col leading-tight overflow-hidden">
+            <span className={`font-semibold text-[13px] truncate flex items-center ${isDark ? 'text-white' : 'text-gray-900'}`} title={contactName}>
               {contactName}
               {isAdmin(contactName, contactRole) && <VerifiedBadge />}
             </span>
-            <span className={`text-xs truncate ${contactStatus === 'Online' ? 'text-[#D6A72B]' : 'text-gray-500'}`}>{contactStatus}</span>
+            <span className={`text-[10px] truncate ${contactStatus === 'Online' ? 'text-[#D6A72B]' : 'text-gray-500'}`}>{contactStatus}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-gray-400">
-          <button className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}>
-            <Search size={18} />
+        <div className="flex items-center gap-1 text-gray-400 relative">
+          <button 
+            onClick={() => setIsMinimized(true)}
+            className={`p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-white/10 text-white/70' : 'hover:bg-black/5 text-gray-600'}`}
+            title="Minimizar"
+          >
+            <Minus size={16} />
           </button>
-          <button className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}>
-            <MoreVertical size={18} />
+
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className={`p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-white/10 text-white/70' : 'hover:bg-black/5 text-gray-600'}`}
+          >
+            <MoreVertical size={16} />
+          </button>
+          
+          {showOptions && (
+            <div className={`absolute top-10 right-0 w-36 rounded-lg shadow-xl overflow-hidden z-50 border ${isDark ? 'bg-[#15161A] border-white/10' : 'bg-white border-gray-100'}`}>
+              <button 
+                onClick={handleClearConversation}
+                className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-gray-50 text-gray-900'}`}
+              >
+                Limpar conversa
+              </button>
+            </div>
+          )}
+
+          <button 
+            onClick={() => closeChat(conversationId)}
+            className={`p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-red-500/20 hover:text-red-400 text-white/70' : 'hover:bg-red-50 hover:text-red-500 text-gray-600'}`}
+          >
+            <ArrowLeft className="hidden" /> {/* Para manter import se necessario, usaremos um X */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       </div>
@@ -192,28 +248,56 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
                       : (isDark ? 'bg-[#202126] text-gray-900 dark:text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5')
                     }
                   `}>
-                    {msg.type === 'text' && (
-                      <p className="text-[14.5px] leading-snug whitespace-pre-wrap break-words">{msg.text}</p>
-                    )}
-                    {msg.type === 'audio' && (
-                      <div className="flex items-center gap-3 pr-8 min-w-[200px]">
-                        <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                          <Play size={18} className={isMine ? 'text-[#D6A72B]' : 'text-gray-300'} />
-                        </button>
-                        {/* Audio Waveform dummy */}
-                        <div className="flex-1 flex items-center gap-0.5 opacity-50">
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
-                            <div key={i} className="w-1 h-3 bg-current rounded-full" style={{ height: `${Math.max(2, Math.random() * 16)}px` }}/>
-                          ))}
-                        </div>
-                        <audio src={msg.text} controls className="hidden" />
-                      </div>
-                    )}
-                    {msg.type === 'image' && (
-                      <div className="max-w-[250px] md:max-w-[300px] overflow-hidden rounded-xl">
-                        <img src={msg.text} alt="Anexo" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.text, '_blank')} />
-                      </div>
-                    )}
+                    {(() => {
+                      const parts = (msg.text || '').split('|')
+                      const url = parts[0]
+                      const fileName = parts.length > 1 ? parts[1] : 'Anexo'
+
+                      if (msg.type === 'text') {
+                        return <p className="text-[14.5px] leading-snug whitespace-pre-wrap break-words">{msg.text}</p>
+                      }
+                      
+                      if (msg.type === 'audio') {
+                        return (
+                          <div className="flex flex-col gap-2 min-w-[200px]">
+                            <audio src={url} controls className="w-full h-10" />
+                            {fileName && <span className="text-[10px] opacity-70 truncate">{fileName}</span>}
+                          </div>
+                        )
+                      }
+                      
+                      if (msg.type === 'image') {
+                        return (
+                          <div className="max-w-[250px] md:max-w-[300px] overflow-hidden rounded-xl">
+                            <img src={url} alt={fileName} className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(url, '_blank')} />
+                          </div>
+                        )
+                      }
+                      
+                      if (msg.type === 'video') {
+                        return (
+                          <div className="max-w-[250px] md:max-w-[300px] overflow-hidden rounded-xl">
+                            <video src={url} controls className="w-full h-auto" />
+                          </div>
+                        )
+                      }
+                      
+                      if (msg.type === 'document') {
+                        return (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isMine ? (isDark ? 'border-white/10 hover:bg-white/5 text-gray-900 dark:text-white' : 'border-black/10 hover:bg-black/5 text-gray-900') : (isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-black/10 hover:bg-black/5 text-gray-900')}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isMine ? 'bg-[#D6A72B]' : 'bg-gray-500/20'}`}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isMine ? 'text-black' : 'text-current'}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <div className="flex flex-col overflow-hidden max-w-[150px]">
+                              <span className="font-semibold text-sm truncate">{fileName}</span>
+                              <span className="text-[10px] opacity-70 uppercase tracking-wider text-left">Baixar Arquivo</span>
+                            </div>
+                          </a>
+                        )
+                      }
+
+                      return null
+                    })()}
                     <div className="float-right mt-1 ml-3 flex items-center gap-1 opacity-70">
                       <span className="text-[10px]">{time}</span>
                       {isMine && (
@@ -238,6 +322,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         conversationId={conversationId} 
         onMessageSent={handleMessageSent} 
       />
+      </div>
     </div>
   )
 }

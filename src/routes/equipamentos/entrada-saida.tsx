@@ -443,12 +443,13 @@ function EntradaSaidaPage() {
     }
   }, [equipments])
 
-  const parsedActionDate = actionDateTime ? new Date(actionDateTime) : new Date();
+  const parsedActionDate = (actionDateTime && !isNaN(new Date(actionDateTime).getTime())) ? new Date(actionDateTime) : new Date();
   const actionTimeStr = actionDateTime && actionDateTime.includes('T') ? actionDateTime.split('T')[1].substring(0,5) : "00:00";
 
   const updateActionDateTime = (newDate?: Date, newTime?: string) => {
     const d = newDate || parsedActionDate;
-    const t = newTime !== undefined ? newTime : actionTimeStr;
+    let t = newTime !== undefined ? newTime : actionTimeStr;
+    if (!t) t = "00:00";
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

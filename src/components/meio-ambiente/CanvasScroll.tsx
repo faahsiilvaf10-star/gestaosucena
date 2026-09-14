@@ -12,7 +12,7 @@ export function CanvasScroll() {
   
   const currentFrame = useRef(0)
   const lastTime = useRef(0)
-  const requestRef = useRef<number>()
+  const requestRef = useRef<number>(0)
   
   // Cache layout calculations to avoid computing every frame
   const layoutCache = useRef({

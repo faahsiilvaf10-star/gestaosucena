@@ -7,6 +7,8 @@ import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
 import { Turnstile } from '@marsidev/react-turnstile'
+import { getAvailableRoles } from '../lib/roles'
+import { isRegistrationOpen } from '../lib/settings'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -15,13 +17,15 @@ export const Route = createFileRoute('/')({
 function Index() {
   const navigate = useNavigate()
   const { isDark } = useTheme()
-  const [viewState, setViewState] = useState<'LOGIN' | 'REGISTER' | 'SUCCESS'>('LOGIN')
+  const [viewState, setViewState] = useState<'LOGIN' | 'REGISTER' | 'SUCCESS' | 'FORGOT_PASSWORD' | 'RESET_PASSWORD'>('LOGIN')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [availableRoles, setAvailableRoles] = useState<string[]>([])
+  const [registrationOpen, setRegistrationOpen] = useState(true)
 
   const translateAuthError = (message: string) => {
     const errorMap: Record<string, string> = {
@@ -61,7 +65,65 @@ function Index() {
       setPassword(savedPassword)
       setRememberMe(true)
     }
+    
+    // Load dynamic roles
+    getAvailableRoles().then(roles => setAvailableRoles(roles))
+    
+    // Load registration status
+    isRegistrationOpen().then(isOpen => setRegistrationOpen(isOpen))
+    // Check for password recovery hash
+    if (window.location.hash.includes('type=recovery')) {
+      setViewState('RESET_PASSWORD')
+    }
   }, [])
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMessage('')
+    if (!email) {
+      toast.error('Preencha o campo de email.')
+      return
+    }
+
+    setIsLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/',
+    })
+    setIsLoading(false)
+
+    if (error) {
+      const translatedError = translateAuthError(error.message)
+      toast.error('Erro: ' + translatedError)
+      setErrorMessage(translatedError)
+    } else {
+      toast.success('Email de recuperação enviado!')
+      setViewState('LOGIN')
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMessage('')
+    if (!password || password.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres.')
+      return
+    }
+
+    setIsLoading(true)
+    const { error } = await supabase.auth.updateUser({ password })
+    setIsLoading(false)
+
+    if (error) {
+      const translatedError = translateAuthError(error.message)
+      toast.error('Erro ao redefinir: ' + translatedError)
+      setErrorMessage(translatedError)
+    } else {
+      toast.success('Senha redefinida com sucesso!')
+      setViewState('LOGIN')
+      // Clear hash from URL
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -422,16 +484,26 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <a href="#" className={linkClass}>
+              <a href="#" className={linkClass} onClick={(e) => {
+                e.preventDefault()
+                setErrorMessage('')
+                setViewState('FORGOT_PASSWORD')
+              }}>
                 Esqueceu a senha?
               </a>
-              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
-                Não tem uma conta?{' '}
-                <span className={linkClass} onClick={() => {
-                  setErrorMessage('')
-                  !isLoading && setViewState('REGISTER')
-                }}>Cadastre-se</span>
-              </p>
+              {registrationOpen ? (
+                <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
+                  Não tem uma conta?{' '}
+                  <span className={linkClass} onClick={() => {
+                    setErrorMessage('')
+                    !isLoading && setViewState('REGISTER')
+                  }}>Cadastre-se</span>
+                </p>
+              ) : (
+                <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-black/40'} italic`}>
+                  A criação de novas contas está temporariamente desativada.
+                </p>
+              )}
             </div>
           </form>
         )}
@@ -476,20 +548,9 @@ function Index() {
                 disabled={isLoading}
               >
                 <option value="" disabled hidden>Selecione um Cargo</option>
-                <option value="Preposto">Preposto</option>
-                <option value="Encarregado Geral">Encarregado Geral</option>
-                <option value="Encarregado I">Encarregado I</option>
-                <option value="Encarregado II">Encarregado II</option>
-                <option value="Técnico de Segurança I">Técnico de Segurança I</option>
-                <option value="Técnico de Segurança II">Técnico de Segurança II</option>
-                <option value="Técnico Meio Ambiente">Técnico Meio Ambiente</option>
-                <option value="Aux. Administrativo">Aux. Administrativo</option>
-                <option value="Aux. Almoxarifado">Aux. Almoxarifado</option>
-                <option value="Planejador">Planejador</option>
-                <option value="Engenheiro Civil">Engenheiro Civil</option>
-                <option value="Engenheiro de Planejamento">Engenheiro de Planejamento</option>
-                <option value="Técnico de Planejamento">Técnico de Planejamento</option>
-                <option value="Engenheiro de Segurança">Engenheiro de Segurança</option>
+                {availableRoles.map(roleOption => (
+                  <option key={roleOption} value={roleOption}>{roleOption}</option>
+                ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -579,6 +640,86 @@ function Index() {
               Fazer Login Agora
             </button>
           </div>
+        )}
+
+        {viewState === 'FORGOT_PASSWORD' && (
+          <form className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" onSubmit={handleForgotPassword}>
+            <div>
+              <p className={`text-sm mb-4 text-center ${isDark ? 'text-gray-900 dark:text-white/80' : 'text-gray-600'}`}>
+                Digite o e-mail associado à sua conta. Enviaremos um link para você redefinir sua senha.
+              </p>
+              <input 
+                type="email" 
+                placeholder="E-mail de recuperação" 
+                className={inputClass} 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+
+            {errorMessage && (
+              <div className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md border border-red-500/20">
+                {errorMessage}
+              </div>
+            )}
+
+            <button type="submit" className={btnClass} disabled={isLoading}>
+              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Enviar Link de Recuperação'}
+            </button>
+            
+            <div className="flex flex-col items-center gap-4 mt-6">
+              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
+                Lembrou sua senha?{' '}
+                <span className={linkClass} onClick={() => {
+                  setErrorMessage('')
+                  !isLoading && setViewState('LOGIN')
+                }}>Voltar para o Login</span>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {viewState === 'RESET_PASSWORD' && (
+          <form className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" onSubmit={handleResetPassword}>
+            <div>
+              <h3 className={`text-lg font-semibold text-center mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Redefinir Senha
+              </h3>
+              <p className={`text-sm mb-4 text-center ${isDark ? 'text-gray-900 dark:text-white/80' : 'text-gray-600'}`}>
+                Digite a sua nova senha abaixo.
+              </p>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Nova Senha" 
+                  className={passwordInputClass} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-gray-900 dark:text-white/40 hover:text-gray-900 dark:text-white/80' : 'text-black/40 hover:text-black/80'}`}
+                  title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {errorMessage && (
+              <div className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md border border-red-500/20">
+                {errorMessage}
+              </div>
+            )}
+
+            <button type="submit" className={btnClass} disabled={isLoading}>
+              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Salvar Nova Senha'}
+            </button>
+          </form>
         )}
 
       </div>

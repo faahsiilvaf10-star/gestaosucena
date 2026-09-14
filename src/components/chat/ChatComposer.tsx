@@ -122,24 +122,29 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
       conversation_id: conversationId,
       sender_id: currentUserId,
       type: 'audio',
-      text: publicUrl, // Ideal seria usar attachments
+      text: `${publicUrl}|Áudio Gravado`,
     })
     
     onMessageSent()
   }
 
-  // ==== UPLOAD DE IMAGEM ====
+  // ==== UPLOAD DE ARQUIVOS (Mídia/Docs) ====
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Limit size or types if necessary
     setIsUploading(true)
     try {
-      const fileName = `image_${Date.now()}_${file.name}`
+      let msgType: 'image' | 'video' | 'audio' | 'document' = 'document'
+      if (file.type.startsWith('image/')) msgType = 'image'
+      else if (file.type.startsWith('video/')) msgType = 'video'
+      else if (file.type.startsWith('audio/')) msgType = 'audio'
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const fileName = `${msgType}_${Date.now()}_${safeName}`
       const filePath = `${conversationId}/${fileName}`
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('chat_media')
         .upload(filePath, file, { upsert: true })
 
@@ -150,8 +155,8 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
       await sendMessage({
         conversation_id: conversationId,
         sender_id: currentUserId,
-        type: 'image',
-        text: publicUrl,
+        type: msgType,
+        text: `${publicUrl}|${file.name}`,
       })
 
       onMessageSent()
@@ -222,7 +227,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept="image/*,video/*" 
+            accept="image/*,video/*,audio/*,.zip,.rar,application/zip,application/x-rar-compressed" 
             className="hidden" 
           />
           
@@ -232,9 +237,9 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite uma mensagem"
-              className="w-full bg-transparent px-4 py-3 outline-none resize-none max-h-32 text-[15px] custom-scrollbar"
+              className="w-full bg-transparent px-4 py-2.5 outline-none resize-none max-h-32 text-[15px] custom-scrollbar"
               rows={1}
-              style={{ minHeight: '44px' }}
+              style={{ minHeight: '44px', lineHeight: '1.4' }}
             />
           </div>
           

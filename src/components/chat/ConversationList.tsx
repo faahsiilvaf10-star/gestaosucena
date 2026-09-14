@@ -10,7 +10,7 @@ import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 // Utilizaremos dados locais de teste se a RPC original falhar para não quebrar.
 export function ConversationList({ currentUserId }: { currentUserId: string }) {
   const { isDark } = useTheme()
-  const { setActiveConversation } = useChat()
+  const { openChat, setIsSidebarOpen } = useChat()
   const [onlineUsers, setOnlineUsers] = useState<any[]>([])
   const [conversations, setConversations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,9 +90,11 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
   const handleStartChat = async (targetUser: any) => {
     try {
       const convId = await getOrCreateDirectConversation(currentUserId, targetUser.id)
-      setActiveConversation(convId) 
-    } catch (err) {
+      openChat(convId)
+      if (window.innerWidth < 768) setIsSidebarOpen(false)
+    } catch (err: any) {
       console.error('Error starting chat:', err)
+      alert('Erro ao abrir chat: ' + err.message)
     }
   }
 
@@ -156,7 +158,10 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
               return (
                 <button
                   key={conv.id}
-                  onClick={() => setActiveConversation(conv.id)}
+                  onClick={() => {
+                    openChat(conv.id)
+                    if (window.innerWidth < 768) setIsSidebarOpen(false)
+                  }}
                   className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
                     isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'
                   }`}

@@ -83,7 +83,15 @@ export async function getConversations() {
   return data
 }
 
-export async function getConversationMessages(conversationId: string, limit = 50, beforeTime?: string) {
+export async function getConversationMessages(conversationId: string, currentUserId: string, limit = 50, beforeTime?: string) {
+  // First get the cleared_at timestamp for the current user
+  const { data: participant } = await supabase
+    .from('conversation_participants')
+    .select('cleared_at')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', currentUserId)
+    .single()
+
   let query = supabase
     .from('messages')
     .select(`
@@ -96,6 +104,10 @@ export async function getConversationMessages(conversationId: string, limit = 50
 
   if (beforeTime) {
     query = query.lt('created_at', beforeTime)
+  }
+  
+  if (participant?.cleared_at) {
+    query = query.gt('created_at', participant.cleared_at)
   }
 
   const { data, error } = await query
@@ -136,10 +148,15 @@ export async function getOrCreateDirectConversation(userId1: string, userId2: st
   // First, try to find an existing conversation
   // This is a complex query, we can use an RPC ideally, but for now we'll do it with JS
   
-  const { data: myParticipations } = await supabase
+  const { data: myParticipations, error: myPartError } = await supabase
     .from('conversation_participants')
     .select('conversation_id')
     .eq('user_id', userId1)
+    
+  if (myPartError) {
+    console.error('myPartError', myPartError)
+    throw new Error('Falha ao buscar participações: ' + myPartError.message)
+  }
 
   if (myParticipations && myParticipations.length > 0) {
     const myConvIds = myParticipations.map(p => p.conversation_id)
@@ -163,7 +180,10 @@ export async function getOrCreateDirectConversation(userId1: string, userId2: st
     .select()
     .single()
     
-  if (convError || !newConv) throw new Error('Could not create conversation')
+  if (convError || !newConv) {
+    console.error('convError', convError)
+    throw new Error('Erro ao criar conversa no banco: ' + (convError?.message || 'Erro desconhecido'))
+  }
 
   // Add participants
   await supabase
@@ -174,4 +194,17 @@ export async function getOrCreateDirectConversation(userId1: string, userId2: st
     ])
 
   return newConv.id
+}
+
+export async function clearConversation(conversationId: string, userId: string) {
+  const { error } = await supabase
+    .from('conversation_participants')
+    .update({ cleared_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error clearing conversation:', error)
+    throw error
+  }
 }

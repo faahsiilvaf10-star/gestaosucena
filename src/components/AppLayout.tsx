@@ -1,8 +1,9 @@
 import { useState, useEffect, ReactNode } from 'react'
-import { useNavigate, useLocation } from '@tanstack/react-router'
+import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import {
   LogOut,
+  Shield,
 } from 'lucide-react'
 import { LogoutOverlay } from './LogoutOverlay'
 import { useTheme } from '../contexts/ThemeContext'
@@ -13,6 +14,9 @@ import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { ChatSidebar } from './ChatSidebar'
 import { WindowsNavbar } from './WindowsNavbar'
+import { ChatWindow } from './chat/ChatWindow'
+import { DdsUploadModal } from './DdsUploadModal'
+import { isAdmin } from './ui/VerifiedBadge'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -24,7 +28,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
   const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '', avatarUrl: '' })
   
-  const { toggleSidebar, unreadCountGlobally } = useChat()
+  const { toggleSidebar, unreadCountGlobally, activeChats, isSidebarOpen } = useChat()
   usePresence(currentUser.id)
   useChatRealtime(currentUser.id)
   
@@ -104,6 +108,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {/* Chat Sidebar Overlay */}
       {currentUser.id && <ChatSidebar currentUserId={currentUser.id} />}
 
+      {/* Floating Chat Windows */}
+      <div 
+        className={`fixed bottom-[40px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${
+          isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]'
+        }`}
+      >
+        {currentUser.id && activeChats.map(chatId => (
+          <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
+        ))}
+      </div>
+
       {/* Bottom Status Bar */}
       <footer 
         className={`fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
@@ -134,9 +149,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
           </button>
+          
+          {isAdmin(currentUser.name, currentUser.role) && (
+            <Link 
+              to="/admin"
+              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
+              title="Administração"
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
+              <Shield size={16} />
+            </Link>
+          )}
         </div>
 
-        {/* Bottom Center: Logo */}
+        {/* Bottom Right: Tools */}
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center pointer-events-none">
           <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-5 w-auto object-contain transition-all duration-300 opacity-60 ${isDark ? 'filter brightness-0 invert' : ''}`} />
         </div>
