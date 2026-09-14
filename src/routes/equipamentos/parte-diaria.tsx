@@ -9,11 +9,11 @@ import {
 import { format, subDays, addDays, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-export const Route = createFileRoute('/equipamentos/painel-motorista')({
-  component: PainelMotoristaPage,
+export const Route = createFileRoute('/equipamentos/parte-diaria')({
+  component: ParteDiariaPage,
 })
 
-function PainelMotoristaPage() {
+function ParteDiariaPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [refreshCountdown, setRefreshCountdown] = useState(15)
@@ -140,7 +140,7 @@ function PainelMotoristaPage() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-gray-900 dark:text-white">
-              Painel do Motorista
+              Parte Diária
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
               Acompanhamento operacional de veículos, motoristas e atividades em campo

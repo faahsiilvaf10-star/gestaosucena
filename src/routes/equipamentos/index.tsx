@@ -7,7 +7,7 @@ export const Route = createFileRoute('/equipamentos/')({
 
 const HUB_ITEMS = [
   { name: 'Entrada e Saída', icon: ArrowLeftRight, href: '/equipamentos/entrada-saida', desc: 'Registrar movimentações' },
-  { name: 'Painel do Motorista', icon: MapPin, href: '/equipamentos/painel-motorista', desc: 'Acompanhamento de rotas e atividades' },
+
   { name: 'App Motorista', icon: Truck, href: '/equipamentos/app-motorista', desc: 'Aplicativo do motorista' },
   { name: 'Parte Diária', icon: Truck, href: '/equipamentos/parte-diaria', desc: 'Relatório diário' },
   { name: 'Todos os Equipamentos', icon: ListChecks, href: '/equipamentos/todos', desc: 'Visualizar a frota completa' },
