@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Loader2, ArrowLeft, KeyRound } from 'lucide-react'
 
-const DRIVERS = [
+export const DRIVERS = [
   { id: 'EM', name: 'EDIELSON MARINHO MENDES' },
   { id: 'ED', name: 'ENISON DA SILVA SANTOS' },
   { id: 'JB', name: 'JOÃO BOSCO DA SILVA COSTA' },

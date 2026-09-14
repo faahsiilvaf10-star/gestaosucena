@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { format, subDays, addDays, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { DRIVERS } from '@/components/app-motorista/LoginStep'
 
 export const Route = createFileRoute('/equipamentos/parte-diaria')({
   component: ParteDiariaPage,
@@ -263,6 +264,27 @@ function MetricCard({ title, value, total, color }: { title: string, value: numb
 function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] }) {
   const [expanded, setExpanded] = useState(false)
 
+  const lastHistory = history.length > 0 ? history[history.length - 1] : null
+  const currentStatus = lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status')
+  const driverId = lastHistory ? lastHistory.driver_id : null
+  const driverName = driverId ? DRIVERS.find(d => d.id === driverId)?.name || 'Desconhecido' : 'Motorista não atribuído'
+
+  let statusColor = 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-400 border-gray-200 dark:border-zinc-700'
+  let statusDot = 'bg-gray-500'
+  let statusLabel = 'Parado'
+
+  if (currentStatus.includes('Operação')) {
+    statusColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+    statusDot = 'bg-emerald-500'
+    statusLabel = 'Em atividade'
+  } else if (currentStatus === 'Chuva' || currentStatus.includes('Abastecendo') || currentStatus.includes('Abastecimento')) {
+    statusColor = 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-200 dark:border-orange-500/30'
+    statusDot = 'bg-orange-500'
+    statusLabel = 'Parado'
+  } else if (currentStatus === 'Sem status' || currentStatus === 'Jornada Finalizada') {
+    statusLabel = 'Sem status'
+  }
+
   return (
     <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-sm transition-all duration-300 overflow-hidden">
       {/* Header Row */}
@@ -277,13 +299,13 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">{vehicle.name || vehicle.plate_tag}</h3>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
-                <span className="w-1.5 h-1.5 inline-block bg-emerald-500 rounded-full mr-1.5 mb-0.5"></span>
-                Em atividade
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusColor}`}>
+                <span className={`w-1.5 h-1.5 inline-block rounded-full mr-1.5 mb-0.5 ${statusDot}`}></span>
+                {statusLabel}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Motorista não atribuído</p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Status: <span className="text-gray-700 dark:text-gray-300 font-semibold">{vehicle.status || 'Operando'}</span></p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{driverName}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Status: <span className="text-gray-700 dark:text-gray-300 font-semibold">{currentStatus}</span></p>
           </div>
         </div>
 
