@@ -110,7 +110,7 @@ BEGIN
       -- 3. Bateu o horário?
       IF v_is_target_day THEN
         IF r.due_time IS NOT NULL AND r.due_time != '' THEN
-          IF r.due_time = v_current_time THEN
+          IF left(r.due_time, 5) = v_current_time THEN
             v_trigger_now := true;
             v_is_advance := false;
           END IF;
