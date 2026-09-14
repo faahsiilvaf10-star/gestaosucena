@@ -92,7 +92,7 @@ export function DashboardRemindersWidget() {
   if (activeReminders.length === 0) return null
 
   return (
-    <div className={`border rounded-2xl p-6 relative overflow-hidden transition-colors ${isDark ? 'bg-[#121214] border-white/5' : 'bg-gray-100 border-black/5 shadow-lg'}`}>
+    <div className={`flex-1 w-full min-w-0 border rounded-2xl p-6 relative overflow-hidden transition-colors ${isDark ? 'bg-[#121214] border-white/5' : 'bg-gray-100 border-black/5 shadow-lg'}`}>
       {/* Decorative gradient */}
       <div className={`absolute top-0 right-0 w-64 h-64 blur-[80px] rounded-full pointer-events-none ${isDark ? 'bg-indigo-500/10' : 'bg-indigo-500/5'}`} />
       
@@ -110,8 +110,24 @@ export function DashboardRemindersWidget() {
           const mentionedUserIds = reminder.reminder_mentions?.map(m => m.user_id) || []
           const allResponsibleIds = Array.from(new Set([reminder.assigned_user_id, ...mentionedUserIds].filter(Boolean) as string[]))
 
+          let cardClasses = isDark ? 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]' : 'border-gray-200 bg-white hover:bg-gray-50 shadow-sm'
+          
+          if (reminder.priority === 'Urgente') {
+            cardClasses = isDark 
+              ? 'border-2 border-red-500/80 bg-red-500/20 hover:bg-red-500/30 shadow-lg shadow-red-900/20' 
+              : 'border-2 border-red-500 bg-red-50 hover:bg-red-100 shadow-md shadow-red-200/50'
+          } else if (reminder.priority === 'Alta') {
+            cardClasses = isDark 
+              ? 'border-2 border-orange-500/80 bg-orange-500/20 hover:bg-orange-500/30 shadow-lg shadow-orange-900/20' 
+              : 'border-2 border-orange-500 bg-orange-50 hover:bg-orange-100 shadow-md shadow-orange-200/50'
+          } else if (reminder.priority === 'Baixa') {
+            cardClasses = isDark 
+              ? 'border-2 border-blue-500/80 bg-blue-500/20 hover:bg-blue-500/30 shadow-lg shadow-blue-900/20' 
+              : 'border-2 border-blue-500 bg-blue-50 hover:bg-blue-100 shadow-md shadow-blue-200/50'
+          }
+
           return (
-            <div key={reminder.id} className={`p-4 rounded-xl border transition-colors group ${isDark ? 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]' : 'border-gray-200 bg-white hover:bg-gray-50 shadow-sm'}`}>
+            <div key={reminder.id} className={`p-4 rounded-xl border transition-colors group ${cardClasses}`}>
               <div className="flex items-start gap-4">
                 <button 
                   onClick={() => toggleCrossedOut(reminder.id)}

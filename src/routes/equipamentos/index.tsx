@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeftRight, Truck, ListChecks, ClipboardCheck } from 'lucide-react'
+import { ArrowLeftRight, Truck, ListChecks, ClipboardCheck, MapPin } from 'lucide-react'
 
 export const Route = createFileRoute('/equipamentos/')({
   component: EquipamentosHub,
@@ -7,6 +7,8 @@ export const Route = createFileRoute('/equipamentos/')({
 
 const HUB_ITEMS = [
   { name: 'Entrada e Saída', icon: ArrowLeftRight, href: '/equipamentos/entrada-saida', desc: 'Registrar movimentações' },
+  { name: 'Painel do Motorista', icon: MapPin, href: '/equipamentos/painel-motorista', desc: 'Acompanhamento de rotas e atividades' },
+  { name: 'App Motorista', icon: Truck, href: '/equipamentos/app-motorista', desc: 'Aplicativo do motorista' },
   { name: 'Parte Diária', icon: Truck, href: '/equipamentos/parte-diaria', desc: 'Relatório diário' },
   { name: 'Todos os Equipamentos', icon: ListChecks, href: '/equipamentos/todos', desc: 'Visualizar a frota completa' },
   { name: 'Vistoria de Equipamentos', icon: ClipboardCheck, href: '/equipamentos/vistoria', desc: 'Laudos e manutenções' },
@@ -14,14 +16,14 @@ const HUB_ITEMS = [
 
 function EquipamentosHub() {
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-transparent">
-      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-2">
+    <div className="flex flex-col h-full bg-transparent">
+      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-8 sm:mt-12">
         
         {/* Title */}
-        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 mt-2 sm:mt-4 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
+        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 mt-4 sm:mt-6 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
-            className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
-            style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
+            className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-md text-center py-4"
+            style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: 'normal' }}
           >
             Equipamentos
           </h1>

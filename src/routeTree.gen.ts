@@ -30,7 +30,9 @@ import { Route as AlmoxarifadoNotasFiscaisRouteImport } from './routes/almoxarif
 import { Route as AlmoxarifadoRequisicaoRouteImport } from './routes/almoxarifado/requisicao'
 import { Route as DocumentosIndexRouteImport } from './routes/documentos/index'
 import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/index'
+import { Route as EquipamentosAppMotoristaRouteImport } from './routes/equipamentos/app-motorista'
 import { Route as EquipamentosEntradaSaidaRouteImport } from './routes/equipamentos/entrada-saida'
+import { Route as EquipamentosPainelMotoristaRouteImport } from './routes/equipamentos/painel-motorista'
 import { Route as EquipamentosTodosRouteImport } from './routes/equipamentos/todos'
 import { Route as EquipamentosVistoriaRouteImport } from './routes/equipamentos/vistoria'
 import { Route as InstacenaIndexRouteImport } from './routes/instacena/index'
@@ -164,10 +166,22 @@ const EquipamentosIndexRoute = EquipamentosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => EquipamentosRoute,
 } as any)
+const EquipamentosAppMotoristaRoute =
+  EquipamentosAppMotoristaRouteImport.update({
+    id: '/app-motorista',
+    path: '/app-motorista',
+    getParentRoute: () => EquipamentosRoute,
+  } as any)
 const EquipamentosEntradaSaidaRoute =
   EquipamentosEntradaSaidaRouteImport.update({
     id: '/entrada-saida',
     path: '/entrada-saida',
+    getParentRoute: () => EquipamentosRoute,
+  } as any)
+const EquipamentosPainelMotoristaRoute =
+  EquipamentosPainelMotoristaRouteImport.update({
+    id: '/painel-motorista',
+    path: '/painel-motorista',
     getParentRoute: () => EquipamentosRoute,
   } as any)
 const EquipamentosTodosRoute = EquipamentosTodosRouteImport.update({
@@ -323,7 +337,9 @@ export interface FileRoutesByFullPath {
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/painel-motorista': typeof EquipamentosPainelMotoristaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
@@ -367,7 +383,9 @@ export interface FileRoutesByTo {
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/painel-motorista': typeof EquipamentosPainelMotoristaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
@@ -418,7 +436,9 @@ export interface FileRoutesById {
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
+  '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/painel-motorista': typeof EquipamentosPainelMotoristaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
   '/instacena/$username': typeof InstacenaUsernameRoute
@@ -470,7 +490,9 @@ export interface FileRouteTypes {
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
+    | '/equipamentos/app-motorista'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/painel-motorista'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
     | '/instacena/$username'
@@ -514,7 +536,9 @@ export interface FileRouteTypes {
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
+    | '/equipamentos/app-motorista'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/painel-motorista'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
     | '/instacena/$username'
@@ -564,7 +588,9 @@ export interface FileRouteTypes {
     | '/almoxarifado/estoque'
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
+    | '/equipamentos/app-motorista'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/painel-motorista'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
     | '/instacena/$username'
@@ -766,11 +792,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipamentosIndexRouteImport
       parentRoute: typeof EquipamentosRoute
     }
+    '/equipamentos/app-motorista': {
+      id: '/equipamentos/app-motorista'
+      path: '/app-motorista'
+      fullPath: '/equipamentos/app-motorista'
+      preLoaderRoute: typeof EquipamentosAppMotoristaRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
     '/equipamentos/entrada-saida': {
       id: '/equipamentos/entrada-saida'
       path: '/entrada-saida'
       fullPath: '/equipamentos/entrada-saida'
       preLoaderRoute: typeof EquipamentosEntradaSaidaRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
+    '/equipamentos/painel-motorista': {
+      id: '/equipamentos/painel-motorista'
+      path: '/painel-motorista'
+      fullPath: '/equipamentos/painel-motorista'
+      preLoaderRoute: typeof EquipamentosPainelMotoristaRouteImport
       parentRoute: typeof EquipamentosRoute
     }
     '/equipamentos/todos': {
@@ -991,14 +1031,18 @@ const AlmoxarifadoRouteWithChildren = AlmoxarifadoRoute._addFileChildren(
 )
 
 interface EquipamentosRouteChildren {
+  EquipamentosAppMotoristaRoute: typeof EquipamentosAppMotoristaRoute
   EquipamentosEntradaSaidaRoute: typeof EquipamentosEntradaSaidaRoute
+  EquipamentosPainelMotoristaRoute: typeof EquipamentosPainelMotoristaRoute
   EquipamentosTodosRoute: typeof EquipamentosTodosRoute
   EquipamentosVistoriaRoute: typeof EquipamentosVistoriaRoute
   EquipamentosIndexRoute: typeof EquipamentosIndexRoute
 }
 
 const EquipamentosRouteChildren: EquipamentosRouteChildren = {
+  EquipamentosAppMotoristaRoute: EquipamentosAppMotoristaRoute,
   EquipamentosEntradaSaidaRoute: EquipamentosEntradaSaidaRoute,
+  EquipamentosPainelMotoristaRoute: EquipamentosPainelMotoristaRoute,
   EquipamentosTodosRoute: EquipamentosTodosRoute,
   EquipamentosVistoriaRoute: EquipamentosVistoriaRoute,
   EquipamentosIndexRoute: EquipamentosIndexRoute,

@@ -46,6 +46,12 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Definir o grupo alvo (específico do DDS ou o geral)
+  v_target_group := COALESCE(
+    NULLIF(v_settings->'ddsReminders'->>'specificGroupId', ''), 
+    v_settings->>'groupId'
+  );
+
   -- Lógica de Horário (Pará é UTC-3)
   v_target_date := (now() AT TIME ZONE 'America/Belem')::date;
   IF NOT is_today THEN

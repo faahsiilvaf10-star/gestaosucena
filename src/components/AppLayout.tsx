@@ -80,24 +80,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`
-      flex flex-col overflow-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300
+      overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300
       ${isDark ? 'bg-[#000] text-gray-900 dark:text-white' : 'bg-[#f4f3f0] text-gray-900'}
     `}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
 
-
       
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
-      <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />
+      <div className="sticky top-0 z-[60] pointer-events-none">
+        <div className="pointer-events-auto">
+          <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />
+        </div>
+      </div>
 
       {/* Main Scrollable Content */}
       <main 
-        className="vt-main flex-1 overflow-y-auto overflow-x-hidden relative z-0"
+        className="vt-main relative z-0 flex flex-col min-h-full"
         style={{ 
           /* Em mobile: sem padding lateral excessivo */
-          paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))'
+          paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+          marginTop: '-1rem' // Compensate slightly for visual flow if needed
         }}
       >
         <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">

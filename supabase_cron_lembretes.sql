@@ -175,7 +175,7 @@ BEGIN
         v_total_users int;
         v_mentioned_users int;
       BEGIN
-        SELECT count(*) INTO v_total_users FROM auth.users;
+        SELECT count(*) INTO v_total_users FROM get_users();
         SELECT count(*) INTO v_mentioned_users FROM reminder_mentions WHERE reminder_id = r.id;
 
         -- Heurística: Se não tiver NENHUMA menção (apenas para si mesmo ou todos),

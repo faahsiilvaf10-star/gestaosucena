@@ -650,12 +650,8 @@ function DashboardComponent() {
 
         {/* BOTTOM WIDGETS */}
         <div className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 mt-6">
-          <div className="w-full lg:w-1/2">
-            <DashboardRemindersWidget />
-          </div>
-          <div className="w-full lg:w-1/2">
-            <DashboardVistoriasWidget />
-          </div>
+          <DashboardRemindersWidget />
+          <DashboardVistoriasWidget />
         </div>
 
       </div>

@@ -130,7 +130,7 @@ export function DashboardVistoriasWidget() {
 
   if (loading) {
     return (
-      <Card className="flex flex-col overflow-hidden shadow-md h-full">
+      <Card className="flex-1 w-full min-w-0 flex flex-col overflow-hidden shadow-md h-full">
         <CardHeader className="pb-2 border-b border-border/50">
           <CardTitle className="text-[10px] uppercase tracking-widest flex items-center gap-2">
             <ShieldAlert size={14} className="text-muted-foreground" /> 
@@ -144,29 +144,13 @@ export function DashboardVistoriasWidget() {
     )
   }
 
-  // If no alerts, don't fill the page with empty state, just show a minimal card
+  // Se não houver alertas, não exibe o card no painel
   if (alerts.length === 0) {
-    return (
-      <Card className="flex flex-col overflow-hidden shadow-md h-full bg-white/40 dark:bg-black/20">
-        <CardHeader className="pb-2 border-b border-border/50">
-          <CardTitle className="text-[10px] uppercase tracking-widest flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={14} className="text-green-500" /> 
-              Vistorias da Frota
-            </div>
-            <Link to="/equipamentos/vistoria" className="hover:text-primary transition-colors">Ver todas &rarr;</Link>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 p-6 flex flex-col items-center justify-center text-center opacity-70">
-          <ShieldCheck size={32} className="mb-2 text-green-500 opacity-50" />
-          <p className="text-sm font-medium">Nenhuma vistoria próxima do vencimento.</p>
-        </CardContent>
-      </Card>
-    )
+    return null
   }
 
   return (
-    <Card className="flex flex-col overflow-hidden shadow-md h-full">
+    <Card className="flex-1 w-full min-w-0 flex flex-col overflow-hidden shadow-md h-full">
       <CardHeader className="pb-3 border-b border-border/50">
         <div className="flex justify-between items-center">
           <CardTitle className="text-[10px] uppercase tracking-widest flex items-center gap-2">
