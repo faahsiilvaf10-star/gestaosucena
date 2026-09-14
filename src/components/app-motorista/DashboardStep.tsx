@@ -204,13 +204,15 @@ export default function DashboardStep() {
     let eventName = newStatus === 'operating' ? 'Em Operação' :
                     newStatus === 'paused' ? 'Pausa / Almoço' :
                     newStatus === 'waiting' ? 'Aguardando' :
-                    newStatus === 'raining' ? 'Chuva' : newStatus;
+                    newStatus === 'raining' ? 'Chuva' : 
+                    newStatus === 'fueling' ? 'Abastecendo Veículo' : newStatus;
     
     let eventColor = color || (
       newStatus === 'operating' ? 'bg-emerald-500' :
       newStatus === 'paused' ? 'bg-orange-500' :
       newStatus === 'waiting' ? 'bg-amber-500' :
-      newStatus === 'raining' ? 'bg-blue-500' : 'bg-gray-500'
+      newStatus === 'raining' ? 'bg-blue-500' : 
+      newStatus === 'fueling' ? 'bg-orange-600' : 'bg-gray-500'
     );
 
     timeline.push({
@@ -246,6 +248,7 @@ export default function DashboardStep() {
     if (activeStatus === 'paused') return { bg: 'bg-orange-500 dark:bg-orange-600 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PAUSA / ALMOÇO', timeLabel: 'Tempo de Pausa' }
     if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-amber-50', dot: 'bg-amber-200', label: 'AGUARDANDO', timeLabel: 'Tempo Aguardando' }
     if (activeStatus === 'raining') return { bg: 'bg-blue-500 dark:bg-blue-600 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-200', label: 'CHUVA', timeLabel: 'Tempo em Chuva' }
+    if (activeStatus === 'fueling') return { bg: 'bg-orange-600 dark:bg-orange-700 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'ABASTECENDO VEÍCULO', timeLabel: 'Tempo Abastecendo' }
     
     if (activeStatus !== 'operating') {
       const customColor = localStorage.getItem('app_motorista_active_status_color') || 'bg-emerald-600'
@@ -713,10 +716,14 @@ export default function DashboardStep() {
           )}
 
           <ActionButton 
-            icon={Fuel} 
-            label="Abastecer" 
+            icon={activeStatus === 'fueling' ? Play : Fuel} 
+            label={activeStatus === 'fueling' ? "Retomar" : "Abastecer"} 
             color={{ bg: 'bg-orange-100 dark:bg-orange-500/20', text: 'text-orange-600 dark:text-orange-400' }}
-            onClick={() => confirmAction('Abastecer', 'bg-orange-500', () => alert('Modal Abastecer'))}
+            onClick={() => confirmAction(
+              activeStatus === 'fueling' ? 'Retomar Operação' : 'Abastecer', 
+              'bg-orange-500', 
+              () => handleStatusChange(activeStatus === 'fueling' ? 'operating' : 'fueling')
+            )}
           />
 
           <ActionButton 
