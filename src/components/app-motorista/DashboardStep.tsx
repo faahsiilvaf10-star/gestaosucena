@@ -525,7 +525,9 @@ export default function DashboardStep() {
     const activities = [
       { name: 'Lavagem Mirante', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
       { name: 'Irrigação Carretel', icon: Droplet, color: 'bg-white border border-gray-200 text-gray-900' },
-      { name: 'Irrigação Faixa 3, 4 e 5', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
+      { name: 'Irrigação Faixa 3', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
+      { name: 'Irrigação Faixa 4', icon: Sprout, color: 'bg-white border border-gray-200 text-gray-900' },
+      { name: 'Irrigação Faixa 5', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
       { name: 'Abastecimento do Tanque de Irrigação', icon: Fuel, color: 'bg-white border border-gray-200 text-gray-900' },
       { name: 'Lavagem Vertedouro', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
       { name: 'Umectação de Vias', icon: CloudRain, color: 'bg-white border border-gray-200 text-gray-900' },
