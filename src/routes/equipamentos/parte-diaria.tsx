@@ -98,16 +98,9 @@ function ParteDiariaPage() {
 
           const statusLower = currentStatus.toLowerCase()
           
-          let isAtividade = true
-          if (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline')) {
-            isAtividade = false
-          } else if (
-            statusLower.includes('chuva') || 
-            statusLower.includes('abastec') || 
-            statusLower.includes('aguardando') || 
-            statusLower.includes('pausa')
-          ) {
-            isAtividade = false
+          let isAtividade = false
+          if (statusLower.includes('em operação') || statusLower.includes('em atividade') || statusLower === 'operating') {
+            isAtividade = true
           }
           
           if (isAtividade) countAtividade++
