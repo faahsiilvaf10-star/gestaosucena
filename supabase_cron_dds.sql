@@ -92,11 +92,11 @@ BEGIN
   -- Preparar o Endpoint
   v_endpoint := trim(trailing '/' from (v_settings->>'url'));
   IF v_endpoint LIKE '%painel.w-api.app%' THEN
-    v_endpoint := 'https://api.w-api.app/v1/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := 'https://api.w-api.app/v1/message/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSIF v_endpoint LIKE '%api.w-api.app%' AND v_endpoint NOT LIKE '%/v1%' THEN
-    v_endpoint := v_endpoint || '/v1/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := v_endpoint || '/v1/message/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSE
-    v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := v_endpoint || '/message/send-text?instanceId=' || (v_settings->>'instanceId');
   END IF;
 
   -- 1. Enviar para o Grupo (Apenas no dia do DDS às 06:00)

@@ -60,11 +60,11 @@ BEGIN
   -- Preparar o Endpoint (mesma lógica do DDS)
   v_endpoint := trim(trailing '/' from (v_settings->>'url'));
   IF v_endpoint LIKE '%painel.w-api.app%' THEN
-    v_endpoint := 'https://api.w-api.app/v1/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := 'https://api.w-api.app/v1/message/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSIF v_endpoint LIKE '%api.w-api.app%' AND v_endpoint NOT LIKE '%/v1%' THEN
-    v_endpoint := v_endpoint || '/v1/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := v_endpoint || '/v1/message/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSE
-    v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint := v_endpoint || '/message/send-text?instanceId=' || (v_settings->>'instanceId');
   END IF;
 
   -- Percorrer todos os lembretes pendentes ou em andamento
@@ -184,9 +184,16 @@ BEGIN
         -- Como no form se não colocar menção é só pra ele, talvez devesse ser privado. 
         -- Porém, se for 0 menções MAS o grupo estiver configurado? Na verdade 0 menções vai pro criador no privado se ele não botou Todos.
         -- No form, se seleciona "Todos", ele joga todos os IDs do sistema. 
-        -- Portanto, se número de menções >= (total_users - 1), é "Todos".
-        IF v_mentioned_users >= (v_total_users - 1) AND v_mentioned_users > 0 THEN
-          v_mentions_all := true;
+        -- Portanto, se número de menções >= (total_users - 1) (em cenários com mais de 2 usuários), é "Todos".
+        -- Se houver apenas 1 ou 2 usuários, exige-se que seja >= total_users para evitar que "Eu" (1 usuário) acione o envio para o Grupo.
+        IF v_total_users > 2 THEN
+          IF v_mentioned_users >= (v_total_users - 1) AND v_mentioned_users > 0 THEN
+            v_mentions_all := true;
+          END IF;
+        ELSE
+          IF v_mentioned_users >= v_total_users AND v_total_users > 0 THEN
+            v_mentions_all := true;
+          END IF;
         END IF;
 
         IF v_mentions_all AND v_default_group IS NOT NULL AND v_default_group != '' THEN
