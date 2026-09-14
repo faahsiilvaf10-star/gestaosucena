@@ -40,15 +40,21 @@ const ParteDiariaReport = forwardRef<HTMLDivElement, ParteDiariaReportProps>(({
   timeline
 }, ref) => {
   // Parse timeline to extract start/end time for each row
-  // We reverse it to chronologic order if it's descending
-  const sortedTimeline = [...timeline].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+  const safeTimeline = timeline || []
+  const sortedTimeline = [...safeTimeline].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
   
   const timelineRows = sortedTimeline.map((event, index) => {
-    const startTime = format(new Date(event.time), 'HH:mm')
-    // End time is either the start of the next event, or if it's the last event, '-' (or current time if still open)
-    const endTime = index < sortedTimeline.length - 1 
-      ? format(new Date(sortedTimeline[index + 1].time), 'HH:mm') 
-      : '-'
+    let startTime = '-'
+    let endTime = '-'
+    try {
+      if (event.time) startTime = format(new Date(event.time), 'HH:mm')
+    } catch (e) {}
+
+    try {
+      if (index < sortedTimeline.length - 1 && sortedTimeline[index + 1].time) {
+        endTime = format(new Date(sortedTimeline[index + 1].time), 'HH:mm')
+      }
+    } catch (e) {}
     
     return {
       startTime,

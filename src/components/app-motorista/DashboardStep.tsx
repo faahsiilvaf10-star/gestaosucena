@@ -627,6 +627,27 @@ export default function DashboardStep() {
           </button>
         </div>
         {renderConfirmModal()}
+
+        <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden">
+          {dispatch && equipment && (
+            <ParteDiariaReport
+              ref={reportRef}
+              motorista={dispatch.driver_name || 'Desconhecido'}
+              ajudante={dispatch.helper_name || '-'}
+              data={new Date()}
+              equipamentoNome={equipment.type || 'Equipamento'}
+              placa={equipment.plate_tag || '-'}
+              obra={equipment.brand ? `OBRA: ${equipment.brand}` : '460001269'}
+              kmInicial={dispatch.odometer_start || '-'}
+              kmFinal={endKm || '-'}
+              horimetroInicial={dispatch.horimeter_start || '-'}
+              horimetroFinal={endHorimeter || '-'}
+              abastecimentoInicial={dispatch.fuel_start_percent || '-'}
+              abastecimentoFinal={endFuel || '-'}
+              timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
+            />
+          )}
+        </div>
       </div>
     )
   }
@@ -971,27 +992,6 @@ export default function DashboardStep() {
       </div>
 
       {renderConfirmModal()}
-
-      <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden">
-        {dispatch && equipment && (
-          <ParteDiariaReport
-            ref={reportRef}
-            motorista={dispatch.driver_name || 'Desconhecido'}
-            ajudante={dispatch.helper_name || '-'}
-            data={new Date()}
-            equipamentoNome={equipment.type || 'Equipamento'}
-            placa={equipment.plate_tag || '-'}
-            obra={equipment.brand ? `OBRA: ${equipment.brand}` : '460001269'}
-            kmInicial={dispatch.odometer_start || '-'}
-            kmFinal={endKm || '-'}
-            horimetroInicial={dispatch.horimeter_start || '-'}
-            horimetroFinal={endHorimeter || '-'}
-            abastecimentoInicial={dispatch.fuel_start_percent || '-'}
-            abastecimentoFinal={endFuel || '-'}
-            timeline={timeline}
-          />
-        )}
-      </div>
     </div>
   )
 }
