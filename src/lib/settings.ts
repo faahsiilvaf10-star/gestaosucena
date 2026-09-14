@@ -59,6 +59,10 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  reminders?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
 }
 
 const defaultWhatsappSettings: WhatsappSettings = {
@@ -73,6 +77,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
     specificGroupId: ''
   },
   requisitionAlerts: {
+    enabled: false,
+    specificGroupId: ''
+  },
+  reminders: {
     enabled: false,
     specificGroupId: ''
   }

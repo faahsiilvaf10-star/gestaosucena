@@ -28,6 +28,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
+  const [advanceNotice, setAdvanceNotice] = useState<number>(0)
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurringDays, setRecurringDays] = useState<number[]>([])
 
@@ -46,6 +47,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setDueDate(reminder.due_date || '')
       setDueTime(reminder.due_time || '')
       setShowDeleteConfirm(false)
+      setAdvanceNotice(reminder.recurrence_config?.advanceNotice || 0)
       setIsRecurring(reminder.is_recurring || false)
       setRecurringDays(reminder.recurrence_config?.days || [])
     } else {
@@ -55,6 +57,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setMentions([])
       setDueDate('')
       setDueTime('')
+      setAdvanceNotice(0)
       setIsRecurring(false)
       setRecurringDays([])
     }
@@ -100,7 +103,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         due_time: dueTime || undefined,
         is_recurring: isRecurring,
         recurrence_type: isRecurring ? 'weekly' : undefined,
-        recurrence_config: isRecurring ? { days: recurringDays } : undefined
+        recurrence_config: {
+          days: isRecurring ? recurringDays : undefined,
+          advanceNotice: advanceNotice > 0 ? advanceNotice : undefined
+        }
       },
       mentions: finalMentions
     })
@@ -256,6 +262,27 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                   onChange={(e) => setDueTime(e.target.value)}
                   className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
                 />
+              </div>
+            </div>
+
+            {/* Aviso Antecipado */}
+            <div className="flex items-center gap-4 group cursor-pointer">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors">
+                <Clock size={16} />
+                <span>Aviso Prévio</span>
+              </div>
+              <div className="flex-1">
+                <select 
+                  value={advanceNotice} 
+                  onChange={(e) => setAdvanceNotice(Number(e.target.value))}
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                >
+                  <option value={0} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>No momento</option>
+                  <option value={1} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>1 dia antes</option>
+                  <option value={2} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>2 dias antes</option>
+                  <option value={3} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>3 dias antes</option>
+                  <option value={7} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>1 semana antes</option>
+                </select>
               </div>
             </div>
 
