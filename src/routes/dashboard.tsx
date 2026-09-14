@@ -161,14 +161,18 @@ function DashboardComponent() {
       let manutencaoList: any[] = []
       
       data?.forEach(eq => {
-        const isInside = eq.location_status !== 'outside'
-        if (isInside) {
-          operacaoCount++
-          operacaoList.push(eq)
-        }
-        else if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') {
-          manutencaoCount++
-          manutencaoList.push(eq)
+        const isVehicle = eq.type === 'Leve' || eq.type === 'Pesado'
+        
+        if (isVehicle) {
+          const isInside = eq.location_status !== 'outside'
+          if (isInside) {
+            operacaoCount++
+            operacaoList.push(eq)
+          }
+          else if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') {
+            manutencaoCount++
+            manutencaoList.push(eq)
+          }
         }
       })
       
