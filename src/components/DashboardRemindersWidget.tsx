@@ -151,7 +151,7 @@ export function DashboardRemindersWidget() {
                         <CalendarIcon size={12} />
                         <span>
                           {format(parseISO(reminder.due_date), "dd/MM")}
-                          {reminder.due_time && ` às ${reminder.due_time}`}
+                          {reminder.due_time && ` às ${reminder.due_time.substring(0, 5)}`}
                         </span>
                       </div>
                     )}
