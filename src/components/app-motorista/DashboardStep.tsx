@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst } from '../../lib/offline-sync'
 import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
 import MercosulPlate from './MercosulPlate'
+import ParteDiariaReport from './ParteDiariaReport'
 
 export default function DashboardStep() {
   const [equipment, setEquipment] = useState<any>(null)
@@ -24,6 +27,49 @@ export default function DashboardStep() {
   // Gate State
   const [gateReason, setGateReason] = useState('')
   const [gateDescription, setGateDescription] = useState('')
+
+  const reportRef = useRef<HTMLDivElement>(null)
+
+  const generateReport = async () => {
+    if (!reportRef.current) return
+
+    // Ensure images/fonts are loaded by waiting a bit
+    await new Promise(r => setTimeout(r, 500))
+
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher resolution
+        useCORS: true,
+        logging: false
+      })
+      
+      const imgData = canvas.toDataURL('image/png')
+      const fileName = `Parte_Diaria_${equipment?.plate_tag || 'Equipamento'}_${format(new Date(), 'dd-MM-yyyy')}`
+      
+      // Download PNG
+      const pngLink = document.createElement('a')
+      pngLink.download = `${fileName}.png`
+      pngLink.href = imgData
+      pngLink.click()
+
+      // Generate and Download PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4' // A4 size
+      })
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`${fileName}.pdf`)
+      
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert('Houve um erro ao gerar o relatório PNG/PDF. O turno foi encerrado normalmente.')
+    }
+  }
 
   // Water Loading State
   const [activeWaterPoint, setActiveWaterPoint] = useState<string | null>(localStorage.getItem('app_motorista_water_point'))
@@ -336,6 +382,9 @@ export default function DashboardStep() {
 
       // Update Equipment status to "Disponível"
       await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside' })
+
+      // Generate Report before removing dispatch
+      await generateReport()
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
@@ -930,6 +979,27 @@ export default function DashboardStep() {
       </div>
 
       {renderConfirmModal()}
+
+      <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden">
+        {dispatch && equipment && (
+          <ParteDiariaReport
+            ref={reportRef}
+            motorista={dispatch.driver_name || 'Desconhecido'}
+            ajudante={dispatch.helper_name || '-'}
+            data={new Date()}
+            equipamentoNome={equipment.type || 'Equipamento'}
+            placa={equipment.plate_tag || '-'}
+            obra={equipment.brand ? `OBRA: ${equipment.brand}` : '460001269'}
+            kmInicial={dispatch.odometer_start || '-'}
+            kmFinal={endKm || '-'}
+            horimetroInicial={dispatch.horimeter_start || '-'}
+            horimetroFinal={endHorimeter || '-'}
+            abastecimentoInicial={dispatch.fuel_start_percent || '-'}
+            abastecimentoFinal={endFuel || '-'}
+            timeline={timeline}
+          />
+        )}
+      </div>
     </div>
   )
 }
