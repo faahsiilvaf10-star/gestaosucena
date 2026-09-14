@@ -331,9 +331,10 @@ export function EpiRequisitionForm() {
           if (groupId) {
              const itemsList = validItems.map(it => {
                const prod = epiProducts?.find(p => p.id === it.productId);
-               return `- ${it.quantity}x ${prod?.name || 'Desconhecido'}`;
+               return `  - ${prod?.name || 'Desconhecido'} (${it.quantity})`;
              }).join('\n');
-             const caption = `📦 *Nova Requisição Finalizada*\nFuncionário(a): *${employee?.nome}*\nAutorizado por: *${authorizer?.nome}*\n\n*Itens Retirados:*\n${itemsList}\n\nVeja o comprovante anexo.`;
+             const dataStr = format(new Date(), 'dd/MM/yyyy');
+             const caption = `🦺 *TROCA DE EPI*\n\n📅 *Data:* ${dataStr}\n👤 *Funcionário:* ${employee?.nome}\n💼 *Função:* ${employee?.cargo || '-'}\n🆔 *Matrícula:* ${employee?.matricula || '-'}\n📝 *Motivo:* ${reason || '.'}\n✅ *Autorizado por:* ${authorizer?.nome} (${authorizer?.matricula || '-'})\n\n*Itens:*\n${itemsList}`;
              await sendWhatsappMediaOnServer({
                data: {
                  url: settings.url,
