@@ -97,7 +97,7 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
   }
 }
 
-export async function saveWhatsappSettings(settings: WhatsappSettings): Promise<boolean> {
+export async function saveWhatsappSettings(settings: WhatsappSettings): Promise<{success: boolean, error?: string}> {
   try {
     const { error } = await supabase
       .from('global_settings')
@@ -109,12 +109,12 @@ export async function saveWhatsappSettings(settings: WhatsappSettings): Promise<
       
     if (error) {
       console.error('Erro ao salvar configs do whatsapp:', error)
-      return false
+      return { success: false, error: error.message }
     }
-    return true
-  } catch (err) {
+    return { success: true }
+  } catch (err: any) {
     console.error('Erro ao salvar configs do whatsapp:', err)
-    return false
+    return { success: false, error: err.message }
   }
 }
 

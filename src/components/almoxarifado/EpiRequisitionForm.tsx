@@ -15,7 +15,7 @@ import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { getWhatsappSettings } from '@/lib/settings';
-import { sendWhatsappMediaOnServer } from '@/server/whatsapp';
+import { sendWhatsappMediaOnServer } from '@/lib/whatsapp-api';
 
 // Gera um recibo em PNG via Canvas nativo (sem dependência de html-to-image)
 function generateReceiptPng(

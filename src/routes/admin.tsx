@@ -85,7 +85,16 @@ function AdminRoute() {
     instanceId: '',
     token: '',
     groupId: '',
-    interval: 30
+    interval: 30,
+    ddsReminders: {
+      enabled_0600: false,
+      enabled_1600: false,
+      specificGroupId: ''
+    },
+    requisitionAlerts: {
+      enabled: false,
+      specificGroupId: ''
+    }
   })
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
   const [isWhatsappLocked, setIsWhatsappLocked] = useState(true)
@@ -319,12 +328,12 @@ function AdminRoute() {
 
   const handleSaveWhatsapp = async () => {
     setSavingWhatsapp(true)
-    const success = await saveWhatsappSettings(whatsappSettings)
-    if (success) {
+    const result = await saveWhatsappSettings(whatsappSettings)
+    if (result.success) {
       toast.success('Configurações do WhatsApp salvas com sucesso!')
       setIsWhatsappLocked(true)
     } else {
-      toast.error('Erro ao salvar as configurações do WhatsApp.')
+      toast.error('Erro ao salvar as configurações: ' + (result.error || 'Desconhecido'))
     }
     setSavingWhatsapp(false)
   }
