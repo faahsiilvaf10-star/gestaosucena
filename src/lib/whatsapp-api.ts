@@ -46,24 +46,32 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
         body: JSON.stringify(payload)
       })
 
-      if (res.status === 404) {
+      if (res.status === 404 || res.status === 400) {
         // Fallback for different W-API / Evolution versions
+        const wApiPayload = {
+          phone: data.phone,
+          image: data.base64Media, // W-API specific uses data:image/png;base64...
+          caption: data.caption
+        };
+
         const fallbacks = [
-          baseEndpoint.replace('/message/sendMedia/', '/messages/sendMedia/'),
-          `${baseUrl}/v1/messages/sendMedia?instanceId=${data.instanceId}`,
-          `${baseUrl}/messages/sendMedia?instanceId=${data.instanceId}`,
-          `${baseUrl}/v1/message/sendMedia/${data.instanceId}`
+          { url: baseEndpoint.replace('/message/sendMedia/', '/messages/sendMedia/'), payload },
+          { url: `${baseUrl}/v1/messages/sendMedia?instanceId=${data.instanceId}`, payload },
+          { url: `${baseUrl}/messages/sendMedia?instanceId=${data.instanceId}`, payload },
+          { url: `${baseUrl}/v1/message/sendMedia/${data.instanceId}`, payload },
+          { url: `${baseUrl}/v1/message/send-image?instanceId=${data.instanceId}`, payload: wApiPayload },
+          { url: `${baseUrl}/message/send-image?instanceId=${data.instanceId}`, payload: wApiPayload }
         ]
 
         for (const fb of fallbacks) {
-          res = await fetch(fb, {
+          res = await fetch(fb.url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${data.token}`,
               'apikey': data.token
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(fb.payload)
           })
           if (res.ok) break;
         }
