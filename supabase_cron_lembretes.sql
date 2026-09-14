@@ -233,6 +233,11 @@ BEGIN
           -- Disparar para cada número no privado
           FOREACH v_phone IN ARRAY v_phones
           LOOP
+            -- Normalizar número: adicionar prefixo 55 (Brasil) se necessário
+            IF v_phone NOT LIKE '55%' THEN
+              v_phone := '55' || v_phone;
+            END IF;
+
             v_payload := jsonb_build_object(
               'number', v_phone,
               'phone', v_phone,
