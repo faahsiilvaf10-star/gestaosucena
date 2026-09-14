@@ -7,10 +7,18 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
 
+  const equipmentId = localStorage.getItem('app_motorista_equipment_id')
+
   // Form Data
   const [helperName, setHelperName] = useState('')
-  const [km, setKm] = useState('')
-  const [horimeter, setHorimeter] = useState('')
+  const [km, setKm] = useState(() => {
+    const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+    return data[equipmentId || '']?.lastKm || ''
+  })
+  const [horimeter, setHorimeter] = useState(() => {
+    const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+    return data[equipmentId || '']?.lastHorimeter || ''
+  })
   const [fuel, setFuel] = useState(() => localStorage.getItem('app_motorista_fuel_level') || '100') // percentage
 
   // Mock checklist items
@@ -20,8 +28,6 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
     { id: '3', name: 'Faróis', status: 'conforme', critical: false },
     { id: '4', name: 'Buzina', status: 'conforme', critical: false },
   ])
-
-  const equipmentId = localStorage.getItem('app_motorista_equipment_id')
 
   const handleNext = () => setStep(prev => prev + 1)
   const handlePrev = () => setStep(prev => prev - 1)
@@ -165,7 +171,11 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                 placeholder="Ex: 125487"
                 className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
               />
-              <p className="text-[10px] text-gray-400 mt-1 ml-1">Último registrado: 125.400 km</p>
+              {(() => {
+                const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+                const lastKm = data[equipmentId || '']?.lastKm
+                return lastKm ? <p className="text-[10px] text-gray-400 mt-1 ml-1">Último registrado: {lastKm}</p> : null
+              })()}
             </div>
 
             <div>
@@ -177,6 +187,11 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                 placeholder="Ex: 7542.3"
                 className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
               />
+              {(() => {
+                const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+                const lastH = data[equipmentId || '']?.lastHorimeter
+                return lastH ? <p className="text-[10px] text-gray-400 mt-1 ml-1">Último registrado: {lastH}</p> : null
+              })()}
             </div>
 
             <div className="pt-2 pb-4">

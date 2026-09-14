@@ -302,6 +302,15 @@ export default function DashboardStep() {
         status: 'aprovado'
       })
 
+      // Save last km and horimeter for this equipment
+      const equipmentData = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+      equipmentData[equipmentId] = {
+        lastKm: endKm,
+        lastHorimeter: endHorimeter
+      }
+      localStorage.setItem('app_motorista_equipment_data', JSON.stringify(equipmentData))
+      localStorage.setItem('app_motorista_last_equipment', equipmentId)
+
       localStorage.setItem('app_motorista_fuel_level', endFuel)
 
       // Update Equipment status to "Disponível"

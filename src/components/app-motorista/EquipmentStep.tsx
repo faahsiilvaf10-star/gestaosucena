@@ -29,10 +29,16 @@ export default function EquipmentStep({ onSelect }: { onSelect: (equipmentId: st
     }
   }
 
+  const lastEquipmentId = localStorage.getItem('app_motorista_last_equipment')
+
   const filteredEq = equipments.filter(eq => 
     (eq.name || '').toLowerCase().includes(search.toLowerCase()) ||
     (eq.plate_tag || '').toLowerCase().includes(search.toLowerCase())
-  )
+  ).sort((a, b) => {
+    if (a.id === lastEquipmentId) return -1
+    if (b.id === lastEquipmentId) return 1
+    return 0
+  })
 
   const handleSelect = (eq: any) => {
     if (eq.status === 'Manutenção' || eq.status === 'Interditado') {
@@ -101,8 +107,13 @@ export default function EquipmentStep({ onSelect }: { onSelect: (equipmentId: st
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
                     {eq.name}
+                    {eq.id === lastEquipmentId && (
+                      <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                        Recomendado
+                      </span>
+                    )}
                   </h3>
                   <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs font-semibold ${getStatusColor(eq.status)}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(eq.status)}`}></span>
