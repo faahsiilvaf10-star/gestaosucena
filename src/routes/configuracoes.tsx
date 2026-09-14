@@ -224,14 +224,24 @@ function ConfiguracoesRoute() {
                       </div>
                       
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">WhatsApp</label>
+                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">WhatsApp <span className="text-yellow-500">*</span></label>
                         <input
                           type="tel"
                           value={whatsapp}
                           onChange={e => setWhatsapp(e.target.value)}
                           className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
-                          placeholder="(11) 99999-9999"
+                          placeholder="Ex: 5591999999999"
                         />
+                        {!whatsapp && (
+                          <p className="text-xs text-amber-500 pl-1 flex items-center gap-1">
+                            ⚠️ Obrigatório para receber lembretes no WhatsApp. Formato: DDI+DDD+Número (ex: <strong>5591999998888</strong>)
+                          </p>
+                        )}
+                        {whatsapp && (
+                          <p className="text-xs text-green-500 pl-1">
+                            ✅ WhatsApp cadastrado. Você receberá lembretes neste número.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
