@@ -132,17 +132,19 @@ $$;
 
 -- 3. Configurar os Agendamentos Diários (Cron Jobs)
 -- Remover agendamentos anteriores (caso existam) para não duplicar
-BEGIN;
-  SELECT cron.unschedule('dds_lembrete_0600');
+DO $$
+BEGIN
+  PERFORM cron.unschedule('dds_lembrete_0600');
 EXCEPTION WHEN OTHERS THEN
   -- Ignorar se não existir
-END;
+END $$;
 
-BEGIN;
-  SELECT cron.unschedule('dds_aviso_1600');
+DO $$
+BEGIN
+  PERFORM cron.unschedule('dds_aviso_1600');
 EXCEPTION WHEN OTHERS THEN
   -- Ignorar se não existir
-END;
+END $$;
 
 -- Agendar para 06:00 do fuso de Brasília/Pará (UTC-3). Portanto, 09:00 UTC.
 SELECT cron.schedule(
