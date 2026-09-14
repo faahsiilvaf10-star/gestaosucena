@@ -47,10 +47,31 @@ export default function DashboardStep() {
   } | null>(null)
 
   const confirmAction = (title: string, color: string, action: () => void, confirmText = 'Confirmar') => {
+    let desc = `Deseja realmente prosseguir com a ação: ${title}?`
+    
+    const isStartingNewActivity = 
+      title !== 'Retomar Operação' && 
+      title !== 'Deslogar' && 
+      title !== 'Finalizar Jornada' && 
+      title !== 'Parar Atividade Atual' &&
+      title !== 'Registrar Anomalia' &&
+      title !== 'Abastecer';
+
+    if (isStartingNewActivity && activeStatus !== 'operating') {
+       // Precisamos resolver getStatusColors para pegar o label atual
+       // Como getStatusColors usa activeStatus que já temos no state, podemos simular aqui
+       let currentLabel = activeStatus.toUpperCase()
+       if (activeStatus === 'paused') currentLabel = 'PAUSA / ALMOÇO'
+       if (activeStatus === 'waiting') currentLabel = 'AGUARDANDO'
+       if (activeStatus === 'raining') currentLabel = 'CHUVA'
+       
+       desc = `Você está atualmente em "${currentLabel}". Deseja encerrar a atividade atual e iniciar "${title}"?`
+    }
+
     setConfirmModal({
       isOpen: true,
       title,
-      description: `Deseja realmente prosseguir com a ação: ${title}?`,
+      description: desc,
       color,
       onConfirm: () => {
         setConfirmModal(null)
@@ -161,6 +182,20 @@ export default function DashboardStep() {
   }, [dispatch, viewState, activeStatus, statusStartTime, activeWaterPoint, waterLoadStartTime])
   const handleStatusChange = (newStatus: string, color?: string) => {
     const now = new Date()
+    
+    // Parar abastecimento de água se estiver mudando para outro status
+    if (activeWaterPoint && !newStatus.startsWith('Abastecimento')) {
+      const stop = new Date()
+      const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+      tl.push({ time: stop.toISOString(), name: `Abastecimento de Água (${activeWaterPoint})`, type: 'Finalizado (Auto)', color: 'bg-emerald-500' })
+      localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
+      
+      setActiveWaterPoint(null)
+      setWaterLoadStartTime(null)
+      localStorage.removeItem('app_motorista_water_point')
+      localStorage.removeItem('app_motorista_water_start')
+    }
+
     setActiveStatus(newStatus)
     setStatusStartTime(newStatus === 'operating' ? null : now)
     
