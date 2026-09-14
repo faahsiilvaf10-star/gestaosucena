@@ -390,19 +390,14 @@ function VehicleCard({ vehicle, history = [] }: { vehicle: any, history?: any[] 
                 <p className="font-semibold text-gray-900 dark:text-white">{vehicle.type || 'Equipamento'}</p>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs">Saída</p>
-                <p className="font-semibold text-gray-900 dark:text-white">-</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">Horímetro</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_horimeter || '-'}</p>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs">Odômetro</p>
-                <p className="font-semibold text-gray-900 dark:text-white">-</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">KM Atual</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_km || '-'}</p>
               </div>
             </div>
-            
-            <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20 font-semibold text-sm hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors">
-              <AlertTriangle size={16} />
-              Registrar Anomalia
-            </button>
           </div>
 
           {/* Timeline Panel */}
