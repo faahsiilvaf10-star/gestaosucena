@@ -428,6 +428,7 @@ export default function DashboardStep() {
                     tl.push({ time: new Date().toISOString(), name: `Abastecimento de Água (${point})`, type: 'Finalizado', color: 'bg-emerald-500' })
                     localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
                     
+                    handleStatusChange('operating')
                     setViewState('operating')
                   } else {
                     if (activeWaterPoint) {
@@ -441,9 +442,10 @@ export default function DashboardStep() {
                     localStorage.setItem('app_motorista_water_start', start.toISOString())
 
                     const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-                    tl.push({ time: start.toISOString(), name: `Abastecimento de Água (${point})`, type: 'Iniciado', color: 'bg-blue-500' })
+                    tl.push({ time: start.toISOString(), name: `Abastecimento de Água (${point})`, type: 'Iniciado', color: 'bg-blue-600' })
                     localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
                     
+                    handleStatusChange(`Abastecimento - ${point}`, 'bg-blue-600')
                     setViewState('operating')
                   }
                 }}
