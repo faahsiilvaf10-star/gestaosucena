@@ -401,7 +401,7 @@ function DashboardComponent() {
           <div className="dashboard-card card-operation group !overflow-visible hover:z-50">
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
-            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 p-3 max-h-60 overflow-y-auto">
+            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-80 overflow-y-auto">
               <h4 className="text-sm font-bold mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
               {eqData?.operacaoList?.length ? (
                 <ul className="text-xs space-y-2">
@@ -448,7 +448,7 @@ function DashboardComponent() {
           <div className="dashboard-card card-maintenance group !overflow-visible hover:z-50">
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
-            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 p-3 max-h-60 overflow-y-auto">
+            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-80 overflow-y-auto">
               <h4 className="text-sm font-bold mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
               {eqData?.manutencaoList?.length ? (
                 <ul className="text-xs space-y-2">
