@@ -455,34 +455,38 @@ export default function DashboardStep() {
                 key={point}
                 onClick={() => {
                   if (isActive) {
-                    setActiveWaterPoint(null)
-                    setWaterLoadStartTime(null)
-                    localStorage.removeItem('app_motorista_water_point')
-                    localStorage.removeItem('app_motorista_water_start')
-                    
-                    const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-                    tl.push({ time: new Date().toISOString(), name: `Abastecimento de Água (${point})`, type: 'Finalizado', color: 'bg-emerald-500' })
-                    localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
-                    
-                    handleStatusChange('operating')
-                    setViewState('operating')
+                    confirmAction(`Parar Abastecimento (${point})`, 'bg-emerald-500', () => {
+                      setActiveWaterPoint(null)
+                      setWaterLoadStartTime(null)
+                      localStorage.removeItem('app_motorista_water_point')
+                      localStorage.removeItem('app_motorista_water_start')
+                      
+                      const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+                      tl.push({ time: new Date().toISOString(), name: `Abastecimento de Água (${point})`, type: 'Finalizado', color: 'bg-emerald-500' })
+                      localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
+                      
+                      handleStatusChange('operating')
+                      setViewState('operating')
+                    })
                   } else {
                     if (activeWaterPoint) {
                        alert('Já existe um carregamento em andamento.')
                        return
                     }
-                    setActiveWaterPoint(point)
-                    const start = new Date()
-                    setWaterLoadStartTime(start)
-                    localStorage.setItem('app_motorista_water_point', point)
-                    localStorage.setItem('app_motorista_water_start', start.toISOString())
+                    confirmAction(`Iniciar Abastecimento (${point})`, 'bg-blue-600', () => {
+                      setActiveWaterPoint(point)
+                      const start = new Date()
+                      setWaterLoadStartTime(start)
+                      localStorage.setItem('app_motorista_water_point', point)
+                      localStorage.setItem('app_motorista_water_start', start.toISOString())
 
-                    const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-                    tl.push({ time: start.toISOString(), name: `Abastecimento de Água (${point})`, type: 'Iniciado', color: 'bg-blue-600' })
-                    localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
-                    
-                    handleStatusChange(`Abastecimento - ${point}`, 'bg-blue-600')
-                    setViewState('operating')
+                      const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+                      tl.push({ time: start.toISOString(), name: `Abastecimento de Água (${point})`, type: 'Iniciado', color: 'bg-blue-600' })
+                      localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
+                      
+                      handleStatusChange(`Abastecimento - ${point}`, 'bg-blue-600')
+                      setViewState('operating')
+                    })
                   }
                 }}
                 className={`w-full relative overflow-hidden rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center gap-2 ${
@@ -697,7 +701,7 @@ export default function DashboardStep() {
               icon={Droplet} 
               label="Carregar Água" 
               color={{ bg: 'bg-blue-100 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' }}
-              onClick={() => confirmAction('Carregar Água', 'bg-blue-500', () => setViewState('loading_water'))}
+              onClick={() => setViewState('loading_water')}
             />
           )}
 
