@@ -57,6 +57,7 @@ function ParteDiariaPage() {
         .from('eq_equipments')
         .select('*')
         .eq('category', 'Equipamento Pesado')
+        .order('name', { ascending: true })
 
       if (pesadosError) throw pesadosError
       
