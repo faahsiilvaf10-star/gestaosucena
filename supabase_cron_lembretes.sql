@@ -109,8 +109,8 @@ BEGIN
 
       -- 3. Bateu o horário?
       IF v_is_target_day THEN
-        IF r.due_time IS NOT NULL AND r.due_time != '' THEN
-          IF left(r.due_time, 5) = v_current_time THEN
+        IF r.due_time IS NOT NULL THEN
+          IF to_char(r.due_time, 'HH24:MI') = v_current_time THEN
             v_trigger_now := true;
             v_is_advance := false;
           END IF;
@@ -160,8 +160,8 @@ BEGIN
         v_message := v_message || '📅 Data: ' || to_char(r.due_date::date, 'DD/MM/YYYY') || chr(10);
       END IF;
 
-      IF r.due_time IS NOT NULL AND r.due_time != '' THEN
-        v_message := v_message || '⏰ Horário: ' || r.due_time || chr(10);
+      IF r.due_time IS NOT NULL THEN
+        v_message := v_message || '⏰ Horário: ' || to_char(r.due_time, 'HH24:MI') || chr(10);
       END IF;
 
       v_message := v_message || '⚡ Prioridade: ' || r.priority;
