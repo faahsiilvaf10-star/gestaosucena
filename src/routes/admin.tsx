@@ -127,6 +127,7 @@ function AdminRoute() {
   const [blockUserModal, setBlockUserModal] = useState<AdminUser | null>(null)
   const [deleteUserModal, setDeleteUserModal] = useState<AdminUser | null>(null)
   const [deleteEmailInput, setDeleteEmailInput] = useState('')
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
     checkAdminAndLoad()
@@ -139,6 +140,8 @@ function AdminRoute() {
         navigate({ to: '/' })
         return
       }
+
+      setCurrentUserId(user.id)
 
       const role = user.user_metadata?.role || ''
       const name = user.user_metadata?.full_name || ''
@@ -272,8 +275,10 @@ function AdminRoute() {
   }
 
   const filteredUsers = users.filter(u => 
-    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    u.id !== currentUserId && (
+      u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   )
 
   const handleAddRole = async () => {
