@@ -103,10 +103,20 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
 
       // Define o status inicial como 'Aguardando'
       const nowISO = new Date().toISOString()
+
+      // === LIMPAR TODOS OS DADOS DO TURNO ANTERIOR ===
+      localStorage.removeItem('app_motorista_timeline')
+      localStorage.removeItem('app_motorista_active_status')
+      localStorage.removeItem('app_motorista_active_status_color')
+      localStorage.removeItem('app_motorista_status_start')
+      localStorage.removeItem('app_motorista_water_point')
+      localStorage.removeItem('app_motorista_water_start')
+      // ===============================================
+
       localStorage.setItem('app_motorista_active_status', 'waiting')
       localStorage.setItem('app_motorista_status_start', nowISO)
       
-      // Inicializa o Histórico (Timeline)
+      // Inicializa o Histórico (Timeline) limpo para o novo turno
       const initialTimeline = [
         { time: nowISO, name: 'Jornada Iniciada', type: 'Início', color: 'bg-emerald-500' },
         { time: nowISO, name: 'Aguardando', type: 'Status Inicial', color: 'bg-amber-500' }

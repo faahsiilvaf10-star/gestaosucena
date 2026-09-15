@@ -237,6 +237,21 @@ function ParteDiariaPage() {
         .in('status', ['Em atividade', 'waiting', 'Aguardando'])
 
       if (error) throw error
+
+      // Limpa dados do turno no localStorage do dispositivo (caso seja o mesmo)
+      const storedEquipmentId = localStorage.getItem('app_motorista_equipment_id')
+      if (storedEquipmentId === vehicleId) {
+        localStorage.removeItem('app_motorista_timeline')
+        localStorage.removeItem('app_motorista_active_status')
+        localStorage.removeItem('app_motorista_active_status_color')
+        localStorage.removeItem('app_motorista_status_start')
+        localStorage.removeItem('app_motorista_water_point')
+        localStorage.removeItem('app_motorista_water_start')
+        localStorage.removeItem('app_motorista_current_dispatch')
+        localStorage.removeItem('app_motorista_equipment_id')
+        localStorage.removeItem('app_motorista_current_step')
+        localStorage.removeItem('app_motorista_fuel_level')
+      }
       
       fetchDashboardData()
     } catch (err) {
