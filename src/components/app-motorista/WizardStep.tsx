@@ -72,15 +72,28 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
 
 
       // 2. Create Checklist
+      const hasAnomalies = checklist.some(item => item.status === 'nao_conforme')
       const checklistData = {
         dispatch_id: newDispatchId,
         equipment_id: equipmentId,
         driver_id: userId,
         type: 'pre-operacional',
-        status: 'aprovado'
+        status: hasAnomalies ? 'aprovado_com_ressalvas' : 'aprovado',
+        created_at: new Date().toISOString()
       }
       const checkRes = await saveOfflineFirst('eq_checklists', 'INSERT', checklistData)
-      const newCheckId = checkRes.data?.[0]?.id || 'offline-check-id'
+      const newChecklistId = (Array.isArray(checkRes.data) ? checkRes.data[0]?.id : checkRes.data?.id) || crypto.randomUUID()
+
+      // 2.1 Insert Checklist Items
+      for (const item of checklist) {
+        await saveOfflineFirst('eq_checklist_items', 'INSERT', {
+          checklist_id: newChecklistId,
+          item_name: item.name,
+          is_critical: item.critical,
+          status: item.status,
+          observation: item.name === 'Pneus' ? tireObservation : ''
+        })
+      }
 
       // 3. Update Equipment status to "Operando" (actually handled by backend or we update it directly)
       await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside' })
@@ -116,6 +129,16 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           new_status: `Anomalia Pneus: ${selectedTires.join(', ')}${obsText}`,
           created_at: nowISO
         })
+
+        await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          equipment_id: equipmentId,
+          driver_id: userId,
+          anomaly_type: 'Pneu',
+          description: `Pneus selecionados: ${selectedTires.join(', ')}`,
+          observation: tireObservation,
+          status: 'Pendente',
+          reported_at: nowISO
+        })
       }
 
       const otherAnomalies = checklist.filter(item => item.status === 'nao_conforme' && item.name !== 'Pneus')
@@ -133,6 +156,15 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           previous_status: 'Jornada Iniciada',
           new_status: `Anomalia Checklist: ${item.name}`,
           created_at: nowISO
+        })
+
+        await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          equipment_id: equipmentId,
+          driver_id: userId,
+          anomaly_type: 'Problema mecânico',
+          description: `Anomalia Checklist: ${item.name}`,
+          status: 'Pendente',
+          reported_at: nowISO
         })
       }
 
@@ -162,6 +194,10 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
     const item = checklist.find(i => i.id === id)
     if (item?.name === 'Pneus' && status === 'nao_conforme') {
       setIsTireModalOpen(true)
+    }
+    if (item?.name === 'Pneus' && status === 'conforme') {
+      setSelectedTires([])
+      setTireObservation('')
     }
     setChecklist(prev => prev.map(item => item.id === id ? { ...item, status } : item))
   }
@@ -403,9 +439,9 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                     setTireModalStep('select')
                   } else {
                     setIsTireModalOpen(false)
-                    if (selectedTires.length === 0) {
-                       setChecklist(prev => prev.map(item => item.name === 'Pneus' ? { ...item, status: 'conforme' } : item))
-                    }
+                    setSelectedTires([])
+                    setTireObservation('')
+                    setChecklist(prev => prev.map(item => item.name === 'Pneus' ? { ...item, status: 'conforme' } : item))
                   }
                 }}
                 className="flex-1 py-4 font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl active:scale-[0.98] transition-all"
