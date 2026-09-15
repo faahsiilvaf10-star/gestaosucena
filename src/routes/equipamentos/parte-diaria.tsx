@@ -61,9 +61,6 @@ function ParteDiariaPage() {
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
   const [vehicleDispatches, setVehicleDispatches] = useState<Record<string, any>>({})
-  
-  const [selectedAnomalies, setSelectedAnomalies] = useState<any[]>([])
-  const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false)
 
   // Fullscreen handler
   const toggleFullscreen = () => {
@@ -411,6 +408,9 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   const [expanded, setExpanded] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const reportRef = useRef<HTMLDivElement>(null)
+  
+  const [selectedAnomalies, setSelectedAnomalies] = useState<any[]>([])
+  const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false)
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editKmInicial, setEditKmInicial] = useState('')
