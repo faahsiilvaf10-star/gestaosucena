@@ -784,11 +784,11 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Horímetro</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_horimeter || '-'}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_horimeter || dispatch?.horimeter_start || '-'}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">KM Atual</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_km || '-'}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_km || dispatch?.odometer_start || '-'}</p>
               </div>
             </div>
             

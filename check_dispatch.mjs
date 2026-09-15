@@ -5,14 +5,16 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-const { data, error } = await supabase
+// Check dispatch odometer/horimeter
+const { data: disp } = await supabase
   .from('eq_driver_dispatch')
-  .select('id, equipment_id, driver_id, shift_start_time, shift_end_time, status')
-  .order('shift_start_time', { ascending: false })
-  .limit(10)
+  .select('id, odometer_start, odometer_end, horimeter_start, horimeter_end')
+  .eq('id', '378721fc-3e1f-4e7d-a80d-d0cd78461028')
+console.log('Dispatch KM/Horimetro:', JSON.stringify(disp, null, 2))
 
-if (error) {
-  console.error('Erro:', error)
-} else {
-  console.log('Dispatches recentes:', JSON.stringify(data, null, 2))
-}
+// Check equipment table
+const { data: eq } = await supabase
+  .from('equipamentos')
+  .select('id, name, current_km, current_horimeter')
+  .eq('id', '44842a45-f510-4367-8016-77cc31537ea1')
+console.log('Equipment KM/Horimetro:', JSON.stringify(eq, null, 2))
