@@ -500,8 +500,11 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   const lastHistory = history.length > 0 ? history[history.length - 1] : null
   let currentStatus = translateStatus(lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status'))
 
-  const driverId = lastHistory ? lastHistory.driver_id : null
-  const driverName = driverId ? DRIVERS.find(d => d.id === driverId)?.name || 'Desconhecido' : 'Motorista não atribuído'
+  // Deriva o motorista: primeiro do histórico, depois do dispatch, para evitar "Motorista não atribuído"
+  const driverId = lastHistory?.driver_id || dispatch?.driver_id || null
+  const driverName = dispatch?.driver_name
+    || (driverId ? DRIVERS.find(d => d.id === driverId)?.name || `Motorista (${driverId})` : null)
+    || (dispatch ? 'Motorista em turno' : 'Motorista não atribuído')
 
   let statusColor = 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-400 border-gray-200 dark:border-zinc-700'
   let statusDot = 'bg-gray-500'
@@ -509,8 +512,13 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   
   const statusLower = currentStatus.toLowerCase()
 
+  // Se turno ativo mas sem histórico ainda, mostra "Aguardando"
+  if (dispatch && !dispatch.shift_end_time && history.length === 0) {
+    currentStatus = 'Aguardando'
+  }
+
   // Se for finalizada ou sem status, fica cinza
-  if (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline')) {
+  if (!dispatch && (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline'))) {
     statusLabel = 'Sem status'
   }
   // Status de Pausa / Parado -> Laranja
@@ -522,10 +530,10 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   ) {
     statusColor = 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-200 dark:border-orange-500/30'
     statusDot = 'bg-orange-500'
-    statusLabel = 'Parado'
+    statusLabel = 'Aguardando'
   } 
   // Qualquer outra atividade (Operando, Irrigação, Nova atividade, etc) -> Verde
-  else {
+  else if (dispatch) {
     statusColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
     statusDot = 'bg-emerald-500'
     statusLabel = 'Em atividade'
@@ -808,7 +816,28 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           {/* Timeline Panel */}
           <div className="md:w-2/3">
             <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4 uppercase tracking-wider opacity-80">Linha do Tempo</h4>
-            {history.length === 0 ? (
+            {history.length === 0 && dispatch ? (
+              <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
+                  <TimelineItem
+                    key="dispatch-start"
+                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                    title="Jornada Iniciada"
+                    subtitle={`Motorista: ${driverName}`}
+                    status="in-progress"
+                    isLast={true}
+                  />
+                  <TimelineItem
+                    key="dispatch-waiting"
+                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                    title="Aguardando"
+                    subtitle="Status inicial"
+                    status="pending"
+                    isLast={true}
+                  />
+                </div>
+              </div>
+            ) : history.length === 0 ? (
               <p className="text-sm text-gray-500">Nenhuma atividade registrada para hoje.</p>
             ) : (
               <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
