@@ -94,7 +94,15 @@ function AppMotoristaWrapper() {
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {currentStep === 'login' && <LoginStep onLogin={() => setCurrentStep('environment')} />}
         {currentStep === 'environment' && <EnvironmentStep onSelect={() => setCurrentStep('equipment')} />}
-        {currentStep === 'equipment' && <EquipmentStep onSelect={() => setCurrentStep('wizard')} />}
+        {currentStep === 'equipment' && (
+          <EquipmentStep 
+            onSelect={() => setCurrentStep('wizard')} 
+            onBack={() => {
+              localStorage.removeItem('app_motorista_driver')
+              setCurrentStep('login')
+            }} 
+          />
+        )}
         {currentStep === 'wizard' && <WizardStep onFinish={() => setCurrentStep('dashboard')} onCancel={() => setCurrentStep('equipment')} />}
         {currentStep === 'dashboard' && <DashboardStep />}
       </div>

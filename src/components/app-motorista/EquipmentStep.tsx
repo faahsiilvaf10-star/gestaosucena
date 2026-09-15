@@ -3,7 +3,7 @@ import { Search, Truck, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import MercosulPlate from './MercosulPlate'
 
-export default function EquipmentStep({ onSelect }: { onSelect: (equipmentId: string) => void }) {
+export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipmentId: string) => void, onBack?: () => void }) {
   const [equipments, setEquipments] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -72,7 +72,7 @@ export default function EquipmentStep({ onSelect }: { onSelect: (equipmentId: st
     <div className="min-h-full flex flex-col p-6 bg-gray-50 dark:bg-zinc-950">
       
       <div className="mb-6">
-        <button className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
+        <button onClick={onBack} className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
           &larr; Voltar
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">SELECIONE O <br/> EQUIPAMENTO</h1>
