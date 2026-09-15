@@ -61,6 +61,9 @@ function ParteDiariaPage() {
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
   const [vehicleDispatches, setVehicleDispatches] = useState<Record<string, any>>({})
+  
+  const [selectedAnomalies, setSelectedAnomalies] = useState<any[]>([])
+  const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false)
 
   // Fullscreen handler
   const toggleFullscreen = () => {
@@ -588,7 +591,8 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                   title="Ver anomalias reportadas"
                   onClick={(e) => {
                     e.stopPropagation();
-                    alert(`Anomalias reportadas hoje:\n\n${anomalies.map((a: any) => `- ${new Date(a.created_at).toLocaleTimeString()}: ${a.new_status.replace('Anomalia Pneus: ', 'Pneus (').replace('Anomalia Checklist: ', '')}${a.new_status.startsWith('Anomalia Pneus') ? ')' : ''}`).join('\n')}`);
+                    setSelectedAnomalies(anomalies);
+                    setIsAnomaliesModalOpen(true);
                   }}
                 >
                   <AlertTriangle size={14} /> Anomalias ({anomalies.length})
@@ -638,6 +642,39 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                 <DialogFooter>
                   <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800">Cancelar</button>
                   <button onClick={handleSaveCorrection} className="px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700">Salvar</button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Modal de Anomalias */}
+            <Dialog open={isAnomaliesModalOpen} onOpenChange={setIsAnomaliesModalOpen}>
+              <DialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <AlertTriangle className="text-red-500" size={20} />
+                    Anomalias Reportadas
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  {selectedAnomalies.length > 0 ? selectedAnomalies.map((a: any) => (
+                    <div key={a.id} className="p-3 rounded-lg border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+                          {new Date(a.created_at).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
+                        {a.new_status.replace('Anomalia Pneus: ', 'Pneus (').replace('Anomalia Checklist: ', '')}{a.new_status.startsWith('Anomalia Pneus') ? ')' : ''}
+                      </p>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma anomalia selecionada.</p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <button onClick={() => setIsAnomaliesModalOpen(false)} className="px-4 py-2 w-full rounded-md text-sm font-medium bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
+                    Fechar
+                  </button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
