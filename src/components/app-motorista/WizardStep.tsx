@@ -10,6 +10,8 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
   // Tire Selector State
   const [isTireModalOpen, setIsTireModalOpen] = useState(false)
   const [selectedTires, setSelectedTires] = useState<string[]>([])
+  const [tireObservation, setTireObservation] = useState('')
+  const [tireModalStep, setTireModalStep] = useState<'select' | 'obs'>('select')
 
   const equipmentId = localStorage.getItem('app_motorista_equipment_id')
 
@@ -98,9 +100,10 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
       ]
 
       if (selectedTires.length > 0) {
+        const obsText = tireObservation ? ` - Obs: ${tireObservation}` : ''
         initialTimeline.push({
           time: nowISO,
-          name: `Anomalia Pneus: ${selectedTires.join(', ')}`,
+          name: `Anomalia Pneus: ${selectedTires.join(', ')}${obsText}`,
           type: 'Anomalia',
           color: 'bg-red-500'
         })
@@ -110,7 +113,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           equipment_id: equipmentId,
           driver_id: userId,
           previous_status: 'Jornada Iniciada',
-          new_status: `Anomalia Pneus: ${selectedTires.join(', ')}`,
+          new_status: `Anomalia Pneus: ${selectedTires.join(', ')}${obsText}`,
           created_at: nowISO
         }).catch(console.error)
       }
@@ -331,79 +334,100 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
               <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Relatar Problema
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Toque nos pneus que estão secos ou furados.</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {tireModalStep === 'select' ? 'Toque nos pneus que estão secos ou furados.' : 'Adicione uma observação sobre os pneus (opcional).'}
+              </p>
             </div>
             
-            <div className="p-6 flex-1 overflow-y-auto flex justify-center bg-gray-50 dark:bg-zinc-950/50">
-              <div className="relative w-48 h-80 bg-gray-200 dark:bg-zinc-800 rounded-3xl border-4 border-gray-300 dark:border-zinc-700 shadow-inner">
-                {/* Chassis Line */}
-                <div className="absolute left-1/2 top-4 bottom-4 w-4 -ml-2 bg-gray-400 dark:bg-zinc-600 rounded-full opacity-30"></div>
-                
-                {/* Cab */}
-                <div className="absolute top-2 left-6 right-6 h-20 bg-gray-300 dark:bg-zinc-700 rounded-t-2xl rounded-b-md opacity-50"></div>
-
-                {[
-                  { id: 'DE', x: -12, y: 8, label: 'Esq' },
-                  { id: 'DD', x: 95, y: 8, label: 'Dir' },
-                  { id: 'TEE', x: -21, y: 48, label: 'E-Ext' },
-                  { id: 'TEI', x: -4, y: 48, label: 'E-Int' },
-                  { id: 'TDI', x: 87, y: 48, label: 'D-Int' },
-                  { id: 'TDE', x: 104, y: 48, label: 'D-Ext' },
-                  { id: 'TREE', x: -21, y: 73, label: 'E-Ext' },
-                  { id: 'TREI', x: -4, y: 73, label: 'E-Int' },
-                  { id: 'TRDI', x: 87, y: 73, label: 'D-Int' },
-                  { id: 'TRDE', x: 104, y: 73, label: 'D-Ext' },
-                ].map((tire) => {
-                  const isSelected = selectedTires.includes(tire.id);
-                  return (
-                    <button
-                      key={tire.id}
-                      onClick={() => setSelectedTires(prev => prev.includes(tire.id) ? prev.filter(t => t !== tire.id) : [...prev, tire.id])}
-                      className={`absolute w-8 h-14 rounded-lg flex flex-col items-center justify-center transition-all shadow-md ${
-                        isSelected 
-                          ? 'bg-red-500 scale-110 shadow-red-500/50 z-10 border-2 border-red-700' 
-                          : 'bg-gray-800 dark:bg-black border-2 border-gray-900 dark:border-zinc-900'
-                      }`}
-                      style={{ 
-                        left: `${tire.x}%`, 
-                        top: `${tire.y}%`,
-                      }}
-                      title={tire.id}
-                    >
-                      {/* Treads */}
-                      <div className="w-full h-1 bg-black/20 my-0.5"></div>
-                      <div className="w-full h-1 bg-black/20 my-0.5"></div>
-                      <div className="w-full h-1 bg-black/20 my-0.5"></div>
-                    </button>
-                  )
-                })}
+            {tireModalStep === 'select' ? (
+              <div className="p-6 flex-1 overflow-y-auto flex justify-center bg-gray-50 dark:bg-zinc-950/50">
+                <div className="relative w-48 h-80 bg-gray-200 dark:bg-zinc-800 rounded-3xl border-4 border-gray-300 dark:border-zinc-700 shadow-inner">
+                  {/* Chassis Line */}
+                  <div className="absolute left-1/2 top-4 bottom-4 w-4 -ml-2 bg-gray-400 dark:bg-zinc-600 rounded-full opacity-30"></div>
+                  
+                  {/* Cab */}
+                  <div className="absolute top-2 left-6 right-6 h-20 bg-gray-300 dark:bg-zinc-700 rounded-t-2xl rounded-b-md opacity-50"></div>
+  
+                  {[
+                    { id: 'DE', x: -12, y: 8, label: 'Esq' },
+                    { id: 'DD', x: 95, y: 8, label: 'Dir' },
+                    { id: 'TEE', x: -21, y: 48, label: 'E-Ext' },
+                    { id: 'TEI', x: -4, y: 48, label: 'E-Int' },
+                    { id: 'TDI', x: 87, y: 48, label: 'D-Int' },
+                    { id: 'TDE', x: 104, y: 48, label: 'D-Ext' },
+                    { id: 'TREE', x: -21, y: 73, label: 'E-Ext' },
+                    { id: 'TREI', x: -4, y: 73, label: 'E-Int' },
+                    { id: 'TRDI', x: 87, y: 73, label: 'D-Int' },
+                    { id: 'TRDE', x: 104, y: 73, label: 'D-Ext' },
+                  ].map((tire) => {
+                    const isSelected = selectedTires.includes(tire.id);
+                    return (
+                      <button
+                        key={tire.id}
+                        onClick={() => setSelectedTires(prev => prev.includes(tire.id) ? prev.filter(t => t !== tire.id) : [...prev, tire.id])}
+                        className={`absolute w-8 h-14 rounded-lg flex flex-col items-center justify-center transition-all shadow-md ${
+                          isSelected 
+                            ? 'bg-red-500 scale-110 shadow-red-500/50 z-10 border-2 border-red-700' 
+                            : 'bg-gray-800 dark:bg-black border-2 border-gray-900 dark:border-zinc-900'
+                        }`}
+                        style={{ 
+                          left: `${tire.x}%`, 
+                          top: `${tire.y}%`,
+                        }}
+                        title={tire.id}
+                      >
+                        {/* Treads */}
+                        <div className="w-full h-1 bg-black/20 my-0.5"></div>
+                        <div className="w-full h-1 bg-black/20 my-0.5"></div>
+                        <div className="w-full h-1 bg-black/20 my-0.5"></div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 flex-1 flex flex-col bg-gray-50 dark:bg-zinc-950/50 min-h-[200px]">
+                <textarea
+                  className="w-full flex-1 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none text-gray-700 dark:text-gray-200"
+                  placeholder="Ex: Pneu dianteiro direito rasgado..."
+                  value={tireObservation}
+                  onChange={(e) => setTireObservation(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-white dark:bg-zinc-900">
               <button 
                 onClick={() => {
-                  setIsTireModalOpen(false)
-                  if (selectedTires.length === 0) {
-                     // revert to OK if they didn't select anything
-                     setChecklist(prev => prev.map(item => item.name === 'Pneus' ? { ...item, status: 'conforme' } : item))
+                  if (tireModalStep === 'obs') {
+                    setTireModalStep('select')
+                  } else {
+                    setIsTireModalOpen(false)
+                    if (selectedTires.length === 0) {
+                       setChecklist(prev => prev.map(item => item.name === 'Pneus' ? { ...item, status: 'conforme' } : item))
+                    }
                   }
                 }}
                 className="flex-1 py-4 font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl active:scale-[0.98] transition-all"
               >
-                Cancelar
+                {tireModalStep === 'obs' ? 'Voltar' : 'Cancelar'}
               </button>
               <button 
                 onClick={() => {
-                  if (selectedTires.length === 0) {
-                    alert('Selecione pelo menos um pneu com defeito, ou cancele.');
-                    return;
+                  if (tireModalStep === 'select') {
+                    if (selectedTires.length === 0) {
+                      alert('Selecione pelo menos um pneu com defeito, ou cancele.');
+                      return;
+                    }
+                    setTireModalStep('obs')
+                  } else {
+                    setIsTireModalOpen(false)
+                    setTireModalStep('select')
                   }
-                  setIsTireModalOpen(false)
                 }}
                 className="flex-1 py-4 font-bold text-white bg-red-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-red-500/30"
               >
-                Confirmar
+                {tireModalStep === 'select' ? 'Avançar' : 'Confirmar'}
               </button>
             </div>
           </div>
