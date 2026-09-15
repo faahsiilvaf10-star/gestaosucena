@@ -573,7 +573,10 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           <div className="hidden sm:flex items-center gap-2">
             
             {(() => {
-              const anomalies = history.filter((h: any) => h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:'));
+              const anomalies = history.filter((h: any) => 
+                (h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:'))
+                && (!dispatch?.id || h.dispatch_id === dispatch.id)
+              );
               
               if (anomalies.length === 0) {
                 return (
