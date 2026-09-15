@@ -133,17 +133,44 @@ function ParteDiariaPage() {
       setVehicleDispatches(dMap)
       setTurnosFinalizadosCount(countTurnos)
 
-      // 3. Busca histórico do dia OU dos dispatches ativos
-      let query = supabase.from('eq_status_history').select('*').order('created_at', { ascending: true })
-      if (activeDispatchIds.length > 0) {
-        query = query.or(`created_at.gte.${todayStart},dispatch_id.in.(${activeDispatchIds.join(',')})`)
-      } else {
-        query = query.gte('created_at', todayStart)
+      // 3. Busca histórico do dia OU dos dispatches ativos (em 2 queries para evitar problema de formato UUID no PostgREST)
+      const todayHistoryRes = await supabase
+        .from('eq_status_history')
+        .select('*')
+        .gte('created_at', todayStart)
+        .order('created_at', { ascending: true })
+
+      const allHistories: any[] = todayHistoryRes.data || []
+
+      // Se existem dispatches com IDs que iniciaram antes de hoje (turnos da noite), busca separadamente
+      const nightShiftDispatchIds = activeDispatchIds.filter(id => {
+        const d = dispatches?.find((d: any) => d.id === id)
+        return d && new Date(d.shift_start_time) < new Date(todayStart)
+      })
+
+      if (nightShiftDispatchIds.length > 0) {
+        for (const did of nightShiftDispatchIds) {
+          const { data: nightHistory } = await supabase
+            .from('eq_status_history')
+            .select('*')
+            .eq('dispatch_id', did)
+            .lt('created_at', todayStart)
+            .order('created_at', { ascending: true })
+          if (nightHistory) {
+            allHistories.push(...nightHistory)
+          }
+        }
       }
 
-      const { data: histories, error: hError } = await query
+      // Deduplicar por id
+      const seenIds = new Set<string>()
+      const histories = allHistories.filter(h => {
+        if (seenIds.has(h.id)) return false
+        seenIds.add(h.id)
+        return true
+      }).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-      if (!hError && histories) {
+      if (histories) {
         const hMap: Record<string, any[]> = {}
         histories.forEach(h => {
           if (!hMap[h.equipment_id]) hMap[h.equipment_id] = []
@@ -182,8 +209,14 @@ function ParteDiariaPage() {
     fetchDashboardData()
 
     const subscription = supabase
-      .channel('eq_equipments_changes_painel')
+      .channel('parte_diaria_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
+        fetchDashboardData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_status_history' }, () => {
+        fetchDashboardData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_driver_dispatch' }, () => {
         fetchDashboardData()
       })
       .subscribe()
