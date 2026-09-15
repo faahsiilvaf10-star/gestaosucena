@@ -1133,6 +1133,13 @@ export default function DashboardStep() {
               setViewState('gate')
             }}
           />
+
+          <ActionButton 
+            icon={History} 
+            label="Histórico do Turno" 
+            color={{ bg: 'bg-gray-100 dark:bg-zinc-800', text: 'text-gray-700 dark:text-gray-300' }}
+            onClick={() => setViewState('history')}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4 mt-4">
