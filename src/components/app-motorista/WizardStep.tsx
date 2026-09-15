@@ -51,7 +51,9 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
       const userId = driver?.id || 'desconhecido'
 
       // 1. Create Dispatch (Jornada)
+      const dispatchId = crypto.randomUUID()
       const dispatchData = {
+        id: dispatchId,
         equipment_id: equipmentId,
         driver_id: userId,
         helper_name: helperName,
@@ -63,7 +65,9 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
       }
       
       const dispatchRes = await saveOfflineFirst('eq_driver_dispatch', 'INSERT', dispatchData)
-      const newDispatchId = dispatchRes.data?.[0]?.id || 'offline-id'
+      // Se online result é array. Se offline result.data é o próprio dispatchData.
+      const newDispatchId = (Array.isArray(dispatchRes.data) ? dispatchRes.data[0]?.id : dispatchRes.data?.id) || dispatchId
+
 
       // 2. Create Checklist
       const checklistData = {

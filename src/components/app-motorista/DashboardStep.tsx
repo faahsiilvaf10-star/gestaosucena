@@ -875,16 +875,16 @@ export default function DashboardStep() {
               onClick={() => {
                 import('../../lib/offline-sync').then(m => m.processSyncQueue()).then(() => window.location.reload());
               }} 
-              className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} 
+              className={`w-10 h-10 md:w-12 md:h-12 shrink-0 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} 
               title="Sincronizar dados"
             >
-              <RefreshCw size={22} className={sColors.text} />
+              <RefreshCw size={18} className={sColors.text} />
             </button>
-            <button onClick={() => setViewState('history')} className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Histórico">
-              <History size={22} className={sColors.text} />
+            <button onClick={() => setViewState('history')} className={`w-10 h-10 md:w-12 md:h-12 shrink-0 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Histórico">
+              <History size={18} className={sColors.text} />
             </button>
-            <button onClick={() => confirmAction('Deslogar', 'bg-red-600', handleLogout, 'Sair')} className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Deslogar">
-              <LogOut size={22} className={sColors.text} />
+            <button onClick={() => confirmAction('Deslogar', 'bg-red-600', handleLogout, 'Sair')} className={`w-10 h-10 md:w-12 md:h-12 shrink-0 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Deslogar">
+              <LogOut size={18} className={sColors.text} />
             </button>
           </div>
         </div>

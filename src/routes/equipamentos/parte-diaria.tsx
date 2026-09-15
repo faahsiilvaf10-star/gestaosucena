@@ -103,13 +103,45 @@ function ParteDiariaPage() {
       setTotalPesadosCount(total)
       setActiveVehicles(operandoList)
 
-      // 2. Busca histórico do dia
+      // 2. Busca dispatches (do dia OU em atividade - para cobrir turnos da noite)
       const todayStart = startOfDay(new Date()).toISOString()
-      const { data: histories, error: hError } = await supabase
-        .from('eq_status_history')
+      const { data: dispatches } = await supabase
+        .from('eq_driver_dispatch')
         .select('*')
-        .gte('created_at', todayStart)
-        .order('created_at', { ascending: true })
+        .or(`shift_start_time.gte.${todayStart},status.eq.Em atividade`)
+        .order('shift_start_time', { ascending: true })
+
+      const dMap: Record<string, any> = {}
+      let countTurnos = 0
+      const activeDispatchIds: string[] = []
+      
+      if (dispatches) {
+        dispatches.forEach(d => {
+          // Guarda sempre o último dispatch relevante para o equipamento
+          dMap[d.equipment_id] = d
+          activeDispatchIds.push(d.id)
+        })
+        
+        // Conta turnos finalizados no dia
+        Object.values(dMap).forEach(d => {
+          if (d.shift_end_time && new Date(d.shift_end_time) >= new Date(todayStart)) {
+            countTurnos++
+          }
+        })
+      }
+      
+      setVehicleDispatches(dMap)
+      setTurnosFinalizadosCount(countTurnos)
+
+      // 3. Busca histórico do dia OU dos dispatches ativos
+      let query = supabase.from('eq_status_history').select('*').order('created_at', { ascending: true })
+      if (activeDispatchIds.length > 0) {
+        query = query.or(`created_at.gte.${todayStart},dispatch_id.in.(${activeDispatchIds.join(',')})`)
+      } else {
+        query = query.gte('created_at', todayStart)
+      }
+
+      const { data: histories, error: hError } = await query
 
       if (!hError && histories) {
         const hMap: Record<string, any[]> = {}
@@ -118,33 +150,6 @@ function ParteDiariaPage() {
           hMap[h.equipment_id].push(h)
         })
         setVehicleHistories(hMap)
-
-        // Busca dispatches do dia (para km e combustível inicial)
-        const { data: dispatches } = await supabase
-          .from('eq_driver_dispatch')
-          .select('*')
-          .gte('shift_start_time', todayStart)
-          .order('shift_start_time', { ascending: true })
-
-        const dMap: Record<string, any> = {}
-        let countTurnos = 0
-        
-        if (dispatches) {
-          dispatches.forEach(d => {
-            // Guarda sempre o último dispatch do dia para o equipamento
-            dMap[d.equipment_id] = d
-          })
-          
-          // Conta turnos finalizados no dia
-          Object.values(dMap).forEach(d => {
-            if (d.shift_end_time) {
-              countTurnos++
-            }
-          })
-        }
-        
-        setVehicleDispatches(dMap)
-        setTurnosFinalizadosCount(countTurnos)
 
         let countAtividade = 0
         operandoList.forEach(vehicle => {
