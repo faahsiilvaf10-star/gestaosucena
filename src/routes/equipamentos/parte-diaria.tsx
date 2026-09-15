@@ -230,10 +230,10 @@ function ParteDiariaPage() {
     try {
       const todayStart = startOfDay(new Date()).toISOString()
       const { error } = await supabase
-        .from('eq_status_history')
+        .from('eq_driver_dispatch')
         .delete()
         .eq('equipment_id', vehicleId)
-        .gte('created_at', todayStart)
+        .gte('shift_start_time', todayStart)
 
       if (error) throw error
       
