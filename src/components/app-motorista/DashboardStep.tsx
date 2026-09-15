@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst } from '../../lib/offline-sync'
-import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw } from 'lucide-react'
+import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
@@ -22,11 +22,15 @@ export default function DashboardStep() {
       : new Date()
   )
   const [elapsedStatusTime, setElapsedStatusTime] = useState('00:00:00')
-  const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history' | 'gate'>('operating')
+  const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history' | 'gate' | 'anomaly'>('operating')
 
-  // Gate State
   const [gateReason, setGateReason] = useState('')
   const [gateDescription, setGateDescription] = useState('')
+
+  // Anomaly State
+  const [anomalyType, setAnomalyType] = useState('Problema mecânico')
+  const [anomalyDescription, setAnomalyDescription] = useState('')
+  const [anomalyResolved, setAnomalyResolved] = useState(false)
 
   const reportRef = useRef<HTMLDivElement>(null)
 
@@ -850,6 +854,139 @@ export default function DashboardStep() {
     )
   }
 
+  if (viewState === 'anomaly') {
+    const handleAnomalySubmit = async () => {
+      if (!anomalyDescription.trim()) {
+        alert('Por favor, descreva a anomalia.')
+        return
+      }
+
+      setLoadingFinish(true)
+      try {
+        const driverData = localStorage.getItem('app_motorista_driver')
+        const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+        const authId = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id
+        const driverId = dispatch?.driver_id || authId
+
+        // Salvar Anomalia
+        await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          equipment_id: equipmentId,
+          driver_id: driverId,
+          anomaly_type: anomalyType,
+          description: anomalyDescription,
+          observation: 'Registrado via Check-list do motorista',
+          status: anomalyResolved ? 'Resolvido' : 'Pendente',
+          reported_at: new Date().toISOString()
+        })
+
+        // Salvar Histórico do Status para exibir no painel e na timeline
+        const now = new Date()
+        saveOfflineFirst('eq_status_history', 'INSERT', {
+          dispatch_id: dispatch?.id,
+          equipment_id: equipmentId,
+          driver_id: driverId,
+          previous_status: activeStatus,
+          new_status: `Anomalia: ${anomalyType}`,
+          observation: `${anomalyDescription} (Corrigido: ${anomalyResolved ? 'Sim' : 'Não'})`,
+          created_at: now.toISOString()
+        }).catch(console.error)
+
+        // Adicionar na timeline local
+        const timeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+        timeline.push({
+          time: now.toISOString(),
+          name: `Anomalia: ${anomalyType}`,
+          type: anomalyResolved ? 'Corrigido' : 'Pendente',
+          color: anomalyResolved ? 'bg-emerald-500' : 'bg-red-500'
+        })
+        localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
+
+        alert('Check-list registrado com sucesso!')
+        setAnomalyDescription('')
+        setAnomalyResolved(false)
+        setAnomalyType('Problema mecânico')
+        setViewState('operating')
+      } catch (err) {
+        console.error(err)
+        alert('Erro ao registrar check-list')
+      } finally {
+        setLoadingFinish(false)
+      }
+    }
+
+    return (
+      <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-6 relative">
+        <div className="p-6 pb-2">
+          <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-1 active:opacity-70">
+            &larr; Voltar ao Painel
+          </button>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+              <ClipboardList size={24} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">CHECK-LIST<br/>(ANOMALIAS)</h2>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 pt-0 custom-scrollbar pb-24">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 block mb-1">Tipo de Anomalia</label>
+            <select 
+              value={anomalyType}
+              onChange={e => setAnomalyType(e.target.value)}
+              className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-gray-900 dark:text-white"
+            >
+              <option value="Problema mecânico">Problema mecânico</option>
+              <option value="Pneu">Pneu</option>
+              <option value="Problema elétrico">Problema elétrico</option>
+              <option value="Combustível">Combustível</option>
+              <option value="Acidente/incidente">Acidente/incidente</option>
+              <option value="Atraso">Atraso</option>
+              <option value="Via bloqueada">Via bloqueada</option>
+              <option value="Falha operacional">Falha operacional</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-xs font-semibold text-gray-500 block mb-1">Descrição do Problema</label>
+            <textarea 
+              value={anomalyDescription}
+              onChange={e => setAnomalyDescription(e.target.value)}
+              placeholder="Descreva o que aconteceu..."
+              rows={4}
+              className="w-full p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-gray-900 dark:text-white resize-none"
+            />
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-white">Problema Corrigido?</p>
+              <p className="text-xs text-gray-500">Marque se o problema já foi solucionado.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer"
+                checked={anomalyResolved}
+                onChange={e => setAnomalyResolved(e.target.checked)}
+              />
+              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+          <button 
+            onClick={handleAnomalySubmit}
+            disabled={loadingFinish}
+            className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+          >
+            {loadingFinish ? <Loader2 className="animate-spin" size={24} /> : 'REGISTRAR'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-20">
       
@@ -957,6 +1094,13 @@ export default function DashboardStep() {
             label="Nova Atividade" 
             color={{ bg: 'bg-emerald-100 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400' }}
             onClick={() => setViewState('new_activity')}
+          />
+
+          <ActionButton 
+            icon={ClipboardList} 
+            label="Check-list" 
+            color={{ bg: 'bg-red-100 dark:bg-red-500/20', text: 'text-red-600 dark:text-red-400' }}
+            onClick={() => setViewState('anomaly')}
           />
           
           {equipment.type?.toLowerCase().includes('pipa') && (
