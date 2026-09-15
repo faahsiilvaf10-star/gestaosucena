@@ -107,10 +107,10 @@ export default function EquipmentStep({ onSelect }: { onSelect: (equipmentId: st
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
-                    {eq.name}
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 min-w-0">
+                    <span className="truncate">{eq.name}</span>
                     {eq.id === lastEquipmentId && (
-                      <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                      <span className="flex-shrink-0 text-[10px] uppercase font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">
                         Recomendado
                       </span>
                     )}

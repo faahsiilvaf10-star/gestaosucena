@@ -56,6 +56,7 @@ function ParteDiariaPage() {
 
   // Data states
   const [emTrabalhoCount, setEmTrabalhoCount] = useState(0)
+  const [turnosFinalizadosCount, setTurnosFinalizadosCount] = useState(0)
   const [totalPesadosCount, setTotalPesadosCount] = useState(0)
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
@@ -126,13 +127,24 @@ function ParteDiariaPage() {
           .order('shift_start_time', { ascending: true })
 
         const dMap: Record<string, any> = {}
+        let countTurnos = 0
+        
         if (dispatches) {
           dispatches.forEach(d => {
             // Guarda sempre o último dispatch do dia para o equipamento
             dMap[d.equipment_id] = d
           })
+          
+          // Conta turnos finalizados no dia
+          Object.values(dMap).forEach(d => {
+            if (d.shift_end_time) {
+              countTurnos++
+            }
+          })
         }
+        
         setVehicleDispatches(dMap)
+        setTurnosFinalizadosCount(countTurnos)
 
         let countAtividade = 0
         operandoList.forEach(vehicle => {
@@ -256,14 +268,12 @@ function ParteDiariaPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         <MetricCard title="Veículos em trabalho" value={emTrabalhoCount} total={totalPesadosCount} color="bg-amber-800 dark:bg-amber-900/80" />
         <MetricCard title="Locais de execução" value={MOCK_METRICS.locais} total={0} color="bg-blue-600 dark:bg-blue-700/80" />
-        <MetricCard title="Pendentes" value={MOCK_METRICS.pendentes} total={0} color="bg-gray-500 dark:bg-gray-600/80" />
-        <MetricCard title="Devoluções" value={MOCK_METRICS.devolucoes} total={0} color="bg-rose-500 dark:bg-rose-600/80" />
         <MetricCard title="Anomalias" value={MOCK_METRICS.anomalias} total={0} color="bg-orange-500 dark:bg-orange-600/80" />
         <MetricCard title="Em atraso" value={MOCK_METRICS.emAtraso} total={0} color="bg-red-600 dark:bg-red-700/80" />
-        <MetricCard title="Concluídos" value={MOCK_METRICS.concluidos} total={0} color="bg-emerald-500 dark:bg-emerald-600/80" />
+        <MetricCard title="Turno finalizado" value={turnosFinalizadosCount} total={0} color="bg-emerald-500 dark:bg-emerald-600/80" />
       </div>
 
       {/* DADOS GERAIS HEADER */}
@@ -366,6 +376,8 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   const [editKmFinal, setEditKmFinal] = useState('')
   const [editHoriInicial, setEditHoriInicial] = useState('')
   const [editHoriFinal, setEditHoriFinal] = useState('')
+  const [editFuelInicial, setEditFuelInicial] = useState('')
+  const [editFuelFinal, setEditFuelFinal] = useState('')
 
   const openEditModal = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -373,6 +385,8 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
     setEditKmFinal(dispatch?.odometer_end?.toString() || vehicle.current_km?.toString() || '')
     setEditHoriInicial(dispatch?.horimeter_start?.toString() || '')
     setEditHoriFinal(dispatch?.horimeter_end?.toString() || vehicle.current_horimeter?.toString() || '')
+    setEditFuelInicial(dispatch?.fuel_start_percent?.toString() || '')
+    setEditFuelFinal(dispatch?.fuel_end_percent?.toString() || '')
     setIsEditModalOpen(true)
   }
 
@@ -388,7 +402,9 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           odometer_start: editKmInicial ? parseFloat(editKmInicial) : null,
           odometer_end: editKmFinal ? parseFloat(editKmFinal) : null,
           horimeter_start: editHoriInicial ? parseFloat(editHoriInicial) : null,
-          horimeter_end: editHoriFinal ? parseFloat(editHoriFinal) : null
+          horimeter_end: editHoriFinal ? parseFloat(editHoriFinal) : null,
+          fuel_start_percent: editFuelInicial ? parseInt(editFuelInicial) : null,
+          fuel_end_percent: editFuelFinal ? parseInt(editFuelFinal) : null
         }).eq('id', dispatch.id)
       }
       
@@ -535,6 +551,14 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                     <label className="text-right text-sm text-gray-700 dark:text-gray-300">Hori. Final</label>
                     <input type="number" value={editHoriFinal} onChange={e => setEditHoriFinal(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
                   </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">Comb. Inicial (%)</label>
+                    <input type="number" value={editFuelInicial} onChange={e => setEditFuelInicial(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm text-gray-700 dark:text-gray-300">Comb. Final (%)</label>
+                    <input type="number" value={editFuelFinal} onChange={e => setEditFuelFinal(e.target.value)} className="col-span-3 p-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100" />
+                  </div>
                 </div>
                 <DialogFooter>
                   <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800">Cancelar</button>
@@ -542,6 +566,25 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            <button 
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors mr-2 ${
+                vehicle.latitude && vehicle.longitude 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer' 
+                  : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-zinc-700 cursor-not-allowed'
+              }`}
+              title={vehicle.latitude && vehicle.longitude ? `Atualizado em: ${new Date(vehicle.last_location_update).toLocaleString()}` : 'Localização não disponível para este equipamento'}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (vehicle.latitude && vehicle.longitude) {
+                  window.open(`https://www.google.com/maps?q=${vehicle.latitude},${vehicle.longitude}`, '_blank')
+                } else {
+                  alert('A localização deste equipamento ainda não foi atualizada pelo app do motorista.')
+                }
+              }}
+            >
+              <MapPin size={14} /> GPS
+            </button>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -743,8 +786,8 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           kmFinal={dispatch?.odometer_end || dispatch?.odometer_start || vehicle.current_km || '-'}
           horimetroInicial={dispatch?.horimeter_start || '-'}
           horimetroFinal={dispatch?.horimeter_end || dispatch?.horimeter_start || vehicle.current_horimeter || '-'}
-          abastecimentoInicial={dispatch?.fuel_start_percent || '-'}
-          abastecimentoFinal={dispatch?.fuel_end_percent || '-'}
+          abastecimentoInicial={dispatch?.fuel_start_percent ?? '-'}
+          abastecimentoFinal={dispatch?.fuel_end_percent ?? dispatch?.fuel_start_percent ?? '-'}
           timeline={history.map((h: any) => ({
             time: h.created_at,
             name: h.new_status,

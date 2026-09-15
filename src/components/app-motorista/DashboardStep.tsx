@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst } from '../../lib/offline-sync'
-import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock } from 'lucide-react'
+import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
@@ -194,6 +194,58 @@ export default function DashboardStep() {
 
     fetchData()
   }, [equipmentId])
+
+  // GPS Tracking Effect
+  useEffect(() => {
+    if (!equipmentId) return;
+
+    let watchId: number;
+    let lastSent = 0;
+
+    const sendLocation = async (position: GeolocationPosition) => {
+      try {
+        // Limit updates to at most once per minute to avoid spamming the DB
+        const now = Date.now();
+        if (now - lastSent < 60000) return;
+        lastSent = now;
+
+        const { latitude, longitude } = position.coords;
+        // Direct update (not offline queued) because GPS is only relevant live
+        await supabase.from('eq_equipments').update({
+          latitude,
+          longitude,
+          last_location_update: new Date().toISOString()
+        }).eq('id', equipmentId);
+      } catch (err) {
+        console.error('GPS Update Error:', err);
+      }
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        sendLocation, 
+        (err) => console.error('GPS Init Error:', err), 
+        { enableHighAccuracy: true }
+      );
+      
+      watchId = navigator.geolocation.watchPosition(
+        sendLocation, 
+        (err) => console.error('GPS Watch Error:', err), 
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    return () => {
+      if (watchId && 'geolocation' in navigator) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [equipmentId]);
+
 
   useEffect(() => {
     if (!dispatch?.shift_start_time || viewState === 'finishing') return
@@ -819,6 +871,15 @@ export default function DashboardStep() {
             </div>
           </div>
           <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                import('../../lib/offline-sync').then(m => m.processSyncQueue()).then(() => window.location.reload());
+              }} 
+              className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} 
+              title="Sincronizar dados"
+            >
+              <RefreshCw size={22} className={sColors.text} />
+            </button>
             <button onClick={() => setViewState('history')} className={`w-12 h-12 ${sColors.text === 'text-white' ? 'bg-white/20 hover:bg-white/30' : 'bg-black/5 hover:bg-black/10'} rounded-2xl flex items-center justify-center backdrop-blur-md transition-colors`} title="Histórico">
               <History size={22} className={sColors.text} />
             </button>
