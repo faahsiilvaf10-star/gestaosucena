@@ -228,12 +228,13 @@ function ParteDiariaPage() {
 
   const handleClearJourney = async (vehicleId: string) => {
     try {
-      const todayStart = startOfDay(new Date()).toISOString()
+      // Deleta TODOS os dispatches ativos do equipamento (sem filtro de data,
+      // pois turnos noturnos são iniciados no dia anterior em UTC)
       const { error } = await supabase
         .from('eq_driver_dispatch')
         .delete()
         .eq('equipment_id', vehicleId)
-        .gte('shift_start_time', todayStart)
+        .in('status', ['Em atividade', 'waiting', 'Aguardando'])
 
       if (error) throw error
       
@@ -243,6 +244,7 @@ function ParteDiariaPage() {
       alert('Erro ao apagar jornada do dia.')
     }
   }
+
 
   // Countdown timer
   useEffect(() => {
