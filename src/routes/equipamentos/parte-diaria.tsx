@@ -521,6 +521,35 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           
           <div className="hidden sm:flex items-center gap-2">
             
+            {(() => {
+              const anomalies = history.filter((h: any) => h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:'));
+              
+              if (anomalies.length === 0) {
+                return (
+                  <button 
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-zinc-700 cursor-not-allowed mr-2"
+                    title="Nenhuma anomalia registrada hoje"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <AlertTriangle size={14} /> Anomalias
+                  </button>
+                )
+              }
+              
+              return (
+                <button 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-xs font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors mr-2 cursor-pointer"
+                  title="Ver anomalias reportadas"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert(`Anomalias reportadas hoje:\n\n${anomalies.map((a: any) => `- ${new Date(a.created_at).toLocaleTimeString()}: ${a.new_status.replace('Anomalia Pneus: ', 'Pneus (').replace('Anomalia Checklist: ', '')}${a.new_status.startsWith('Anomalia Pneus') ? ')' : ''}`).join('\n')}`);
+                  }}
+                >
+                  <AlertTriangle size={14} /> Anomalias ({anomalies.length})
+                </button>
+              )
+            })()}
+
             <button 
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-zinc-800 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-gray-200 dark:border-zinc-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors mr-2"
               title="Corrigir KM/Horímetro"
