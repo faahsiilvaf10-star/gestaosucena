@@ -108,14 +108,14 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           color: 'bg-red-500'
         })
         
-        saveOfflineFirst('eq_status_history', 'INSERT', {
+        await saveOfflineFirst('eq_status_history', 'INSERT', {
           dispatch_id: newDispatchId,
           equipment_id: equipmentId,
           driver_id: userId,
           previous_status: 'Jornada Iniciada',
           new_status: `Anomalia Pneus: ${selectedTires.join(', ')}${obsText}`,
           created_at: nowISO
-        }).catch(console.error)
+        })
       }
 
       const otherAnomalies = checklist.filter(item => item.status === 'nao_conforme' && item.name !== 'Pneus')
@@ -126,26 +126,26 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           type: 'Anomalia',
           color: 'bg-red-500'
         })
-        saveOfflineFirst('eq_status_history', 'INSERT', {
+        await saveOfflineFirst('eq_status_history', 'INSERT', {
           dispatch_id: newDispatchId,
           equipment_id: equipmentId,
           driver_id: userId,
           previous_status: 'Jornada Iniciada',
           new_status: `Anomalia Checklist: ${item.name}`,
           created_at: nowISO
-        }).catch(console.error)
+        })
       }
 
       localStorage.setItem('app_motorista_timeline', JSON.stringify(initialTimeline))
 
-      saveOfflineFirst('eq_status_history', 'INSERT', {
+      await saveOfflineFirst('eq_status_history', 'INSERT', {
         dispatch_id: newDispatchId,
         equipment_id: equipmentId,
         driver_id: userId,
         previous_status: 'Jornada Iniciada',
         new_status: 'Aguardando',
         created_at: nowISO
-      }).catch(console.error)
+      })
 
       localStorage.setItem('app_motorista_fuel_level', fuel)
       localStorage.setItem('app_motorista_current_step', 'dashboard')
