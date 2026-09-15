@@ -228,15 +228,28 @@ function ParteDiariaPage() {
 
   const handleClearJourney = async (vehicleId: string) => {
     try {
-      // Deleta TODOS os dispatches ativos do equipamento (sem filtro de data,
-      // pois turnos noturnos são iniciados no dia anterior em UTC)
-      const { error } = await supabase
+      // 1. Fetch active dispatches for this equipment
+      const { data: dispatchesToDelete } = await supabase
         .from('eq_driver_dispatch')
-        .delete()
+        .select('id')
         .eq('equipment_id', vehicleId)
         .in('status', ['Em atividade', 'waiting', 'Aguardando'])
 
-      if (error) throw error
+      if (dispatchesToDelete && dispatchesToDelete.length > 0) {
+        const dispatchIds = dispatchesToDelete.map(d => d.id)
+
+        // 2. Explicitly delete related status history and anomalies
+        await supabase.from('eq_status_history').delete().in('dispatch_id', dispatchIds)
+        await supabase.from('eq_anomalies').delete().in('dispatch_id', dispatchIds)
+
+        // 3. Delete the dispatches
+        const { error } = await supabase
+          .from('eq_driver_dispatch')
+          .delete()
+          .in('id', dispatchIds)
+
+        if (error) throw error
+      }
 
       // Limpa dados do turno no localStorage do dispositivo (caso seja o mesmo)
       const storedEquipmentId = localStorage.getItem('app_motorista_equipment_id')
