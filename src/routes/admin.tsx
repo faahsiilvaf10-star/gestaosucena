@@ -453,7 +453,7 @@ function AdminRoute() {
           <div>
             <div className="flex items-center gap-3 text-[#D6A72B] mb-2">
               <Shield size={32} />
-              <h1 className="text-3xl md:text-4xl font-light italic" style={{ fontFamily: 'TarmilesAction, serif' }}>
+              <h1 className="text-3xl md:text-4xl tracking-tight font-display italic">
                 Administração
               </h1>
             </div>

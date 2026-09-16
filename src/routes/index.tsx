@@ -329,7 +329,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-white tracking-wide mb-1" style={{ fontFamily: 'TarmilesAction, sans-serif', fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
+                <p className="text-white tracking-tight mb-1 font-display italic" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               

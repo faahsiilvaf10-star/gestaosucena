@@ -24,7 +24,7 @@ function DocumentosIndex() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
         <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           Documentações
         </h1>
@@ -36,7 +36,7 @@ function DocumentosIndex() {
           <button
             key={cargo.id}
             onClick={() => setSelectedCargo(cargo)}
-            className="group relative flex flex-col items-center justify-center p-10 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+            className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
           >
             {/* Ícone */}
             <div className="mb-6 transition-transform duration-500 group-hover:scale-110">

@@ -161,10 +161,14 @@ body {
 
   overflow: hidden;
 
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+  touch-action: manipulation;
+
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-card:hover {
@@ -672,7 +676,12 @@ body {
   }
 
   .dashboard-card {
-    padding: 20px;
+    padding: 18px; /* Slightly reduced for mobile */
+  }
+
+  .dashboard-card:active {
+    transform: scale(0.97) translateZ(0); /* Immediate tactile feedback for mobile */
+    transition: transform 0.1s ease;
   }
 
   .donut-wrapper {

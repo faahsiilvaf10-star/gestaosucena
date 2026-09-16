@@ -17,12 +17,12 @@ const HUB_ITEMS = [
 function EquipamentosHub() {
   return (
     <div className="flex flex-col h-full bg-transparent">
-      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-8 sm:mt-12">
+      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-2 sm:mt-4">
         
         {/* Title */}
-        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 mt-4 sm:mt-6 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
+        <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
-            className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-md text-center py-4"
+            className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-md text-center py-1"
             style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: 'normal' }}
           >
             Equipamentos
@@ -33,32 +33,21 @@ function EquipamentosHub() {
         </div>
 
         {/* Grid — 1 col mobile, 2 col tablet+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full animate-in fade-in zoom-in-95 duration-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full animate-in fade-in zoom-in-95 duration-700">
           {HUB_ITEMS.map((item, idx) => {
             const Icon = item.icon
             return (
               <Link
                 key={idx}
                 to={item.href as any}
-                className="group flex items-center sm:flex-col sm:items-center sm:justify-center gap-4 sm:gap-4
-                           py-5 px-5 sm:py-10 sm:px-6 rounded-2xl sm:rounded-3xl transition-all duration-300
-                           bg-white text-black shadow-md hover:shadow-xl hover:-translate-y-1 sm:hover:-translate-y-2
-                           relative overflow-hidden active:scale-[0.98]"
-                style={{ minHeight: 72 }}
+                className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
               >
-                <Icon
-                  size={36}
-                  className="text-black opacity-90 group-hover:scale-110 transition-transform duration-300 relative z-10 flex-shrink-0 sm:w-12 sm:h-12"
-                  strokeWidth={1.5}
-                />
-                <div className="flex flex-col min-w-0 sm:items-center">
-                  <span className="text-xl sm:text-3xl md:text-4xl font-display italic tracking-tight relative z-10 sm:text-center overflow-wrap-anywhere">
-                    {item.name}
-                  </span>
-                  <span className="text-sm text-black/50 mt-0.5 sm:mt-1 sm:text-center">
-                    {item.desc}
-                  </span>
+                <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
+                  <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
                 </div>
+                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                  {item.name}
+                </h3>
               </Link>
             )
           })}

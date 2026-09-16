@@ -14,11 +14,11 @@ const HUB_ITEMS = [
 
 function MeioAmbienteHub() {
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-transparent">
+    <div className="flex flex-col h-full overflow-y-auto pb-24 custom-scrollbar bg-transparent">
       <div className="max-w-6xl w-full h-full mx-auto flex flex-col items-center justify-start mt-2">
         
         {/* Title */}
-        <div className="flex flex-col items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
           <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
             Meio Ambiente
           </h1>
@@ -26,18 +26,21 @@ function MeioAmbienteHub() {
         </div>
 
         {/* Grid of buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full max-w-6xl animate-in fade-in zoom-in-95 duration-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-6xl animate-in fade-in zoom-in-95 duration-700">
           {HUB_ITEMS.map((item, idx) => {
             const Icon = item.icon
             return (
               <Link
                 key={idx}
                 to={item.href}
-                className="group flex flex-col items-center justify-center py-12 px-6 rounded-3xl transition-all duration-300
-                           bg-white text-black shadow-lg hover:shadow-xl hover:-translate-y-2 relative overflow-hidden"
+                className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
               >
-                <Icon size={48} className="mb-4 text-black opacity-90 group-hover:scale-110 transition-transform duration-300 relative z-10" strokeWidth={1.5} />
-                <span className="text-3xl md:text-3xl font-display italic tracking-tight relative z-10 text-center">{item.name}</span>
+                <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
+                  <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                  {item.name}
+                </h3>
               </Link>
             )
           })}
