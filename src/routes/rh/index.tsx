@@ -14,7 +14,7 @@ const HUB_ITEMS = [
 
 function RhHub() {
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 w-full">
+    <div className="flex flex-col h-full overflow-y-auto pb-24 custom-scrollbar bg-transparent">
       <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-2">
         
         {/* Title */}
@@ -38,13 +38,13 @@ function RhHub() {
               <Link
                 key={idx}
                 to={item.href as any}
-                className="group relative flex flex-row items-center justify-start py-4 px-5 rounded-[24px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+                className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
               >
-                <div className="mr-4 transition-transform duration-500 group-hover:scale-110 shrink-0 flex items-center justify-center">
-                  <Icon className="w-8 h-8 text-gray-900" strokeWidth={1.5} />
+                <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
+                  <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-serif italic text-xl text-gray-900 tracking-wide font-medium text-left leading-tight">
-                  {item.name.replace('\n', ' ')}
+                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                  {item.name}
                 </h3>
               </Link>
             )

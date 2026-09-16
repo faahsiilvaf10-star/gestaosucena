@@ -23,7 +23,7 @@ function DocumentosIndex() {
   const [selectedCargo, setSelectedCargo] = useState<{id: string, name: string} | null>(null);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 w-full">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
         <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           Documentações
@@ -36,16 +36,16 @@ function DocumentosIndex() {
           <button
             key={cargo.id}
             onClick={() => setSelectedCargo(cargo)}
-            className="group relative flex flex-row items-center justify-start py-4 px-5 rounded-[24px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+            className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
           >
             {/* Ícone */}
-            <div className="mr-4 transition-transform duration-500 group-hover:scale-110 shrink-0 flex items-center justify-center">
-              <cargo.icon className="w-8 h-8 text-gray-900" strokeWidth={1.5} />
+            <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
+              <cargo.icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
             </div>
             
             {/* Texto */}
-            <h3 className="font-serif italic text-xl text-gray-900 tracking-wide font-medium text-left leading-tight">
-              {cargo.name.replace('\n', ' ')}
+            <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center">
+              {cargo.name}
             </h3>
           </button>
         ))}
