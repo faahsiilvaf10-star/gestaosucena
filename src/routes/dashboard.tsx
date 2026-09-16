@@ -415,7 +415,7 @@ function DashboardComponent() {
                   {eqData.operacaoList.map((eq: any, i: number) => (
                     <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-1 last:border-0">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-blue-600 dark:text-blue-400">{eq.plate_tag || 'S/N'}</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400 uppercase">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
                     </li>
@@ -462,7 +462,7 @@ function DashboardComponent() {
                   {eqData.manutencaoList.map((eq: any, i: number) => (
                     <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-2 last:border-0">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-orange-600 dark:text-orange-400">{eq.plate_tag || 'S/N'}</span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400 uppercase">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
                       <div className="text-[10px] text-gray-400 mt-1">

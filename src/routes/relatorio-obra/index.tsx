@@ -14,7 +14,7 @@ const HUB_ITEMS = [
 
 function RelatorioObraHub() {
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-transparent pb-20">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12 w-full">
       <div className="max-w-5xl w-full mx-auto flex flex-col items-center justify-start mt-2">
         
         {/* Title */}
@@ -40,13 +40,13 @@ function RelatorioObraHub() {
               <Link
                 key={idx}
                 to={item.href as any}
-                className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+                className="group relative flex flex-row items-center justify-start py-4 px-5 rounded-[24px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
               >
-                <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
-                  <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
+                <div className="mr-4 transition-transform duration-500 group-hover:scale-110 shrink-0 flex items-center justify-center">
+                  <Icon className="w-8 h-8 text-gray-900" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
-                  {item.name}
+                <h3 className="font-serif italic text-xl text-gray-900 tracking-wide font-medium text-left leading-tight">
+                  {item.name.replace('\n', ' ')}
                 </h3>
               </Link>
             )
@@ -54,24 +54,22 @@ function RelatorioObraHub() {
 
           {/* Botão Nova Atividade (Pontilhado) */}
           <button
-            className="group flex items-center sm:flex-col sm:items-center sm:justify-center
-                       gap-4 sm:gap-3
-                       py-1 sm:py-2 px-4 sm:px-6 rounded-2xl sm:rounded-3xl transition-all duration-300
+            className="group flex flex-row items-center justify-start
+                       py-4 px-5 rounded-[24px] transition-all duration-300
                        bg-white/50 text-black border-2 border-dashed border-gray-400 dark:border-gray-500
-                       hover:bg-white hover:border-solid hover:shadow-xl hover:-translate-y-1 sm:hover:-translate-y-2
-                       relative overflow-hidden active:scale-[0.98]"
-            style={{ minHeight: 60 }}
+                       hover:bg-white hover:border-solid hover:shadow-md hover:-translate-y-1
+                       relative overflow-hidden"
           >
-            <Plus
-              size={32}
-              className="text-black opacity-90 group-hover:scale-110 transition-transform duration-300 relative z-10 flex-shrink-0 sm:w-12 sm:h-12 sm:mb-1"
-              strokeWidth={1.5}
-            />
-            <div className="flex flex-col min-w-0 sm:items-center">
-              <span className="text-xl sm:text-2xl lg:text-3xl font-serif italic tracking-wide font-medium relative z-10 sm:text-center">
-                Nova Atividade
-              </span>
+            <div className="mr-4 transition-transform duration-500 group-hover:scale-110 shrink-0 flex items-center justify-center">
+              <Plus
+                size={32}
+                className="text-black opacity-90 relative z-10"
+                strokeWidth={1.5}
+              />
             </div>
+            <h3 className="text-xl font-serif italic tracking-wide font-medium text-left leading-tight relative z-10">
+              Nova Atividade
+            </h3>
           </button>
         </div>
       </div>
