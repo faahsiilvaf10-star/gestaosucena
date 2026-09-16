@@ -744,3 +744,69 @@ body {
     transition: none;
   }
 }
+
+/* =========================================
+   DARK MODE OVERRIDES
+========================================= */
+.dark .dashboard-page {
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-label: rgba(255, 255, 255, 0.9);
+}
+
+.dark .dashboard-header {
+  background: rgba(20, 25, 30, 0.7);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .dashboard-card {
+  background: linear-gradient(145deg, rgba(30, 35, 45, 0.95), rgba(20, 25, 30, 0.85));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .icon-box {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .donut {
+  --accent: #ffffff !important;
+  --track: rgba(255, 255, 255, 0.15) !important;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+.dark .percent-box {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.dark .percent-box span {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark .big-number {
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.dark .card-title {
+  color: #ffffff;
+}
+
+.dark .anniversary-list li,
+.dark .weather-temp,
+.dark .weather-desc {
+  color: #ffffff;
+}
+
+.dark .anniversary-list li span:last-child {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark .employee-decoration {
+  color: rgba(255, 255, 255, 0.1);
+}
