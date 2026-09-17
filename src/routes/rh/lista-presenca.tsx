@@ -93,25 +93,25 @@ function AddCollaboratorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+      <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         
-        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
           <h2 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
             <Plus size={18} /> 
             Adicionar a {currentArea}
           </h2>
-          <button onClick={onClose} className="text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors p-1">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-black/10 dark:border-white/10">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 dark:text-white/40" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/40" size={16} />
             <input 
               type="text" 
               placeholder="Buscar colaborador no efetivo..." 
-              className="w-full bg-black/40 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
+              className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -121,22 +121,22 @@ function AddCollaboratorModal({
 
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? (
-            <div className="py-10 text-center text-gray-900 dark:text-white/50">Carregando efetivo...</div>
+            <div className="py-10 text-center text-gray-500 dark:text-white/50">Carregando efetivo...</div>
           ) : filteredEfetivo.length === 0 ? (
-            <div className="py-10 text-center text-gray-900 dark:text-white/50">Nenhum colaborador encontrado.</div>
+            <div className="py-10 text-center text-gray-500 dark:text-white/50">Nenhum colaborador encontrado.</div>
           ) : (
             <div className="flex flex-col gap-1">
               {filteredEfetivo.map(c => (
                 <button 
                   key={c.id}
                   onClick={() => onAdd(c)}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors text-left group"
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
                 >
                   <div>
                     <div className="text-gray-900 dark:text-white font-medium text-sm">{c.nome}</div>
-                    <div className="text-gray-900 dark:text-white/50 text-xs mt-0.5">{c.cargo || 'Sem cargo'} • {c.setor || 'Sem setor'}</div>
+                    <div className="text-gray-500 dark:text-white/50 text-xs mt-0.5">{c.cargo || 'Sem cargo'} • {c.setor || 'Sem setor'}</div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-900 dark:text-white/40 group-hover:bg-white/10 group-hover:text-gray-900 dark:text-white transition-all">
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-white/40 group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-gray-900 dark:group-hover:text-white transition-all">
                     <Plus size={16} />
                   </div>
                 </button>
@@ -240,26 +240,29 @@ function PreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
           <h2 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
             <Eye size={18} /> 
             Pré-visualizar
           </h2>
-          <button onClick={onClose} className="text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors p-1">
             <X size={20} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-black/20">
-          <pre className="text-gray-900 dark:text-white/90 font-mono text-sm whitespace-pre-wrap font-sans">
+        <div className="flex-1 overflow-y-auto p-4 bg-black/5 dark:bg-black/20">
+          <pre className="font-mono text-xs sm:text-sm text-gray-900 dark:text-white/90 whitespace-pre-wrap break-words">
             {generatePreviewText()}
           </pre>
         </div>
 
-        <div className="p-4 border-t border-white/10 bg-white/5 flex justify-end">
-          <button onClick={handleCopy} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-[#0866ff] hover:bg-[#0866ff]/90 text-gray-900 dark:text-white flex items-center gap-2 transition-colors">
+        <div className="p-4 border-t border-black/10 dark:border-white/10 flex gap-2 justify-end bg-white dark:bg-[#1e1e1e]">
+          <button onClick={onClose} className="px-4 py-2 rounded-full text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors">
+            Fechar
+          </button>
+          <button onClick={handleCopy} className="px-4 py-2 rounded-full text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 transition-colors">
             <Copy size={16} /> Copiar para WhatsApp
           </button>
         </div>
@@ -476,7 +479,6 @@ function RhListaPresencaPage() {
     })
     
     toast.success(`${efetivo.nome} adicionado(a) à ${activeTab}`)
-    setIsAddModalOpen(false)
   }
 
   const handleSalvar = async () => {
@@ -948,18 +950,18 @@ function RhListaPresencaPage() {
       {/* Delete Area Modal */}
       {areaToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden p-6">
-            <h2 className="text-xl text-gray-900 dark:text-white font-bold mb-4">Excluir Área?</h2>
-            <p className="text-gray-900 dark:text-white/70 mb-6 text-sm">
-              Tem certeza que deseja excluir a <strong>{areaToDelete}</strong>? 
-              Todos os colaboradores associados a ela na lista de hoje serão removidos da presença.
+          <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col p-6 text-center">
+            <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-gray-900 dark:text-white font-bold text-xl mb-2">Excluir Área?</h3>
+            <p className="text-gray-600 dark:text-white/60 text-sm mb-6">
+              Tem certeza que deseja remover a aba <strong>{areaToDelete}</strong>? Os colaboradores não serão excluídos do sistema.
             </p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setAreaToDelete(null)} className="px-4 py-2 rounded-full text-gray-900 dark:text-white/70 hover:bg-white/10 hover:text-gray-900 dark:text-white transition-colors text-sm font-medium">
+            <div className="flex gap-2 w-full">
+              <button onClick={() => setAreaToDelete(null)} className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors">
                 Cancelar
               </button>
-              <button onClick={confirmDeleteArea} className="px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 text-gray-900 dark:text-white transition-colors text-sm font-medium">
-                Sim, Excluir
+              <button onClick={confirmDeleteArea} className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition-colors">
+                Sim, excluir
               </button>
             </div>
           </div>

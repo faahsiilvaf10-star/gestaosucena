@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { WeatherWidget } from '../components/WeatherWidget'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
+import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { CalendarDays } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -651,9 +652,14 @@ function DashboardComponent() {
         </div>
 
         {/* BOTTOM WIDGETS */}
-        <div className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 mt-6">
-          <DashboardRemindersWidget />
-          <DashboardVistoriasWidget />
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mt-6">
+          <div className="lg:col-span-6 h-full min-h-[400px]">
+            <RecentActivitiesWidget />
+          </div>
+          <div className="lg:col-span-6 flex flex-col gap-4 sm:gap-6">
+            <div className="flex-1"><DashboardRemindersWidget /></div>
+            <div className="flex-1"><DashboardVistoriasWidget /></div>
+          </div>
         </div>
 
       </div>
