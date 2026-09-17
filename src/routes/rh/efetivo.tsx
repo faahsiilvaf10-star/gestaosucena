@@ -260,6 +260,12 @@ function RhEfetivoPage() {
             successMessage = 'Planilha sincronizada. Nenhuma alteração foi necessária.'
           }
 
+          const { logActivity } = await import('../../lib/logActivity');
+          await logActivity({
+            module: 'RH',
+            action: `Planilha de Efetivo importada: ${successMessage.trim()}`
+          });
+
           toast.success(successMessage.trim(), { id: toastId })
           fetchEfetivo()
         } catch (err: any) {

@@ -303,6 +303,12 @@ function RDOPage() {
         value: dataToSave,
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
+      
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'RDO',
+        action: `RDO Principal salvo para ${formatDateDisplay(selectedDate)}`
+      });
     } catch (e) {}
     
     updateSavedDates();

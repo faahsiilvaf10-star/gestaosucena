@@ -239,6 +239,13 @@ function EntradaSaidaPage() {
         }
       })
 
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'Equipamentos',
+        action: `Entrada: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'})`,
+        user_name: userName
+      });
+
       toast.success(`${selectedEq.name} registrada DENTRO da obra.`)
       setIsEntryModalOpen(false)
       fetchEquipments()
@@ -307,6 +314,14 @@ function EntradaSaidaPage() {
       if (updateError) throw updateError
       
       const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || 'Outro'
+      
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'Equipamentos',
+        action: `Saída: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'}) - ${reasonLabel}`,
+        user_name: userName
+      });
+
       toast.success(`${selectedEq.name} registrada FORA da obra — ${reasonLabel}.`)
       setIsExitModalOpen(false)
       fetchEquipments()

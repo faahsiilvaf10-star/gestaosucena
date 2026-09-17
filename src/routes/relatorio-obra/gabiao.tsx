@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
+import { logActivity } from '../../lib/logActivity'
 
 export const Route = createFileRoute('/relatorio-obra/gabiao')({
   component: GabiaoPage,
@@ -164,6 +165,11 @@ function GabiaoPage() {
         value: dataToSave,
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
+      
+      await logActivity({
+        module: 'RDO',
+        action: `Relatório de Gabião salvo para ${formatDateDisplay(selectedDate)}`
+      });
     } catch (e) {}
     
     updateSavedDates();

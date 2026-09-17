@@ -513,6 +513,14 @@ function RhListaPresencaPage() {
       
       setLockedAreas(prev => [...prev, activeTab])
       localStorage.removeItem(`rh_unlocked_${attendanceDate}_${activeTab}`)
+      
+      const { logActivity } = await import('../../lib/logActivity');
+      const dateObj = new Date(attendanceDate + 'T12:00:00');
+      await logActivity({
+        module: 'RH',
+        action: `Lista de presença salva para a data ${dateObj.toLocaleDateString('pt-BR')} (Área: ${activeTab})`
+      });
+
       toast.success(`${activeTab} salva com sucesso!`, { id: toastId })
     } catch (err: any) {
       console.error('ERRO AO SALVAR:', err)

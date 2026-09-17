@@ -120,6 +120,12 @@ function DDSSchedulePage() {
         console.error("Erro no upsert:", error)
         throw error
       }
+      
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'Segurança',
+        action: `DDS agendado para ${data.date.split('-').reverse().join('/')} (Tema: ${data.tema || 'A definir'})`
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })

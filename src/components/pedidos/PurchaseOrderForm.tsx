@@ -170,6 +170,12 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
 
       setShowConfirmModal(false)
       
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'Almoxarifado',
+        action: `Novo Pedido de Compra criado (${data.items.length} itens) - Status: ${status}`
+      });
+
       // Limpar formulário
       form.reset()
       

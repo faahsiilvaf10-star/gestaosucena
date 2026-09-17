@@ -346,6 +346,13 @@ export function EpiRequisitionForm() {
         items: validItems.map(it => ({ product_id: it.productId, quantity: it.quantity })),
         receipt_image_base64: receiptBase64
       });
+      
+      const { logActivity } = await import('../../lib/logActivity');
+      await logActivity({
+        module: 'Almoxarifado',
+        action: `Requisição de EPI criada para ${employee?.nome} (${validItems.length} itens)`,
+        user_name: authorizer?.nome
+      });
 
       // Dispara envio automático no WhatsApp se estiver habilitado
       try {

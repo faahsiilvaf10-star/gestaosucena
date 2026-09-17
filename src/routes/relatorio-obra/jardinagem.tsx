@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
+import { logActivity } from '../../lib/logActivity'
 
 const maskNumber = (val: string, isFloat: boolean) => {
   let raw = val.replace(/\D/g, '');
@@ -228,6 +229,11 @@ function JardinagemPage() {
         value: dataToSave,
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
+      
+      await logActivity({
+        module: 'RDO',
+        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)}`
+      });
     } catch (e) {}
     
     updateSavedDates();
