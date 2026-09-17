@@ -663,14 +663,14 @@ function RhListaPresencaPage() {
         <div className="flex-1 flex flex-col mt-4">
           
           {/* Tabs */}
-          <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar">
+          <div className="flex flex-wrap gap-2 pb-2">
             {areas.map(area => {
               const count = colaboradores.filter(c => (c.setor || 'Sem Área') === area).length
               const isActive = activeTab === area
               return (
                 <div 
                   key={area}
-                  className={`flex items-center rounded-full transition-colors whitespace-nowrap pl-4 pr-1 py-1.5
+                  className={`shrink-0 flex items-center rounded-full transition-colors whitespace-nowrap pl-4 pr-1 py-1.5
                     ${isActive 
                       ? 'bg-black text-white dark:bg-white dark:text-black' 
                       : 'bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300'}`}
@@ -686,7 +686,7 @@ function RhListaPresencaPage() {
             })}
             
             {isAddingArea ? (
-              <div className="flex items-center bg-black/10 dark:bg-white/10 rounded-full px-4 py-1">
+              <div className="shrink-0 flex items-center bg-black/10 dark:bg-white/10 rounded-full px-4 py-1">
                 <input 
                   type="text" 
                   value={newAreaName}
@@ -725,37 +725,37 @@ function RhListaPresencaPage() {
                 />
               </div>
             ) : (
-              <button onClick={() => setIsAddingArea(true)} className="px-4 py-2.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300 whitespace-nowrap transition-colors">
+              <button onClick={() => setIsAddingArea(true)} className="shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300 whitespace-nowrap transition-colors">
                 <Plus size={16} /> Nova Área
               </button>
             )}
           </div>
 
-          <div className="flex flex-col gap-6 mt-4">
+          <div className="flex flex-col gap-4 md:gap-6 mt-4">
               {/* Dashboard Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-900 dark:text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Total</p>
-                    <p className="text-gray-900 dark:text-white text-3xl font-bold">{total}</p>
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
+                  <div className="flex flex-col items-center md:items-start">
+                    <p className="text-gray-900 dark:text-white/50 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Total</p>
+                    <p className="text-gray-900 dark:text-white text-xl md:text-3xl font-bold">{total}</p>
                   </div>
-                  <Users className="text-gray-900 dark:text-white/20" size={32} />
+                  <Users className="text-gray-900 dark:text-white/20 hidden md:block" size={32} />
                 </div>
                 
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-900 dark:text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Presentes</p>
-                    <p className="text-gray-900 dark:text-white text-3xl font-bold">{presentes}</p>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
+                  <div className="flex flex-col items-center md:items-start">
+                    <p className="text-gray-900 dark:text-white/50 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Presentes</p>
+                    <p className="text-gray-900 dark:text-white text-xl md:text-3xl font-bold">{presentes}</p>
                   </div>
-                  <CheckCircle2 className="text-gray-900 dark:text-white/20" size={32} />
+                  <CheckCircle2 className="text-gray-900 dark:text-white/20 hidden md:block" size={32} />
                 </div>
                 
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-red-400/70 text-xs font-medium uppercase tracking-wider mb-1">Ausentes</p>
-                    <p className="text-red-500 text-3xl font-bold">{ausentes}</p>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
+                  <div className="flex flex-col items-center md:items-start">
+                    <p className="text-red-400/70 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Ausentes</p>
+                    <p className="text-red-500 text-xl md:text-3xl font-bold">{ausentes}</p>
                   </div>
-                  <XCircle className="text-red-500/20" size={32} />
+                  <XCircle className="text-red-500/20 hidden md:block" size={32} />
                 </div>
               </div>
 
@@ -765,7 +765,7 @@ function RhListaPresencaPage() {
                   <input 
                     type="text" 
                     placeholder="Buscar por nome ou função..." 
-                    className="w-full bg-black/40 border border-white/10 rounded-full pl-4 pr-10 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
+                    className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-full pl-4 pr-10 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -778,11 +778,11 @@ function RhListaPresencaPage() {
                   )}
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-                  <button onClick={() => markAll('PRESENTE')} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-gray-900 dark:text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto pb-2 md:pb-0">
+                  <button onClick={() => markAll('PRESENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos presentes
                   </button>
-                  <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-gray-900 dark:text-white border border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos ausentes
                   </button>
                   <button 
@@ -794,12 +794,12 @@ function RhListaPresencaPage() {
                       }
                     }} 
                     disabled={lockedAreas.includes(activeTab) || colaboradores.filter(c => (c.setor || 'Sem Área') === activeTab).length === 0} 
-                    className="px-4 py-2.5 rounded-full text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Limpar Lista
                   </button>
-                  <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Plus size={14} /> Adicionar colaborador
+                  <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Plus size={14} /> Adicionar
                   </button>
                   
                   {lockedAreas.includes(activeTab) ? (
@@ -808,20 +808,20 @@ function RhListaPresencaPage() {
                         setLockedAreas(prev => prev.filter(a => a !== activeTab))
                         localStorage.setItem(`rh_unlocked_${attendanceDate}_${activeTab}`, 'true')
                       }} 
-                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors"
+                      className="shrink-0 px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors"
                     >
                       <Unlock size={14} /> Editar
                     </button>
                   ) : (
-                    <button onClick={handleSalvar} className="px-4 py-2.5 rounded-full text-xs font-bold bg-white text-black hover:bg-gray-200 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors">
+                    <button onClick={handleSalvar} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors">
                       <Save size={14} /> Salvar {activeTab}
                     </button>
                   )}
                   
-                  <button onClick={() => setIsPreviewOpen(true)} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-black/40 hover:bg-black/60 text-gray-900 dark:text-white border border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors">
+                  <button onClick={() => setIsPreviewOpen(true)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors">
                     <Eye size={14} /> Pré-visualizar
                   </button>
-                  <button onClick={handleGeneratePDF} className="px-4 py-2.5 rounded-full text-xs font-semibold bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/20 flex items-center gap-2 whitespace-nowrap transition-colors">
+                  <button onClick={handleGeneratePDF} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-2 whitespace-nowrap transition-colors">
                     <FileText size={14} /> Baixar PDF
                   </button>
                 </div>

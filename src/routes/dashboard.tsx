@@ -299,10 +299,10 @@ function DashboardComponent() {
           </div>
         </div>
 
-        <div className="dashboard-grid">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
           
           {/* TOTAL FUNCIONARIOS */}
-          <div className="dashboard-card card-total">
+          <div className="dashboard-card col-span-1 md:col-span-4">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-blue">
@@ -321,7 +321,7 @@ function DashboardComponent() {
           </div>
 
           {/* PRESENÇA */}
-          <div className="dashboard-card card-presence">
+          <div className="dashboard-card col-span-1 md:col-span-4">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-green">
@@ -348,7 +348,7 @@ function DashboardComponent() {
           </div>
 
           {/* AUSÊNCIAS */}
-          <div className="dashboard-card card-absence">
+          <div className="dashboard-card col-span-1 md:col-span-4">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-red">
@@ -375,10 +375,12 @@ function DashboardComponent() {
           </div>
 
           {/* WEATHER */}
-          <WeatherWidget />
+          <div className="col-span-1 md:col-span-3">
+            <WeatherWidget />
+          </div>
 
           {/* ANIVERSARIANTES */}
-          <div className="dashboard-card card-birthday">
+          <div className="dashboard-card col-span-1 md:col-span-3">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-purple">
@@ -405,7 +407,7 @@ function DashboardComponent() {
           </div>
 
           {/* OPERAÇÃO */}
-          <div className="dashboard-card card-operation group !overflow-visible hover:z-50">
+          <div className="dashboard-card group !overflow-visible hover:z-50 col-span-1 md:col-span-3">
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -452,7 +454,7 @@ function DashboardComponent() {
           </div>
 
           {/* MANUTENÇÃO */}
-          <div className="dashboard-card card-maintenance group !overflow-visible hover:z-50">
+          <div className="dashboard-card group !overflow-visible hover:z-50 col-span-1 md:col-span-3">
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -503,7 +505,7 @@ function DashboardComponent() {
 
           {/* ALERTA DDS (SÓ SE O USUÁRIO FOR O PALESTRANTE) */}
           {currentUser?.id === ddsData?.hoje?.palestrante?.id && (
-            <div style={{ gridColumn: 'span 12' }} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
+            <div className="col-span-1 md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
                <div className="flex flex-col gap-3">
                  <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">!</div>
@@ -534,7 +536,7 @@ function DashboardComponent() {
           )}
 
           {currentUser?.id === ddsData?.amanha?.palestrante?.id && currentUser?.id !== ddsData?.hoje?.palestrante?.id && (
-            <div style={{ gridColumn: 'span 12' }} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
+            <div className="col-span-1 md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
                <div className="flex flex-col gap-3">
                  <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">!</div>
@@ -566,7 +568,7 @@ function DashboardComponent() {
 
           {/* DDS HOJE */}
           <div 
-            className="dashboard-card card-dds relative cursor-pointer hover:shadow-md transition-shadow"
+            className="dashboard-card relative cursor-pointer hover:shadow-md transition-shadow col-span-1 md:col-span-6"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
             <div className="dds-card-content w-full">
@@ -620,7 +622,7 @@ function DashboardComponent() {
 
           {/* DDS AMANHÃ */}
           <div 
-            className="dashboard-card card-dds cursor-pointer hover:shadow-md transition-shadow"
+            className="dashboard-card cursor-pointer hover:shadow-md transition-shadow col-span-1 md:col-span-6"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
             <div className="dds-card-content">

@@ -347,15 +347,16 @@ function DDSSchedulePage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-gray-500 uppercase bg-gray-50 font-semibold text-xs border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4">Data</th>
-                  <th className="px-6 py-4">Dia</th>
-                  <th className="px-6 py-4">Palestrante</th>
-                  <th className="px-6 py-4">Tema</th>
-                  <th className="px-6 py-4 text-right">Ações</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Data</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Dia</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Palestrante</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Tema</th>
+                  <th className="px-6 py-4 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -365,13 +366,13 @@ function DDSSchedulePage() {
                   
                   return (
                     <tr key={dateStr} className="hover:bg-gray-50/80 transition-colors group">
-                      <td className="px-6 py-4 font-bold text-black">
+                      <td className="px-6 py-4 font-bold text-black whitespace-nowrap">
                         {format(day, 'dd/MM')}
                       </td>
-                      <td className="px-6 py-4 text-gray-500 capitalize">
+                      <td className="px-6 py-4 text-gray-500 capitalize whitespace-nowrap">
                         {format(day, 'EEE', { locale: ptBR }).replace('.', '')}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {entry?.palestrante ? (
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border border-blue-300 text-blue-700 font-bold overflow-hidden shadow-sm">
@@ -393,14 +394,13 @@ function DDSSchedulePage() {
                       <td className="px-6 py-4">
                         {entry?.tema ? (
                           <div className="flex items-center space-x-2 text-gray-700 font-medium">
-                            <span>{entry.tema}</span>
-                            <ImageIcon className="w-4 h-4 text-blue-500" />
+                            <span className="line-clamp-2">{entry.tema}</span>
                           </div>
                         ) : (
                           <span className="text-gray-400 italic">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => openEdit(day)}
@@ -423,6 +423,69 @@ function DDSSchedulePage() {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden flex flex-col divide-y divide-gray-100">
+            {workDays.map(day => {
+              const dateStr = format(day, 'yyyy-MM-dd')
+              const entry = scheduleMap.get(dateStr)
+              
+              return (
+                <div key={dateStr} className="p-4 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-black text-xl">{format(day, 'dd/MM')}</span>
+                      <span className="text-gray-500 capitalize text-sm">{format(day, 'EEEE', { locale: ptBR })}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(day)} className="p-2.5 text-gray-500 hover:text-black bg-gray-50 border border-gray-200 rounded-xl transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {entry && (
+                        <button onClick={() => handleDelete(day)} className="p-2.5 text-red-500 hover:text-red-700 bg-red-50 border border-red-100 rounded-xl transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-3 flex flex-col justify-center border border-gray-100">
+                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Palestrante</div>
+                      {entry?.palestrante ? (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border border-blue-300 text-blue-700 font-bold overflow-hidden shadow-sm shrink-0">
+                            {entry.palestrante.avatar_url ? (
+                              <img src={entry.palestrante.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                              entry.palestrante.nome.substring(0, 2).toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-gray-900 text-sm truncate">{entry.palestrante.nome}</p>
+                            <p className="text-xs text-gray-500 truncate">{entry.palestrante.cargo}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic text-sm">Não definido</span>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-3 flex flex-col justify-center border border-gray-100">
+                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tema</div>
+                      {entry?.tema ? (
+                        <div className="flex items-center space-x-2 text-gray-800 font-medium text-sm leading-snug">
+                          <span>{entry.tema}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic text-sm">-</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 

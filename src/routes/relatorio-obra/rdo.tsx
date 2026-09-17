@@ -130,21 +130,31 @@ function RDOPage() {
         
       if (error) throw error;
       
+      // Calculate start and end of the specified date in Brazil time (UTC-3)
+      const startDate = new Date(`${dateStr}T00:00:00-03:00`).toISOString();
+      const endDate = new Date(`${dateStr}T23:59:59.999-03:00`).toISOString();
+      
       const { data: movements } = await supabase
         .from('eq_movements')
         .select('equipment_id, created_at')
         .eq('movement_type', 'exit')
-        .like('created_at', `${dateStr}%`)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
         .order('created_at', { ascending: false });
         
       const exits = movements || [];
 
       const filtered = (allEqs || []).filter(eq => {
+        // Ignorar o Gerador específico no RDO
+        if (eq.plate_tag?.toUpperCase() === 'E9A4808' || eq.name?.toUpperCase() === 'GERADOR') return false;
+        
         if (eq.location_status === 'inside') return true;
         return !!exits.find(m => m.equipment_id === eq.id);
       }).map(eq => {
+        // If it's outside, check if there was an exit on this day
         const exitMove = exits.find(m => m.equipment_id === eq.id);
         if (eq.location_status === 'outside' && exitMove) {
+          // Convert the UTC exit time to local time (BRT) for display
           const time = new Date(exitMove.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           return { ...eq, exitTime: time };
         }
@@ -703,6 +713,21 @@ function RDOPage() {
 
               <div className="mt-6 font-bold text-red-600">🔴 Cor Proibida do Mês (setembro): Vermelha</div>
               
+            </div>
+
+            <div className="flex sm:hidden justify-between items-center gap-4 mt-4">
+              {isLocked ? (
+                <button onClick={handleUnlock} className="flex-1 justify-center flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-yellow-100 transition-colors shadow-sm text-yellow-700">
+                  <Lock size={18} className="text-yellow-600" /> Desbloquear
+                </button>
+              ) : (
+                <button onClick={handleSave} className="flex-1 justify-center flex items-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm text-gray-700">
+                  <Save size={18} className="text-gray-500" /> Salvar
+                </button>
+              )}
+              <button onClick={handleCopy} className="flex-1 justify-center flex items-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm text-gray-700">
+                <Copy size={18} className="text-gray-500" /> Copiar
+              </button>
             </div>
           </div>
         </div>

@@ -531,6 +531,21 @@ function GabiaoPage() {
               </p>
             </div>
 
+            <div className="flex sm:hidden justify-between items-center gap-4 mt-4">
+              {isLocked ? (
+                <button onClick={handleUnlock} className="flex-1 justify-center flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-yellow-100 transition-colors shadow-sm text-yellow-700">
+                  <Lock size={18} className="text-yellow-600" /> Desbloquear
+                </button>
+              ) : (
+                <button onClick={handleSave} className="flex-1 justify-center flex items-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm text-gray-700">
+                  <Save size={18} className="text-gray-500" /> Salvar
+                </button>
+              )}
+              <button onClick={handleCopy} className="flex-1 justify-center flex items-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm text-gray-700">
+                <Copy size={18} className="text-gray-500" /> Copiar
+              </button>
+            </div>
+
             <div className="mt-6 flex justify-center">
               <img src="/Trabalhador_gabiao.png" alt="Trabalhador Gabião" className="w-96 h-auto object-contain drop-shadow-md" />
             </div>

@@ -11,7 +11,7 @@ import { useEpiProducts, useCreateEpiRequisition } from '@/hooks/useEpiRequisiti
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft, Eraser } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { getWhatsappSettings } from '@/lib/settings';
@@ -276,6 +276,30 @@ export function EpiRequisitionForm() {
     employeeSigRef.current?.clear();
   };
 
+  // Funções para forçar o modo paisagem no celular (requer clique do usuário)
+  const requestLandscape = async () => {
+    if (window.innerWidth >= 768) return;
+    try {
+      if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+        // Tenta travar a orientação (funciona em PWAs instalados)
+        await window.screen.orientation.lock('landscape');
+      }
+    } catch (e) {
+      console.warn("Orientation lock not supported or requires fullscreen:", e);
+    }
+  };
+
+  const exitLandscape = async () => {
+    try {
+      if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
+        window.screen.orientation.unlock();
+      }
+    } catch (e) {
+      console.warn("Orientation unlock not supported:", e);
+    }
+  };
+
+  // Handler unificado para salvar
   const handleGenerateAndSubmit = async () => {
     if (!authorizerId || !employeeId) {
       toast.error('Selecione o autorizador e o funcionário.');
@@ -459,12 +483,14 @@ export function EpiRequisitionForm() {
             const item = items.find(i => i.productId === p.id);
             return (
               <div key={p.id} className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <Checkbox 
                     id={`epi-${p.id}`} 
                     checked={isSelected} 
                     onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
                     disabled={p.current_quantity <= 0}
+                    className="rounded-full shrink-0 mt-0.5"
+                    style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
                   />
                   <Label 
                     htmlFor={`epi-${p.id}`} 
@@ -475,7 +501,7 @@ export function EpiRequisitionForm() {
                 </div>
                 
                 {isSelected && (
-                  <div className="pl-7 flex flex-wrap items-center gap-3 animate-in fade-in zoom-in duration-200">
+                  <div className="pl-9 flex flex-wrap items-center gap-3 animate-in fade-in zoom-in duration-200">
                     <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md">
                       <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
                       <Input 
@@ -519,6 +545,8 @@ export function EpiRequisitionForm() {
                       checked={isSelected} 
                       onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
                       disabled={p.current_quantity <= 0}
+                      className="rounded-full shrink-0"
+                      style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
                     />
                     <Label htmlFor={`unif-${p.id}`} className="text-sm cursor-pointer whitespace-nowrap">Selecionar</Label>
                   </div>
@@ -555,28 +583,40 @@ export function EpiRequisitionForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
-            <Label className="text-center font-bold">ASSINATURA DO AUTORIZADOR</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
+          <div className={cn("space-y-4 md:space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
+            <div className="w-full flex items-center justify-between mb-2">
+              <div className="w-10"></div> {/* Spacer for alignment */}
+              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
+              <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
+                <Eraser className="w-6 h-6 text-gray-500" />
+              </Button>
+            </div>
+            <div className="border-2 border-dashed border-gray-400 md:border-gray-300 rounded-lg bg-gray-50 md:bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
               <SignatureCanvas 
                 ref={authorizerSigRef} 
                 penColor="black"
                 canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
               />
             </div>
-            <span className="text-sm text-muted-foreground">{authorizer?.nome || 'Selecione o autorizador'}</span>
+            <span className="text-sm text-gray-600 md:text-muted-foreground font-medium text-center">{authorizer?.nome || 'Selecione o autorizador'}</span>
           </div>
 
-          <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
-            <Label className="text-center font-bold">ASSINATURA DO FUNCIONÁRIO</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
+          <div className={cn("space-y-4 md:space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
+            <div className="w-full flex items-center justify-between mb-2">
+              <div className="w-10"></div> {/* Spacer for alignment */}
+              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
+              <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
+                <Eraser className="w-6 h-6 text-gray-500" />
+              </Button>
+            </div>
+            <div className="border-2 border-dashed border-gray-400 md:border-gray-300 rounded-lg bg-gray-50 md:bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
               <SignatureCanvas 
                 ref={employeeSigRef} 
                 penColor="black"
                 canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
               />
             </div>
-            <span className="text-sm text-muted-foreground">{employee?.nome || 'Selecione o funcionário'}</span>
+            <span className="text-sm text-gray-600 md:text-muted-foreground font-medium text-center">{employee?.nome || 'Selecione o funcionário'}</span>
           </div>
         </div>
       </div>
@@ -587,12 +627,18 @@ export function EpiRequisitionForm() {
           <Button type="button" variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
         )}
         {step > 1 && (
-          <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
+          <Button type="button" variant="outline" onClick={() => {
+            if (step - 1 === 1) exitLandscape();
+            setStep(step - 1);
+          }}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Button>
         )}
         {step < 3 ? (
-          <Button type="button" className="ml-auto" onClick={() => setStep(step + 1)}>
+          <Button type="button" className="ml-auto" onClick={() => {
+            if (step + 1 >= 2) requestLandscape();
+            setStep(step + 1);
+          }}>
             Próximo <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (
