@@ -7,6 +7,7 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
+import { supabase } from '../../lib/supabase'
 
 const maskNumber = (val: string, isFloat: boolean) => {
   let raw = val.replace(/\D/g, '');
@@ -161,37 +162,55 @@ function JardinagemPage() {
   const [isLocked, setIsLocked] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const updateSavedDates = () => {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('jardinagem_rdo_'));
-    const lockedDates = keys.filter(k => {
+  const updateSavedDates = async () => {
+    const localKeys = Object.keys(localStorage).filter(k => k.startsWith('jardinagem_rdo_'));
+    const localDates = localKeys.filter(k => {
       try {
         const data = JSON.parse(localStorage.getItem(k) || '{}');
         return data.isLocked !== false;
       } catch (e) {
         return false;
       }
-    }).map(k => k.replace('jardinagem_rdo_', '')).sort((a, b) => b.localeCompare(a));
-    setSavedDates(lockedDates);
+    }).map(k => k.replace('jardinagem_rdo_', ''));
+
+    let remoteDates: string[] = [];
+    try {
+      const { data } = await supabase.from('global_settings').select('key, value').like('key', 'jardinagem_rdo_%');
+      if (data) {
+        remoteDates = data.filter(r => r.value?.isLocked !== false).map(r => r.key.replace('jardinagem_rdo_', ''));
+      }
+    } catch (e) {}
+
+    const merged = Array.from(new Set([...localDates, ...remoteDates])).sort((a, b) => b.localeCompare(a));
+    setSavedDates(merged);
   }
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     setIsLocked(false);
-    const data = localStorage.getItem(`jardinagem_rdo_${selectedDate}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        parsed.isLocked = false;
-        localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(parsed));
-        updateSavedDates();
-      } catch (e) {}
+    let parsed: any = {};
+    const localData = localStorage.getItem(`jardinagem_rdo_${selectedDate}`);
+    if (localData) {
+      try { parsed = JSON.parse(localData); } catch (e) {}
     }
+    parsed.isLocked = false;
+    localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(parsed));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `jardinagem_rdo_${selectedDate}`,
+        value: parsed,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
   }
 
   useEffect(() => {
     updateSavedDates();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const dataToSave = {
       rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
       outrasFaixa, outrasBerma, outrasDesc, canteiroDesc, irrigacaoPipas, irrigacaoApoioPipa, irrigacaoCarretel, irrigacaoCarretelBermas,
@@ -199,43 +218,64 @@ function JardinagemPage() {
       isLocked: true
     };
     localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(dataToSave));
-    updateSavedDates();
     setIsLocked(true);
     toast.success('Relatório salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `jardinagem_rdo_${selectedDate}`,
+        value: dataToSave,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
   }
 
-  const loadDate = (dateStr: string) => {
+  const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
-    const data = localStorage.getItem(`jardinagem_rdo_${dateStr}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        setRocagem(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]);
-        setRocagemAsp(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]);
-        setPodagem(parsed.podagem || [{ faixa: '', berma: '', value: '' }]);
-        setCova(parsed.cova || [{ faixa: '', berma: '', value: '' }]);
-        setCoroamento(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]);
-        setAdubagem(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]);
-        setPlantio(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]);
-        setLimpezaManual(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]);
-        setLimpezaSoprador(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]);
-        setInvasoras(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]);
-        setRetiradaMudas(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]);
-        setPlantioGrama(parsed.plantioGrama || [{ faixa: '', berma: '', value: '' }]);
-        setOutrasFaixa(parsed.outrasFaixa !== undefined ? parsed.outrasFaixa : '');
-        setOutrasBerma(parsed.outrasBerma !== undefined ? parsed.outrasBerma : '');
-        setOutrasDesc(parsed.outrasDesc !== undefined ? parsed.outrasDesc : '');
-        setCanteiroDesc(parsed.canteiroDesc !== undefined ? parsed.canteiroDesc : '');
-        setIrrigacaoPipas(parsed.irrigacaoPipas || false);
-        setIrrigacaoApoioPipa(parsed.irrigacaoApoioPipa || false);
-        setIrrigacaoCarretel(parsed.irrigacaoCarretel || false);
-        setManutencaoIrrigacao(parsed.manutencaoIrrigacao || false);
-        setIrrigacaoCarretelBermas(parsed.irrigacaoCarretelBermas || { 1: [], 2: [], 3: [], 4: [], 5: [] });
-        setIsLocked(parsed.isLocked !== false);
-        setShowHistory(false);
-      } catch (e) {
-        console.error("Error loading data", e);
+    
+    let parsed: any = null;
+    
+    try {
+      const { data } = await supabase.from('global_settings').select('value').eq('key', `jardinagem_rdo_${dateStr}`).single();
+      if (data && data.value) {
+        parsed = data.value;
+        localStorage.setItem(`jardinagem_rdo_${dateStr}`, JSON.stringify(parsed));
       }
+    } catch (e) {}
+    
+    if (!parsed) {
+      const localData = localStorage.getItem(`jardinagem_rdo_${dateStr}`);
+      if (localData) {
+        try { parsed = JSON.parse(localData); } catch (e) {}
+      }
+    }
+    
+    if (parsed) {
+      setRocagem(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]);
+      setRocagemAsp(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]);
+      setPodagem(parsed.podagem || [{ faixa: '', berma: '', value: '' }]);
+      setCova(parsed.cova || [{ faixa: '', berma: '', value: '' }]);
+      setCoroamento(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]);
+      setAdubagem(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]);
+      setPlantio(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]);
+      setLimpezaManual(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]);
+      setLimpezaSoprador(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]);
+      setInvasoras(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]);
+      setRetiradaMudas(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]);
+      setPlantioGrama(parsed.plantioGrama || [{ faixa: '', berma: '', value: '' }]);
+      setOutrasFaixa(parsed.outrasFaixa !== undefined ? parsed.outrasFaixa : '');
+      setOutrasBerma(parsed.outrasBerma !== undefined ? parsed.outrasBerma : '');
+      setOutrasDesc(parsed.outrasDesc !== undefined ? parsed.outrasDesc : '');
+      setCanteiroDesc(parsed.canteiroDesc !== undefined ? parsed.canteiroDesc : '');
+      setIrrigacaoPipas(parsed.irrigacaoPipas || false);
+      setIrrigacaoApoioPipa(parsed.irrigacaoApoioPipa || false);
+      setIrrigacaoCarretel(parsed.irrigacaoCarretel || false);
+      setManutencaoIrrigacao(parsed.manutencaoIrrigacao || false);
+      setIrrigacaoCarretelBermas(parsed.irrigacaoCarretelBermas || { 1: [], 2: [], 3: [], 4: [], 5: [] });
+      setIsLocked(parsed.isLocked !== false);
+      setShowHistory(false);
     } else {
       setRocagem([{ faixa: '', berma: '', value: '' }]);
       setRocagemAsp([{ faixa: '', berma: '', value: '' }]);

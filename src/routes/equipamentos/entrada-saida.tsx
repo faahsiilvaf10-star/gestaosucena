@@ -228,6 +228,17 @@ function EntradaSaidaPage() {
 
       if (updateError) throw updateError
       
+      // Broadcast para os outros clientes
+      supabase.channel('global_eq_movements').send({
+        type: 'broadcast',
+        event: 'eq_moved',
+        payload: {
+          equipment_id: selectedEq.id,
+          movement_type: 'entry',
+          created_by: userName
+        }
+      })
+
       toast.success(`${selectedEq.name} registrada DENTRO da obra.`)
       setIsEntryModalOpen(false)
       fetchEquipments()

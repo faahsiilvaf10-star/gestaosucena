@@ -554,35 +554,40 @@ function AdminRoute() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map(user => (
-                    <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
-                            {user.avatar_url ? (
-                              <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <UserIcon size={20} className="text-gray-400" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium flex items-center gap-1">
-                              {user.name}
+                  filteredUsers.map(user => {
+                    const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                    const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
+                    const displayId = String(seqIndex).padStart(4, '0');
+
+                    return (
+                      <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                              {user.avatar_url ? (
+                                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <UserIcon size={20} className="text-gray-400" />
+                              )}
                             </div>
-                            <div className="text-xs text-gray-500 truncate w-32 md:w-auto" title={user.id}>
-                              ID: {user.id.substring(0, 8)}...
+                            <div>
+                              <div className="font-medium flex items-center gap-1">
+                                {user.name}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate w-32 md:w-auto" title={user.id}>
+                                ID: {displayId}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-gray-600 dark:text-gray-300">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes('admin') || user.role?.toLowerCase().includes('diretor') ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}`}>
-                          {user.role || 'Usuário'}
-                        </span>
-                      </td>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-gray-600 dark:text-gray-300">{user.email}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes('admin') || user.role?.toLowerCase().includes('diretor') ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}`}>
+                            {user.role || 'Usuário'}
+                          </span>
+                        </td>
                       <td className="px-6 py-4">
                         {user.banned_until ? (
                           <div className="flex items-center gap-1.5 text-red-500 font-medium">
@@ -630,7 +635,8 @@ function AdminRoute() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                  );
+                })
                 )}
               </tbody>
             </table>

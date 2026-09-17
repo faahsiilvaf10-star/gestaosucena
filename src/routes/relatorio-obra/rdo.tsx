@@ -77,43 +77,81 @@ function RDOPage() {
     }
   }
 
-  const updateSavedDates = () => {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('main_rdo_'));
-    const lockedDates = keys.filter(k => {
+  const updateSavedDates = async () => {
+    const localKeys = Object.keys(localStorage).filter(k => k.startsWith('main_rdo_') && k !== 'main_rdo_defaults');
+    const localDates = localKeys.filter(k => {
       try {
         const data = JSON.parse(localStorage.getItem(k) || '{}');
         return data.isLocked !== false;
       } catch (e) {
         return false;
       }
-    }).map(k => k.replace('main_rdo_', '')).sort((a, b) => b.localeCompare(a));
-    setSavedDates(lockedDates);
-  }
+    }).map(k => k.replace('main_rdo_', ''));
 
-  const handleUnlock = () => {
-    setIsLocked(false);
-    const data = localStorage.getItem(`main_rdo_${selectedDate}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        parsed.isLocked = false;
-        localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(parsed));
-        updateSavedDates();
-      } catch (e) {}
-    }
-  }
-
-  const fetchEquipamentos = async () => {
+    let remoteDates: string[] = [];
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase.from('global_settings').select('key, value').like('key', 'main_rdo_%');
+      if (data) {
+        remoteDates = data.filter(r => r.key !== 'main_rdo_defaults' && r.value?.isLocked !== false).map(r => r.key.replace('main_rdo_', ''));
+      }
+    } catch (e) {}
+
+    const merged = Array.from(new Set([...localDates, ...remoteDates])).sort((a, b) => b.localeCompare(a));
+    setSavedDates(merged);
+  }
+
+  const handleUnlock = async () => {
+    setIsLocked(false);
+    let parsed: any = {};
+    const localData = localStorage.getItem(`main_rdo_${selectedDate}`);
+    if (localData) {
+      try { parsed = JSON.parse(localData); } catch (e) {}
+    }
+    parsed.isLocked = false;
+    localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(parsed));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `main_rdo_${selectedDate}`,
+        value: parsed,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
+  }
+
+  const fetchEquipamentos = async (dateStr: string) => {
+    try {
+      const { data: allEqs, error } = await supabase
         .from('eq_equipments')
         .select('*')
-        .eq('location_status', 'inside')
         .order('name', { ascending: true });
         
-      if (data) {
-        setEquipamentos(data);
-      }
+      if (error) throw error;
+      
+      const { data: movements } = await supabase
+        .from('eq_movements')
+        .select('equipment_id, created_at')
+        .eq('movement_type', 'exit')
+        .like('created_at', `${dateStr}%`)
+        .order('created_at', { ascending: false });
+        
+      const exits = movements || [];
+
+      const filtered = (allEqs || []).filter(eq => {
+        if (eq.location_status === 'inside') return true;
+        return !!exits.find(m => m.equipment_id === eq.id);
+      }).map(eq => {
+        const exitMove = exits.find(m => m.equipment_id === eq.id);
+        if (eq.location_status === 'outside' && exitMove) {
+          const time = new Date(exitMove.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          return { ...eq, exitTime: time };
+        }
+        return eq;
+      });
+
+      setEquipamentos(filtered);
     } catch(e) {
       console.error(e);
     }
@@ -122,89 +160,71 @@ function RDOPage() {
   useEffect(() => {
     updateSavedDates();
     loadDate(selectedDate);
-    fetchEquipamentos();
   }, []);
 
-  const loadDate = (dateStr: string) => {
+  const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
+    fetchEquipamentos(dateStr);
+    fetchPresencasForDate(dateStr);
     
     const isFriday = new Date(dateStr + 'T12:00:00Z').getUTCDay() === 5;
     const defaultHorario = isFriday ? '07:00 as 16:00' : '07:00 as 17:00';
     
-    // Load Main RDO data
-    const data = localStorage.getItem(`main_rdo_${dateStr}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        setEmpresa(parsed.empresa || 'Sucena Empreendimentos');
-        setContrato(parsed.contrato || '460001269');
-        setGerencia(parsed.gerencia || 'Hydro');
-        setLideranca(parsed.lideranca || 'Eng. Luís Araújo');
-        setTst(parsed.tst || 'Itamar Junior e Alexssandro Chaves');
-        setLocal(parsed.local || 'Alunorte Barcarena');
-        
-        let savedHorario = parsed.horario;
-        if (savedHorario === '07:00 as 17:00' && isFriday) savedHorario = '07:00 as 16:00';
-        setHorario(savedHorario || defaultHorario);
-        
-        setClimaManha(parsed.climaManha || 'Sol');
-        setClimaTarde(parsed.climaTarde || 'Sol');
-        setDificuldades(parsed.dificuldades || 'Não Houve.');
-        setIsLocked(parsed.isLocked !== false);
-        setShowHistory(false);
-      } catch (e) {
-        console.error("Error loading main rdo data", e);
+    let mainData: any = null;
+    let jarData: any = null;
+    let gabData: any = null;
+    
+    try {
+      const { data } = await supabase.from('global_settings').select('key, value').in('key', [`main_rdo_${dateStr}`, `jardinagem_rdo_${dateStr}`, `gabiao_rdo_${dateStr}`]);
+      if (data) {
+        data.forEach(item => {
+          if (item.key.startsWith('main_rdo_')) { mainData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
+          if (item.key.startsWith('jardinagem_rdo_')) { jarData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
+          if (item.key.startsWith('gabiao_rdo_')) { gabData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
+        });
       }
+    } catch(e) {}
+
+    // Fallbacks
+    if (!mainData) { const local = localStorage.getItem(`main_rdo_${dateStr}`); if (local) try { mainData = JSON.parse(local); } catch(e){} }
+    if (!jarData) { const local = localStorage.getItem(`jardinagem_rdo_${dateStr}`); if (local) try { jarData = JSON.parse(local); } catch(e){} }
+    if (!gabData) { const local = localStorage.getItem(`gabiao_rdo_${dateStr}`); if (local) try { gabData = JSON.parse(local); } catch(e){} }
+
+    if (mainData) {
+      setEmpresa(mainData.empresa || 'Sucena Empreendimentos');
+      setContrato(mainData.contrato || '460001269');
+      setGerencia(mainData.gerencia || 'Hydro');
+      setLideranca(mainData.lideranca || 'Eng. Luís Araújo');
+      setTst(mainData.tst || 'Itamar Junior e Alexssandro Chaves');
+      setLocal(mainData.local || 'Alunorte Barcarena');
+      let savedHorario = mainData.horario;
+      if (savedHorario === '07:00 as 17:00' && isFriday) savedHorario = '07:00 as 16:00';
+      setHorario(savedHorario || defaultHorario);
+      setClimaManha(mainData.climaManha || 'Sol');
+      setClimaTarde(mainData.climaTarde || 'Sol');
+      setDificuldades(mainData.dificuldades || 'Não Houve.');
+      setIsLocked(mainData.isLocked !== false);
+      setShowHistory(false);
     } else {
       let defaults = {
-        empresa: 'Sucena Empreendimentos',
-        contrato: '460001269',
-        gerencia: 'Hydro',
-        lideranca: 'Eng. Luís Araújo',
-        tst: 'Itamar Junior e Alexssandro Chaves',
-        local: 'Alunorte Barcarena'
+        empresa: 'Sucena Empreendimentos', contrato: '460001269', gerencia: 'Hydro',
+        lideranca: 'Eng. Luís Araújo', tst: 'Itamar Junior e Alexssandro Chaves', local: 'Alunorte Barcarena'
       };
       const savedDefaults = localStorage.getItem('main_rdo_defaults');
       if (savedDefaults) {
-        try {
-          const p = JSON.parse(savedDefaults);
-          defaults = { ...defaults, ...p };
-        } catch(e) {}
+        try { defaults = { ...defaults, ...JSON.parse(savedDefaults) }; } catch(e) {}
       }
-
-      setEmpresa(defaults.empresa);
-      setContrato(defaults.contrato);
-      setGerencia(defaults.gerencia);
-      setLideranca(defaults.lideranca);
-      setTst(defaults.tst);
-      setLocal(defaults.local);
-      setHorario(defaultHorario);
-      setClimaManha('Sol');
-      setClimaTarde('Sol');
-      setDificuldades('Não Houve.');
-      setIsLocked(false);
-      setShowHistory(false);
+      setEmpresa(defaults.empresa); setContrato(defaults.contrato); setGerencia(defaults.gerencia);
+      setLideranca(defaults.lideranca); setTst(defaults.tst); setLocal(defaults.local);
+      setHorario(defaultHorario); setClimaManha('Sol'); setClimaTarde('Sol'); setDificuldades('Não Houve.');
+      setIsLocked(false); setShowHistory(false);
     }
 
-    // Load sub-reports
-    const jar = localStorage.getItem(`jardinagem_rdo_${dateStr}`);
-    if (jar) {
-      try { setJardinagemData(JSON.parse(jar)); } catch(e) { setJardinagemData(null); }
-    } else {
-      setJardinagemData(null);
-    }
-
-    const gab = localStorage.getItem(`gabiao_rdo_${dateStr}`);
-    if (gab) {
-      try { setGabiaoData(JSON.parse(gab)); } catch(e) { setGabiaoData(null); }
-    } else {
-      setGabiaoData(null);
-    }
-    
-    fetchPresencasForDate(dateStr);
+    setJardinagemData(jarData);
+    setGabiaoData(gabData);
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const dataToSave = {
       empresa, contrato, gerencia, lideranca, tst, local, horario,
       climaManha, climaTarde, dificuldades,
@@ -214,9 +234,18 @@ function RDOPage() {
     localStorage.setItem('main_rdo_defaults', JSON.stringify({
       empresa, contrato, gerencia, lideranca, tst, local
     }));
-    updateSavedDates();
     setIsLocked(true);
     toast.success('RDO salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `main_rdo_${selectedDate}`,
+        value: dataToSave,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
   }
 
   const handleCopy = () => {
@@ -418,7 +447,11 @@ function RDOPage() {
     lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqGerais.length})`);
     if (eqGerais.length > 0) {
       eqGerais.forEach(eq => {
-        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`);
+        let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
+        if ((eq as any).exitTime) {
+          eqNameStr += ` (Saiu às ${(eq as any).exitTime})`;
+        }
+        lines.push(eqNameStr);
       });
     } else {
       lines.push(`Nenhum equipamento na obra.`);

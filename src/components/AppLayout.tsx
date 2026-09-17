@@ -17,6 +17,8 @@ import { WindowsNavbar } from './WindowsNavbar'
 import { ChatWindow } from './chat/ChatWindow'
 import { DdsUploadModal } from './DdsUploadModal'
 import { isAdmin } from './ui/VerifiedBadge'
+import { toast } from 'sonner'
+import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -26,6 +28,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
+  const [announcement, setAnnouncement] = useState<{ type: 'entry'|'exit', eq: any, move: any } | null>(null)
   const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '', avatarUrl: '' })
   
   const { toggleSidebar, unreadCountGlobally, activeChats, isSidebarOpen } = useChat()
@@ -67,6 +70,32 @@ export function AppLayout({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    // Global listener for Equipment Movements (Entry/Exit announcements)
+    const handleMovement = async (move: any) => {
+      const { data: eq } = await supabase.from('eq_equipments').select('*').eq('id', move.equipment_id).single()
+      
+      setAnnouncement({
+        type: move.movement_type as 'entry'|'exit',
+        eq: eq,
+        move: move
+      })
+    }
+
+    const channel = supabase.channel('global_eq_movements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'eq_movements' }, async (payload) => {
+        handleMovement(payload.new)
+      })
+      .on('broadcast', { event: 'eq_moved' }, async ({ payload }) => {
+        handleMovement(payload)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const handleLogoutConfirm = async () => {
@@ -231,6 +260,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Equipment Announcement Modal */}
+      {announcement && (
+        <EquipmentAnnouncementModal 
+          announcement={announcement}
+          isDark={isDark}
+          onClose={() => setAnnouncement(null)}
+        />
       )}
 
       {/* Monthly Colors Modal */}

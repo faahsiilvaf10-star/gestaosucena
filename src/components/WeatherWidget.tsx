@@ -15,18 +15,18 @@ import { useTheme } from '../contexts/ThemeContext'
 
 // WMO Weather interpretation codes
 function getWeatherDetails(code: number) {
-  if (code === 0) return { label: 'Céu Limpo', icon: <Sun className="text-yellow-400" size={32} /> }
-  if (code === 1 || code === 2) return { label: 'Parcialmente Nublado', icon: <Cloud className="text-gray-300" size={32} /> }
-  if (code === 3) return { label: 'Nublado', icon: <Cloud className="text-gray-400" size={32} /> }
-  if (code === 45 || code === 48) return { label: 'Neblina', icon: <CloudFog className="text-gray-400" size={32} /> }
-  if (code >= 51 && code <= 55) return { label: 'Garoa', icon: <CloudDrizzle className="text-blue-300" size={32} /> }
-  if (code >= 61 && code <= 65) return { label: 'Chuva', icon: <CloudRain className="text-blue-400" size={32} /> }
-  if (code >= 71 && code <= 77) return { label: 'Neve', icon: <CloudSnow className="text-gray-900 dark:text-white" size={32} /> }
-  if (code >= 80 && code <= 82) return { label: 'Pancadas de Chuva', icon: <CloudRain className="text-blue-500" size={32} /> }
-  if (code >= 85 && code <= 86) return { label: 'Tempestade de Neve', icon: <CloudSnow className="text-gray-900 dark:text-white" size={32} /> }
+  if (code === 0) return { label: 'Céu Limpo', icon: <Sun className="text-yellow-500" size={32} /> }
+  if (code === 1 || code === 2) return { label: 'Parcialmente Nublado', icon: <Cloud className="text-slate-500 dark:text-slate-300" size={32} /> }
+  if (code === 3) return { label: 'Nublado', icon: <Cloud className="text-slate-600 dark:text-slate-400" size={32} /> }
+  if (code === 45 || code === 48) return { label: 'Neblina', icon: <CloudFog className="text-slate-500 dark:text-slate-400" size={32} /> }
+  if (code >= 51 && code <= 55) return { label: 'Garoa', icon: <CloudDrizzle className="text-blue-500 dark:text-blue-300" size={32} /> }
+  if (code >= 61 && code <= 65) return { label: 'Chuva', icon: <CloudRain className="text-blue-600 dark:text-blue-400" size={32} /> }
+  if (code >= 71 && code <= 77) return { label: 'Neve', icon: <CloudSnow className="text-slate-700 dark:text-white" size={32} /> }
+  if (code >= 80 && code <= 82) return { label: 'Pancadas de Chuva', icon: <CloudRain className="text-blue-600 dark:text-blue-400" size={32} /> }
+  if (code >= 85 && code <= 86) return { label: 'Tempestade de Neve', icon: <CloudSnow className="text-slate-700 dark:text-white" size={32} /> }
   if (code >= 95 && code <= 99) return { label: 'Tempestade', icon: <CloudLightning className="text-yellow-500" size={32} /> }
   
-  return { label: 'Desconhecido', icon: <Cloud className="text-gray-400" size={32} /> }
+  return { label: 'Desconhecido', icon: <Cloud className="text-slate-500 dark:text-slate-400" size={32} /> }
 }
 
 export function WeatherWidget() {

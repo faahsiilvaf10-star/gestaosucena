@@ -6,6 +6,7 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
+import { supabase } from '../../lib/supabase'
 
 export const Route = createFileRoute('/relatorio-obra/gabiao')({
   component: GabiaoPage,
@@ -96,37 +97,55 @@ function GabiaoPage() {
   const [isLocked, setIsLocked] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const updateSavedDates = () => {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('gabiao_rdo_'));
-    const lockedDates = keys.filter(k => {
+  const updateSavedDates = async () => {
+    const localKeys = Object.keys(localStorage).filter(k => k.startsWith('gabiao_rdo_'));
+    const localDates = localKeys.filter(k => {
       try {
         const data = JSON.parse(localStorage.getItem(k) || '{}');
         return data.isLocked !== false;
       } catch (e) {
         return false;
       }
-    }).map(k => k.replace('gabiao_rdo_', '')).sort((a, b) => b.localeCompare(a));
-    setSavedDates(lockedDates);
+    }).map(k => k.replace('gabiao_rdo_', ''));
+
+    let remoteDates: string[] = [];
+    try {
+      const { data } = await supabase.from('global_settings').select('key, value').like('key', 'gabiao_rdo_%');
+      if (data) {
+        remoteDates = data.filter(r => r.value?.isLocked !== false).map(r => r.key.replace('gabiao_rdo_', ''));
+      }
+    } catch (e) {}
+
+    const merged = Array.from(new Set([...localDates, ...remoteDates])).sort((a, b) => b.localeCompare(a));
+    setSavedDates(merged);
   }
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     setIsLocked(false);
-    const data = localStorage.getItem(`gabiao_rdo_${selectedDate}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        parsed.isLocked = false;
-        localStorage.setItem(`gabiao_rdo_${selectedDate}`, JSON.stringify(parsed));
-        updateSavedDates();
-      } catch (e) {}
+    let parsed: any = {};
+    const localData = localStorage.getItem(`gabiao_rdo_${selectedDate}`);
+    if (localData) {
+      try { parsed = JSON.parse(localData); } catch (e) {}
     }
+    parsed.isLocked = false;
+    localStorage.setItem(`gabiao_rdo_${selectedDate}`, JSON.stringify(parsed));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `gabiao_rdo_${selectedDate}`,
+        value: parsed,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
   }
 
   useEffect(() => {
     updateSavedDates();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const dataToSave = {
       localFaixa, localFase, localElevado,
       escavacao, manta, silte, limpeza, retTela, retCascalho, lavVert, lavBacias,
@@ -135,43 +154,64 @@ function GabiaoPage() {
       isLocked: true
     };
     localStorage.setItem(`gabiao_rdo_${selectedDate}`, JSON.stringify(dataToSave));
-    updateSavedDates();
     setIsLocked(true);
     toast.success('Relatório salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
+    
+    try {
+      await supabase.from('global_settings').upsert({
+        key: `gabiao_rdo_${selectedDate}`,
+        value: dataToSave,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {}
+    
+    updateSavedDates();
   }
 
-  const loadDate = (dateStr: string) => {
+  const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
-    const data = localStorage.getItem(`gabiao_rdo_${dateStr}`);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        setLocalFaixa(parsed.localFaixa || '');
-        setLocalFase(parsed.localFase || 'Nenhuma');
-        setLocalElevado(parsed.localElevado || 'Nenhum');
-        setEscavacao(parsed.escavacao || false);
-        setManta(parsed.manta || { checked: false, value: '' });
-        setSilte(parsed.silte || { checked: false, value: '' });
-        setLimpeza(parsed.limpeza || false);
-        setRetTela(parsed.retTela || { checked: false, value: '' });
-        setRetCascalho(parsed.retCascalho || { checked: false, value: '' });
-        setLavVert(parsed.lavVert || false);
-        setLavBacias(parsed.lavBacias || false);
-        setRepGeotextil(parsed.repGeotextil || { checked: false, value: '' });
-        setRetGeotextil(parsed.retGeotextil || { checked: false, value: '' });
-        setRetGeomembrana(parsed.retGeomembrana || { checked: false, value: '' });
-        setRepGeomembrana(parsed.repGeomembrana || { checked: false, value: '' });
-        setRecTela(parsed.recTela || { checked: false, value: '' });
-        setRecCascalho(parsed.recCascalho || { checked: false, value: '' });
-        setRecSilte(parsed.recSilte || { checked: false, value: '' });
-        setTransporte(parsed.transporte || false);
-        setAtividadesManuais(parsed.atividadesManuais || '');
-        setObservacoes(parsed.observacoes || '');
-        setIsLocked(parsed.isLocked !== false);
-        setShowHistory(false);
-      } catch (e) {
-        console.error("Error loading data", e);
+    
+    let parsed: any = null;
+    
+    try {
+      const { data } = await supabase.from('global_settings').select('value').eq('key', `gabiao_rdo_${dateStr}`).single();
+      if (data && data.value) {
+        parsed = data.value;
+        localStorage.setItem(`gabiao_rdo_${dateStr}`, JSON.stringify(parsed));
       }
+    } catch (e) {}
+    
+    if (!parsed) {
+      const localData = localStorage.getItem(`gabiao_rdo_${dateStr}`);
+      if (localData) {
+        try { parsed = JSON.parse(localData); } catch (e) {}
+      }
+    }
+    
+    if (parsed) {
+      setLocalFaixa(parsed.localFaixa || '');
+      setLocalFase(parsed.localFase || 'Nenhuma');
+      setLocalElevado(parsed.localElevado || 'Nenhum');
+      setEscavacao(parsed.escavacao || false);
+      setManta(parsed.manta || { checked: false, value: '' });
+      setSilte(parsed.silte || { checked: false, value: '' });
+      setLimpeza(parsed.limpeza || false);
+      setRetTela(parsed.retTela || { checked: false, value: '' });
+      setRetCascalho(parsed.retCascalho || { checked: false, value: '' });
+      setLavVert(parsed.lavVert || false);
+      setLavBacias(parsed.lavBacias || false);
+      setRepGeotextil(parsed.repGeotextil || { checked: false, value: '' });
+      setRetGeotextil(parsed.retGeotextil || { checked: false, value: '' });
+      setRetGeomembrana(parsed.retGeomembrana || { checked: false, value: '' });
+      setRepGeomembrana(parsed.repGeomembrana || { checked: false, value: '' });
+      setRecTela(parsed.recTela || { checked: false, value: '' });
+      setRecCascalho(parsed.recCascalho || { checked: false, value: '' });
+      setRecSilte(parsed.recSilte || { checked: false, value: '' });
+      setTransporte(parsed.transporte || false);
+      setAtividadesManuais(parsed.atividadesManuais || '');
+      setObservacoes(parsed.observacoes || '');
+      setIsLocked(parsed.isLocked !== false);
+      setShowHistory(false);
     } else {
       setLocalFaixa('');
       setLocalFase('Nenhuma');
