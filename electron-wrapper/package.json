@@ -1,0 +1,26 @@
+{
+  "name": "gestaosucena-desktop",
+  "version": "1.0.0",
+  "description": "Aplicativo Desktop Gestão Sucena",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.gestaosucena.app",
+    "productName": "Gestão Sucena",
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3"
+  }
+}

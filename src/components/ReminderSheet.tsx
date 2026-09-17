@@ -130,15 +130,15 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   if (!isOpen) return null
 
   return createPortal(
-    <>
-      {/* Backdrop */}
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4 sm:p-6 transition-opacity"
+      onClick={onClose}
+    >
+      {/* Modal Window */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Sheet */}
-      <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'} border-l z-[120] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0`}>
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full max-w-3xl max-h-[90vh] ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl flex flex-col transform transition-all relative overflow-hidden`}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/5">
@@ -166,22 +166,22 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar flex flex-col">
           
           {/* Title Input */}
           <div>
-            <input 
-              type="text"
+            <textarea 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nome da tarefa"
-              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/20 focus:outline-none"
+              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/20 focus:outline-none resize-none overflow-y-auto min-h-[60px]"
+              rows={2}
               autoFocus
             />
           </div>
 
           {/* Properties Grid */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             
             {/* Responsáveis (Múltiplos) */}
             <div className="flex items-start gap-4 group cursor-pointer">
@@ -245,12 +245,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
             </div>
 
             {/* Data e Hora de Vencimento */}
-            <div className="flex items-center gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 group cursor-pointer">
+              <div className="w-auto sm:w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors">
                 <Calendar size={16} />
                 <span>Data e Hora</span>
               </div>
-              <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 flex flex-wrap items-center gap-2 w-full">
                 <DateInput 
                   value={dueDate}
                   onChange={(val) => setDueDate(val)}
@@ -288,12 +288,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
             {/* Recorrência */}
             <div className="flex items-start gap-4 group cursor-pointer">
-              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors pt-2">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors pt-0.5">
                 <Repeat size={16} />
                 <span>Recorrente</span>
               </div>
               <div className="flex-1">
-                <div className="pt-2">
+                <div className="pt-0.5">
                   <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-white">
                     <input 
                       type="checkbox"
@@ -305,7 +305,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                   </label>
                 </div>
                 {isRecurring && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, idx) => (
                       <button
                         key={idx}
@@ -314,7 +314,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                             prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
                           )
                         }}
-                        className={`w-9 h-9 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
+                        className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
                           recurringDays.includes(idx) 
                             ? 'bg-indigo-600 text-gray-900 dark:text-white' 
                             : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white'
@@ -351,13 +351,13 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           </div>
 
           {/* Description */}
-          <div className="pt-4 border-t border-white/5">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white/70 mb-3">Descrição</h3>
+          <div className="pt-3 border-t border-white/5 flex-1 flex flex-col">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white/70 mb-2">Descrição</h3>
             <textarea 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="O que precisa ser feito?"
-              className="w-full h-32 bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
+              className="w-full flex-1 min-h-[160px] bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
             />
           </div>
 
@@ -414,7 +414,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         </div>
 
       </div>
-    </>,
+    </div>,
     document.body
   )
 }
