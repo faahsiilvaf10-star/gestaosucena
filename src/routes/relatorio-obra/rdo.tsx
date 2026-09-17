@@ -45,6 +45,7 @@ function RDOPage() {
   // Equipments from Supabase
   const [equipamentos, setEquipamentos] = useState<any[]>([]);
   const [presencas, setPresencas] = useState<any[]>([]);
+  const [ddsText, setDdsText] = useState('A definir');
 
   const fetchPresencasForDate = async (dateStr: string) => {
     try {
@@ -172,10 +173,59 @@ function RDOPage() {
     loadDate(selectedDate);
   }, []);
 
+  useEffect(() => {
+    // Setup realtime subscriptions to automatically update RDO when sub-reports or presences are saved
+    const channel = supabase.channel(`rdo_realtime_${selectedDate}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings' }, (payload) => {
+        const key = (payload.new as any)?.key || '';
+        if (key === `jardinagem_rdo_${selectedDate}` || key === `gabiao_rdo_${selectedDate}`) {
+          supabase.from('global_settings').select('key, value').in('key', [`jardinagem_rdo_${selectedDate}`, `gabiao_rdo_${selectedDate}`])
+            .then(({ data }) => {
+              if (data) {
+                data.forEach(item => {
+                  if (item.key.startsWith('jardinagem_rdo_')) { setJardinagemData(item.value); localStorage.setItem(item.key, JSON.stringify(item.value)); }
+                  if (item.key.startsWith('gabiao_rdo_')) { setGabiaoData(item.value); localStorage.setItem(item.key, JSON.stringify(item.value)); }
+                });
+              }
+            });
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rh_presencas', filter: `data=eq.${selectedDate}` }, () => {
+        fetchPresencasForDate(selectedDate);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate]);
+
   const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
     fetchEquipamentos(dateStr);
     fetchPresencasForDate(dateStr);
+    
+    // Buscar DDS
+    try {
+      const { data: schedule } = await supabase
+        .from('seguranca_dds')
+        .select('*')
+        .eq('date', dateStr)
+        .single();
+        
+      if (schedule && schedule.palestrante_id) {
+        const { data: users } = await supabase.rpc('get_system_users');
+        const user = (users || []).find((u: any) => u.id === schedule.palestrante_id);
+        const palestrante = user ? user.nome : 'Desconhecido';
+        setDdsText(`${schedule.tema || 'Sem tema'} (Palestrante: ${palestrante})`);
+      } else if (schedule && schedule.tema) {
+         setDdsText(`${schedule.tema}`);
+      } else {
+         setDdsText('A definir');
+      }
+    } catch(e) {
+      setDdsText('A definir');
+    }
     
     const isFriday = new Date(dateStr + 'T12:00:00Z').getUTCDay() === 5;
     const defaultHorario = isFriday ? '07:00 as 16:00' : '07:00 as 17:00';
@@ -318,7 +368,7 @@ function RDOPage() {
   // Formatting helpers for sub-reports
   const renderJardinagemText = () => {
     if (!jardinagemData) {
-      return `⚠️ Relatório diário de Jardinagem ainda não salvo para esta data.\n\n👷 Efetivo 👷\n⚠️ Lista de Presença ainda não salva para esta data.`;
+      return `⚠️ Relatório diário de Jardinagem ainda não salvo para esta data.\n\n${renderEfetivoPorArea('Área Jardinagem')}`;
     }
     
     let text = "";
@@ -399,7 +449,7 @@ function RDOPage() {
 
   const renderGabiaoText = () => {
     if (!gabiaoData) {
-      return `⚠️ Relatório diário de Gabião ainda não salvo para esta data.\n\n👷 Efetivo 👷\n⚠️ Lista de Presença ainda não salva para esta data.`;
+      return `⚠️ Relatório diário de Gabião ainda não salvo para esta data.\n\n${renderEfetivoPorArea('Área Gabião')}`;
     }
     
     let text = "";
@@ -678,18 +728,49 @@ function RDOPage() {
               <div className="mt-2">➡️ LOCAL: {local}</div>
               <div className="mt-2">➡️ DATA: {formatLongDate(selectedDate)}</div>
               <div className="mt-2">➡️ HORÁRIO: {horario}</div>
-              <div className="mt-2">➡️ DDS: A definir</div>
+              <div className="mt-2">➡️ DDS: {ddsText}</div>
 
               <div className="mt-6 mb-2 font-bold">🛠️ ATIVIDADES:</div>
               
-              <div className="mt-2 font-bold text-green-700">🌿 Jardinagem 🌿</div>
-              <div className="mt-2 text-gray-600">{renderJardinagemText()}</div>
-
-              <div className="mt-6 font-bold text-green-700">✳️ ÁREA GABIÃO ✳️</div>
-              <div className="mt-2 text-gray-600">{renderGabiaoText()}</div>
-
-              <div className="mt-6 font-bold text-green-700">🚚 ÁREA TRANSPORTE 🚚</div>
-              <div className="mt-2 text-gray-600 whitespace-pre-wrap">{renderEfetivoPorArea('Área Transporte')}</div>
+              {(() => {
+                const defaultAreasToRender = ['Área Jardinagem', 'Área Gabião', 'Área Transporte'];
+                const areasComPresenca = Array.from(new Set(presencas.map(p => p.area))).filter(Boolean) as string[];
+                const todasAreas = Array.from(new Set([...defaultAreasToRender, ...areasComPresenca]));
+                
+                return todasAreas.map(area => {
+                  if (area === 'Área Jardinagem') {
+                    return (
+                      <div key={area}>
+                        <div className="mt-2 font-bold text-green-700">🌿 Jardinagem 🌿</div>
+                        <div className="mt-2 text-gray-600">{renderJardinagemText()}</div>
+                      </div>
+                    );
+                  }
+                  if (area === 'Área Gabião') {
+                    return (
+                      <div key={area}>
+                        <div className="mt-6 font-bold text-green-700">✳️ ÁREA GABIÃO ✳️</div>
+                        <div className="mt-2 text-gray-600">{renderGabiaoText()}</div>
+                      </div>
+                    );
+                  }
+                  if (area === 'Área Transporte') {
+                    return (
+                      <div key={area}>
+                        <div className="mt-6 font-bold text-green-700">🚚 ÁREA TRANSPORTE 🚚</div>
+                        <div className="mt-2 text-gray-600 whitespace-pre-wrap">{renderEfetivoPorArea('Área Transporte')}</div>
+                      </div>
+                    );
+                  }
+                  // Qualquer outra área nova adicionada no sistema
+                  return (
+                    <div key={area}>
+                      <div className="mt-6 font-bold text-green-700">🏗️ {area.toUpperCase()} 🏗️</div>
+                      <div className="mt-2 text-gray-600 whitespace-pre-wrap">{renderEfetivoPorArea(area)}</div>
+                    </div>
+                  );
+                });
+              })()}
 
               <div className="mt-8 font-bold text-blue-700">
                 {renderEquipamentosGeraisText().split('\n').map((line, i) => (

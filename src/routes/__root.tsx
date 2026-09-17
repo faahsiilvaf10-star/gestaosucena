@@ -15,6 +15,7 @@ import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatProvider } from "../contexts/ChatContext";
+import { DailyPipasAlertModal } from "../components/DailyPipasAlertModal";
 
 import { AppLayout } from "../components/AppLayout";
 
@@ -34,6 +35,7 @@ function RootContent() {
         <Outlet />
       )}
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
+      <DailyPipasAlertModal />
     </div>
   )
 }

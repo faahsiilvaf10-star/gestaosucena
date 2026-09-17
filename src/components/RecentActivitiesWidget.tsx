@@ -54,13 +54,16 @@ export function RecentActivitiesWidget() {
           <div className="text-gray-500 dark:text-white/50 text-sm">Nenhuma atividade recente.</div>
         ) : (
           activities.map(act => {
+            if (!act) return null;
             const isEntry = act.movement_type === 'entry'
             const eqName = act.eq_equipments?.name || 'Equipamento'
             const plate = act.eq_equipments?.plate_tag || 'S/ Placa'
             
             let dateStr = 'Data inválida'
             try {
-              dateStr = formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })
+              if (act.created_at) {
+                dateStr = formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })
+              }
             } catch (e) {}
 
             return (

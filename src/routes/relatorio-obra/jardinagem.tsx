@@ -208,6 +208,7 @@ function JardinagemPage() {
 
   useEffect(() => {
     updateSavedDates();
+    loadDate(selectedDate);
   }, []);
 
   const handleSave = async () => {

@@ -143,6 +143,7 @@ function GabiaoPage() {
 
   useEffect(() => {
     updateSavedDates();
+    loadDate(selectedDate);
   }, []);
 
   const handleSave = async () => {
