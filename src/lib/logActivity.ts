@@ -15,11 +15,13 @@ interface LogOptions {
  */
 export async function logActivity({ module, action, description, user_name }: LogOptions) {
   try {
+    const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
     const { error } = await supabase.from('system_activities').insert({
       module,
       action,
       description: description || null,
-      user_name: user_name || 'Sistema'
+      user_name: user_name || 'Sistema',
+      environment: env
     });
     
     if (error) {

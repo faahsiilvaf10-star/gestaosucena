@@ -153,7 +153,7 @@ function DashboardComponent() {
   const { data: eqData } = useQuery({
     queryKey: ['equipments_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('eq_equipments').select('location_status, last_exit_reason, name, plate_tag, type, category, updated_at')
+      const { data, error } = await supabase.from('eq_equipments').select('location_status, last_exit_reason, name, plate_tag, type, category, updated_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
       if (error) throw error
       
       let operacaoCount = 0

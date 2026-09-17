@@ -95,8 +95,7 @@ function EntradaSaidaPage() {
       if (!isRefreshing) setLoading(true)
       
       const { data, error: sbError } = await supabase
-        .from('eq_equipments')
-        .select('*')
+        .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError
@@ -163,8 +162,7 @@ function EntradaSaidaPage() {
     setLoadingHistory(true)
     try {
       const { data, error } = await supabase
-        .from('eq_movements')
-        .select('*')
+        .from('eq_movements').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('equipment_id', eq.id)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -189,8 +187,7 @@ function EntradaSaidaPage() {
     try {
       // Check current status
       const { data: currentEq } = await supabase
-        .from('eq_equipments')
-        .select('location_status')
+        .from('eq_equipments').select('location_status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('id', selectedEq.id)
         .single()
 
@@ -272,8 +269,7 @@ function EntradaSaidaPage() {
     try {
       // Check current status
       const { data: currentEq } = await supabase
-        .from('eq_equipments')
-        .select('location_status')
+        .from('eq_equipments').select('location_status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('id', selectedEq.id)
         .single()
 
@@ -345,14 +341,13 @@ function EntradaSaidaPage() {
       const endDate = new Date(`${reportEndDate}T23:59:59`)
 
       const { data: movements, error } = await supabase
-        .from('eq_movements')
-        .select(`
+        .from('eq_movements').select(`
           *,
           eq_equipments (
             name,
             plate_tag,
             category
-          )
+          ).eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         `)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())

@@ -125,8 +125,7 @@ function RDOPage() {
   const fetchEquipamentos = async (dateStr: string) => {
     try {
       const { data: allEqs, error } = await supabase
-        .from('eq_equipments')
-        .select('*')
+        .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true });
         
       if (error) throw error;
@@ -136,8 +135,7 @@ function RDOPage() {
       const endDate = new Date(`${dateStr}T23:59:59.999-03:00`).toISOString();
       
       const { data: movements } = await supabase
-        .from('eq_movements')
-        .select('equipment_id, created_at')
+        .from('eq_movements').select('equipment_id, created_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('movement_type', 'exit')
         .gte('created_at', startDate)
         .lte('created_at', endDate)

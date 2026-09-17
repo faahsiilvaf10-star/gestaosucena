@@ -49,12 +49,11 @@ export function DashboardVistoriasWidget() {
   const fetchInspections = async () => {
     try {
       const { data, error } = await supabase
-        .from('eq_equipments')
-        .select(`
+        .from('eq_equipments').select(`
           id, name, plate_tag, category,
           equipment_inspections (
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry
-          )
+          ).eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         `)
         .or('category.neq.Jardinagem,category.is.null')
       if (!error && data) {

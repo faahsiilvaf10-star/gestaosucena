@@ -15,8 +15,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const fetchEquipments = async () => {
     try {
       const { data, error } = await supabase
-        .from('eq_equipments')
-        .select('*')
+        .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
       

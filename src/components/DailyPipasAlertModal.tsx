@@ -24,8 +24,7 @@ export function DailyPipasAlertModal() {
           setLoading(true);
           try {
             const { data, error } = await supabase
-              .from('eq_equipments')
-              .select('*')
+              .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
               .ilike('name', 'CP%')
               .eq('location_status', 'inside')
               .order('name');

@@ -166,7 +166,7 @@ export default function DashboardStep() {
     const fetchData = async () => {
       if (!equipmentId) return
 
-      const { data: eq } = await supabase.from('eq_equipments').select('*').eq('id', equipmentId).single()
+      const { data: eq } = await supabase.from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
       if (eq) setEquipment(eq)
 
       const { data: dsp } = await supabase

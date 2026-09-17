@@ -68,8 +68,7 @@ function TodosEquipamentosPage() {
       if (!isRefreshing) setLoading(true)
       
       const { data, error: sbError } = await supabase
-        .from('eq_equipments')
-        .select('*')
+        .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError

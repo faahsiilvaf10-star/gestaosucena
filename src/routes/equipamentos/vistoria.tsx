@@ -107,12 +107,11 @@ function VistoriaPage() {
       if (!isRefreshing) setLoading(true)
       
       const { data, error: sbError } = await supabase
-        .from('eq_equipments')
-        .select(`
+        .from('eq_equipments').select(`
           id, name, plate_tag, category,
           equipment_inspections (
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry, updated_at
-          )
+          ).eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         `)
         .or('category.neq.Jardinagem,category.is.null')
         .order('name', { ascending: true })
