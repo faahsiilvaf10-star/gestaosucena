@@ -20,7 +20,7 @@ export function SelectedWorks() {
               <span className="text-xs text-muted uppercase tracking-[0.3em]">Selected Work</span>
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl text-text-primary mb-4 leading-tight">
-              Featured <span className="font-display italic">projects</span>
+              Featured <span className="">projects</span>
             </h2>
             <p className="text-sm md:text-base text-muted">
               A selection of projects I've worked on, from concept to launch.
@@ -49,7 +49,7 @@ export function SelectedWorks() {
               <div className="absolute inset-0 bg-bg/70 backdrop-blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
                 <div className="relative rounded-full p-[2px] accent-gradient">
                   <span className="block bg-white text-bg rounded-full px-5 py-2 text-sm">
-                    View — <span className="font-display italic">{p.title}</span>
+                    View — <span className="">{p.title}</span>
                   </span>
                 </div>
               </div>

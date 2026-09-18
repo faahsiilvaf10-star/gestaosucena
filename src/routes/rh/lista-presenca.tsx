@@ -656,7 +656,7 @@ function RhListaPresencaPage() {
               <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-gray-900 dark:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
-              <h1 className="text-[42px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>Lista de Presença</h1>
+              <h1 className="text-[42px] tracking-tight" style={{ lineHeight: '1' }}>Lista de Presença</h1>
             </div>
           </div>
           
@@ -680,10 +680,7 @@ function RhListaPresencaPage() {
               return (
                 <div 
                   key={area}
-                  className={`shrink-0 flex items-center rounded-full transition-colors whitespace-nowrap pl-4 pr-1 py-1.5
-                    ${isActive 
-                      ? 'bg-black text-white dark:bg-white dark:text-black' 
-                      : 'bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300'}`}
+                  className={`shrink-0 flex items-center rounded-full transition-colors whitespace-nowrap pl-4 pr-1 py-1.5 ${isActive ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 hover:bg-black/10 text-gray-600 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300'}`}
                 >
                   <button onClick={() => setActiveTab(area)} className="text-sm font-semibold flex items-center gap-2 pr-2 border-r border-current border-opacity-20">
                     {area} <span className="opacity-50 text-xs">({count})</span>
@@ -839,7 +836,7 @@ function RhListaPresencaPage() {
 
               {/* List */}
               <div className="mt-4">
-                <h3 className="text-gray-900 dark:text-white font-serif text-lg mb-4">{activeTab} — {total} funcionário(s)</h3>
+                <h3 className="text-gray-900 dark:text-white text-lg mb-4">{activeTab} — {total} funcionário(s)</h3>
                 
                 {loading ? (
                   <div className="py-10 text-center text-gray-900 dark:text-white/50">Carregando...</div>
@@ -862,22 +859,19 @@ function RhListaPresencaPage() {
                             {/* Radio Options */}
                             <div className="flex flex-col gap-1 w-24 flex-shrink-0">
                               <label className="flex items-center gap-2 cursor-pointer group/opt">
-                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors
-                                  ${c.status === 'AUSENTE' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
+                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'AUSENTE' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'AUSENTE' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
                                 <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">AUSENTE</span>
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer group/opt">
-                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors
-                                  ${c.status === 'EXTERNO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
+                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'EXTERNO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'EXTERNO' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
                                 <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">EXTERNO</span>
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer group/opt">
-                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors
-                                  ${c.status === 'ATESTADO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
+                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'ATESTADO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'ATESTADO' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
                                 <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">ATESTADO</span>

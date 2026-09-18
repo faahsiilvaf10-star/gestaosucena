@@ -21,7 +21,7 @@ function RelatorioObraHub() {
         <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <div className="flex items-center gap-3">
             <h1
-              className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
+              className="tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
               style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
             >
               Relatório de Obra
@@ -45,7 +45,7 @@ function RelatorioObraHub() {
                 <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
                   <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                <h3 className="text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
                   {item.name}
                 </h3>
               </Link>
@@ -54,12 +54,7 @@ function RelatorioObraHub() {
 
           {/* Botão Nova Atividade (Pontilhado) */}
           <button
-            className="group flex items-center sm:flex-col sm:items-center sm:justify-center
-                       gap-4 sm:gap-3
-                       py-1 sm:py-2 px-4 sm:px-6 rounded-2xl sm:rounded-3xl transition-all duration-300
-                       bg-white/50 text-black border-2 border-dashed border-gray-400 dark:border-gray-500
-                       hover:bg-white hover:border-solid hover:shadow-xl hover:-translate-y-1 sm:hover:-translate-y-2
-                       relative overflow-hidden active:scale-[0.98]"
+            className="group flex items-center sm:flex-col sm:items-center sm:justify-center gap-4 sm:gap-3 py-1 sm:py-2 px-4 sm:px-6 rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/50 text-black border-2 border-dashed border-gray-400 dark:border-gray-500 hover:bg-white hover:border-solid hover:shadow-xl hover:-translate-y-1 sm:hover:-translate-y-2 relative overflow-hidden active:scale-[0.98]"
             style={{ minHeight: 60 }}
           >
             <Plus
@@ -68,7 +63,7 @@ function RelatorioObraHub() {
               strokeWidth={1.5}
             />
             <div className="flex flex-col min-w-0 sm:items-center">
-              <span className="text-xl sm:text-2xl lg:text-3xl font-serif italic tracking-wide font-medium relative z-10 sm:text-center">
+              <span className="text-xl sm:text-2xl lg:text-3xl tracking-wide font-medium relative z-10 sm:text-center">
                 Nova Atividade
               </span>
             </div>

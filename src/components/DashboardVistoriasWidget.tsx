@@ -206,7 +206,7 @@ export function DashboardVistoriasWidget() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-70 mb-0.5">{isExpired ? 'Vencido há' : 'Faltam'}</div>
-                    <div className="font-bold font-display text-lg leading-none">
+                    <div className="font-bold text-lg leading-none">
                       {Math.abs(alert.days)} {Math.abs(alert.days) === 1 ? 'dia' : 'dias'}
                     </div>
                   </div>

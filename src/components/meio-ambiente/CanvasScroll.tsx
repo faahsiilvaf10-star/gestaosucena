@@ -206,7 +206,7 @@ export function CanvasScroll() {
     <div ref={containerRef} className="h-screen w-full bg-[#050505] relative overflow-hidden">
         
         {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/50 z-20 font-display italic tracking-widest text-xl">
+          <div className="absolute inset-0 flex items-center justify-center text-white/50 z-20 tracking-widest text-xl">
             Preparando experiência...
           </div>
         )}

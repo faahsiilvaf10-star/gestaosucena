@@ -122,7 +122,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                     {move?.exit_reason || eq?.last_exit_reason || 'Não informado'}
                   </div>
                   {(move?.description || eq?.last_exit_description) && (
-                    <div className={`text-sm mt-1 p-3 rounded-xl italic ${isDark ? 'bg-black/20 text-gray-300 border border-white/5' : 'bg-white text-gray-600 border border-gray-100 shadow-sm'}`}>
+                    <div className={`text-sm mt-1 p-3 rounded-xl ${isDark ? 'bg-black/20 text-gray-300 border border-white/5' : 'bg-white text-gray-600 border border-gray-100 shadow-sm'}`}>
                       "{move?.description || eq?.last_exit_description}"
                     </div>
                   )}

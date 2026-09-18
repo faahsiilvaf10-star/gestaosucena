@@ -26,7 +26,7 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
       
       {/* Desktop Sidebar (Left) */}
       <aside className="hidden md:flex flex-col w-[200px] lg:w-[244px] h-full border-r border-black/10 dark:border-white/10 px-4 py-8 shrink-0 sticky top-0">
-        <h1 className="font-display italic tracking-tight px-2 mb-8" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
+        <h1 className="tracking-tight px-2 mb-8" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           INSTACENA
         </h1>
 
@@ -48,7 +48,7 @@ export function InstacenaLayout({ children }: InstacenaLayoutProps) {
       <main className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar relative bg-transparent pb-16 md:pb-0">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between px-4 h-14 border-b border-white/10 sticky top-0 z-10 backdrop-blur-md bg-transparent">
-          <h1 className="text-3xl font-display italic tracking-tight" style={{ lineHeight: '1' }}>
+          <h1 className="text-3xl tracking-tight" style={{ lineHeight: '1' }}>
             INSTACENA
           </h1>
           <div className="flex items-center gap-4">

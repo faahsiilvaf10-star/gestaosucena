@@ -142,20 +142,12 @@ export function DashboardRemindersWidget() {
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate transition-all ${
-                    isCrossedOut 
-                      ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') 
-                      : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900')
-                  }`}>
+                  <p className={`text-sm font-medium truncate transition-all ${ isCrossedOut ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900') }`}>
                     {reminder.title}
                   </p>
                   
                   {reminder.description && (
-                    <p className={`text-xs mt-0.5 line-clamp-1 transition-all ${
-                      isCrossedOut
-                        ? (isDark ? 'text-gray-900 dark:text-white/30 line-through' : 'text-gray-400 line-through')
-                        : (isDark ? 'text-gray-900 dark:text-white/60 group-hover:text-gray-900 dark:text-white/80' : 'text-gray-500')
-                    }`}>
+                    <p className={`text-xs mt-0.5 line-clamp-1 transition-all ${ isCrossedOut ? (isDark ? 'text-gray-900 dark:text-white/30 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-gray-900 dark:text-white/60 group-hover:text-gray-900 dark:text-white/80' : 'text-gray-500') }`}>
                       {reminder.description}
                     </p>
                   )}
@@ -206,11 +198,7 @@ export function DashboardRemindersWidget() {
                     
                     {/* Priority */}
                     {reminder.priority !== 'Normal' && (
-                      <div className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                        reminder.priority === 'Urgente' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                        reminder.priority === 'Alta' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                      }`}>
+                      <div className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${ reminder.priority === 'Urgente' ? 'bg-red-500/10 text-red-400 border-red-500/20' : reminder.priority === 'Alta' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20' }`}>
                         {reminder.priority}
                       </div>
                     )}

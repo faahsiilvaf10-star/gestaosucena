@@ -166,7 +166,7 @@ function RelatorioPresencaPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-display italic tracking-tight flex items-center gap-3">
+            <h1 className="text-3xl tracking-tight flex items-center gap-3">
               <Calendar className="text-[#0866ff]" size={28} />
               Relatório Diário de Presença
             </h1>

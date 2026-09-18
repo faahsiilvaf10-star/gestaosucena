@@ -295,7 +295,7 @@ function VistoriaPage() {
       <div className="flex-none p-4 md:p-8 pb-4 relative z-20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="font-display italic tracking-tight mb-2"
+            <h1 className="tracking-tight mb-2"
               style={{ fontSize: 'clamp(22px, 6vw, 48px)' }}
             >Controle de Vistorias</h1>
             <p className="text-sm md:text-base opacity-70">Documentação, inspeções e vencimentos da frota</p>
@@ -405,7 +405,7 @@ function VistoriaPage() {
             ) : error ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center rounded-2xl border bg-white/50 dark:bg-white/5 backdrop-blur-md">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
-                <h3 className="text-xl font-display mb-2">{error}</h3>
+                <h3 className="text-xl mb-2">{error}</h3>
                 <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
@@ -413,7 +413,7 @@ function VistoriaPage() {
             ) : filteredEquipments.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center rounded-2xl border bg-white/50 dark:bg-white/5 backdrop-blur-md opacity-50">
                 <ShieldCheck size={48} className="mb-4" />
-                <h3 className="text-xl font-display">Nenhum equipamento encontrado com estes filtros.</h3>
+                <h3 className="text-xl">Nenhum equipamento encontrado com estes filtros.</h3>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -575,7 +575,7 @@ function DocRow({
           </div>
         ) : (
           <>
-            <div className={`font-mono font-medium ${!currentDate ? 'opacity-50 italic text-sm' : 'text-base'}`}>
+            <div className={`font-mono font-medium ${!currentDate ? 'opacity-50 text-sm' : 'text-base'}`}>
               {formatDateBr(currentDate)}
             </div>
             {currentDate && (
@@ -615,8 +615,8 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     <div className={`p-4 md:p-5 rounded-2xl border transition-colors flex flex-col justify-between ${colorClass}`}>
       <div className="text-[10px] md:text-xs font-bold opacity-60 uppercase tracking-widest leading-tight">{title}</div>
       <div className="flex items-baseline gap-2 mt-3">
-        <div className="font-display font-bold tabular-nums metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
-        {total !== undefined && <div className="text-sm md:text-lg opacity-50 font-display">/ {total}</div>}
+        <div className="font-bold tabular-nums metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
+        {total !== undefined && <div className="text-sm md:text-lg opacity-50">/ {total}</div>}
       </div>
     </div>
   )

@@ -56,7 +56,7 @@ export function Explorations() {
           <span className="w-8 h-px bg-stroke" />
         </div>
         <h2 className="text-4xl md:text-6xl lg:text-7xl text-text-primary mb-4 leading-tight">
-          Visual <span className="font-display italic">playground</span>
+          Visual <span className="">playground</span>
         </h2>
         <p className="text-sm md:text-base text-muted max-w-md mb-8">
           Sketches, frames, and small experiments — a window into the process.

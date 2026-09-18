@@ -30,12 +30,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
       
       {/* Outer Modal Container with Golden Glow Border */}
       <div 
-        className={`relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-6 
-          ${isDark 
-            ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' 
-            : 'bg-white text-black shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]'
-          }
-        `}
+        className={`relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-6 ${isDark ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-white text-black shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]' }`}
         onClick={e => e.stopPropagation()}
       >
         
@@ -69,12 +64,7 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
             return (
               <div 
                 key={month} 
-                className={`p-3 md:p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 md:gap-3 transition-colors 
-                  ${isDark 
-                    ? 'bg-[#16171b] border-white/5 hover:border-white/10' 
-                    : 'bg-gray-50 border-black/5 hover:border-black/10'
-                  }
-                `}
+                className={`p-3 md:p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 md:gap-3 transition-colors ${isDark ? 'bg-[#16171b] border-white/5 hover:border-white/10' : 'bg-gray-50 border-black/5 hover:border-black/10' }`}
               >
                 <div className="text-center">
                   <h3 className="font-bold text-[15px] md:text-[16px] leading-tight mb-0.5">{month}</h3>

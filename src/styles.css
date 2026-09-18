@@ -225,13 +225,17 @@
 
     background-color: var(--theme-bg);
     color: var(--theme-text-primary);
-    font-family: 'Inter', sans-serif;
+    font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
     /* Padding de safe area para iPhone com notch/home indicator */
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  h1, h2, h3, h4, h5, h6, button, .btn, [role="button"], .card-title, .page-title, .dashboard-title {
+    font-weight: 300 !important;
   }
 
   #root {

@@ -329,7 +329,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-white tracking-tight mb-1 font-display italic" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
+                <p className="text-white tracking-tight mb-1" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               
@@ -500,7 +500,7 @@ function Index() {
                   }}>Cadastre-se</span>
                 </p>
               ) : (
-                <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-black/40'} italic`}>
+                <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-black/40'}`}>
                   A criação de novas contas está temporariamente desativada.
                 </p>
               )}
@@ -631,11 +631,7 @@ function Index() {
 
             <button 
               onClick={() => setViewState('LOGIN')}
-              className={`w-full max-w-[280px] rounded-lg px-4 py-3 text-sm font-medium transition-all mt-6 border ${
-                isDark
-                  ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/50 text-gray-900 dark:text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                  : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-gray-900 dark:text-white shadow-md'
-              }`}
+              className={`w-full max-w-[280px] rounded-lg px-4 py-3 text-sm font-medium transition-all mt-6 border ${ isDark ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/50 text-gray-900 dark:text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-gray-900 dark:text-white shadow-md' }`}
             >
               Fazer Login Agora
             </button>

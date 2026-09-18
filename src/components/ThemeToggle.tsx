@@ -6,9 +6,7 @@ export function ThemeToggle() {
 
   return (
     <div 
-      className={`flex items-center rounded-full p-0.5 cursor-pointer border transition-colors ${
-        isDark ? 'bg-[#18181b] border-white/10' : 'bg-gray-200 border-black/5 shadow-inner'
-      }`}
+      className={`flex items-center rounded-full p-0.5 cursor-pointer border transition-colors ${ isDark ? 'bg-[#18181b] border-white/10' : 'bg-gray-200 border-black/5 shadow-inner' }`}
       onClick={toggleTheme}
     >
       <div className={`rounded-full p-1 transition-all ${isDark ? 'bg-[#27272a] shadow-sm' : ''}`}>

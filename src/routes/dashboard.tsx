@@ -280,7 +280,7 @@ function DashboardComponent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-8 mt-1 sm:mt-2 px-2 sm:px-0">
           <div>
             <h1
-              className={`font-display italic tracking-tight ${isDark ? 'text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`}
+              className={`tracking-tight ${isDark ? 'text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`}
               style={{ fontSize: 'clamp(32px, 8vw, 54px)', lineHeight: '1' }}
             >
               Olá, {displayFirstName}!
@@ -412,13 +412,13 @@ function DashboardComponent() {
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-bold mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
+              <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
               {eqData?.operacaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.operacaoList.map((eq: any, i: number) => (
                     <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-1 last:border-0">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-blue-600 dark:text-blue-400 uppercase">{eq.plate_tag || 'S/N'}</span>
+                        <span className="font-light text-blue-600 dark:text-blue-400 uppercase">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
                     </li>
@@ -459,13 +459,13 @@ function DashboardComponent() {
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-bold mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
+              <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
               {eqData?.manutencaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.manutencaoList.map((eq: any, i: number) => (
                     <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-2 last:border-0">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-orange-600 dark:text-orange-400 uppercase">{eq.plate_tag || 'S/N'}</span>
+                        <span className="font-light text-orange-600 dark:text-orange-400 uppercase">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
                       <div className="text-[10px] text-gray-400 mt-1">
@@ -508,7 +508,7 @@ function DashboardComponent() {
           {currentUser?.id === ddsData?.hoje?.palestrante?.id && (
             <div className="col-span-1 md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
                <div className="flex flex-col gap-3">
-                 <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
+                 <div className="flex items-center gap-2 text-blue-400 font-light text-lg">
                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">!</div>
                    <span>🎤 Atenção! Você é o Palestrante de Hoje!</span>
                  </div>
@@ -529,7 +529,7 @@ function DashboardComponent() {
                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                  </div>
                  <div className="flex flex-col">
-                   <span className="font-bold text-white text-sm">Prepare-se!</span>
+                   <span className="font-light text-white text-sm">Prepare-se!</span>
                    <span className="text-slate-400 text-sm">Revise o tema com antecedência</span>
                  </div>
                </div>
@@ -539,7 +539,7 @@ function DashboardComponent() {
           {currentUser?.id === ddsData?.amanha?.palestrante?.id && currentUser?.id !== ddsData?.hoje?.palestrante?.id && (
             <div className="col-span-1 md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl bg-[#0f172a] text-white border border-[#1e293b] gap-4 mb-2">
                <div className="flex flex-col gap-3">
-                 <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
+                 <div className="flex items-center gap-2 text-blue-400 font-light text-lg">
                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">!</div>
                    <span>🎤 Atenção! Você é o Palestrante de Amanhã!</span>
                  </div>
@@ -560,7 +560,7 @@ function DashboardComponent() {
                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                  </div>
                  <div className="flex flex-col">
-                   <span className="font-bold text-white text-sm">Prepare-se!</span>
+                   <span className="font-light text-white text-sm">Prepare-se!</span>
                    <span className="text-slate-400 text-sm">Revise o tema com antecedência</span>
                  </div>
                </div>
@@ -599,7 +599,7 @@ function DashboardComponent() {
                     </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
-                      className="hidden sm:flex text-xs items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-1.5 rounded-lg font-semibold transition-colors border border-blue-500/20 shrink-0"
+                      className="hidden sm:flex text-xs items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-1.5 rounded-lg font-light transition-colors border border-blue-500/20 shrink-0"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                       Postar DDS
@@ -608,7 +608,7 @@ function DashboardComponent() {
                   {/* Botão Mobile */}
                   <button 
                     onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
-                    className="sm:hidden mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-2 rounded-lg font-semibold transition-colors border border-blue-500/20"
+                    className="sm:hidden mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-2 rounded-lg font-light transition-colors border border-blue-500/20"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                     Postar DDS

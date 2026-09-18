@@ -75,11 +75,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
       />
       
       <div 
-        className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${
-          isDark 
-            ? 'bg-[#111111] border-white/10' 
-            : 'bg-white border-black/10'
-        } animate-in fade-in zoom-in-95 duration-200`}
+        className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${ isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-black/10' } animate-in fade-in zoom-in-95 duration-200`}
       >
         {/* Search Input */}
         <div className={`flex items-center px-4 py-4 border-b ${isDark ? 'border-white/10' : 'border-black/5'}`}>
@@ -90,19 +86,11 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquisar páginas..."
-            className={`flex-1 mx-4 bg-transparent outline-none text-xl ${
-              isDark 
-                ? 'text-white placeholder:text-white/30' 
-                : 'text-gray-900 placeholder:text-gray-400'
-            }`}
+            className={`flex-1 mx-4 bg-transparent outline-none text-xl ${ isDark ? 'text-white placeholder:text-white/30' : 'text-gray-900 placeholder:text-gray-400' }`}
           />
           <button 
             onClick={onClose}
-            className={`p-1.5 rounded-md ${
-              isDark 
-                ? 'hover:bg-white/10 text-white/50 hover:text-white' 
-                : 'hover:bg-black/5 text-black/50 hover:text-black'
-            } transition-colors`}
+            className={`p-1.5 rounded-md ${ isDark ? 'hover:bg-white/10 text-white/50 hover:text-white' : 'hover:bg-black/5 text-black/50 hover:text-black' } transition-colors`}
           >
             <X size={20} />
           </button>
@@ -120,44 +108,22 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   key={item.id}
                   onClick={() => handleSelect(item)}
                   onMouseEnter={() => setSelectedIndex(index)}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors text-left ${
-                    isSelected
-                      ? isDark
-                        ? 'bg-white/10'
-                        : 'bg-gray-100'
-                      : 'hover:bg-black/5 dark:hover:bg-white/5'
-                  }`}
+                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors text-left ${ isSelected ? isDark ? 'bg-white/10' : 'bg-gray-100' : 'hover:bg-black/5 dark:hover:bg-white/5' }`}
                 >
-                  <div className={`p-2 rounded-lg ${
-                    item.isEmergency 
-                      ? 'bg-red-500/20 text-red-500' 
-                      : isDark
-                        ? 'bg-white/5 text-white/70'
-                        : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <div className={`p-2 rounded-lg ${ item.isEmergency ? 'bg-red-500/20 text-red-500' : isDark ? 'bg-white/5 text-white/70' : 'bg-gray-100 text-gray-600' }`}>
                     <Icon size={20} />
                   </div>
                   <div className="flex-1">
-                    <div className={`font-semibold ${
-                      item.isEmergency 
-                        ? 'text-red-500' 
-                        : isDark
-                          ? 'text-white'
-                          : 'text-gray-900'
-                    }`}>
+                    <div className={`font-semibold ${ item.isEmergency ? 'text-red-500' : isDark ? 'text-white' : 'text-gray-900' }`}>
                       {item.label}
                     </div>
-                    <div className={`text-xs ${
-                      isDark ? 'text-white/40' : 'text-gray-500'
-                    }`}>
+                    <div className={`text-xs ${ isDark ? 'text-white/40' : 'text-gray-500' }`}>
                       {item.href !== '#' ? `Ir para ${item.href}` : 'Em desenvolvimento'}
                     </div>
                   </div>
                   
                   {isSelected && (
-                    <div className={`text-xs px-2 py-1 rounded ${
-                      isDark ? 'bg-white/10 text-white/50' : 'bg-gray-200 text-gray-500'
-                    }`}>
+                    <div className={`text-xs px-2 py-1 rounded ${ isDark ? 'bg-white/10 text-white/50' : 'bg-gray-200 text-gray-500' }`}>
                       ↵ Enter
                     </div>
                   )}
@@ -165,9 +131,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
               )
             })
           ) : (
-            <div className={`py-12 text-center ${
-              isDark ? 'text-white/40' : 'text-gray-500'
-            }`}>
+            <div className={`py-12 text-center ${ isDark ? 'text-white/40' : 'text-gray-500' }`}>
               Nenhuma página encontrada.
             </div>
           )}

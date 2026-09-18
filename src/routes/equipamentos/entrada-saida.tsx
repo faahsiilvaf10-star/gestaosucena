@@ -483,7 +483,7 @@ function EntradaSaidaPage() {
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="font-display italic tracking-tight mb-2"
+            <h1 className="tracking-tight mb-2"
               style={{ fontSize: 'clamp(20px, 6vw, 48px)' }}
             >Controle de Entrada e Saída</h1>
             <p className="text-sm md:text-base opacity-70">Controle dos equipamentos dentro e fora da obra</p>
@@ -591,7 +591,7 @@ function EntradaSaidaPage() {
             ) : error ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
-                <h3 className="text-xl font-display mb-2">{error}</h3>
+                <h3 className="text-xl mb-2">{error}</h3>
                 <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
@@ -599,7 +599,7 @@ function EntradaSaidaPage() {
             ) : filteredEquipments.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-50">
                 <Truck size={48} className="mb-4" />
-                <h3 className="text-xl font-display">Nenhum equipamento encontrado.</h3>
+                <h3 className="text-xl">Nenhum equipamento encontrado.</h3>
               </div>
             ) : (
               <>
@@ -626,11 +626,7 @@ function EntradaSaidaPage() {
                             <td className="p-4">{eq.category || '-'}</td>
                             <td className="p-4">
                               <div className="relative group/tooltip inline-block">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                  isInside 
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer'
-                                }`}>
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${ isInside ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' }`}>
                                   {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                                 </span>
                                 {!isInside && eq.last_exit_description && (
@@ -699,11 +695,7 @@ function EntradaSaidaPage() {
                         
                         <div className="flex items-start justify-between mt-1">
                           <div className="relative group/tooltip">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                  isInside 
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer'
-                                }`}>
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${ isInside ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' }`}>
                               {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                             </span>
                             {!isInside && eq.last_exit_description && (
@@ -753,7 +745,7 @@ function EntradaSaidaPage() {
           <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-500">
               <LogIn size={28} />
-              <h2 className="text-2xl font-display italic">Registrar Entrada</h2>
+              <h2 className="text-2xl">Registrar Entrada</h2>
             </div>
             
             <div className={`p-4 rounded-2xl mb-6 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
@@ -819,7 +811,7 @@ function EntradaSaidaPage() {
           <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-500">
               <LogOut size={28} />
-              <h2 className="text-2xl font-display italic">Registrar Saída</h2>
+              <h2 className="text-2xl">Registrar Saída</h2>
             </div>
             
             <div className={`p-4 rounded-2xl mb-6 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
@@ -919,7 +911,7 @@ function EntradaSaidaPage() {
           <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-display italic">Histórico de Movimentação</h2>
+                <h2 className="text-2xl">Histórico de Movimentação</h2>
                 <div className="text-sm opacity-70 mt-1 font-bold">{selectedEq.name} <span className="font-mono text-xs opacity-70 uppercase ml-2">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</span></div>
               </div>
               <button onClick={() => setIsHistoryModalOpen(false)} className={`p-2 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/5 hover:bg-black/10'}`}>
@@ -946,18 +938,12 @@ function EntradaSaidaPage() {
                     return (
                       <div key={mov.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                         {/* Icon */}
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ${
-                          isDark 
-                            ? (isEntry ? 'bg-[#101014] border-green-500/30 text-green-400' : 'bg-[#101014] border-red-500/30 text-red-400')
-                            : (isEntry ? 'bg-white border-green-200 text-green-600' : 'bg-white border-red-200 text-red-600')
-                        }`}>
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ${ isDark ? (isEntry ? 'bg-[#101014] border-green-500/30 text-green-400' : 'bg-[#101014] border-red-500/30 text-red-400') : (isEntry ? 'bg-white border-green-200 text-green-600' : 'bg-white border-red-200 text-red-600') }`}>
                           {isEntry ? <LogIn size={16} /> : <LogOut size={16} />}
                         </div>
                         
                         {/* Card */}
-                        <div className={`w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl shadow-sm border ${
-                          isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5'
-                        }`}>
+                        <div className={`w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl shadow-sm border ${ isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5' }`}>
                           <div className="flex items-center justify-between mb-1">
                             <span className={`font-bold text-sm ${isEntry ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                               {isEntry ? 'ENTRADA' : 'SAÍDA'}
@@ -971,7 +957,7 @@ function EntradaSaidaPage() {
                             <div className="text-sm font-semibold opacity-90 mt-2">{reasonLabel}</div>
                           )}
                           {mov.description && (
-                            <div className="text-xs opacity-70 mt-1 italic">"{mov.description}"</div>
+                            <div className="text-xs opacity-70 mt-1">"{mov.description}"</div>
                           )}
                           
                           <div className="text-[10px] opacity-40 mt-3 flex items-center gap-1">
@@ -992,7 +978,7 @@ function EntradaSaidaPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
           <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
-            <h2 className="text-2xl font-display italic mb-2">Relatório PDF</h2>
+            <h2 className="text-2xl mb-2">Relatório PDF</h2>
             <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
             
             <div className="space-y-4">
@@ -1052,8 +1038,8 @@ function MetricCard({ title, value, total, color = 'default' }: { title: string,
     <div className={`p-5 rounded-2xl border transition-colors flex flex-col justify-between ${colorClass}`}>
       <div className="text-xs font-bold opacity-60 uppercase tracking-widest">{title}</div>
       <div className="flex items-baseline gap-2 mt-3">
-        <div className="font-display font-bold metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
-        {total !== undefined && <div className="text-lg opacity-50 font-display">/ {total}</div>}
+        <div className="font-bold metric-value" style={{ fontSize: 'clamp(24px, 6vw, 48px)' }}>{value}</div>
+        {total !== undefined && <div className="text-lg opacity-50">/ {total}</div>}
       </div>
     </div>
   )

@@ -549,7 +549,7 @@ function RDOPage() {
         <div className="px-4 sm:px-8 pt-8 pb-4">
           <div className="flex items-center gap-4 mb-3">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-display tracking-tight font-bold text-gray-900 italic">RDO - Relatório Diário de Obra</h1>
+              <h1 className="text-3xl sm:text-4xl tracking-tight font-bold text-gray-900">RDO - Relatório Diário de Obra</h1>
               <p className="text-gray-500 text-sm mt-1">{formatLongDate(selectedDate)}</p>
             </div>
           </div>
@@ -621,11 +621,7 @@ function RDOPage() {
                     <button
                       key={d}
                       onClick={() => loadDate(d)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                        d === selectedDate 
-                        ? 'bg-yellow-100 border-yellow-300 text-yellow-800' 
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${ d === selectedDate ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100' }`}
                     >
                       {formatDateDisplay(d)}
                     </button>
@@ -643,7 +639,7 @@ function RDOPage() {
             
             <div className={`bg-[#faf9f6] border border-yellow-500/20 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-sm transition-all duration-300 relative overflow-hidden ${isLocked ? 'opacity-70 pointer-events-none' : ''}`}>
               <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-yellow-100/50 to-transparent pointer-events-none" />
-              <h2 className="text-xl font-display font-bold text-gray-900 mb-2 relative z-10 italic">Informações Gerais</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-2 relative z-10">Informações Gerais</h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
                 <div className="flex flex-col gap-2">
@@ -679,7 +675,7 @@ function RDOPage() {
 
             <div className={`bg-[#faf9f6] border border-yellow-500/20 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-sm transition-all duration-300 relative overflow-hidden ${isLocked ? 'opacity-70 pointer-events-none' : ''}`}>
               <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-yellow-100/50 to-transparent pointer-events-none" />
-              <h2 className="text-xl font-display font-bold text-gray-900 mb-2 relative z-10 italic">Condições e Observações</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-2 relative z-10">Condições e Observações</h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
                 <div className="flex flex-col gap-2">
@@ -719,7 +715,7 @@ function RDOPage() {
           <div className="sticky top-6 bg-white border border-gray-200 rounded-3xl p-6 flex flex-col gap-4 shadow-xl">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="text-gray-800" size={20} />
-              <h2 className="text-xl font-display font-bold italic text-gray-900">Prévia do Relatório</h2>
+              <h2 className="text-xl font-bold text-gray-900">Prévia do Relatório</h2>
             </div>
             
             <div ref={previewRef} className="bg-[#faf9f6] border border-gray-200 p-5 rounded-2xl font-mono text-[13px] text-gray-800 whitespace-pre-wrap flex flex-col gap-0 relative overflow-y-auto max-h-[600px] leading-relaxed custom-scrollbar shadow-inner">

@@ -752,11 +752,7 @@ export default function DashboardStep() {
                     })
                   }
                 }}
-                className={`w-full relative overflow-hidden rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center gap-2 ${
-                  isActive 
-                    ? 'bg-blue-600 border border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]' 
-                    : 'bg-blue-500 border border-blue-600 text-white active:scale-[0.98]'
-                }`}
+                className={`w-full relative overflow-hidden rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center gap-2 ${ isActive ? 'bg-blue-600 border border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]' : 'bg-blue-500 border border-blue-600 text-white active:scale-[0.98]' }`}
               >
                 {isActive && (
                   <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none"></div>

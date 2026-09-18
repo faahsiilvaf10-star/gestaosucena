@@ -44,7 +44,7 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-display italic text-text-primary">404</h1>
+        <h1 className="text-7xl text-text-primary">404</h1>
         <p className="mt-4 text-sm text-muted">Page not found.</p>
         <Link to="/" className="mt-6 inline-block rounded-full bg-text-primary px-5 py-2 text-sm text-bg">Go home</Link>
       </div>
@@ -59,7 +59,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-display italic text-text-primary">This page didn't load</h1>
+        <h1 className="text-xl text-text-primary">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted">Something went wrong.</p>
         <button
           onClick={() => { router.invalidate(); reset(); }}
@@ -87,7 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&display=swap&font-display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&display=swap&=swap" },
     ],
   }),
   shellComponent: RootShell,

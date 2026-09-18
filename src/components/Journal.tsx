@@ -24,7 +24,7 @@ export function Journal() {
               <span className="text-xs text-muted uppercase tracking-[0.3em]">Journal</span>
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl text-text-primary mb-4 leading-tight">
-              Recent <span className="font-display italic">thoughts</span>
+              Recent <span className="">thoughts</span>
             </h2>
             <p className="text-sm md:text-base text-muted">Long-form notes on craft, motion, and process.</p>
           </div>

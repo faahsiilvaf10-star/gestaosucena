@@ -111,9 +111,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
             <button
               key={user.id}
               onClick={() => handleStartChat(user)}
-              className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'
-              }`}
+              className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${ isDark ? 'hover:bg-white/5' : 'hover:bg-black/5' }`}
             >
               <div className="relative">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -162,9 +160,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                     openChat(conv.id)
                     if (window.innerWidth < 768) setIsSidebarOpen(false)
                   }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                    isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'
-                  }`}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${ isDark ? 'hover:bg-white/5' : 'hover:bg-black/5' }`}
                 >
                   <div className="relative shrink-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">

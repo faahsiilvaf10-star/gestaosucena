@@ -107,10 +107,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
               <button
                 type="submit"
                 disabled={loading}
-                className={`px-4 py-2 text-sm font-bold text-gray-900 dark:text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm
-                  ${type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
-                  ${loading ? 'opacity-70 cursor-not-allowed' : ''}
-                `}
+                className={`px-4 py-2 text-sm font-bold text-gray-900 dark:text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm ${type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Confirmar

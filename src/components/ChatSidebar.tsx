@@ -20,18 +20,13 @@ export function ChatSidebar({ currentUserId }: { currentUserId: string }) {
     <>
       {/* Backdrop opcional (somente no mobile ou para escurecer fundo) */}
       <div 
-        className={`fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[99] transition-opacity duration-300 md:hidden ${
-          isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[99] transition-opacity duration-300 md:hidden ${ isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' }`}
         onClick={() => setIsSidebarOpen(false)}
       />
 
       {/* Container Principal */}
       <div 
-        className={`fixed top-0 right-0 h-[100dvh] z-[100] transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col
-          ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}
-          ${isDark ? 'bg-[#090A0C] border-l border-white/5 text-gray-900 dark:text-white' : 'bg-gray-50 border-l border-black/5 text-gray-900'}
-        `}
+        className={`fixed top-0 right-0 h-[100dvh] z-[100] transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'} ${isDark ? 'bg-[#090A0C] border-l border-white/5 text-gray-900 dark:text-white' : 'bg-gray-50 border-l border-black/5 text-gray-900'}`}
         style={{ width: 'min(100vw, 350px)' }}
       >
         {/* Cabeçalho da Lista */}

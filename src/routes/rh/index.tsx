@@ -20,7 +20,7 @@ function RhHub() {
         {/* Title */}
         <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
-            className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
+            className="tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
             style={{ fontSize: 'clamp(26px, 8vw, 54px)', lineHeight: '1' }}
           >
             Recursos Humanos
@@ -43,7 +43,7 @@ function RhHub() {
                 <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
                   <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-serif italic text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                <h3 className="text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
                   {item.name}
                 </h3>
               </Link>

@@ -39,7 +39,7 @@ export function Footer() {
       <div className="absolute inset-0 bg-black/60" />
 
       <div className="relative z-10 overflow-hidden mb-16">
-        <div ref={marqueeRef} className="flex whitespace-nowrap text-6xl md:text-8xl lg:text-9xl font-display italic text-text-primary/90">
+        <div ref={marqueeRef} className="flex whitespace-nowrap text-6xl md:text-8xl lg:text-9xl text-text-primary/90">
           {Array.from({ length: 10 }).map((_, i) => (
             <span key={i} className="px-6">BUILDING THE FUTURE •</span>
           ))}

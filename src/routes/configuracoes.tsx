@@ -141,16 +141,12 @@ function ConfiguracoesRoute() {
       <div className="max-w-4xl mx-auto py-4 sm:py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         <div className="mb-8">
-          <h1 className="font-display italic tracking-tight" style={{ fontSize: 'clamp(24px, 7vw, 54px)', lineHeight: '1' }}>Configurações de Perfil</h1>
+          <h1 className="tracking-tight" style={{ fontSize: 'clamp(24px, 7vw, 54px)', lineHeight: '1' }}>Configurações de Perfil</h1>
           <p className="text-gray-900 dark:text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
         </div>
 
         {message && (
-          <div className={`p-4 rounded-xl mb-6 flex items-start gap-3 border ${
-            message.type === 'success' 
-              ? 'bg-green-500/10 border-green-500/20 text-green-400' 
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
+          <div className={`p-4 rounded-xl mb-6 flex items-start gap-3 border ${ message.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400' }`}>
             {message.type === 'success' ? <CheckCircle2 size={20} className="shrink-0 mt-0.5" /> : <AlertCircle size={20} className="shrink-0 mt-0.5" />}
             <p className="text-sm font-medium">{message.text}</p>
           </div>

@@ -45,14 +45,14 @@ export function LoadingScreen({ onComplete }: { onComplete: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-display italic text-text-primary/80"
+            className="text-4xl md:text-6xl lg:text-7xl text-text-primary/80"
           >
             {WORDS[wordIndex]}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <div className="absolute bottom-10 right-6 text-6xl md:text-8xl lg:text-9xl font-display text-text-primary tabular-nums">
+      <div className="absolute bottom-10 right-6 text-6xl md:text-8xl lg:text-9xl text-text-primary tabular-nums">
         {String(count).padStart(3, "0")}
       </div>
 

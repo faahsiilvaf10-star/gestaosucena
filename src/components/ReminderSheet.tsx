@@ -314,11 +314,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                             prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
                           )
                         }}
-                        className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
-                          recurringDays.includes(idx) 
-                            ? 'bg-indigo-600 text-gray-900 dark:text-white' 
-                            : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${ recurringDays.includes(idx) ? 'bg-indigo-600 text-gray-900 dark:text-white' : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white' }`}
                       >
                         {day}
                       </button>

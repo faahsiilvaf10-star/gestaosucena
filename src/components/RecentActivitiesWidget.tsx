@@ -67,7 +67,7 @@ export function RecentActivitiesWidget() {
     <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-800/60 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
       <div className="flex items-center gap-2 mb-6 relative z-10">
         <Clock className="w-5 h-5 text-gray-400" />
-        <h2 className="text-xl font-display font-semibold text-gray-900 dark:text-white tracking-tight">Atividades recentes</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Atividades recentes</h2>
       </div>
 
       <div className="flex flex-col gap-4 flex-1 relative z-10">

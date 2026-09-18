@@ -61,7 +61,7 @@ function CalendarioHydroPage() {
               <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-gray-900 dark:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
-              <h1 className="text-[42px] font-display italic tracking-tight" style={{ lineHeight: '1' }}>
+              <h1 className="text-[42px] tracking-tight" style={{ lineHeight: '1' }}>
                 Calendário Projetos Alunorte {year}
               </h1>
             </div>

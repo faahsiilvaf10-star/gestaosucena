@@ -411,11 +411,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                       <button
                         key={tire.id}
                         onClick={() => setSelectedTires(prev => prev.includes(tire.id) ? prev.filter(t => t !== tire.id) : [...prev, tire.id])}
-                        className={`absolute w-8 h-14 rounded-lg flex flex-col items-center justify-center transition-all shadow-md ${
-                          isSelected 
-                            ? 'bg-red-500 scale-110 shadow-red-500/50 z-10 border-2 border-red-700' 
-                            : 'bg-gray-800 dark:bg-black border-2 border-gray-900 dark:border-zinc-900'
-                        }`}
+                        className={`absolute w-8 h-14 rounded-lg flex flex-col items-center justify-center transition-all shadow-md ${ isSelected ? 'bg-red-500 scale-110 shadow-red-500/50 z-10 border-2 border-red-700' : 'bg-gray-800 dark:bg-black border-2 border-gray-900 dark:border-zinc-900' }`}
                         style={{ 
                           left: `${tire.x}%`, 
                           top: `${tire.y}%`,

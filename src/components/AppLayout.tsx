@@ -108,10 +108,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`
-      overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300
-      ${isDark ? 'bg-[#000] text-gray-900 dark:text-white' : 'bg-[#f4f3f0] text-gray-900'}
-    `}
+    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-gray-900 dark:text-white' : 'bg-[#f4f3f0] text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
@@ -143,9 +140,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Floating Chat Windows */}
       <div 
-        className={`fixed bottom-[40px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${
-          isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]'
-        }`}
+        className={`fixed bottom-[40px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]' }`}
       >
         {currentUser.id && activeChats.map(chatId => (
           <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />

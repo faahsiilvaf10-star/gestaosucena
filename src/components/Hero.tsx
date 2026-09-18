@@ -51,12 +51,12 @@ export function Hero() {
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-6">
         <div className="blur-in text-xs text-muted uppercase tracking-[0.3em] mb-8">COLLECTION '26</div>
-        <h1 className="name-reveal text-6xl md:text-8xl lg:text-9xl font-display italic leading-[0.9] tracking-tight text-text-primary mb-6">
+        <h1 className="name-reveal text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight text-text-primary mb-6">
           Michael Smith
         </h1>
         <p className="blur-in text-lg md:text-2xl text-text-primary/90 mb-6">
           A{" "}
-          <span key={roleIndex} className="font-display italic text-text-primary animate-role-fade-in inline-block">
+          <span key={roleIndex} className="text-text-primary animate-role-fade-in inline-block">
             {ROLES[roleIndex]}
           </span>{" "}
           lives in Chicago.

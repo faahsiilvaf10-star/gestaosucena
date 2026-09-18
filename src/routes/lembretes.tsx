@@ -120,7 +120,7 @@ function LembretesComponent() {
         {/* Title & Controls */}
         <div className="relative flex flex-col md:flex-row items-center justify-center mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col items-center justify-center text-center">
-            <h1 className="font-display italic tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center"
+            <h1 className="tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-center"
               style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
             >
               Lembretes
@@ -149,20 +149,12 @@ function LembretesComponent() {
               <button
                 key={opt.label}
                 onClick={() => setCurrentFilter(opt.label)}
-                className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  currentFilter === opt.label 
-                    ? (isDark ? 'bg-white/10 text-gray-900 dark:text-white' : 'bg-black/5 text-gray-900')
-                    : (isDark ? 'text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5')
-                }`}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${ currentFilter === opt.label ? (isDark ? 'bg-white/10 text-gray-900 dark:text-white' : 'bg-black/5 text-gray-900') : (isDark ? 'text-gray-900 dark:text-white/50 hover:text-gray-900 dark:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5') }`}
               >
                 {opt.label === 'Favoritos' && <Star size={14} />}
                 {opt.label}
                 {opt.count > 0 && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    opt.label === 'Atrasados' ? 'bg-red-500/20 text-red-400' : 
-                    opt.label === 'Hoje' ? 'bg-blue-500/20 text-blue-400' :
-                    (isDark ? 'bg-white/10 text-gray-900 dark:text-white/60' : 'bg-black/10 text-gray-600')
-                  }`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${ opt.label === 'Atrasados' ? 'bg-red-500/20 text-red-400' : opt.label === 'Hoje' ? 'bg-blue-500/20 text-blue-400' : (isDark ? 'bg-white/10 text-gray-900 dark:text-white/60' : 'bg-black/10 text-gray-600') }`}>
                     {opt.count}
                   </span>
                 )}
@@ -176,11 +168,7 @@ function LembretesComponent() {
               <input 
                 type="text"
                 placeholder="Pesquisar..."
-                className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full sm:w-64 transition-all ${
-                  isDark 
-                    ? 'bg-black/20 border-white/10 text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30' 
-                    : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500'
-                }`}
+                className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full sm:w-64 transition-all ${ isDark ? 'bg-black/20 border-white/10 text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30' : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500' }`}
               />
             </div>
           </div>
@@ -190,11 +178,7 @@ function LembretesComponent() {
         <div className={`rounded-2xl border transition-colors overflow-hidden ${isDark ? 'bg-[#101014]/60 backdrop-blur-md border-white/10' : 'bg-[#faf9f6]/80 backdrop-blur-md border-black/10'}`}>
           <div className="p-6">
             
-            <div className={`relative flex items-center gap-3 p-3 rounded-xl border group transition-all mb-6 ${
-              isDark 
-                ? 'border-white/10 bg-black/20 focus-within:bg-black/40 focus-within:border-yellow-500/50' 
-                : 'border-black/10 bg-[#faf9f6]/70 focus-within:bg-white focus-within:border-yellow-500 shadow-sm'
-            }`}>
+            <div className={`relative flex items-center gap-3 p-3 rounded-xl border group transition-all mb-6 ${ isDark ? 'border-white/10 bg-black/20 focus-within:bg-black/40 focus-within:border-yellow-500/50' : 'border-black/10 bg-[#faf9f6]/70 focus-within:bg-white focus-within:border-yellow-500 shadow-sm' }`}>
               <Plus size={20} className={`group-focus-within:text-yellow-500 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-400'}`} />
               <input 
                 type="text" 
@@ -203,9 +187,7 @@ function LembretesComponent() {
                 onKeyDown={handleQuickAdd}
                 disabled={createMutation.isPending}
                 placeholder="Adicionar um lembrete rápido... Pressione Enter para salvar."
-                className={`flex-1 bg-transparent focus:outline-none text-sm ${
-                  isDark ? 'text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/40' : 'text-gray-900 placeholder:text-gray-500'
-                }`}
+                className={`flex-1 bg-transparent focus:outline-none text-sm ${ isDark ? 'text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/40' : 'text-gray-900 placeholder:text-gray-500' }`}
               />
             </div>
 
@@ -261,11 +243,7 @@ function LembretesComponent() {
                       </button>
                       
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate transition-all ${
-                          isCompleted 
-                            ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') 
-                            : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900 group-hover:text-black')
-                        }`}>
+                        <p className={`text-sm font-medium truncate transition-all ${ isCompleted ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900 group-hover:text-black') }`}>
                           {reminder.title}
                         </p>
                         
@@ -278,11 +256,7 @@ function LembretesComponent() {
                           )}
 
                           {reminder.priority !== 'Normal' && (
-                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                              reminder.priority === 'Urgente' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              reminder.priority === 'Alta' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                              'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                            }`}>
+                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${ reminder.priority === 'Urgente' ? 'bg-red-500/10 text-red-400 border-red-500/20' : reminder.priority === 'Alta' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20' }`}>
                               {reminder.priority}
                             </div>
                           )}

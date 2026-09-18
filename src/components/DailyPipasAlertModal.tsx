@@ -64,7 +64,7 @@ export function DailyPipasAlertModal() {
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
             <Droplet size={32} className="text-white" />
           </div>
-          <h2 className="text-2xl font-display font-bold text-center">Comunicado Diário</h2>
+          <h2 className="text-2xl font-bold text-center">Comunicado Diário</h2>
           <p className="text-blue-100 font-medium text-center mt-1">Status dos Caminhões Pipa na Obra</p>
         </div>
 

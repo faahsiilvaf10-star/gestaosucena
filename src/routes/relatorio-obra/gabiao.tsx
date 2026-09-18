@@ -292,7 +292,7 @@ function GabiaoPage() {
               <Hammer className="text-orange-600" size={24} />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-display italic tracking-tight font-bold text-gray-900">Registro de Atividades - Gabião</h1>
+              <h1 className="text-2xl sm:text-3xl tracking-tight font-bold text-gray-900">Registro de Atividades - Gabião</h1>
               <p className="text-gray-500 text-sm">{formatLongDate(selectedDate)}</p>
             </div>
           </div>
@@ -359,11 +359,7 @@ function GabiaoPage() {
                     <button
                       key={d}
                       onClick={() => loadDate(d)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                        d === selectedDate 
-                        ? 'bg-yellow-100 border-yellow-300 text-yellow-800' 
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${ d === selectedDate ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100' }`}
                     >
                       {formatDateDisplay(d)}
                     </button>
@@ -477,7 +473,7 @@ function GabiaoPage() {
           <div className="sticky top-6 bg-white border border-gray-200 rounded-3xl p-5 sm:p-8 flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="text-gray-800" size={20} />
-              <h2 className="text-xl font-display font-bold italic text-gray-900">Resumo para RDO</h2>
+              <h2 className="text-xl font-bold text-gray-900">Resumo para RDO</h2>
             </div>
             <p className="text-gray-500 text-sm mb-2">
               Esta prévia mostra como os dados aparecerão no RDO

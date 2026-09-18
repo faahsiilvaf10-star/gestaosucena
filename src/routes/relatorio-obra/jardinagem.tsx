@@ -442,7 +442,7 @@ function JardinagemPage() {
             <Leaf className="text-green-600" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display italic tracking-tight font-bold text-gray-900">Atividades - Jardinagem</h1>
+            <h1 className="text-2xl sm:text-3xl tracking-tight font-bold text-gray-900">Atividades - Jardinagem</h1>
             <p className="text-gray-500 text-sm">{formatLongDate(selectedDate)}</p>
           </div>
         </div>
@@ -508,7 +508,7 @@ function JardinagemPage() {
 
           <div className="flex items-center gap-2 mb-2 relative z-10">
             <Leaf className="text-green-600" size={20} />
-            <h2 className="text-xl font-display font-bold italic text-gray-900">Relatório de Atividades</h2>
+            <h2 className="text-xl font-bold text-gray-900">Relatório de Atividades</h2>
           </div>
           <p className="text-gray-600 text-sm mb-4 relative z-10 max-w-lg">
             Preencha os dados das atividades de jardinagem do dia. Estes dados serão enviados automaticamente para o RDO.
@@ -762,7 +762,7 @@ function JardinagemPage() {
         <div className="sticky top-6 bg-white border border-gray-200 rounded-3xl p-5 sm:p-8 flex flex-col gap-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="text-gray-800" size={20} />
-            <h2 className="text-xl font-display font-bold italic text-gray-900">Resumo para RDO</h2>
+            <h2 className="text-xl font-bold text-gray-900">Resumo para RDO</h2>
           </div>
           <p className="text-gray-500 text-sm mb-2">
             Esta prévia mostra como os dados aparecerão no RDO

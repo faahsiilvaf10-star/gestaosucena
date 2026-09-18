@@ -79,7 +79,7 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
         {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
           <div>
-            <h2 className="text-2xl font-serif font-bold">Documentos - {cargoName}</h2>
+            <h2 className="text-2xl font-bold">Documentos - {cargoName}</h2>
             <p className={`text-sm mt-1 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>
               Gerencie arquivos, planilhas, PDFs e imagens deste cargo.
             </p>
@@ -95,11 +95,7 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
           {/* Upload Box */}
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className={`cursor-pointer border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${
-              uploadMutation.isPending 
-                ? 'opacity-50 pointer-events-none' 
-                : isDark ? 'border-white/20 hover:border-white/40 hover:bg-white/5' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-            }`}
+            className={`cursor-pointer border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${ uploadMutation.isPending ? 'opacity-50 pointer-events-none' : isDark ? 'border-white/20 hover:border-white/40 hover:bg-white/5' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50' }`}
           >
             <input 
               type="file" 

@@ -19,7 +19,7 @@ export function Stats() {
             viewport={{ once: true }}
             className="text-center md:text-left"
           >
-            <div className="text-6xl md:text-7xl lg:text-8xl font-display italic text-text-primary mb-3">{s.value}</div>
+            <div className="text-6xl md:text-7xl lg:text-8xl text-text-primary mb-3">{s.value}</div>
             <div className="text-xs text-muted uppercase tracking-[0.3em]">{s.label}</div>
           </motion.div>
         ))}

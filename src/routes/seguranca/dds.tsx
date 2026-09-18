@@ -287,7 +287,7 @@ function DDSSchedulePage() {
         <div className="space-y-2">
           <div className="flex items-center space-x-3 text-black">
             <Sun className="w-8 h-8" />
-            <h1 className="text-3xl md:text-4xl font-display font-bold italic tracking-tight text-black">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">
               DDS - Diálogo de Segurança
             </h1>
           </div>
@@ -318,7 +318,7 @@ function DDSSchedulePage() {
 
         {/* Quick Actions */}
         <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm">
-          <h2 className="text-xl font-display font-bold italic mb-2">Ações Rápidas</h2>
+          <h2 className="text-xl font-bold mb-2">Ações Rápidas</h2>
           <p className="text-gray-500 text-sm mb-6">Gerencie a escala do mês</p>
           <div className="flex flex-wrap gap-4">
             <Button 
@@ -346,7 +346,7 @@ function DDSSchedulePage() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3 mb-1">
               <CalendarIcon className="w-5 h-5 text-gray-500" />
-              <h2 className="text-2xl font-display font-bold italic text-black">Escala do Mês</h2>
+              <h2 className="text-2xl font-bold text-black">Escala do Mês</h2>
             </div>
             <p className="text-gray-500 text-sm">
               {workDays.length} dias úteis • {schedule.length} agendamentos
@@ -394,7 +394,7 @@ function DDSSchedulePage() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">Não definido</span>
+                          <span className="text-gray-400">Não definido</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -403,7 +403,7 @@ function DDSSchedulePage() {
                             <span className="line-clamp-2">{entry.tema}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">-</span>
+                          <span className="text-gray-400">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
@@ -474,7 +474,7 @@ function DDSSchedulePage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic text-sm">Não definido</span>
+                        <span className="text-gray-400 text-sm">Não definido</span>
                       )}
                     </div>
 
@@ -485,7 +485,7 @@ function DDSSchedulePage() {
                           <span>{entry.tema}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic text-sm">-</span>
+                        <span className="text-gray-400 text-sm">-</span>
                       )}
                     </div>
                   </div>
@@ -501,7 +501,7 @@ function DDSSchedulePage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-black">
           <DialogHeader>
-            <DialogTitle className="font-display font-bold italic text-2xl text-black">
+            <DialogTitle className="font-bold text-2xl text-black">
               Agendar DDS - {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : ''}
             </DialogTitle>
           </DialogHeader>
@@ -586,7 +586,7 @@ function DDSSchedulePage() {
       <Dialog open={confirmAction.isOpen} onOpenChange={(open) => !open && setConfirmAction(prev => ({ ...prev, isOpen: false }))}>
         <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-black">
           <DialogHeader>
-            <DialogTitle className="font-display font-bold italic text-2xl text-black">
+            <DialogTitle className="font-bold text-2xl text-black">
               {confirmAction.title}
             </DialogTitle>
           </DialogHeader>

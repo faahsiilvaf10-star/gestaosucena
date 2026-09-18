@@ -241,13 +241,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
               
               return (
                 <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`
-                    max-w-[85%] md:max-w-[75%] rounded-2xl p-2.5 shadow-sm relative group
-                    ${isMine 
-                      ? (isDark ? 'bg-[#25200F] text-gray-900 dark:text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') 
-                      : (isDark ? 'bg-[#202126] text-gray-900 dark:text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5')
-                    }
-                  `}>
+                  <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-2.5 shadow-sm relative group ${isMine ? (isDark ? 'bg-[#25200F] text-gray-900 dark:text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') : (isDark ? 'bg-[#202126] text-gray-900 dark:text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5') }`}>
                     {(() => {
                       const parts = (msg.text || '').split('|')
                       const url = parts[0]

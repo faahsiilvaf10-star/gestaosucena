@@ -307,7 +307,7 @@ function ParteDiariaPage() {
       <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-sm p-4 sm:p-6 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
               Parte Diária
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
@@ -421,7 +421,7 @@ function MetricCard({ title, value, total, color }: { title: string, value: numb
   return (
     <div className={`${color} text-white p-4 rounded-2xl relative overflow-hidden shadow-sm flex flex-col justify-between min-h-[110px]`}>
       <div className="relative z-10">
-        <h3 className="text-3xl font-bold font-display leading-none">{value}</h3>
+        <h3 className="text-3xl font-bold leading-none">{value}</h3>
         <p className="text-sm font-medium opacity-90 mt-1">{title}</p>
       </div>
       {total > 0 && (
@@ -712,11 +712,7 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
             </Dialog>
 
             <button 
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors mr-2 ${
-                vehicle.latitude && vehicle.longitude 
-                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer' 
-                  : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-zinc-700 cursor-not-allowed'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors mr-2 ${ vehicle.latitude && vehicle.longitude ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-zinc-700 cursor-not-allowed' }`}
               title={vehicle.latitude && vehicle.longitude ? `Atualizado em: ${new Date(vehicle.last_location_update).toLocaleString()}` : 'Localização não disponível para este equipamento'}
               onClick={(e) => {
                 e.stopPropagation()

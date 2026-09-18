@@ -453,7 +453,7 @@ function AdminRoute() {
           <div>
             <div className="flex items-center gap-3 text-[#D6A72B] mb-2">
               <Shield size={32} />
-              <h1 className="text-3xl md:text-4xl tracking-tight font-display italic">
+              <h1 className="text-3xl md:text-4xl tracking-tight">
                 Administração
               </h1>
             </div>
@@ -485,11 +485,7 @@ function AdminRoute() {
         <div className={`flex items-center gap-2 border-b ${isDark ? 'border-white/10' : 'border-black/10'} pb-4`}>
           <button 
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'users' 
-                ? (isDark ? 'bg-white/10 text-white' : 'bg-black text-white') 
-                : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-black hover:bg-black/5')
-            }`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'users' ? (isDark ? 'bg-white/10 text-white' : 'bg-black text-white') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-black hover:bg-black/5') }`}
           >
             <Users size={18} />
             Usuários e Acessos
@@ -497,11 +493,7 @@ function AdminRoute() {
           
           <button 
             onClick={() => setActiveTab('whatsapp')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'whatsapp' 
-                ? 'bg-[#25D366]/20 text-[#25D366]' 
-                : (isDark ? 'text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10' : 'text-gray-600 hover:text-[#25D366] hover:bg-[#25D366]/10')
-            }`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'whatsapp' ? 'bg-[#25D366]/20 text-[#25D366]' : (isDark ? 'text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10' : 'text-gray-600 hover:text-[#25D366] hover:bg-[#25D366]/10') }`}
           >
             <MessageCircle size={18} />
             WhatsApp API
@@ -668,12 +660,7 @@ function AdminRoute() {
           <button 
             onClick={handleToggleRegistration}
             disabled={savingRegistration}
-            className={`w-full py-3 px-4 font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2
-              ${registrationOpen 
-                ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' 
-                : 'bg-green-500 text-white hover:bg-green-600'
-              }
-            `}
+            className={`w-full py-3 px-4 font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${registrationOpen ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-green-500 text-white hover:bg-green-600' }`}
           >
             {registrationOpen ? 'Desativar Cadastros' : 'Ativar Cadastros'}
           </button>
