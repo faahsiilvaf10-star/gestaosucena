@@ -10,20 +10,79 @@ import {
   Cell
 } from 'recharts'
 import { useTheme } from '../../contexts/ThemeContext'
+import { Calendar } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '../../lib/supabase'
 
 export const Route = createFileRoute('/meio-ambiente/consumo')({
   component: ConsumoAbastecimentoPage,
 })
 
-const data = [
-  { name: 'Ponto 82', volume: 8500 },
-  { name: 'Ponto 3D', volume: 6200 },
-  { name: 'Ponto 3C', volume: 11200 },
-  { name: 'Ponto 46', volume: 4800 },
-]
-
 function ConsumoAbastecimentoPage() {
   const { isDark } = useTheme()
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })
+  const [history, setHistory] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true)
+      let query = supabase.from('eq_status_history').select(`
+        id,
+        created_at,
+        new_status,
+        eq_equipments (
+          name,
+          plate_tag
+        )
+      `).like('new_status', 'Abastecimento - %').order('created_at', { ascending: false })
+      
+      if (startDate) {
+        query = query.gte('created_at', `${startDate}T00:00:00.000Z`)
+      }
+      if (endDate) {
+        query = query.lte('created_at', `${endDate}T23:59:59.999Z`)
+      }
+      
+      const { data, error } = await query
+      
+      if (!error && data) {
+        setHistory(data)
+      } else {
+        console.error("Erro ao buscar histórico:", error)
+      }
+      setIsLoading(false)
+    }
+    fetchData()
+  }, [startDate, endDate])
+
+  const chartData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    
+    // Pontos padrão para sempre aparecerem no gráfico
+    counts['Ponto 82'] = 0
+    counts['Ponto 3D'] = 0
+    counts['Ponto 3C'] = 0
+    counts['Ponto 46'] = 0
+
+    history.forEach(row => {
+      const pointName = row.new_status.replace('Abastecimento - ', '').trim()
+      if (counts[pointName] === undefined) {
+        counts[pointName] = 0
+      }
+      // Adicionando 1 viagem para o gráfico
+      counts[pointName] += 1
+    })
+
+    return Object.entries(counts).map(([name, viagens]) => ({ name, viagens }))
+  }, [history])
 
   return (
     <div className={`-mx-4 md:-mx-12 lg:-mx-24 xl:-mx-32 min-h-screen overflow-hidden flex flex-col justify-start relative transition-colors duration-300 ${isDark ? 'bg-black text-white' : 'bg-[#f4f3f0] text-gray-900'}`}>
@@ -44,46 +103,119 @@ function ConsumoAbastecimentoPage() {
           </div>
 
           {/* Chart Container */}
-          <div className={`backdrop-blur-md rounded-3xl p-8 shadow-2xl h-[450px] w-full mt-4 relative overflow-hidden group transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 border border-white/5' : 'bg-white/80 border border-black/5'}`}>
+          <div className={`backdrop-blur-md rounded-3xl p-8 shadow-2xl w-full mt-4 relative overflow-hidden group transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 border border-white/5' : 'bg-white/80 border border-black/5'}`}>
              {/* Decorative glow */}
              <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none transition-opacity duration-700 opacity-50 group-hover:opacity-100" />
              
-             <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-white/90' : 'text-gray-800'}`}>Volume Diário (Litros)</h3>
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 relative z-10">
+               <h3 className={`text-xl font-bold ${isDark ? 'text-white/90' : 'text-gray-800'}`}>Total de Viagens (Abastecimento)</h3>
+               
+               <div className="flex items-center gap-2">
+                 <div className="relative">
+                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
+                   <input 
+                     type="date" 
+                     value={startDate}
+                     onChange={(e) => setStartDate(e.target.value)}
+                     className={`pl-9 pr-3 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-auto ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
+                     title="Data Inicial"
+                   />
+                 </div>
+                 <span className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>até</span>
+                 <div className="relative">
+                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
+                   <input 
+                     type="date" 
+                     value={endDate}
+                     onChange={(e) => setEndDate(e.target.value)}
+                     className={`pl-9 pr-3 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-auto ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
+                     title="Data Final"
+                   />
+                 </div>
+               </div>
+             </div>
              
-             <ResponsiveContainer width="100%" height="85%">
-               <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#ffffff15" : "#00000010"} vertical={false} />
-                 <XAxis 
-                   dataKey="name" 
-                   stroke={isDark ? "#ffffff50" : "#00000040"} 
-                   tick={{ fill: isDark ? '#ffffff80' : '#4b5563', fontSize: 12, fontWeight: 500 }} 
-                   axisLine={false} 
-                   tickLine={false}
-                   dy={10}
-                 />
-                 <YAxis 
-                   stroke={isDark ? "#ffffff50" : "#00000040"} 
-                   tick={{ fill: isDark ? '#ffffff80' : '#4b5563', fontSize: 12 }} 
-                   axisLine={false} 
-                   tickLine={false}
-                 />
-                 <Tooltip 
-                   cursor={{ fill: isDark ? '#ffffff05' : '#00000005' }}
-                   contentStyle={{ backgroundColor: isDark ? '#121214' : '#ffffff', borderColor: isDark ? '#ffffff10' : '#e5e7eb', borderRadius: '12px', color: isDark ? '#fff' : '#111827', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
-                   itemStyle={{ color: '#eab308', fontWeight: 'bold' }}
-                   labelStyle={{ color: isDark ? '#ffffff80' : '#6b7280', marginBottom: '4px' }}
-                 />
-                 <Bar dataKey="volume" radius={[6, 6, 0, 0]} maxBarSize={80}>
-                    {data.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={index === 2 ? '#eab308' : (isDark ? '#ffffff20' : '#e5e7eb')} 
-                        className="transition-all duration-300 hover:opacity-80"
-                      />
-                    ))}
-                 </Bar>
-               </BarChart>
-             </ResponsiveContainer>
+             <div className="h-[350px]">
+               {isLoading ? (
+                 <div className="w-full h-full flex items-center justify-center">
+                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-yellow-500"></div>
+                 </div>
+               ) : (
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#ffffff15" : "#00000010"} vertical={false} />
+                     <XAxis 
+                       dataKey="name" 
+                       stroke={isDark ? "#ffffff50" : "#00000040"} 
+                       tick={{ fill: isDark ? '#ffffff80' : '#4b5563', fontSize: 12, fontWeight: 500 }} 
+                       axisLine={false} 
+                       tickLine={false}
+                       dy={10}
+                     />
+                     <YAxis 
+                       stroke={isDark ? "#ffffff50" : "#00000040"} 
+                       tick={{ fill: isDark ? '#ffffff80' : '#4b5563', fontSize: 12 }} 
+                       axisLine={false} 
+                       tickLine={false}
+                       allowDecimals={false}
+                     />
+                     <Tooltip 
+                       cursor={{ fill: isDark ? '#ffffff05' : '#00000005' }}
+                       contentStyle={{ backgroundColor: isDark ? '#121214' : '#ffffff', borderColor: isDark ? '#ffffff10' : '#e5e7eb', borderRadius: '12px', color: isDark ? '#fff' : '#111827', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                       itemStyle={{ color: '#eab308', fontWeight: 'bold' }}
+                       labelStyle={{ color: isDark ? '#ffffff80' : '#6b7280', marginBottom: '4px' }}
+                       formatter={(value: number) => [`${value} viagens`, 'Registros']}
+                     />
+                     <Bar dataKey="viagens" radius={[6, 6, 0, 0]} maxBarSize={80}>
+                        {chartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={index === 2 ? '#eab308' : (isDark ? '#ffffff20' : '#e5e7eb')} 
+                            className="transition-all duration-300 hover:opacity-80"
+                          />
+                        ))}
+                     </Bar>
+                   </BarChart>
+                 </ResponsiveContainer>
+               )}
+             </div>
+
+             {/* Detailed Table */}
+             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 relative z-10">
+               <h4 className={`text-lg font-bold mb-4 ${isDark ? 'text-white/80' : 'text-gray-700'}`}>Detalhamento de Viagens</h4>
+               <div className="overflow-x-auto overflow-y-auto max-h-[300px]">
+                 <table className="w-full text-left border-collapse">
+                   <thead className="sticky top-0 bg-white/90 dark:bg-black/90 backdrop-blur-md z-10">
+                     <tr className={`border-b text-sm ${isDark ? 'border-white/10 text-white/50' : 'border-gray-200 text-gray-500'}`}>
+                       <th className="pb-3 pr-4 font-medium">Data / Horário</th>
+                       <th className="pb-3 pr-4 font-medium">Ponto de Captação</th>
+                       <th className="pb-3 pr-4 font-medium">Caminhão Pipa</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {isLoading ? (
+                       <tr><td colSpan={3} className="py-4 text-center text-sm opacity-50">Carregando...</td></tr>
+                     ) : history.length === 0 ? (
+                       <tr><td colSpan={3} className="py-4 text-center text-sm opacity-50">Nenhum registro encontrado neste período.</td></tr>
+                     ) : (
+                       history.map(row => (
+                         <tr key={row.id} className={`border-b last:border-0 ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                           <td className="py-3 pr-4 text-sm whitespace-nowrap">
+                             {new Date(row.created_at).toLocaleDateString('pt-BR')} às {new Date(row.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                           </td>
+                           <td className="py-3 pr-4 text-sm font-medium">
+                             {row.new_status.replace('Abastecimento - ', '')}
+                           </td>
+                           <td className="py-3 pr-4 text-sm">
+                             {row.eq_equipments?.name || 'Desconhecido'} {row.eq_equipments?.plate_tag ? `(${row.eq_equipments.plate_tag})` : ''}
+                           </td>
+                         </tr>
+                       ))
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+             </div>
           </div>
         </div>
 

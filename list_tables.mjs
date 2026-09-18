@@ -14,16 +14,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-async function checkProfiles() {
-  const { data, error } = await supabase.from('profiles').select('*').limit(1)
-  console.log("Profiles query result:")
-  console.log("Error:", error)
-  console.log("Data:", data)
-
-  const { data: users, error: uError } = await supabase.from('users').select('*').limit(1)
-  console.log("\nUsers query result:")
-  console.log("Error:", uError)
-  console.log("Data:", users)
+async function getTables() {
+  const { data, error } = await supabase.rpc('get_tables_names') // If RPC exists, otherwise we just query information_schema or run a dummy select on known tables
+  console.log("RPC get_tables_names:", data, error)
 }
-
-checkProfiles()
+getTables()

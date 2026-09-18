@@ -635,9 +635,14 @@ function RhEfetivoPage() {
                      displayValue = date.toLocaleDateString('pt-BR');
                   }
                   
+                  let displayKey = key;
+                  if (displayKey.toUpperCase() === 'HABILIDADES') {
+                    displayKey = 'Função';
+                  }
+                  
                   return (
                     <div key={key} className="col-span-1 sm:col-span-2">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{key}</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{displayKey}</p>
                       <p className="font-medium text-[15px] whitespace-pre-wrap">{displayValue}</p>
                     </div>
                   )
