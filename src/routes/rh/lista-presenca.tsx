@@ -392,9 +392,44 @@ function RhListaPresencaPage() {
               }
             })
         } else {
-          // Nenhuma lista para hoje — começar VAZIA
-          // O usuário adiciona os colaboradores manualmente
-          nextColaboradores = []
+          // Nenhuma lista para hoje — tentar carregar do último dia salvo
+          const { data: lastData, error: lastError } = await supabase
+            .from('rh_presencas')
+            .select('data')
+            .lt('data', attendanceDate)
+            .order('data', { ascending: false })
+            .limit(1)
+
+          if (!lastError && lastData && lastData.length > 0) {
+            const lastDate = lastData[0].data
+            // Buscar todas as presenças desse último dia
+            const { data: fullLastData, error: fullLastError } = await supabase
+              .from('rh_presencas')
+              .select('*')
+              .eq('data', lastDate)
+
+            if (!fullLastError && fullLastData && fullLastData.length > 0) {
+              const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
+              nextColaboradores = fullLastData
+                .filter(d => d.status !== 'REMOVIDO')
+                .map(d => {
+                  const emp = efetivoMap.get(d.funcionario_id)
+                  let finalArea = d.area
+                  if (!finalArea || finalArea.toUpperCase().includes('BARCARENA')) finalArea = 'Área Gabião'
+                  return {
+                    id: d.funcionario_id,
+                    nome: emp ? emp.nome : 'Desconhecido',
+                    cargo: emp ? emp.cargo : null,
+                    setor: finalArea,
+                    status: 'PRESENTE' // Herdar tudo como presente por padrão
+                  }
+                })
+            } else {
+              nextColaboradores = []
+            }
+          } else {
+            nextColaboradores = []
+          }
         }
       }
 
