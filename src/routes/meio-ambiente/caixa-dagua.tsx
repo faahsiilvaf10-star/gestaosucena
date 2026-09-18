@@ -108,7 +108,7 @@ function CaixaDaguaPage() {
   return (
     <div className={`-mx-4 md:-mx-12 lg:-mx-24 xl:-mx-32 min-h-screen flex flex-col justify-start relative transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#f4f3f0]'}`}>
       
-      <div className="max-w-[1200px] mx-auto w-full px-4 lg:px-16 pt-10 pb-20 relative z-10 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="max-w-[1600px] mx-auto w-full px-4 lg:px-16 pt-10 pb-20 relative z-10 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
         
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-6">
@@ -150,17 +150,19 @@ function CaixaDaguaPage() {
           </div>
         </div>
 
-        {/* Table Wrapper */}
-        <div className="w-full overflow-hidden rounded-md border border-[#1a4b6d] shadow-2xl bg-[#0d0d0d] font-sans">
+        {/* Content Section */}
+        <div className="flex flex-col xl:flex-row items-start justify-start xl:gap-0 gap-12 w-full">
+          {/* Table Wrapper */}
+          <div className="flex-[2] w-full overflow-hidden rounded-md border border-[#1a4b6d] shadow-2xl bg-white font-sans relative z-20">
           {isLoading ? (
             <div className="flex justify-center items-center h-[400px]">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : (
             <div className="w-full">
-              <table className="w-full text-sm text-center border-collapse text-white">
+              <table className="w-full text-sm text-center border-collapse text-black">
                 <thead>
-                  <tr className="bg-[#1a4b6d]">
+                  <tr className="bg-[#1a4b6d] text-white">
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold text-left w-32">Mês</th>
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold w-1/5">Sem 01</th>
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold w-1/5">Sem 02</th>
@@ -171,9 +173,9 @@ function CaixaDaguaPage() {
                 </thead>
                 <tbody>
                   {MONTHS.map((monthName, mIdx) => {
-                    const rowBg = mIdx % 2 === 0 ? 'bg-[#151515]' : 'bg-[#0d0d0d]'
+                    const rowBg = mIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     return (
-                      <tr key={monthName} className={`border-b border-[#1a4b6d]/30 transition-colors hover:bg-white/5 ${rowBg}`}>
+                      <tr key={monthName} className={`border-b border-[#1a4b6d]/30 transition-colors hover:bg-black/5 ${rowBg}`}>
                         <td className="p-3 border-r border-[#1a4b6d]/30 font-bold text-left whitespace-nowrap">
                           {monthName}
                         </td>
@@ -187,7 +189,7 @@ function CaixaDaguaPage() {
                                 type="text"
                                 value={valStr}
                                 onChange={(e) => handleValueChange(mIdx, week, e.target.value)}
-                                className="w-full h-full p-3 bg-transparent text-center text-white outline-none focus:bg-white/10 transition-colors"
+                                className="w-full h-full p-3 bg-transparent text-center text-black outline-none focus:bg-black/5 transition-colors"
                                 placeholder=""
                               />
                             </td>
@@ -201,8 +203,8 @@ function CaixaDaguaPage() {
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-end items-center p-4 bg-[#0a0a0c] border-t border-[#1a4b6d] gap-4">
-                <span className="text-sm font-bold text-white/50 uppercase tracking-widest">
+              <div className="flex justify-end items-center p-4 bg-white border-t border-[#1a4b6d] gap-4">
+                <span className="text-sm font-bold text-black/50 uppercase tracking-widest">
                   TOTAL ACUMULADO ANO (LITROS)
                 </span>
                 <span className="text-2xl font-bold text-[#1a4b6d]">
@@ -211,6 +213,17 @@ function CaixaDaguaPage() {
               </div>
             </div>
           )}
+          </div>
+          
+          {/* Right Side Image */}
+          <div className="flex-1 w-full flex justify-start items-center relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-100 mt-8 xl:mt-0 self-center z-10">
+             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full blur-[100px] pointer-events-none ${isDark ? 'bg-blue-500/10' : 'bg-blue-500/20'}`} />
+             <img 
+               src="/caixa_de_agua.png" 
+               alt="Caixa de Água" 
+               className={`w-full max-w-[500px] object-contain relative z-10 hover:scale-105 transition-transform duration-700 ${isDark ? 'drop-shadow-[0_20px_50px_rgba(0,0,0,0.7)]' : 'drop-shadow-[0_20px_50px_rgba(0,0,0,0.2)]'}`} 
+             />
+          </div>
         </div>
 
       </div>

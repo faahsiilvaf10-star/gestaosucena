@@ -45,6 +45,7 @@ import { Route as MeioAmbienteIndexRouteImport } from './routes/meio-ambiente/in
 import { Route as MeioAmbienteCaixaDaguaRouteImport } from './routes/meio-ambiente/caixa-dagua'
 import { Route as MeioAmbienteConsumoRouteImport } from './routes/meio-ambiente/consumo'
 import { Route as MeioAmbientePluviometriaRouteImport } from './routes/meio-ambiente/pluviometria'
+import { Route as MeioAmbienteResiduosRouteImport } from './routes/meio-ambiente/residuos'
 import { Route as RelatorioObraIndexRouteImport } from './routes/relatorio-obra/index'
 import { Route as RelatorioObraGabiaoRouteImport } from './routes/relatorio-obra/gabiao'
 import { Route as RelatorioObraJardinagemRouteImport } from './routes/relatorio-obra/jardinagem'
@@ -246,6 +247,11 @@ const MeioAmbientePluviometriaRoute =
     path: '/pluviometria',
     getParentRoute: () => MeioAmbienteRoute,
   } as any)
+const MeioAmbienteResiduosRoute = MeioAmbienteResiduosRouteImport.update({
+  id: '/residuos',
+  path: '/residuos',
+  getParentRoute: () => MeioAmbienteRoute,
+} as any)
 const RelatorioObraIndexRoute = RelatorioObraIndexRouteImport.update({
   id: '/relatorio-obra/',
   path: '/relatorio-obra/',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
+  '/meio-ambiente/residuos': typeof MeioAmbienteResiduosRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -410,6 +417,7 @@ export interface FileRoutesByTo {
   '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
+  '/meio-ambiente/residuos': typeof MeioAmbienteResiduosRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -465,6 +473,7 @@ export interface FileRoutesById {
   '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
   '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
+  '/meio-ambiente/residuos': typeof MeioAmbienteResiduosRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -521,6 +530,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
     | '/meio-ambiente/pluviometria'
+    | '/meio-ambiente/residuos'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
     | '/meio-ambiente/pluviometria'
+    | '/meio-ambiente/residuos'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
     | '/meio-ambiente/pluviometria'
+    | '/meio-ambiente/residuos'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -921,6 +933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeioAmbientePluviometriaRouteImport
       parentRoute: typeof MeioAmbienteRoute
     }
+    '/meio-ambiente/residuos': {
+      id: '/meio-ambiente/residuos'
+      path: '/residuos'
+      fullPath: '/meio-ambiente/residuos'
+      preLoaderRoute: typeof MeioAmbienteResiduosRouteImport
+      parentRoute: typeof MeioAmbienteRoute
+    }
     '/relatorio-obra/': {
       id: '/relatorio-obra/'
       path: '/relatorio-obra'
@@ -1116,6 +1135,7 @@ interface MeioAmbienteRouteChildren {
   MeioAmbienteCaixaDaguaRoute: typeof MeioAmbienteCaixaDaguaRoute
   MeioAmbienteConsumoRoute: typeof MeioAmbienteConsumoRoute
   MeioAmbientePluviometriaRoute: typeof MeioAmbientePluviometriaRoute
+  MeioAmbienteResiduosRoute: typeof MeioAmbienteResiduosRoute
   MeioAmbienteIndexRoute: typeof MeioAmbienteIndexRoute
 }
 
@@ -1123,6 +1143,7 @@ const MeioAmbienteRouteChildren: MeioAmbienteRouteChildren = {
   MeioAmbienteCaixaDaguaRoute: MeioAmbienteCaixaDaguaRoute,
   MeioAmbienteConsumoRoute: MeioAmbienteConsumoRoute,
   MeioAmbientePluviometriaRoute: MeioAmbientePluviometriaRoute,
+  MeioAmbienteResiduosRoute: MeioAmbienteResiduosRoute,
   MeioAmbienteIndexRoute: MeioAmbienteIndexRoute,
 }
 
