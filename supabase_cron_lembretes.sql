@@ -124,8 +124,8 @@ BEGIN
       END IF;
 
       IF v_is_advance_day AND NOT v_trigger_now THEN
-        -- Aviso antecipado sempre às 06:00
-        IF v_current_time = '06:00' THEN
+        -- Aviso antecipado sempre às 16:00
+        IF v_current_time = '16:00' THEN
           v_trigger_now := true;
           v_is_advance := true;
         END IF;

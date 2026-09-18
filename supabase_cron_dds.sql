@@ -77,22 +77,24 @@ BEGIN
 
   -- Tratar o tema
   IF v_dds.tema IS NOT NULL AND trim(v_dds.tema) != '' THEN
-    v_tema_str := 'Tema: *' || v_dds.tema || '*';
+    v_tema_str := '*Tema:* ' || v_dds.tema;
   ELSE
-    v_tema_str := 'Tema: *A definir*';
+    v_tema_str := '*Tema:* A definir';
   END IF;
 
   -- Formatar Mensagem
   IF is_today THEN
-    v_message := '🟢 *Gestão Sucena - Lembrete Automático*' || chr(10) || chr(10) ||
-                 'Bom dia! Passando para lembrar que *hoje* é o dia do DDS.' || chr(10) ||
-                 'Palestrante: *' || v_speaker_name || '*' || chr(10) ||
-                 v_tema_str;
+    v_message := '🎤 *Lembrete DDS - Hoje*' || chr(10) || chr(10) ||
+                 '👤 *Palestrante:* ' || v_speaker_name || chr(10) ||
+                 '📅 *Data:* ' || to_char(v_target_date, 'DD/MM/YYYY') || ' (hoje)' || chr(10) ||
+                 '📋 ' || v_tema_str || chr(10) || chr(10) ||
+                 '_Mensagem automática - Sucena_';
   ELSE
-    v_message := '🟢 *Gestão Sucena - Aviso Prévio*' || chr(10) || chr(10) ||
-                 'Boa tarde! Passando para lembrar que *amanhã* é o dia do DDS.' || chr(10) ||
-                 'Palestrante: *' || v_speaker_name || '*' || chr(10) ||
-                 v_tema_str;
+    v_message := '🎤 *Aviso Prévio DDS - Amanhã*' || chr(10) || chr(10) ||
+                 '👤 *Palestrante:* ' || v_speaker_name || chr(10) ||
+                 '📅 *Data:* ' || to_char(v_target_date, 'DD/MM/YYYY') || ' (amanhã)' || chr(10) ||
+                 '📋 ' || v_tema_str || chr(10) || chr(10) ||
+                 '_Mensagem automática - Sucena_';
   END IF;
 
   -- Preparar o Endpoint

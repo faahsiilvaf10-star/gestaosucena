@@ -1,5 +1,65 @@
 import { createServerFn } from '@tanstack/react-start'
 
+export const sendWhatsappTextOnServer = createServerFn({ method: 'POST' })
+  .validator((data: {
+    url: string,
+    token: string,
+    instanceId: string,
+    phone: string,
+    text: string
+  }) => data)
+  .handler(async ({ data }) => {
+    try {
+      let baseUrl = data.url.trim()
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
+
+      let baseEndpoint = `${baseUrl}/message/sendText/${data.instanceId}`;
+      if (baseUrl.includes('painel.w-api.app')) {
+        baseEndpoint = `https://api.w-api.app/message/sendText/${data.instanceId}`;
+      }
+
+      const payload = {
+        number: data.phone,
+        text: data.text
+      }
+
+      let res = await fetch(baseEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${data.token}`,
+          'apikey': data.token
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+         let fallbackEndpoint = `${baseUrl}/messages/send`;
+         if (baseUrl.includes('painel.w-api.app')) fallbackEndpoint = `https://api.w-api.app/messages/send`;
+         
+         const fbPayload = {
+            number: data.phone,
+            body: data.text
+         };
+
+         res = await fetch(fallbackEndpoint, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${data.token}`
+            },
+            body: JSON.stringify(fbPayload)
+         });
+      }
+
+      const resultText = await res.text();
+      return { success: res.ok, result: resultText };
+    } catch (e: any) {
+      console.error("sendWhatsappTextOnServer error:", e)
+      return { success: false, error: e.message }
+    }
+  })
+
 export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
   .validator((data: {
     url: string,

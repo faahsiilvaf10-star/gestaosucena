@@ -971,7 +971,7 @@ function AdminRoute() {
                 <ul className="list-disc ml-5 mt-2 space-y-1">
                   <li>Lembretes <strong>com horário definido</strong> são enviados no horário escolhido (Pará UTC-4).</li>
                   <li>Lembretes <strong>sem horário</strong> são enviados às 06:00h da manhã.</li>
-                  <li>Se houver aviso antecipado (ex: 1 dia antes), também é enviado às 06:00h naqueles dias.</li>
+                  <li>Se houver aviso antecipado (ex: 1 dia antes), o envio antecipado é realizado às <strong>16:00h</strong> daquele dia.</li>
                   <li>Lembretes <strong>recorrentes</strong> (dias da semana) são enviados no horário configurado.</li>
                   <li>Se mencionar <strong>todos</strong> → vai para o <strong>grupo configurado</strong>; senão → vai no <strong>privado</strong> do criador e dos usuários mencionados.</li>
                   <li>Se o criador adiar o lembrete para outro dia, o envio do WhatsApp também é <strong>adiado automaticamente</strong> para a nova data.</li>
@@ -1014,6 +1014,55 @@ function AdminRoute() {
                 
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                   Requisitos: integração W-API habilitada, ID do grupo preenchido (para lembretes de "todos") e usuários com WhatsApp cadastrado (para envios privados). Lembre-se de salvar a configuração após alterar este botão.
+                </p>
+              </div>
+            </div>
+            {/* Nova Seção: Envio Automático da Lista de Presença */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Send size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Envio Automático da Lista de Presença
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Quando habilitado, ao <strong>salvar a Lista de Presença diária</strong> (Gabião, Jardinagem, ADM, Transporte ou nova area criada) o sistema envia automaticamente para o <strong>grupo configurado</strong> o <strong>texto formatado</strong> com presentes, ausentes e total da área, respeitando o intervalo de segurança configurado.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, enabled: !prev.attendanceAlerts?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.attendanceAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.attendanceAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio automático ao salvar a Lista de Presença</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.attendanceAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.attendanceAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.attendanceAlerts?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
+                
+                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Requisitos: integração W-API habilitada e <strong>ID do grupo</strong> preenchido (use o campo acima para enviar para um grupo diferente do padrão). Lembre-se de salvar a configuração após alterar este botão.
                 </p>
               </div>
             </div>

@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
+import { getWhatsappSettings } from '@/lib/settings'
+import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
@@ -555,6 +557,35 @@ function RhListaPresencaPage() {
         module: 'RH',
         action: `Lista de presença salva para a data ${dateObj.toLocaleDateString('pt-BR')} (Área: ${activeTab})`
       });
+
+      // Dispara envio automático no WhatsApp se estiver habilitado
+      try {
+        const settings = await getWhatsappSettings();
+        if (settings.attendanceAlerts?.enabled && settings.url && settings.token) {
+          const groupId = settings.attendanceAlerts.specificGroupId || settings.groupId;
+          if (groupId) {
+            const listArea = colaboradores.filter(c => (c.setor || 'Sem Área') === activeTab && c.status !== 'REMOVIDO');
+            const presentes = listArea.filter(c => c.status === 'PRESENTE').length;
+            const ausentes = listArea.filter(c => c.status === 'AUSENTE').length;
+            const total = listArea.length;
+            
+            const dataStr = dateObj.toLocaleDateString('pt-BR');
+            const text = `📋 *LISTA DE PRESENÇA SALVA*\n\n📅 *Data:* ${dataStr}\n🏢 *Área:* ${activeTab}\n\n✅ *Presentes:* ${presentes}\n❌ *Ausentes:* ${ausentes}\n📊 *Total:* ${total}\n\n_Enviado automaticamente pelo sistema_`;
+            
+            await sendWhatsappTextOnServer({
+              data: {
+                url: settings.url,
+                token: settings.token,
+                instanceId: settings.instanceId,
+                phone: groupId,
+                text: text
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao enviar whatsapp automático (lista de presença)", err);
+      }
 
       toast.success(`${activeTab} salva com sucesso!`, { id: toastId })
     } catch (err: any) {
