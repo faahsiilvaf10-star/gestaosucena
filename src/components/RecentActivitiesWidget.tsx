@@ -94,7 +94,7 @@ export function RecentActivitiesWidget() {
                     {act.action}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-white/50 truncate">
-                    {act.module} {act.user_name && `• ${act.user_name}`}
+                    {act.module} {act.user_name && `• ${act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}`}
                   </p>
                 </div>
                 <div className="text-xs font-medium text-gray-400 dark:text-white/40 whitespace-nowrap pt-1">

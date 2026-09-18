@@ -178,7 +178,8 @@ function EntradaSaidaPage() {
 
   const getUserName = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    return user?.email || 'Usuário Logado'
+    if (!user) return 'Usuário Logado'
+    return user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário Logado'
   }
 
   const handleConfirmEntry = async () => {
@@ -961,7 +962,7 @@ function EntradaSaidaPage() {
                           )}
                           
                           <div className="text-[10px] opacity-40 mt-3 flex items-center gap-1">
-                            Usuário: {mov.created_by || 'Desconhecido'}
+                            Usuário: {mov.created_by ? (mov.created_by.includes('@') ? mov.created_by.split('@')[0] : mov.created_by) : 'Desconhecido'}
                           </div>
                         </div>
                       </div>
