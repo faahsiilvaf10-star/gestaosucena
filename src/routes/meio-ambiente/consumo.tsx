@@ -10,8 +10,10 @@ import {
   Cell
 } from 'recharts'
 import { useTheme } from '../../contexts/ThemeContext'
-import { Calendar } from 'lucide-react'
+import { Calendar, Download } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { supabase } from '../../lib/supabase'
 
 export const Route = createFileRoute('/meio-ambiente/consumo')({
@@ -84,6 +86,35 @@ function ConsumoAbastecimentoPage() {
     return Object.entries(counts).map(([name, viagens]) => ({ name, viagens }))
   }, [history])
 
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    
+    // Configurações do cabeçalho
+    doc.setFontSize(20)
+    doc.text('Relatório de Consumo & Abastecimento', 14, 22)
+    
+    doc.setFontSize(11)
+    doc.text(`Período: ${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`, 14, 30)
+    doc.text(`Total de Registros: ${history.length}`, 14, 36)
+
+    // Corpo da tabela
+    const tableData = history.map(row => [
+      `${new Date(row.created_at).toLocaleDateString('pt-BR')} às ${new Date(row.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`,
+      row.new_status.replace('Abastecimento - ', ''),
+      `${row.eq_equipments?.name || 'Desconhecido'} ${row.eq_equipments?.plate_tag ? `(${row.eq_equipments.plate_tag})` : ''}`
+    ])
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Data / Horário', 'Ponto de Captação', 'Caminhão Pipa']],
+      body: tableData,
+      theme: isDark ? 'grid' : 'striped',
+      headStyles: { fillColor: [234, 179, 8], textColor: 255 }, // Amarelo Sucena
+    })
+
+    doc.save(`relatorio_consumo_${startDate}_a_${endDate}.pdf`)
+  }
+
   return (
     <div className={`-mx-4 md:-mx-12 lg:-mx-24 xl:-mx-32 min-h-screen overflow-hidden flex flex-col justify-start relative transition-colors duration-300 ${isDark ? 'bg-black text-white' : 'bg-[#f4f3f0] text-gray-900'}`}>
       
@@ -132,6 +163,14 @@ function ConsumoAbastecimentoPage() {
                      title="Data Final"
                    />
                  </div>
+                 <button 
+                   onClick={generatePDF}
+                   disabled={isLoading || history.length === 0}
+                   className={`ml-2 p-1.5 rounded-lg border transition-colors flex items-center justify-center ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                   title="Baixar Relatório em PDF"
+                 >
+                   <Download className="w-5 h-5 text-yellow-500" />
+                 </button>
                </div>
              </div>
              
