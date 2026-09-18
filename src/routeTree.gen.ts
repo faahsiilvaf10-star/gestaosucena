@@ -42,7 +42,9 @@ import { Route as InstacenaPerfilRouteImport } from './routes/instacena/perfil'
 import { Route as InstacenaPesquisaRouteImport } from './routes/instacena/pesquisa'
 import { Route as InstacenaReelsRouteImport } from './routes/instacena/reels'
 import { Route as MeioAmbienteIndexRouteImport } from './routes/meio-ambiente/index'
+import { Route as MeioAmbienteCaixaDaguaRouteImport } from './routes/meio-ambiente/caixa-dagua'
 import { Route as MeioAmbienteConsumoRouteImport } from './routes/meio-ambiente/consumo'
+import { Route as MeioAmbientePluviometriaRouteImport } from './routes/meio-ambiente/pluviometria'
 import { Route as RelatorioObraIndexRouteImport } from './routes/relatorio-obra/index'
 import { Route as RelatorioObraGabiaoRouteImport } from './routes/relatorio-obra/gabiao'
 import { Route as RelatorioObraJardinagemRouteImport } from './routes/relatorio-obra/jardinagem'
@@ -228,11 +230,22 @@ const MeioAmbienteIndexRoute = MeioAmbienteIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MeioAmbienteRoute,
 } as any)
+const MeioAmbienteCaixaDaguaRoute = MeioAmbienteCaixaDaguaRouteImport.update({
+  id: '/caixa-dagua',
+  path: '/caixa-dagua',
+  getParentRoute: () => MeioAmbienteRoute,
+} as any)
 const MeioAmbienteConsumoRoute = MeioAmbienteConsumoRouteImport.update({
   id: '/consumo',
   path: '/consumo',
   getParentRoute: () => MeioAmbienteRoute,
 } as any)
+const MeioAmbientePluviometriaRoute =
+  MeioAmbientePluviometriaRouteImport.update({
+    id: '/pluviometria',
+    path: '/pluviometria',
+    getParentRoute: () => MeioAmbienteRoute,
+  } as any)
 const RelatorioObraIndexRoute = RelatorioObraIndexRouteImport.update({
   id: '/relatorio-obra/',
   path: '/relatorio-obra/',
@@ -346,7 +359,9 @@ export interface FileRoutesByFullPath {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -392,7 +407,9 @@ export interface FileRoutesByTo {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -445,7 +462,9 @@ export interface FileRoutesById {
   '/instacena/perfil': typeof InstacenaPerfilRoute
   '/instacena/pesquisa': typeof InstacenaPesquisaRoute
   '/instacena/reels': typeof InstacenaReelsRoute
+  '/meio-ambiente/caixa-dagua': typeof MeioAmbienteCaixaDaguaRoute
   '/meio-ambiente/consumo': typeof MeioAmbienteConsumoRoute
+  '/meio-ambiente/pluviometria': typeof MeioAmbientePluviometriaRoute
   '/relatorio-obra/gabiao': typeof RelatorioObraGabiaoRoute
   '/relatorio-obra/jardinagem': typeof RelatorioObraJardinagemRoute
   '/relatorio-obra/rdo': typeof RelatorioObraRdoRoute
@@ -499,7 +518,9 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
+    | '/meio-ambiente/pluviometria'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -545,7 +566,9 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
+    | '/meio-ambiente/pluviometria'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -597,7 +620,9 @@ export interface FileRouteTypes {
     | '/instacena/perfil'
     | '/instacena/pesquisa'
     | '/instacena/reels'
+    | '/meio-ambiente/caixa-dagua'
     | '/meio-ambiente/consumo'
+    | '/meio-ambiente/pluviometria'
     | '/relatorio-obra/gabiao'
     | '/relatorio-obra/jardinagem'
     | '/relatorio-obra/rdo'
@@ -875,11 +900,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeioAmbienteIndexRouteImport
       parentRoute: typeof MeioAmbienteRoute
     }
+    '/meio-ambiente/caixa-dagua': {
+      id: '/meio-ambiente/caixa-dagua'
+      path: '/caixa-dagua'
+      fullPath: '/meio-ambiente/caixa-dagua'
+      preLoaderRoute: typeof MeioAmbienteCaixaDaguaRouteImport
+      parentRoute: typeof MeioAmbienteRoute
+    }
     '/meio-ambiente/consumo': {
       id: '/meio-ambiente/consumo'
       path: '/consumo'
       fullPath: '/meio-ambiente/consumo'
       preLoaderRoute: typeof MeioAmbienteConsumoRouteImport
+      parentRoute: typeof MeioAmbienteRoute
+    }
+    '/meio-ambiente/pluviometria': {
+      id: '/meio-ambiente/pluviometria'
+      path: '/pluviometria'
+      fullPath: '/meio-ambiente/pluviometria'
+      preLoaderRoute: typeof MeioAmbientePluviometriaRouteImport
       parentRoute: typeof MeioAmbienteRoute
     }
     '/relatorio-obra/': {
@@ -1074,12 +1113,16 @@ const InstacenaRouteWithChildren = InstacenaRoute._addFileChildren(
 )
 
 interface MeioAmbienteRouteChildren {
+  MeioAmbienteCaixaDaguaRoute: typeof MeioAmbienteCaixaDaguaRoute
   MeioAmbienteConsumoRoute: typeof MeioAmbienteConsumoRoute
+  MeioAmbientePluviometriaRoute: typeof MeioAmbientePluviometriaRoute
   MeioAmbienteIndexRoute: typeof MeioAmbienteIndexRoute
 }
 
 const MeioAmbienteRouteChildren: MeioAmbienteRouteChildren = {
+  MeioAmbienteCaixaDaguaRoute: MeioAmbienteCaixaDaguaRoute,
   MeioAmbienteConsumoRoute: MeioAmbienteConsumoRoute,
+  MeioAmbientePluviometriaRoute: MeioAmbientePluviometriaRoute,
   MeioAmbienteIndexRoute: MeioAmbienteIndexRoute,
 }
 
