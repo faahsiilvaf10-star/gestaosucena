@@ -45,7 +45,7 @@ function RelatorioObraHub() {
                 <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
                   <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                <h3 className="text-2xl text-gray-900 tracking-wide font-light text-center whitespace-pre-line leading-tight">
                   {item.name}
                 </h3>
               </Link>
@@ -63,7 +63,7 @@ function RelatorioObraHub() {
               strokeWidth={1.5}
             />
             <div className="flex flex-col min-w-0 sm:items-center">
-              <span className="text-xl sm:text-2xl lg:text-3xl tracking-wide font-medium relative z-10 sm:text-center">
+              <span className="text-xl sm:text-2xl lg:text-3xl tracking-wide font-light relative z-10 sm:text-center">
                 Nova Atividade
               </span>
             </div>
