@@ -247,6 +247,7 @@ export function EpiRequisitionForm() {
   const [reason, setReason] = useState('');
   const [authorizerOpen, setAuthorizerOpen] = useState(false);
   const [employeeOpen, setEmployeeOpen] = useState(false);
+  const [searchEpiTerm, setSearchEpiTerm] = useState('');
   
   const [items, setItems] = useState<{ productId: string, quantity: number }[]>([]);
   
@@ -488,12 +489,22 @@ export function EpiRequisitionForm() {
 
       {/* EPI Selection */}
       <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step !== 1 && "hidden md:block")}>
-        <div className="border-b pb-4">
-          <h3 className="text-xl font-bold">EPI</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4">
+          <h3 className="text-xl font-bold">EPI e Materiais</h3>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Procurar EPI ou material..."
+              className="pl-9 bg-muted/50"
+              value={searchEpiTerm}
+              onChange={e => setSearchEpiTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {epiProducts?.filter(p => !p.name.toLowerCase().includes('camisa') && !p.name.toLowerCase().includes('calça') && !p.category?.name?.toLowerCase().includes('uniforme')).map(p => {
+          {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && !p.name.toLowerCase().includes('camisa') && !p.name.toLowerCase().includes('calça') && !p.category?.name?.toLowerCase().includes('uniforme')).map(p => {
             const isSelected = items.some(i => i.productId === p.id);
             const item = items.find(i => i.productId === p.id);
             return (
@@ -545,7 +556,7 @@ export function EpiRequisitionForm() {
         
         <div className="space-y-6">
            {/* Renderiza uniformes que não foram renderizados no bloco anterior */}
-           {epiProducts?.filter(p => p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme')).map(p => {
+           {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && (p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme'))).map(p => {
             const isSelected = items.some(i => i.productId === p.id);
             const item = items.find(i => i.productId === p.id);
             return (
@@ -584,7 +595,7 @@ export function EpiRequisitionForm() {
               </div>
             );
            })}
-           {epiProducts?.filter(p => p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme')).length === 0 && (
+           {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && (p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme'))).length === 0 && (
              <p className="text-sm text-muted-foreground">Nenhum uniforme encontrado no estoque.</p>
            )}
         </div>

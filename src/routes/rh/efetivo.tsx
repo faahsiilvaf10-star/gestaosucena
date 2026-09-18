@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { 
@@ -26,6 +27,12 @@ type EfetivoItem = {
   data_admissao: string | null
   status: string
   setor: string | null
+  aso_admissional?: string | null
+  aso_periodico?: string | null
+  retorno_ao_trabalho?: string | null
+  mudanca_de_risco?: string | null
+  observacao?: string | null
+  validade_aso_efetiva?: string | null
   raw_data?: any
 }
 
@@ -81,6 +88,29 @@ function RhEfetivoPage() {
     } catch (err) {
       console.error(err)
       toast.error('Erro ao atualizar matrícula')
+    }
+  }
+
+  const handleUpdateField = async (id: string, field: string, value: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('rh_efetivo')
+        .update({ [field]: value || null })
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value || null } : item))
+      setSelectedColaborador(prev => (prev && prev.id === id) ? { ...prev, [field]: value || null } : prev)
+      toast.success('Atualizado com sucesso')
+      
+      // If a date field was updated, we re-fetch to get the new calculated Validade ASO
+      if (['aso_admissional', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
+        fetchEfetivo()
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao atualizar informação')
     }
   }
 
@@ -164,13 +194,13 @@ function RhEfetivoPage() {
             const setor = getVal(['SETOR', 'DEPARTAMENTO', 'ÁREA', 'AREA', 'LOCALIDADE', 'LOCALIDADE '])
             
             // Format admission date if exists
-            let dataAdmissao = getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO'])
-            if (typeof dataAdmissao === 'number') {
-              const d = new Date((dataAdmissao - (25567 + 2)) * 86400 * 1000)
-              dataAdmissao = d.toISOString().split('T')[0]
-            } else if (typeof dataAdmissao === 'string' && dataAdmissao.includes('/')) {
-              const parts = dataAdmissao.split('/')
-              if (parts.length === 3) dataAdmissao = `${parts[2]}-${parts[1]}-${parts[0]}`
+            let asoAdmissional = getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO', 'ASO ADMISSIONAL'])
+            if (typeof asoAdmissional === 'number') {
+              const d = new Date((asoAdmissional - (25567 + 2)) * 86400 * 1000)
+              asoAdmissional = d.toISOString().split('T')[0]
+            } else if (typeof asoAdmissional === 'string' && asoAdmissional.includes('/')) {
+              const parts = asoAdmissional.split('/')
+              if (parts.length === 3) asoAdmissional = `${parts[2]}-${parts[1]}-${parts[0]}`
             }
 
             // Force matricula to be null for Auxiliar Administrativo as requested
@@ -185,7 +215,7 @@ function RhEfetivoPage() {
               matricula: finalMatricula,
               status: String(status),
               setor: setor ? String(setor) : null,
-              data_admissao: dataAdmissao ? String(dataAdmissao) : null,
+              aso_admissional: asoAdmissional ? String(asoAdmissional) : null,
               raw_data: row
             }
           })
@@ -387,7 +417,7 @@ function RhEfetivoPage() {
                     <th className="p-4">Nome</th>
                     <th className="p-4">Cargo</th>
                     <th className="p-4">Contato</th>
-                    <th className="p-4">Data de Admissão</th>
+
                     <th className="p-4">Status</th>
                   </tr>
                 </thead>
@@ -420,10 +450,12 @@ function RhEfetivoPage() {
                           item.matricula || '-'
                         )}
                       </td>
-                      <td className="p-4 font-bold">{item.nome}</td>
-                      <td className="p-4 text-gray-600 dark:text-gray-400">{item.cargo || '-'}</td>
+                      <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
+                      <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
                       <td className="p-4">{item.raw_data?.CONTATO || '-'}</td>
-                      <td className="p-4">{item.data_admissao ? item.data_admissao.split('-').reverse().join('/') : '-'}</td>
+                      
+
+
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${item.status.toUpperCase() === 'ATIVO' ? 'bg-green-500/20 text-green-600 dark:text-green-500' : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${item.status.toUpperCase() === 'ATIVO' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
@@ -440,8 +472,8 @@ function RhEfetivoPage() {
       </div>
 
       {/* Modal de Detalhes do Colaborador */}
-      {selectedColaborador && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+      {selectedColaborador && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-[#1a1a1b] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 shrink-0">
               <div>
@@ -465,13 +497,124 @@ function RhEfetivoPage() {
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.matricula || '-'}</p>
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data de Admissão</p>
-                  <p className="font-medium text-[15px]">{selectedColaborador.data_admissao ? selectedColaborador.data_admissao.split('-').reverse().join('/') : '-'}</p>
-                </div>
+                {/* Ocultando ASO Admissional daqui para criar uma seção dedicada */}
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Setor</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.setor || '-'}</p>
+                </div>
+
+                <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
+                  <h3 className="font-bold text-lg mb-4">Controle Médico (ASO)</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {/* ASO Admissional */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
+                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        <input 
+                          type="date"
+                          value={selectedColaborador.aso_admissional || ''}
+                          onChange={(e) => setSelectedColaborador({...selectedColaborador, aso_admissional: e.target.value})}
+                          onBlur={(e) => {
+                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_admissional', e.target.value)
+                            }
+                          }}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+                    
+                    {/* ASO Periódico */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Periódico</p>
+                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        <input 
+                          type="date"
+                          value={selectedColaborador.aso_periodico || ''}
+                          onChange={(e) => setSelectedColaborador({...selectedColaborador, aso_periodico: e.target.value})}
+                          onBlur={(e) => {
+                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.aso_periodico || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_periodico', e.target.value)
+                            }
+                          }}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_periodico ? selectedColaborador.aso_periodico.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+
+                    {/* Retorno ao Trabalho */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Retorno ao Trab.</p>
+                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        <input 
+                          type="date"
+                          value={selectedColaborador.retorno_ao_trabalho || ''}
+                          onChange={(e) => setSelectedColaborador({...selectedColaborador, retorno_ao_trabalho: e.target.value})}
+                          onBlur={(e) => {
+                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.retorno_ao_trabalho || '')) {
+                              handleUpdateField(selectedColaborador.id, 'retorno_ao_trabalho', e.target.value)
+                            }
+                          }}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.retorno_ao_trabalho ? selectedColaborador.retorno_ao_trabalho.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+
+                    {/* Mudança de Risco */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Mudança de Risco</p>
+                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        <input 
+                          type="date"
+                          value={selectedColaborador.mudanca_de_risco || ''}
+                          onChange={(e) => setSelectedColaborador({...selectedColaborador, mudanca_de_risco: e.target.value})}
+                          onBlur={(e) => {
+                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.mudanca_de_risco || '')) {
+                              handleUpdateField(selectedColaborador.id, 'mudanca_de_risco', e.target.value)
+                            }
+                          }}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.mudanca_de_risco ? selectedColaborador.mudanca_de_risco.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Observação */}
+                    <div className="col-span-1">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Observação</p>
+                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        <input 
+                          type="text"
+                          value={selectedColaborador.observacao || ''}
+                          onChange={(e) => setSelectedColaborador({...selectedColaborador, observacao: e.target.value})}
+                          onBlur={(e) => {
+                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.observacao || '')) {
+                              handleUpdateField(selectedColaborador.id, 'observacao', e.target.value)
+                            }
+                          }}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                          placeholder="Adicione uma observação..."
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.observacao || '-'}</p>
+                      )}
+                    </div>
+
+                    {/* Validade ASO Efetiva */}
+                    <div className="col-span-1">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Validade ASO (Efetiva)</p>
+                      <p className="font-bold text-[15px] text-[#0866ff]">{items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva ? items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva?.split('-').reverse().join('/') : '-'}</p>
+                    </div>
+                  </div>
                 </div>
                 
                 {selectedColaborador.raw_data && Object.entries(selectedColaborador.raw_data).map(([key, value]) => {
@@ -502,7 +645,8 @@ function RhEfetivoPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
