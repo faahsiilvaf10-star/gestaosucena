@@ -100,6 +100,7 @@ function AdminRoute() {
   const [isWhatsappLocked, setIsWhatsappLocked] = useState(true)
   const [unlockCodeModal, setUnlockCodeModal] = useState(false)
   const [unlockCodeInput, setUnlockCodeInput] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<keyof NonNullable<WhatsappSettings['messageTemplates']>>('ddsHoje')
 
   // Test API Modal
   const [testApiModal, setTestApiModal] = useState(false)
@@ -1064,6 +1065,61 @@ function AdminRoute() {
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                   Requisitos: integração W-API habilitada e <strong>ID do grupo</strong> preenchido (use o campo acima para enviar para um grupo diferente do padrão). Lembre-se de salvar a configuração após alterar este botão.
                 </p>
+              </div>
+            </div>
+
+            {/* Nova Seção: Modelos de Mensagens (Templates) */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <MessageCircle size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Modelos de Mensagens (Templates)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Personalize os textos que serão enviados automaticamente pelo sistema para o WhatsApp.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'ddsHoje', label: 'DDS Hoje' },
+                    { key: 'ddsAmanha', label: 'DDS Amanhã' },
+                    { key: 'lembreteHoje', label: 'Lembrete' },
+                    { key: 'lembreteAmanha', label: 'Aviso Prévio (Lembrete)' },
+                    { key: 'listaPresenca', label: 'Lista de Presença' },
+                    { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' }
+                  ].map(t => (
+                    <button
+                      key={t.key}
+                      onClick={() => setSelectedTemplate(t.key as any)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedTemplate === t.key ? 'bg-[#D6A72B] text-white' : isDark ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <textarea
+                    value={whatsappSettings.messageTemplates?.[selectedTemplate] || ''}
+                    onChange={e => setWhatsappSettings(prev => ({
+                      ...prev,
+                      messageTemplates: {
+                        ...prev.messageTemplates!,
+                        [selectedTemplate]: e.target.value
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    className={`w-full h-48 px-4 py-3 rounded-lg border outline-none transition-colors text-sm resize-y ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="Digite o modelo da mensagem..."
+                  />
+                  <div className={`mt-4 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <strong>Variáveis disponíveis:</strong><br />
+                    {selectedTemplate.startsWith('dds') && '{palestrante}, {data}, {tema}'}
+                    {selectedTemplate.startsWith('lembrete') && '{titulo}, {descricao}, {data}, {hora}'}
+                    {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}'}
+                    {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
+                  </div>
+                </div>
               </div>
             </div>
 

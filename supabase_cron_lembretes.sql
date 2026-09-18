@@ -145,26 +145,21 @@ BEGIN
 
       -- MONTAR A MENSAGEM
       IF v_is_advance THEN
-        v_message := '⏳ *Aviso Antecipado de Lembrete*' || chr(10) || chr(10);
+        v_message := COALESCE(
+          v_settings->'messageTemplates'->>'lembreteAmanha',
+          '⏳ *Aviso Antecipado de Lembrete*' || chr(10) || chr(10) || '📌 *{titulo}*' || chr(10) || '_{descricao}_' || chr(10) || chr(10) || '📅 Data: {data}' || chr(10) || '⏰ Horário: {hora}'
+        );
       ELSE
-        v_message := '🔔 *Lembrete Automático*' || chr(10) || chr(10);
+        v_message := COALESCE(
+          v_settings->'messageTemplates'->>'lembreteHoje',
+          '🔔 *Lembrete Automático*' || chr(10) || chr(10) || '📌 *{titulo}*' || chr(10) || '_{descricao}_' || chr(10) || chr(10) || '📅 Data: {data}' || chr(10) || '⏰ Horário: {hora}'
+        );
       END IF;
 
-      v_message := v_message || '📌 *' || r.title || '*' || chr(10);
-      
-      IF r.description IS NOT NULL AND r.description != '' THEN
-        v_message := v_message || '_' || r.description || '_' || chr(10) || chr(10);
-      END IF;
-
-      IF r.due_date IS NOT NULL AND NOT r.is_recurring THEN
-        v_message := v_message || '📅 Data: ' || to_char(r.due_date::date, 'DD/MM/YYYY') || chr(10);
-      END IF;
-
-      IF r.due_time IS NOT NULL THEN
-        v_message := v_message || '⏰ Horário: ' || to_char(r.due_time, 'HH24:MI') || chr(10);
-      END IF;
-
-      v_message := v_message || '⚡ Prioridade: ' || r.priority;
+      v_message := replace(v_message, '{titulo}', r.title);
+      v_message := replace(v_message, '{descricao}', COALESCE(r.description, ''));
+      v_message := replace(v_message, '{data}', COALESCE(to_char(r.due_date::date, 'DD/MM/YYYY'), '-'));
+      v_message := replace(v_message, '{hora}', COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
       -- VERIFICAR DESTINATÁRIOS
       v_mentions_all := false;

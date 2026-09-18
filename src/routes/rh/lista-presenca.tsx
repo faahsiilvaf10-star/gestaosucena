@@ -570,7 +570,12 @@ function RhListaPresencaPage() {
             const total = listArea.length;
             
             const dataStr = dateObj.toLocaleDateString('pt-BR');
-            const text = `📋 *LISTA DE PRESENÇA SALVA*\n\n📅 *Data:* ${dataStr}\n🏢 *Área:* ${activeTab}\n\n✅ *Presentes:* ${presentes}\n❌ *Ausentes:* ${ausentes}\n📊 *Total:* ${total}\n\n_Enviado automaticamente pelo sistema_`;
+            let text = settings.messageTemplates?.listaPresenca || '📋 *LISTA DE PRESENÇA SALVA*\n\n📅 *Data:* {data}\n🏢 *Área:* {area}\n\n✅ *Presentes:* {presentes}\n❌ *Ausentes:* {ausentes}\n📊 *Total:* {total}\n\n_Enviado automaticamente pelo sistema_';
+            text = text.replace('{data}', dataStr)
+                       .replace('{area}', activeTab)
+                       .replace('{presentes}', presentes.toString())
+                       .replace('{ausentes}', ausentes.toString())
+                       .replace('{total}', total.toString());
             
             await sendWhatsappTextOnServer({
               data: {

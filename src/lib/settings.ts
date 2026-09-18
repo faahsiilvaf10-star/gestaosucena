@@ -68,6 +68,14 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  messageTemplates?: {
+    ddsHoje: string;
+    ddsAmanha: string;
+    lembreteHoje: string;
+    lembreteAmanha: string;
+    listaPresenca: string;
+    requisicaoEpi: string;
+  };
 }
 
 const defaultWhatsappSettings: WhatsappSettings = {
@@ -93,6 +101,14 @@ const defaultWhatsappSettings: WhatsappSettings = {
   attendanceAlerts: {
     enabled: false,
     specificGroupId: ''
+  },
+  messageTemplates: {
+    ddsHoje: '🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
+    ddsAmanha: '🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
+    lembreteHoje: '🔔 *Lembrete Automático*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
+    lembreteAmanha: '⏳ *Aviso Antecipado de Lembrete*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
+    listaPresenca: '📋 *LISTA DE PRESENÇA SALVA*\n\n📅 *Data:* {data}\n🏢 *Área:* {area}\n\n✅ *Presentes:* {presentes}\n❌ *Ausentes:* {ausentes}\n📊 *Total:* {total}\n\n_Enviado automaticamente pelo sistema_',
+    requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}'
   }
 }
 

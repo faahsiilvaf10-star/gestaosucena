@@ -84,18 +84,20 @@ BEGIN
 
   -- Formatar Mensagem
   IF is_today THEN
-    v_message := '🎤 *Lembrete DDS - Hoje*' || chr(10) || chr(10) ||
-                 '👤 *Palestrante:* ' || v_speaker_name || chr(10) ||
-                 '📅 *Data:* ' || to_char(v_target_date, 'DD/MM/YYYY') || ' (hoje)' || chr(10) ||
-                 '📋 ' || v_tema_str || chr(10) || chr(10) ||
-                 '_Mensagem automática - Sucena_';
+    v_message := COALESCE(
+      v_settings->'messageTemplates'->>'ddsHoje',
+      '🎤 *Lembrete DDS - Hoje*' || chr(10) || chr(10) || '👤 *Palestrante:* {palestrante}' || chr(10) || '📅 *Data:* {data} (hoje)' || chr(10) || '📋 {tema}' || chr(10) || chr(10) || '_Mensagem automática - Sucena_'
+    );
   ELSE
-    v_message := '🎤 *Aviso Prévio DDS - Amanhã*' || chr(10) || chr(10) ||
-                 '👤 *Palestrante:* ' || v_speaker_name || chr(10) ||
-                 '📅 *Data:* ' || to_char(v_target_date, 'DD/MM/YYYY') || ' (amanhã)' || chr(10) ||
-                 '📋 ' || v_tema_str || chr(10) || chr(10) ||
-                 '_Mensagem automática - Sucena_';
+    v_message := COALESCE(
+      v_settings->'messageTemplates'->>'ddsAmanha',
+      '🎤 *Aviso Prévio DDS - Amanhã*' || chr(10) || chr(10) || '👤 *Palestrante:* {palestrante}' || chr(10) || '📅 *Data:* {data} (amanhã)' || chr(10) || '📋 {tema}' || chr(10) || chr(10) || '_Mensagem automática - Sucena_'
+    );
   END IF;
+
+  v_message := replace(v_message, '{palestrante}', COALESCE(v_speaker_name, 'Não informado'));
+  v_message := replace(v_message, '{data}', to_char(v_target_date, 'DD/MM/YYYY'));
+  v_message := replace(v_message, '{tema}', v_tema_str);
 
   -- Preparar o Endpoint
   v_endpoint := trim(trailing '/' from (v_settings->>'url'));

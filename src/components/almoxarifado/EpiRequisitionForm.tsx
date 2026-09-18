@@ -365,7 +365,15 @@ export function EpiRequisitionForm() {
                return `  - ${prod?.name || 'Desconhecido'} (${it.quantity})`;
              }).join('\n');
              const dataStr = format(new Date(), 'dd/MM/yyyy');
-             const caption = `🦺 *TROCA DE EPI*\n\n📅 *Data:* ${dataStr}\n👤 *Funcionário:* ${employee?.nome}\n💼 *Função:* ${employee?.cargo || '-'}\n🆔 *Matrícula:* ${employee?.matricula || '-'}\n📝 *Motivo:* ${reason || '.'}\n✅ *Autorizado por:* ${authorizer?.nome} (${authorizer?.matricula || '-'})\n\n*Itens:*\n${itemsList}`;
+             let caption = settings.messageTemplates?.requisicaoEpi || '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}';
+             caption = caption.replace('{data}', dataStr)
+                              .replace('{nome}', employee?.nome || '')
+                              .replace('{cargo}', employee?.cargo || '-')
+                              .replace('{matricula}', employee?.matricula || '-')
+                              .replace('{motivo}', reason || '.')
+                              .replace('{autorizador}', authorizer?.nome || '')
+                              .replace('{matricula_autorizador}', authorizer?.matricula || '-')
+                              .replace('{itens}', itemsList);
              await sendWhatsappMediaOnServer({
                data: {
                  url: settings.url,
