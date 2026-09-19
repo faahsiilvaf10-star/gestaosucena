@@ -4,8 +4,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { Save, Download } from 'lucide-react'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import {
   BarChart,
   Bar,
@@ -226,7 +224,7 @@ function ResiduosPage() {
     grid: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
   }
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     const doc = new jsPDF('landscape', 'mm', 'a4')
 
     const createDocument = (logoImg?: HTMLImageElement) => {

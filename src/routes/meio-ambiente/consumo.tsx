@@ -86,7 +86,9 @@ function ConsumoAbastecimentoPage() {
     return Object.entries(counts).map(([name, viagens]) => ({ name, viagens }))
   }, [history])
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable').catch(()=>({default:null}));
     const doc = new jsPDF()
     
     // Configurações do cabeçalho

@@ -75,7 +75,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Global listener for Equipment Movements (Entry/Exit announcements)
     const handleMovement = async (move: any) => {
-      const { data: eq } = await supabase.from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', move.equipment_id).single()
+      const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', move.equipment_id).single()
       
       setAnnouncement({
         type: move.movement_type as 'entry'|'exit',

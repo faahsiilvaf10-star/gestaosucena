@@ -1116,7 +1116,7 @@ function AdminRoute() {
                     <strong>Variáveis disponíveis:</strong><br />
                     {selectedTemplate.startsWith('dds') && '{palestrante}, {data}, {tema}'}
                     {selectedTemplate.startsWith('lembrete') && '{titulo}, {descricao}, {data}, {hora}'}
-                    {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}'}
+                    {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}, {lista_nomes}, {resumo}'}
                     {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
                   </div>
                 </div>

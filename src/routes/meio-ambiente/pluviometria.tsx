@@ -85,24 +85,59 @@ function PluviometriaPage() {
   const saveAll = async () => {
     setIsSaving(true)
     
+    const startDate = `${year}-01-01`
+    const endDate = `${year}-12-31`
+    
+    // 1. Buscar todos os registros do ano para mapear os IDs e limpar duplicatas
+    const { data: existingRecords } = await supabase
+      .from('pluviometria_registros')
+      .select('id, data_registro')
+      .gte('data_registro', startDate)
+      .lte('data_registro', endDate)
+      .eq('setor', setor)
+
+    const idMap = new Map<string, number>()
+    const duplicatesToDelete: number[] = []
+
+    if (existingRecords) {
+      existingRecords.forEach(r => {
+        if (idMap.has(r.data_registro)) {
+          duplicatesToDelete.push(r.id)
+        } else {
+          idMap.set(r.data_registro, r.id)
+        }
+      })
+    }
+
+    // 2. Deletar duplicatas se existirem
+    if (duplicatesToDelete.length > 0) {
+      await supabase.from('pluviometria_registros').delete().in('id', duplicatesToDelete)
+    }
+
     const toUpsert: any[] = []
     const toDelete: string[] = []
 
     Object.entries(data).forEach(([date, volStr]) => {
-      if (volStr === '') {
+      const cleanVal = volStr.trim()
+      if (cleanVal === '') {
         toDelete.push(date)
       } else {
-        toUpsert.push({
+        const parsed = parseFloat(cleanVal.replace(',', '.'))
+        const record: any = {
           data_registro: date,
-          volume_mm: parseFloat(volStr.replace(',', '.')) || 0,
+          volume_mm: isNaN(parsed) ? 0 : parsed,
           setor: setor
-        })
+        }
+        if (idMap.has(date)) {
+          record.id = idMap.get(date)
+        }
+        toUpsert.push(record)
       }
     })
 
     let hasError = false
+    let errorMsg = ''
 
-    // Se o usuário apagou o conteúdo da célula, nós deletamos do banco
     if (toDelete.length > 0) {
       const { error } = await supabase
         .from('pluviometria_registros')
@@ -113,26 +148,31 @@ function PluviometriaPage() {
       if (error) {
         console.error('Erro ao deletar vazios:', error)
         hasError = true
+        errorMsg = error.message
       }
     }
 
-    // Upsert nos valores válidos (incluindo o 0)
     if (toUpsert.length > 0) {
       const { error } = await supabase
         .from('pluviometria_registros')
-        .upsert(toUpsert, { onConflict: 'data_registro' })
+        .upsert(toUpsert) // Sem onConflict, pois estamos passando o ID se existir
 
       if (error) {
         console.error('Erro ao salvar:', error)
         hasError = true
+        errorMsg = error.message
       }
     }
 
     if (hasError) {
-      toast.error('Erro ao salvar algumas alterações.')
+      toast.error(`Erro ao salvar: ${errorMsg}`)
     } else {
       toast.success('Registros salvos com sucesso!')
     }
+    
+    // Forçar atualização do estado local com o que realmente está no banco
+    await fetchData()
+    
     setIsSaving(false)
   }
 
@@ -160,7 +200,7 @@ function PluviometriaPage() {
     }))
   }, [monthTotals])
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     const doc = new jsPDF('landscape', 'mm', 'a4')
 
     const createDocument = (logoImg?: HTMLImageElement) => {

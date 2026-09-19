@@ -567,15 +567,69 @@ function RhListaPresencaPage() {
             const listArea = colaboradores.filter(c => (c.setor || 'Sem Área') === activeTab && c.status !== 'REMOVIDO');
             const presentes = listArea.filter(c => c.status === 'PRESENTE').length;
             const ausentes = listArea.filter(c => c.status === 'AUSENTE').length;
+            const externos = listArea.filter(c => c.status === 'EXTERNO').length;
+            const atestados = listArea.filter(c => c.status === 'ATESTADO').length;
             const total = listArea.length;
             
+            // Build names list
+            const suporteCargos = ['ENC', 'ENCARREGADO', 'SUPERVISOR', 'LIDER', 'LÍDER', 'GERENTE', 'COORDENADOR', 'TECNICO', 'TÉCNICO', 'ENGENHEIRO'];
+            const isSuporte = (cargo: string | null) => {
+              if (!cargo) return false;
+              const c = cargo.toUpperCase();
+              return suporteCargos.some(sc => c.includes(sc));
+            };
+            
+            const getStatusIcon = (status: string) => {
+              switch (status) {
+                case 'PRESENTE': return '✅';
+                case 'AUSENTE': return '❌';
+                case 'EXTERNO': return '🛠️';
+                case 'ATESTADO': return '🏥';
+                default: return '✅';
+              }
+            };
+
+            const suporte = listArea.filter(c => isSuporte(c.cargo));
+            const execucao = listArea.filter(c => !isSuporte(c.cargo));
+            
+            let listaNomesStr = '';
+            if (suporte.length > 0) {
+              listaNomesStr += `✴️EQUIPE DE SUPORTE✴️\n\n`;
+              suporte.forEach(c => {
+                listaNomesStr += `🙋 ${c.cargo ? c.cargo.toUpperCase() : 'ENC'}: ${c.nome} ${getStatusIcon(c.status)}\n\n`;
+              });
+            }
+            if (execucao.length > 0) {
+              listaNomesStr += `✴️EQUIPE DE EXECUÇÃO✴️\n\n`;
+              const byCargo = execucao.reduce((acc: any, c: any) => {
+                const cargo = (c.cargo || 'SEM CARGO').toUpperCase();
+                if (!acc[cargo]) acc[cargo] = [];
+                acc[cargo].push(c);
+                return acc;
+              }, {});
+              
+              Object.keys(byCargo).forEach(cargo => {
+                listaNomesStr += `👷 ${cargo}:\n\n`;
+                byCargo[cargo].forEach((c: any) => {
+                  listaNomesStr += `${c.nome} ${getStatusIcon(c.status)}\n\n`;
+                });
+              });
+            }
+
+            let resumoStr = `✅ Presentes: ${presentes}  |  ❌ Ausentes: ${ausentes}  |  🛠️ Externo: ${externos}  |  👥 Total: ${total}`;
+            if (atestados > 0) {
+              resumoStr += `\n🏥 Atestados: ${atestados}`;
+            }
+            
             const dataStr = dateObj.toLocaleDateString('pt-BR');
-            let text = settings.messageTemplates?.listaPresenca || '📋 *LISTA DE PRESENÇA SALVA*\n\n📅 *Data:* {data}\n🏢 *Área:* {area}\n\n✅ *Presentes:* {presentes}\n❌ *Ausentes:* {ausentes}\n📊 *Total:* {total}\n\n_Enviado automaticamente pelo sistema_';
+            let text = settings.messageTemplates?.listaPresenca || '📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}';
             text = text.replace('{data}', dataStr)
-                       .replace('{area}', activeTab)
+                       .replace('{area}', activeTab.toUpperCase())
                        .replace('{presentes}', presentes.toString())
                        .replace('{ausentes}', ausentes.toString())
-                       .replace('{total}', total.toString());
+                       .replace('{total}', total.toString())
+                       .replace('{lista_nomes}', listaNomesStr.trimEnd())
+                       .replace('{resumo}', resumoStr);
             
             await sendWhatsappTextOnServer({
               data: {
@@ -599,7 +653,9 @@ function RhListaPresencaPage() {
     }
   }
 
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF()
     
     doc.setFontSize(18)

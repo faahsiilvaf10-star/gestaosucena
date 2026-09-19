@@ -89,7 +89,7 @@ function DashboardComponent() {
 
       const { data: schedule } = await supabase
         .from('seguranca_dds')
-        .select('*')
+        .select('id, date, tema, palestrante_id')
         .in('date', [today, tomorrow])
         
       const { data: users } = await supabase.rpc('get_system_users')
@@ -277,34 +277,53 @@ function DashboardComponent() {
       <div className="dashboard-container">
         
         {/* Title & Date — responsivo */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-8 mt-1 sm:mt-2 px-2 sm:px-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-2 px-2 sm:px-0">
           <div>
             <h1
-              className={`tracking-tight ${isDark ? 'text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-gray-900 drop-shadow-none'}`}
+              className={`tracking-tight neon-title ${isDark ? 'text-white' : 'text-gray-900 drop-shadow-none'}`}
               style={{ fontSize: 'clamp(32px, 8vw, 54px)', lineHeight: '1' }}
             >
-              Olá, {displayFirstName}!
+              Olá, <span className={isDark ? "neon-name" : ""}>{displayFirstName}</span>!
             </h1>
-            <p className={`text-sm mt-1 ml-0.5 font-medium ${isDark ? 'text-gray-900 dark:text-white/70' : 'text-gray-500'}`}>
+            <p className={`text-sm mt-1 ml-0.5 font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
               Visão geral da operação
             </p>
           </div>
-          {/* Data — compacta em mobile, completa em desktop */}
-          <div className={`flex items-center gap-2 font-evantic tracking-wide ${isDark ? 'text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]' : 'text-gray-900 drop-shadow-none'}`}
-            style={{ fontSize: 'clamp(14px, 4vw, 22px)' }}
-          >
-            <CalendarDays size={20} className={`flex-shrink-0 ${isDark ? 'opacity-80' : 'opacity-60'}`} />
-            {/* Data curta em mobile, completa em desktop */}
-            <span className="sm:hidden">{currentDateShort}</span>
-            <span className="hidden sm:inline">{currentDate}</span>
+          
+          <div className="flex items-center gap-6">
+            <div className={`flex flex-col items-end gap-1 font-evantic tracking-wide ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]' : 'text-gray-900'}`}>
+              <div className="flex items-center gap-2" style={{ fontSize: 'clamp(14px, 4vw, 18px)' }}>
+                <CalendarDays size={18} className={`flex-shrink-0 ${isDark ? 'opacity-80' : 'opacity-60'}`} />
+                <span className="sm:hidden">{currentDateShort}</span>
+                <span className="hidden sm:inline">{currentDate}</span>
+              </div>
+              {isDark && (
+                <div className="hidden sm:flex gap-3 text-[9px] tracking-[0.2em] text-slate-400 font-sans mt-2">
+                  <span className="cursor-pointer hover:text-white transition-colors border-b border-[#00d2ff] pb-1 text-white">PESSOAS</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="cursor-pointer hover:text-white transition-colors">OPERAÇÃO</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="cursor-pointer hover:text-white transition-colors">RESULTADOS</span>
+                </div>
+              )}
+            </div>
+            
+            {isDark && (
+              <div className="hidden md:flex flex-col text-[9px] tracking-[0.2em] text-slate-500 font-sans border-l border-white/10 pl-5 opacity-80">
+                <span>GRANDES</span>
+                <span>PESSOAS</span>
+                <span>MOVEM</span>
+                <span>RESULTADOS</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 pb-12">
           
           {/* TOTAL FUNCIONARIOS */}
-          <div className="dashboard-card col-span-1 md:col-span-4">
-            <div className="card-header">
+          <div className="dashboard-card neon-card neon-blue col-span-1 md:col-span-4 relative pb-8">
+            <div className="card-header relative z-10">
               <div className="card-title-wrap">
                 <div className="icon-box icon-blue">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -315,14 +334,30 @@ function DashboardComponent() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
             </div>
-            <div className="big-number">{totalFuncionarios}</div>
-            <div className="big-number-label">colaboradores</div>
+            <div className="big-number relative z-10">{totalFuncionarios}</div>
+            <div className="big-number-label relative z-10">colaboradores</div>
             
-            <svg className="employee-decoration" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {/* Elemento visual do canto inferior direito - 3 círculos */}
+            {isDark ? (
+              <div className="absolute right-0 bottom-0 w-32 h-32 pointer-events-none opacity-40 z-0">
+                 <div className="absolute bottom-2 right-12 w-16 h-16 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
+                 <div className="absolute bottom-8 right-4 w-12 h-12 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
+                 <div className="absolute bottom-2 -right-4 w-20 h-20 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
+              </div>
+            ) : (
+              <svg className="employee-decoration relative z-10" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            )}
+
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-line"></span>
+                <span className="footer-text">NOSSO MAIOR ATIVO</span>
+              </div>
+            )}
           </div>
 
           {/* PRESENÇA */}
-          <div className="dashboard-card col-span-1 md:col-span-4">
+          <div className="dashboard-card neon-card neon-green col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-green">
@@ -342,14 +377,28 @@ function DashboardComponent() {
                 </div>
               </div>
               <div className="percent-box percent-green">
-                <strong>{pctPresenca}%</strong>
+                <div className="flex items-center gap-2">
+                  <strong>{pctPresenca}%</strong>
+                  {isDark && (
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="18" y="4" width="4" height="16" rx="1" />
+                      <rect x="10" y="10" width="4" height="10" rx="1" />
+                      <rect x="2" y="16" width="4" height="4" rx="1" />
+                    </svg>
+                  )}
+                </div>
                 <span>de presença</span>
               </div>
             </div>
+            {isDark && (
+              <div className="card-footer" style={{ right: '16px', left: 'auto' }}>
+                <span className="footer-text">PESSOAS FAZEM A DIFERENÇA</span>
+              </div>
+            )}
           </div>
 
           {/* AUSÊNCIAS */}
-          <div className="dashboard-card col-span-1 md:col-span-4">
+          <div className="dashboard-card neon-card neon-pink col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-red">
@@ -369,19 +418,38 @@ function DashboardComponent() {
                 </div>
               </div>
               <div className="percent-box percent-red">
-                <strong>{pctAusencia}%</strong>
+                <div className="flex items-center gap-2">
+                  <strong>{pctAusencia}%</strong>
+                  {isDark && (
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="18" y="4" width="4" height="16" rx="1" />
+                      <rect x="10" y="10" width="4" height="10" rx="1" />
+                      <rect x="2" y="16" width="4" height="4" rx="1" />
+                    </svg>
+                  )}
+                </div>
                 <span>de ausências</span>
               </div>
             </div>
+            {isDark && (
+              <div className="card-footer" style={{ right: '16px', left: 'auto' }}>
+                <span className="footer-text">ACOMPANHAMENTO CONTÍNUO</span>
+              </div>
+            )}
           </div>
 
           {/* WEATHER */}
-          <div className="col-span-1 md:col-span-3">
+          <div className={`col-span-1 md:col-span-3 ${isDark ? 'neon-card neon-blue' : ''}`}>
             <WeatherWidget />
+            {isDark && (
+              <div className="card-footer" style={{ bottom: '16px' }}>
+                <span className="footer-text text-[8px] opacity-80">CLIMA DA REGIÃO</span>
+              </div>
+            )}
           </div>
 
           {/* ANIVERSARIANTES */}
-          <div className="dashboard-card col-span-1 md:col-span-3">
+          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-3 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className="icon-box icon-purple">
@@ -405,10 +473,15 @@ function DashboardComponent() {
                 <div className="text-sm text-gray-500 text-center mt-4">Nenhum neste mês</div>
               )}
             </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🎂 VIDAS QUE FAZEM PARTE DESSA HISTÓRIA</span>
+              </div>
+            )}
           </div>
 
           {/* OPERAÇÃO */}
-          <div className="dashboard-card group !overflow-visible hover:z-50 col-span-1 md:col-span-3">
+          <div className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-3 pb-8">
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -448,14 +521,28 @@ function DashboardComponent() {
                 </div>
               </div>
               <div className="percent-box percent-blue">
-                <strong>{pctOperacao}%</strong>
+                <div className="flex items-center gap-2">
+                  <strong>{pctOperacao}%</strong>
+                  {isDark && (
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="18" y="4" width="4" height="16" rx="1" />
+                      <rect x="10" y="10" width="4" height="10" rx="1" />
+                      <rect x="2" y="16" width="4" height="4" rx="1" />
+                    </svg>
+                  )}
+                </div>
                 <span>em operação</span>
               </div>
             </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">⚙️ OPERAÇÃO EM MOVIMENTO</span>
+              </div>
+            )}
           </div>
 
           {/* MANUTENÇÃO */}
-          <div className="dashboard-card group !overflow-visible hover:z-50 col-span-1 md:col-span-3">
+          <div className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-3 pb-8">
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -498,10 +585,24 @@ function DashboardComponent() {
                 </div>
               </div>
               <div className="percent-box percent-orange">
-                <strong>{pctManutencao}%</strong>
+                <div className="flex items-center gap-2">
+                  <strong>{pctManutencao}%</strong>
+                  {isDark && (
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="18" y="4" width="4" height="16" rx="1" />
+                      <rect x="10" y="10" width="4" height="10" rx="1" />
+                      <rect x="2" y="16" width="4" height="4" rx="1" />
+                    </svg>
+                  )}
+                </div>
                 <span>em manutenção</span>
               </div>
             </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🛡️ CONFIABILIDADE SEMPRE</span>
+              </div>
+            )}
           </div>
 
           {/* ALERTA DDS (SÓ SE O USUÁRIO FOR O PALESTRANTE) */}

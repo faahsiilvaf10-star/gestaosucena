@@ -24,6 +24,39 @@ function CaixaDaguaPage() {
 
   useEffect(() => {
     fetchData()
+    // Auto-fill logic (runs once if table is empty)
+    const autoFill = async () => {
+      const { data: existing } = await supabase.from('caixa_dagua_registros').select('id').limit(1)
+      if (existing && existing.length === 0) {
+        const records = [
+          { data_registro: '2026-01-1', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-01-2', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-02-1', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-02-3', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-03-1', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-03-3', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-03-4', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-04-2', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-05-1', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-05-4', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-06-2', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-06-4', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-07-1', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-07-2', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-07-4', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-08-2', volume_litros: 1000, setor: 'GERAL' },
+          { data_registro: '2026-08-4', volume_litros: 1000, setor: 'GERAL' }
+        ]
+        const { error } = await supabase.from('caixa_dagua_registros').upsert(records, { onConflict: 'data_registro' })
+        if (!error) {
+          toast.success('Tabela preenchida automaticamente conforme a imagem!')
+          fetchData() // refresh after insert
+        } else {
+          console.error(error)
+        }
+      }
+    }
+    autoFill()
   }, [year])
 
   const fetchData = async () => {

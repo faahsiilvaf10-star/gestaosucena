@@ -97,14 +97,16 @@ function RelatorioPresencaPage() {
     }
   }
 
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
     if (registros.length === 0) {
       toast.error('Nenhum dado para gerar o PDF.')
       return
     }
 
-    const generate = (logoImg?: HTMLImageElement) => {
-      const doc = new jsPDF()
+    const generate = async (logoImg?: HTMLImageElement) => {
+      const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+    const doc = new jsPDF()
       
       if (logoImg) {
         doc.addImage(logoImg, 'PNG', 165, 10, 30, 15)

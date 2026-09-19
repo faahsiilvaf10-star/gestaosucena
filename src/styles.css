@@ -142,8 +142,8 @@
 
 @layer base {
   :root {
-    --theme-bg: hsl(0 0% 98%);
-    --theme-surface: hsl(0 0% 100%);
+    --theme-bg: hsl(35 18% 86%);
+    --theme-surface: hsl(35 14% 92%);
     --theme-text-primary: hsl(0 0% 4%);
     --theme-muted: hsl(0 0% 45%);
     --theme-stroke: hsl(0 0% 90%);
@@ -603,5 +603,23 @@
 @media (max-width: 767px) {
   .recharts-wrapper {
     font-size: 10px;
+  }
+}
+
+
+/* Optmization for Mobile Glassmorphism */
+@media (max-width: 768px) {
+  .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-sm {
+    backdrop-filter: blur(4px) !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+  .dark .backdrop-blur-md, .dark .backdrop-blur-lg, .dark .backdrop-blur-xl, .dark .backdrop-blur-sm {
+    background-color: rgba(18, 18, 20, 0.85) !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+  .shadow-sm, .shadow, .shadow-md {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
   }
 }

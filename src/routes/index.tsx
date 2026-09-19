@@ -243,7 +243,7 @@ function Index() {
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
 
   return (
-    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-gray-900 dark:text-white' : 'bg-gray-50 text-black'}`}>
+    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-gray-900 dark:text-white' : 'bg-[#d4d4d8] text-black'}`}>
       
       <AnimatePresence>
         {isAuthorized && (

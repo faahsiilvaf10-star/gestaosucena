@@ -95,7 +95,7 @@ function EntradaSaidaPage() {
       if (!isRefreshing) setLoading(true)
       
       const { data, error: sbError } = await supabase
-        .from('eq_equipments').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, current_driver, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError
@@ -162,7 +162,7 @@ function EntradaSaidaPage() {
     setLoadingHistory(true)
     try {
       const { data, error } = await supabase
-        .from('eq_movements').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_movements').select('id, equipment_id, movement_type, km_horimetro, signature_url, created_by, created_at, photo_urls, has_pendency').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('equipment_id', eq.id)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -361,7 +361,9 @@ function EntradaSaidaPage() {
         return
       }
 
-      const doc = new jsPDF()
+      const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable').catch(()=>({default:null}));
+    const doc = new jsPDF()
 
       try {
         const img = new Image()

@@ -12,7 +12,7 @@ export function RecentActivitiesWidget() {
   const fetchActivities = async () => {
     try {
       const { data, error } = await supabase
-        .from('system_activities').select('*').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('created_at', { ascending: false })
         .limit(6)
       
