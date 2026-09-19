@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
 
@@ -22,6 +23,7 @@ function Index() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [availableRoles, setAvailableRoles] = useState<string[]>([])
   const [registrationOpen, setRegistrationOpen] = useState(true)
 
@@ -132,11 +134,21 @@ function Index() {
       setErrorMessage(msg)
       return
     }
+    
+    if (!turnstileToken) {
+      const msg = 'Por favor, marque a caixa "Sou humano".'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
 
     setIsLoading(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: turnstileToken
+      }
     })
     setIsLoading(false)
 
@@ -176,12 +188,20 @@ function Index() {
       setErrorMessage(msg)
       return
     }
+    
+    if (!turnstileToken) {
+      const msg = 'Por favor, marque a caixa "Sou humano".'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
 
     setIsLoading(true)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        captchaToken: turnstileToken,
         data: {
           full_name: nome,
           whatsapp: whatsapp,
@@ -445,7 +465,18 @@ function Index() {
 
 
             <div className="flex justify-center my-4">
-              {/* Turnstile widget removed permanently due to network block */}
+              <Turnstile 
+                siteKey="0x4AAAAAAAE8jKD-UAlSRqS81"
+                onSuccess={(token) => {
+                  setTurnstileToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => setErrorMessage('Erro na verificação do Cloudflare.')}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
             </div>
 
             <button type="submit" className={btnClass} disabled={isLoading}>
@@ -553,7 +584,18 @@ function Index() {
 
 
             <div className="flex justify-center my-4">
-              {/* Turnstile widget removed permanently due to network block */}
+              <Turnstile 
+                siteKey="0x4AAAAAAAE8jKD-UAlSRqS81"
+                onSuccess={(token) => {
+                  setTurnstileToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => setErrorMessage('Erro na verificação do Cloudflare.')}
+                onExpire={() => setTurnstileToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
             </div>
 
             <button type="submit" className={btnClass} disabled={isLoading}>
