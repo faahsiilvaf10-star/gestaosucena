@@ -466,7 +466,7 @@ function Index() {
 
             <div className="flex justify-center my-4">
               <Turnstile 
-                siteKey="0x4AAAAAAEuMRRevAbfgvL7z"
+                siteKey="0x4AAAAAAAE8jUmmkPpshZEvX"
                 onSuccess={(token) => {
                   setTurnstileToken(token)
                   setErrorMessage('')
@@ -585,7 +585,7 @@ function Index() {
 
             <div className="flex justify-center my-4">
               <Turnstile 
-                siteKey="0x4AAAAAAEuMRRevAbfgvL7z"
+                siteKey="0x4AAAAAAAE8jUmmkPpshZEvX"
                 onSuccess={(token) => {
                   setTurnstileToken(token)
                   setErrorMessage('')
