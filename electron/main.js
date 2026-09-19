@@ -37,9 +37,9 @@ async function createWindow() {
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#18181b', // Cor de fundo da barra superior (zinc-900)
+      color: '#00000000', // Transparente para o glass aparecer
       symbolColor: '#ffffff', // Cor dos botões de fechar/minimizar
-      height: 35
+      height: 28
     },
     icon: path.join(__dirname, '../public/logo.png'),
     webPreferences: {
@@ -63,15 +63,17 @@ async function createWindow() {
         titlebar.style.top = '0';
         titlebar.style.left = '0';
         titlebar.style.width = '100%';
-        titlebar.style.height = '35px';
-        titlebar.style.backgroundColor = '#18181b';
+        titlebar.style.height = '28px';
+        titlebar.style.backgroundColor = 'rgba(10, 10, 12, 0.65)'; // Transparente escura
+        titlebar.style.backdropFilter = 'blur(12px)'; // Efeito Glass
+        titlebar.style.webkitBackdropFilter = 'blur(12px)';
         titlebar.style.zIndex = '2147483647';
         titlebar.style.webkitAppRegion = 'drag';
         titlebar.style.display = 'flex';
         titlebar.style.alignItems = 'center';
-        titlebar.style.paddingLeft = '20px';
+        titlebar.style.justifyContent = 'center'; // Texto centralizado
         titlebar.style.boxSizing = 'border-box';
-        titlebar.style.borderBottom = '1px solid #27272a';
+        titlebar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
         
         const titleText = document.createElement('span');
         titleText.innerText = 'Sucena Empreendimentos';
@@ -85,7 +87,7 @@ async function createWindow() {
         document.body.appendChild(titlebar);
         
         // Empurrar o conteúdo do site para baixo
-        document.body.style.paddingTop = '35px';
+        document.body.style.paddingTop = '28px';
         
         // Ocultar a barra de rolagem padrão para ficar mais elegante
         const style = document.createElement('style');
