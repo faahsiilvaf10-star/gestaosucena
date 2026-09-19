@@ -466,7 +466,7 @@ function Index() {
 
             <div className="flex justify-center my-4">
               <HCaptcha 
-                sitekey="10000000-ffff-ffff-ffff-000000000001"
+                sitekey="c5f4f238-a294-441e-a5b8-61aa9546b52a"
                 onVerify={(token) => {
                   setCaptchaToken(token)
                   setErrorMessage('')
@@ -583,7 +583,7 @@ function Index() {
 
             <div className="flex justify-center my-4">
               <HCaptcha 
-                sitekey="10000000-ffff-ffff-ffff-000000000001"
+                sitekey="c5f4f238-a294-441e-a5b8-61aa9546b52a"
                 onVerify={(token) => {
                   setCaptchaToken(token)
                   setErrorMessage('')
