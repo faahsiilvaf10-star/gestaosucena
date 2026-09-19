@@ -114,7 +114,7 @@ function PluviometriaPage() {
       await supabase.from('pluviometria_registros').delete().in('id', duplicatesToDelete)
     }
 
-    const toUpsert: any[] = []
+    const toUpdate: any[] = []; const toInsert: any[] = [];
     const toDelete: string[] = []
 
     Object.entries(data).forEach(([date, volStr]) => {
@@ -131,7 +131,7 @@ function PluviometriaPage() {
         if (idMap.has(date)) {
           record.id = idMap.get(date)
         }
-        toUpsert.push(record)
+        if (record.id) { toUpdate.push(record) } else { toInsert.push(record) }
       }
     })
 
