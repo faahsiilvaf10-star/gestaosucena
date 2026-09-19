@@ -60,9 +60,8 @@ function PluviometriaPage() {
     } else if (dbData) {
       const map: Record<string, string> = {}
       dbData.forEach(row => {
-        if (Number(row.volume_mm) !== 0) {
-          map[row.data_registro] = String(row.volume_mm)
-        }
+        // Agora aceitamos o 0 explícito!
+        map[row.data_registro] = String(row.volume_mm)
       })
       setData(map)
     }
@@ -85,24 +84,52 @@ function PluviometriaPage() {
 
   const saveAll = async () => {
     setIsSaving(true)
-    const records = Object.entries(data).map(([date, volStr]) => ({
-      data_registro: date,
-      volume_mm: volStr === '' ? 0 : (parseFloat(volStr.replace(',', '.')) || 0),
-      setor: setor
-    }))
+    
+    const toUpsert: any[] = []
+    const toDelete: string[] = []
 
-    if (records.length === 0) {
-      setIsSaving(false)
-      return toast.info('Não há dados para salvar.')
+    Object.entries(data).forEach(([date, volStr]) => {
+      if (volStr === '') {
+        toDelete.push(date)
+      } else {
+        toUpsert.push({
+          data_registro: date,
+          volume_mm: parseFloat(volStr.replace(',', '.')) || 0,
+          setor: setor
+        })
+      }
+    })
+
+    let hasError = false
+
+    // Se o usuário apagou o conteúdo da célula, nós deletamos do banco
+    if (toDelete.length > 0) {
+      const { error } = await supabase
+        .from('pluviometria_registros')
+        .delete()
+        .in('data_registro', toDelete)
+        .eq('setor', setor)
+      
+      if (error) {
+        console.error('Erro ao deletar vazios:', error)
+        hasError = true
+      }
     }
 
-    const { error } = await supabase
-      .from('pluviometria_registros')
-      .upsert(records, { onConflict: 'data_registro' })
+    // Upsert nos valores válidos (incluindo o 0)
+    if (toUpsert.length > 0) {
+      const { error } = await supabase
+        .from('pluviometria_registros')
+        .upsert(toUpsert, { onConflict: 'data_registro' })
 
-    if (error) {
-      console.error('Erro ao salvar:', error)
-      toast.error('Erro ao salvar os registros.')
+      if (error) {
+        console.error('Erro ao salvar:', error)
+        hasError = true
+      }
+    }
+
+    if (hasError) {
+      toast.error('Erro ao salvar algumas alterações.')
     } else {
       toast.success('Registros salvos com sucesso!')
     }
