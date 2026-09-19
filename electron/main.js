@@ -15,8 +15,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function createWindow() {
   // 1. Criar janela de Splash transparente
   splashWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
+    width: 800,
+    height: 600,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
@@ -47,7 +47,7 @@ async function createWindow() {
   // Assim que estiver pronta, exibe a principal e fecha a splash
   mainWindow.webContents.once('did-finish-load', async () => {
     // Dá um tempinho extra na splash para charme
-    await sleep(2000); 
+    await sleep(3500); 
     splashWindow.destroy();
     mainWindow.maximize();
     mainWindow.show();
