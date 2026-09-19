@@ -12,6 +12,8 @@ dist
 dist-ssr
 .output
 .vinxi
+desktop-build/
+release/
 .tanstack/**
 .nitro
 *.local

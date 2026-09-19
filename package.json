@@ -1,15 +1,45 @@
 {
   "name": "tanstack_start_ts",
+  "version": "1.0.0",
+  "description": "Gestão Sucena",
+  "author": "Sucena",
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build:desktop": "electron-builder"
+  },
+  "build": {
+    "appId": "com.gestaosucena.app",
+    "productName": "Gestão Sucena",
+    "directories": {
+      "output": "desktop-build"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/sucenaicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -3,7 +3,9 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { Save } from 'lucide-react'
+import { Save, Download } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   BarChart,
   Bar,
@@ -224,6 +226,83 @@ function ResiduosPage() {
     grid: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
   }
 
+  const generatePDF = () => {
+    const doc = new jsPDF('landscape', 'mm', 'a4')
+
+    const createDocument = (logoImg?: HTMLImageElement) => {
+      // Configurações do cabeçalho
+      doc.setFontSize(16)
+      doc.text('Relatório de Resíduos e Efluentes', 14, 25)
+      
+      doc.setFontSize(10)
+      doc.text(`Setor: ${setor}`, 14, 32)
+      doc.text(`Ano: ${year}`, 14, 37)
+      doc.text(`Total de Resíduos Anual: ${grandTotal > 0 ? grandTotal.toFixed(2).replace(/\.00$/, '') : 0} KG`, 14, 42)
+
+      if (logoImg) {
+        try {
+          doc.addImage(logoImg, 'PNG', 240, 12, 40, 15)
+        } catch (e) {
+          console.warn('Não foi possível adicionar a logo', e)
+        }
+      }
+
+      // Tabela de Resíduos
+      doc.setFontSize(12)
+      doc.text('RESÍDUOS', 14, 52)
+
+      const headResiduos = [['Mês', 'PAPEL(KG)', 'PLÁSTICO(KG)', 'NÃO RECICLÁVEL(KG)', 'METAL(KG)', 'ORGÂNICO(KG)', 'Total']]
+      const bodyResiduos = MONTHS.map((month, mIdx) => {
+        const row = [month]
+        CATEGORIES.forEach(cat => {
+          const val = data[`${year}-${String(mIdx + 1).padStart(2, '0')}`]?.[cat.id] ?? ''
+          row.push(val)
+        })
+        row.push(rowTotals[mIdx] > 0 ? rowTotals[mIdx].toFixed(2).replace(/\.00$/, '') : '0')
+        return row
+      })
+
+      autoTable(doc, {
+        startY: 56,
+        head: headResiduos,
+        body: bodyResiduos,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
+        headStyles: { fillColor: [26, 75, 109], textColor: [255, 255, 255], fontStyle: 'bold' },
+        columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } }
+      })
+
+      const finalY = (doc as any).lastAutoTable.finalY || 56
+
+      // Tabela de Efluentes
+      doc.setFontSize(12)
+      doc.text('EFLUENTES SANITÁRIOS', 14, finalY + 12)
+
+      const headEfluentes = [['Mês', 'Efluentes Sanitários (m³)']];
+      const bodyEfluentes = MONTHS.map((month, mIdx) => {
+        const val = efluentesData[`${year}-${String(mIdx + 1).padStart(2, '0')}`] ?? ''
+        return [month, val]
+      })
+
+      autoTable(doc, {
+        startY: finalY + 16,
+        head: headEfluentes,
+        body: bodyEfluentes,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
+        headStyles: { fillColor: [26, 75, 109], textColor: [255, 255, 255], fontStyle: 'bold' },
+        columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } }
+      })
+
+      doc.save(`Residuos_Efluentes_${setor}_${year}.pdf`)
+    }
+
+    const img = new Image()
+    img.onload = () => createDocument(img)
+    img.onerror = () => createDocument()
+    img.src = '/logo-relatorio.png'
+  }
+
   return (
     <div className={`-mx-4 md:-mx-12 lg:-mx-24 xl:-mx-32 min-h-screen flex flex-col justify-start relative transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]' : 'bg-[#f4f3f0]'}`}>
       
@@ -257,14 +336,23 @@ function ResiduosPage() {
                   + ANO
                 </button>
               </div>
-              <button 
-                onClick={saveAll}
-                disabled={isSaving}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={generatePDF}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded flex items-center justify-center gap-2 transition-colors shadow-lg"
+                  title="Baixar Relatório em PDF"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={saveAll}
+                  disabled={isSaving}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
