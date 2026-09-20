@@ -75,6 +75,8 @@ export type WhatsappSettings = {
     lembreteAmanha: string;
     listaPresenca: string;
     requisicaoEpi: string;
+    anomaliaRegistrada: string;
+    anomaliaCorrigida: string;
   };
 }
 
@@ -108,7 +110,9 @@ const defaultWhatsappSettings: WhatsappSettings = {
     lembreteHoje: '🔔 *Lembrete Automático*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
     lembreteAmanha: '⏳ *Aviso Antecipado de Lembrete*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
     listaPresenca: '📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}',
-    requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}'
+    requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}',
+    anomaliaRegistrada: '🚨 *NOVA ANOMALIA REPORTADA* 🚨\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Anomalia:* {anomalia}\n📝 *Descrição:* {descricao}\n👤 *Motorista:* {motorista}',
+    anomaliaCorrigida: '✅ *ANOMALIA CORRIGIDA* ✅\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}'
   }
 }
 

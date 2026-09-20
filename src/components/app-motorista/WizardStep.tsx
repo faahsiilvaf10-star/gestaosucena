@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Users, Gauge, Droplet, ClipboardCheck, Camera, Loader2, ArrowLeftRight, AlertTriangle } from 'lucide-react'
+import { getWhatsappSettings } from '../../lib/settings'
+import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
+import { format } from 'date-fns'
 import { saveOfflineFirst } from '../../lib/offline-sync'
 import FuelGauge from './FuelGauge'
 
@@ -149,6 +152,36 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           status: 'Pendente',
           reported_at: nowISO
         })
+
+        // --- DISPARO WHATSAPP PNEUS ---
+        if (navigator.onLine) {
+          try {
+            const wSettings = await getWhatsappSettings()
+            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.anomaliaRegistrada) {
+              let text = wSettings.messageTemplates.anomaliaRegistrada
+              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', 'Pneus')
+              text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
+              const driverData = localStorage.getItem('app_motorista_driver')
+              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+              text = text.replace('{motorista}', driverName)
+
+              sendWhatsappTextOnServer({
+                data: {
+                  url: wSettings.url,
+                  token: wSettings.token,
+                  instanceId: wSettings.instanceId,
+                  phone: wSettings.groupId,
+                  text
+                }
+              }).catch(e => console.error('Erro WP', e))
+            }
+          } catch (e) {}
+        }
+        // -----------------------------
       }
 
       const otherAnomalies = checklist.filter(item => item.status === 'nao_conforme' && item.name !== 'Pneus')
@@ -176,6 +209,36 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           status: 'Pendente',
           reported_at: nowISO
         })
+
+        // --- DISPARO WHATSAPP CHECKLIST ---
+        if (navigator.onLine) {
+          try {
+            const wSettings = await getWhatsappSettings()
+            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.anomaliaRegistrada) {
+              let text = wSettings.messageTemplates.anomaliaRegistrada
+              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', 'Problema mecânico')
+              text = text.replace('{descricao}', `Item reprovado no Check-list: ${item.name}`)
+              const driverData = localStorage.getItem('app_motorista_driver')
+              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+              text = text.replace('{motorista}', driverName)
+
+              sendWhatsappTextOnServer({
+                data: {
+                  url: wSettings.url,
+                  token: wSettings.token,
+                  instanceId: wSettings.instanceId,
+                  phone: wSettings.groupId,
+                  text
+                }
+              }).catch(e => console.error('Erro WP', e))
+            }
+          } catch (e) {}
+        }
+        // -----------------------------
       }
 
       localStorage.setItem('app_motorista_timeline', JSON.stringify(initialTimeline))

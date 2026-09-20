@@ -8,7 +8,8 @@ import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
 import MercosulPlate from './MercosulPlate'
 import ParteDiariaReport from './ParteDiariaReport'
-import { getEquipmentActivities } from '../../lib/settings'
+import { getEquipmentActivities, getWhatsappSettings } from '../../lib/settings'
+import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
 
 const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
@@ -925,6 +926,38 @@ export default function DashboardStep() {
           color: anomalyResolved ? 'bg-emerald-500' : 'bg-red-500'
         })
         localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
+
+        // --- DISPARO WHATSAPP ---
+        if (navigator.onLine) {
+          try {
+            const wSettings = await getWhatsappSettings()
+            const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
+            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.[templateKey]) {
+              let text = wSettings.messageTemplates[templateKey]
+              text = text.replace('{hora}', format(now, 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', anomalyType)
+              text = text.replace('{descricao}', anomalyDescription)
+              text = text.replace('{motorista}', driverName)
+
+              // Dispara no modo fire-and-forget
+              sendWhatsappTextOnServer({
+                data: {
+                  url: wSettings.url,
+                  token: wSettings.token,
+                  instanceId: wSettings.instanceId,
+                  phone: wSettings.groupId,
+                  text
+                }
+              }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+            }
+          } catch (err) {
+            console.error('Falha ao tentar notificar WhatsApp', err)
+          }
+        }
+        // -------------------------
 
         alert('Check-list registrado com sucesso!')
         setAnomalyDescription('')

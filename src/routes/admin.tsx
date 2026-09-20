@@ -1086,7 +1086,9 @@ function AdminRoute() {
                     { key: 'lembreteHoje', label: 'Lembrete' },
                     { key: 'lembreteAmanha', label: 'Aviso Prévio (Lembrete)' },
                     { key: 'listaPresenca', label: 'Lista de Presença' },
-                    { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' }
+                    { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' },
+                    { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
+                    { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' }
                   ].map(t => (
                     <button
                       key={t.key}
