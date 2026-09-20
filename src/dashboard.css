@@ -875,7 +875,7 @@ body {
 
 .dark .neon-card {
   --neon-border-color: #ffffff;
-  background: rgba(4, 12, 24, 0.6) !important;
+  background: transparent !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 16px !important;
@@ -932,7 +932,7 @@ body {
 }
 
 .dark .donut::after {
-  background: #0b1018 !important; /* Aproximação da cor de fundo do card */
+  background: #050505 !important; /* Mesma cor do fundo da página */
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
