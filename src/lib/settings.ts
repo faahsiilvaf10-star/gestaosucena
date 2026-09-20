@@ -152,3 +152,60 @@ export async function saveWhatsappSettings(settings: WhatsappSettings): Promise<
   }
 }
 
+export type EquipmentActivity = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  categories: string[];
+};
+
+export async function getEquipmentActivities(): Promise<EquipmentActivity[]> {
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', 'equipment_activities')
+      .single()
+
+    if (error || !data) {
+      return [
+        { id: '1', name: 'Lavagem Mirante', icon: 'Waves', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
+        { id: '2', name: 'Irrigação Carretel', icon: 'Droplet', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
+        { id: '3', name: 'Irrigação Faixa 3', icon: 'Sprout', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
+        { id: '4', name: 'Irrigação Faixa 4', icon: 'Sprout', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
+        { id: '5', name: 'Irrigação Faixa 5', icon: 'Sprout', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
+        { id: '6', name: 'Abastecimento do Tanque de Irrigação', icon: 'Fuel', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
+        { id: '7', name: 'Lavagem Vertedouro', icon: 'Waves', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
+        { id: '8', name: 'Umectação de Vias', icon: 'CloudRain', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
+        { id: '9', name: 'Lavagem de Carro', icon: 'Car', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
+      ]
+    }
+
+    return data.value as EquipmentActivity[]
+  } catch (err) {
+    console.error('Erro ao buscar atividades:', err)
+    return []
+  }
+}
+
+export async function setEquipmentActivities(activities: EquipmentActivity[]): Promise<{success: boolean, error?: string}> {
+  try {
+    const { error } = await supabase
+      .from('global_settings')
+      .upsert({
+        key: 'equipment_activities',
+        value: activities,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' })
+      
+    if (error) {
+      console.error('Erro ao salvar atividades:', error)
+      return { success: false, error: error.message }
+    }
+    return { success: true }
+  } catch (err: any) {
+    console.error('Erro ao salvar atividades:', err)
+    return { success: false, error: err.message }
+  }
+}

@@ -95,7 +95,7 @@ function EntradaSaidaPage() {
       if (!isRefreshing) setLoading(true)
       
       const { data, error: sbError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, current_driver, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true })
 
       if (sbError) throw sbError
@@ -162,7 +162,7 @@ function EntradaSaidaPage() {
     setLoadingHistory(true)
     try {
       const { data, error } = await supabase
-        .from('eq_movements').select('id, equipment_id, movement_type, km_horimetro, signature_url, created_by, created_at, photo_urls, has_pendency').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_movements').select('id, equipment_id, movement_type, exit_reason, description, created_by, created_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('equipment_id', eq.id)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -633,10 +633,10 @@ function EntradaSaidaPage() {
                                   {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                                 </span>
                                 {!isInside && eq.last_exit_description && (
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-white text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
                                     <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
                                     {eq.last_exit_description}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black dark:border-t-white"></div>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                                   </div>
                                 )}
                               </div>
@@ -702,10 +702,10 @@ function EntradaSaidaPage() {
                               {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                             </span>
                             {!isInside && eq.last_exit_description && (
-                              <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
+                              <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-white text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
                                 <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
                                 {eq.last_exit_description}
-                                <div className="absolute top-full left-4 border-4 border-transparent border-t-black dark:border-t-white"></div>
+                                <div className="absolute top-full left-4 border-4 border-transparent border-t-white"></div>
                               </div>
                             )}
                           </div>

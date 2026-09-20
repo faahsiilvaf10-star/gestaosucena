@@ -560,7 +560,7 @@ function DashboardComponent() {
             </div>
             <div className="birthday-list">
               {aniversariantesMes.length > 0 ? (
-                aniversariantesMes.slice(0, 3).map((aniv: any, idx: number) => (
+                aniversariantesMes.map((aniv: any, idx: number) => (
                   <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>
                     <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
                     <span className="birthday-day">Dia {String(aniv.day).padStart(2, '0')}</span>
@@ -614,7 +614,10 @@ function DashboardComponent() {
           </div>
 
           {/* OPERAÇÃO */}
-          <div className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8">
+          <div 
+            className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8 cursor-pointer"
+            onClick={() => navigate({ to: '/equipamentos' })}
+          >
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -675,7 +678,10 @@ function DashboardComponent() {
           </div>
 
           {/* MANUTENÇÃO */}
-          <div className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8">
+          <div 
+            className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8 cursor-pointer"
+            onClick={() => navigate({ to: '/equipamentos' })}
+          >
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
