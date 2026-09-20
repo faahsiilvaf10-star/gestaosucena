@@ -36,6 +36,8 @@ export default function DashboardStep() {
   const [anomalyType, setAnomalyType] = useState('Problema mecânico')
   const [anomalyDescription, setAnomalyDescription] = useState('')
   const [anomalyResolved, setAnomalyResolved] = useState(false)
+  const [pendingAnomalies, setPendingAnomalies] = useState<any[]>([])
+  const [correctionDescription, setCorrectionDescription] = useState('')
 
   const reportRef = useRef<HTMLDivElement>(null)
   
@@ -880,7 +882,99 @@ export default function DashboardStep() {
     )
   }
 
+  // Reload pending anomalies when entering anomaly view
+  useEffect(() => {
+    if (viewState === 'anomaly') {
+      setPendingAnomalies(JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]'))
+    }
+  }, [viewState])
+
   if (viewState === 'anomaly') {
+    const handleResolvePending = async () => {
+      if (!correctionDescription.trim()) {
+        alert('Por favor, descreva a correção.')
+        return
+      }
+      setLoadingFinish(true)
+      try {
+        const driverData = localStorage.getItem('app_motorista_driver')
+        const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+        const authId = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id
+        const driverId = dispatch?.driver_id || authId
+        const now = new Date()
+
+        for (const a of pendingAnomalies) {
+          // Salvar como Resolvido localmente
+          await saveOfflineFirst('eq_anomalies', 'UPDATE', {
+            id: a.id,
+            status: 'Resolvido',
+            observation: `Corrigido: ${correctionDescription}`,
+            updated_at: now.toISOString()
+          }).catch(console.error)
+
+          await saveOfflineFirst('eq_status_history', 'INSERT', {
+            dispatch_id: dispatch?.id,
+            equipment_id: equipmentId,
+            driver_id: driverId,
+            previous_status: activeStatus,
+            new_status: `Anomalia Corrigida: ${a.type}`,
+            observation: `Resolução: ${correctionDescription}`,
+            created_at: now.toISOString()
+          }).catch(console.error)
+
+          // Adicionar na timeline local
+          const timeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+          timeline.push({
+            time: now.toISOString(),
+            name: `Anomalia Corrigida: ${a.type}`,
+            type: 'Corrigido',
+            color: 'bg-emerald-500'
+          })
+          localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
+
+          // --- DISPARO WHATSAPP ---
+          if (navigator.onLine) {
+            try {
+              const wSettings = await getWhatsappSettings()
+              const templateKey = 'anomaliaCorrigida'
+              if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.[templateKey]) {
+                let text = wSettings.messageTemplates[templateKey]
+                text = text.replace('{hora}', format(now, 'HH:mm'))
+                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replace('{tag}', equipment?.name || '-')
+                text = text.replace('{placa}', equipment?.plate_tag || '-')
+                text = text.replace('{anomalia}', a.type)
+                text = text.replace('{descricao}', correctionDescription)
+                text = text.replace('{motorista}', driverName)
+
+                sendWhatsappTextOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: wSettings.groupId,
+                    text
+                  }
+                }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+              }
+            } catch (err) {}
+          }
+          // -------------------------
+        }
+
+        localStorage.removeItem('app_motorista_active_anomalies')
+        setPendingAnomalies([])
+        setCorrectionDescription('')
+        alert('Anomalias corrigidas com sucesso!')
+        setViewState('operating')
+      } catch (err) {
+        console.error(err)
+        alert('Erro ao corrigir anomalias')
+      } finally {
+        setLoadingFinish(false)
+      }
+    }
+
     const handleAnomalySubmit = async () => {
       if (!anomalyDescription.trim()) {
         alert('Por favor, descreva a anomalia.')
@@ -894,16 +988,25 @@ export default function DashboardStep() {
         const authId = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id
         const driverId = dispatch?.driver_id || authId
 
+        const anomalyId = crypto.randomUUID()
+
         // Salvar Anomalia
         await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          id: anomalyId,
           equipment_id: equipmentId,
           driver_id: driverId,
           anomaly_type: anomalyType,
           description: anomalyDescription,
           observation: 'Registrado via Check-list do motorista',
           status: anomalyResolved ? 'Resolvido' : 'Pendente',
-          reported_at: new Date().toISOString()
+          reported_at: now.toISOString()
         })
+
+        if (!anomalyResolved) {
+          const activeAnomalies = JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]')
+          activeAnomalies.push({ id: anomalyId, type: anomalyType, description: anomalyDescription })
+          localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
+        }
 
         // Salvar Histórico do Status para exibir no painel e na timeline
         const now = new Date()
@@ -987,7 +1090,47 @@ export default function DashboardStep() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 pt-0 custom-scrollbar pb-24">
-          <div>
+          
+          {pendingAnomalies.length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-2xl p-4 space-y-4">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold mb-2">
+                <AlertTriangle size={18} />
+                <h3>Anomalias Pendentes</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {pendingAnomalies.map((a, idx) => (
+                  <div key={a.id || idx} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-red-100 dark:border-red-900/20 text-sm">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{a.type}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">{a.description}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <label className="text-xs font-semibold text-red-700 dark:text-red-400 block mb-1">Descrição da Correção</label>
+                <textarea 
+                  value={correctionDescription}
+                  onChange={e => setCorrectionDescription(e.target.value)}
+                  placeholder="Descreva o que foi feito para corrigir..."
+                  className="w-full h-24 p-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-gray-900 dark:text-white resize-none"
+                />
+              </div>
+
+              <button 
+                onClick={handleResolvePending}
+                disabled={loadingFinish || !correctionDescription.trim()}
+                className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+              >
+                {loadingFinish ? <Loader2 className="animate-spin" /> : 'CORRIGIR PENDÊNCIAS'}
+              </button>
+            </div>
+          )}
+
+          <div className={pendingAnomalies.length > 0 ? "pt-6 border-t border-gray-200 dark:border-zinc-800" : ""}>
+            {pendingAnomalies.length > 0 && (
+              <h3 className="font-bold text-gray-900 dark:text-white mb-4">Registrar Nova Anomalia</h3>
+            )}
             <label className="text-xs font-semibold text-gray-500 block mb-1">Tipo de Anomalia</label>
             <select 
               value={anomalyType}

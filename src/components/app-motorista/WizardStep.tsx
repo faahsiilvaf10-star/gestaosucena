@@ -143,7 +143,9 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           created_at: nowISO
         })
 
+        const anomalyId = crypto.randomUUID()
         await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          id: anomalyId,
           equipment_id: equipmentId,
           driver_id: userId,
           anomaly_type: 'Pneu',
@@ -152,6 +154,10 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           status: 'Pendente',
           reported_at: nowISO
         })
+
+        const activeAnomalies = JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]')
+        activeAnomalies.push({ id: anomalyId, type: 'Pneu', description: `Pneus selecionados: ${selectedTires.join(', ')}` })
+        localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP PNEUS ---
         if (navigator.onLine) {
@@ -201,7 +207,9 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           created_at: nowISO
         })
 
+        const anomalyId = crypto.randomUUID()
         await saveOfflineFirst('eq_anomalies', 'INSERT', {
+          id: anomalyId,
           equipment_id: equipmentId,
           driver_id: userId,
           anomaly_type: 'Problema mecânico',
@@ -209,6 +217,10 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           status: 'Pendente',
           reported_at: nowISO
         })
+
+        const activeAnomalies = JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]')
+        activeAnomalies.push({ id: anomalyId, type: 'Problema mecânico', description: `Checklist: ${item.name}` })
+        localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP CHECKLIST ---
         if (navigator.onLine) {
