@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getEquipmentActivities, setEquipmentActivities, EquipmentActivity } from '@/lib/settings'
+import { getEquipmentActivities, setEquipmentActivities, EquipmentActivity, getWhatsappSettings } from '@/lib/settings'
+import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import {
   MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
@@ -80,6 +81,7 @@ function ParteDiariaPage() {
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
   const [vehicleDispatches, setVehicleDispatches] = useState<Record<string, any>>({})
+  const [allAnomalies, setAllAnomalies] = useState<any[]>([])
   const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false)
   const [activities, setActivities] = useState<EquipmentActivity[]>([])
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([])
@@ -238,6 +240,13 @@ function ParteDiariaPage() {
           hMap[h.equipment_id].push(h)
         })
         setVehicleHistories(hMap)
+
+        // Busca Anomalias Pendentes
+        const { data: dbAnomalies } = await supabase
+          .from('eq_anomalies')
+          .select('*, driver:driver_id(name), equipment:equipment_id(name,plate_tag)')
+          .eq('status', 'Pendente')
+        setAllAnomalies(dbAnomalies || [])
 
         let countAtividade = 0
         let countManutencao = 0
@@ -516,6 +525,7 @@ function ParteDiariaPage() {
               vehicle={vehicle} 
               history={vehicleHistories[vehicle.id] || []} 
               dispatch={vehicleDispatches[vehicle.id]}
+              pendingAnomalies={allAnomalies.filter(a => a.equipment_id === vehicle.id)}
               onClearJourney={() => handleClearJourney(vehicle.id)} 
               onRefresh={fetchDashboardData}
             />
@@ -666,7 +676,7 @@ function MetricCard({ title, value, total, color, onClick }: { title: string, va
   )
 }
 
-function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefresh }: { vehicle: any, history?: any[], dispatch?: any, onClearJourney: () => void, onRefresh: () => void }) {
+function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], onClearJourney, onRefresh }: { vehicle: any, history?: any[], dispatch?: any, pendingAnomalies?: any[], onClearJourney: () => void, onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const reportRef = useRef<HTMLDivElement>(null)
@@ -678,6 +688,65 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   const [editKmInicial, setEditKmInicial] = useState('')
   const [editKmFinal, setEditKmFinal] = useState('')
   const [editHoriInicial, setEditHoriInicial] = useState('')
+
+  const handleResolveAnomaly = async (anomaly: any) => {
+    const desc = prompt('Informe o que foi feito para corrigir a anomalia (opcional):')
+    if (desc === null) return // Canceled
+
+    try {
+      const obs = desc.trim() ? `Corrigido pelo Admin: ${desc}` : 'Corrigido pelo Admin'
+      
+      await supabase.from('eq_anomalies').update({
+        status: 'Resolvido',
+        observation: obs,
+        updated_at: new Date().toISOString()
+      }).eq('id', anomaly.id)
+
+      if (dispatch?.id) {
+         await supabase.from('eq_status_history').insert({
+           dispatch_id: dispatch.id,
+           equipment_id: vehicle.id,
+           driver_id: anomaly.driver_id || dispatch.driver_id,
+           previous_status: 'Anomalia Pendente',
+           new_status: `Anomalia Corrigida: ${anomaly.anomaly_type}`,
+           observation: obs,
+         })
+      }
+
+      const wSettings = await getWhatsappSettings()
+      if (wSettings.appMotoristaAlerts?.enabled !== false) {
+        const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+        if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaCorrigida) {
+          let text = wSettings.messageTemplates.anomaliaCorrigida
+          text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+          text = text.replace('{equipamento}', vehicle.name || vehicle.type || '-')
+          text = text.replace('{tag}', vehicle.name || '-')
+          text = text.replace('{placa}', vehicle.plate_tag || '-')
+          text = text.replace('{anomalia}', anomaly.anomaly_type || 'Desconhecido')
+          text = text.replace('{descricao}', anomaly.description || '')
+          text = text.replace('{motorista}', anomaly.driver?.name || dispatch?.driver_name || 'Admin')
+
+          sendWhatsappTextOnServer({
+            data: {
+              url: wSettings.url,
+              token: wSettings.token,
+              instanceId: wSettings.instanceId,
+              phone: targetPhone,
+              text
+            }
+          }).catch(console.error)
+        }
+      }
+
+      alert('Anomalia marcada como corrigida!')
+      setIsAnomaliesModalOpen(false)
+      onRefresh()
+
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao corrigir anomalia.')
+    }
+  }
   const [editHoriFinal, setEditHoriFinal] = useState('')
   const [editFuelInicial, setEditFuelInicial] = useState('')
   const [editFuelFinal, setEditFuelFinal] = useState('')
@@ -842,12 +911,7 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
           <div className="hidden sm:flex items-center gap-2">
             
             {(() => {
-              const anomalies = history.filter((h: any) => 
-                (h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:') || h.new_status?.startsWith('Anomalia:'))
-                && (!dispatch?.id || h.dispatch_id === dispatch.id)
-              );
-              
-              if (anomalies.length === 0) {
+              if (pendingAnomalies.length === 0) {
                 return (
                   <button 
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-zinc-700 cursor-not-allowed mr-2"
@@ -865,11 +929,11 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                   title="Ver anomalias reportadas"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedAnomalies(anomalies);
+                    setSelectedAnomalies(pendingAnomalies);
                     setIsAnomaliesModalOpen(true);
                   }}
                 >
-                  <AlertTriangle size={14} /> Anomalias ({anomalies.length})
+                  <AlertTriangle size={14} /> Anomalias ({pendingAnomalies.length})
                 </button>
               )
             })()}
@@ -936,12 +1000,19 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                     <div key={a.id} className="p-3 rounded-lg border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                          {new Date(a.created_at).toLocaleTimeString()}
+                          {a.reported_at ? new Date(a.reported_at).toLocaleTimeString() : new Date(a.created_at).toLocaleTimeString()}
                         </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleResolveAnomaly(a); }}
+                          className="text-xs font-semibold bg-white dark:bg-zinc-800 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                        >
+                          Corrigir
+                        </button>
                       </div>
                       <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
-                        {a.new_status.replace('Anomalia Pneus: ', 'Pneus (').replace('Anomalia Checklist: ', '')}{a.new_status.startsWith('Anomalia Pneus') ? ')' : ''}
+                        {a.anomaly_type}: {a.description}
                       </p>
+                      {a.driver?.name && <p className="text-xs text-gray-500 mt-1">Motorista: {a.driver.name}</p>}
                     </div>
                   )) : (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma anomalia selecionada.</p>
