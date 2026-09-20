@@ -292,7 +292,6 @@ function ParteDiariaPage() {
         setTurnosFinalizadosCount(countParados)
         setAnomaliesCount(countAnomaliasTotal)
       } else {
-      } else {
         setEmTrabalhoCount(0)
         setManutencaoCount(0)
         setTurnosFinalizadosCount(0)
