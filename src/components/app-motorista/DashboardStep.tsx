@@ -8,7 +8,11 @@ import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
 import MercosulPlate from './MercosulPlate'
 import ParteDiariaReport from './ParteDiariaReport'
+import { getEquipmentActivities } from '../../lib/settings'
 
+const ICON_MAP: Record<string, any> = {
+  Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
+}
 export default function DashboardStep() {
   const [equipment, setEquipment] = useState<any>(null)
   const [dispatch, setDispatch] = useState<any>(null)
@@ -33,6 +37,16 @@ export default function DashboardStep() {
   const [anomalyResolved, setAnomalyResolved] = useState(false)
 
   const reportRef = useRef<HTMLDivElement>(null)
+  
+  const [dynamicActivities, setDynamicActivities] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadActs() {
+      const data = await getEquipmentActivities()
+      setDynamicActivities(data)
+    }
+    loadActs()
+  }, [])
 
   const generateReport = async () => {
     if (!reportRef.current) return
@@ -182,6 +196,21 @@ export default function DashboardStep() {
         setDispatch(dsp)
         localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
       } else {
+        if (navigator.onLine) {
+          // Se estamos online e não tem turno ativo no banco, o turno foi fechado por outro lugar.
+          // Devemos limpar o estado local para forçar a nova seleção de equipamento/motorista.
+          localStorage.removeItem('app_motorista_current_step')
+          localStorage.removeItem('app_motorista_current_dispatch')
+          localStorage.removeItem('app_motorista_equipment_id')
+          localStorage.removeItem('app_motorista_timeline')
+          localStorage.removeItem('app_motorista_active_status')
+          localStorage.removeItem('app_motorista_active_status_color')
+          localStorage.removeItem('app_motorista_status_start')
+          
+          window.location.reload()
+          return
+        }
+        
         const localCache = localStorage.getItem('app_motorista_current_dispatch')
         if (localCache) {
           setDispatch(JSON.parse(localCache))
@@ -781,17 +810,10 @@ export default function DashboardStep() {
   }
 
   if (viewState === 'new_activity') {
-    const activities = [
-      { name: 'Lavagem Mirante', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
-      { name: 'Irrigação Carretel', icon: Droplet, color: 'bg-white border border-gray-200 text-gray-900' },
-      { name: 'Irrigação Faixa 3', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
-      { name: 'Irrigação Faixa 4', icon: Sprout, color: 'bg-white border border-gray-200 text-gray-900' },
-      { name: 'Irrigação Faixa 5', icon: Sprout, color: 'bg-zinc-900 border border-zinc-800 text-white' },
-      { name: 'Abastecimento do Tanque de Irrigação', icon: Fuel, color: 'bg-white border border-gray-200 text-gray-900' },
-      { name: 'Lavagem Vertedouro', icon: Waves, color: 'bg-zinc-900 border border-zinc-800 text-white' },
-      { name: 'Umectação de Vias', icon: CloudRain, color: 'bg-white border border-gray-200 text-gray-900' },
-      { name: 'Lavagem de Carro', icon: Car, color: 'bg-zinc-900 border border-zinc-800 text-white' },
-    ]
+    const activities = dynamicActivities.filter(act => {
+      if (!act.categories || act.categories.length === 0) return true;
+      return act.categories.includes(equipment?.type);
+    })
 
     return (
       <div className="min-h-full flex flex-col bg-[#0A0A0A] text-white pb-6 relative">
@@ -814,8 +836,14 @@ export default function DashboardStep() {
         <div className="flex-1 overflow-y-auto px-4 space-y-3 custom-scrollbar pb-24">
 
 
+          {activities.length === 0 && (
+             <div className="text-center py-8 text-gray-500">
+               Nenhuma atividade configurada para este tipo de equipamento.
+             </div>
+          )}
           {activities.map(act => {
             const isActive = activeStatus === act.name;
+            const Icon = ICON_MAP[act.icon] || Wrench;
             return (
               <button
                 key={act.name}
@@ -828,7 +856,7 @@ export default function DashboardStep() {
                 }}
                 className={`w-full ${isActive ? 'bg-red-600 text-white border-transparent' : act.color} rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform shadow-sm ${isActive ? 'animate-pulse ring-2 ring-red-400 shadow-[0_0_20px_rgba(220,38,38,0.6)]' : ''}`}
               >
-                <act.icon size={24} className="shrink-0" />
+                <Icon size={24} className="shrink-0" />
                 <span className="font-bold text-left text-sm md:text-base leading-tight">
                   {act.name} {isActive && <span className="text-xs font-normal opacity-80 ml-2">(Em andamento)</span>}
                 </span>
