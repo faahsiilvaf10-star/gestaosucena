@@ -16,6 +16,19 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
   const [tireObservation, setTireObservation] = useState('')
   const [tireModalStep, setTireModalStep] = useState<'select' | 'obs'>('select')
 
+  // Brakes State
+  const [isBrakesModalOpen, setIsBrakesModalOpen] = useState(false)
+  const [brakesObservation, setBrakesObservation] = useState('')
+
+  // Horn State
+  const [isHornModalOpen, setIsHornModalOpen] = useState(false)
+  const [hornObservation, setHornObservation] = useState('')
+
+  // Lights State
+  const [isLightsModalOpen, setIsLightsModalOpen] = useState(false)
+  const [lightsIssues, setLightsIssues] = useState<string[]>([])
+  const [lightsObservation, setLightsObservation] = useState('')
+
   const equipmentId = localStorage.getItem('app_motorista_equipment_id')
 
   // Form Data
@@ -283,12 +296,27 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
 
   const updateChecklist = (id: string, status: string) => {
     const item = checklist.find(i => i.id === id)
-    if (item?.name === 'Pneus' && status === 'nao_conforme') {
-      setIsTireModalOpen(true)
+    if (item?.name === 'Pneus') {
+      if (status === 'nao_conforme') setIsTireModalOpen(true)
+      if (status === 'conforme') {
+        setSelectedTires([])
+        setTireObservation('')
+      }
     }
-    if (item?.name === 'Pneus' && status === 'conforme') {
-      setSelectedTires([])
-      setTireObservation('')
+    if (item?.name === 'Freios') {
+      if (status === 'nao_conforme') setIsBrakesModalOpen(true)
+      if (status === 'conforme') setBrakesObservation('')
+    }
+    if (item?.name === 'Buzina') {
+      if (status === 'nao_conforme') setIsHornModalOpen(true)
+      if (status === 'conforme') setHornObservation('')
+    }
+    if (item?.name === 'Faróis') {
+      if (status === 'nao_conforme') setIsLightsModalOpen(true)
+      if (status === 'conforme') {
+        setLightsIssues([])
+        setLightsObservation('')
+      }
     }
     setChecklist(prev => prev.map(item => item.id === id ? { ...item, status } : item))
   }
