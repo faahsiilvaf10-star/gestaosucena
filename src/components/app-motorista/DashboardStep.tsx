@@ -1026,6 +1026,7 @@ export default function DashboardStep() {
         const driverId = dispatch?.driver_id || authId
 
         const anomalyId = crypto.randomUUID()
+        const now = new Date()
 
         // Salvar Anomalia
         await saveOfflineFirst('eq_anomalies', 'INSERT', {
@@ -1046,7 +1047,6 @@ export default function DashboardStep() {
         }
 
         // Salvar Histórico do Status para exibir no painel e na timeline
-        const now = new Date()
         saveOfflineFirst('eq_status_history', 'INSERT', {
           dispatch_id: dispatch?.id,
           equipment_id: equipmentId,
