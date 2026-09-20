@@ -318,6 +318,14 @@ export default function DashboardStep() {
 
     return () => clearInterval(interval)
   }, [dispatch, viewState, activeStatus, statusStartTime, activeWaterPoint, waterLoadStartTime])
+
+  // Reload pending anomalies when entering anomaly view
+  useEffect(() => {
+    if (viewState === 'anomaly') {
+      setPendingAnomalies(JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]'))
+    }
+  }, [viewState])
+
   const handleStatusChange = (newStatus: string, color?: string) => {
     const now = new Date()
     
@@ -913,12 +921,7 @@ export default function DashboardStep() {
     )
   }
 
-  // Reload pending anomalies when entering anomaly view
-  useEffect(() => {
-    if (viewState === 'anomaly') {
-      setPendingAnomalies(JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]'))
-    }
-  }, [viewState])
+
 
   if (viewState === 'anomaly') {
     const handleResolvePending = async () => {
