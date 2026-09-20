@@ -242,6 +242,7 @@ function ParteDiariaPage() {
         let countAtividade = 0
         let countManutencao = 0
         let countParados = 0
+        let countAnomaliasTotal = 0
         operandoList.forEach(vehicle => {
           const vHistory = hMap[vehicle.id] || []
           const dispatch = dMap[vehicle.id]
@@ -278,24 +279,23 @@ function ParteDiariaPage() {
           if (!isAtividade && !isManutencao && !dMap[vehicle.id]) {
             countParados++
           }
+
+          const vehicleAnomalies = vHistory.filter((h: any) => 
+            (h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:') || h.new_status?.startsWith('Anomalia:'))
+            && (!dispatch?.id || h.dispatch_id === dispatch.id)
+          )
+          countAnomaliasTotal += vehicleAnomalies.length
         })
         
         setEmTrabalhoCount(countAtividade)
         setManutencaoCount(countManutencao)
         setTurnosFinalizadosCount(countParados)
+        setAnomaliesCount(countAnomaliasTotal)
+      } else {
       } else {
         setEmTrabalhoCount(0)
         setManutencaoCount(0)
         setTurnosFinalizadosCount(0)
-      }
-
-      if (activeDispatchIds.length > 0) {
-        const { count: anomaliasDataCount } = await supabase
-          .from('eq_anomalies')
-          .select('*', { count: 'exact', head: true })
-          .in('dispatch_id', activeDispatchIds)
-        setAnomaliesCount(anomaliasDataCount || 0)
-      } else {
         setAnomaliesCount(0)
       }
 
@@ -842,7 +842,7 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
             
             {(() => {
               const anomalies = history.filter((h: any) => 
-                (h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:'))
+                (h.new_status?.startsWith('Anomalia Pneus:') || h.new_status?.startsWith('Anomalia Checklist:') || h.new_status?.startsWith('Anomalia:'))
                 && (!dispatch?.id || h.dispatch_id === dispatch.id)
               );
               
