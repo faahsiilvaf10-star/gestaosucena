@@ -17,7 +17,7 @@ function SegurancaComponent() {
     { title: "Inspeção\nde Canteiro", icon: HardHat },
     { title: "Pós Chuva", icon: Droplets },
     { title: "Desvios", icon: TriangleAlert },
-    { title: "Requisição", icon: ShieldCheck },
+    { title: "Requisição", icon: ShieldCheck, href: "/almoxarifado/requisicoes" },
     { title: "Inspeção\nExtintores", icon: Flame },
     { title: "Campanhas", icon: Heart },
     { title: "Matriz\nResponsabilidade", icon: Grid3X3 },
