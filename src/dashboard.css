@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --dash-bg: #eaf3ff;
   --text-primary: #07173f;
   --text-secondary: #53698e;
@@ -507,7 +507,7 @@ body {
 }
 
 .birthday-item.active {
-  background: rgba(69, 134, 255, 0.11);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .birthday-name {
@@ -813,19 +813,12 @@ body {
    ========================================================== */
 
 .dark .dashboard-page {
-  background: radial-gradient(circle at 50% 0%, #031525 0%, #01080e 60%, #000000 100%);
+  background: #050505; /* Preto quase absoluto */
   position: relative;
 }
 
 .dark .dashboard-page::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(0, 162, 255, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 85% 30%, rgba(0, 255, 170, 0.02) 0%, transparent 40%);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .neon-title .neon-name {
@@ -834,43 +827,72 @@ body {
   font-weight: 700;
 }
 
-/* NEON CARDS */
+/* NEON CARDS (BASE) */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@keyframes borderRotate {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+.neon-card {
+  position: relative;
+}
+
+.neon-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: var(--radius, 22px);
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 20%,
+    var(--neon-border-color, #000000) 50%,
+    transparent 80%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.9;
+  z-index: 10;
+  animation: borderRotate 30s linear infinite;
+}
+
+.neon-card.neon-blue { --neon-color: #00d2ff; }
+.neon-card.neon-green { --neon-color: #00ff88; }
+.neon-card.neon-pink { --neon-color: #ff00aa; }
+.neon-card.neon-purple { --neon-color: #aa00ff; }
+.neon-card.neon-orange { --neon-color: #ffaa00; }
+.neon-card.neon-yellow { --neon-color: #ffd700; }
+.neon-card.neon-red { --neon-color: #ff3333; }
+
 .dark .neon-card {
+  --neon-border-color: #ffffff;
   background: rgba(4, 12, 24, 0.6) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 16px !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  position: relative;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
   transition: all 0.3s ease;
 }
 
 .dark .neon-card::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
   border-radius: 16px;
-  padding: 1.5px;
-  background: linear-gradient(135deg, var(--neon-color, rgba(255,255,255,0.1)), transparent 60%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.8;
 }
 
 .dark .neon-card:hover {
-  box-shadow: 0 10px 40px var(--neon-glow, rgba(0,0,0,0.5)) !important;
+  box-shadow: 0 10px 40px rgba(255, 255, 255, 0.15) !important;
   transform: translateY(-2px);
 }
-
-.dark .neon-card.neon-blue { --neon-color: #00d2ff; --neon-glow: rgba(0, 210, 255, 0.15); }
-.dark .neon-card.neon-green { --neon-color: #00ff88; --neon-glow: rgba(0, 255, 136, 0.15); }
-.dark .neon-card.neon-pink { --neon-color: #ff00aa; --neon-glow: rgba(255, 0, 170, 0.15); }
-.dark .neon-card.neon-purple { --neon-color: #aa00ff; --neon-glow: rgba(170, 0, 255, 0.15); }
-.dark .neon-card.neon-orange { --neon-color: #ffaa00; --neon-glow: rgba(255, 170, 0, 0.15); }
 
 /* Card Footers */
 .card-footer {
@@ -910,21 +932,23 @@ body {
 }
 
 .dark .donut::after {
-  background: transparent !important;
-  border: 4px solid #000;
+  background: #0b1018 !important; /* Aproximação da cor de fundo do card */
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Custom Neon Overrides for Donut */
-.dark .neon-green .donut { --accent: #00ff88 !important; --track: rgba(0, 255, 136, 0.1) !important; filter: drop-shadow(0 0 8px rgba(0,255,136,0.5)); }
-.dark .neon-pink .donut { --accent: #ff00aa !important; --track: rgba(255, 0, 170, 0.1) !important; filter: drop-shadow(0 0 8px rgba(255,0,170,0.5)); }
-.dark .neon-blue .donut { --accent: #00d2ff !important; --track: rgba(0, 210, 255, 0.1) !important; filter: drop-shadow(0 0 8px rgba(0,210,255,0.5)); }
-.dark .neon-orange .donut { --accent: #ffaa00 !important; --track: rgba(255, 170, 0, 0.1) !important; filter: drop-shadow(0 0 8px rgba(255,170,0,0.5)); }
+/* Custom Neon Overrides for Donut (All White) */
+.dark .donut { 
+  --accent: #ffffff !important; 
+  --track: rgba(255, 255, 255, 0.1) !important; 
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9)) !important; 
+}
 
 /* Percent boxes */
 .dark .neon-green .percent-box { background: rgba(0, 255, 136, 0.1) !important; color: #00ff88 !important; border: 1px solid rgba(0,255,136,0.2); }
 .dark .neon-pink .percent-box { background: rgba(255, 0, 170, 0.1) !important; color: #ff00aa !important; border: 1px solid rgba(255,0,170,0.2); }
 .dark .neon-blue .percent-box { background: rgba(0, 210, 255, 0.1) !important; color: #00d2ff !important; border: 1px solid rgba(0,210,255,0.2); }
 .dark .neon-orange .percent-box { background: rgba(255, 170, 0, 0.1) !important; color: #ffaa00 !important; border: 1px solid rgba(255,170,0,0.2); }
+.dark .neon-red .percent-box { background: rgba(255, 51, 51, 0.1) !important; color: #ff3333 !important; border: 1px solid rgba(255,51,51,0.2); }
 
 .dark .icon-box {
   background: transparent !important;
@@ -937,6 +961,7 @@ body {
 .dark .neon-pink .icon-box { color: #ff00aa; filter: drop-shadow(0 0 5px rgba(255,0,170,0.5)); }
 .dark .neon-purple .icon-box { color: #aa00ff; filter: drop-shadow(0 0 5px rgba(170,0,255,0.5)); }
 .dark .neon-orange .icon-box { color: #ffaa00; filter: drop-shadow(0 0 5px rgba(255,170,0,0.5)); }
+.dark .neon-red .icon-box { color: #ff3333; filter: drop-shadow(0 0 5px rgba(255,51,51,0.5)); }
 
 .dark .employee-decoration {
   opacity: 0.15 !important;

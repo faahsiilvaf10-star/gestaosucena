@@ -49,7 +49,7 @@ function PluviometriaPage() {
     
     const { data: dbData, error } = await supabase
       .from('pluviometria_registros')
-      .select('data_registro, volume_mm')
+      .select('id, data_registro, volume_mm')
       .gte('data_registro', startDate)
       .lte('data_registro', endDate)
       .eq('setor', setor)
@@ -59,9 +59,11 @@ function PluviometriaPage() {
       toast.error('Erro ao carregar os dados de pluviometria.')
     } else if (dbData) {
       const map: Record<string, string> = {}
-      dbData.forEach(row => {
-        // Agora aceitamos o 0 explícito!
-        map[row.data_registro] = String(row.volume_mm)
+      dbData.forEach((row: any) => {
+        // Aceitamos o 0 explícito, mas ignoramos os deletados (-1)
+        if (row.volume_mm >= 0) {
+          map[row.data_registro] = String(row.volume_mm)
+        }
       })
       setData(map)
     }
@@ -83,97 +85,112 @@ function PluviometriaPage() {
   }
 
   const saveAll = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
+    let stage = 'início';
     
-    const startDate = `${year}-01-01`
-    const endDate = `${year}-12-31`
-    
-    // 1. Buscar todos os registros do ano para mapear os IDs e limpar duplicatas
-    const { data: existingRecords } = await supabase
-      .from('pluviometria_registros')
-      .select('id, data_registro')
-      .gte('data_registro', startDate)
-      .lte('data_registro', endDate)
-      .eq('setor', setor)
-
-    const idMap = new Map<string, number>()
-    const duplicatesToDelete: number[] = []
-
-    if (existingRecords) {
-      existingRecords.forEach(r => {
-        if (idMap.has(r.data_registro)) {
-          duplicatesToDelete.push(r.id)
-        } else {
-          idMap.set(r.data_registro, r.id)
-        }
-      })
-    }
-
-    // 2. Deletar duplicatas se existirem
-    if (duplicatesToDelete.length > 0) {
-      await supabase.from('pluviometria_registros').delete().in('id', duplicatesToDelete)
-    }
-
-    const toUpdate: any[] = []; const toInsert: any[] = [];
-    const toDelete: string[] = []
-
-    Object.entries(data).forEach(([date, volStr]) => {
-      const cleanVal = volStr.trim()
-      if (cleanVal === '') {
-        toDelete.push(date)
-      } else {
-        const parsed = parseFloat(cleanVal.replace(',', '.'))
-        const record: any = {
-          data_registro: date,
-          volume_mm: isNaN(parsed) ? 0 : parsed,
-          setor: setor
-        }
-        if (idMap.has(date)) {
-          record.id = idMap.get(date)
-        }
-        if (record.id) { toUpdate.push(record) } else { toInsert.push(record) }
-      }
-    })
-
-    let hasError = false
-    let errorMsg = ''
-
-    if (toDelete.length > 0) {
-      const { error } = await supabase
-        .from('pluviometria_registros')
-        .delete()
-        .in('data_registro', toDelete)
-        .eq('setor', setor)
+    try {
+      stage = 'buscando existentes';
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
       
-      if (error) {
-        console.error('Erro ao deletar vazios:', error)
-        hasError = true
-        errorMsg = error.message
-      }
-    }
-
-    if (toUpsert.length > 0) {
-      const { error } = await supabase
+      // 1. Buscar todos os registros do ano para mapear os IDs
+      const { data: existingRecords, error: errFetch } = await supabase
         .from('pluviometria_registros')
-        .upsert(toUpsert) // Sem onConflict, pois estamos passando o ID se existir
+        .select('id, data_registro')
+        .gte('data_registro', startDate)
+        .lte('data_registro', endDate)
+        .eq('setor', setor);
 
-      if (error) {
-        console.error('Erro ao salvar:', error)
-        hasError = true
-        errorMsg = error.message
+      if (errFetch) throw new Error(`Falha ao buscar dados: ${errFetch.message}`);
+
+      stage = 'mapeando IDs';
+      const idMap = new Map<string, number>();
+
+      if (existingRecords) {
+        existingRecords.forEach((r: any) => {
+          if (!idMap.has(r.data_registro)) {
+            idMap.set(r.data_registro, r.id);
+          }
+        });
       }
-    }
 
-    if (hasError) {
-      toast.error(`Erro ao salvar: ${errorMsg}`)
-    } else {
-      toast.success('Registros salvos com sucesso!')
+      stage = 'separando dados para inserir e atualizar';
+      const toUpdate: any[] = [];
+      const toInsert: any[] = [];
+
+      Object.entries(data).forEach(([date, volStr]) => {
+        const cleanVal = String(volStr).trim();
+        if (cleanVal === '') {
+          // Em vez de deletar (o banco bloqueia o DELETE), nós atualizamos para -1 (invisível)
+          if (idMap.has(date)) {
+            toUpdate.push({
+              id: idMap.get(date),
+              data_registro: date,
+              volume_mm: -1,
+              setor: setor
+            });
+          }
+        } else {
+          const parsed = parseFloat(cleanVal.replace(',', '.'));
+          const record: any = {
+            data_registro: date,
+            volume_mm: isNaN(parsed) ? 0 : parsed,
+            setor: setor
+          };
+          if (idMap.has(date)) {
+            record.id = idMap.get(date);
+            toUpdate.push(record);
+          } else {
+            toInsert.push(record);
+          }
+        }
+      });
+
+      let errorMsg = '';
+
+      stage = 'inserindo novos registros';
+      if (toInsert.length > 0) {
+        for (let i = 0; i < toInsert.length; i += 100) {
+          const chunk = toInsert.slice(i, i + 100);
+          const { error } = await supabase
+            .from('pluviometria_registros')
+            .insert(chunk);
+
+          if (error) {
+            errorMsg += `\nErro ao inserir: ${error.message}`;
+          }
+        }
+      }
+
+      stage = 'atualizando registros existentes';
+      if (toUpdate.length > 0) {
+        for (let i = 0; i < toUpdate.length; i += 100) {
+          const chunk = toUpdate.slice(i, i + 100);
+          const { error } = await supabase
+            .from('pluviometria_registros')
+            .upsert(chunk);
+
+          if (error) {
+            errorMsg += `\nErro ao atualizar: ${error.message}`;
+          }
+        }
+      }
+
+      if (errorMsg) {
+        toast.error(`Aviso/Erro durante o salvamento: ${errorMsg}`);
+      } else {
+        toast.success('Registros salvos com sucesso!');
+      }
+      
+      stage = 'atualizando grid';
+      await fetchData();
+      
+    } catch (err: any) {
+      console.error(`Falha no estágio "${stage}":`, err);
+      toast.error(`Erro ao salvar (${stage}). Atualize a página e tente novamente. Detalhes: ${err.message || 'Erro Desconhecido'}`);
+    } finally {
+      setIsSaving(false);
     }
-    
-    // Forçar atualização do estado local com o que realmente está no banco
-    await fetchData()
-    
-    setIsSaving(false)
   }
 
   // Calculate row totals and grand total
@@ -326,7 +343,7 @@ function PluviometriaPage() {
                   className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                  {isSaving ? 'Salvando...' : 'Salvar Planilha'}
                 </button>
               </div>
             </div>

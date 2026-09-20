@@ -6,10 +6,9 @@ import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Gift, MapPin, X, AlertTriangle } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { subDays, addDays, format, getMonth } from 'date-fns'
-import { Gift, MapPin, X } from 'lucide-react'
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
 
@@ -25,6 +24,7 @@ function DashboardComponent() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false)
   
   const queryClient = useQueryClient()
   
@@ -137,11 +137,11 @@ function DashboardComponent() {
     refetchInterval: 300000 // Refaz a cada 5 min
   })
 
-  // Buscar efetivo completo para contagem e aniversariantes
+  // Buscar efetivo completo para contagem e aniversariantes/ASO
   const { data: efetivo = [] } = useQuery({
     queryKey: ['efetivo_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status')
+      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status, validade_aso_efetiva')
       if (error) throw error
       return data || []
     }
@@ -230,6 +230,44 @@ function DashboardComponent() {
   .filter((a: any) => a.month === getMonth(new Date()))
   .sort((a: any, b: any) => a.day - b.day)
 
+  const aniversariantesHoje = aniversariantesMes.filter((a: any) => a.day === hojeDay)
+
+  useEffect(() => {
+    if (aniversariantesHoje.length > 0) {
+      const alreadyShown = sessionStorage.getItem('birthday_modal_shown_today')
+      if (!alreadyShown) {
+        setShowBirthdayModal(true)
+        sessionStorage.setItem('birthday_modal_shown_today', 'true')
+      }
+    }
+  }, [aniversariantesHoje.length])
+
+  // Calcular ASO vencendo em 10 dias ou menos (ou já vencidos)
+  const asoVencendo = (efetivo || [])
+    .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO' && emp.validade_aso_efetiva)
+    .map((emp: any) => {
+      const parts = emp.validade_aso_efetiva.split('-')
+      if (parts.length !== 3) return null
+      
+      const validade = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+      const hoje = new Date()
+      hoje.setHours(0,0,0,0)
+      
+      const diffTime = validade.getTime() - hoje.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays <= 10) {
+        return {
+          nome: emp.nome,
+          diasRestantes: diffDays,
+          validadeFormatada: `${parts[2]}/${parts[1]}/${parts[0]}`
+        }
+      }
+      return null
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => a.diasRestantes - b.diasRestantes)
+
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
@@ -280,10 +318,10 @@ function DashboardComponent() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-2 px-2 sm:px-0">
           <div>
             <h1
-              className={`tracking-tight neon-title ${isDark ? 'text-white' : 'text-gray-900 drop-shadow-none'}`}
+              className={`tracking-tight ${isDark ? 'text-white' : 'text-gray-900 drop-shadow-none'}`}
               style={{ fontSize: 'clamp(32px, 8vw, 54px)', lineHeight: '1' }}
             >
-              Olá, <span className={isDark ? "neon-name" : ""}>{displayFirstName}</span>!
+              Olá, <span>{displayFirstName}</span>!
             </h1>
             <p className={`text-sm mt-1 ml-0.5 font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
               Visão geral da operação
@@ -297,25 +335,21 @@ function DashboardComponent() {
                 <span className="sm:hidden">{currentDateShort}</span>
                 <span className="hidden sm:inline">{currentDate}</span>
               </div>
-              {isDark && (
-                <div className="hidden sm:flex gap-3 text-[9px] tracking-[0.2em] text-slate-400 font-sans mt-2">
-                  <span className="cursor-pointer hover:text-white transition-colors border-b border-[#00d2ff] pb-1 text-white">PESSOAS</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="cursor-pointer hover:text-white transition-colors">OPERAÇÃO</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="cursor-pointer hover:text-white transition-colors">RESULTADOS</span>
-                </div>
-              )}
+              <div className={`hidden sm:flex gap-3 text-[9px] tracking-[0.2em] font-sans mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                <span className={`cursor-pointer transition-colors border-b pb-1 ${isDark ? 'hover:text-white border-[#00d2ff] text-white' : 'hover:text-gray-900 border-gray-900 text-gray-900'}`}>PESSOAS</span>
+                <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
+                <span className={`cursor-pointer transition-colors ${isDark ? 'hover:text-white' : 'hover:text-gray-900'}`}>OPERAÇÃO</span>
+                <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
+                <span className={`cursor-pointer transition-colors ${isDark ? 'hover:text-white' : 'hover:text-gray-900'}`}>RESULTADOS</span>
+              </div>
             </div>
             
-            {isDark && (
-              <div className="hidden md:flex flex-col text-[9px] tracking-[0.2em] text-slate-500 font-sans border-l border-white/10 pl-5 opacity-80">
-                <span>GRANDES</span>
-                <span>PESSOAS</span>
-                <span>MOVEM</span>
-                <span>RESULTADOS</span>
-              </div>
-            )}
+            <div className={`hidden md:flex flex-col text-[9px] tracking-[0.2em] font-sans border-l pl-5 opacity-80 ${isDark ? 'text-slate-500 border-white/10' : 'text-gray-400 border-gray-200'}`}>
+              <span>GRANDES</span>
+              <span>PESSOAS</span>
+              <span>MOVEM</span>
+              <span>RESULTADOS</span>
+            </div>
           </div>
         </div>
 
@@ -325,8 +359,8 @@ function DashboardComponent() {
           <div className="dashboard-card neon-card neon-blue col-span-1 md:col-span-4 relative pb-8">
             <div className="card-header relative z-10">
               <div className="card-title-wrap">
-                <div className="icon-box icon-blue">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-blue"}>
+                  {!isDark ? <img src="/icons/users_total.png" alt="Users" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
                 </div>
                 <h3 className="card-title">TOTAL DE FUNCIONÁRIOS</h3>
               </div>
@@ -337,16 +371,8 @@ function DashboardComponent() {
             <div className="big-number relative z-10">{totalFuncionarios}</div>
             <div className="big-number-label relative z-10">colaboradores</div>
             
-            {/* Elemento visual do canto inferior direito - 3 círculos */}
-            {isDark ? (
-              <div className="absolute right-0 bottom-0 w-32 h-32 pointer-events-none opacity-40 z-0">
-                 <div className="absolute bottom-2 right-12 w-16 h-16 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
-                 <div className="absolute bottom-8 right-4 w-12 h-12 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
-                 <div className="absolute bottom-2 -right-4 w-20 h-20 rounded-full border border-[#00d2ff]/30 shadow-[0_0_20px_#00d2ff] bg-gradient-to-b from-[#00d2ff]/10 to-transparent"></div>
-              </div>
-            ) : (
-              <svg className="employee-decoration relative z-10" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            )}
+            {/* Elemento visual do canto inferior direito */}
+            <svg className="employee-decoration relative z-10" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 
             {isDark && (
               <div className="card-footer">
@@ -360,8 +386,8 @@ function DashboardComponent() {
           <div className="dashboard-card neon-card neon-green col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-green">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-green"}>
+                  {!isDark ? <img src="/icons/users.png" alt="Presentes" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
                 </div>
                 <h3 className="card-title">PRESENTES HOJE</h3>
               </div>
@@ -398,11 +424,11 @@ function DashboardComponent() {
           </div>
 
           {/* AUSÊNCIAS */}
-          <div className="dashboard-card neon-card neon-pink col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-red">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
+                  {!isDark ? <img src="/icons/user_x.png" alt="Ausências" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>}
                 </div>
                 <h3 className="card-title">AUSÊNCIAS</h3>
               </div>
@@ -439,7 +465,7 @@ function DashboardComponent() {
           </div>
 
           {/* WEATHER */}
-          <div className={`col-span-1 md:col-span-3 ${isDark ? 'neon-card neon-blue' : ''}`}>
+          <div className="neon-card neon-blue col-span-1 md:col-span-3 relative h-full">
             <WeatherWidget />
             {isDark && (
               <div className="card-footer" style={{ bottom: '16px' }}>
@@ -448,12 +474,44 @@ function DashboardComponent() {
             )}
           </div>
 
-          {/* ANIVERSARIANTES */}
+          {/* ANIVERSARIANTE DO DIA */}
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-3 pb-8">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                </div>
+                <h3 className="card-title">ANIVERSARIANTE DO DIA</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="birthday-list">
+              {aniversariantesHoje.length > 0 ? (
+                aniversariantesHoje.map((aniv: any, idx: number) => (
+                  <div key={idx} className="birthday-item active">
+                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
+                    <span className="birthday-day font-bold text-yellow-500">HOJE! 🎉</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center mt-4">Nenhum hoje</div>
+              )}
+            </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🎈 PARABÉNS!</span>
+              </div>
+            )}
+          </div>
+
+          {/* ANIVERSARIANTES DO MÊS */}
           <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-3 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-purple">
-                  <Gift size={20} />
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
                 </div>
                 <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
               </div>
@@ -480,8 +538,44 @@ function DashboardComponent() {
             )}
           </div>
 
+          {/* ASO VENCENDO */}
+          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-3 pb-8">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
+                  {!isDark ? <img src="/icons/alert.png" alt="ASO" className="w-12 h-12 object-contain drop-shadow-sm" /> : <AlertTriangle size={20} className="animate-pulse" />}
+                </div>
+                <h3 className="card-title">VENCIMENTO ASO</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="birthday-list">
+              {asoVencendo.length > 0 ? (
+                asoVencendo.slice(0, 3).map((aso: any, idx: number) => (
+                  <div key={idx} className="birthday-item" style={{ borderColor: aso.diasRestantes <= 0 ? 'rgba(239, 68, 68, 0.3)' : '' }}>
+                    <span className={`birthday-name capitalize ${aso.diasRestantes <= 0 ? 'text-red-500 font-bold' : ''}`}>
+                      {typeof aso.nome === 'string' ? aso.nome.toLowerCase() : aso.nome}
+                    </span>
+                    <span className={`birthday-day text-xs font-bold ${aso.diasRestantes <= 0 ? 'text-red-500' : aso.diasRestantes <= 5 ? 'text-orange-500' : 'text-yellow-500'}`}>
+                      {aso.diasRestantes < 0 ? `Vencido` : aso.diasRestantes === 0 ? 'Vence Hoje' : `${aso.diasRestantes} dias`}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center mt-4">Nenhum ASO próximo do vencimento</div>
+              )}
+            </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🏥 SAÚDE OCUPACIONAL</span>
+              </div>
+            )}
+          </div>
+
           {/* OPERAÇÃO */}
-          <div className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-3 pb-8">
+          <div className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8">
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -504,8 +598,8 @@ function DashboardComponent() {
             
             <div className="card-header relative z-0">
               <div className="card-title-wrap">
-                <div className="icon-box icon-blue">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-blue"}>
+                  {!isDark ? <img src="/icons/layers.png" alt="Operação" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>}
                 </div>
                 <h3 className="card-title">EM OPERAÇÃO</h3>
               </div>
@@ -542,7 +636,7 @@ function DashboardComponent() {
           </div>
 
           {/* MANUTENÇÃO */}
-          <div className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-3 pb-8">
+          <div className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8">
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -568,8 +662,8 @@ function DashboardComponent() {
             
             <div className="card-header relative z-0">
               <div className="card-title-wrap">
-                <div className="icon-box icon-orange">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-orange"}>
+                  {!isDark ? <img src="/icons/wrench.png" alt="Manutenção" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>}
                 </div>
                 <h3 className="card-title">EM MANUTENÇÃO</h3>
               </div>
@@ -790,6 +884,47 @@ function DashboardComponent() {
           >
             <X size={24} />
           </button>
+        </div>
+      )}
+
+      {/* MODAL DE ANIVERSARIANTE DO DIA */}
+      {showBirthdayModal && aniversariantesHoje.length > 0 && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+          <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
+            <button 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+              onClick={() => setShowBirthdayModal(false)}
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500 mb-4 animate-bounce">
+                <Gift size={40} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tem festa hoje! 🎉</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Hoje é o aniversário de:
+              </p>
+              
+              <div className="w-full flex flex-col gap-3 mb-8">
+                {aniversariantesHoje.map((aniv: any, i: number) => (
+                  <div key={i} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl p-4 flex items-center justify-center">
+                    <span className="font-bold text-lg text-gray-800 dark:text-white capitalize">
+                      {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors"
+                onClick={() => setShowBirthdayModal(false)}
+              >
+                Legal! Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
