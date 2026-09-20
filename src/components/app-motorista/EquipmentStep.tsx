@@ -18,6 +18,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         .from('eq_equipments')
         .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
         .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
       
       if (error) throw error
