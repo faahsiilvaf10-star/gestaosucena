@@ -509,7 +509,7 @@ export default function DashboardStep() {
       localStorage.setItem('app_motorista_fuel_level', endFuel)
 
       // Update Equipment status to "Disponível"
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside' })
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside', status: 'Disponível' })
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')

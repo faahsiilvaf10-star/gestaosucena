@@ -790,8 +790,10 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
   }
 
   // Se for finalizada ou sem status, fica cinza
-  if (!dispatch && (statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline'))) {
-    statusLabel = 'Sem status'
+  if (!dispatch || dispatch.shift_end_time || statusLower === 'sem status' || statusLower.includes('finalizada') || statusLower.includes('offline')) {
+    statusLabel = statusLower.includes('finalizada') ? 'Finalizada' : 'Parado'
+    statusColor = 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-400 border-gray-200 dark:border-zinc-700'
+    statusDot = 'bg-gray-500'
   }
   // Status de Pausa / Parado -> Laranja
   else if (
