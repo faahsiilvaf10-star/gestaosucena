@@ -199,6 +199,7 @@ export default function DashboardStep() {
         if (navigator.onLine) {
           // Se estamos online e não tem turno ativo no banco, o turno foi fechado por outro lugar.
           // Devemos limpar o estado local para forçar a nova seleção de equipamento/motorista.
+          localStorage.removeItem('app_motorista_driver')
           localStorage.removeItem('app_motorista_current_step')
           localStorage.removeItem('app_motorista_current_dispatch')
           localStorage.removeItem('app_motorista_equipment_id')
