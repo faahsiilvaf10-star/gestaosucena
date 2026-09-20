@@ -1,11 +1,28 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getEquipmentActivities, setEquipmentActivities, EquipmentActivity } from '@/lib/settings'
 import {
   MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
-  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit
+  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit,
+  Waves, Droplet, Sprout, Fuel, CloudRain, Car, Plus, Save, Pencil
 } from 'lucide-react'
+
+export const ICON_MAP: Record<string, any> = {
+  Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
+}
+
+export const ICON_NAMES_PT: Record<string, string> = {
+  Waves: 'Ondas',
+  Droplet: 'Gota',
+  Sprout: 'Muda / Planta',
+  Fuel: 'Combustível',
+  CloudRain: 'Chuva',
+  Car: 'Carro',
+  MapPin: 'Localização',
+  Truck: 'Caminhão'
+}
 import {
   Dialog,
   DialogContent,
@@ -57,10 +74,63 @@ function ParteDiariaPage() {
   // Data states
   const [emTrabalhoCount, setEmTrabalhoCount] = useState(0)
   const [turnosFinalizadosCount, setTurnosFinalizadosCount] = useState(0)
+  const [anomaliesCount, setAnomaliesCount] = useState(0)
+  const [manutencaoCount, setManutencaoCount] = useState(0)
   const [totalPesadosCount, setTotalPesadosCount] = useState(0)
   const [activeVehicles, setActiveVehicles] = useState<any[]>([])
   const [vehicleHistories, setVehicleHistories] = useState<Record<string, any[]>>({})
   const [vehicleDispatches, setVehicleDispatches] = useState<Record<string, any>>({})
+  const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false)
+  const [activities, setActivities] = useState<EquipmentActivity[]>([])
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([])
+  const [isEditingActivity, setIsEditingActivity] = useState<boolean>(false)
+  const [editingActivity, setEditingActivity] = useState<Partial<EquipmentActivity>>({})
+
+  useEffect(() => {
+    const loadActivitiesAndTypes = async () => {
+      const data = await getEquipmentActivities()
+      setActivities(data)
+      const { data: types } = await supabase.from('eq_equipments').select('type')
+      if (types) {
+        const distinct = Array.from(new Set(types.map(t => t.type).filter(Boolean))) as string[]
+        setEquipmentTypes(distinct.sort())
+      }
+    }
+    loadActivitiesAndTypes()
+  }, [])
+
+  const handleSaveActivity = async () => {
+    if (!editingActivity.name || !editingActivity.icon || !editingActivity.color) return;
+    
+    let newList = [...activities]
+    if (editingActivity.id) {
+      newList = newList.map(a => a.id === editingActivity.id ? editingActivity as EquipmentActivity : a)
+    } else {
+      newList.push({
+        ...editingActivity,
+        id: crypto.randomUUID(),
+        categories: editingActivity.categories || []
+      } as EquipmentActivity)
+    }
+    
+    const { success } = await setEquipmentActivities(newList)
+    if (success) {
+      setActivities(newList)
+      setIsEditingActivity(false)
+      setEditingActivity({})
+    } else {
+      alert("Erro ao salvar atividade")
+    }
+  }
+
+  const handleDeleteActivity = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta atividade?")) return;
+    const newList = activities.filter(a => a.id !== id)
+    const { success } = await setEquipmentActivities(newList)
+    if (success) {
+      setActivities(newList)
+    }
+  }
 
   // Fullscreen handler
   const toggleFullscreen = () => {
@@ -89,7 +159,7 @@ function ParteDiariaPage() {
     try {
       // 1. Busca todos os Equipamentos Pesados
       const { data: pesados, error: pesadosError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, current_driver, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description, status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
 
@@ -120,17 +190,9 @@ function ParteDiariaPage() {
           dMap[d.equipment_id] = d
           activeDispatchIds.push(d.id)
         })
-        
-        // Conta turnos finalizados no dia
-        Object.values(dMap).forEach(d => {
-          if (d.shift_end_time && new Date(d.shift_end_time) >= new Date(todayStart)) {
-            countTurnos++
-          }
-        })
       }
       
       setVehicleDispatches(dMap)
-      setTurnosFinalizadosCount(countTurnos)
 
       // 3. Busca histórico do dia OU dos dispatches ativos (em 2 queries para evitar problema de formato UUID no PostgREST)
       const todayHistoryRes = await supabase
@@ -178,24 +240,63 @@ function ParteDiariaPage() {
         setVehicleHistories(hMap)
 
         let countAtividade = 0
+        let countManutencao = 0
+        let countParados = 0
         operandoList.forEach(vehicle => {
           const vHistory = hMap[vehicle.id] || []
+          const dispatch = dMap[vehicle.id]
           const lastH = vHistory.length > 0 ? vHistory[vHistory.length - 1] : null
           let currentStatus = translateStatus(lastH ? lastH.new_status : (vehicle.status || 'Sem status'))
+
+          if (!dispatch) {
+            const s = currentStatus.toLowerCase();
+            if (s.includes('em operação') || s.includes('em atividade') || s === 'operating' || s.includes('aguardando')) {
+              currentStatus = 'Sem status';
+            }
+          }
 
           const statusLower = currentStatus.toLowerCase()
           
           let isAtividade = false
+          let isManutencao = false
+
           if (statusLower.includes('em operação') || statusLower.includes('em atividade') || statusLower === 'operating') {
-            isAtividade = true
+            if (dMap[vehicle.id]) {
+              countAtividade++
+              isAtividade = true
+            }
           }
-          
-          if (isAtividade) countAtividade++
+          if (
+            statusLower.includes('manuten') || 
+            (vehicle.location_status === 'outside' && 
+             (vehicle.last_exit_reason === 'corrective_maintenance' || vehicle.last_exit_reason === 'preventive_maintenance'))
+          ) {
+            countManutencao++
+            isManutencao = true
+          }
+
+          if (!isAtividade && !isManutencao && !dMap[vehicle.id]) {
+            countParados++
+          }
         })
         
         setEmTrabalhoCount(countAtividade)
+        setManutencaoCount(countManutencao)
+        setTurnosFinalizadosCount(countParados)
       } else {
         setEmTrabalhoCount(0)
+        setManutencaoCount(0)
+        setTurnosFinalizadosCount(0)
+      }
+
+      if (activeDispatchIds.length > 0) {
+        const { count: anomaliasDataCount } = await supabase
+          .from('eq_anomalies')
+          .select('*', { count: 'exact', head: true })
+          .in('dispatch_id', activeDispatchIds)
+        setAnomaliesCount(anomaliasDataCount || 0)
+      } else {
+        setAnomaliesCount(0)
       }
 
     } catch (error) {
@@ -337,9 +438,21 @@ function ParteDiariaPage() {
       {/* METRIC CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         <MetricCard title="Veículos em trabalho" value={emTrabalhoCount} total={totalPesadosCount} color="bg-amber-800 dark:bg-amber-900/80" />
-        <MetricCard title="Locais de execução" value={MOCK_METRICS.locais} total={0} color="bg-blue-600 dark:bg-blue-700/80" />
-        <MetricCard title="Anomalias" value={MOCK_METRICS.anomalias} total={0} color="bg-orange-500 dark:bg-orange-600/80" />
-        <MetricCard title="Em atraso" value={MOCK_METRICS.emAtraso} total={0} color="bg-red-600 dark:bg-red-700/80" />
+        <MetricCard 
+          title="Locais de execução" 
+          value={activities.length} 
+          total={0} 
+          color="bg-blue-600 dark:bg-blue-700/80" 
+          onClick={() => setIsActivitiesModalOpen(true)}
+        />
+        <MetricCard title="Anomalias" value={anomaliesCount} total={0} color="bg-orange-500 dark:bg-orange-600/80" />
+        <MetricCard 
+          title="Manutenção" 
+          value={manutencaoCount} 
+          total={0} 
+          color="bg-red-600 dark:bg-red-700/80" 
+          onClick={() => window.location.href = '/equipamentos/entrada-saida'}
+        />
         <MetricCard title="Turno finalizado" value={turnosFinalizadosCount} total={0} color="bg-emerald-500 dark:bg-emerald-600/80" />
       </div>
 
@@ -411,15 +524,136 @@ function ParteDiariaPage() {
         )}
       </div>
 
+      {/* Modal de Locais de Execução (Atividades) */}
+      <Dialog open={isActivitiesModalOpen} onOpenChange={setIsActivitiesModalOpen}>
+        <DialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl sm:max-w-md">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <MapPin className="text-blue-500" size={20} />
+              {isEditingActivity ? 'Editar Atividade' : 'Locais de Execução'}
+            </DialogTitle>
+            {!isEditingActivity && (
+              <button 
+                onClick={() => { setEditingActivity({ categories: [], color: 'bg-zinc-900 border border-zinc-800 text-white', icon: 'MapPin' }); setIsEditingActivity(true); }} 
+                className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+              >
+                <Plus size={16} /> Nova
+              </button>
+            )}
+          </DialogHeader>
+          
+          <div className="py-2">
+            {isEditingActivity ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da Atividade</label>
+                  <input 
+                    type="text" 
+                    value={editingActivity.name || ''} 
+                    onChange={e => setEditingActivity({...editingActivity, name: e.target.value})}
+                    className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md p-2 text-sm text-gray-900 dark:text-gray-100"
+                    placeholder="Ex: Lavagem Mirante"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ícone</label>
+                    <select 
+                      value={editingActivity.icon || ''}
+                      onChange={e => setEditingActivity({...editingActivity, icon: e.target.value})}
+                      className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md p-2 text-sm text-gray-900 dark:text-gray-100"
+                    >
+                      {Object.keys(ICON_MAP).map(iconName => (
+                        <option key={iconName} value={iconName}>{ICON_NAMES_PT[iconName] || iconName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cor</label>
+                    <select 
+                      value={editingActivity.color || ''}
+                      onChange={e => setEditingActivity({...editingActivity, color: e.target.value})}
+                      className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-md p-2 text-sm text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="bg-zinc-900 border border-zinc-800 text-white">Escura (Dark)</option>
+                      <option value="bg-white border border-gray-200 text-gray-900">Clara (Light)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categorias (vazio = todas)</label>
+                  <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-zinc-700 rounded-md p-2 bg-gray-50 dark:bg-zinc-800/50">
+                    {equipmentTypes.map(type => (
+                      <label key={type} className="flex items-center gap-2 mb-1 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={(editingActivity.categories || []).includes(type)}
+                          onChange={e => {
+                            const cats = editingActivity.categories || [];
+                            if (e.target.checked) setEditingActivity({...editingActivity, categories: [...cats, type]})
+                            else setEditingActivity({...editingActivity, categories: cats.filter(c => c !== type)})
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <button onClick={() => setIsEditingActivity(false)} className="px-4 py-2 text-sm bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-900 dark:text-gray-100 rounded-md">Cancelar</button>
+                  <button onClick={handleSaveActivity} className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 rounded-md"><Save size={16}/> Salvar</button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                {activities.map((act) => {
+                  const Icon = ICON_MAP[act.icon] || MapPin;
+                  return (
+                    <div key={act.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 group hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg text-gray-900 dark:text-white">
+                          <Icon size={18} />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 block">{act.name}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {act.categories && act.categories.length > 0 ? act.categories.join(', ') : 'Todas as Categorias'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setEditingActivity(act); setIsEditingActivity(true); }} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                          <Pencil size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteActivity(act.id)} className="p-1.5 text-gray-500 hover:text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+                {activities.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma atividade cadastrada.</p>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }
 
-function MetricCard({ title, value, total, color }: { title: string, value: number, total: number, color: string }) {
+function MetricCard({ title, value, total, color, onClick }: { title: string, value: number, total: number, color: string, onClick?: () => void }) {
   const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0
   
   return (
-    <div className={`${color} text-white p-4 rounded-2xl relative overflow-hidden shadow-sm flex flex-col justify-between min-h-[110px]`}>
+    <div 
+      className={`${color} text-white p-4 rounded-2xl relative overflow-hidden shadow-sm flex flex-col justify-between min-h-[110px] ${onClick ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+      onClick={onClick}
+    >
       <div className="relative z-10">
         <h3 className="text-3xl font-bold leading-none">{value}</h3>
         <p className="text-sm font-medium opacity-90 mt-1">{title}</p>
@@ -531,6 +765,13 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
 
   const lastHistory = history.length > 0 ? history[history.length - 1] : null
   let currentStatus = translateStatus(lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status'))
+
+  if (!dispatch) {
+    const s = currentStatus.toLowerCase();
+    if (s.includes('em operação') || s.includes('em atividade') || s === 'operating' || s.includes('aguardando')) {
+      currentStatus = 'Sem status';
+    }
+  }
 
   // Deriva o motorista: primeiro do histórico, depois do dispatch, para evitar "Motorista não atribuído"
   const driverId = lastHistory?.driver_id || dispatch?.driver_id || null
@@ -677,6 +918,8 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+
 
             {/* Modal de Anomalias */}
             <Dialog open={isAnomaliesModalOpen} onOpenChange={setIsAnomaliesModalOpen}>
