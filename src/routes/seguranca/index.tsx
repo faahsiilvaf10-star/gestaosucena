@@ -11,8 +11,8 @@ export const Route = createFileRoute('/seguranca/')({
 function SegurancaComponent() {
   const modulos = [
     { title: "DDS", icon: Sun, href: "/seguranca/dds" },
-    { title: "Permissão\nde Trabalho", icon: Folder },
-    { title: "Homologados", icon: BadgeCheck },
+    { title: "Permissão\nde Trabalho", icon: Folder, href: "/permissao-trabalho" },
+    { title: "Homologados", icon: BadgeCheck, href: "/seguranca/homologados" },
     { title: "Vistoria Cintas", icon: Link2 },
     { title: "Inspeção\nde Canteiro", icon: HardHat },
     { title: "Pós Chuva", icon: Droplets },

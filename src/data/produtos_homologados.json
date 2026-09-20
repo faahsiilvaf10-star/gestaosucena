@@ -1,0 +1,1055 @@
+[
+  {
+    "nome": "1-PROPANOL EMPLURA",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "AC 200",
+    "fabricante": "CRIVELA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACERO DESINFETANTE",
+    "fabricante": "KLIMP",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACETATO DE AMÔNIO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACETILENO",
+    "fabricante": "WHITE MARTINS",
+    "categoria": "Produtos Químicos",
+    "ni": "294922",
+    "perigoso": true,
+    "controlado": false,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACIDO CICLOHEXILENO-1,2 DINITRILO TETRACETICO (CDTA)",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACIDO CICLOHEXILENO-1,2 DINITRILO TETRACETICO (CDTA)",
+    "fabricante": "F MAIA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACIDO CICLOHEXILENO-1,2 DINITRILO TETRACETICO (CDTA)",
+    "fabricante": "J.T. BAKER",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACIDO CICLOHEXILENO-1,2 DINITRILO TETRACETICO (CDTA)",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO CLORIDRICO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO CLORIDRICO",
+    "fabricante": "F MAIA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO CLORIDRICO",
+    "fabricante": "J.T. BAKER",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO CLORIDRICO",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO NÍTRICO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO NÍTRICO",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO OXÁLICO",
+    "fabricante": "VETEC",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO SULFÚRICO",
+    "fabricante": "CARAIBA METAIS",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO SULFÚRICO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO SULFÚRICO",
+    "fabricante": "PRODUQUIMICA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO SULFÚRICO",
+    "fabricante": "SIGMA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO TÁRTÁRICO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO TÁRTÁRICO",
+    "fabricante": "F MAIA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO TÁRTÁRICO",
+    "fabricante": "J.T. BAKER",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁCIDO TÁRTÁRICO",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACOPLANTE PARA ULTRA-SOM 2000 A/US",
+    "fabricante": "METAL-CHEK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ACRÍLICO FOSCO TURBO BRANCO",
+    "fabricante": "TINTAS VERBRAS",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO INDUSTRIAL EC-1099.",
+    "fabricante": "3M DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "LOCTITE ANAEROBICO 277",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 515",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 518",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 570",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 601",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 607",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO 770",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO INSTANTÂNEO 406",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO ANAEROBICO INSTANTÂNEO 495",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO BIOCOMPONENTE EPOXI-CERÂMICA",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO DE CONTATO - CASCOLA Tradicional sem Toluol",
+    "fabricante": "HENKEL LTDA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO DE CONTATO 2,8 KG",
+    "fabricante": "CASCOLA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO EXTRA VF-2000",
+    "fabricante": "VULCAFLEX",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO INSTANTANEO 416",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PARA JUNTA DE MOTORES DIESEL",
+    "fabricante": "3M",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PLASTICO PARA PVC 75GR",
+    "fabricante": "AFIX",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PLASTICO PARA PVC 75GR",
+    "fabricante": "TIGRE",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PLÁSTICO PARA PVC AZUL TIGRE",
+    "fabricante": "TIGRE SA – TUBOS E CONEXÕES.",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PLÁSTICO PARA PVC INCOLOR",
+    "fabricante": "TIGRE S.A",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PVA PARA MADEIRA 1L",
+    "fabricante": "CASCOLA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO PVC INCOLOR TIGRE",
+    "fabricante": "TIGRE SA – TUBOS E CONEXÕES",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO SC 2000",
+    "fabricante": "REMA TIP TOP",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADESIVO SELANTE A BASE DE SILASTIC 595",
+    "fabricante": "LOCTITE DO BRASIL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADITIVO PARA RADIADORES BLUE POWER",
+    "fabricante": "UNIFORT",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ADVANTAGE AF 2768",
+    "fabricante": "ASHLAND",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "AERODRI 105 Dewatering Aid",
+    "fabricante": "CYTEC",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁGUA DESMINERALIZADA",
+    "fabricante": "BOLETIM TÉCNICO",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "AGUA SANITARIA 1L",
+    "fabricante": "BRANMIX",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "AGUA SANITARIA 1L",
+    "fabricante": "ECONOMICO",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "AL 2032 CERA",
+    "fabricante": "ADHETECH",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALARANJADO DE XILENOL",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALARANJADO DE XILENOL",
+    "fabricante": "F MAIA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALARANJADO DE XILENOL",
+    "fabricante": "J.T. BAKER",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALARANJADO DE XILENOL",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCANCE",
+    "fabricante": "BERNARDO QUÍMICA LTDA.",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL 50 %",
+    "fabricante": "PARQUÍMICA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL 70 %",
+    "fabricante": "PARQUIMICA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL EM GEL",
+    "fabricante": "CIA NACIONAL DE ÁLCOOL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL EM GEL BRILUX",
+    "fabricante": "INDUSTRIA REUNIDAS RAYMUNDO DA FONTE S/A",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL EM GEL BRILUX LAVANDA",
+    "fabricante": "INDUSTRIA REUNIDAS RAYMUNDO DA FONTE S/A",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL EM GEL ECONÔMICO",
+    "fabricante": "F.C.OLIVEIRA & CIA LTDA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "A . S . C",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "ALMON QUIMICA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "F MAIA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "J.T. BAKER",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "MERCK",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "NITROGENIUS PRODUTOS QUÍMICOS",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "NOBRE",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETÍLICO 92.8ºINPM (96 °GL)",
+    "fabricante": "QUIMIDROL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ÁLCOOL ETILICO HIDRATADO A 70º INPM EM GEL (USO GERAL)",
+    "fabricante": "DA ILHA COMERCIO DE ALCOOL",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL ISOPROPÍLICO",
+    "fabricante": "CARLO ERBA",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL ISOPROPÍLICO",
+    "fabricante": "IMPLASTEC",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "ALCOOL LIQUIDO",
+    "fabricante": "START",
+    "categoria": "Produtos Químicos",
+    "ni": "-",
+    "perigoso": false,
+    "controlado": true,
+    "classe_risco": "-"
+  },
+  {
+    "nome": "Capacete",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 498",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Capacete",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 29638",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Capacete",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 12482",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Capacete (Contratadas)",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 44758",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Boné de segurança",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 38352",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Capuz + protetor facial",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 29993",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção da cabeça"
+  },
+  {
+    "nome": "Óculos de segurança",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 39904",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos olhos"
+  },
+  {
+    "nome": "Óculos de segurança",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 20716",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos olhos"
+  },
+  {
+    "nome": "Protetor auricular",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 820",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção auditiva"
+  },
+  {
+    "nome": "Protetor auricular",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 27971",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção auditiva"
+  },
+  {
+    "nome": "Protetor auricular",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 11882",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção auditiva"
+  },
+  {
+    "nome": "Respirador descartável PFF2",
+    "fabricante": "3M",
+    "categoria": "EPIs",
+    "ni": "CA 33796",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção respiratória"
+  },
+  {
+    "nome": "Respirador descartável PFF3",
+    "fabricante": "3M",
+    "categoria": "EPIs",
+    "ni": "CA 42954",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção respiratória"
+  },
+  {
+    "nome": "Respirador purificador de ar tipo semifacial",
+    "fabricante": "3M",
+    "categoria": "EPIs",
+    "ni": "CA 12011",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção respiratória"
+  },
+  {
+    "nome": "Luva tátil",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 51313",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva tátil",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 31492",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva tátil",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 46932",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva tátil",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 17601",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva de algodão",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 10464",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva de vaqueta e raspa",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 49635",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva de PVC",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 40174",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva química",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 43802",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Luva nitrílica",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 12598",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das mãos"
+  },
+  {
+    "nome": "Bota de couro",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 26765",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos pés"
+  },
+  {
+    "nome": "Bota de couro",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 28846",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos pés"
+  },
+  {
+    "nome": "Botina de couro",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 32209",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos pés"
+  },
+  {
+    "nome": "Botina de couro",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 40243",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção dos pés"
+  },
+  {
+    "nome": "Avental em PVC",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 44668",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção do corpo"
+  },
+  {
+    "nome": "Vestimenta tipo capa",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 28449",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção do corpo"
+  },
+  {
+    "nome": "Vestimenta tipo japona",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 37721",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção do corpo"
+  },
+  {
+    "nome": "Capuz translúcido de PVC",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 11919",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Prevenção de queimadura química"
+  },
+  {
+    "nome": "Macacão de segurança",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 43617",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Prevenção de queimadura química"
+  },
+  {
+    "nome": "Perneiras de couro",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 32562",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção das pernas"
+  },
+  {
+    "nome": "Cinto de segurança tipo paraquedista",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 39991",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção contra queda"
+  },
+  {
+    "nome": "Cinto de segurança tipo paraquedista",
+    "fabricante": "NÃO INFORMADO",
+    "categoria": "EPIs",
+    "ni": "CA 33838",
+    "perigoso": false,
+    "controlado": false,
+    "classe_risco": "Proteção contra queda"
+  }
+]

@@ -165,7 +165,7 @@ function PermissaoTrabalhoPage() {
         <div className="flex-1" />
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full text-sm transition-colors shadow-sm"
         >
           <Plus size={16} /> Nova PT
         </button>
@@ -176,8 +176,8 @@ function PermissaoTrabalhoPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="dashboard-card relative overflow-hidden p-6 flex items-center gap-4 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-2xl">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                <FileText className="text-blue-500" size={24} />
+              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
+                <FileText className="text-yellow-500" size={24} />
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{pts.length}</div>
@@ -215,7 +215,7 @@ function PermissaoTrabalhoPage() {
                 placeholder="Buscar por título ou descrição..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="w-full bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
               />
             </div>
             
@@ -227,7 +227,10 @@ function PermissaoTrabalhoPage() {
               >
                 <option>Todos os tipos</option>
                 <option>PT (Permissão de Trabalho)</option>
-                <option>APR (Análise Preliminar)</option>
+                <option>Permissão de Trabalho em Altura</option>
+                <option>Análise de Risco</option>
+                <option>EBTV</option>
+                <option>PRO</option>
               </select>
               
               <select 
@@ -294,7 +297,7 @@ function PermissaoTrabalhoPage() {
                           <td className="py-4 pr-4">
                             <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                               {pt.arquivo_url && (
-                                <a href={pt.arquivo_url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-500 transition-colors" title="Ver Anexo">
+                                <a href={pt.arquivo_url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-yellow-500 transition-colors" title="Ver Anexo">
                                   <FileText size={16} />
                                 </a>
                               )}
@@ -318,10 +321,14 @@ function PermissaoTrabalhoPage() {
       )}
 
       {activeTab === 'sem_pt' && (
-        <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center text-center">
-          <FileText size={48} className="text-gray-300 dark:text-white/10 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Nenhuma atividade registrada</h3>
-          <p className="text-gray-500 mt-2 text-sm max-w-sm">Esta área exibirá as frentes de trabalho ou atividades que estão em andamento sem uma Permissão de Trabalho válida.</p>
+        <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center">
+          <div className="w-full max-w-4xl bg-white shadow-lg border border-gray-200 rounded-sm overflow-hidden" style={{ aspectRatio: '1 / 1.414' }}>
+            <img 
+              src="/documentos/lista-atividades-sem-pt.png" 
+              alt="Lista de Atividades que NÃO requerem Permissão de Trabalho" 
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
       )}
 
@@ -345,7 +352,7 @@ function PermissaoTrabalhoPage() {
                   value={titulo}
                   onChange={e => setTitulo(e.target.value.toUpperCase())}
                   placeholder="Ex: IÇAMENTO DE CARGAS"
-                  className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
 
@@ -358,7 +365,7 @@ function PermissaoTrabalhoPage() {
                     value={numero}
                     onChange={e => setNumero(e.target.value)}
                     placeholder="Ex: 021468"
-                    className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   />
                 </div>
                 <div>
@@ -368,7 +375,7 @@ function PermissaoTrabalhoPage() {
                     type="date" 
                     value={dataVencimento}
                     onChange={e => setDataVencimento(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   />
                 </div>
               </div>
@@ -378,10 +385,13 @@ function PermissaoTrabalhoPage() {
                 <select 
                   value={tipo}
                   onChange={e => setTipo(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 >
                   <option>PT (Permissão de Trabalho)</option>
-                  <option>APR (Análise Preliminar)</option>
+                  <option>Permissão de Trabalho em Altura</option>
+                  <option>Análise de Risco</option>
+                  <option>EBTV</option>
+                  <option>PRO</option>
                   <option>Outro</option>
                 </select>
               </div>
@@ -413,7 +423,7 @@ function PermissaoTrabalhoPage() {
                 <button 
                   type="submit" 
                   disabled={uploading}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {uploading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {uploading ? 'Salvando...' : 'Salvar Permissão'}
