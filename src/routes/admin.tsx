@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send } from 'lucide-react'
+import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'
@@ -908,6 +908,52 @@ function AdminRoute() {
                 <p className={`text-xs mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                   Requisitos: integração W-API habilitada, palestrante com usuário interno cadastrado e número de WhatsApp preenchido no perfil. Lembre-se de salvar a configuração após alterar estes botões.
                 </p>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações do App Motorista */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Smartphone size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações do App Motorista
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia mensagens automáticas quando houver registro/correção de anomalias ou alterações de status da operação.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, enabled: !prev.appMotoristaAlerts?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.appMotoristaAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.appMotoristaAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio de Alertas e Anomalias</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.appMotoristaAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.appMotoristaAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.appMotoristaAlerts?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363406691114696@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, os alertas e anomalias serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

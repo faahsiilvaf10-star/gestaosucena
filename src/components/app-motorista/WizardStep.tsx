@@ -163,27 +163,30 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         if (navigator.onLine) {
           try {
             const wSettings = await getWhatsappSettings()
-            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.anomaliaRegistrada) {
-              let text = wSettings.messageTemplates.anomaliaRegistrada
-              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', 'Pneus')
-              text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
-              const driverData = localStorage.getItem('app_motorista_driver')
-              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-              text = text.replace('{motorista}', driverName)
+            if (wSettings.appMotoristaAlerts?.enabled !== false) {
+              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+                let text = wSettings.messageTemplates.anomaliaRegistrada
+                text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replace('{tag}', equipment?.name || '-')
+                text = text.replace('{placa}', equipment?.plate_tag || '-')
+                text = text.replace('{anomalia}', 'Pneus')
+                text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
+                const driverData = localStorage.getItem('app_motorista_driver')
+                const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+                text = text.replace('{motorista}', driverName)
 
-              sendWhatsappTextOnServer({
-                data: {
-                  url: wSettings.url,
-                  token: wSettings.token,
-                  instanceId: wSettings.instanceId,
-                  phone: wSettings.groupId,
-                  text
-                }
-              }).catch(e => console.error('Erro WP', e))
+                sendWhatsappTextOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: targetPhone,
+                    text
+                  }
+                }).catch(e => console.error('Erro WP', e))
+              }
             }
           } catch (e) {}
         }
@@ -226,27 +229,30 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         if (navigator.onLine) {
           try {
             const wSettings = await getWhatsappSettings()
-            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.anomaliaRegistrada) {
-              let text = wSettings.messageTemplates.anomaliaRegistrada
-              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', 'Problema mecânico')
-              text = text.replace('{descricao}', `Item reprovado no Check-list: ${item.name}`)
-              const driverData = localStorage.getItem('app_motorista_driver')
-              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-              text = text.replace('{motorista}', driverName)
+            if (wSettings.appMotoristaAlerts?.enabled !== false) {
+              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+                let text = wSettings.messageTemplates.anomaliaRegistrada
+                text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replace('{tag}', equipment?.name || '-')
+                text = text.replace('{placa}', equipment?.plate_tag || '-')
+                text = text.replace('{anomalia}', 'Problema mecânico')
+                text = text.replace('{descricao}', `Item reprovado no Check-list: ${item.name}`)
+                const driverData = localStorage.getItem('app_motorista_driver')
+                const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+                text = text.replace('{motorista}', driverName)
 
-              sendWhatsappTextOnServer({
-                data: {
-                  url: wSettings.url,
-                  token: wSettings.token,
-                  instanceId: wSettings.instanceId,
-                  phone: wSettings.groupId,
-                  text
-                }
-              }).catch(e => console.error('Erro WP', e))
+                sendWhatsappTextOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: targetPhone,
+                    text
+                  }
+                }).catch(e => console.error('Erro WP', e))
+              }
             }
           } catch (e) {}
         }

@@ -386,6 +386,37 @@ export default function DashboardStep() {
       localStorage.removeItem('app_motorista_active_status_color')
     }
 
+    // --- DISPARO WHATSAPP STATUS ---
+    if (navigator.onLine) {
+      getWhatsappSettings().then(wSettings => {
+        if (wSettings.appMotoristaAlerts?.enabled !== false) {
+          const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+          if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.statusAlterado) {
+            let text = wSettings.messageTemplates.statusAlterado
+            text = text.replace('{hora}', format(now, 'HH:mm'))
+            text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+            text = text.replace('{tag}', equipment?.name || '-')
+            text = text.replace('{placa}', equipment?.plate_tag || '-')
+            text = text.replace('{status}', eventName)
+            const driverData = localStorage.getItem('app_motorista_driver')
+            const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+            text = text.replace('{motorista}', driverName)
+
+            sendWhatsappTextOnServer({
+              data: {
+                url: wSettings.url,
+                token: wSettings.token,
+                instanceId: wSettings.instanceId,
+                phone: targetPhone,
+                text
+              }
+            }).catch(e => console.error('Erro WP Status', e))
+          }
+        }
+      }).catch(err => console.error(err))
+    }
+    // -------------------------------
+
     localStorage.setItem('app_motorista_status_start', now.toISOString())
   }
 
@@ -936,26 +967,29 @@ export default function DashboardStep() {
           if (navigator.onLine) {
             try {
               const wSettings = await getWhatsappSettings()
-              const templateKey = 'anomaliaCorrigida'
-              if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.[templateKey]) {
-                let text = wSettings.messageTemplates[templateKey]
-                text = text.replace('{hora}', format(now, 'HH:mm'))
-                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                text = text.replace('{tag}', equipment?.name || '-')
-                text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', a.type)
-                text = text.replace('{descricao}', correctionDescription)
-                text = text.replace('{motorista}', driverName)
+              if (wSettings.appMotoristaAlerts?.enabled !== false) {
+                const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+                const templateKey = 'anomaliaCorrigida'
+                if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
+                  let text = wSettings.messageTemplates[templateKey]
+                  text = text.replace('{hora}', format(now, 'HH:mm'))
+                  text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                  text = text.replace('{tag}', equipment?.name || '-')
+                  text = text.replace('{placa}', equipment?.plate_tag || '-')
+                  text = text.replace('{anomalia}', a.type)
+                  text = text.replace('{descricao}', correctionDescription)
+                  text = text.replace('{motorista}', driverName)
 
-                sendWhatsappTextOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: wSettings.groupId,
-                    text
-                  }
-                }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+                  sendWhatsappTextOnServer({
+                    data: {
+                      url: wSettings.url,
+                      token: wSettings.token,
+                      instanceId: wSettings.instanceId,
+                      phone: targetPhone,
+                      text
+                    }
+                  }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+                }
               }
             } catch (err) {}
           }
@@ -1034,27 +1068,30 @@ export default function DashboardStep() {
         if (navigator.onLine) {
           try {
             const wSettings = await getWhatsappSettings()
-            const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
-            if (wSettings.url && wSettings.token && wSettings.instanceId && wSettings.groupId && wSettings.messageTemplates?.[templateKey]) {
-              let text = wSettings.messageTemplates[templateKey]
-              text = text.replace('{hora}', format(now, 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', anomalyType)
-              text = text.replace('{descricao}', anomalyDescription)
-              text = text.replace('{motorista}', driverName)
+            if (wSettings.appMotoristaAlerts?.enabled !== false) {
+              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+              const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
+              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
+                let text = wSettings.messageTemplates[templateKey]
+                text = text.replace('{hora}', format(now, 'HH:mm'))
+                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replace('{tag}', equipment?.name || '-')
+                text = text.replace('{placa}', equipment?.plate_tag || '-')
+                text = text.replace('{anomalia}', anomalyType)
+                text = text.replace('{descricao}', anomalyDescription)
+                text = text.replace('{motorista}', driverName)
 
-              // Dispara no modo fire-and-forget
-              sendWhatsappTextOnServer({
-                data: {
-                  url: wSettings.url,
-                  token: wSettings.token,
-                  instanceId: wSettings.instanceId,
-                  phone: wSettings.groupId,
-                  text
-                }
-              }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+                // Dispara no modo fire-and-forget
+                sendWhatsappTextOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: targetPhone,
+                    text
+                  }
+                }).catch(e => console.error('Erro ao disparar WP anomalia', e))
+              }
             }
           } catch (err) {
             console.error('Falha ao tentar notificar WhatsApp', err)

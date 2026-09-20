@@ -68,6 +68,10 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  appMotoristaAlerts?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     ddsHoje: string;
     ddsAmanha: string;
@@ -77,6 +81,7 @@ export type WhatsappSettings = {
     requisicaoEpi: string;
     anomaliaRegistrada: string;
     anomaliaCorrigida: string;
+    statusAlterado: string;
   };
 }
 
@@ -104,6 +109,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: false,
     specificGroupId: ''
   },
+  appMotoristaAlerts: {
+    enabled: true,
+    specificGroupId: ''
+  },
   messageTemplates: {
     ddsHoje: '🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
     ddsAmanha: '🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
@@ -112,7 +121,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
     listaPresenca: '📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}',
     requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}',
     anomaliaRegistrada: '🚨 *NOVA ANOMALIA REPORTADA* 🚨\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Anomalia:* {anomalia}\n📝 *Descrição:* {descricao}\n👤 *Motorista:* {motorista}',
-    anomaliaCorrigida: '✅ *ANOMALIA CORRIGIDA* ✅\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}'
+    anomaliaCorrigida: '✅ *ANOMALIA CORRIGIDA* ✅\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}',
+    statusAlterado: '🚜 *MUDANÇA DE STATUS* 🚜\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n🔄 *Novo Status:* {status}\n👤 *Motorista:* {motorista}'
   }
 }
 
