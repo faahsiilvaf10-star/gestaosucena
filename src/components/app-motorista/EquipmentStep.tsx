@@ -16,7 +16,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
     try {
       const { data, error } = await supabase
         .from('eq_equipments')
-        .select('id, name, plate_tag, category, type, location_status, current_driver, environment, status, updated_at, last_exit_reason')
+        .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
         .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .order('name', { ascending: true })
       
