@@ -8,7 +8,7 @@ import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { CalendarDays, Gift, MapPin, X, AlertTriangle } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { subDays, addDays, format, getMonth } from 'date-fns'
+import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
 
@@ -135,6 +135,29 @@ function DashboardComponent() {
       }
     },
     refetchInterval: 300000 // Refaz a cada 5 min
+  })
+
+  // Buscar Permissões de Trabalho (PTs) vencendo em até 5 dias ou vencidas
+  const { data: expiringPTs = [] } = useQuery({
+    queryKey: ['expiring_pts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('permissao_trabalho')
+        .select('*')
+        .order('data_vencimento', { ascending: true })
+      
+      if (error) return []
+      
+      const today = new Date()
+      today.setHours(0,0,0,0)
+      
+      return data.filter((pt: any) => {
+        const vencDate = parseISO(pt.data_vencimento)
+        vencDate.setHours(0,0,0,0)
+        const diff = differenceInDays(vencDate, today)
+        return diff <= 5 // Vencendo em 5 dias ou menos (inclui vencidas)
+      })
+    }
   })
 
   // Buscar efetivo completo para contagem e aniversariantes/ASO
@@ -354,6 +377,22 @@ function DashboardComponent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 pb-12">
+          
+          {/* ALERTA PT VENCENDO */}
+          {expiringPTs.length > 0 && (
+            <div className="col-span-1 md:col-span-12 dashboard-card bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-red-500/20 transition-colors" onClick={() => navigate({ to: '/permissao-trabalho' })}>
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-red-500" size={24} />
+                <div>
+                  <h3 className="font-bold text-red-500 dark:text-red-400">Alerta de Permissão de Trabalho</h3>
+                  <p className="text-sm text-red-600 dark:text-red-300">Você tem {expiringPTs.length} permiss{expiringPTs.length > 1 ? 'ões' : 'ão'} de trabalho vencendo nos próximos 5 dias ou já vencida(s).</p>
+                </div>
+              </div>
+              <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+                Ver detalhes
+              </button>
+            </div>
+          )}
           
           {/* TOTAL FUNCIONARIOS */}
           <div className="dashboard-card neon-card neon-blue col-span-1 md:col-span-4 relative pb-8">

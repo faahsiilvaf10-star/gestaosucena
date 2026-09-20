@@ -294,15 +294,6 @@ body {
   display: grid;
   place-items: center;
 
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.90),
-      rgba(158, 197, 255, 0.22)
-    );
-
   color: #7a9bc5;
 }
 

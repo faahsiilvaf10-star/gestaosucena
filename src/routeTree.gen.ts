@@ -46,6 +46,7 @@ import { Route as MeioAmbienteCaixaDaguaRouteImport } from './routes/meio-ambien
 import { Route as MeioAmbienteConsumoRouteImport } from './routes/meio-ambiente/consumo'
 import { Route as MeioAmbientePluviometriaRouteImport } from './routes/meio-ambiente/pluviometria'
 import { Route as MeioAmbienteResiduosRouteImport } from './routes/meio-ambiente/residuos'
+import { Route as PermissaoTrabalhoIndexRouteImport } from './routes/permissao-trabalho/index'
 import { Route as RelatorioObraIndexRouteImport } from './routes/relatorio-obra/index'
 import { Route as RelatorioObraGabiaoRouteImport } from './routes/relatorio-obra/gabiao'
 import { Route as RelatorioObraJardinagemRouteImport } from './routes/relatorio-obra/jardinagem'
@@ -252,6 +253,11 @@ const MeioAmbienteResiduosRoute = MeioAmbienteResiduosRouteImport.update({
   path: '/residuos',
   getParentRoute: () => MeioAmbienteRoute,
 } as any)
+const PermissaoTrabalhoIndexRoute = PermissaoTrabalhoIndexRouteImport.update({
+  id: '/permissao-trabalho/',
+  path: '/permissao-trabalho/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatorioObraIndexRoute = RelatorioObraIndexRouteImport.update({
   id: '/relatorio-obra/',
   path: '/relatorio-obra/',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
+  '/permissao-trabalho/': typeof PermissaoTrabalhoIndexRoute
   '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
   '/seguranca/': typeof SegurancaIndexRoute
@@ -431,6 +438,7 @@ export interface FileRoutesByTo {
   '/equipamentos': typeof EquipamentosIndexRoute
   '/instacena': typeof InstacenaIndexRoute
   '/meio-ambiente': typeof MeioAmbienteIndexRoute
+  '/permissao-trabalho': typeof PermissaoTrabalhoIndexRoute
   '/relatorio-obra': typeof RelatorioObraIndexRoute
   '/rh': typeof RhIndexRoute
   '/seguranca': typeof SegurancaIndexRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/equipamentos/': typeof EquipamentosIndexRoute
   '/instacena/': typeof InstacenaIndexRoute
   '/meio-ambiente/': typeof MeioAmbienteIndexRoute
+  '/permissao-trabalho/': typeof PermissaoTrabalhoIndexRoute
   '/relatorio-obra/': typeof RelatorioObraIndexRoute
   '/rh/': typeof RhIndexRoute
   '/seguranca/': typeof SegurancaIndexRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/meio-ambiente/'
+    | '/permissao-trabalho/'
     | '/relatorio-obra/'
     | '/rh/'
     | '/seguranca/'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/equipamentos'
     | '/instacena'
     | '/meio-ambiente'
+    | '/permissao-trabalho'
     | '/relatorio-obra'
     | '/rh'
     | '/seguranca'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/equipamentos/'
     | '/instacena/'
     | '/meio-ambiente/'
+    | '/permissao-trabalho/'
     | '/relatorio-obra/'
     | '/rh/'
     | '/seguranca/'
@@ -676,6 +688,7 @@ export interface RootRouteChildren {
   RelatorioObraJardinagemRoute: typeof RelatorioObraJardinagemRoute
   RelatorioObraRdoRoute: typeof RelatorioObraRdoRoute
   DocumentosIndexRoute: typeof DocumentosIndexRoute
+  PermissaoTrabalhoIndexRoute: typeof PermissaoTrabalhoIndexRoute
   RelatorioObraIndexRoute: typeof RelatorioObraIndexRoute
 }
 
@@ -940,6 +953,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeioAmbienteResiduosRouteImport
       parentRoute: typeof MeioAmbienteRoute
     }
+    '/permissao-trabalho/': {
+      id: '/permissao-trabalho/'
+      path: '/permissao-trabalho'
+      fullPath: '/permissao-trabalho/'
+      preLoaderRoute: typeof PermissaoTrabalhoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorio-obra/': {
       id: '/relatorio-obra/'
       path: '/relatorio-obra'
@@ -1201,6 +1221,7 @@ const rootRouteChildren: RootRouteChildren = {
   RelatorioObraJardinagemRoute: RelatorioObraJardinagemRoute,
   RelatorioObraRdoRoute: RelatorioObraRdoRoute,
   DocumentosIndexRoute: DocumentosIndexRoute,
+  PermissaoTrabalhoIndexRoute: PermissaoTrabalhoIndexRoute,
   RelatorioObraIndexRoute: RelatorioObraIndexRoute,
 }
 export const routeTree = rootRouteImport

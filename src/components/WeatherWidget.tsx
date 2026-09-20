@@ -15,7 +15,7 @@ import { useTheme } from '../contexts/ThemeContext'
 
 // WMO Weather interpretation codes
 function getWeatherDetails(code: number) {
-  if (code === 0) return { label: 'Céu Limpo', icon: <Sun className="text-yellow-500" size={32} /> }
+  if (code === 0) return { label: 'Céu Limpo', icon: <img src="/icons/sun.png" alt="Sol" className="w-16 h-16 object-contain" /> }
   if (code === 1 || code === 2) return { label: 'Parcialmente Nublado', icon: <Cloud className="text-slate-500 dark:text-slate-300" size={32} /> }
   if (code === 3) return { label: 'Nublado', icon: <Cloud className="text-slate-600 dark:text-slate-400" size={32} /> }
   if (code === 45 || code === 48) return { label: 'Neblina', icon: <CloudFog className="text-slate-500 dark:text-slate-400" size={32} /> }
