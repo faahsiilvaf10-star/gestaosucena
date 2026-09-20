@@ -208,9 +208,31 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
 
       const otherAnomalies = checklist.filter(item => item.status === 'nao_conforme' && item.name !== 'Pneus')
       for (const item of otherAnomalies) {
+        // Build detailed description per item type
+        let anomalyType = item.name
+        let anomalyDesc = ''
+        if (item.name === 'Freios') {
+          anomalyType = 'Freios'
+          anomalyDesc = brakesObservation || 'Problema nos freios relatado no check-list'
+        } else if (item.name === 'Buzina') {
+          anomalyType = 'Buzina'
+          anomalyDesc = hornObservation || 'Problema na buzina relatado no check-list'
+        } else if (item.name === 'Faróis') {
+          anomalyType = 'Faróis'
+          anomalyDesc = lightsIssues.length > 0
+            ? `Peças com problema: ${lightsIssues.join(', ')}${lightsObservation ? ` - ${lightsObservation}` : ''}`
+            : lightsObservation || 'Problema nos faróis relatado no check-list'
+        } else {
+          anomalyDesc = `Item reprovado: ${item.name}`
+        }
+
+        const statusLabel = lightsIssues.length > 0 && item.name === 'Faróis'
+          ? `Anomalia Checklist: Faróis - ${lightsIssues.join(', ')}`
+          : `Anomalia Checklist: ${item.name}`
+
         initialTimeline.push({
           time: nowISO,
-          name: `Anomalia Checklist: ${item.name}`,
+          name: statusLabel,
           type: 'Anomalia',
           color: 'bg-red-500'
         })
@@ -219,7 +241,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           equipment_id: equipmentId,
           driver_id: userId,
           previous_status: 'Jornada Iniciada',
-          new_status: `Anomalia Checklist: ${item.name}`,
+          new_status: statusLabel,
           created_at: nowISO
         })
 
@@ -228,14 +250,14 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           id: anomalyId,
           equipment_id: equipmentId,
           driver_id: userId,
-          anomaly_type: 'Problema mecânico',
-          description: `Anomalia Checklist: ${item.name}`,
+          anomaly_type: anomalyType,
+          description: anomalyDesc,
           status: 'Pendente',
           reported_at: nowISO
         })
 
         const activeAnomalies = JSON.parse(localStorage.getItem('app_motorista_active_anomalies') || '[]')
-        activeAnomalies.push({ id: anomalyId, type: 'Problema mecânico', description: `Checklist: ${item.name}` })
+        activeAnomalies.push({ id: anomalyId, type: anomalyType, description: anomalyDesc })
         localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP CHECKLIST ---
@@ -250,8 +272,8 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                 text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
                 text = text.replace('{tag}', equipment?.name || '-')
                 text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', 'Problema mecânico')
-                text = text.replace('{descricao}', `Item reprovado no Check-list: ${item.name}`)
+                text = text.replace('{anomalia}', anomalyType)
+                text = text.replace('{descricao}', anomalyDesc)
                 const driverData = localStorage.getItem('app_motorista_driver')
                 const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
                 text = text.replace('{motorista}', driverName)
@@ -579,6 +601,246 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
                 className="flex-1 py-4 font-bold text-white bg-red-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-red-500/30"
               >
                 {tireModalStep === 'select' ? 'Avançar' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BRAKES MODAL */}
+      {isBrakesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <AlertTriangle className="text-red-500" /> Freios com Problema
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com os freios.</p>
+            </div>
+            <div className="p-6 bg-gray-50 dark:bg-zinc-950/50">
+              <textarea
+                className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none text-gray-700 dark:text-gray-200 h-32"
+                placeholder="Ex: Pedal mole, barulho ao frear, freio travando..."
+                value={brakesObservation}
+                onChange={(e) => setBrakesObservation(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-white dark:bg-zinc-900">
+              <button
+                onClick={() => {
+                  setIsBrakesModalOpen(false)
+                  setBrakesObservation('')
+                  setChecklist(prev => prev.map(item => item.name === 'Freios' ? { ...item, status: 'conforme' } : item))
+                }}
+                className="flex-1 py-4 font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl active:scale-[0.98] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!brakesObservation.trim()) {
+                    alert('Por favor, descreva o problema nos freios.')
+                    return
+                  }
+                  setIsBrakesModalOpen(false)
+                }}
+                className="flex-1 py-4 font-bold text-white bg-red-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-red-500/30"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HORN MODAL */}
+      {isHornModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <AlertTriangle className="text-red-500" /> Buzina com Problema
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com a buzina.</p>
+            </div>
+            <div className="p-6 bg-gray-50 dark:bg-zinc-950/50">
+              <textarea
+                className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none text-gray-700 dark:text-gray-200 h-32"
+                placeholder="Ex: Buzina não funciona, som fraco, travada..."
+                value={hornObservation}
+                onChange={(e) => setHornObservation(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-white dark:bg-zinc-900">
+              <button
+                onClick={() => {
+                  setIsHornModalOpen(false)
+                  setHornObservation('')
+                  setChecklist(prev => prev.map(item => item.name === 'Buzina' ? { ...item, status: 'conforme' } : item))
+                }}
+                className="flex-1 py-4 font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl active:scale-[0.98] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!hornObservation.trim()) {
+                    alert('Por favor, descreva o problema na buzina.')
+                    return
+                  }
+                  setIsHornModalOpen(false)
+                }}
+                className="flex-1 py-4 font-bold text-white bg-red-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-red-500/30"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LIGHTS MODAL */}
+      {isLightsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 pb-4 border-b border-gray-100 dark:border-zinc-800">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <AlertTriangle className="text-yellow-500" /> Faróis com Problema
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Toque nas peças que estão com defeito ou queimadas.</p>
+            </div>
+
+            <div className="p-4 flex-1 overflow-y-auto bg-gray-50 dark:bg-zinc-950/50">
+              {/* FRONT */}
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 text-center">Frente do Caminhão</p>
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 mb-4">
+                {/* Truck front drawing */}
+                <div className="relative flex justify-center items-end mb-3">
+                  {/* cab shape */}
+                  <div className="w-36 h-16 bg-gray-200 dark:bg-zinc-700 rounded-t-2xl rounded-b-md flex items-end justify-between px-1 pb-1">
+                    {/* left headlight area */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Farol Esquerdo (Frente)') ? prev.filter(x => x !== 'Farol Esquerdo (Frente)') : [...prev, 'Farol Esquerdo (Frente)'])}
+                        className={`w-8 h-4 rounded-sm text-[9px] font-bold transition-all ${ lightsIssues.includes('Farol Esquerdo (Frente)') ? 'bg-red-500 text-white' : 'bg-yellow-300 text-yellow-900' }`}
+                        title="Farol Esquerdo Frente"
+                      >FE</button>
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Pisca Esquerdo (Frente)') ? prev.filter(x => x !== 'Pisca Esquerdo (Frente)') : [...prev, 'Pisca Esquerdo (Frente)'])}
+                        className={`w-8 h-3 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Pisca Esquerdo (Frente)') ? 'bg-red-500 text-white' : 'bg-orange-300 text-orange-900' }`}
+                        title="Pisca Esquerdo Frente"
+                      >PE</button>
+                    </div>
+                    {/* center grill */}
+                    <div className="flex-1 mx-1 h-8 bg-gray-300 dark:bg-zinc-600 rounded flex items-center justify-center">
+                      <div className="grid grid-cols-3 gap-0.5">
+                        {Array.from({length:6}).map((_,i) => <div key={i} className="w-1.5 h-2 bg-gray-400 dark:bg-zinc-500 rounded-sm"/>)}
+                      </div>
+                    </div>
+                    {/* right headlight area */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Farol Direito (Frente)') ? prev.filter(x => x !== 'Farol Direito (Frente)') : [...prev, 'Farol Direito (Frente)'])}
+                        className={`w-8 h-4 rounded-sm text-[9px] font-bold transition-all ${ lightsIssues.includes('Farol Direito (Frente)') ? 'bg-red-500 text-white' : 'bg-yellow-300 text-yellow-900' }`}
+                        title="Farol Direito Frente"
+                      >FD</button>
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Pisca Direito (Frente)') ? prev.filter(x => x !== 'Pisca Direito (Frente)') : [...prev, 'Pisca Direito (Frente)'])}
+                        className={`w-8 h-3 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Pisca Direito (Frente)') ? 'bg-red-500 text-white' : 'bg-orange-300 text-orange-900' }`}
+                        title="Pisca Direito Frente"
+                      >PD</button>
+                    </div>
+                  </div>
+                </div>
+                {/* Legend front */}
+                <div className="flex flex-wrap gap-1.5 justify-center text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-yellow-300 rounded inline-block"/> Farol</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-orange-300 rounded inline-block"/> Pisca</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-red-500 rounded inline-block"/> Queimado/Defeito</span>
+                </div>
+              </div>
+
+              {/* REAR */}
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 text-center">Traseira do Caminhão</p>
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 mb-4">
+                <div className="relative flex justify-center items-end mb-3">
+                  <div className="w-36 h-14 bg-gray-200 dark:bg-zinc-700 rounded-xl flex items-center justify-between px-1">
+                    {/* left rear */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Lanterna Esquerda (Traseira)') ? prev.filter(x => x !== 'Lanterna Esquerda (Traseira)') : [...prev, 'Lanterna Esquerda (Traseira)'])}
+                        className={`w-8 h-5 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Lanterna Esquerda (Traseira)') ? 'bg-red-500 text-white' : 'bg-red-300 text-red-900' }`}
+                        title="Lanterna Esquerda Traseira"
+                      >LE</button>
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Pisca Esquerdo (Traseira)') ? prev.filter(x => x !== 'Pisca Esquerdo (Traseira)') : [...prev, 'Pisca Esquerdo (Traseira)'])}
+                        className={`w-8 h-3 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Pisca Esquerdo (Traseira)') ? 'bg-red-500 text-white' : 'bg-orange-300 text-orange-900' }`}
+                        title="Pisca Esquerdo Traseira"
+                      >PE</button>
+                    </div>
+                    {/* center bar */}
+                    <div className="flex-1 mx-1 h-3 bg-gray-300 dark:bg-zinc-600 rounded"/>
+                    {/* right rear */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Lanterna Direita (Traseira)') ? prev.filter(x => x !== 'Lanterna Direita (Traseira)') : [...prev, 'Lanterna Direita (Traseira)'])}
+                        className={`w-8 h-5 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Lanterna Direita (Traseira)') ? 'bg-red-500 text-white' : 'bg-red-300 text-red-900' }`}
+                        title="Lanterna Direita Traseira"
+                      >LD</button>
+                      <button
+                        onClick={() => setLightsIssues(prev => prev.includes('Pisca Direito (Traseira)') ? prev.filter(x => x !== 'Pisca Direito (Traseira)') : [...prev, 'Pisca Direito (Traseira)'])}
+                        className={`w-8 h-3 rounded-sm text-[8px] font-bold transition-all ${ lightsIssues.includes('Pisca Direito (Traseira)') ? 'bg-red-500 text-white' : 'bg-orange-300 text-orange-900' }`}
+                        title="Pisca Direito Traseira"
+                      >PD</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 justify-center text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-red-300 rounded inline-block"/> Lanterna</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-orange-300 rounded inline-block"/> Pisca</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-2 bg-red-500 rounded inline-block"/> Defeito</span>
+                </div>
+              </div>
+
+              {/* Observation */}
+              {lightsIssues.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Peças selecionadas: <span className="text-red-500 font-semibold">{lightsIssues.join(', ')}</span></p>
+                  <textarea
+                    className="w-full p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 resize-none text-gray-700 dark:text-gray-200 h-20 text-sm"
+                    placeholder="Observação adicional (opcional)..."
+                    value={lightsObservation}
+                    onChange={(e) => setLightsObservation(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-white dark:bg-zinc-900">
+              <button
+                onClick={() => {
+                  setIsLightsModalOpen(false)
+                  setLightsIssues([])
+                  setLightsObservation('')
+                  setChecklist(prev => prev.map(item => item.name === 'Faróis' ? { ...item, status: 'conforme' } : item))
+                }}
+                className="flex-1 py-4 font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl active:scale-[0.98] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (lightsIssues.length === 0) {
+                    alert('Selecione pelo menos uma peça com defeito, ou cancele.')
+                    return
+                  }
+                  setIsLightsModalOpen(false)
+                }}
+                className="flex-1 py-4 font-bold text-white bg-yellow-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-yellow-500/30"
+              >
+                Confirmar
               </button>
             </div>
           </div>
