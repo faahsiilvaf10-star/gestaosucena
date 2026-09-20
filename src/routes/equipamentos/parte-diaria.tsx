@@ -1150,6 +1150,16 @@ function VehicleCard({ vehicle, history = [], dispatch, onClearJourney, onRefres
             ) : (
               <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
+                  {dispatch && (
+                    <TimelineItem
+                      key="dispatch-start"
+                      time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                      title="Jornada Iniciada"
+                      subtitle={`Motorista: ${driverName}`}
+                      status="in-progress"
+                      isLast={false}
+                    />
+                  )}
                   {history.map((h, i) => {
                     const translatedNewStatus = translateStatus(h.new_status)
                     const translatedPrevStatus = translateStatus(h.previous_status)
