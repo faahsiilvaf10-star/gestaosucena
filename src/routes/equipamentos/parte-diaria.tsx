@@ -7,7 +7,7 @@ import {
   MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
   Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit,
-  Waves, Droplet, Sprout, Fuel, CloudRain, Car, Plus, Save, Pencil
+  Waves, Droplet, Sprout, Fuel, CloudRain, Car, Plus, Save, Pencil, ArrowUp, ArrowDown
 } from 'lucide-react'
 
 export const ICON_MAP: Record<string, any> = {
@@ -87,6 +87,8 @@ function ParteDiariaPage() {
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([])
   const [isEditingActivity, setIsEditingActivity] = useState<boolean>(false)
   const [editingActivity, setEditingActivity] = useState<Partial<EquipmentActivity>>({})
+  const [isSavingActivityOrder, setIsSavingActivityOrder] = useState(false)
+  const [hasUnsavedActivityOrder, setHasUnsavedActivityOrder] = useState(false)
 
   useEffect(() => {
     const loadActivitiesAndTypes = async () => {
@@ -118,6 +120,7 @@ function ParteDiariaPage() {
     const { success } = await setEquipmentActivities(newList)
     if (success) {
       setActivities(newList)
+      setHasUnsavedActivityOrder(false)
       setIsEditingActivity(false)
       setEditingActivity({})
     } else {
@@ -131,6 +134,32 @@ function ParteDiariaPage() {
     const { success } = await setEquipmentActivities(newList)
     if (success) {
       setActivities(newList)
+      setHasUnsavedActivityOrder(false)
+    }
+  }
+
+  const moveActivity = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= activities.length) return
+
+    const reordered = [...activities]
+    const [activity] = reordered.splice(index, 1)
+    reordered.splice(targetIndex, 0, activity)
+    setActivities(reordered)
+    setHasUnsavedActivityOrder(true)
+  }
+
+  const handleSaveActivityOrder = async () => {
+    if (!hasUnsavedActivityOrder) return
+
+    setIsSavingActivityOrder(true)
+    const { success } = await setEquipmentActivities(activities)
+    setIsSavingActivityOrder(false)
+
+    if (success) {
+      setHasUnsavedActivityOrder(false)
+    } else {
+      alert('Erro ao salvar a ordem das atividades')
     }
   }
 
@@ -617,6 +646,7 @@ function ParteDiariaPage() {
             ) : (
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 {activities.map((act) => {
+                  const activityIndex = activities.findIndex(activity => activity.id === act.id)
                   const Icon = ICON_MAP[act.icon] || MapPin;
                   return (
                     <div key={act.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 group hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
@@ -631,7 +661,25 @@ function ParteDiariaPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveActivity(activityIndex, -1)}
+                          disabled={activityIndex === 0}
+                          aria-label={`Mover ${act.name} para cima`}
+                          title="Mover para cima"
+                          className="p-1.5 text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+                        >
+                          <ArrowUp size={16} />
+                        </button>
+                        <button
+                          onClick={() => moveActivity(activityIndex, 1)}
+                          disabled={activityIndex === activities.length - 1}
+                          aria-label={`Mover ${act.name} para baixo`}
+                          title="Mover para baixo"
+                          className="p-1.5 text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+                        >
+                          <ArrowDown size={16} />
+                        </button>
                         <button onClick={() => { setEditingActivity(act); setIsEditingActivity(true); }} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20">
                           <Pencil size={16} />
                         </button>
@@ -645,6 +693,19 @@ function ParteDiariaPage() {
                 {activities.length === 0 && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma atividade cadastrada.</p>
                 )}
+                <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 pt-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Use as setas para definir a posição fixa.
+                  </span>
+                  <button
+                    onClick={handleSaveActivityOrder}
+                    disabled={!hasUnsavedActivityOrder || isSavingActivityOrder}
+                    className="shrink-0 px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center gap-2 rounded-md"
+                  >
+                    <Save size={16} />
+                    {isSavingActivityOrder ? 'Salvando...' : 'Salvar ordem'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
