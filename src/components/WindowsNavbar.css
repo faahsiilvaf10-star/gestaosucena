@@ -1746,9 +1746,9 @@
 }
 
 /* ==========================================================
-   DESKTOP OVERRIDES
-   ========================================================== */
-@media (min-width: 1024px) {
+  DESKTOP OVERRIDES
+  ========================================================== */
+@media (min-width: 1536px) {
   .sucena-mobile-header,
   .sucena-drawer,
   .sucena-drawer-backdrop {

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export type Cinta = {
   id: string
@@ -52,7 +53,7 @@ interface CintasState {
   inspecionarCinta: (id: string, dataInspecao: string, observacoes: string, novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => void
 }
 
-export const useCintasStore = create<CintasState>((set) => ({
+export const useCintasStore = create<CintasState>()(persist((set) => ({
   cintas: initialCintas,
   historico: initialHistory,
   inspecionarCinta: (id, dataInspecao, observacoes, novoStatus) => set((state) => {
@@ -90,4 +91,6 @@ export const useCintasStore = create<CintasState>((set) => ({
       historico: [novoHistorico, ...state.historico]
     }
   })
+}), {
+  name: 'sucena-cintas-inspecoes',
 }))

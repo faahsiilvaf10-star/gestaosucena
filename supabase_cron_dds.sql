@@ -102,7 +102,12 @@ BEGIN
   -- Preparar o Endpoint
   v_endpoint := trim(trailing '/' from (v_settings->>'url'));
   IF v_endpoint LIKE '%painel.w-api.app%' THEN
-    v_endpoint := 'https://api.w-api.app/message/sendText/' || (v_settings->>'instanceId');
+    v_endpoint := 'https://api.w-api.app/v1/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+  ELSIF v_endpoint LIKE '%api.w-api.app%' THEN
+    IF v_endpoint NOT LIKE '%/v1' THEN
+      v_endpoint := v_endpoint || '/v1';
+    END IF;
+    v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSE
     v_endpoint := v_endpoint || '/message/sendText/' || (v_settings->>'instanceId');
   END IF;
@@ -121,7 +126,8 @@ BEGIN
         body := v_payload_group,
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'Authorization', 'Bearer ' || (v_settings->>'token')
+          'Authorization', 'Bearer ' || (v_settings->>'token'),
+          'apikey', (v_settings->>'token')
         )
     ) INTO v_req_id_group;
   END IF;
@@ -143,7 +149,8 @@ BEGIN
         body := v_payload_private,
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'Authorization', 'Bearer ' || (v_settings->>'token')
+          'Authorization', 'Bearer ' || (v_settings->>'token'),
+          'apikey', (v_settings->>'token')
         )
     ) INTO v_req_id_private;
   END IF;

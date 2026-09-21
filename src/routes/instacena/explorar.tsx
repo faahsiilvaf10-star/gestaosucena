@@ -71,11 +71,12 @@ function ExplorarRoute() {
           
           const { data: profilesData } = await supabase
             .from('social_profiles')
-            .select('user_id, display_name, avatar_url, username')
+            .select('id, user_id, display_name, avatar_url, username')
             .in('user_id', Array.from(userIds))
             
           const profileMap = (profilesData || []).reduce((acc: any, prof) => {
             acc[prof.user_id] = prof
+            acc[prof.id] = prof
             return acc
           }, {})
           

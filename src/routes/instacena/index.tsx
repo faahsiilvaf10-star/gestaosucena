@@ -107,13 +107,34 @@ function FeedRoute() {
       
       const { data: profilesData } = await supabase
         .from('social_profiles')
-        .select('user_id, display_name, avatar_url, username')
+        .select('id, user_id, display_name, avatar_url, username')
         .in('user_id', Array.from(userIds))
         
       const profileMap = (profilesData || []).reduce((acc: any, profile) => {
         acc[profile.user_id] = profile
+        acc[profile.id] = profile
         return acc
       }, {})
+
+      // Perfis criados antes do Instacena podem ainda estar com o nome genérico.
+      // Administradores já possuem acesso seguro aos metadados reais pelo RPC existente.
+      if (userProfile && isAdmin(userProfile.display_name, userProfile.role)) {
+        const { data: authUsers } = await supabase.rpc('admin_list_users')
+        authUsers?.forEach((authUser: any) => {
+          const profile = profileMap[authUser.id]
+          if (!profile || profile.display_name === 'Usuário' || profile.username?.startsWith('user_')) {
+            const resolvedProfile = {
+              ...profile,
+              user_id: authUser.id,
+              display_name: authUser.name || profile?.display_name || 'Usuário',
+              avatar_url: authUser.avatar_url || profile?.avatar_url || '',
+              username: profile?.username || `user_${authUser.id.replace(/-/g, '').slice(0, 12)}`,
+            }
+            profileMap[authUser.id] = resolvedProfile
+            if (profile?.id) profileMap[profile.id] = resolvedProfile
+          }
+        })
+      }
       
       const stitchedPosts = postsData.map(post => {
         const comments = post.social_comments || []
@@ -148,9 +169,43 @@ function FeedRoute() {
           .from('social_profiles')
           .select('*')
           .eq('user_id', user.id)
-          .single()
-        userProfile = profile
-        setCurrentUser(profile)
+          .maybeSingle()
+
+        if (profile) {
+          const metadata = user.user_metadata || {}
+          const displayName = metadata.full_name || metadata.name
+          const avatarUrl = metadata.avatar_url
+          const needsSync = Boolean(displayName && (profile.display_name === 'Usuário' || profile.username?.startsWith('user_')))
+
+          if (needsSync) {
+            const { data: syncedProfile } = await supabase
+              .from('social_profiles')
+              .update({ display_name: displayName, avatar_url: avatarUrl || profile.avatar_url || '' })
+              .eq('user_id', user.id)
+              .select('*')
+              .single()
+            userProfile = syncedProfile || { ...profile, display_name: displayName, avatar_url: avatarUrl || profile.avatar_url || '' }
+          } else {
+            userProfile = profile
+          }
+        } else {
+          const metadata = user.user_metadata || {}
+          const displayName = metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Usuário'
+          const username = `user_${user.id.replace(/-/g, '').slice(0, 12)}`
+          const { data: createdProfile } = await supabase
+            .from('social_profiles')
+            .insert({
+              user_id: user.id,
+              username,
+              display_name: displayName,
+              avatar_url: metadata.avatar_url || '',
+            })
+            .select('*')
+            .single()
+
+          userProfile = createdProfile
+        }
+        setCurrentUser(userProfile)
       }
 
       // Fetch Stories
@@ -164,11 +219,12 @@ function FeedRoute() {
         const storyUserIds = [...new Set(storiesData.map(s => s.user_id))]
         const { data: storyProfiles } = await supabase
           .from('social_profiles')
-          .select('user_id, display_name, avatar_url, username')
+          .select('id, user_id, display_name, avatar_url, username')
           .in('user_id', storyUserIds)
           
         const storyProfileMap = (storyProfiles || []).reduce((acc: any, profile) => {
           acc[profile.user_id] = profile
+          acc[profile.id] = profile
           return acc
         }, {})
         
@@ -734,8 +790,8 @@ function FeedRoute() {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-bold text-[15px] flex items-center">
-                      {post.social_profiles?.display_name || 'Usuário'}
-                      {isAdmin(post.social_profiles?.display_name) && <VerifiedBadge />}
+                      {post.social_profiles?.display_name || post.social_profiles?.username || 'Usuário'}
+                      {isAdmin(post.social_profiles?.display_name || post.social_profiles?.username) && <VerifiedBadge />}
                     </span>
                     <span className="text-[12px] text-gray-500">
                       {formatPostTime(post.created_at)} • 

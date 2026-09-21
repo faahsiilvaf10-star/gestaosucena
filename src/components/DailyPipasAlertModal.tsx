@@ -3,19 +3,19 @@ import { supabase } from '../lib/supabase';
 import { Droplet, X } from 'lucide-react';
 import { format } from 'date-fns';
 
-export function DailyPipasAlertModal() {
+export function DailyPipasAlertModal({ enabled }: { enabled: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [pipas, setPipas] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return
+
     const checkTime = async () => {
       const now = new Date();
       const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, 5 = Friday
-      const hours = now.getHours();
-      
-      // Segunda a Sexta e hora = 8
-      if (dayOfWeek >= 1 && dayOfWeek <= 5 && hours === 8) {
+      // Exibe na primeira entrada autenticada do dia útil, independentemente do horário.
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         const todayStr = format(now, 'yyyy-MM-dd');
         const lastShown = localStorage.getItem('last_pipas_alert_date');
         
@@ -47,28 +47,30 @@ export function DailyPipasAlertModal() {
     checkTime();
     const interval = setInterval(checkTime, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [enabled]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-200">
-        <div className="bg-blue-600 p-6 flex flex-col items-center relative text-white">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+      <div className="bg-white dark:bg-[#1e1e1e] w-[min(92vw,720px)] max-h-[min(86vh,760px)] overflow-y-auto rounded-2xl shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+        <div className="bg-blue-600 p-6 md:p-8 flex items-center gap-4 relative text-white">
           <button 
             onClick={() => setIsOpen(false)}
             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+          <div className="w-14 h-14 shrink-0 bg-white/20 rounded-full flex items-center justify-center">
             <Droplet size={32} className="text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-center">Comunicado Diário</h2>
-          <p className="text-blue-100 font-medium text-center mt-1">Status dos Caminhões Pipa na Obra</p>
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold">Comunicado Diário</h2>
+            <p className="text-blue-100 font-medium mt-1">Status dos Caminhões Pipa na Obra</p>
+          </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 md:p-8">
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
             Abaixo estão listados os Caminhões Pipa que se encontram <strong>dentro da obra</strong> no momento:
           </p>

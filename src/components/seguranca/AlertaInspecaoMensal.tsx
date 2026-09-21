@@ -23,6 +23,13 @@ const mesesInspecao = [
   { label: 'dezembro de 2026', cor: 'Verde' as const },
 ]
 
+function isInspecionadaNesteMes(cinta: Cinta, referenceDate = new Date()) {
+  if (cinta.status !== 'Inspecionada' || !cinta.inspecionadaEm) return false
+
+  const [day, month, year] = cinta.inspecionadaEm.split('/').map(Number)
+  return year === referenceDate.getFullYear() && month === referenceDate.getMonth() + 1 && day > 0
+}
+
 // Sends a message via W-API
 async function sendWhatsappMessage(url: string, token: string, groupId: string, message: string) {
   try {
@@ -48,13 +55,11 @@ export function AlertaInspecaoMensal() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
-  // Get current month label — mocked to September 2026 to match app data
-  // In production this would be: new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-  const currentMonthLabel = 'setembro de 2026'
+  const currentMonthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date())
   const corDoMes = mesesInspecao.find(m => m.label === currentMonthLabel)?.cor || 'Vermelho'
 
   const cintasPendentes = useMemo(() => {
-    return cintas.filter(c => c.cor === corDoMes && c.status === 'Pendente')
+    return cintas.filter(c => c.cor === corDoMes && !isInspecionadaNesteMes(c))
   }, [cintas, corDoMes])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
