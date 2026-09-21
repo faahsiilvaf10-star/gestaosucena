@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link2, Calendar, Filter, Plus, FileSpreadsheet, Camera, Edit, Save, Image as ImageIcon, History, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -38,8 +38,12 @@ const mesesInspecao = [
 ]
 
 function VistoriaCintas() {
-  const { cintas, historico, inspecionarCinta } = useCintasStore()
+  const { cintas, historico, inspecionarCinta, fetchCintas, hasHydrated } = useCintasStore()
   const [editingCinta, setEditingCinta] = useState<any | null>(null)
+
+  useEffect(() => {
+    if (!hasHydrated) fetchCintas()
+  }, [hasHydrated, fetchCintas])
 
   const [mesFiltro, setMesFiltro] = useState('setembro de 2026')
   const [corFiltro, setCorFiltro] = useState('Todas')
@@ -62,11 +66,15 @@ function VistoriaCintas() {
     setObservacoes('')
   }
 
-  const handleSave = (novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => {
+  const handleSave = async (novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => {
     if (!editingCinta) return
-    inspecionarCinta(editingCinta.id, dataInspecao, observacoes, novoStatus)
-    setEditingCinta(null)
-    setHistoryPage(1)
+    try {
+      await inspecionarCinta(editingCinta.id, dataInspecao, observacoes, novoStatus)
+      setEditingCinta(null)
+      setHistoryPage(1)
+    } catch (e) {
+      console.error('Erro ao salvar inspeção:', e)
+    }
   }
 
   // Derived state

@@ -56,9 +56,13 @@ async function sendWhatsappMessage(url: string, token: string, instanceId: strin
 
 export function AlertaInspecaoMensal() {
   const navigate = useNavigate()
-  const { cintas, hasHydrated, inspecionarCinta } = useCintasStore()
+  const { cintas, hasHydrated, inspecionarCinta, fetchCintas } = useCintasStore()
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
+
+  useEffect(() => {
+    if (!hasHydrated) fetchCintas()
+  }, [hasHydrated, fetchCintas])
 
   const currentMonthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date())
   const corDoMes = mesesInspecao.find(m => m.label === currentMonthLabel)?.cor || 'Vermelho'
@@ -126,10 +130,16 @@ export function AlertaInspecaoMensal() {
   const handleSaveBatch = async () => {
     setIsSending(true)
 
-    // 1. Save locally
-    selectedIds.forEach(id => {
-      inspecionarCinta(id, dataInspecao, observacoes, 'Inspecionada')
-    })
+    // 1. Save to DB
+    try {
+      await Promise.all(selectedIds.map(id => 
+        inspecionarCinta(id, dataInspecao, observacoes, 'Inspecionada')
+      ))
+    } catch (e) {
+      toast.error('Ocorreu um erro ao salvar no banco de dados.')
+      setIsSending(false)
+      return
+    }
 
     // 2. Send WhatsApp notification for each inspected strap
     try {
