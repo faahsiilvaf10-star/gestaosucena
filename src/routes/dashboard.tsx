@@ -617,7 +617,7 @@ function DashboardComponent() {
           >
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
-            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="absolute top-[105%] left-1/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
               <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
               {eqData?.operacaoList?.length ? (
                 <ul className="text-xs space-y-2">
@@ -646,6 +646,7 @@ function DashboardComponent() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="donut-wrapper">
               <div className="donut" style={{ "--value": pctOperacao, "--accent": "var(--blue)", "--track": "rgba(22, 119, 255, 0.15)" } as any}>
                 <div className="donut-content">
@@ -667,11 +668,11 @@ function DashboardComponent() {
                 <span>em operação</span>
               </div>
             </div>
-            <div className="mt-6 border-t border-blue-200/60 dark:border-white/10 pt-6">
+            <div className="border-t border-blue-200/60 dark:border-white/10 pt-6 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
           {/* MANUTENÇÃO */}
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
-            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="absolute top-[105%] left-3/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
               <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
               {eqData?.manutencaoList?.length ? (
                 <ul className="text-xs space-y-2">
@@ -730,6 +731,7 @@ function DashboardComponent() {
               </div>
             )}
           </div>
+            </div>
           </div>
 
           {/* ALERTA DDS (SÓ SE O USUÁRIO FOR O PALESTRANTE) */}
