@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { WeatherWidget } from '../components/WeatherWidget'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
@@ -509,80 +508,6 @@ function DashboardComponent() {
             )}
           </div>
 
-          {/* WEATHER */}
-          <div className="neon-card neon-blue col-span-1 md:col-span-3 relative h-full">
-            <WeatherWidget />
-            {isDark && (
-              <div className="card-footer" style={{ bottom: '16px' }}>
-                <span className="footer-text text-[8px] opacity-80">CLIMA DA REGIÃO</span>
-              </div>
-            )}
-          </div>
-
-          {/* ANIVERSARIANTE DO DIA */}
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-3 pb-8">
-            <div className="card-header">
-              <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
-                </div>
-                <h3 className="card-title">ANIVERSARIANTE DO DIA</h3>
-              </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
-            </div>
-            <div className="birthday-list">
-              {aniversariantesHoje.length > 0 ? (
-                aniversariantesHoje.map((aniv: any, idx: number) => (
-                  <div key={idx} className="birthday-item active">
-                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
-                    <span className="birthday-day font-bold text-yellow-500">HOJE! 🎉</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500 text-center mt-4">Nenhum hoje</div>
-              )}
-            </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">🎈 PARABÉNS!</span>
-              </div>
-            )}
-          </div>
-
-          {/* ANIVERSARIANTES DO MÊS */}
-          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-3 pb-8">
-            <div className="card-header">
-              <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
-                </div>
-                <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
-              </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
-            </div>
-            <div className="birthday-list">
-              {aniversariantesMes.length > 0 ? (
-                aniversariantesMes.map((aniv: any, idx: number) => (
-                  <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>
-                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
-                    <span className="birthday-day">Dia {String(aniv.day).padStart(2, '0')}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-500 text-center mt-4">Nenhum neste mês</div>
-              )}
-            </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">🎂 VIDAS QUE FAZEM PARTE DESSA HISTÓRIA</span>
-              </div>
-            )}
-          </div>
-
           {/* ASO VENCENDO */}
           <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-3 pb-8">
             <div className="card-header">
@@ -615,6 +540,72 @@ function DashboardComponent() {
             {isDark && (
               <div className="card-footer">
                 <span className="footer-text">🏥 SAÚDE OCUPACIONAL</span>
+              </div>
+            )}
+          </div>
+
+          {/* ANIVERSARIANTE DO DIA */}
+          {aniversariantesHoje.length > 0 && (
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-3 pb-8">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                </div>
+                <h3 className="card-title">ANIVERSARIANTE DO DIA</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="birthday-list">
+              {aniversariantesHoje.length > 0 ? (
+                aniversariantesHoje.map((aniv: any, idx: number) => (
+                  <div key={idx} className="birthday-item active">
+                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
+                    <span className="birthday-day font-bold text-yellow-500">HOJE! 🎉</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center mt-4">Nenhum hoje</div>
+              )}
+            </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🎈 PARABÉNS!</span>
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* ANIVERSARIANTES DO MÊS */}
+          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-3 pb-8">
+            <div className="card-header">
+              <div className="card-title-wrap">
+                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                </div>
+                <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
+              </div>
+              <button className="card-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+            <div className="birthday-list">
+              {aniversariantesMes.length > 0 ? (
+                aniversariantesMes.map((aniv: any, idx: number) => (
+                  <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>
+                    <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
+                    <span className="birthday-day">Dia {String(aniv.day).padStart(2, '0')}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center mt-4">Nenhum neste mês</div>
+              )}
+            </div>
+            {isDark && (
+              <div className="card-footer">
+                <span className="footer-text">🎂 VIDAS QUE FAZEM PARTE DESSA HISTÓRIA</span>
               </div>
             )}
           </div>

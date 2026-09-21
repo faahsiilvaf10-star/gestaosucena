@@ -907,6 +907,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
   const driverName = dispatch?.driver_name
     || (driverId ? DRIVERS.find(d => d.id === driverId)?.name || `Motorista (${driverId})` : null)
     || (dispatch ? 'Motorista em turno' : 'Motorista não atribuído')
+  const helperName = typeof dispatch?.helper_name === 'string' ? dispatch.helper_name.trim() : ''
 
   let statusColor = 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-gray-400 border-gray-200 dark:border-zinc-700'
   let statusDot = 'bg-gray-500'
@@ -963,6 +964,11 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
               </span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{driverName}</p>
+            {helperName && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Ajudante: <span className="font-semibold text-gray-700 dark:text-gray-300">{helperName}</span>
+              </p>
+            )}
             <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Status: <span className="text-gray-700 dark:text-gray-300 font-semibold">{currentStatus}</span></p>
           </div>
         </div>
