@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useCintasStore } from '../../store/cintasStore'
 import { AlertaInspecaoMensal } from '../../components/seguranca/AlertaInspecaoMensal'
+import { DateInput } from '../../components/ui/DateInput'
 
 export const Route = createFileRoute('/seguranca/cintas')({
   component: VistoriaCintas,
@@ -502,10 +503,9 @@ function VistoriaCintas() {
                 <Label className="text-sm font-medium text-gray-700 dark:text-white">
                   Data da Inspeção
                 </Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={dataInspecao}
-                  onChange={(e) => setDataInspecao(e.target.value)}
+                  onChange={setDataInspecao}
                   className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus-visible:ring-gray-300 dark:focus-visible:ring-white/20"
                 />
               </div>

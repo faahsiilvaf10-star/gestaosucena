@@ -5,6 +5,7 @@ import { FileText, Clock, AlertTriangle, Search, Filter, History, Edit, Plus, X,
 import { supabase } from '@/lib/supabase'
 import { format, differenceInDays, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { DateInput } from '@/components/ui/DateInput'
 
 export const Route = createFileRoute('/permissao-trabalho/')({
   component: PermissaoTrabalhoPage,
@@ -370,11 +371,10 @@ function PermissaoTrabalhoPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Vencimento</label>
-                  <input 
+                  <DateInput
                     required
-                    type="date" 
                     value={dataVencimento}
-                    onChange={e => setDataVencimento(e.target.value)}
+                    onChange={setDataVencimento}
                     className="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   />
                 </div>

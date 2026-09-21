@@ -50,12 +50,16 @@ const initialHistory: HistoricoInspecao[] = [
 interface CintasState {
   cintas: Cinta[]
   historico: HistoricoInspecao[]
+  hasHydrated: boolean
+  setHasHydrated: (hasHydrated: boolean) => void
   inspecionarCinta: (id: string, dataInspecao: string, observacoes: string, novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => void
 }
 
 export const useCintasStore = create<CintasState>()(persist((set) => ({
   cintas: initialCintas,
   historico: initialHistory,
+  hasHydrated: false,
+  setHasHydrated: (hasHydrated) => set({ hasHydrated }),
   inspecionarCinta: (id, dataInspecao, observacoes, novoStatus) => set((state) => {
     const cintaToEdit = state.cintas.find(c => c.id === id)
     if (!cintaToEdit) return state
@@ -93,4 +97,7 @@ export const useCintasStore = create<CintasState>()(persist((set) => ({
   })
 }), {
   name: 'sucena-cintas-inspecoes',
+  onRehydrateStorage: () => (state) => {
+    state?.setHasHydrated(true)
+  },
 }))

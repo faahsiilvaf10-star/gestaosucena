@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar } from 'lucide-react'
+import { Calendar as CalendarIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
+import { Calendar } from './calendar'
 
 interface DateInputProps {
   value: string // expects yyyy-mm-dd
@@ -60,17 +64,7 @@ export function DateInput({ value, onChange, className = '', placeholder = 'dd/m
     }
   }
 
-  // Fallback: abre o date picker nativo ao clicar no ícone
-  const hiddenDateRef = useRef<HTMLInputElement>(null)
-  const openNativePicker = () => {
-    if (hiddenDateRef.current) {
-      hiddenDateRef.current.showPicker?.()
-    }
-  }
-
-  const handleNativeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value)
-  }
+  const selectedDate = value ? new Date(`${value}T12:00:00`) : undefined
 
   return (
     <div className="relative">
@@ -85,23 +79,28 @@ export function DateInput({ value, onChange, className = '', placeholder = 'dd/m
         className={className}
         maxLength={10}
       />
-      <input
-        ref={hiddenDateRef}
-        type="date"
-        value={value}
-        onChange={handleNativeChange}
-        className="absolute inset-0 opacity-0 pointer-events-none"
-        tabIndex={-1}
-      />
-      <button
-        type="button"
-        onClick={openNativePicker}
-        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-80 transition-opacity"
-        tabIndex={-1}
-        disabled={disabled}
-      >
-        <Calendar size={16} />
-      </button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-80 transition-opacity"
+            tabIndex={-1}
+            disabled={disabled}
+            aria-label="Abrir calendário"
+          >
+            <CalendarIcon size={16} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => date && onChange(format(date, 'yyyy-MM-dd'))}
+            locale={ptBR}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

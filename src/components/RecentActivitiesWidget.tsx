@@ -11,13 +11,51 @@ export function RecentActivitiesWidget() {
 
   const fetchActivities = async () => {
     try {
+      const environment = typeof window !== 'undefined'
+        ? localStorage.getItem('sucena_environment') || 'barcarena'
+        : 'barcarena'
+
       const { data, error } = await supabase
-        .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', environment)
+        .order('created_at', { ascending: false })
+        .limit(12)
+
+      const { data: movements, error: movementsError } = await supabase
+        .from('eq_movements')
+        .select('id, movement_type, created_by, created_at, eq_equipments!inner(name, plate_tag, environment)')
+        .eq('eq_equipments.environment', environment)
         .order('created_at', { ascending: false })
         .limit(6)
       
       if (error) throw error
-      setActivities(data || [])
+      if (movementsError) throw movementsError
+
+      const movementActivities = (movements || []).map((movement: any) => {
+        const equipment = movement.eq_equipments
+        const equipmentName = equipment?.name || 'Equipamento'
+        const plate = equipment?.plate_tag ? ` (Placa: ${equipment.plate_tag})` : ''
+        const isEntry = movement.movement_type === 'entry'
+
+        return {
+          id: `movement-${movement.id}`,
+          module: 'Equipamentos',
+          action: `${isEntry ? 'Entrada' : 'Saída'}: ${equipmentName}${plate}`,
+          user_name: movement.created_by,
+          created_at: movement.created_at,
+          movement_id: movement.id,
+        }
+      })
+
+      const loggedActivities = (data || []).filter((activity: any) => {
+        if (activity.module !== 'Equipamentos') return true
+        return !/^(Entrada|Saída):/.test(activity.action || '')
+      })
+
+      setActivities(
+        [...loggedActivities, ...movementActivities]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 6)
+      )
     } catch (err) {
       console.error('Error fetching system activities:', err)
     } finally {
@@ -30,6 +68,9 @@ export function RecentActivitiesWidget() {
 
     const channel = supabase.channel('global_system_activities')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_activities' }, () => {
+        fetchActivities()
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'eq_movements' }, () => {
         fetchActivities()
       })
       .subscribe()

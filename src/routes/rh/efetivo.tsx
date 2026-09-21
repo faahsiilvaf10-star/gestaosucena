@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
+import { DateInput } from '../../components/ui/DateInput'
 import { toast } from 'sonner'
 import { 
   Users, 
@@ -510,13 +511,12 @@ function RhEfetivoPage() {
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
                       {userEmail === 'ffaahsiilva@gmail.com' ? (
-                        <input 
-                          type="date"
+                        <DateInput
                           value={selectedColaborador.aso_admissional || ''}
-                          onChange={(e) => setSelectedColaborador({...selectedColaborador, aso_admissional: e.target.value})}
-                          onBlur={(e) => {
-                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional || '')) {
-                              handleUpdateField(selectedColaborador.id, 'aso_admissional', e.target.value)
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, aso_admissional: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_admissional', value)
                             }
                           }}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
@@ -530,13 +530,12 @@ function RhEfetivoPage() {
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Periódico</p>
                       {userEmail === 'ffaahsiilva@gmail.com' ? (
-                        <input 
-                          type="date"
+                        <DateInput
                           value={selectedColaborador.aso_periodico || ''}
-                          onChange={(e) => setSelectedColaborador({...selectedColaborador, aso_periodico: e.target.value})}
-                          onBlur={(e) => {
-                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.aso_periodico || '')) {
-                              handleUpdateField(selectedColaborador.id, 'aso_periodico', e.target.value)
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, aso_periodico: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_periodico || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_periodico', value)
                             }
                           }}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
@@ -550,13 +549,12 @@ function RhEfetivoPage() {
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Retorno ao Trab.</p>
                       {userEmail === 'ffaahsiilva@gmail.com' ? (
-                        <input 
-                          type="date"
+                        <DateInput
                           value={selectedColaborador.retorno_ao_trabalho || ''}
-                          onChange={(e) => setSelectedColaborador({...selectedColaborador, retorno_ao_trabalho: e.target.value})}
-                          onBlur={(e) => {
-                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.retorno_ao_trabalho || '')) {
-                              handleUpdateField(selectedColaborador.id, 'retorno_ao_trabalho', e.target.value)
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, retorno_ao_trabalho: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.retorno_ao_trabalho || '')) {
+                              handleUpdateField(selectedColaborador.id, 'retorno_ao_trabalho', value)
                             }
                           }}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
@@ -570,13 +568,12 @@ function RhEfetivoPage() {
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Mudança de Risco</p>
                       {userEmail === 'ffaahsiilva@gmail.com' ? (
-                        <input 
-                          type="date"
+                        <DateInput
                           value={selectedColaborador.mudanca_de_risco || ''}
-                          onChange={(e) => setSelectedColaborador({...selectedColaborador, mudanca_de_risco: e.target.value})}
-                          onBlur={(e) => {
-                            if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.mudanca_de_risco || '')) {
-                              handleUpdateField(selectedColaborador.id, 'mudanca_de_risco', e.target.value)
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, mudanca_de_risco: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.mudanca_de_risco || '')) {
+                              handleUpdateField(selectedColaborador.id, 'mudanca_de_risco', value)
                             }
                           }}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"

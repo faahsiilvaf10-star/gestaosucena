@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { AlertCircle, CheckCircle2, Save, Camera, Image as ImageIcon, MessageCircle } from 'lucide-react'
 import { useCintasStore, Cinta } from '../../store/cintasStore'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/DateInput'
 import { Label } from '@/components/ui/label'
 import { getWhatsappSettings } from '../../lib/settings'
+import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
 import { toast } from 'sonner'
 
 const mesesInspecao = [
@@ -30,20 +33,21 @@ function isInspecionadaNesteMes(cinta: Cinta, referenceDate = new Date()) {
   return year === referenceDate.getFullYear() && month === referenceDate.getMonth() + 1 && day > 0
 }
 
-// Sends a message via W-API
-async function sendWhatsappMessage(url: string, token: string, groupId: string, message: string) {
+async function sendWhatsappMessage(url: string, token: string, instanceId: string, groupId: string, message: string) {
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ number: groupId, text: message })
+    const result = await sendWhatsappTextOnServer({
+      data: {
+        url,
+        token,
+        instanceId,
+        phone: groupId,
+        text: message,
+      },
     })
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error('WhatsApp API error:', res.status, body)
-      return false
+    if (!result.success) {
+      console.error('WhatsApp API error:', result.error || result.result)
     }
-    return true
+    return result.success
   } catch (err) {
     console.error('WhatsApp send error:', err)
     return false
@@ -51,7 +55,8 @@ async function sendWhatsappMessage(url: string, token: string, groupId: string, 
 }
 
 export function AlertaInspecaoMensal() {
-  const { cintas, inspecionarCinta } = useCintasStore()
+  const navigate = useNavigate()
+  const { cintas, hasHydrated, inspecionarCinta } = useCintasStore()
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
@@ -97,13 +102,13 @@ export function AlertaInspecaoMensal() {
         .replace('{cor}', corDoMes)
         .replace('{lista_cintas}', listaCintas)
 
-      await sendWhatsappMessage(waSettings.url, waSettings.token, groupId, message)
+      await sendWhatsappMessage(waSettings.url, waSettings.token, waSettings.instanceId, groupId, message)
     } catch (e) {
       console.error('Erro ao enviar aviso mensal de cintas:', e)
     }
   }
 
-  if (cintasPendentes.length === 0) return null
+  if (!hasHydrated || cintasPendentes.length === 0) return null
 
   const handleOpen = () => {
     setIsOpen(true)
@@ -129,12 +134,13 @@ export function AlertaInspecaoMensal() {
     // 2. Send WhatsApp notification for each inspected strap
     try {
       const waSettings = await getWhatsappSettings()
-      if (waSettings.cintasInspection?.enabled && waSettings.url && waSettings.token) {
+      if (waSettings.cintasInspection?.enabled && waSettings.url && waSettings.token && waSettings.instanceId) {
         const groupId = waSettings.cintasInspection.specificGroupId || waSettings.groupId
         if (groupId) {
           const template = waSettings.messageTemplates?.cintasInspecionada || ''
           const dataFmt = dataInspecao.split('-').reverse().join('/')
 
+          let allSent = true
           for (const id of selectedIds) {
             const cinta = cintasPendentes.find(c => c.id === id)
             if (!cinta) continue
@@ -146,17 +152,26 @@ export function AlertaInspecaoMensal() {
               .replace('{data}', dataFmt)
               .replace('{responsavel}', 'Você')
 
-            await sendWhatsappMessage(waSettings.url, waSettings.token, groupId, message)
+            const sent = await sendWhatsappMessage(waSettings.url, waSettings.token, waSettings.instanceId, groupId, message)
+            allSent = allSent && sent
           }
-          toast.success(`Notificação enviada ao grupo do WhatsApp!`)
+          if (allSent) {
+            toast.success(`Notificação enviada ao grupo do WhatsApp!`)
+          } else {
+            toast.error('A inspeção foi salva, mas não foi possível enviar todas as notificações ao WhatsApp.')
+          }
         }
+      } else {
+        toast.error('A inspeção foi salva, mas o WhatsApp não está configurado ou ativado.')
       }
     } catch (e) {
       console.error('Erro ao enviar confirmação de inspeção:', e)
+      toast.error('A inspeção foi salva, mas houve erro no envio ao WhatsApp.')
     }
 
     setIsSending(false)
     setIsOpen(false)
+    navigate({ to: '/seguranca/cintas' })
   }
 
   return (
@@ -224,10 +239,9 @@ export function AlertaInspecaoMensal() {
             {/* Data */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700 dark:text-white">Data da Inspeção</Label>
-              <Input
-                type="date"
+              <DateInput
                 value={dataInspecao}
-                onChange={(e) => setDataInspecao(e.target.value)}
+                onChange={setDataInspecao}
                 className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               />
             </div>
