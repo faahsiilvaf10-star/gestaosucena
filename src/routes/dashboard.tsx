@@ -612,7 +612,7 @@ function DashboardComponent() {
 
           {/* OPERAÇÃO */}
           <div 
-            className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8 cursor-pointer"
+            className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-12 pb-8 cursor-pointer"
             onClick={() => navigate({ to: '/equipamentos' })}
           >
             {/* Tooltip Em Operação */}
@@ -667,18 +667,8 @@ function DashboardComponent() {
                 <span>em operação</span>
               </div>
             </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">⚙️ OPERAÇÃO EM MOVIMENTO</span>
-              </div>
-            )}
-          </div>
-
+            <div className="mt-6 border-t border-blue-200/60 dark:border-white/10 pt-6">
           {/* MANUTENÇÃO */}
-          <div 
-            className="dashboard-card neon-card neon-orange group !overflow-visible hover:z-50 col-span-1 md:col-span-6 pb-8 cursor-pointer"
-            onClick={() => navigate({ to: '/equipamentos' })}
-          >
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -736,9 +726,10 @@ function DashboardComponent() {
             </div>
             {isDark && (
               <div className="card-footer">
-                <span className="footer-text">🛡️ CONFIABILIDADE SEMPRE</span>
+                <span className="footer-text">⚙️ OPERAÇÃO EM MOVIMENTO</span>
               </div>
             )}
+          </div>
           </div>
 
           {/* ALERTA DDS (SÓ SE O USUÁRIO FOR O PALESTRANTE) */}
