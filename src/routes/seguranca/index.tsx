@@ -13,7 +13,7 @@ function SegurancaComponent() {
     { title: "DDS", icon: Sun, href: "/seguranca/dds" },
     { title: "Permissão\nde Trabalho", icon: Folder, href: "/permissao-trabalho" },
     { title: "Homologados", icon: BadgeCheck, href: "/seguranca/homologados" },
-    { title: "Vistoria Cintas", icon: Link2 },
+    { title: "Vistoria Cintas", icon: Link2, href: "/seguranca/cintas" },
     { title: "Inspeção\nde Canteiro", icon: HardHat },
     { title: "Pós Chuva", icon: Droplets },
     { title: "Desvios", icon: TriangleAlert },

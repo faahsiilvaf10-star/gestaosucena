@@ -57,6 +57,7 @@ import { Route as RhEfetivoRouteImport } from './routes/rh/efetivo'
 import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
 import { Route as SegurancaIndexRouteImport } from './routes/seguranca/index'
+import { Route as SegurancaCintasRouteImport } from './routes/seguranca/cintas'
 import { Route as SegurancaDdsRouteImport } from './routes/seguranca/dds'
 import { Route as SegurancaHomologadosRouteImport } from './routes/seguranca/homologados'
 import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
@@ -309,6 +310,11 @@ const SegurancaIndexRoute = SegurancaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SegurancaRoute,
 } as any)
+const SegurancaCintasRoute = SegurancaCintasRouteImport.update({
+  id: '/cintas',
+  path: '/cintas',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const SegurancaDdsRoute = SegurancaDdsRouteImport.update({
   id: '/dds',
   path: '/dds',
@@ -388,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   '/rh/efetivo': typeof RhEfetivoRoute
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
+  '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
@@ -556,6 +565,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/cintas'
     | '/seguranca/dds'
     | '/seguranca/homologados'
     | '/almoxarifado/'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/cintas'
     | '/seguranca/dds'
     | '/seguranca/homologados'
     | '/almoxarifado'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/rh/efetivo'
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
+    | '/seguranca/cintas'
     | '/seguranca/dds'
     | '/seguranca/homologados'
     | '/almoxarifado/'
@@ -1042,6 +1054,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaIndexRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/cintas': {
+      id: '/seguranca/cintas'
+      path: '/cintas'
+      fullPath: '/seguranca/cintas'
+      preLoaderRoute: typeof SegurancaCintasRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/seguranca/dds': {
       id: '/seguranca/dds'
       path: '/dds'
@@ -1209,12 +1228,14 @@ const RhRouteChildren: RhRouteChildren = {
 const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 
 interface SegurancaRouteChildren {
+  SegurancaCintasRoute: typeof SegurancaCintasRoute
   SegurancaDdsRoute: typeof SegurancaDdsRoute
   SegurancaHomologadosRoute: typeof SegurancaHomologadosRoute
   SegurancaIndexRoute: typeof SegurancaIndexRoute
 }
 
 const SegurancaRouteChildren: SegurancaRouteChildren = {
+  SegurancaCintasRoute: SegurancaCintasRoute,
   SegurancaDdsRoute: SegurancaDdsRoute,
   SegurancaHomologadosRoute: SegurancaHomologadosRoute,
   SegurancaIndexRoute: SegurancaIndexRoute,

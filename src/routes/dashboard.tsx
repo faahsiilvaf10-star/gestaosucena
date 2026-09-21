@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
+import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
@@ -374,6 +375,11 @@ function DashboardComponent() {
               <span>RESULTADOS</span>
             </div>
           </div>
+        </div>
+
+        {/* ===== ALERTA DE INSPEÇÃO MENSAL DE CINTAS ===== */}
+        <div className="mb-2">
+          <AlertaInspecaoMensal />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 pb-12">
