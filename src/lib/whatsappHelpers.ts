@@ -1,5 +1,6 @@
 import { getWhatsappSettings } from './settings'
 import { sendWhatsappTextOnServer } from './whatsapp-api'
+import { toast } from 'sonner'
 
 const EXIT_REASONS_MAP: Record<string, string> = {
   preventive_maintenance: 'Manutenção Preventiva',
@@ -53,7 +54,8 @@ export async function sendEntryExitWhatsappNotification(
         text: msg
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending Entry/Exit WhatsApp Notification:', error)
+    toast.error('Erro no WhatsApp: ' + (error?.message || String(error)))
   }
 }
