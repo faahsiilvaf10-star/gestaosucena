@@ -285,6 +285,7 @@ export function EpiRequisitionForm() {
   useEffect(() => {
     if ((step === 2 || step === 3) && window.innerWidth < 768) {
       setSignatureFullscreen(true)
+      document.body.classList.add('signature-active')
       // Tenta travar orientação (funciona em PWA/Android)
       try {
         if (window.screen?.orientation?.lock) {
@@ -293,12 +294,15 @@ export function EpiRequisitionForm() {
       } catch (_) {}
     } else {
       setSignatureFullscreen(false)
+      document.body.classList.remove('signature-active')
       try {
         if (window.screen?.orientation?.unlock) {
           window.screen.orientation.unlock()
         }
       } catch (_) {}
     }
+    
+    return () => document.body.classList.remove('signature-active')
   }, [step])
 
   // Derived data
@@ -675,6 +679,9 @@ export function EpiRequisitionForm() {
                     <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setStep(1) }} className="text-xs px-3">
+                      ← Voltar
+                    </Button>
                     <Button size="sm" onClick={() => { setStep(3) }} className="bg-black text-white text-xs px-3">
                       Próximo →
                     </Button>
@@ -737,6 +744,12 @@ export function EpiRequisitionForm() {
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setStep(2) }} className="text-xs px-3">
+                      ← Voltar
+                    </Button>
+                    <Button size="sm" onClick={handleGenerateAndSubmit} disabled={isGenerating} className="bg-black text-white text-xs px-3">
+                      {isGenerating ? 'Salvando...' : 'Finalizar ✓'}
                     </Button>
                   </div>
                 </div>
