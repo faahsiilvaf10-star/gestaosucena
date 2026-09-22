@@ -257,15 +257,21 @@ export function EpiRequisitionForm() {
   const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
+  // Controla se está em modo assinatura fullscreen no mobile
+  const [signatureFullscreen, setSignatureFullscreen] = useState(false);
 
-  // Calcula o tamanho ideal do canvas para ocupar toda a tela do celular
+  // Calcula dimensões do canvas: em modo fullscreen no mobile usa dimensões landscape
   useEffect(() => {
     const updateCanvasSize = () => {
       if (window.innerWidth < 768) {
-        setCanvasSize({
-          width: window.innerWidth - 32,
-          height: window.innerHeight - 220
-        })
+        if (signatureFullscreen) {
+          // Landscape: larg = altura real do dispositivo, alt = largura real
+          const vw = Math.max(window.innerWidth, window.innerHeight)
+          const vh = Math.min(window.innerWidth, window.innerHeight)
+          setCanvasSize({ width: vw - 40, height: vh - 100 })
+        } else {
+          setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 220 })
+        }
       } else {
         setCanvasSize({ width: 340, height: 200 })
       }
@@ -273,7 +279,27 @@ export function EpiRequisitionForm() {
     updateCanvasSize()
     window.addEventListener('resize', updateCanvasSize)
     return () => window.removeEventListener('resize', updateCanvasSize)
-  }, [])
+  }, [signatureFullscreen])
+
+  // Entra em modo fullscreen paisagem ao chegar na etapa de assinatura no mobile
+  useEffect(() => {
+    if ((step === 2 || step === 3) && window.innerWidth < 768) {
+      setSignatureFullscreen(true)
+      // Tenta travar orientação (funciona em PWA/Android)
+      try {
+        if (window.screen?.orientation?.lock) {
+          window.screen.orientation.lock('landscape').catch(() => {})
+        }
+      } catch (_) {}
+    } else {
+      setSignatureFullscreen(false)
+      try {
+        if (window.screen?.orientation?.unlock) {
+          window.screen.orientation.unlock()
+        }
+      } catch (_) {}
+    }
+  }, [step])
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -628,55 +654,127 @@ export function EpiRequisitionForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* ASSINATURA AUTORIZADOR */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
-            <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div>
-              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
-              <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
-                <Eraser className="w-6 h-6 text-gray-500" />
-              </Button>
-            </div>
-            <div
-              ref={sigContainerRef}
-              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-              style={{ height: canvasSize.height }}
-            >
-              <SignatureCanvas
-                ref={authorizerSigRef}
-                penColor="black"
-                canvasProps={{
-                  width: canvasSize.width,
-                  height: canvasSize.height,
-                  className: 'sigCanvas w-full h-full'
+            {/* Mobile: overlay fullscreen girado em paisagem */}
+            {signatureFullscreen ? (
+              <div
+                className="fixed inset-0 z-[300] bg-white flex flex-col"
+                style={{
+                  width: '100dvh',
+                  height: '100dvw',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%) rotate(90deg)',
+                  transformOrigin: 'center center',
                 }}
-              />
-            </div>
-            <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
+              >
+                <div className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0">
+                  <Label className="font-bold text-base text-black">ASSINATURA DO AUTORIZADOR</Label>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
+                      <Eraser className="w-5 h-5 text-gray-500" />
+                    </Button>
+                    <Button size="sm" onClick={() => { setStep(3) }} className="bg-black text-white text-xs px-3">
+                      Próximo →
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
+                  <SignatureCanvas
+                    ref={authorizerSigRef}
+                    penColor="black"
+                    canvasProps={{
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      className: 'sigCanvas w-full h-full'
+                    }}
+                  />
+                </div>
+                <span className="text-center text-sm text-gray-600 pb-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
+              </div>
+            ) : (
+              <>
+                <div className="w-full flex items-center justify-between mb-2">
+                  <div className="w-10"></div>
+                  <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
+                  <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
+                    <Eraser className="w-6 h-6 text-gray-500" />
+                  </Button>
+                </div>
+                <div
+                  ref={sigContainerRef}
+                  className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+                  style={{ height: canvasSize.height }}
+                >
+                  <SignatureCanvas
+                    ref={authorizerSigRef}
+                    penColor="black"
+                    canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
+              </>
+            )}
           </div>
 
+          {/* ASSINATURA FUNCIONÁRIO */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
-            <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div>
-              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
-              <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
-                <Eraser className="w-6 h-6 text-gray-500" />
-              </Button>
-            </div>
-            <div
-              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-              style={{ height: canvasSize.height }}
-            >
-              <SignatureCanvas
-                ref={employeeSigRef}
-                penColor="black"
-                canvasProps={{
-                  width: canvasSize.width,
-                  height: canvasSize.height,
-                  className: 'sigCanvas w-full h-full'
+            {signatureFullscreen ? (
+              <div
+                className="fixed inset-0 z-[300] bg-white flex flex-col"
+                style={{
+                  width: '100dvh',
+                  height: '100dvw',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%) rotate(90deg)',
+                  transformOrigin: 'center center',
                 }}
-              />
-            </div>
-            <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
+              >
+                <div className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0">
+                  <Label className="font-bold text-base text-black">ASSINATURA DO FUNCIONÁRIO</Label>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
+                      <Eraser className="w-5 h-5 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
+                  <SignatureCanvas
+                    ref={employeeSigRef}
+                    penColor="black"
+                    canvasProps={{
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      className: 'sigCanvas w-full h-full'
+                    }}
+                  />
+                </div>
+                <span className="text-center text-sm text-gray-600 pb-2">{employee?.nome || 'Selecione o funcionário'}</span>
+              </div>
+            ) : (
+              <>
+                <div className="w-full flex items-center justify-between mb-2">
+                  <div className="w-10"></div>
+                  <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
+                  <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
+                    <Eraser className="w-6 h-6 text-gray-500" />
+                  </Button>
+                </div>
+                <div
+                  className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+                  style={{ height: canvasSize.height }}
+                >
+                  <SignatureCanvas
+                    ref={employeeSigRef}
+                    penColor="black"
+                    canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
