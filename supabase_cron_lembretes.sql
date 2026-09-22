@@ -89,6 +89,8 @@ BEGIN
       v_trigger_now boolean := false;
       v_is_target_day boolean := false;
       v_is_advance_day boolean := false;
+      v_phones text[] := '{}';
+      v_phone text;
     BEGIN
       -- 1. Verificar se hoje é o dia do lembrete
       IF r.is_recurring THEN
@@ -104,8 +106,6 @@ BEGIN
       -- 2. Verificar se hoje é o dia de AVISO ANTECIPADO
       IF v_advance_days > 0 THEN
         IF r.is_recurring THEN
-          -- Ex: se repete terça (2), e avisa 1 dia antes, então segunda (1) é dia de aviso
-          -- dow_alvo - advance_days = dow_hoje
           IF r.recurrence_config->'days' @> to_jsonb((v_current_dow + v_advance_days) % 7) THEN
             v_is_advance_day := true;
           END IF;
@@ -124,7 +124,6 @@ BEGIN
             v_is_advance := false;
           END IF;
         ELSE
-          -- Sem horário configurado = 06:00
           IF v_current_time >= '06:00' THEN
             v_trigger_now := true;
             v_is_advance := false;
@@ -133,19 +132,16 @@ BEGIN
       END IF;
 
       IF v_is_advance_day AND NOT v_trigger_now THEN
-        -- Aviso antecipado sempre às 16:00
         IF v_current_time >= '16:00' THEN
           v_trigger_now := true;
           v_is_advance := true;
         END IF;
       END IF;
 
-      -- Se não for pra disparar, continua o loop
       IF NOT v_trigger_now THEN
         CONTINUE;
       END IF;
 
-      -- Se já notificamos ESTE lembrete HOJE, não envia de novo
       IF r.last_notified_at IS NOT NULL 
          AND (r.last_notified_at AT TIME ZONE 'America/Belem')::date = v_current_date THEN
         CONTINUE;
@@ -169,62 +165,54 @@ BEGIN
       v_message := replace(v_message, '{data}', COALESCE(to_char(r.due_date::date, 'DD/MM/YYYY'), '-'));
       v_message := replace(v_message, '{hora}', COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
-      -- VERIFICAR DESTINATÁRIOS (Envio Direto no Privado)
-      DECLARE
-        v_phones text[] := '{}';
-        v_phone text;
-      BEGIN
-        -- 1. Incluir o criador (se tiver WhatsApp configurado)
-        SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
-        IF v_phone IS NOT NULL AND trim(v_phone) != '' THEN
-          v_phones := array_append(v_phones, trim(v_phone));
+      -- 1. Incluir o criador (se tiver WhatsApp configurado)
+      SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
+      IF v_phone IS NOT NULL AND trim(v_phone) != '' THEN
+        v_phones := array_append(v_phones, trim(v_phone));
+      END IF;
+
+      -- 2. Incluir os mencionados (se tiverem WhatsApp configurado)
+      FOR m IN 
+        SELECT u.raw_user_meta_data->>'whatsapp' as phone
+        FROM reminder_mentions rm
+        JOIN auth.users u ON u.id = rm.user_id
+        WHERE rm.reminder_id = r.id
+      LOOP
+        IF m.phone IS NOT NULL AND trim(m.phone) != '' AND NOT (v_phones @> ARRAY[trim(m.phone)]) THEN
+          v_phones := array_append(v_phones, trim(m.phone));
+        END IF;
+      END LOOP;
+
+      -- 3. Disparar individualmente para cada número encontrado
+      FOREACH v_phone IN ARRAY v_phones
+      LOOP
+        v_phone := regexp_replace(v_phone, '\D', '', 'g');
+        IF v_phone NOT LIKE '55%' THEN
+          v_phone := '55' || v_phone;
         END IF;
 
-        -- 2. Incluir os mencionados (se tiverem WhatsApp configurado)
-        FOR m IN 
-          SELECT u.raw_user_meta_data->>'whatsapp' as phone
-          FROM reminder_mentions rm
-          JOIN auth.users u ON u.id = rm.user_id
-          WHERE rm.reminder_id = r.id
-        LOOP
-          IF m.phone IS NOT NULL AND trim(m.phone) != '' AND NOT (v_phones @> ARRAY[trim(m.phone)]) THEN
-            v_phones := array_append(v_phones, trim(m.phone));
-          END IF;
-        END LOOP;
+        v_payload := jsonb_build_object(
+          'number', v_phone,
+          'phone', v_phone,
+          'text', v_message,
+          'message', v_message
+        );
 
-        -- 3. Disparar individualmente para cada número encontrado
-        FOREACH v_phone IN ARRAY v_phones
-        LOOP
-          -- Normalizar número: remover todos os caracteres que não sejam números
-          v_phone := regexp_replace(v_phone, '\D', '', 'g');
+        PERFORM net.http_post(
+          url := v_endpoint,
+          body := v_payload,
+          headers := jsonb_build_object(
+              'Content-Type', 'application/json',
+              'Authorization', 'Bearer ' || (v_settings->>'token'),
+              'apikey', (v_settings->>'token')
+          ),
+          timeout_milliseconds := 10000
+        );
+      END LOOP;
 
-          -- Adicionar prefixo 55 (Brasil) se não existir
-          IF v_phone NOT LIKE '55%' THEN
-            v_phone := '55' || v_phone;
-          END IF;
-
-          v_payload := jsonb_build_object(
-            'number', v_phone,
-            'phone', v_phone,
-            'text', v_message,
-            'message', v_message
-          );
-
-          PERFORM net.http_post(
-            url := v_endpoint,
-            body := v_payload,
-            headers := jsonb_build_object(
-                'Content-Type', 'application/json',
-                'Authorization', 'Bearer ' || (v_settings->>'token'),
-                'apikey', (v_settings->>'token')
-            )
-          );
-        END LOOP;
-      END;
-
-      -- INSERIR NOTIFICAÇÃO IN-APP PARA OS ENVOLVIDOS
+      -- INSERIR NOTIFICAÇÃO IN-APP PARA OS ENVOLVIDOS (COM DEBUG)
       INSERT INTO reminder_notifications (user_id, reminder_id, type, title, message)
-      SELECT u, r.id, 'lembrete', '🔔 Lembrete: ' || r.title, COALESCE(r.description, 'Você tem um lembrete pendente.')
+      SELECT u, r.id, 'lembrete', '🔔 Lembrete: ' || r.title, COALESCE(r.description, 'Você tem um lembrete pendente.') || ' [DEBUG DESTINOS: ' || array_to_string(v_phones, ', ') || ']'
       FROM unnest(ARRAY(
           SELECT user_id FROM reminder_mentions WHERE reminder_id = r.id
           UNION
