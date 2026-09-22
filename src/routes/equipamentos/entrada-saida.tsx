@@ -262,14 +262,14 @@ function EntradaSaidaPage() {
             msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
             msg = msg.replace('{placa}', selectedEq.plate_tag || 'N/A')
             
-            let baseUrl = whatsappSettings.url.trim()
-            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-            if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
-            else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
-            const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
-            
             sendWhatsappTextOnServer({
-              data: { endpoint, token: whatsappSettings.token, number, text: msg }
+              data: { 
+                url: whatsappSettings.url, 
+                instanceId: whatsappSettings.instanceId,
+                token: whatsappSettings.token, 
+                phone: number, 
+                text: msg 
+              }
             }).catch(console.error)
           }
         }
@@ -341,11 +341,15 @@ function EntradaSaidaPage() {
 
       if (updateError) throw updateError
       
+      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
+      
       const payload = {
         equipment_id: selectedEq.id,
         movement_type: 'exit',
         created_by: userName,
-        created_at: new Date(actionDateTime).toISOString()
+        created_at: new Date(actionDateTime).toISOString(),
+        exit_reason: reasonLabel,
+        description: exitDescription.trim() || null
       };
 
       // Broadcast para os outros clientes
@@ -356,8 +360,6 @@ function EntradaSaidaPage() {
       })
       // Disparar localmente para quem registrou
       window.dispatchEvent(new CustomEvent('eq_moved_local', { detail: payload }))
-      
-      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
       
       const { logActivity } = await import('../../lib/logActivity');
       await logActivity({
@@ -381,14 +383,14 @@ function EntradaSaidaPage() {
             const motivoText = exitDescription.trim() ? `${selectedReasonLabel} - ${exitDescription.trim()}` : selectedReasonLabel
             msg = msg.replace('{motivo}', motivoText)
             
-            let baseUrl = whatsappSettings.url.trim()
-            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-            if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
-            else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
-            const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
-            
             sendWhatsappTextOnServer({
-              data: { endpoint, token: whatsappSettings.token, number, text: msg }
+              data: { 
+                url: whatsappSettings.url, 
+                instanceId: whatsappSettings.instanceId,
+                token: whatsappSettings.token, 
+                phone: number, 
+                text: msg 
+              }
             }).catch(console.error)
           }
         }
