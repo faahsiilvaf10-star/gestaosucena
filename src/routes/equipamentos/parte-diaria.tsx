@@ -190,7 +190,7 @@ function ParteDiariaPage() {
     try {
       // 1. Busca todos os Equipamentos Pesados
       const { data: pesados, error: pesadosError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description, status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description, status, latitude, longitude, last_location_update').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
 
@@ -203,12 +203,12 @@ function ParteDiariaPage() {
       setTotalPesadosCount(total)
       setActiveVehicles(operandoList)
 
-      // 2. Busca dispatches (do dia OU em atividade - para cobrir turnos da noite)
+      // 2. Busca dispatches (apenas do dia atual para zerar a linha do tempo)
       const todayStart = startOfDay(new Date()).toISOString()
       const { data: dispatches } = await supabase
         .from('eq_driver_dispatch')
         .select('*')
-        .or(`shift_start_time.gte.${todayStart},status.eq.Em atividade`)
+        .gte('shift_start_time', todayStart)
         .order('shift_start_time', { ascending: true })
 
       const dMap: Record<string, any> = {}
@@ -225,7 +225,7 @@ function ParteDiariaPage() {
       
       setVehicleDispatches(dMap)
 
-      // 3. Busca histórico do dia OU dos dispatches ativos (em 2 queries para evitar problema de formato UUID no PostgREST)
+      // 3. Busca histórico apenas do dia
       const todayHistoryRes = await supabase
         .from('eq_status_history')
         .select('*')
@@ -233,26 +233,6 @@ function ParteDiariaPage() {
         .order('created_at', { ascending: true })
 
       const allHistories: any[] = todayHistoryRes.data || []
-
-      // Se existem dispatches com IDs que iniciaram antes de hoje (turnos da noite), busca separadamente
-      const nightShiftDispatchIds = activeDispatchIds.filter(id => {
-        const d = dispatches?.find((d: any) => d.id === id)
-        return d && new Date(d.shift_start_time) < new Date(todayStart)
-      })
-
-      if (nightShiftDispatchIds.length > 0) {
-        for (const did of nightShiftDispatchIds) {
-          const { data: nightHistory } = await supabase
-            .from('eq_status_history')
-            .select('*')
-            .eq('dispatch_id', did)
-            .lt('created_at', todayStart)
-            .order('created_at', { ascending: true })
-          if (nightHistory) {
-            allHistories.push(...nightHistory)
-          }
-        }
-      }
 
       // Deduplicar por id
       const seenIds = new Set<string>()
