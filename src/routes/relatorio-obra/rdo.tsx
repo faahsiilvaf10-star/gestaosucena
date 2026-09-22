@@ -147,12 +147,11 @@ function RDOPage() {
         // Ignorar o Gerador específico no RDO
         if (eq.plate_tag?.toUpperCase() === 'E9A4808' || eq.name?.toUpperCase() === 'GERADOR') return false;
         
-        if (eq.location_status === 'inside') return true;
+        if (eq.location_status === 'outside') return true;
         return !!exits.find(m => m.equipment_id === eq.id);
       }).map(eq => {
-        // If it's outside, check if there was an exit on this day
         const exitMove = exits.find(m => m.equipment_id === eq.id);
-        if (eq.location_status === 'outside' && exitMove) {
+        if (exitMove) {
           // Convert the UTC exit time to local time (BRT) for display
           const time = new Date(exitMove.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           return { ...eq, exitTime: time };
