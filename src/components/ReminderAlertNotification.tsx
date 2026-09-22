@@ -126,7 +126,7 @@ export function ReminderAlertNotification() {
                   Fechar
                 </button>
                 <a
-                  href="/reminders"
+                  href="/lembretes"
                   onClick={() => {
                     setNotifications(prev => prev.filter(n => n.id !== notif.id))
                   }}
