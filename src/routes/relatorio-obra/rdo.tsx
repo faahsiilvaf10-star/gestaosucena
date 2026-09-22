@@ -506,10 +506,12 @@ function RDOPage() {
 
   const renderEquipamentosGeraisText = () => {
     let lines = [];
-    const eqGerais = equipamentos.filter(eq => eq.category !== 'Jardinagem');
-    lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqGerais.length})`);
-    if (eqGerais.length > 0) {
-      eqGerais.forEach(eq => {
+    const eqPesados = equipamentos.filter(eq => eq.category !== 'Jardinagem' && eq.category !== 'Equipamento Leve' && eq.category !== 'Canteiro');
+    const eqLeves = equipamentos.filter(eq => eq.category === 'Equipamento Leve' || eq.category === 'Canteiro');
+
+    lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesados.length})`);
+    if (eqPesados.length > 0) {
+      eqPesados.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
         if ((eq as any).exitTime) {
           eqNameStr += ` (Saiu às ${(eq as any).exitTime})`;
@@ -517,8 +519,24 @@ function RDOPage() {
         lines.push(eqNameStr);
       });
     } else {
-      lines.push(`Nenhum equipamento na obra.`);
+      lines.push(`Nenhum equipamento pesado na obra.`);
     }
+
+    lines.push('');
+
+    lines.push(`✅ EQUIPAMENTOS LEVES E CANTEIRO (${eqLeves.length})`);
+    if (eqLeves.length > 0) {
+      eqLeves.forEach(eq => {
+        let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
+        if ((eq as any).exitTime) {
+          eqNameStr += ` (Saiu às ${(eq as any).exitTime})`;
+        }
+        lines.push(eqNameStr);
+      });
+    } else {
+      lines.push(`Nenhum equipamento leve ou de canteiro na obra.`);
+    }
+
     return lines.join('\n');
   }
 
