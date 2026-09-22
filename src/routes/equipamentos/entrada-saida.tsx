@@ -228,16 +228,21 @@ function EntradaSaidaPage() {
 
       if (updateError) throw updateError
       
+      const payload = {
+        equipment_id: selectedEq.id,
+        movement_type: 'entry',
+        created_by: userName,
+        created_at: new Date(actionDateTime).toISOString()
+      };
+      
       // Broadcast para os outros clientes
       supabase.channel('global_eq_movements').send({
         type: 'broadcast',
         event: 'eq_moved',
-        payload: {
-          equipment_id: selectedEq.id,
-          movement_type: 'entry',
-          created_by: userName
-        }
+        payload
       })
+      // Disparar localmente para quem registrou
+      window.dispatchEvent(new CustomEvent('eq_moved_local', { detail: payload }))
 
       const { logActivity } = await import('../../lib/logActivity');
       await logActivity({
@@ -251,7 +256,7 @@ function EntradaSaidaPage() {
         if (whatsappSettings.equipamentosMovimentacao?.enabled) {
           const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
           if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || ''
+            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
             msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
             msg = msg.replace('{equipamento}', selectedEq.name)
             msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
@@ -336,6 +341,22 @@ function EntradaSaidaPage() {
 
       if (updateError) throw updateError
       
+      const payload = {
+        equipment_id: selectedEq.id,
+        movement_type: 'exit',
+        created_by: userName,
+        created_at: new Date(actionDateTime).toISOString()
+      };
+
+      // Broadcast para os outros clientes
+      supabase.channel('global_eq_movements').send({
+        type: 'broadcast',
+        event: 'eq_moved',
+        payload
+      })
+      // Disparar localmente para quem registrou
+      window.dispatchEvent(new CustomEvent('eq_moved_local', { detail: payload }))
+      
       const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
       
       const { logActivity } = await import('../../lib/logActivity');
@@ -350,7 +371,7 @@ function EntradaSaidaPage() {
         if (whatsappSettings.equipamentosMovimentacao?.enabled) {
           const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
           if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || ''
+            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
             msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
             msg = msg.replace('{equipamento}', selectedEq.name)
             msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())

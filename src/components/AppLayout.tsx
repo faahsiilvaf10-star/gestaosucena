@@ -94,8 +94,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
       })
       .subscribe()
 
+    const localListener = (e: any) => handleMovement(e.detail)
+    window.addEventListener('eq_moved_local', localListener)
+
     return () => {
       supabase.removeChannel(channel)
+      window.removeEventListener('eq_moved_local', localListener)
     }
   }, [])
 
