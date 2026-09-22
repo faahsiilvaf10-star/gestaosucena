@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getConversations, getOrCreateDirectConversation } from '../../lib/api-chat'
 import { useChat } from '../../contexts/ChatContext'
@@ -7,6 +7,15 @@ import { User, Check, CheckCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
+// Considera online apenas quem enviou heartbeat nos últimos 50s
+const OFFLINE_THRESHOLD_MS = 50_000
+
+function isReallyOnline(presence: { is_online: boolean; last_heartbeat?: string | null } | undefined | null): boolean {
+  if (!presence || !presence.is_online) return false
+  if (!presence.last_heartbeat) return false
+  return (Date.now() - new Date(presence.last_heartbeat).getTime()) < OFFLINE_THRESHOLD_MS
+}
+
 // Utilizaremos dados locais de teste se a RPC original falhar para não quebrar.
 export function ConversationList({ currentUserId }: { currentUserId: string }) {
   const { isDark } = useTheme()
@@ -14,68 +23,90 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
   const [onlineUsers, setOnlineUsers] = useState<any[]>([])
   const [conversations, setConversations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  // Guarda os dados de presença brutos para re-calcular ao longo do tempo
+  const [presenceData, setPresenceData] = useState<any[]>([])
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      // 1. Pega os usuários
-      const { data: users, error } = await supabase.rpc('get_users')
-      if (error) {
-        console.error('Error fetching users:', error)
-        return
-      }
-
-      // 2. Pega a presença online atual do banco
-      const { data: presence } = await supabase.from('user_presence').select('*')
-      
-      const usersMap = (users || []).reduce((acc: any, u: any) => {
-        const p = presence?.find(p => p.user_id === u.id)
-        return {
-          ...acc,
-          [u.id]: {
-            ...u,
-            isOnline: p?.is_online || false,
-            lastSeen: p?.last_seen || null
-          }
-        }
-      }, {})
-      
-      // Remove a nós mesmos da lista e ordena os online primeiro
-      const filtered = Object.values(usersMap).filter((u: any) => u.id !== currentUserId)
-      filtered.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
-      
-      setOnlineUsers(filtered)
-      
-      // 3. Pega conversas existentes
-      const convs = await getConversations()
-      // Filtra para as minhas conversas
-      const myConvs = convs.filter((c: any) => c.participants?.some((p: any) => p.user_id === currentUserId))
-        .map((conv: any) => {
-          const activeUsers = conv.participants.filter((p: any) => p.user_id !== currentUserId).map((p: any) => usersMap[p.user_id])
-          const title = conv.is_group ? conv.title : activeUsers[0]?.name || 'Usuário Desconhecido'
-          return {
-            ...conv,
-            displayTitle: title,
-            users: activeUsers
-          }
-        })
-        .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      
-      setConversations(myConvs)
-      
-      setLoading(false)
+  const fetchUsers = useCallback(async () => {
+    // 1. Pega os usuários
+    const { data: users, error } = await supabase.rpc('get_users')
+    if (error) {
+      console.error('Error fetching users:', error)
+      return
     }
 
+    // 2. Pega a presença online atual do banco (com last_heartbeat)
+    const { data: presence } = await supabase.from('user_presence').select('*')
+    if (presence) setPresenceData(presence)
+
+    const usersMap = (users || []).reduce((acc: any, u: any) => {
+      const p = presence?.find(p => p.user_id === u.id)
+      return {
+        ...acc,
+        [u.id]: {
+          ...u,
+          isOnline: isReallyOnline(p),
+          lastSeen: p?.last_seen || null,
+          _presenceRaw: p || null
+        }
+      }
+    }, {})
+
+    // Remove a nós mesmos da lista e ordena os online primeiro
+    const filtered = Object.values(usersMap).filter((u: any) => u.id !== currentUserId)
+    filtered.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
+
+    setOnlineUsers(filtered)
+
+    // 3. Pega conversas existentes
+    const convs = await getConversations()
+    // Filtra para as minhas conversas
+    const myConvs = convs.filter((c: any) => c.participants?.some((p: any) => p.user_id === currentUserId))
+      .map((conv: any) => {
+        const activeUsers = conv.participants.filter((p: any) => p.user_id !== currentUserId).map((p: any) => usersMap[p.user_id])
+        const title = conv.is_group ? conv.title : activeUsers[0]?.name || 'Usuário Desconhecido'
+        return {
+          ...conv,
+          displayTitle: title,
+          users: activeUsers
+        }
+      })
+      .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+
+    setConversations(myConvs)
+
+    setLoading(false)
+  }, [currentUserId])
+
+  useEffect(() => {
     fetchUsers()
 
-    // Inscrever-se para presenças alteradas e novas mensagens afetando a ordem da lista
+    // Re-calcula status de online a cada 15s (para detectar quem ficou sem heartbeat)
+    const recalcInterval = setInterval(() => {
+      setOnlineUsers(prev => {
+        const updated = prev.map(u => ({
+          ...u,
+          isOnline: isReallyOnline(u._presenceRaw)
+        }))
+        updated.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
+        return updated
+      })
+    }, 15_000)
+
+    // Inscrever-se para presenças alteradas em tempo real
     const channelName = `presence_list_${currentUserId}_${Date.now()}_${Math.random()}`
     const presenceSub = supabase.channel(channelName)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_presence' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_presence' }, (payload: any) => {
         setOnlineUsers(prev => {
           const updated = [...prev]
           const idx = updated.findIndex(u => u.id === payload.new.user_id)
           if (idx > -1) {
-            updated[idx] = { ...updated[idx], isOnline: payload.new.is_online, lastSeen: payload.new.last_seen }
+            const newPresence = payload.new
+            updated[idx] = {
+              ...updated[idx],
+              isOnline: isReallyOnline(newPresence),
+              lastSeen: newPresence.last_seen,
+              _presenceRaw: newPresence
+            }
             updated.sort((a: any, b: any) => (a.isOnline === b.isOnline) ? 0 : a.isOnline ? -1 : 1)
           }
           return updated
@@ -83,9 +114,10 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
       }).subscribe()
 
     return () => {
+      clearInterval(recalcInterval)
       supabase.removeChannel(presenceSub)
     }
-  }, [currentUserId])
+  }, [currentUserId, fetchUsers])
 
   const handleStartChat = async (targetUser: any) => {
     try {
