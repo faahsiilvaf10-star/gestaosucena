@@ -9,6 +9,15 @@ import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
+// Toca o som de notificação de mensagem recebida
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/chat-notification.mp3')
+    audio.volume = 0.7
+    audio.play().catch(() => {})
+  } catch (_) {}
+}
+
 // Ícone de status estilo WhatsApp
 function MessageStatus({ status }: { status: string }) {
   if (status === 'read') {
@@ -113,6 +122,9 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
             
             // Se formos o destinatário e a aba está visível → lida; senão → entregue
             if (newMsg.sender_id !== currentUserId) {
+              // Toca o som de notificação
+              playNotificationSound()
+
               if (document.visibilityState === 'visible') {
                 supabase.from('messages').update({ status: 'read' }).eq('id', newMsg.id).then()
               } else {
