@@ -442,7 +442,7 @@ export default function DashboardStep() {
 
   const getStatusColors = () => {
     if (activeStatus === 'paused') return { bg: 'bg-orange-500 dark:bg-orange-600 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - PAUSA/ALMOÇO', timeLabel: 'Tempo de Pausa' }
-    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-amber-50', dot: 'bg-amber-200', label: 'PARADO - AGUARDANDO', timeLabel: 'Tempo Aguardando' }
+    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-gray-900', dot: 'bg-gray-900', label: 'PARADO - AGUARDANDO', timeLabel: 'Tempo Aguardando' }
     if (activeStatus === 'raining') return { bg: 'bg-blue-500 dark:bg-blue-600 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-200', label: 'PARADO - CHUVA', timeLabel: 'Tempo em Chuva' }
     if (activeStatus === 'fueling') return { bg: 'bg-orange-600 dark:bg-orange-700 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - ABASTECENDO', timeLabel: 'Tempo Abastecendo' }
     
