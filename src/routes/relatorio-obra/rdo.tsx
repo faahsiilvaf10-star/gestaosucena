@@ -506,8 +506,14 @@ function RDOPage() {
 
   const renderEquipamentosGeraisText = () => {
     let lines = [];
-    const eqPesados = equipamentos.filter(eq => eq.category !== 'Jardinagem' && eq.category !== 'Equipamento Leve' && eq.category !== 'Canteiro');
-    const eqLeves = equipamentos.filter(eq => eq.category === 'Equipamento Leve' || eq.category === 'Canteiro');
+    const isLeveOuCanteiro = (eq: any) => {
+      const cat = (eq.category || '').toLowerCase();
+      return cat.includes('leve') || cat.includes('canteiro') || eq.name.toUpperCase().includes('SUC 01'); // explicitly include SUC 01 just in case
+    };
+    const isJardinagem = (eq: any) => (eq.category || '').toLowerCase().includes('jardinagem');
+
+    const eqPesados = equipamentos.filter(eq => !isJardinagem(eq) && !isLeveOuCanteiro(eq));
+    const eqLeves = equipamentos.filter(eq => isLeveOuCanteiro(eq));
 
     lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesados.length})`);
     if (eqPesados.length > 0) {
