@@ -318,25 +318,12 @@ export function EpiRequisitionForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
-  // Detecta se o celular ainda está em retrato (orientation.lock falhou)
-  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
+  // Calcula dimensões do canvas para mobile
   useEffect(() => {
-    const update = () => setIsPortrait(window.innerHeight > window.innerWidth)
-    window.addEventListener('resize', update)
-    window.addEventListener('orientationchange', update)
-    return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('orientationchange', update)
-    }
-  }, [])
-
-  // Calcula dimensões do canvas
-  useEffect(() => {
-    const updateCanvasSize = () => {
+    const update = () => {
       if (window.innerWidth < 768) {
         if (signatureFullscreen) {
-          // Em fullscreen, usa o tamanho real da tela atual (retrato ou paisagem)
           setCanvasSize({ width: window.innerWidth - 24, height: window.innerHeight - 100 })
         } else {
           setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 220 })
@@ -345,42 +332,21 @@ export function EpiRequisitionForm() {
         setCanvasSize({ width: 340, height: 200 })
       }
     }
-    updateCanvasSize()
-    window.addEventListener('resize', updateCanvasSize)
-    return () => window.removeEventListener('resize', updateCanvasSize)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
   }, [signatureFullscreen])
 
-  // Entra em modo fullscreen paisagem ao chegar na etapa de assinatura no mobile
+  // Entra em modo overlay ao chegar na etapa de assinatura no mobile
   useEffect(() => {
     if ((step === 2 || step === 3) && window.innerWidth < 768) {
       setSignatureFullscreen(true)
       document.body.classList.add('signature-active')
-
-      // Tenta travar orientação em paisagem sem fullscreen
-      const tryLock = async () => {
-        try {
-          if (window.screen?.orientation?.lock) {
-            await window.screen.orientation.lock('landscape')
-          }
-        } catch (_) {
-          // Fallback: se o browser não suportar, a rotação CSS do overlay fará o trabalho
-        }
-      }
-      tryLock()
     } else {
       setSignatureFullscreen(false)
       document.body.classList.remove('signature-active')
-      try {
-        if (window.screen?.orientation?.unlock) {
-          window.screen.orientation.unlock()
-        }
-      } catch (_) {}
     }
-    
-    return () => {
-      document.body.classList.remove('signature-active')
-      try { window.screen?.orientation?.unlock?.() } catch (_) {}
-    }
+    return () => document.body.classList.remove('signature-active')
   }, [step])
 
   // Derived data
@@ -738,13 +704,10 @@ export function EpiRequisitionForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ASSINATURA AUTORIZADOR */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
-            {/* Mobile: overlay fullscreen nativo (sem rotação CSS para não bugar o touch) */}
             {signatureFullscreen ? (
               <div className="sig-landscape-overlay">
                 <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
-                  <div className="flex flex-col">
-                    <Label className="font-bold text-base text-black">ASSINATURA AUTORIZADOR</Label>
-                  </div>
+                  <Label className="font-bold text-base text-black">ASSINATURA AUTORIZADOR</Label>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
@@ -757,13 +720,6 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                {/* Quando o orientation.lock falhou e celular ainda está em retrato */}
-                {signatureFullscreen && isPortrait && (
-                  <div className="fixed inset-0 z-[400] bg-black/80 flex flex-col items-center justify-center gap-4">
-                    <div className="text-white text-6xl animate-bounce">&#8635;</div>
-                    <p className="text-white font-bold text-lg text-center px-8">Gire o celular para assinar em paisagem</p>
-                  </div>
-                )}
                 <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={authorizerSigRef}
@@ -811,9 +767,7 @@ export function EpiRequisitionForm() {
             {signatureFullscreen ? (
               <div className="sig-landscape-overlay">
                 <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
-                  <div className="flex flex-col">
-                    <Label className="font-bold text-base text-black">ASSINATURA FUNCIONÁRIO</Label>
-                  </div>
+                  <Label className="font-bold text-base text-black">ASSINATURA FUNCIONÁRIO</Label>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
@@ -826,12 +780,6 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                {signatureFullscreen && isPortrait && (
-                  <div className="fixed inset-0 z-[400] bg-black/80 flex flex-col items-center justify-center gap-4">
-                    <div className="text-white text-6xl animate-bounce">&#8635;</div>
-                    <p className="text-white font-bold text-lg text-center px-8">Gire o celular para assinar em paisagem</p>
-                  </div>
-                )}
                 <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={employeeSigRef}
