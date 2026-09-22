@@ -57,10 +57,19 @@ BEGIN
   -- Dia da semana (0=Dom, 1=Seg...6=Sáb) compatível com o Javascript getDay()
   v_current_dow := EXTRACT(DOW FROM v_current_ts);
 
-  -- Preparar o Endpoint (mesma lógica do frontend)
+  -- Preparar o Endpoint e Headers (mesma lógica do frontend whatsapp-api.ts)
   v_endpoint := trim(trailing '/' from (v_settings->>'url'));
+  
+  -- Converter URL se for W-API
   IF v_endpoint LIKE '%painel.w-api.app%' THEN
-    v_endpoint := 'https://api.w-api.app/message/sendText/' || (v_settings->>'instanceId');
+    v_endpoint := 'https://api.w-api.app/v1';
+  ELSIF v_endpoint LIKE '%api.w-api.app%' AND v_endpoint NOT LIKE '%/v1%' THEN
+    v_endpoint := v_endpoint || '/v1';
+  END IF;
+
+  -- Montar endpoint final
+  IF v_endpoint LIKE '%api.w-api.app%' THEN
+    v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSE
     v_endpoint := v_endpoint || '/message/sendText/' || (v_settings->>'instanceId');
   END IF;
@@ -202,7 +211,8 @@ BEGIN
             body := v_payload,
             headers := jsonb_build_object(
                 'Content-Type', 'application/json',
-                'Authorization', 'Bearer ' || (v_settings->>'token')
+                'Authorization', 'Bearer ' || (v_settings->>'token'),
+                'apikey', (v_settings->>'token')
             )
           );
         ELSE
@@ -232,7 +242,10 @@ BEGIN
           -- Disparar para cada número no privado
           FOREACH v_phone IN ARRAY v_phones
           LOOP
-            -- Normalizar número: adicionar prefixo 55 (Brasil) se necessário
+            -- Normalizar número: remover todos os caracteres que não sejam números
+            v_phone := regexp_replace(v_phone, '\D', '', 'g');
+
+            -- Adicionar prefixo 55 (Brasil) se não existir
             IF v_phone NOT LIKE '55%' THEN
               v_phone := '55' || v_phone;
             END IF;
@@ -249,7 +262,8 @@ BEGIN
               body := v_payload,
               headers := jsonb_build_object(
                   'Content-Type', 'application/json',
-                  'Authorization', 'Bearer ' || (v_settings->>'token')
+                  'Authorization', 'Bearer ' || (v_settings->>'token'),
+                  'apikey', (v_settings->>'token')
               )
             );
           END LOOP;
