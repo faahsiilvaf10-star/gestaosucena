@@ -169,41 +169,43 @@ BEGIN
       v_message := replace(v_message, '{data}', COALESCE(to_char(r.due_date::date, 'DD/MM/YYYY'), '-'));
       v_message := replace(v_message, '{hora}', COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
-      -- VERIFICAR DESTINATÁRIOS
-      v_mentions_all := false;
-      
+      -- VERIFICAR DESTINATÁRIOS (Envio Direto no Privado)
       DECLARE
         v_phones text[] := '{}';
         v_phone text;
-        v_total_users int;
-        v_mentioned_users int;
       BEGIN
-        SELECT count(*) INTO v_total_users FROM get_users();
-        SELECT count(*) INTO v_mentioned_users FROM reminder_mentions WHERE reminder_id = r.id;
-
-        -- Heurística: Se não tiver NENHUMA menção (apenas para si mesmo ou todos),
-        -- ou se mencionou TODO MUNDO do sistema (ou quase), enviamos para o GRUPO.
-        -- OBS: A imagem diz: "Se mencionar todos -> vai para o grupo configurado; senão -> privado".
-        -- Como no form se não colocar menção é só pra ele, talvez devesse ser privado. 
-        -- Porém, se for 0 menções MAS o grupo estiver configurado? Na verdade 0 menções vai pro criador no privado se ele não botou Todos.
-        -- No form, se seleciona "Todos", ele joga todos os IDs do sistema. 
-        -- Portanto, se número de menções >= (total_users - 1) (em cenários com mais de 2 usuários), é "Todos".
-        -- Se houver apenas 1 ou 2 usuários, exige-se que seja >= total_users para evitar que "Eu" (1 usuário) acione o envio para o Grupo.
-        IF v_total_users > 2 THEN
-          IF v_mentioned_users >= (v_total_users - 1) AND v_mentioned_users > 0 THEN
-            v_mentions_all := true;
-          END IF;
-        ELSE
-          IF v_mentioned_users >= v_total_users AND v_total_users > 0 THEN
-            v_mentions_all := true;
-          END IF;
+        -- 1. Incluir o criador (se tiver WhatsApp configurado)
+        SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
+        IF v_phone IS NOT NULL AND trim(v_phone) != '' THEN
+          v_phones := array_append(v_phones, trim(v_phone));
         END IF;
 
-        IF v_mentions_all AND v_default_group IS NOT NULL AND v_default_group != '' THEN
-          -- ENVIA PARA O GRUPO
+        -- 2. Incluir os mencionados (se tiverem WhatsApp configurado)
+        FOR m IN 
+          SELECT u.raw_user_meta_data->>'whatsapp' as phone
+          FROM reminder_mentions rm
+          JOIN auth.users u ON u.id = rm.user_id
+          WHERE rm.reminder_id = r.id
+        LOOP
+          IF m.phone IS NOT NULL AND trim(m.phone) != '' AND NOT (v_phones @> ARRAY[trim(m.phone)]) THEN
+            v_phones := array_append(v_phones, trim(m.phone));
+          END IF;
+        END LOOP;
+
+        -- 3. Disparar individualmente para cada número encontrado
+        FOREACH v_phone IN ARRAY v_phones
+        LOOP
+          -- Normalizar número: remover todos os caracteres que não sejam números
+          v_phone := regexp_replace(v_phone, '\D', '', 'g');
+
+          -- Adicionar prefixo 55 (Brasil) se não existir
+          IF v_phone NOT LIKE '55%' THEN
+            v_phone := '55' || v_phone;
+          END IF;
+
           v_payload := jsonb_build_object(
-            'number', v_default_group,
-            'phone', v_default_group,
+            'number', v_phone,
+            'phone', v_phone,
             'text', v_message,
             'message', v_message
           );
@@ -217,59 +219,7 @@ BEGIN
                 'apikey', (v_settings->>'token')
             )
           );
-        ELSE
-          -- ENVIA NO PRIVADO (Criador + Mencionados)
-          -- Incluir o criador
-          SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
-          -- Fallback: se o criador não tem WhatsApp cadastrado, usa o adminPhone das configurações
-          IF v_phone IS NULL OR v_phone = '' THEN
-            v_phone := v_settings->>'adminPhone';
-          END IF;
-          IF v_phone IS NOT NULL AND v_phone != '' THEN
-            v_phones := array_append(v_phones, v_phone);
-          END IF;
-
-          -- Incluir os mencionados
-          FOR m IN 
-            SELECT u.raw_user_meta_data->>'whatsapp' as phone
-            FROM reminder_mentions rm
-            JOIN auth.users u ON u.id = rm.user_id
-            WHERE rm.reminder_id = r.id
-          LOOP
-            IF m.phone IS NOT NULL AND m.phone != '' AND NOT (v_phones @> ARRAY[m.phone]) THEN
-              v_phones := array_append(v_phones, m.phone);
-            END IF;
-          END LOOP;
-
-          -- Disparar para cada número no privado
-          FOREACH v_phone IN ARRAY v_phones
-          LOOP
-            -- Normalizar número: remover todos os caracteres que não sejam números
-            v_phone := regexp_replace(v_phone, '\D', '', 'g');
-
-            -- Adicionar prefixo 55 (Brasil) se não existir
-            IF v_phone NOT LIKE '55%' THEN
-              v_phone := '55' || v_phone;
-            END IF;
-
-            v_payload := jsonb_build_object(
-              'number', v_phone,
-              'phone', v_phone,
-              'text', v_message,
-              'message', v_message
-            );
-
-            PERFORM net.http_post(
-              url := v_endpoint,
-              body := v_payload,
-              headers := jsonb_build_object(
-                  'Content-Type', 'application/json',
-                  'Authorization', 'Bearer ' || (v_settings->>'token'),
-                  'apikey', (v_settings->>'token')
-              )
-            );
-          END LOOP;
-        END IF;
+        END LOOP;
       END;
 
       -- INSERIR NOTIFICAÇÃO IN-APP PARA OS ENVOLVIDOS
