@@ -10,6 +10,15 @@ function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null 
   return (Date.now() - new Date(p.last_heartbeat).getTime()) < OFFLINE_THRESHOLD_MS
 }
 
+// Toca o som de notificação de online
+function playOnlineSound() {
+  try {
+    const audio = new Audio('/chat-online.mp3')
+    audio.volume = 0.6
+    audio.play().catch(() => {/* Autoplay bloqueado pelo browser, ignora */})
+  } catch (_) {}
+}
+
 interface OnlineNotif {
   id: string
   userId: string
@@ -77,6 +86,9 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
             avatarUrl: user?.avatar_url || '',
             role: user?.role || ''
           }
+
+          // Toca o som de notificação
+          playOnlineSound()
 
           setNotifications(prev => [...prev, newNotif])
 
