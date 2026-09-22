@@ -256,6 +256,15 @@ BEGIN
         END IF;
       END;
 
+      -- INSERIR NOTIFICAÇÃO IN-APP PARA OS ENVOLVIDOS
+      INSERT INTO reminder_notifications (user_id, reminder_id, type, title, message)
+      SELECT u, r.id, 'lembrete', '🔔 Lembrete: ' || r.title, COALESCE(r.description, 'Você tem um lembrete pendente.')
+      FROM unnest(ARRAY(
+          SELECT user_id FROM reminder_mentions WHERE reminder_id = r.id
+          UNION
+          SELECT r.creator_id
+      )) AS u;
+
       -- Marcar como notificado para evitar repetição no mesmo minuto
       UPDATE reminders SET last_notified_at = now() WHERE id = r.id;
 
