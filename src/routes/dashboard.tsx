@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { WeatherWidget } from '../components/WeatherWidget'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
@@ -504,6 +505,16 @@ function DashboardComponent() {
             {isDark && (
               <div className="card-footer" style={{ right: '16px', left: 'auto' }}>
                 <span className="footer-text">ACOMPANHAMENTO CONTÍNUO</span>
+              </div>
+            )}
+          </div>
+
+          {/* WEATHER */}
+          <div className="neon-card neon-blue col-span-1 md:col-span-3 relative h-full">
+            <WeatherWidget />
+            {isDark && (
+              <div className="card-footer" style={{ bottom: '16px' }}>
+                <span className="footer-text text-[8px] opacity-80">CLIMA DA REGIÃO</span>
               </div>
             )}
           </div>
