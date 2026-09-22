@@ -26,6 +26,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
   };
 
   const vehicleName = (eq?.name || '').toUpperCase();
+  const hideImage = eq?.category === 'Leve' || eq?.category === 'Canteiro' || eq?.category === 'Jardinagem';
   const isMunck = vehicleName.startsWith('CM');
   const isOnibus = vehicleName.startsWith('OB');
   const truckImage = isMunck ? '/logomunk.png?v=1' : (isOnibus ? '/logoonibus.png?v=1' : '/logopipa.png?v=2');
@@ -62,12 +63,14 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
         <div className="p-6 space-y-6">
           
           {/* Image Container */}
-          <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center shadow-inner border border-black/5 dark:border-white/5 p-4">
-            <img 
-              src={truckImage} 
-              alt={vehicleName}
-              className="w-full h-auto object-contain max-h-[160px]"
-            />
+          <div className={`relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center shadow-inner border border-black/5 dark:border-white/5 p-4 ${hideImage ? 'min-h-[100px]' : ''}`}>
+            {!hideImage && (
+              <img 
+                src={truckImage} 
+                alt={vehicleName}
+                className="w-full h-auto object-contain max-h-[160px]"
+              />
+            )}
             
             {/* Overlay Gradient for premium feel */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
