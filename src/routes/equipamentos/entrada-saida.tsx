@@ -245,23 +245,31 @@ function EntradaSaidaPage() {
       // Disparar localmente para quem registrou
       window.dispatchEvent(new CustomEvent('eq_moved_local', { detail: payload }))
 
-      const { logActivity } = await import('../../lib/logActivity');
-      await logActivity({
-        module: 'Equipamentos',
-        action: `Entrada: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'})`,
-        user_name: userName
-      });
-
-      // Notificação WhatsApp (agora aguardamos e usamos o helper centralizado)
-      await sendEntryExitWhatsappNotification(
-        'entry',
-        selectedEq,
-        actionDateTime
-      )
-
       toast.success(`${selectedEq.name} registrada DENTRO da obra.`)
       setIsEntryModalOpen(false)
       fetchEquipments()
+
+      try {
+        const { logActivity } = await import('../../lib/logActivity');
+        await logActivity({
+          module: 'Equipamentos',
+          action: `Entrada: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'})`,
+          user_name: userName
+        });
+      } catch (e) {
+        console.error("Failed to log activity", e)
+      }
+
+      // Notificação WhatsApp (agora aguardamos e usamos o helper centralizado)
+      try {
+        await sendEntryExitWhatsappNotification(
+          'entry',
+          selectedEq,
+          actionDateTime
+        )
+      } catch (e) {
+        console.error("Failed to send whatsapp", e)
+      }
     } catch (err) {
       console.error('Error recording entry:', err)
       toast.error('Não foi possível registrar a movimentação.')
@@ -345,25 +353,33 @@ function EntradaSaidaPage() {
       // Disparar localmente para quem registrou
       window.dispatchEvent(new CustomEvent('eq_moved_local', { detail: payload }))
       
-      const { logActivity } = await import('../../lib/logActivity');
-      await logActivity({
-        module: 'Equipamentos',
-        action: `Saída: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'}) - ${reasonLabel}`,
-        user_name: userName
-      });
-
-      // Notificação WhatsApp
-      await sendEntryExitWhatsappNotification(
-        'exit',
-        selectedEq,
-        actionDateTime,
-        exitReason,
-        exitDescription
-      )
-
       toast.success(`${selectedEq.name} registrada FORA da obra — ${reasonLabel}.`)
       setIsExitModalOpen(false)
       fetchEquipments()
+      
+      try {
+        const { logActivity } = await import('../../lib/logActivity');
+        await logActivity({
+          module: 'Equipamentos',
+          action: `Saída: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'}) - ${reasonLabel}`,
+          user_name: userName
+        });
+      } catch (e) {
+        console.error("Failed to log activity", e)
+      }
+
+      // Notificação WhatsApp
+      try {
+        await sendEntryExitWhatsappNotification(
+          'exit',
+          selectedEq,
+          actionDateTime,
+          exitReason,
+          exitDescription
+        )
+      } catch (e) {
+        console.error("Failed to send whatsapp", e)
+      }
     } catch (err) {
       console.error('Error recording exit:', err)
       toast.error('Não foi possível registrar a movimentação.')
