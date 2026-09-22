@@ -20,6 +20,7 @@ function ConfiguracoesRoute() {
   // User Data
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [originalEmail, setOriginalEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [password, setPassword] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
@@ -36,6 +37,7 @@ function ConfiguracoesRoute() {
       if (user) {
         setName(user.user_metadata?.full_name || '')
         setEmail(user.email || '')
+        setOriginalEmail(user.email || '')
         setWhatsapp(user.user_metadata?.whatsapp || '')
         setAvatarUrl(user.user_metadata?.avatar_url || '')
         setRole(user.user_metadata?.role || '')
@@ -111,21 +113,32 @@ function ConfiguracoesRoute() {
     setMessage(null)
     
     try {
+      // Auto-format WhatsApp number (remove non-digits and ensure 55 prefix)
+      let formattedWhatsapp = whatsapp.replace(/\D/g, '')
+      if (formattedWhatsapp && !formattedWhatsapp.startsWith('55')) {
+        formattedWhatsapp = '55' + formattedWhatsapp
+      }
+      
+      // Update the input visually so the user sees the correction
+      setWhatsapp(formattedWhatsapp)
+
       // Build update payload
       const updatePayload: any = {
         data: {
           full_name: name,
-          whatsapp: whatsapp,
+          whatsapp: formattedWhatsapp,
           avatar_url: avatarUrl
         }
       }
 
-      if (email) updatePayload.email = email
+      // Only send email if it was actually changed to avoid Supabase errors
+      if (email && email !== originalEmail) updatePayload.email = email
       if (password) updatePayload.password = password
 
       const { error } = await supabase.auth.updateUser(updatePayload)
       if (error) throw error
 
+      setOriginalEmail(email) // update original email reference
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' })
       setPassword('') // Clear password field after success
     } catch (error: any) {
