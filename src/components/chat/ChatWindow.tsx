@@ -9,6 +9,34 @@ import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
+// Ícone de status estilo WhatsApp
+function MessageStatus({ status }: { status: string }) {
+  if (status === 'read') {
+    // Dois checks AZUIS
+    return (
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M11.071 0.5L4.5 7.071 1.929 4.5 0.5 5.929l4 4L12.5 1.929 11.071 0.5z" fill="#53BDEB"/>
+        <path d="M15.071 0.5L8.5 7.071 7.5 6.071 6.071 7.5l2.429 2.429L16.5 1.929 15.071 0.5z" fill="#53BDEB"/>
+      </svg>
+    )
+  }
+  if (status === 'delivered') {
+    // Dois checks CINZA
+    return (
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none" className="inline-block ml-1 shrink-0">
+        <path d="M11.071 0.5L4.5 7.071 1.929 4.5 0.5 5.929l4 4L12.5 1.929 11.071 0.5z" fill="currentColor" fillOpacity="0.5"/>
+        <path d="M15.071 0.5L8.5 7.071 7.5 6.071 6.071 7.5l2.429 2.429L16.5 1.929 15.071 0.5z" fill="currentColor" fillOpacity="0.5"/>
+      </svg>
+    )
+  }
+  // sent (1 check CINZA)
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 11" fill="none" className="inline-block ml-1 shrink-0">
+      <path d="M10.071 0.5L3.5 7.071 0.929 4.5 -0.5 5.929l4 4L11.5 1.929 10.071 0.5z" fill="currentColor" fillOpacity="0.5"/>
+    </svg>
+  )
+}
+
 function formatMessageDate(dateString: string) {
   const d = new Date(dateString)
   if (isToday(d)) return 'Hoje'
@@ -83,9 +111,13 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
             setMessages(prev => [...prev, newMsg])
             setTimeout(scrollToBottom, 50)
             
-            // Marca como lida se formos o destinatário
-            if (newMsg.sender_id !== currentUserId && document.visibilityState === 'visible') {
-              supabase.from('messages').update({ status: 'read' }).eq('id', newMsg.id).then()
+            // Se formos o destinatário e a aba está visível → lida; senão → entregue
+            if (newMsg.sender_id !== currentUserId) {
+              if (document.visibilityState === 'visible') {
+                supabase.from('messages').update({ status: 'read' }).eq('id', newMsg.id).then()
+              } else {
+                supabase.from('messages').update({ status: 'delivered' }).eq('id', newMsg.id).then()
+              }
             }
           }
         )
@@ -97,6 +129,14 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
           }
         )
         .subscribe()
+
+      // Marca mensagens recebidas não lidas como "delivered" (viram o app mas aba pode não estar focada)
+      // e como "read" se a conversa está aberta agora
+      const unread = msgs.filter(m => m.sender_id !== currentUserId && m.status !== 'read')
+      if (unread.length > 0) {
+        const ids = unread.map(m => m.id)
+        supabase.from('messages').update({ status: 'read' }).in('id', ids).then()
+      }
     }
     
     loadData()
@@ -292,14 +332,10 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
 
                       return null
                     })()}
-                    <div className="float-right mt-1 ml-3 flex items-center gap-1 opacity-70">
+                    <div className="float-right mt-1 ml-3 flex items-center gap-0.5 opacity-80">
                       <span className="text-[10px]">{time}</span>
                       {isMine && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
-                          className={msg.status === 'read' ? 'text-blue-400' : 'text-gray-400'}
-                        >
-                          <path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>
-                        </svg>
+                        <MessageStatus status={msg.status || 'sent'} />
                       )}
                     </div>
                   </div>
