@@ -145,8 +145,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
     statusAlterado: '🚜 *MUDANÇA DE STATUS* 🚜\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n🔄 *Novo Status:* {status}\n👤 *Motorista:* {motorista}',
     cintasAvisoMensal: '🔗 *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n⚠️ As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_',
     cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_',
-    equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
-    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n❓ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
+    equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
+    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
   }
 }
 

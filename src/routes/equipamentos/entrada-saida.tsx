@@ -256,7 +256,7 @@ function EntradaSaidaPage() {
         if (whatsappSettings.equipamentosMovimentacao?.enabled) {
           const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
           if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
+            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
             msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
             msg = msg.replace('{equipamento}', selectedEq.name)
             msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
@@ -373,7 +373,7 @@ function EntradaSaidaPage() {
         if (whatsappSettings.equipamentosMovimentacao?.enabled) {
           const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
           if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
+            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_';
             msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
             msg = msg.replace('{equipamento}', selectedEq.name)
             msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
