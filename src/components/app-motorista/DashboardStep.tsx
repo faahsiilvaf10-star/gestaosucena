@@ -9,6 +9,7 @@ import FuelGauge from './FuelGauge'
 import MercosulPlate from './MercosulPlate'
 import ParteDiariaReport from './ParteDiariaReport'
 import { getEquipmentActivities, getWhatsappSettings } from '../../lib/settings'
+import { sendEntryExitWhatsappNotification } from '../../lib/whatsappHelpers'
 import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
 
 const ICON_MAP: Record<string, any> = {
@@ -584,6 +585,18 @@ export default function DashboardStep() {
           last_exit_description: isExit ? gateDescription : null,
           updated_at: new Date().toISOString()
         })
+        
+        try {
+          await sendEntryExitWhatsappNotification(
+            isExit ? 'exit' : 'entry',
+            equipment,
+            new Date(),
+            isExit ? gateReason : undefined,
+            isExit ? gateDescription : undefined
+          )
+        } catch(e) {
+          console.error("Failed to send WhatsApp from app-motorista", e)
+        }
         
         setEquipment((prev: any) => ({ ...prev, location_status: isExit ? 'outside' : 'inside' }))
         

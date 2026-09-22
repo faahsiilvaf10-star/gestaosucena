@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale'
 import { cn } from '../../lib/utils'
 import { getWhatsappSettings } from '../../lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
+import { sendEntryExitWhatsappNotification } from '@/lib/whatsappHelpers'
 
 export const Route = createFileRoute('/equipamentos/entrada-saida')({
   component: EntradaSaidaPage,
@@ -251,29 +252,12 @@ function EntradaSaidaPage() {
         user_name: userName
       });
 
-      // Notificação WhatsApp
-      getWhatsappSettings().then(whatsappSettings => {
-        if (whatsappSettings.equipamentosMovimentacao?.enabled) {
-          const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
-          if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_';
-            msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
-            msg = msg.replace('{equipamento}', selectedEq.name)
-            msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
-            msg = msg.replace('{placa}', selectedEq.plate_tag || 'N/A')
-            
-            sendWhatsappTextOnServer({
-              data: { 
-                url: whatsappSettings.url, 
-                instanceId: whatsappSettings.instanceId,
-                token: whatsappSettings.token, 
-                phone: number, 
-                text: msg 
-              }
-            }).catch(console.error)
-          }
-        }
-      }).catch(console.error)
+      // Notificação WhatsApp (agora aguardamos e usamos o helper centralizado)
+      await sendEntryExitWhatsappNotification(
+        'entry',
+        selectedEq,
+        actionDateTime
+      )
 
       toast.success(`${selectedEq.name} registrada DENTRO da obra.`)
       setIsEntryModalOpen(false)
@@ -369,32 +353,13 @@ function EntradaSaidaPage() {
       });
 
       // Notificação WhatsApp
-      getWhatsappSettings().then(whatsappSettings => {
-        if (whatsappSettings.equipamentosMovimentacao?.enabled) {
-          const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
-          if (number) {
-            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_';
-            msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
-            msg = msg.replace('{equipamento}', selectedEq.name)
-            msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
-            msg = msg.replace('{placa}', selectedEq.plate_tag || 'N/A')
-            
-            const selectedReasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
-            const motivoText = exitDescription.trim() ? `${selectedReasonLabel} - ${exitDescription.trim()}` : selectedReasonLabel
-            msg = msg.replace('{motivo}', motivoText)
-            
-            sendWhatsappTextOnServer({
-              data: { 
-                url: whatsappSettings.url, 
-                instanceId: whatsappSettings.instanceId,
-                token: whatsappSettings.token, 
-                phone: number, 
-                text: msg 
-              }
-            }).catch(console.error)
-          }
-        }
-      }).catch(console.error)
+      await sendEntryExitWhatsappNotification(
+        'exit',
+        selectedEq,
+        actionDateTime,
+        exitReason,
+        exitDescription
+      )
 
       toast.success(`${selectedEq.name} registrada FORA da obra — ${reasonLabel}.`)
       setIsExitModalOpen(false)
