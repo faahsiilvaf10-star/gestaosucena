@@ -144,9 +144,6 @@ function RDOPage() {
       const exits = movements || [];
 
       const filtered = (allEqs || []).filter(eq => {
-        // Ignorar o Gerador específico no RDO
-        if (eq.plate_tag?.toUpperCase() === 'E9A4808' || eq.name?.toUpperCase() === 'GERADOR') return false;
-        
         if (eq.location_status === 'inside') return true;
         return !!exits.find(m => m.equipment_id === eq.id);
       }).map(eq => {
