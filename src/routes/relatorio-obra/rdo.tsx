@@ -23,6 +23,7 @@ function RDOPage() {
   
   const [climaManha, setClimaManha] = useState('Sol');
   const [climaTarde, setClimaTarde] = useState('Sol');
+  const [temperatura, setTemperatura] = useState('');
   const [dificuldades, setDificuldades] = useState('Não Houve.');
 
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -256,6 +257,7 @@ function RDOPage() {
       setHorario(savedHorario || defaultHorario);
       setClimaManha(mainData.climaManha || 'Sol');
       setClimaTarde(mainData.climaTarde || 'Sol');
+      setTemperatura(mainData.temperatura || '');
       setDificuldades(mainData.dificuldades || 'Não Houve.');
       setIsLocked(mainData.isLocked !== false);
       setShowHistory(false);
@@ -270,8 +272,23 @@ function RDOPage() {
       }
       setEmpresa(defaults.empresa); setContrato(defaults.contrato); setGerencia(defaults.gerencia);
       setLideranca(defaults.lideranca); setTst(defaults.tst); setLocal(defaults.local);
-      setHorario(defaultHorario); setClimaManha('Sol'); setClimaTarde('Sol'); setDificuldades('Não Houve.');
+      setHorario(defaultHorario); setClimaManha('Sol'); setClimaTarde('Sol'); setTemperatura(''); setDificuldades('Não Houve.');
       setIsLocked(false); setShowHistory(false);
+
+      // Auto-fetch temperature if it is today
+      const today = new Date().toISOString().split('T')[0];
+      if (dateStr === today) {
+        let lat = -1.5061, lon = -48.6258; // Default Barcarena
+        const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null;
+        if (env === 'paragominas') { lat = -2.9998; lon = -47.3537; }
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`)
+          .then(res => res.json())
+          .then(data => {
+            if (data?.current?.temperature_2m !== undefined) {
+              setTemperatura(Math.round(data.current.temperature_2m).toString());
+            }
+          }).catch(console.error);
+      }
     }
 
     setJardinagemData(jarData);
@@ -281,7 +298,7 @@ function RDOPage() {
   const handleSave = async () => {
     const dataToSave = {
       empresa, contrato, gerencia, lideranca, tst, local, horario,
-      climaManha, climaTarde, dificuldades,
+      climaManha, climaTarde, temperatura, dificuldades,
       isLocked: true
     };
     localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(dataToSave));
@@ -721,6 +738,10 @@ function RDOPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Temperatura (°C)</label>
+                  <input type="text" value={temperatura} onChange={e => setTemperatura(e.target.value)} placeholder="Ex: 27" className="w-full bg-white border border-gray-300 rounded-xl p-3.5 text-sm text-gray-900 outline-none focus:border-yellow-500 transition-colors" />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
                   <label className="text-xs font-bold text-gray-500 uppercase ml-1">⚠️ Dificuldades/Desvios</label>
                   <textarea 
                     value={dificuldades} onChange={e => setDificuldades(e.target.value)}
@@ -807,7 +828,7 @@ function RDOPage() {
               <div className="mt-8 font-bold text-orange-600">    Condições climáticas:</div>
               <div className="text-gray-700">• MANHÃ = {climaManha}</div>
               <div className="text-gray-700">• TARDE = {climaTarde}</div>
-              <div className="text-gray-700">• 🌡️ TEMPERATURA ATUAL = 27°C (sensação 32°C)</div>
+              {temperatura && <div className="text-gray-700">• 🌡️ TEMPERATURA ATUAL = {temperatura}°C</div>}
 
               <div className="mt-6 font-bold text-red-600">⚠️ DIFICULDADES/DESVIOS</div>
               <div className="text-gray-700">{dificuldades}</div>
