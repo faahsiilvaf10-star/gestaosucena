@@ -648,7 +648,7 @@ body.signature-active .fixed.bottom-\[40px\] {
   display: none !important;
 }
 
-/* Overlay de assinatura: fullscreen em paisagem, CSS rotate em retrato */
+/* Overlay de assinatura: sempre fullscreen sem rotação (evita bug de coordenadas de toque) */
 body.signature-active .sig-landscape-overlay {
   position: fixed;
   inset: 0;
@@ -656,17 +656,4 @@ body.signature-active .sig-landscape-overlay {
   background: white;
   display: flex;
   flex-direction: column;
-}
-
-/* Rotação CSS: quando o celular está em retrato, rotaciona o overlay para paisagem */
-@media screen and (orientation: portrait) {
-  body.signature-active .sig-landscape-overlay {
-    top: 50%;
-    left: 50%;
-    inset: unset;
-    width: 100dvh;
-    height: 100dvw;
-    transform: translate(-50%, -50%) rotate(90deg);
-    transform-origin: center center;
-  }
 }

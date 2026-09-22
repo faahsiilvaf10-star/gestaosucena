@@ -219,19 +219,17 @@ function LastRequisitionDate({ employeeId, productId }: { employeeId: string, pr
 }
 
 
-// Hook que remapeia coordenadas de toque para um canvas dentro de um overlay rotacionado 90° CW via CSS
-// Math derivada: para rotate(90deg) em elemento width=100dvh, height=100dvw centrado na tela:
-//   fakeClientX = clientY * (vw / vh)
-//   fakeClientY = (vw - clientX) * (vh / vw)
+// Hook que remapeia eventos de toque para um canvas rotacionado 90° via CSS
+// Sem este hook, as coordenadas do toque ficam erradas no canvas girado
 function useSignatureTouchRemap(
-  interceptorRef: React.RefObject<HTMLDivElement>,
+  overlayRef: React.RefObject<HTMLDivElement>,
   canvasRef: React.RefObject<SignatureCanvas>,
   active: boolean
 ) {
   useEffect(() => {
     if (!active) return
-    const interceptor = interceptorRef.current
-    if (!interceptor) return
+    const overlay = overlayRef.current
+    if (!overlay) return
 
     const remapEvent = (e: PointerEvent) => {
       if ((e as any).__remapped) return
@@ -244,16 +242,13 @@ function useSignatureTouchRemap(
       const vw = window.innerWidth
       const vh = window.innerHeight
 
-      // Rotação 90° CW com translate(-50%,-50%) rotate(90deg):
-      // landscape local (lx, ly) = (clientY, vw - clientX)
-      // Para que signature_pad calcule isso corretamente via getBoundingClientRect:
-      // rect ≈ {left:0, top:0, width:vw, height:vh}
-      // canvas.width = vh (landscape), canvas.height = vw (landscape)
-      // signature_pad: pt.x = fakeX * (vh/vw), pt.y = fakeY * (vw/vh)
-      // queremos pt.x = clientY, pt.y = vw - clientX
-      // portanto: fakeX = clientY * (vw/vh), fakeY = (vw-clientX) * (vh/vw)
-      const fakeClientX = e.clientY * (vw / vh)
-      const fakeClientY = (vw - e.clientX) * (vh / vw)
+      // Para rotação 90° CW: remapeia portrait→landscape
+      // touch em (clientX, clientY) deve desenhar em:
+      //   canvas_x = (vh - clientY) / vh * canvasWidth
+      //   canvas_y = clientX / vw * canvasHeight
+      // Fazemos isso ajustando o clientX/clientY sintético
+      const fakeClientX = (vh - e.clientY) * (vw / vh)
+      const fakeClientY = e.clientX * (vh / vw)
 
       const synthetic = new PointerEvent(e.type, {
         bubbles: true,
@@ -269,19 +264,19 @@ function useSignatureTouchRemap(
       canvas.dispatchEvent(synthetic)
     }
 
-    const opts = { passive: false } as AddEventListenerOptions
-    interceptor.addEventListener('pointerdown', remapEvent, opts)
-    interceptor.addEventListener('pointermove', remapEvent, opts)
-    interceptor.addEventListener('pointerup', remapEvent, opts)
-    interceptor.addEventListener('pointercancel', remapEvent, opts)
+    const opts = { passive: false, capture: true } as AddEventListenerOptions
+    overlay.addEventListener('pointerdown', remapEvent, opts)
+    overlay.addEventListener('pointermove', remapEvent, opts)
+    overlay.addEventListener('pointerup', remapEvent, opts)
+    overlay.addEventListener('pointercancel', remapEvent, opts)
 
     return () => {
-      interceptor.removeEventListener('pointerdown', remapEvent)
-      interceptor.removeEventListener('pointermove', remapEvent)
-      interceptor.removeEventListener('pointerup', remapEvent)
-      interceptor.removeEventListener('pointercancel', remapEvent)
+      overlay.removeEventListener('pointerdown', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointermove', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointerup', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointercancel', remapEvent, { capture: true } as any)
     }
-  }, [active, interceptorRef, canvasRef])
+  }, [active, overlayRef, canvasRef])
 }
 
 export function EpiRequisitionForm() {
@@ -319,47 +314,30 @@ export function EpiRequisitionForm() {
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
   const sigContainerRef = useRef<HTMLDivElement>(null);
-  const authorizerInterceptorRef = useRef<HTMLDivElement>(null);
-  const employeeInterceptorRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
-  // Verdadeiro quando o overlay está CSS-rotacionado (portrait mode)
-  const [cssRotated, setCssRotated] = useState(false);
 
-  // Atualiza canvas size e detecta se CSS rotation está ativa
+  // Calcula dimensões do canvas para mobile
   useEffect(() => {
     const update = () => {
-      const isMobile = window.innerWidth < 768
-      const isPortrait = window.innerHeight > window.innerWidth
-      const rotated = signatureFullscreen && isMobile && isPortrait
-      setCssRotated(rotated)
-
-      if (isMobile && signatureFullscreen) {
-        if (rotated) {
-          // Canvas em modo paisagem (dentro do overlay CSS-rotacionado)
-          setCanvasSize({ width: window.innerHeight - 40, height: window.innerWidth - 100 })
-        } else {
-          // Já está em paisagem (orientation.lock funcionou)
+      if (window.innerWidth < 768) {
+        if (signatureFullscreen) {
           setCanvasSize({ width: window.innerWidth - 24, height: window.innerHeight - 100 })
+        } else {
+          setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 220 })
         }
-      } else if (isMobile) {
-        setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 220 })
       } else {
         setCanvasSize({ width: 340, height: 200 })
       }
     }
     update()
     window.addEventListener('resize', update)
-    window.addEventListener('orientationchange', update)
-    return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('orientationchange', update)
-    }
+    return () => window.removeEventListener('resize', update)
   }, [signatureFullscreen])
 
-  // Ativa overlay ao chegar na etapa de assinatura no mobile
+  // Entra em modo overlay ao chegar na etapa de assinatura no mobile
   useEffect(() => {
     if ((step === 2 || step === 3) && window.innerWidth < 768) {
       setSignatureFullscreen(true)
@@ -370,10 +348,6 @@ export function EpiRequisitionForm() {
     }
     return () => document.body.classList.remove('signature-active')
   }, [step])
-
-  // Intercepta e corrige coordenadas de toque quando o CSS rotation está ativo
-  useSignatureTouchRemap(authorizerInterceptorRef, authorizerSigRef, cssRotated)
-  useSignatureTouchRemap(employeeInterceptorRef, employeeSigRef, cssRotated)
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -759,7 +733,7 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden relative" style={{ touchAction: 'none' }}>
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={authorizerSigRef}
                     penColor="black"
@@ -773,14 +747,6 @@ export function EpiRequisitionForm() {
                       className: 'sigCanvas w-full h-full'
                     }}
                   />
-                  {/* Interceptor: captura toques e corrige coordenadas quando CSS rotation ativa */}
-                  {cssRotated && (
-                    <div
-                      ref={authorizerInterceptorRef}
-                      className="absolute inset-0 z-10"
-                      style={{ touchAction: 'none' }}
-                    />
-                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
               </div>
@@ -827,7 +793,7 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden relative" style={{ touchAction: 'none' }}>
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={employeeSigRef}
                     penColor="black"
@@ -841,14 +807,6 @@ export function EpiRequisitionForm() {
                       className: 'sigCanvas w-full h-full'
                     }}
                   />
-                  {/* Interceptor: captura toques e corrige coordenadas quando CSS rotation ativa */}
-                  {cssRotated && (
-                    <div
-                      ref={employeeInterceptorRef}
-                      className="absolute inset-0 z-10"
-                      style={{ touchAction: 'none' }}
-                    />
-                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{employee?.nome || 'Selecione o funcionário'}</span>
               </div>
