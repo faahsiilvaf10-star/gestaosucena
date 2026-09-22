@@ -72,6 +72,10 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  equipamentosMovimentacao?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   cintasInspection?: {
     enabled: boolean;
     specificGroupId: string;
@@ -88,6 +92,8 @@ export type WhatsappSettings = {
     statusAlterado: string;
     cintasAvisoMensal: string;
     cintasInspecionada: string;
+    equipamentoEntrada: string;
+    equipamentoSaida: string;
   };
 }
 
@@ -119,6 +125,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: true,
     specificGroupId: ''
   },
+  equipamentosMovimentacao: {
+    enabled: false,
+    specificGroupId: ''
+  },
   cintasInspection: {
     enabled: false,
     specificGroupId: ''
@@ -134,7 +144,9 @@ const defaultWhatsappSettings: WhatsappSettings = {
     anomaliaCorrigida: '✅ *ANOMALIA CORRIGIDA* ✅\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}',
     statusAlterado: '🚜 *MUDANÇA DE STATUS* 🚜\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n🔄 *Novo Status:* {status}\n👤 *Motorista:* {motorista}',
     cintasAvisoMensal: '🔗 *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n⚠️ As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_',
-    cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_'
+    cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_',
+    equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
+    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n❓ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
   }
 }
 

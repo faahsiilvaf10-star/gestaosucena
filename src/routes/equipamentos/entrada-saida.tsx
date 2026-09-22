@@ -15,6 +15,8 @@ import { Calendar as CalendarUI } from '../../components/ui/calendar'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '../../lib/utils'
+import { getWhatsappSettings } from '../../lib/settings'
+import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 
 export const Route = createFileRoute('/equipamentos/entrada-saida')({
   component: EntradaSaidaPage,
@@ -244,6 +246,30 @@ function EntradaSaidaPage() {
         user_name: userName
       });
 
+      // Notificação WhatsApp
+      getWhatsappSettings().then(whatsappSettings => {
+        if (whatsappSettings.equipamentosMovimentacao?.enabled) {
+          const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
+          if (number) {
+            let msg = whatsappSettings.messageTemplates?.equipamentoEntrada || ''
+            msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
+            msg = msg.replace('{equipamento}', selectedEq.name)
+            msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
+            msg = msg.replace('{placa}', selectedEq.plate_tag || 'N/A')
+            
+            let baseUrl = whatsappSettings.url.trim()
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
+            if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
+            else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
+            const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
+            
+            sendWhatsappTextOnServer({
+              data: { endpoint, token: whatsappSettings.token, number, text: msg }
+            }).catch(console.error)
+          }
+        }
+      }).catch(console.error)
+
       toast.success(`${selectedEq.name} registrada DENTRO da obra.`)
       setIsEntryModalOpen(false)
       fetchEquipments()
@@ -310,7 +336,7 @@ function EntradaSaidaPage() {
 
       if (updateError) throw updateError
       
-      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || 'Outro'
+      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
       
       const { logActivity } = await import('../../lib/logActivity');
       await logActivity({
@@ -318,6 +344,34 @@ function EntradaSaidaPage() {
         action: `Saída: ${selectedEq.name} (Placa: ${selectedEq.plate_tag || 'S/ Placa'}) - ${reasonLabel}`,
         user_name: userName
       });
+
+      // Notificação WhatsApp
+      getWhatsappSettings().then(whatsappSettings => {
+        if (whatsappSettings.equipamentosMovimentacao?.enabled) {
+          const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
+          if (number) {
+            let msg = whatsappSettings.messageTemplates?.equipamentoSaida || ''
+            msg = msg.replace('{hora}', format(new Date(actionDateTime), "HH:mm 'de' dd/MM/yyyy"))
+            msg = msg.replace('{equipamento}', selectedEq.name)
+            msg = msg.replace('{tag}', selectedEq.id.substring(0, 8).toUpperCase())
+            msg = msg.replace('{placa}', selectedEq.plate_tag || 'N/A')
+            
+            const selectedReasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
+            const motivoText = exitDescription.trim() ? `${selectedReasonLabel} - ${exitDescription.trim()}` : selectedReasonLabel
+            msg = msg.replace('{motivo}', motivoText)
+            
+            let baseUrl = whatsappSettings.url.trim()
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
+            if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
+            else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
+            const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
+            
+            sendWhatsappTextOnServer({
+              data: { endpoint, token: whatsappSettings.token, number, text: msg }
+            }).catch(console.error)
+          }
+        }
+      }).catch(console.error)
 
       toast.success(`${selectedEq.name} registrada FORA da obra — ${reasonLabel}.`)
       setIsExitModalOpen(false)
