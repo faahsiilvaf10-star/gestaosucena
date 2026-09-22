@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -219,6 +219,66 @@ function LastRequisitionDate({ employeeId, productId }: { employeeId: string, pr
 }
 
 
+// Hook que remapeia eventos de toque para um canvas rotacionado 90° via CSS
+// Sem este hook, as coordenadas do toque ficam erradas no canvas girado
+function useSignatureTouchRemap(
+  overlayRef: React.RefObject<HTMLDivElement>,
+  canvasRef: React.RefObject<SignatureCanvas>,
+  active: boolean
+) {
+  useEffect(() => {
+    if (!active) return
+    const overlay = overlayRef.current
+    if (!overlay) return
+
+    const remapEvent = (e: PointerEvent) => {
+      if ((e as any).__remapped) return
+      e.preventDefault()
+      e.stopPropagation()
+
+      const canvas = canvasRef.current?.getCanvas()
+      if (!canvas) return
+
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+
+      // Para rotação 90° CW: remapeia portrait→landscape
+      // touch em (clientX, clientY) deve desenhar em:
+      //   canvas_x = (vh - clientY) / vh * canvasWidth
+      //   canvas_y = clientX / vw * canvasHeight
+      // Fazemos isso ajustando o clientX/clientY sintético
+      const fakeClientX = (vh - e.clientY) * (vw / vh)
+      const fakeClientY = e.clientX * (vh / vw)
+
+      const synthetic = new PointerEvent(e.type, {
+        bubbles: true,
+        cancelable: true,
+        clientX: fakeClientX,
+        clientY: fakeClientY,
+        pointerId: e.pointerId,
+        pointerType: e.pointerType,
+        pressure: e.pressure || 0.5,
+        isPrimary: e.isPrimary,
+      });
+      (synthetic as any).__remapped = true
+      canvas.dispatchEvent(synthetic)
+    }
+
+    const opts = { passive: false, capture: true } as AddEventListenerOptions
+    overlay.addEventListener('pointerdown', remapEvent, opts)
+    overlay.addEventListener('pointermove', remapEvent, opts)
+    overlay.addEventListener('pointerup', remapEvent, opts)
+    overlay.addEventListener('pointercancel', remapEvent, opts)
+
+    return () => {
+      overlay.removeEventListener('pointerdown', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointermove', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointerup', remapEvent, { capture: true } as any)
+      overlay.removeEventListener('pointercancel', remapEvent, { capture: true } as any)
+    }
+  }, [active, overlayRef, canvasRef])
+}
+
 export function EpiRequisitionForm() {
   const navigate = useNavigate();
   const createMutation = useCreateEpiRequisition();
@@ -254,11 +314,33 @@ export function EpiRequisitionForm() {
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
   const sigContainerRef = useRef<HTMLDivElement>(null);
+  const authorizerInterceptorRef = useRef<HTMLDivElement>(null);
+  const employeeInterceptorRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
   // Controla se está em modo assinatura fullscreen no mobile
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
+  // Detecta se o CSS rotation está ativo (portrait + signature overlay)
+  const [cssRotationActive, setCssRotationActive] = useState(false);
+
+  // Detecta se o CSS rotation está sendo usado (dispositivo em portrait com overlay ativo)
+  useEffect(() => {
+    const checkRotation = () => {
+      setCssRotationActive(signatureFullscreen && window.innerHeight > window.innerWidth)
+    }
+    checkRotation()
+    window.addEventListener('resize', checkRotation)
+    window.addEventListener('orientationchange', checkRotation)
+    return () => {
+      window.removeEventListener('resize', checkRotation)
+      window.removeEventListener('orientationchange', checkRotation)
+    }
+  }, [signatureFullscreen])
+
+  // Remapeia coordenadas de toque para os dois canvas rotacionados
+  useSignatureTouchRemap(authorizerInterceptorRef, authorizerSigRef, cssRotationActive)
+  useSignatureTouchRemap(employeeInterceptorRef, employeeSigRef, cssRotationActive)
 
   // Calcula dimensões do canvas
   useEffect(() => {
@@ -696,9 +778,18 @@ export function EpiRequisitionForm() {
                     canvasProps={{
                       width: canvasSize.width,
                       height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full'
+                      className: 'sigCanvas w-full h-full',
+                      style: { touchAction: 'none' }
                     }}
                   />
+                  {/* Interceptor transparente que corrige coordenadas quando o CSS rotation está ativo */}
+                  {cssRotationActive && (
+                    <div
+                      ref={authorizerInterceptorRef}
+                      className="absolute inset-0 z-10"
+                      style={{ touchAction: 'none', cursor: 'crosshair' }}
+                    />
+                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
               </div>
@@ -757,9 +848,18 @@ export function EpiRequisitionForm() {
                     canvasProps={{
                       width: canvasSize.width,
                       height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full'
+                      className: 'sigCanvas w-full h-full',
+                      style: { touchAction: 'none' }
                     }}
                   />
+                  {/* Interceptor transparente que corrige coordenadas quando o CSS rotation está ativo */}
+                  {cssRotationActive && (
+                    <div
+                      ref={employeeInterceptorRef}
+                      className="absolute inset-0 z-10"
+                      style={{ touchAction: 'none', cursor: 'crosshair' }}
+                    />
+                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{employee?.nome || 'Selecione o funcionário'}</span>
               </div>
