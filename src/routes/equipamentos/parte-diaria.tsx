@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import * as htmlToImage from 'html-to-image'
 import { jsPDF } from 'jspdf'
-import { format, subDays, addDays, startOfDay } from 'date-fns'
+import { format, subDays, addDays, startOfDay, subHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DRIVERS } from '@/components/app-motorista/LoginStep'
 import ParteDiariaReport from '@/components/app-motorista/ParteDiariaReport'
@@ -1268,7 +1268,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
                   <TimelineItem
                     key="dispatch-start"
-                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                    time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
                     title="Jornada Iniciada"
                     subtitle={`Motorista: ${driverName}`}
                     status="in-progress"
@@ -1276,7 +1276,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   />
                   <TimelineItem
                     key="dispatch-waiting"
-                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                    time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
                     title="Aguardando"
                     subtitle="Status inicial"
                     status="pending"
@@ -1292,7 +1292,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   {dispatch && (
                     <TimelineItem
                       key="dispatch-start"
-                      time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
+                      time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
                       title="Jornada Iniciada"
                       subtitle={`Motorista: ${driverName}`}
                       status="in-progress"
@@ -1310,7 +1310,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                     return (
                       <TimelineItem 
                         key={h.id}
-                        time={format(new Date(h.created_at), 'HH:mm')} 
+                        time={format(subHours(new Date(h.created_at), 1), 'HH:mm')} 
                         title={translatedNewStatus} 
                         subtitle={translatedPrevStatus && translatedPrevStatus !== translatedNewStatus ? `Anterior: ${translatedPrevStatus}` : undefined} 
                         status={mappedStatus} 

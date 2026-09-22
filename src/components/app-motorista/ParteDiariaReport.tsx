@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react'
-import { format } from 'date-fns'
+import { format, subHours } from 'date-fns'
 
 interface TimelineEvent {
   time: string
@@ -100,12 +100,12 @@ const ParteDiariaReport = forwardRef<HTMLDivElement, ParteDiariaReportProps>(({
     let startTime = ''
     let endTime = ''
     try {
-      if (event.time) startTime = format(new Date(event.time), 'HH:mm')
+      if (event.time) startTime = format(subHours(new Date(event.time), 1), 'HH:mm')
     } catch (e) {}
 
     try {
       if (index < sortedTimeline.length - 1 && sortedTimeline[index + 1].time) {
-        endTime = format(new Date(sortedTimeline[index + 1].time), 'HH:mm')
+        endTime = format(subHours(new Date(sortedTimeline[index + 1].time), 1), 'HH:mm')
       }
     } catch (e) {}
     
