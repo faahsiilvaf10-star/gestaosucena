@@ -59,15 +59,7 @@ export function ReminderAlertNotification() {
 
         setNotifications(prev => [...prev, newNotif])
 
-        // Remove automaticamente após 10s
-        setTimeout(() => {
-          setNotifications(prev =>
-            prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
-          )
-          setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== notifId))
-          }, 400)
-        }, 10000)
+        // Removido auto-fechamento. O usuário precisa fechar manualmente.
       })
       .subscribe()
 
