@@ -145,25 +145,19 @@ function ConsumoAbastecimentoPage() {
                <h3 className={`text-xl font-bold ${isDark ? 'text-white/90' : 'text-gray-800'}`}>Total de Viagens (Abastecimento)</h3>
                
                <div className="flex items-center gap-2">
-                 <div className="relative">
-                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
-                   <DateInput
-                     value={startDate}
-                     onChange={setStartDate}
-                     className={`pr-8 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-auto ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
-                     title="Data Inicial"
-                   />
-                 </div>
+                 <DateInput
+                   value={startDate}
+                   onChange={setStartDate}
+                   className={`px-3 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-[130px] ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
+                   title="Data Inicial"
+                 />
                  <span className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>até</span>
-                 <div className="relative">
-                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
-                   <DateInput
-                     value={endDate}
-                     onChange={setEndDate}
-                     className={`pr-8 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-auto ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
-                     title="Data Final"
-                   />
-                 </div>
+                 <DateInput
+                   value={endDate}
+                   onChange={setEndDate}
+                   className={`px-3 py-1.5 text-sm rounded-lg border outline-none transition-colors w-full sm:w-[130px] ${isDark ? 'bg-white/5 border-white/10 text-white focus:border-yellow-500' : 'bg-black/5 border-black/10 text-gray-900 focus:border-yellow-500'}`}
+                   title="Data Final"
+                 />
                  <button 
                    onClick={generatePDF}
                    disabled={isLoading || history.length === 0}
