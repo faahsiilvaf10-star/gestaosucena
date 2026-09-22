@@ -253,8 +253,27 @@ export function EpiRequisitionForm() {
   
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
+  const sigContainerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
+
+  // Calcula o tamanho ideal do canvas para ocupar toda a tela do celular
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (window.innerWidth < 768) {
+        setCanvasSize({
+          width: window.innerWidth - 32,
+          height: window.innerHeight - 220
+        })
+      } else {
+        setCanvasSize({ width: 340, height: 200 })
+      }
+    }
+    updateCanvasSize()
+    window.addEventListener('resize', updateCanvasSize)
+    return () => window.removeEventListener('resize', updateCanvasSize)
+  }, [])
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -609,40 +628,55 @@ export function EpiRequisitionForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className={cn("space-y-4 md:space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
+          <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
             <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div> {/* Spacer for alignment */}
+              <div className="w-10"></div>
               <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
               <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
                 <Eraser className="w-6 h-6 text-gray-500" />
               </Button>
             </div>
-            <div className="border-2 border-dashed border-gray-400 md:border-gray-300 rounded-lg bg-gray-50 md:bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
-              <SignatureCanvas 
-                ref={authorizerSigRef} 
+            <div
+              ref={sigContainerRef}
+              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+              style={{ height: canvasSize.height }}
+            >
+              <SignatureCanvas
+                ref={authorizerSigRef}
                 penColor="black"
-                canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
+                canvasProps={{
+                  width: canvasSize.width,
+                  height: canvasSize.height,
+                  className: 'sigCanvas w-full h-full'
+                }}
               />
             </div>
-            <span className="text-sm text-gray-600 md:text-muted-foreground font-medium text-center">{authorizer?.nome || 'Selecione o autorizador'}</span>
+            <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
           </div>
 
-          <div className={cn("space-y-4 md:space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
+          <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
             <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div> {/* Spacer for alignment */}
+              <div className="w-10"></div>
               <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
               <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
                 <Eraser className="w-6 h-6 text-gray-500" />
               </Button>
             </div>
-            <div className="border-2 border-dashed border-gray-400 md:border-gray-300 rounded-lg bg-gray-50 md:bg-white w-full max-w-sm overflow-hidden touch-none flex justify-center">
-              <SignatureCanvas 
-                ref={employeeSigRef} 
+            <div
+              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+              style={{ height: canvasSize.height }}
+            >
+              <SignatureCanvas
+                ref={employeeSigRef}
                 penColor="black"
-                canvasProps={{ width: 340, height: 150, className: 'sigCanvas max-w-full' }} 
+                canvasProps={{
+                  width: canvasSize.width,
+                  height: canvasSize.height,
+                  className: 'sigCanvas w-full h-full'
+                }}
               />
             </div>
-            <span className="text-sm text-gray-600 md:text-muted-foreground font-medium text-center">{employee?.nome || 'Selecione o funcionário'}</span>
+            <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
           </div>
         </div>
       </div>
