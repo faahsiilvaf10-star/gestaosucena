@@ -467,8 +467,16 @@ export default function DashboardStep() {
   const sColors = getStatusColors()
 
   const handleFinishShift = async () => {
+    if (dispatch?.odometer_start && !endKm) {
+      alert('Por favor, informe o KM Final.')
+      return
+    }
     if (dispatch?.odometer_start && parseFloat(endKm) < dispatch.odometer_start) {
       alert(`KM Final não pode ser menor que KM Inicial (${dispatch.odometer_start})`)
+      return
+    }
+    if (dispatch?.horimeter_start && !endHorimeter) {
+      alert('Por favor, informe o Horímetro Final.')
       return
     }
     if (dispatch?.horimeter_start && parseFloat(endHorimeter) < dispatch.horimeter_start) {
@@ -508,6 +516,40 @@ export default function DashboardStep() {
       localStorage.setItem('app_motorista_last_equipment', equipmentId)
 
       localStorage.setItem('app_motorista_fuel_level', endFuel)
+
+      // --- DISPARO WHATSAPP ---
+      if (navigator.onLine) {
+        try {
+          const wSettings = await getWhatsappSettings()
+          if (wSettings.appMotoristaAlerts?.enabled !== false) {
+            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone) {
+              const driverData = localStorage.getItem('app_motorista_driver')
+              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+              let msg = `🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n`
+              msg += `🚜 *Equipamento:* ${equipment?.plate_tag || equipment?.type}\n`
+              msg += `👤 *Operador/Motorista:* ${driverName}\n`
+              if (endKm) msg += `🛣 *KM Final:* ${endKm}\n`
+              if (endHorimeter) msg += `⏱ *Horímetro Final:* ${endHorimeter}\n`
+              msg += `⛽ *Combustível Final:* ${endFuel}%\n\n`
+              msg += `_Mensagem Automática - G. Sucena_`
+
+              await sendWhatsappTextOnServer({
+                data: {
+                  url: wSettings.url,
+                  token: wSettings.token,
+                  instanceId: wSettings.instanceId,
+                  phone: targetPhone,
+                  text: msg
+                }
+              })
+            }
+          }
+        } catch (err) {
+          console.error('Falha ao enviar wp de fim de jornada:', err)
+        }
+      }
+      // -------------------------
 
       // Update Equipment status to "Disponível"
       await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside', status: 'Disponível' })
