@@ -21,8 +21,40 @@ export function usePresence(userId?: string) {
       }, { onConflict: 'user_id' })
     }
 
-    // Marca online imediatamente ao entrar
+    // Quando o usuário fica online, marca como "delivered" todas as mensagens
+    // que chegaram para ele enquanto estava offline (ainda com status 'sent')
+    const markPendingMessagesAsDelivered = async () => {
+      try {
+        // Busca todas as conversas em que este usuário participa
+        const { data: participations } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', userId)
+
+        if (!participations || participations.length === 0) return
+
+        const conversationIds = participations.map((p: any) => p.conversation_id)
+
+        // Busca mensagens enviadas para este usuário (não pelo próprio) com status 'sent'
+        const { data: pendingMessages } = await supabase
+          .from('messages')
+          .select('id')
+          .in('conversation_id', conversationIds)
+          .neq('sender_id', userId)
+          .eq('status', 'sent')
+
+        if (pendingMessages && pendingMessages.length > 0) {
+          const ids = pendingMessages.map((m: any) => m.id)
+          await supabase.from('messages').update({ status: 'delivered' }).in('id', ids)
+        }
+      } catch (err) {
+        console.error('Error marking messages as delivered:', err)
+      }
+    }
+
+    // Marca online imediatamente ao entrar + atualiza mensagens pendentes
     sendHeartbeat(true)
+    markPendingMessagesAsDelivered()
 
     // Realtime Presence Channel (detecção instantânea de queda de conexão)
     const channelName = `global_presence_${userId}_${Date.now()}_${Math.random()}`
