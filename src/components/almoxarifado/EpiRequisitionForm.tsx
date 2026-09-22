@@ -353,6 +353,19 @@ export function EpiRequisitionForm() {
   const authorizer = employees?.find(e => e.id === authorizerId);
   const employee = employees?.find(e => e.id === employeeId);
 
+  // Bloqueia orientação em paisagem (chamado via gesto do usuário)
+  const lockLandscape = async () => {
+    try {
+      if (window.screen?.orientation?.lock) {
+        await window.screen.orientation.lock('landscape')
+      }
+    } catch (_) {}
+  }
+
+  const unlockOrientation = () => {
+    try { window.screen?.orientation?.unlock?.() } catch (_) {}
+  }
+
   const handleToggleItem = (productId: string, checked: boolean) => {
     if (checked) {
       setItems([...items, { productId, quantity: 1 }]);
@@ -712,10 +725,10 @@ export function EpiRequisitionForm() {
                     <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setStep(1) }} className="text-xs px-3">
+                    <Button size="sm" variant="outline" onClick={() => { unlockOrientation(); setStep(1) }} className="text-xs px-3">
                       ← Voltar
                     </Button>
-                    <Button size="sm" onClick={() => { setStep(3) }} className="bg-black text-white text-xs px-3">
+                    <Button size="sm" onClick={() => { lockLandscape(); setStep(3) }} className="bg-black text-white text-xs px-3">
                       Próximo →
                     </Button>
                   </div>
@@ -772,10 +785,10 @@ export function EpiRequisitionForm() {
                     <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setStep(2) }} className="text-xs px-3">
+                    <Button size="sm" variant="outline" onClick={() => { lockLandscape(); setStep(2) }} className="text-xs px-3">
                       ← Voltar
                     </Button>
-                    <Button size="sm" onClick={handleGenerateAndSubmit} disabled={isGenerating} className="bg-black text-white text-xs px-3">
+                    <Button size="sm" onClick={() => { unlockOrientation(); handleGenerateAndSubmit() }} disabled={isGenerating} className="bg-black text-white text-xs px-3">
                       {isGenerating ? 'Salvando...' : 'Finalizar ✓'}
                     </Button>
                   </div>
@@ -830,7 +843,7 @@ export function EpiRequisitionForm() {
         )}
         {step > 1 && (
           <Button type="button" variant="outline" onClick={() => {
-            if (step - 1 === 1) exitLandscape();
+            if (step - 1 === 1) unlockOrientation();
             setStep(step - 1);
           }}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
@@ -838,7 +851,7 @@ export function EpiRequisitionForm() {
         )}
         {step < 3 ? (
           <Button type="button" className="ml-auto" onClick={() => {
-            if (step + 1 >= 2) requestLandscape();
+            if (step + 1 >= 2) lockLandscape();
             setStep(step + 1);
           }}>
             Próximo <ArrowRight className="w-4 h-4 ml-2" />
