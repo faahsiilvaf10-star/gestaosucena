@@ -648,30 +648,12 @@ body.signature-active .fixed.bottom-\[40px\] {
   display: none !important;
 }
 
-/* Fallback CSS: Rotaciona a tela para paisagem quando orientation.lock não é suportado */
-@media screen and (orientation: portrait) {
-  body.signature-active .sig-landscape-overlay {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 100dvh;
-    height: 100dvw;
-    transform: translate(-50%, -50%) rotate(90deg);
-    transform-origin: center center;
-    z-index: 300;
-    background: white;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-@media screen and (orientation: landscape) {
-  body.signature-active .sig-landscape-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-    background: white;
-    display: flex;
-    flex-direction: column;
-  }
+/* Overlay de assinatura: sempre fullscreen sem rotação (evita bug de coordenadas de toque) */
+body.signature-active .sig-landscape-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: white;
+  display: flex;
+  flex-direction: column;
 }

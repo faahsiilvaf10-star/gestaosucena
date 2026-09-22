@@ -314,33 +314,22 @@ export function EpiRequisitionForm() {
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
   const sigContainerRef = useRef<HTMLDivElement>(null);
-  const authorizerInterceptorRef = useRef<HTMLDivElement>(null);
-  const employeeInterceptorRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
-  // Controla se está em modo assinatura fullscreen no mobile
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
-  // Detecta se o CSS rotation está ativo (portrait + signature overlay)
-  const [cssRotationActive, setCssRotationActive] = useState(false);
+  // Detecta se o celular ainda está em retrato (orientation.lock falhou)
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
-  // Detecta se o CSS rotation está sendo usado (dispositivo em portrait com overlay ativo)
   useEffect(() => {
-    const checkRotation = () => {
-      setCssRotationActive(signatureFullscreen && window.innerHeight > window.innerWidth)
-    }
-    checkRotation()
-    window.addEventListener('resize', checkRotation)
-    window.addEventListener('orientationchange', checkRotation)
+    const update = () => setIsPortrait(window.innerHeight > window.innerWidth)
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
     return () => {
-      window.removeEventListener('resize', checkRotation)
-      window.removeEventListener('orientationchange', checkRotation)
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
     }
-  }, [signatureFullscreen])
-
-  // Remapeia coordenadas de toque para os dois canvas rotacionados
-  useSignatureTouchRemap(authorizerInterceptorRef, authorizerSigRef, cssRotationActive)
-  useSignatureTouchRemap(employeeInterceptorRef, employeeSigRef, cssRotationActive)
+  }, [])
 
   // Calcula dimensões do canvas
   useEffect(() => {
@@ -768,28 +757,27 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none relative">
+                {/* Quando o orientation.lock falhou e celular ainda está em retrato */}
+                {signatureFullscreen && isPortrait && (
+                  <div className="fixed inset-0 z-[400] bg-black/80 flex flex-col items-center justify-center gap-4">
+                    <div className="text-white text-6xl animate-bounce">&#8635;</div>
+                    <p className="text-white font-bold text-lg text-center px-8">Gire o celular para assinar em paisagem</p>
+                  </div>
+                )}
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={authorizerSigRef}
                     penColor="black"
                     minWidth={1.5}
                     maxWidth={3}
-                    throttle={16}
+                    throttle={0}
+                    velocityFilterWeight={0.1}
                     canvasProps={{
                       width: canvasSize.width,
                       height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full',
-                      style: { touchAction: 'none' }
+                      className: 'sigCanvas w-full h-full'
                     }}
                   />
-                  {/* Interceptor transparente que corrige coordenadas quando o CSS rotation está ativo */}
-                  {cssRotationActive && (
-                    <div
-                      ref={authorizerInterceptorRef}
-                      className="absolute inset-0 z-10"
-                      style={{ touchAction: 'none', cursor: 'crosshair' }}
-                    />
-                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
               </div>
@@ -838,28 +826,26 @@ export function EpiRequisitionForm() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none relative">
+                {signatureFullscreen && isPortrait && (
+                  <div className="fixed inset-0 z-[400] bg-black/80 flex flex-col items-center justify-center gap-4">
+                    <div className="text-white text-6xl animate-bounce">&#8635;</div>
+                    <p className="text-white font-bold text-lg text-center px-8">Gire o celular para assinar em paisagem</p>
+                  </div>
+                )}
+                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
                   <SignatureCanvas
                     ref={employeeSigRef}
                     penColor="black"
                     minWidth={1.5}
                     maxWidth={3}
-                    throttle={16}
+                    throttle={0}
+                    velocityFilterWeight={0.1}
                     canvasProps={{
                       width: canvasSize.width,
                       height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full',
-                      style: { touchAction: 'none' }
+                      className: 'sigCanvas w-full h-full'
                     }}
                   />
-                  {/* Interceptor transparente que corrige coordenadas quando o CSS rotation está ativo */}
-                  {cssRotationActive && (
-                    <div
-                      ref={employeeInterceptorRef}
-                      className="absolute inset-0 z-10"
-                      style={{ touchAction: 'none', cursor: 'crosshair' }}
-                    />
-                  )}
                 </div>
                 <span className="text-center text-sm text-gray-600 pb-2">{employee?.nome || 'Selecione o funcionário'}</span>
               </div>
