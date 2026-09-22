@@ -1269,7 +1269,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   <TimelineItem
                     key="dispatch-start"
                     time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
-                    title="Jornada Iniciada"
+                    title="Inicio de Turno"
                     subtitle={`Motorista: ${driverName}`}
                     status="in-progress"
                     isLast={true}
@@ -1293,13 +1293,15 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                     <TimelineItem
                       key="dispatch-start"
                       time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
-                      title="Jornada Iniciada"
+                      title="Inicio de Turno"
                       subtitle={`Motorista: ${driverName}`}
                       status="in-progress"
                       isLast={false}
                     />
                   )}
                   {history.map((h, i) => {
+                    if (h.new_status === 'Finalizado (Auto)') return null;
+
                     const translatedNewStatus = translateStatus(h.new_status)
                     const translatedPrevStatus = translateStatus(h.previous_status)
                     let mappedStatus: 'completed' | 'in-progress' | 'pending' | 'anomaly' = 'completed'
@@ -1341,11 +1343,18 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           horimetroFinal={dispatch?.horimeter_end || dispatch?.horimeter_start || vehicle.current_horimeter || '-'}
           abastecimentoInicial={dispatch?.fuel_start_percent ?? '-'}
           abastecimentoFinal={dispatch?.fuel_end_percent ?? dispatch?.fuel_start_percent ?? '-'}
-          timeline={history.map((h: any) => ({
-            time: h.created_at,
-            name: h.new_status,
-            type: 'Status Alterado'
-          }))}
+          timeline={[
+            ...(dispatch?.shift_start_time ? [{
+              time: dispatch.shift_start_time,
+              name: 'Inicio de Turno',
+              type: 'Status Inicial'
+            }] : []),
+            ...history.filter((h: any) => h.new_status !== 'Finalizado (Auto)').map((h: any) => ({
+              time: h.created_at,
+              name: h.new_status,
+              type: 'Status Alterado'
+            }))
+          ]}
         />
       </div>
     </div>
