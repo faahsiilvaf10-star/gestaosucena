@@ -22,7 +22,6 @@ import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
-import { ReminderAlertNotification } from './ReminderAlertNotification'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -123,7 +122,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
       <DdsAlertManager />
       {currentUser.id && <UserOnlineNotification currentUserId={currentUser.id} />}
-      {currentUser.id && <ReminderAlertNotification currentUserId={currentUser.id} />}
 
       
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}

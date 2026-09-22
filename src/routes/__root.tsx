@@ -17,6 +17,7 @@ import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatProvider } from "../contexts/ChatContext";
 import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
+import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -34,6 +35,7 @@ function RootContent() {
         <Outlet />
       )}
       <GlobalEquipmentAlert />
+      <ReminderAlertNotification />
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
     </div>
   )

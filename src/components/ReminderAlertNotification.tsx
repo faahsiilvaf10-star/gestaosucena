@@ -16,9 +16,21 @@ interface ReminderNotif {
   exiting?: boolean
 }
 
-export function ReminderAlertNotification({ currentUserId }: { currentUserId: string }) {
+export function ReminderAlertNotification() {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<ReminderNotif[]>([])
   
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.id) setCurrentUserId(data.user.id)
+    })
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id || null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   useEffect(() => {
     if (!currentUserId) return
 
