@@ -45,15 +45,42 @@ export async function sendEntryExitWhatsappNotification(
       msg = msg.replace('{motivo}', motivoText)
     }
 
-    await sendWhatsappTextOnServer({
-      data: {
-        url: whatsappSettings.url,
-        instanceId: whatsappSettings.instanceId,
-        token: whatsappSettings.token,
-        phone: number,
-        text: msg
+    try {
+      await sendWhatsappTextOnServer({
+        data: {
+          url: whatsappSettings.url,
+          instanceId: whatsappSettings.instanceId,
+          token: whatsappSettings.token,
+          phone: number,
+          text: msg
+        }
+      })
+    } catch (serverErr) {
+      console.warn("ServerFn failed, attempting direct fetch fallback...", serverErr);
+      
+      let baseUrl = whatsappSettings.url.trim()
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
+      if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
+      else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
+
+      const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
+      const payload = { number, phone: number, text: msg, message: msg }
+      
+      let res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${whatsappSettings.token}`,
+          'apikey': whatsappSettings.token
+        },
+        body: JSON.stringify(payload)
+      })
+      if (res.status === 404) {
+        const fallback = endpoint.includes('/message/') ? endpoint.replace('/message/', '/messages/') : endpoint.replace('/messages/', '/message/');
+        res = await fetch(fallback, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${whatsappSettings.token}`, 'apikey': whatsappSettings.token }, body: JSON.stringify(payload) });
       }
-    })
+      if (!res.ok) throw new Error("Direct fetch failed: " + await res.text())
+    }
   } catch (error: any) {
     console.error('Error sending Entry/Exit WhatsApp Notification:', error)
     toast.error('Erro no WhatsApp: ' + (error?.message || String(error)))

@@ -20,6 +20,7 @@ import { isAdmin } from './ui/VerifiedBadge'
 import { toast } from 'sonner'
 import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 import { DailyPipasAlertModal } from './DailyPipasAlertModal'
+import { DdsAlertManager } from './DdsAlertManager'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -118,6 +119,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
+      <DdsAlertManager />
 
       
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
