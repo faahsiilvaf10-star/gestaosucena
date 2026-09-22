@@ -85,7 +85,7 @@ BEGIN
           v_is_target_day := true;
         END IF;
       ELSE
-        IF r.due_date IS NOT NULL AND r.due_date::date = v_current_date THEN
+        IF r.due_date IS NOT NULL AND r.due_date::date <= v_current_date THEN
           v_is_target_day := true;
         END IF;
       END IF;
@@ -108,13 +108,13 @@ BEGIN
       -- 3. Bateu o horário?
       IF v_is_target_day THEN
         IF r.due_time IS NOT NULL THEN
-          IF to_char(r.due_time, 'HH24:MI') = v_current_time THEN
+          IF to_char(r.due_time, 'HH24:MI') <= v_current_time THEN
             v_trigger_now := true;
             v_is_advance := false;
           END IF;
         ELSE
           -- Sem horário configurado = 06:00
-          IF v_current_time = '06:00' THEN
+          IF v_current_time >= '06:00' THEN
             v_trigger_now := true;
             v_is_advance := false;
           END IF;
@@ -123,7 +123,7 @@ BEGIN
 
       IF v_is_advance_day AND NOT v_trigger_now THEN
         -- Aviso antecipado sempre às 16:00
-        IF v_current_time = '16:00' THEN
+        IF v_current_time >= '16:00' THEN
           v_trigger_now := true;
           v_is_advance := true;
         END IF;
@@ -134,10 +134,9 @@ BEGIN
         CONTINUE;
       END IF;
 
-      -- Se já notificamos ESTE lembrete HOJE no mesmo minuto, não envia de novo
+      -- Se já notificamos ESTE lembrete HOJE, não envia de novo
       IF r.last_notified_at IS NOT NULL 
-         AND (r.last_notified_at AT TIME ZONE 'America/Belem')::date = v_current_date
-         AND to_char(r.last_notified_at AT TIME ZONE 'America/Belem', 'HH24:MI') = v_current_time THEN
+         AND (r.last_notified_at AT TIME ZONE 'America/Belem')::date = v_current_date THEN
         CONTINUE;
       END IF;
 
