@@ -18,6 +18,13 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
   useEffect(() => {
     // Trigger entrance animation
     setTimeout(() => setIsVisible(true), 10);
+
+    // Toca o som de comunicado
+    try {
+      const audio = new Audio('/comunicado.mp3')
+      audio.volume = 0.8
+      audio.play().catch(() => {})
+    } catch (_) {}
   }, []);
 
   const handleClose = () => {
