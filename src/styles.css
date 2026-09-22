@@ -644,6 +644,6 @@
 body.signature-active header,
 body.signature-active footer,
 body.signature-active .sticky.top-0,
-body.signature-active .fixed.bottom-[40px] {
+body.signature-active .fixed.bottom-\[40px\] {
   display: none !important;
 }
