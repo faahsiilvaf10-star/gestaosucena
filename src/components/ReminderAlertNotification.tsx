@@ -32,8 +32,12 @@ export function ReminderAlertNotification() {
   }, [])
 
   useEffect(() => {
-    if (!currentUserId) return
+    if (!currentUserId) {
+      console.log("[ReminderAlert] No user ID, not subscribing.")
+      return
+    }
 
+    console.log(`[ReminderAlert] Subscribing to reminder_notifications for user: ${currentUserId}`)
     const channel = supabase.channel(`reminder_notif_${currentUserId}_${Date.now()}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -41,6 +45,7 @@ export function ReminderAlertNotification() {
         table: 'reminder_notifications',
         filter: `user_id=eq.${currentUserId}` 
       }, (payload: any) => {
+        console.log("[ReminderAlert] Received INSERT payload:", payload)
         const notif = payload.new
 
         const notifId = notif.id
