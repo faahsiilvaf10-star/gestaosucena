@@ -284,23 +284,50 @@ export function EpiRequisitionForm() {
     if ((step === 2 || step === 3) && window.innerWidth < 768) {
       setSignatureFullscreen(true)
       document.body.classList.add('signature-active')
-      // Tenta travar orientação (funciona em PWA/Android)
-      try {
-        if (window.screen?.orientation?.lock) {
-          window.screen.orientation.lock('landscape').catch(() => {})
-        }
-      } catch (_) {}
+
+      // Entra em fullscreen e depois trava em paisagem
+      const enterLandscape = async () => {
+        try {
+          const el = document.documentElement
+          if (el.requestFullscreen) {
+            await el.requestFullscreen()
+          } else if ((el as any).webkitRequestFullscreen) {
+            await (el as any).webkitRequestFullscreen()
+          }
+        } catch (_) {}
+
+        try {
+          if (window.screen?.orientation?.lock) {
+            await window.screen.orientation.lock('landscape')
+          }
+        } catch (_) {}
+      }
+
+      enterLandscape()
     } else {
       setSignatureFullscreen(false)
       document.body.classList.remove('signature-active')
-      try {
-        if (window.screen?.orientation?.unlock) {
-          window.screen.orientation.unlock()
-        }
-      } catch (_) {}
+
+      // Sai do fullscreen e libera a orientação
+      const exitLandscape = async () => {
+        try {
+          if (window.screen?.orientation?.unlock) {
+            window.screen.orientation.unlock()
+          }
+        } catch (_) {}
+        try {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen()
+          }
+        } catch (_) {}
+      }
+
+      exitLandscape()
     }
     
-    return () => document.body.classList.remove('signature-active')
+    return () => {
+      document.body.classList.remove('signature-active')
+    }
   }, [step])
 
   // Derived data
