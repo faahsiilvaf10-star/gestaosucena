@@ -16,6 +16,7 @@ import { CustomCursor } from "../components/CustomCursor";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatProvider } from "../contexts/ChatContext";
 import { AppLayout } from "../components/AppLayout";
+import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -32,6 +33,7 @@ function RootContent() {
       ) : (
         <Outlet />
       )}
+      <GlobalEquipmentAlert />
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
     </div>
   )
