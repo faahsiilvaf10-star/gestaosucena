@@ -44,6 +44,7 @@ function RhEfetivoPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [selectedColaborador, setSelectedColaborador] = useState<EfetivoItem | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,10 +52,24 @@ function RhEfetivoPage() {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUserEmail(user?.email || null)
+      if (user) {
+        const { data: users } = await supabase.rpc('get_users')
+        if (users) {
+          const currentUserProfile = (users as any[]).find((u: any) => u.id === user.id)
+          setUserRole(currentUserProfile?.role || null)
+        }
+      }
     }
     fetchUser()
     fetchEfetivo()
   }, [])
+
+  const canEdit = userEmail === 'ffaahsiilva@gmail.com' || 
+    (userRole && (
+      userRole.toLowerCase().includes('auxiliar administrativo') || 
+      userRole.toLowerCase().includes('admin') || 
+      userRole.toLowerCase().includes('diretor')
+    ));
 
   const fetchEfetivo = async () => {
     try {
@@ -430,7 +445,7 @@ function RhEfetivoPage() {
                       className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                     >
                       <td className="p-4 font-mono text-xs w-40" onClick={e => e.stopPropagation()}>
-                        {userEmail === 'ffaahsiilva@gmail.com' ? (
+                        {canEdit ? (
                           <input 
                             type="text"
                             defaultValue={item.matricula || ''}
@@ -510,7 +525,7 @@ function RhEfetivoPage() {
                     {/* ASO Admissional */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
-                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                      {canEdit ? (
                         <DateInput
                           value={selectedColaborador.aso_admissional || ''}
                           onChange={(value) => {
@@ -529,7 +544,7 @@ function RhEfetivoPage() {
                     {/* ASO Periódico */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Periódico</p>
-                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                      {canEdit ? (
                         <DateInput
                           value={selectedColaborador.aso_periodico || ''}
                           onChange={(value) => {
@@ -548,7 +563,7 @@ function RhEfetivoPage() {
                     {/* Retorno ao Trabalho */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Retorno ao Trab.</p>
-                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                      {canEdit ? (
                         <DateInput
                           value={selectedColaborador.retorno_ao_trabalho || ''}
                           onChange={(value) => {
@@ -567,7 +582,7 @@ function RhEfetivoPage() {
                     {/* Mudança de Risco */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Mudança de Risco</p>
-                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                      {canEdit ? (
                         <DateInput
                           value={selectedColaborador.mudanca_de_risco || ''}
                           onChange={(value) => {
@@ -588,7 +603,7 @@ function RhEfetivoPage() {
                     {/* Observação */}
                     <div className="col-span-1">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Observação</p>
-                      {userEmail === 'ffaahsiilva@gmail.com' ? (
+                      {canEdit ? (
                         <input 
                           type="text"
                           value={selectedColaborador.observacao || ''}
