@@ -285,48 +285,30 @@ export function EpiRequisitionForm() {
       setSignatureFullscreen(true)
       document.body.classList.add('signature-active')
 
-      // Entra em fullscreen e depois trava em paisagem
-      const enterLandscape = async () => {
-        try {
-          const el = document.documentElement
-          if (el.requestFullscreen) {
-            await el.requestFullscreen()
-          } else if ((el as any).webkitRequestFullscreen) {
-            await (el as any).webkitRequestFullscreen()
-          }
-        } catch (_) {}
-
+      // Tenta travar orientação em paisagem sem fullscreen
+      const tryLock = async () => {
         try {
           if (window.screen?.orientation?.lock) {
             await window.screen.orientation.lock('landscape')
           }
-        } catch (_) {}
+        } catch (_) {
+          // Fallback: se o browser não suportar, a rotação CSS do overlay fará o trabalho
+        }
       }
-
-      enterLandscape()
+      tryLock()
     } else {
       setSignatureFullscreen(false)
       document.body.classList.remove('signature-active')
-
-      // Sai do fullscreen e libera a orientação
-      const exitLandscape = async () => {
-        try {
-          if (window.screen?.orientation?.unlock) {
-            window.screen.orientation.unlock()
-          }
-        } catch (_) {}
-        try {
-          if (document.fullscreenElement) {
-            await document.exitFullscreen()
-          }
-        } catch (_) {}
-      }
-
-      exitLandscape()
+      try {
+        if (window.screen?.orientation?.unlock) {
+          window.screen.orientation.unlock()
+        }
+      } catch (_) {}
     }
     
     return () => {
       document.body.classList.remove('signature-active')
+      try { window.screen?.orientation?.unlock?.() } catch (_) {}
     }
   }, [step])
 
@@ -687,13 +669,10 @@ export function EpiRequisitionForm() {
           <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
             {/* Mobile: overlay fullscreen nativo (sem rotação CSS para não bugar o touch) */}
             {signatureFullscreen ? (
-              <div
-                className="fixed inset-0 z-[300] bg-white flex flex-col pt-2"
-              >
-                <div className="flex items-center justify-between px-4 pb-2 shrink-0">
+              <div className="sig-landscape-overlay">
+                <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
                   <div className="flex flex-col">
                     <Label className="font-bold text-base text-black">ASSINATURA AUTORIZADOR</Label>
-                    <span className="text-[10px] text-gray-500">Gire o celular se precisar de mais espaço</span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
@@ -751,13 +730,10 @@ export function EpiRequisitionForm() {
           {/* ASSINATURA FUNCIONÁRIO */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
             {signatureFullscreen ? (
-              <div
-                className="fixed inset-0 z-[300] bg-white flex flex-col pt-2"
-              >
-                <div className="flex items-center justify-between px-4 pb-2 shrink-0">
+              <div className="sig-landscape-overlay">
+                <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
                   <div className="flex flex-col">
                     <Label className="font-bold text-base text-black">ASSINATURA FUNCIONÁRIO</Label>
-                    <span className="text-[10px] text-gray-500">Gire o celular se precisar de mais espaço</span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
