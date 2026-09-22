@@ -623,3 +623,19 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
   }
 }
+
+/* User Online Notification Popup Animation */
+@keyframes slideUpNotif {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up-notif {
+  animation: slideUpNotif 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
