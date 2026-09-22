@@ -67,8 +67,14 @@ BEGIN
     v_endpoint := v_endpoint || '/v1';
   END IF;
 
-  -- Montar endpoint final (Padrão da Evolution API - evita o erro 404)
-  v_endpoint := v_endpoint || '/message/sendText/' || (v_settings->>'instanceId');
+  -- Montar endpoint final
+  IF v_endpoint LIKE '%api.w-api.app%' THEN
+    -- A API da w-api.app requer exatamente "message/send-text" (com traço e singular)
+    v_endpoint := v_endpoint || '/message/send-text?instanceId=' || (v_settings->>'instanceId');
+  ELSE
+    -- Padrão da Evolution API v1 original
+    v_endpoint := v_endpoint || '/message/sendText/' || (v_settings->>'instanceId');
+  END IF;
 
   -- Percorrer todos os lembretes pendentes ou em andamento
   FOR r IN 
