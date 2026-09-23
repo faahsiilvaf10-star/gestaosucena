@@ -536,12 +536,12 @@ export default function DashboardStep() {
               if (reportRef.current) {
                 try {
                   await new Promise(r => setTimeout(r, 800))
-                  dataUrl = await htmlToImage.toPng(reportRef.current, {
-                    pixelRatio: 2,
-                    backgroundColor: '#ffffff',
-                    cacheBust: true,
-                    skipFonts: false,
+                  const canvas = await html2canvas(reportRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
                   })
+                  dataUrl = canvas.toDataURL('image/png')
                 } catch (err) {
                   console.error('Erro ao gerar imagem da Parte Diária:', err)
                 }
