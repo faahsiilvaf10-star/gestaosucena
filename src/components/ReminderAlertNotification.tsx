@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 function playReminderSound() {
   try {
-    const audio = new Audio('/comunicado.mp3') // Reutilizando o som de comunicado existente
+    const audio = new Audio('/comunicado.mp3')
     audio.volume = 0.8
     audio.play().catch(() => {/* Autoplay bloqueado pelo browser, ignora */})
   } catch (_) {}
@@ -20,6 +20,9 @@ export function ReminderAlertNotification() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<ReminderNotif[]>([])
   
+  // Data atual local (YYYY-MM-DD) para controle do 'Adiar'
+  const todayDateStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-')
+  
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user?.id) setCurrentUserId(data.user.id)
@@ -33,11 +36,43 @@ export function ReminderAlertNotification() {
 
   useEffect(() => {
     if (!currentUserId) {
-      console.log("[ReminderAlert] No user ID, not subscribing.")
       return
     }
 
-    console.log(`[ReminderAlert] Subscribing to reminder_notifications for user: ${currentUserId}`)
+    // 1. Buscar notificações pendentes (não lidas) ao logar/entrar
+    const fetchPendingNotifications = async () => {
+      const { data, error } = await supabase
+        .from('reminder_notifications')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .eq('read', false)
+      
+      if (!error && data) {
+        const pending: ReminderNotif[] = []
+        for (const notif of data) {
+          // Verifica se foi adiado hoje no localStorage
+          const snoozedDate = localStorage.getItem(`snoozed_notif_${notif.id}`)
+          if (snoozedDate !== todayDateStr) {
+            pending.push({
+              id: notif.id,
+              title: notif.title || 'Lembrete',
+              message: notif.message || 'Você tem um novo lembrete!'
+            })
+          }
+        }
+        if (pending.length > 0) {
+          setNotifications(prev => {
+            const existingIds = new Set(prev.map(p => p.id))
+            const newNotifs = pending.filter(p => !existingIds.has(p.id))
+            return [...prev, ...newNotifs]
+          })
+          // Não toca som ao carregar as antigas, só se for nova
+        }
+      }
+    }
+    fetchPendingNotifications()
+
+    // 2. Escutar por novos lembretes chegando em tempo real
     const channel = supabase.channel(`reminder_notif_${currentUserId}_${Date.now()}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -45,28 +80,56 @@ export function ReminderAlertNotification() {
         table: 'reminder_notifications',
         filter: `user_id=eq.${currentUserId}` 
       }, (payload: any) => {
-        console.log("[ReminderAlert] Received INSERT payload:", payload)
         const notif = payload.new
 
-        const notifId = notif.id
-        const newNotif: ReminderNotif = {
-          id: notifId,
-          title: notif.title || 'Lembrete',
-          message: notif.message || 'Você tem um novo lembrete!'
+        // Apenas adiciona se não foi adiada hoje
+        const snoozedDate = localStorage.getItem(`snoozed_notif_${notif.id}`)
+        if (snoozedDate !== todayDateStr) {
+          const newNotif: ReminderNotif = {
+            id: notif.id,
+            title: notif.title || 'Lembrete',
+            message: notif.message || 'Você tem um novo lembrete!'
+          }
+
+          playReminderSound()
+
+          setNotifications(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev
+            return [...prev, newNotif]
+          })
         }
-
-        playReminderSound()
-
-        setNotifications(prev => [...prev, newNotif])
-
-        // Removido auto-fechamento. O usuário precisa fechar manualmente.
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [currentUserId])
+  }, [currentUserId, todayDateStr])
+
+  const dismissNotification = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, exiting: true } : n)
+    )
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id))
+    }, 400)
+  }
+
+  const handleVisto = async (id: string) => {
+    // Marca como lido no banco
+    await supabase
+      .from('reminder_notifications')
+      .update({ read: true })
+      .eq('id', id)
+    
+    dismissNotification(id)
+  }
+
+  const handleAdiar = (id: string) => {
+    // Salva no localStorage para não mostrar mais hoje
+    localStorage.setItem(`snoozed_notif_${id}`, todayDateStr)
+    dismissNotification(id)
+  }
 
   if (notifications.length === 0) return null
 
@@ -105,27 +168,17 @@ export function ReminderAlertNotification() {
 
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => {
-                    setNotifications(prev =>
-                      prev.map(n => n.id === notif.id ? { ...n, exiting: true } : n)
-                    )
-                    setTimeout(() => {
-                      setNotifications(prev => prev.filter(n => n.id !== notif.id))
-                    }, 400)
-                  }}
+                  onClick={() => handleAdiar(notif.id)}
                   className="px-6 py-2.5 font-bold text-gray-700 dark:text-gray-200 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl transition-colors"
                 >
-                  Fechar
+                  Adiar
                 </button>
-                <a
-                  href="/lembretes"
-                  onClick={() => {
-                    setNotifications(prev => prev.filter(n => n.id !== notif.id))
-                  }}
+                <button
+                  onClick={() => handleVisto(notif.id)}
                   className="px-6 py-2.5 font-bold text-black bg-[#D6A72B] hover:bg-[#c49823] rounded-xl transition-colors shadow-lg shadow-[#D6A72B]/20"
                 >
-                  Ver Lembretes
-                </a>
+                  Visto
+                </button>
               </div>
             </div>
           </div>
