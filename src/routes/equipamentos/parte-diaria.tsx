@@ -280,11 +280,10 @@ function ParteDiariaPage() {
           let isAtividade = false
           let isManutencao = false
 
-          if (statusLower.includes('em operação') || statusLower.includes('em atividade') || statusLower === 'operating') {
-            if (dMap[vehicle.id]) {
-              countAtividade++
-              isAtividade = true
-            }
+          // Regra: Qualquer equipamento que iniciou jornada e ainda não finalizou conta como "Em Trabalho"
+          if (dMap[vehicle.id] && !statusLower.includes('jornada finalizada') && !statusLower.includes('finalizada')) {
+            countAtividade++
+            isAtividade = true
           }
           if (
             statusLower.includes('manuten') || 
