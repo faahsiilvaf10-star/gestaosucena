@@ -57,6 +57,7 @@ DECLARE
   v_message text;
   v_phones text[];
   v_phone text;
+  v_creator_name text;
   v_is_advance boolean;
   v_advance_days integer;
 BEGIN
@@ -192,7 +193,10 @@ BEGIN
       v_message := replace(v_message, '{hora}',     COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
       -- Incluir criador
-      SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
+      SELECT raw_user_meta_data->>'name', raw_user_meta_data->>'whatsapp' INTO v_creator_name, v_phone FROM auth.users WHERE id = r.creator_id;
+      
+      v_message := v_message || E'\n\n👤 Criado por: ' || COALESCE(v_creator_name, 'Usuário');
+
       IF v_phone IS NOT NULL AND trim(v_phone) != '' THEN
         v_phones := array_append(v_phones, trim(v_phone));
       END IF;
