@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- FIX: Lembretes WhatsApp - Correcao completa do cron e RLS
 -- =============================================================================
 -- PROBLEMA 1: A politica de INSERT em reminder_notifications exige TO authenticated
@@ -184,9 +184,12 @@ BEGIN
       END IF;
 
       v_message := replace(v_message, '{titulo}', COALESCE(r.title, ''));
-      v_message := replace(v_message, '{descricao}', COALESCE(r.description, ''));
-      v_message := replace(v_message, '{data}', COALESCE(to_char(r.due_date::date, 'DD/MM/YYYY'), '-'));
-      v_message := replace(v_message, '{hora}', COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
+      v_message := replace(v_message, '{descricao}',COALESCE(r.description, ''));
+      v_message := replace(v_message, '{data}',     COALESCE(
+        to_char(r.due_date::date, 'DD/MM/YYYY'), 
+        to_char(v_current_date + (CASE WHEN v_is_advance THEN v_advance_days ELSE 0 END), 'DD/MM/YYYY')
+      ));
+      v_message := replace(v_message, '{hora}',     COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
       -- Incluir criador
       SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
