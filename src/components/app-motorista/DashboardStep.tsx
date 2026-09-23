@@ -535,11 +535,18 @@ export default function DashboardStep() {
               let dataUrl = ''
               if (reportRef.current) {
                 try {
-                  await new Promise(r => setTimeout(r, 200))
-                  dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2, backgroundColor: '#ffffff' })
+                  await new Promise(r => setTimeout(r, 800))
+                  dataUrl = await htmlToImage.toPng(reportRef.current, {
+                    pixelRatio: 2,
+                    backgroundColor: '#ffffff',
+                    cacheBust: true,
+                    skipFonts: false,
+                  })
                 } catch (err) {
-                  console.error('Erro ao gerar imagem:', err)
+                  console.error('Erro ao gerar imagem da Parte Diária:', err)
                 }
+              } else {
+                console.warn('reportRef.current é null — ParteDiariaReport não montado no DOM')
               }
 
               // Montar mensagem
@@ -841,24 +848,23 @@ export default function DashboardStep() {
         </div>
         {renderConfirmModal()}
 
-        {/* Hidden Div para renderizar Parte Diaria e tirar print */}
-        <div className="absolute top-[-10000px] left-[-10000px] opacity-0 pointer-events-none">
-          <div ref={reportRef}>
-            <ParteDiariaReport
-              motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
-              ajudante={dispatch?.helper_name || ''}
-              data={new Date()}
-              equipamentoNome={equipment?.name || equipment?.type || '-'}
-              placa={equipment?.plate_tag || '-'}
-              kmInicial={dispatch?.odometer_start ?? ''}
-              kmFinal={endKm || ''}
-              horimetroInicial={dispatch?.horimeter_start ?? ''}
-              horimetroFinal={endHorimeter || ''}
-              abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
-              abastecimentoFinal={endFuel || ''}
-              timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
-            />
-          </div>
+        {/* Hidden report para captura de imagem - idêntico ao parte-diaria.tsx admin */}
+        <div style={{ position: 'fixed', top: '-10000px', left: 0, zIndex: -1000 }}>
+          <ParteDiariaReport
+            ref={reportRef}
+            motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
+            ajudante={dispatch?.helper_name || ''}
+            data={new Date()}
+            equipamentoNome={equipment?.name || equipment?.type || '-'}
+            placa={equipment?.plate_tag || '-'}
+            kmInicial={dispatch?.odometer_start ?? ''}
+            kmFinal={endKm || ''}
+            horimetroInicial={dispatch?.horimeter_start ?? ''}
+            horimetroFinal={endHorimeter || ''}
+            abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
+            abastecimentoFinal={endFuel || ''}
+            timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
+          />
         </div>
       </div>
     )

@@ -126,7 +126,7 @@ const ParteDiariaReport = forwardRef<HTMLDivElement, ParteDiariaReportProps>(({
     <div ref={ref} className="bg-[#ffffff] text-[#000000] font-sans relative" style={{ width: '800px', padding: '15px 30px', fontFamily: 'Arial, sans-serif' }}>
       
       <div className="flex justify-center mb-2">
-        <img src="/logo-relatorio.png" alt="SUCENA Empreendimentos" className="h-14 object-contain" />
+        <img src="/logo-relatorio.png" alt="SUCENA Empreendimentos" className="h-14 object-contain" crossOrigin="anonymous" />
       </div>
 
       <div className="border-[1.5px] border-[#000000]">
