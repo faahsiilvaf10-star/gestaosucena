@@ -25,6 +25,7 @@ interface ReminderNotif {
   id: string
   title: string
   message: string
+  created_at?: string
   reminder?: ReminderData
   exiting?: boolean
 }
@@ -70,6 +71,7 @@ export function ReminderAlertNotification() {
               id: notif.id,
               title: notif.title || 'Lembrete',
               message: notif.message || 'Você tem um novo lembrete!',
+              created_at: notif.created_at,
               reminder: notif.reminder as ReminderData
             })
           }
@@ -111,6 +113,7 @@ export function ReminderAlertNotification() {
             id: notif.id,
             title: notif.title || 'Lembrete',
             message: notif.message || 'Você tem um novo lembrete!',
+            created_at: notif.created_at,
             reminder: reminderData
           }
 
@@ -213,20 +216,20 @@ export function ReminderAlertNotification() {
                     </div>
 
                     <div className="space-y-3">
-                      {(notif.reminder.due_date || notif.reminder.due_time) && (
+                      {(notif.reminder.due_date || notif.reminder.due_time || notif.created_at) && (
                         <div className="flex flex-wrap gap-x-6 gap-y-2">
-                          {notif.reminder.due_date && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                              <Calendar size={16} className="text-[#D6A72B]" />
-                              <span className="font-medium">
-                                {new Date(notif.reminder.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                            <Calendar size={16} className="text-[#D6A72B]" />
+                            <span className="font-medium">
+                              {notif.reminder.due_date 
+                                ? new Date(notif.reminder.due_date + 'T12:00:00').toLocaleDateString('pt-BR')
+                                : (notif.created_at ? new Date(notif.created_at).toLocaleDateString('pt-BR') : '')}
+                            </span>
+                          </div>
                           {notif.reminder.due_time && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                               <Clock size={16} className="text-[#D6A72B]" />
-                              <span className="font-medium">{notif.reminder.due_time}</span>
+                              <span className="font-medium">{notif.reminder.due_time.substring(0, 5)}</span>
                             </div>
                           )}
                         </div>
