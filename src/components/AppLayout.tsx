@@ -22,6 +22,7 @@ import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
+import { NewMessageNotification } from './chat/NewMessageNotification'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -121,7 +122,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
       <DdsAlertManager />
-      {currentUser.id && <UserOnlineNotification currentUserId={currentUser.id} />}
+      {currentUser.id && (
+        <>
+          <UserOnlineNotification currentUserId={currentUser.id} />
+          <NewMessageNotification currentUserId={currentUser.id} />
+        </>
+      )}
 
       
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
