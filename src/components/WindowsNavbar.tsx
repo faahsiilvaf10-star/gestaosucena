@@ -9,6 +9,7 @@ import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
 import { GlobalSearchModal } from './GlobalSearchModal'
 import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
+import { LiquidMetalButton } from './ui/liquid-metal-button'
 
 interface UserInfo {
   id: string
@@ -47,7 +48,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   
   const menuRef = useRef<HTMLDivElement>(null)
   const indicatorRef = useRef<HTMLDivElement>(null)
-  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([])
+  const itemRefs = useRef<(HTMLElement | null)[]>([])
   const animationTimerRef = useRef<number | null>(null)
   const drawerRef = useRef<HTMLDivElement>(null)
 
@@ -76,7 +77,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
 
   // Desktop: liquid indicator
   useEffect(() => {
-    const updateIndicator = (item: HTMLAnchorElement, animate = true) => {
+    const updateIndicator = (item: HTMLElement, animate = true) => {
       if (!item || !menuRef.current || !indicatorRef.current) return
 
       const menuRect = menuRef.current.getBoundingClientRect()
@@ -355,17 +356,36 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           <div className="nav-menu-wrapper">
             <div className="nav-menu-scroll">
               <nav className="nav-menu" id="mainNavigation" ref={menuRef}>
-                <div className="liquid-indicator" id="liquidIndicator" ref={indicatorRef}></div>
                 
                 {MENU_ITEMS.map((item, idx) => {
                   const isActive = currentPath === item.routeMatch || currentPath.startsWith(item.routeMatch + '/')
                   const Icon = item.icon
                   
+                  if (isActive) {
+                    return (
+                      <div
+                        key={item.id}
+                        ref={el => itemRefs.current[idx] = el}
+                        style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: '0 4px', background: 'transparent', zIndex: 5 }}
+                      >
+                         <LiquidMetalButton 
+                           label={item.label} 
+                           onClick={() => {
+                             if (item.href !== '#') {
+                               navigate({ to: item.href as any })
+                             }
+                           }}
+                           viewMode="text" 
+                         />
+                      </div>
+                    )
+                  }
+
                   return (
                     <a
                       key={item.id}
                       href={item.href}
-                      ref={el => itemRefs.current[idx] = el}
+                      ref={el => itemRefs.current[idx] = el as HTMLAnchorElement}
                       className={`nav-item ${isActive ? 'active' : ''} ${item.isEmergency ? 'emergency' : ''}`}
                       onClick={(e) => handleItemClick(e, item.href, idx)}
                       aria-current={isActive ? 'page' : undefined}
