@@ -6,7 +6,7 @@ import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import {
   MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
   Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
-  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit,
+  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit, History,
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, Plus, Save, Pencil, ArrowUp, ArrowDown
 } from 'lucide-react'
 
@@ -49,6 +49,7 @@ import { format, subDays, addDays, startOfDay, subHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DRIVERS } from '@/components/app-motorista/LoginStep'
 import ParteDiariaReport from '@/components/app-motorista/ParteDiariaReport'
+import { EquipmentHistoryModal } from '@/components/EquipmentHistoryModal'
 
 export const Route = createFileRoute('/equipamentos/parte-diaria')({
   component: ParteDiariaPage,
@@ -726,6 +727,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
   const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false)
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [editKmInicial, setEditKmInicial] = useState('')
   const [editKmFinal, setEditKmFinal] = useState('')
   const [editHoriInicial, setEditHoriInicial] = useState('')
@@ -993,6 +995,17 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
               <Edit size={14} /> Corrigir
             </button>
             
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors mr-2 cursor-pointer"
+              title="Ver todo o histórico por data"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsHistoryModalOpen(true)
+              }}
+            >
+              <History size={14} /> Histórico
+            </button>
+
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
               <DialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
                 <DialogHeader>
@@ -1337,6 +1350,13 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           ]}
         />
       </div>
+
+      <EquipmentHistoryModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+        vehicleId={vehicle.id} 
+        vehicleName={`${vehicle.name} - ${vehicle.plate_tag}`} 
+      />
     </div>
   )
 }
