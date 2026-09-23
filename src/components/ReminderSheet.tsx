@@ -18,6 +18,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const { isDark } = useTheme()
   const queryClient = useQueryClient()
   const isEditing = !!reminder
+  const canEdit = !isEditing || reminder?.creator_id === currentUserId
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -217,9 +218,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nome da tarefa"
-              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/20 focus:outline-none resize-none overflow-y-auto min-h-[60px]"
+              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/20 focus:outline-none resize-none overflow-y-auto min-h-[60px] disabled:opacity-70 disabled:cursor-not-allowed"
               rows={2}
               autoFocus
+              disabled={!canEdit}
             />
           </div>
 
@@ -251,39 +253,43 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                       return (
                         <div key={userId} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-medium border border-indigo-500/20">
                           {isMe ? '(Eu)' : (u?.name || 'Desconhecido')}
-                          <button 
-                            onClick={() => setMentions(prev => prev.filter(id => id !== userId))}
-                            className="hover:text-gray-900 dark:text-white transition-colors ml-1"
-                          >
-                            <X size={12} />
-                          </button>
+                          {canEdit && (
+                            <button 
+                              onClick={() => setMentions(prev => prev.filter(id => id !== userId))}
+                              className="hover:text-gray-900 dark:text-white transition-colors ml-1"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
                         </div>
                       )
                     })
                   )}
                 </div>
-                <select 
-                  value="" 
-                  onChange={(e) => {
-                    const val = e.target.value
-                    if (!val) return
-                    if (val === 'ALL') {
-                      setMentions(['ALL'])
-                    } else if (!mentions.includes(val)) {
-                      setMentions(prev => [...prev.filter(id => id !== 'ALL'), val])
-                    }
-                  }}
-                  className="w-full bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="" className={isDark ? "bg-[#121214] text-white/50" : "bg-white text-gray-500"}>+ Adicionar responsável</option>
-                  <option value="ALL" className={isDark ? "bg-[#121214] text-indigo-300 font-medium" : "bg-white text-indigo-600 font-medium"}>(Todos)</option>
-                  {currentUserId && !mentions.includes(currentUserId) && (
-                    <option value={currentUserId} className={isDark ? "bg-[#121214] text-indigo-400 font-medium" : "bg-white text-indigo-600 font-medium"}>(Eu)</option>
-                  )}
-                  {users.filter(u => u.id !== currentUserId && !mentions.includes(u.id)).map(u => (
-                    <option key={u.id} value={u.id} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>{u.name}</option>
-                  ))}
-                </select>
+                {canEdit && (
+                  <select 
+                    value="" 
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (!val) return
+                      if (val === 'ALL') {
+                        setMentions(['ALL'])
+                      } else if (!mentions.includes(val)) {
+                        setMentions(prev => [...prev.filter(id => id !== 'ALL'), val])
+                      }
+                    }}
+                    className="w-full bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="" className={isDark ? "bg-[#121214] text-white/50" : "bg-white text-gray-500"}>+ Adicionar responsável</option>
+                    <option value="ALL" className={isDark ? "bg-[#121214] text-indigo-300 font-medium" : "bg-white text-indigo-600 font-medium"}>(Todos)</option>
+                    {currentUserId && !mentions.includes(currentUserId) && (
+                      <option value={currentUserId} className={isDark ? "bg-[#121214] text-indigo-400 font-medium" : "bg-white text-indigo-600 font-medium"}>(Eu)</option>
+                    )}
+                    {users.filter(u => u.id !== currentUserId && !mentions.includes(u.id)).map(u => (
+                      <option key={u.id} value={u.id} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>{u.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
@@ -297,13 +303,15 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                 <DateInput 
                   value={dueDate}
                   onChange={(val) => setDueDate(val)}
-                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors cursor-pointer"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={!canEdit}
                 />
                 <input 
                   type="time" 
                   value={dueTime}
                   onChange={(e) => setDueTime(e.target.value)}
-                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark]"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 rounded-md transition-colors cursor-pointer [color-scheme:dark] disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={!canEdit}
                 />
               </div>
             </div>
@@ -318,7 +326,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                 <select 
                   value={advanceNotice} 
                   onChange={(e) => setAdvanceNotice(Number(e.target.value))}
-                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={!canEdit}
                 >
                   <option value={0} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>No momento</option>
                   <option value={1} className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>1 dia antes</option>
@@ -342,7 +351,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                       type="checkbox"
                       checked={isRecurring}
                       onChange={(e) => setIsRecurring(e.target.checked)}
-                      className="rounded border-white/20 bg-black/50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                      className="rounded border-white/20 bg-black/50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 w-4 h-4 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                      disabled={!canEdit}
                     />
                     Repetir em dias específicos
                   </label>
@@ -352,12 +362,13 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                     {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, idx) => (
                       <button
                         key={idx}
+                        disabled={!canEdit}
                         onClick={() => {
                           setRecurringDays(prev => 
                             prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
                           )
                         }}
-                        className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${ recurringDays.includes(idx) ? 'bg-indigo-600 text-gray-900 dark:text-white' : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white' }`}
+                        className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${ recurringDays.includes(idx) ? 'bg-indigo-600 text-gray-900 dark:text-white' : 'bg-white/5 text-gray-900 dark:text-white/50 hover:bg-white/10 hover:text-gray-900 dark:text-white' }`}
                       >
                         {day}
                       </button>
@@ -377,7 +388,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                 <select 
                   value={priority} 
                   onChange={(e) => setPriority(e.target.value as any)}
-                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer"
+                  className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none hover:bg-white/5 p-1.5 -ml-1.5 rounded-md transition-colors appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={!canEdit}
                 >
                   <option value="Baixa" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Baixa</option>
                   <option value="Normal" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Normal</option>
@@ -401,17 +413,19 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                       alt="Anexo" 
                       className="h-32 w-auto object-cover rounded-xl border border-gray-200 dark:border-white/10"
                     />
-                    <button 
-                      onClick={() => {
-                        setImageFile(null)
-                        setImageUrl('')
-                      }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
-                    >
-                      <X size={14} />
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => {
+                          setImageFile(null)
+                          setImageUrl('')
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
-                ) : (
+                ) : canEdit && (
                   <div className="mt-1">
                     <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
                       <div className="flex flex-col items-center gap-1 text-gray-500 dark:text-white/40">
@@ -443,7 +457,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="O que precisa ser feito?"
-              className="w-full flex-1 min-h-[160px] bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
+              className="w-full flex-1 min-h-[160px] bg-white/[0.02] border border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30 focus:outline-none focus:border-indigo-500/50 resize-none transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={!canEdit}
             />
           </div>
 
@@ -452,7 +467,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
         {/* Footer Actions */}
         <div className="p-4 border-t border-white/5 flex items-center justify-between bg-[#0A0A0B]/50">
           <div>
-            {isEditing && reminder?.creator_id === currentUserId && (
+            {isEditing && canEdit && (
               <>
                 {showDeleteConfirm ? (
                   <div className="flex items-center gap-2">
@@ -487,15 +502,17 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               onClick={onClose}
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 dark:text-white/60 hover:text-gray-900 dark:text-white hover:bg-white/5 transition-colors"
             >
-              Cancelar
+              {canEdit ? 'Cancelar' : 'Fechar'}
             </button>
-            <button 
-              onClick={handleSave}
-              disabled={!title.trim() || saveMutation.isPending || isUploading}
-              className="px-6 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-gray-900 dark:text-white transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
-            >
-              {saveMutation.isPending || isUploading ? 'Salvando...' : 'Salvar'}
-            </button>
+            {canEdit && (
+              <button 
+                onClick={handleSave}
+                disabled={!title.trim() || saveMutation.isPending || isUploading}
+                className="px-6 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-gray-900 dark:text-white transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+              >
+                {saveMutation.isPending || isUploading ? 'Salvando...' : 'Salvar'}
+              </button>
+            )}
           </div>
         </div>
 
