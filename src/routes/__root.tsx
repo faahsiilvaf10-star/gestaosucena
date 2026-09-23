@@ -34,8 +34,12 @@ function RootContent() {
       ) : (
         <Outlet />
       )}
-      <GlobalEquipmentAlert />
-      <ReminderAlertNotification />
+      {isAppRoute && (
+        <>
+          <GlobalEquipmentAlert />
+          <ReminderAlertNotification />
+        </>
+      )}
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
     </div>
   )
