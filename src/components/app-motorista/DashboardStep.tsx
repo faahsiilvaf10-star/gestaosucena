@@ -533,6 +533,7 @@ export default function DashboardStep() {
               
               // Render da Parte Diaria para Imagem
               let dataUrl = ''
+              let debugErr = ''
               if (reportRef.current) {
                 try {
                   await new Promise(r => setTimeout(r, 800))
@@ -542,11 +543,13 @@ export default function DashboardStep() {
                     logging: false
                   })
                   dataUrl = canvas.toDataURL('image/png')
-                } catch (err) {
+                } catch (err: any) {
                   console.error('Erro ao gerar imagem da Parte Diária:', err)
+                  debugErr = err?.message || err?.toString() || 'Unknown html2canvas error'
                 }
               } else {
                 console.warn('reportRef.current é null — ParteDiariaReport não montado no DOM')
+                debugErr = 'reportRef.current is null'
               }
 
               // Montar mensagem
@@ -559,6 +562,10 @@ export default function DashboardStep() {
               msg = msg.replace('{km}', endKm || '-')
               msg = msg.replace('{horimetro}', endHorimeter || '-')
               msg = msg.replace('{combustivel}', endFuel || '-')
+
+              if (debugErr) {
+                msg += `\n\n[DEBUG: Image generation failed: ${debugErr}]`
+              }
 
               if (dataUrl) {
                 await sendWhatsappMediaOnServer({
@@ -848,8 +855,8 @@ export default function DashboardStep() {
         </div>
         {renderConfirmModal()}
 
-        {/* Hidden report para captura de imagem - idêntico ao parte-diaria.tsx admin */}
-        <div style={{ position: 'fixed', top: '-10000px', left: 0, zIndex: -1000 }}>
+        {/* Hidden report para captura de imagem */}
+        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -1000, opacity: 0.01, pointerEvents: 'none' }}>
           <ParteDiariaReport
             ref={reportRef}
             motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
@@ -864,6 +871,7 @@ export default function DashboardStep() {
             abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
             abastecimentoFinal={endFuel || ''}
             timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
+            hideLogo={true}
           />
         </div>
       </div>

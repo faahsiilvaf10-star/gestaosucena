@@ -22,56 +22,37 @@ export interface ParteDiariaReportProps {
   abastecimentoInicial: number | string
   abastecimentoFinal: number | string
   timeline: TimelineEvent[]
+  hideLogo?: boolean
 }
 
 const FuelGauge = ({ value }: { value: number | string }) => {
   // SVG gauge mimicking the exact image
   const percentage = typeof value === 'number' ? value : parseInt(String(value)) || 0
   const angle = (percentage / 100) * 180 - 90 // -90 (E) to 90 (F)
-
+  
   return (
-    <div className="relative w-20 h-10 mx-auto mt-2">
+    <div className="relative w-24 h-12 flex flex-col items-center">
       <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
-        {/* Track background */}
-        <path
-          d="M 10 50 A 40 40 0 0 1 90 50"
-          fill="none"
-          stroke="#f3f4f6"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        {/* Color segments to mimic the gauge (Red to Green) */}
-        <path
-          d="M 10 50 A 40 40 0 0 1 30 20"
-          fill="none"
-          stroke="#f87171" // Red
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 30 20 A 40 40 0 0 1 70 20"
-          fill="none"
-          stroke="#fde047" // Yellow
-          strokeWidth="12"
-        />
-        <path
-          d="M 70 20 A 40 40 0 0 1 90 50"
-          fill="none"
-          stroke="#86efac" // Green
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
+        {/* Background track */}
+        <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e5e7eb" strokeWidth="12" strokeLinecap="round" />
         
-        {/* E and F labels */}
-        <text x="-4" y="55" fontSize="11" fontWeight="bold" fill="#666">E</text>
-        <text x="96" y="55" fontSize="11" fontWeight="bold" fill="#666">F</text>
+        {/* Colored zones */}
+        <path d="M 10 50 A 40 40 0 0 1 30 20" fill="none" stroke="#ef4444" strokeWidth="12" strokeLinecap="round" /> {/* E (Red) */}
+        <path d="M 30 20 A 40 40 0 0 1 50 10" fill="none" stroke="#f59e0b" strokeWidth="12" /> {/* 1/2 (Yellow) */}
+        <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#22c55e" strokeWidth="12" strokeLinecap="round" /> {/* F (Green) */}
         
         {/* Needle */}
         <g transform={`translate(50, 50) rotate(${angle})`}>
-          <path d="M -3 -5 L 3 -5 L 0 -35 Z" fill="#ef4444" />
-          <circle cx="0" cy="0" r="5" fill="#ef4444" />
-          <circle cx="0" cy="0" r="2" fill="#fff" />
+          <polygon points="-4,-2 0,-35 4,-2" fill="#000000" />
+          <circle cx="0" cy="0" r="6" fill="#000000" />
+          <circle cx="0" cy="0" r="2" fill="#ffffff" />
         </g>
+        
+        {/* Labels */}
+        <text x="5" y="45" fontSize="14" fontWeight="bold" fill="#000000">E</text>
+        <text x="45" y="-5" fontSize="14" fontWeight="bold" fill="#000000">1/2</text>
+        <text x="85" y="45" fontSize="14" fontWeight="bold" fill="#000000">F</text>
+        <text x="40" y="20" fontSize="10" fontWeight="bold" fill="#000000">{percentage}%</text>
       </svg>
     </div>
   )
@@ -90,7 +71,8 @@ const ParteDiariaReport = forwardRef<HTMLDivElement, ParteDiariaReportProps>(({
   horimetroFinal,
   abastecimentoInicial,
   abastecimentoFinal,
-  timeline
+  timeline,
+  hideLogo = false
 }, ref) => {
   // Parse timeline to extract start/end time for each row
   const safeTimeline = timeline || []
@@ -125,9 +107,11 @@ const ParteDiariaReport = forwardRef<HTMLDivElement, ParteDiariaReportProps>(({
   return (
     <div ref={ref} className="bg-[#ffffff] text-[#000000] font-sans relative" style={{ width: '800px', padding: '15px 30px', fontFamily: 'Arial, sans-serif' }}>
       
-      <div className="flex justify-center mb-2">
-        <img src="/logo-relatorio.png" alt="SUCENA Empreendimentos" className="h-14 object-contain" crossOrigin="anonymous" />
-      </div>
+      {!hideLogo && (
+        <div className="flex justify-center mb-2">
+          <img src="/logo-relatorio.png" alt="SUCENA Empreendimentos" className="h-14 object-contain" crossOrigin="anonymous" />
+        </div>
+      )}
 
       <div className="border-[1.5px] border-[#000000]">
         
