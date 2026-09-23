@@ -77,7 +77,8 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
     instanceId: string,
     phone: string,
     caption: string,
-    base64Media: string
+    base64Media: string,
+    fileName?: string
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -110,7 +111,7 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
         phone: data.phone,
         mediatype: "image",
         mimetype: "image/png",
-        fileName: "requisicao.png",
+        fileName: data.fileName || "documento.png",
         caption: data.caption,
         message: data.caption,
         media: pureBase64,

@@ -1271,7 +1271,8 @@ function AdminRoute() {
                     { key: 'listaPresenca', label: 'Lista de Presença' },
                     { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' },
                     { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
-                    { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' }
+                    { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' },
+                    { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -1303,6 +1304,9 @@ function AdminRoute() {
                     {selectedTemplate.startsWith('lembrete') && '{titulo}, {descricao}, {data}, {hora}'}
                     {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}, {lista_nomes}, {resumo}'}
                     {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
+                    {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
+                    {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
+                    {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
                   </div>
                 </div>
               </div>

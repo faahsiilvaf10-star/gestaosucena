@@ -10,7 +10,8 @@ import MercosulPlate from './MercosulPlate'
 import ParteDiariaReport from './ParteDiariaReport'
 import { getEquipmentActivities, getWhatsappSettings } from '../../lib/settings'
 import { sendEntryExitWhatsappNotification } from '../../lib/whatsappHelpers'
-import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
+import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from '../../lib/whatsapp-api'
+import * as htmlToImage from 'html-to-image'
 
 const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
@@ -526,23 +527,54 @@ export default function DashboardStep() {
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone) {
               const driverData = localStorage.getItem('app_motorista_driver')
               const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-              let msg = `🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n`
-              msg += `🚜 *Equipamento:* ${equipment?.plate_tag || equipment?.type}\n`
-              msg += `👤 *Operador/Motorista:* ${driverName}\n`
-              if (endKm) msg += `🛣 *KM Final:* ${endKm}\n`
-              if (endHorimeter) msg += `⏱ *Horímetro Final:* ${endHorimeter}\n`
-              msg += `⛽ *Combustível Final:* ${endFuel}%\n\n`
-              msg += `_Mensagem Automática - G. Sucena_`
-
-              await sendWhatsappTextOnServer({
-                data: {
-                  url: wSettings.url,
-                  token: wSettings.token,
-                  instanceId: wSettings.instanceId,
-                  phone: targetPhone,
-                  text: msg
+              
+              // Pega ajudante se houver
+              const dispatchHelper = dispatch?.helper_name || 'Nenhum'
+              
+              // Render da Parte Diaria para Imagem
+              let dataUrl = ''
+              if (reportRef.current) {
+                try {
+                  await new Promise(r => setTimeout(r, 200))
+                  dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2, backgroundColor: '#ffffff' })
+                } catch (err) {
+                  console.error('Erro ao gerar imagem:', err)
                 }
-              })
+              }
+
+              // Montar mensagem
+              let msg = wSettings.messageTemplates?.fimJornadaApp || '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_'
+              
+              msg = msg.replace('{equipamento}', equipment?.plate_tag || equipment?.type || '-')
+              msg = msg.replace('{motorista}', driverName)
+              msg = msg.replace('{ajudante}', dispatchHelper)
+              msg = msg.replace('{data}', format(new Date(), 'dd/MM/yyyy'))
+              msg = msg.replace('{km}', endKm || '-')
+              msg = msg.replace('{horimetro}', endHorimeter || '-')
+
+              if (dataUrl) {
+                await sendWhatsappMediaOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: targetPhone,
+                    caption: msg,
+                    base64Media: dataUrl,
+                    fileName: `parte-diaria-${equipment?.plate_tag || 'eq'}.png`
+                  }
+                })
+              } else {
+                await sendWhatsappTextOnServer({
+                  data: {
+                    url: wSettings.url,
+                    token: wSettings.token,
+                    instanceId: wSettings.instanceId,
+                    phone: targetPhone,
+                    text: msg
+                  }
+                })
+              }
             }
           }
         } catch (err) {
@@ -808,25 +840,21 @@ export default function DashboardStep() {
         </div>
         {renderConfirmModal()}
 
-        <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden">
-          {dispatch && equipment && (
+        {/* Hidden Div para renderizar Parte Diaria e tirar print */}
+        <div className="absolute top-[-10000px] left-[-10000px] opacity-0 pointer-events-none">
+          <div ref={reportRef} className="w-[800px] bg-white text-black p-8">
             <ParteDiariaReport
-              ref={reportRef}
-              motorista={dispatch.driver_name || 'Desconhecido'}
-              ajudante={dispatch.helper_name || '-'}
-              data={new Date()}
-              equipamentoNome={equipment.type || 'Equipamento'}
-              placa={equipment.plate_tag || '-'}
-              obra={equipment.brand ? `OBRA: ${equipment.brand}` : '460001269'}
-              kmInicial={dispatch.odometer_start || '-'}
-              kmFinal={endKm || '-'}
-              horimetroInicial={dispatch.horimeter_start || '-'}
+              dispatch={dispatch}
+              equipment={equipment}
+              activities={[]} 
+              abastecimentos={[]}
+              horimetroInicial={dispatch?.horimeter_start || '-'}
               horimetroFinal={endHorimeter || '-'}
-              abastecimentoInicial={dispatch.fuel_start_percent || '-'}
+              abastecimentoInicial={dispatch?.fuel_start_percent || '-'}
               abastecimentoFinal={endFuel || '-'}
               timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
             />
-          )}
+          </div>
         </div>
       </div>
     )

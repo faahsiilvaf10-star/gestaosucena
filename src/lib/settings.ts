@@ -91,6 +91,7 @@ export type WhatsappSettings = {
     anomaliaCorrigida: string;
     statusAlterado: string;
     cintasAvisoMensal: string;
+    fimJornadaApp: string;
     cintasInspecionada: string;
     equipamentoEntrada: string;
     equipamentoSaida: string;
@@ -141,9 +142,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
     listaPresenca: '📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}',
     requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}',
     anomaliaRegistrada: '🚨 *NOVA ANOMALIA REPORTADA* 🚨\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Anomalia:* {anomalia}\n📝 *Descrição:* {descricao}\n👤 *Motorista:* {motorista}',
-    anomaliaCorrigida: '✅ *ANOMALIA CORRIGIDA* ✅\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}',
-    statusAlterado: '🚜 *MUDANÇA DE STATUS* 🚜\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n🔄 *Novo Status:* {status}\n👤 *Motorista:* {motorista}',
-    cintasAvisoMensal: '🔗 *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n⚠️ As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_',
+    anomaliaCorrigida: '🟢 *ANOMALIA CORRIGIDA* 🟢\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n✅ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}',
+    statusAlterado: '🔄 *MUDANÇA DE STATUS* 🔄\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n📌 *Novo Status:* {status}\n👤 *Motorista:* {motorista}',
+    cintasAvisoMensal: '⚠️ *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n🔍 As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_',
+    fimJornadaApp: '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_',
     cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_',
     equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
     equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
