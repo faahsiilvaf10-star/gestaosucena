@@ -26,3 +26,11 @@
 >   2. **O que mudou:** Deve explicar claramente o que mudou no código.
 >   3. **Validação:** Deve descrever exatamente como as alterações foram validadas/testadas localmente.
 >   4. **Análise de Risco:** Deve registrar quaisquer riscos inerentes, limitações da abordagem e próximos passos caso existam.
+
+## Diretrizes de UI/UX (Padrão de Qualidade)
+> [!IMPORTANT]
+> Garanta que toda interface do sistema tenha:
+> - **Performance:** Lazy loading quando fizer sentido e Skeleton screens para carregamento.
+> - **Fluidez:** Animações suaves de entrada e saída, transições consistentes entre telas, cards, modais e listas.
+> - **Interatividade:** Estados de progresso nos elementos interativos e feedback visual para ações do usuário.
+> - **Revisão de Qualidade:** Antes de finalizar qualquer alteração na interface, o agente deve agir como um designer de produto sênior, revisando e corrigindo proativamente tudo que parecer brusco, travado, genérico ou amador.
