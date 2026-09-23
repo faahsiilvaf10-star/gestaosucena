@@ -16,3 +16,13 @@
 > 1. Adicione a chave no `messageTemplates` em `src/lib/settings.ts`
 > 2. Adicione a interface de edição em `src/routes/admin.tsx` (na aba do WhatsApp)
 > 3. Use variáveis dinâmicas `{chave}` e garanta que o código (seja TSX ou SQL) faça os devidos replaces lendo da configuração antes de disparar.
+
+## Fluxo de Trabalho e Controle de Qualidade
+> [!IMPORTANT]
+> - **Issues:** Antes de iniciar qualquer tarefa, crie uma Issue no GitHub categorizada como "Correção", "Melhoria" ou "Nova função".
+> - **Pull Requests:** Trabalhe criando branches e submetendo Pull Requests (PRs) para gerenciar entregas e deploys, nunca fazendo commit direto na `main` a menos que explicitamente solicitado pelo usuário.
+> - **Padrão de PRs:**
+>   1. **Referência:** Todo PR deve mencionar a Issue relacionada na descrição (ex: `Fixes #1`).
+>   2. **O que mudou:** Deve explicar claramente o que mudou no código.
+>   3. **Validação:** Deve descrever exatamente como as alterações foram validadas/testadas localmente.
+>   4. **Análise de Risco:** Deve registrar quaisquer riscos inerentes, limitações da abordagem e próximos passos caso existam.
