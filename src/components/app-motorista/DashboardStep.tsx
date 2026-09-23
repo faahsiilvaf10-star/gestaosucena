@@ -543,7 +543,7 @@ export default function DashboardStep() {
               }
 
               // Montar mensagem
-              let msg = wSettings.messageTemplates?.fimJornadaApp || '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_'
+              let msg = wSettings.messageTemplates?.fimJornadaApp || '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n⛽ *Combustível Final:* {combustivel}%\n\n_Mensagem Automática - G. Sucena_'
               
               msg = msg.replace('{equipamento}', equipment?.plate_tag || equipment?.type || '-')
               msg = msg.replace('{motorista}', driverName)
@@ -551,6 +551,7 @@ export default function DashboardStep() {
               msg = msg.replace('{data}', format(new Date(), 'dd/MM/yyyy'))
               msg = msg.replace('{km}', endKm || '-')
               msg = msg.replace('{horimetro}', endHorimeter || '-')
+              msg = msg.replace('{combustivel}', endFuel || '-')
 
               if (dataUrl) {
                 await sendWhatsappMediaOnServer({
@@ -842,16 +843,19 @@ export default function DashboardStep() {
 
         {/* Hidden Div para renderizar Parte Diaria e tirar print */}
         <div className="absolute top-[-10000px] left-[-10000px] opacity-0 pointer-events-none">
-          <div ref={reportRef} className="w-[800px] bg-white text-black p-8">
+          <div ref={reportRef}>
             <ParteDiariaReport
-              dispatch={dispatch}
-              equipment={equipment}
-              activities={[]} 
-              abastecimentos={[]}
-              horimetroInicial={dispatch?.horimeter_start || '-'}
-              horimetroFinal={endHorimeter || '-'}
-              abastecimentoInicial={dispatch?.fuel_start_percent || '-'}
-              abastecimentoFinal={endFuel || '-'}
+              motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
+              ajudante={dispatch?.helper_name || ''}
+              data={new Date()}
+              equipamentoNome={equipment?.name || equipment?.type || '-'}
+              placa={equipment?.plate_tag || '-'}
+              kmInicial={dispatch?.odometer_start ?? ''}
+              kmFinal={endKm || ''}
+              horimetroInicial={dispatch?.horimeter_start ?? ''}
+              horimetroFinal={endHorimeter || ''}
+              abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
+              abastecimentoFinal={endFuel || ''}
               timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
             />
           </div>
