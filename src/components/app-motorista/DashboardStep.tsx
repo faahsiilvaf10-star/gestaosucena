@@ -3,15 +3,14 @@ import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst } from '../../lib/offline-sync'
 import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
-import html2canvas from 'html2canvas'
+import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from '../../lib/whatsapp-api'
+import * as htmlToImage from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
 import MercosulPlate from './MercosulPlate'
 import ParteDiariaReport from './ParteDiariaReport'
 import { getEquipmentActivities, getWhatsappSettings } from '../../lib/settings'
 import { sendEntryExitWhatsappNotification } from '../../lib/whatsappHelpers'
-import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from '../../lib/whatsapp-api'
-import * as htmlToImage from 'html-to-image'
 
 const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
@@ -60,13 +59,10 @@ export default function DashboardStep() {
     await new Promise(r => setTimeout(r, 500))
 
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2, // Higher resolution
-        useCORS: true,
-        logging: false
+      const imgData = await htmlToImage.toPng(reportRef.current, { 
+        pixelRatio: 2, 
+        backgroundColor: '#ffffff' 
       })
-      
-      const imgData = canvas.toDataURL('image/png')
       const fileName = `Parte_Diaria_${equipment?.plate_tag || 'Equipamento'}_${format(new Date(), 'dd-MM-yyyy')}`
       
       // Download PNG
@@ -541,12 +537,12 @@ export default function DashboardStep() {
               if (reportRef.current) {
                 try {
                   await new Promise(r => setTimeout(r, 800))
-                  const canvas = await html2canvas(reportRef.current, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
+                  const dataUrlCanvas = await htmlToImage.toPng(reportRef.current, { 
+                    pixelRatio: 2, 
+                    backgroundColor: '#ffffff' 
                   })
-                  dataUrl = canvas.toDataURL('image/png')
+                  dataUrl = dataUrlCanvas
+                  if (dataUrl === 'data:,') dataUrl = ''
                 } catch (err: any) {
                   console.error('Erro ao gerar imagem da Parte Diária:', err)
                   debugErr = err?.message || err?.toString() || 'Unknown html2canvas error'
@@ -868,7 +864,7 @@ export default function DashboardStep() {
         {renderConfirmModal()}
 
         {/* Hidden report para captura de imagem */}
-        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -1000, opacity: 0.01, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '800px', backgroundColor: '#ffffff', pointerEvents: 'none' }}>
           <ParteDiariaReport
             ref={reportRef}
             motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
