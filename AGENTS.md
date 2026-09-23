@@ -34,3 +34,30 @@
 > - **Fluidez:** Animações suaves de entrada e saída, transições consistentes entre telas, cards, modais e listas.
 > - **Interatividade:** Estados de progresso nos elementos interativos e feedback visual para ações do usuário.
 > - **Revisão de Qualidade:** Antes de finalizar qualquer alteração na interface, o agente deve agir como um designer de produto sênior, revisando e corrigindo proativamente tudo que parecer brusco, travado, genérico ou amador.
+
+## Esteira de Qualidade e Arquitetura
+> [!IMPORTANT]
+> Garanta que o sistema tenha uma esteira de qualidade antes de qualquer código entrar na branch principal.
+> Inclua, quando fizer sentido para o projeto:
+> 
+> **1. Observabilidade:**
+> - Sentry, Datadog, New Relic, OpenTelemetry.
+> 
+> **2. Qualidade e lint de código:**
+> - arch-contract, Biome, Commitlint, Knip, Stryker.
+> 
+> **3. Testes:**
+> - Unitários, integração, end-to-end.
+> - Codecov, Playwright, Endtest.
+> 
+> **4. Segurança e operação:**
+> - Rate limit, revisão de segurança.
+> - Performance budget.
+> - Separação entre backend e frontend.
+> - Termos de uso e política de privacidade revisados e aprovados pelo jurídico.
+> 
+> **5. Arquitetura:**
+> - Evitar overengineering; evitar bottlenecks absurdos.
+> - Componentizar desde o início.
+> - Aplicar DRY com critério, sem criar abstrações prematuras.
+> - Impedir reconstrução de componentes que já existem.
