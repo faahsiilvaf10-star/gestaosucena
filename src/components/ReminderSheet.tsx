@@ -137,24 +137,6 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       triggerSave(imageUrl)
     }
   }
-      data: {
-        title,
-        description,
-        priority,
-        // Mantemos assigned_user_id pro primeiro apenas por compatibilidade legada se precisar
-        assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : undefined,
-        due_date: dueDate || undefined,
-        due_time: dueTime || undefined,
-        is_recurring: isRecurring,
-        recurrence_type: isRecurring ? 'weekly' : undefined,
-        recurrence_config: {
-          days: isRecurring ? recurringDays : undefined,
-          advanceNotice: advanceNotice > 0 ? advanceNotice : undefined
-        }
-      },
-      mentions: finalMentions
-    })
-  }
 
   const deleteMutation = useMutation({
     mutationFn: () => {

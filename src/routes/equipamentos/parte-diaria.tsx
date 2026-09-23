@@ -73,6 +73,8 @@ function ParteDiariaPage() {
   const [groupMode, setGroupMode] = useState<'motorista' | 'veiculo'>('veiculo')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+
   // Data states
   const [emTrabalhoCount, setEmTrabalhoCount] = useState(0)
   const [turnosFinalizadosCount, setTurnosFinalizadosCount] = useState(0)
@@ -204,12 +206,15 @@ function ParteDiariaPage() {
       setTotalPesadosCount(total)
       setActiveVehicles(operandoList)
 
-      // 2. Busca dispatches (apenas do dia atual para zerar a linha do tempo)
-      const todayStart = startOfDay(new Date()).toISOString()
+      // 2. Busca dispatches (do dia selecionado)
+      const dateStart = startOfDay(selectedDate).toISOString()
+      const dateEnd = startOfDay(addDays(selectedDate, 1)).toISOString()
+      
       const { data: dispatches } = await supabase
         .from('eq_driver_dispatch')
         .select('*')
-        .gte('shift_start_time', todayStart)
+        .gte('shift_start_time', dateStart)
+        .lt('shift_start_time', dateEnd)
         .order('shift_start_time', { ascending: true })
 
       const dMap: Record<string, any> = {}
@@ -226,11 +231,12 @@ function ParteDiariaPage() {
       
       setVehicleDispatches(dMap)
 
-      // 3. Busca histórico apenas do dia
+      // 3. Busca histórico apenas do dia selecionado
       const todayHistoryRes = await supabase
         .from('eq_status_history')
         .select('*')
-        .gte('created_at', todayStart)
+        .gte('created_at', dateStart)
+        .lt('created_at', dateEnd)
         .order('created_at', { ascending: true })
 
       const allHistories: any[] = todayHistoryRes.data || []
@@ -341,7 +347,7 @@ function ParteDiariaPage() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [])
+  }, [selectedDate])
 
   const handleClearJourney = async (vehicleId: string) => {
     try {
@@ -406,7 +412,7 @@ function ParteDiariaPage() {
       }, 1000)
     }
     return () => clearInterval(interval)
-  }, [autoRefresh])
+  }, [autoRefresh, selectedDate])
 
   // Mocks para o restante
   const MOCK_METRICS = {
@@ -435,9 +441,21 @@ function ParteDiariaPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+          <div className="flex items-center bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 text-sm font-medium focus-within:ring-2 focus-within:ring-indigo-500">
             <CalendarIcon size={16} className="mr-2 text-gray-400" />
-            <span>{format(new Date(), 'dd/MM/yyyy')} até {format(new Date(), 'dd/MM/yyyy')}</span>
+            <input 
+              type="date"
+              className="bg-transparent border-none py-2 text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer"
+              value={format(selectedDate, 'yyyy-MM-dd')}
+              onChange={(e) => {
+                const newDate = new Date(e.target.value)
+                if (!isNaN(newDate.getTime())) {
+                  // Ajusta o fuso horário para evitar problemas (garante meia noite local)
+                  const dt = new Date(newDate.getTime() + newDate.getTimezoneOffset() * 60000)
+                  setSelectedDate(dt)
+                }
+              }}
+            />
           </div>
           <button className="p-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors" title="Atualizar">
             <RefreshCw size={18} />
@@ -530,6 +548,7 @@ function ParteDiariaPage() {
         ) : (
           activeVehicles.map(vehicle => (
             <VehicleCard 
+                selectedDate={selectedDate}
               key={vehicle.id} 
               vehicle={vehicle} 
               history={vehicleHistories[vehicle.id] || []} 
@@ -717,11 +736,46 @@ function MetricCard({ title, value, total, color, onClick }: { title: string, va
   )
 }
 
-function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], onClearJourney, onRefresh }: { vehicle: any, history?: any[], dispatch?: any, pendingAnomalies?: any[], onClearJourney: () => void, onRefresh: () => void }) {
+function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], onClearJourney, onRefresh, selectedDate }: { vehicle: any, history?: any[], dispatch?: any, pendingAnomalies?: any[], onClearJourney: () => void, onRefresh: () => void, selectedDate?: Date }) {
   const [expanded, setExpanded] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const reportRef = useRef<HTMLDivElement>(null)
   
+  // Local date state per card (starts from page-level selectedDate)
+  const [localDate, setLocalDate] = useState<Date>(selectedDate || new Date())
+  const [localHistory, setLocalHistory] = useState<any[]>(history)
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false)
+
+  // When page-level selectedDate changes, update localDate too
+  useEffect(() => {
+    setLocalDate(selectedDate || new Date())
+  }, [selectedDate])
+
+  // Fetch history for localDate whenever localDate changes
+  useEffect(() => {
+    const fetchLocalHistory = async () => {
+      setIsFetchingHistory(true)
+      try {
+        const { startOfDay, addDays } = await import('date-fns')
+        const dateStart = startOfDay(localDate).toISOString()
+        const dateEnd = startOfDay(addDays(localDate, 1)).toISOString()
+        const { data } = await supabase
+          .from('eq_status_history')
+          .select('*')
+          .eq('equipment_id', vehicle.id)
+          .gte('created_at', dateStart)
+          .lt('created_at', dateEnd)
+          .order('created_at', { ascending: true })
+        setLocalHistory(data || [])
+      } catch (e) {
+        console.error('Error fetching local history', e)
+      } finally {
+        setIsFetchingHistory(false)
+      }
+    }
+    fetchLocalHistory()
+  }, [localDate, vehicle.id])
+
   const [selectedAnomalies, setSelectedAnomalies] = useState<any[]>([])
   const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false)
   
@@ -838,7 +892,8 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
       await new Promise(r => setTimeout(r, 500))
       const dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2 })
       const link = document.createElement('a')
-      link.download = `parte-diaria-${vehicle.plate_tag || vehicle.name}.png`
+      const dateStr = format(localDate, 'dd-MM-yyyy')
+      link.download = `parte-diaria-${vehicle.plate_tag || vehicle.name}-${dateStr}.png`
       link.href = dataUrl
       link.click()
     } catch (err: any) {
@@ -866,14 +921,15 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
       
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`parte-diaria-${vehicle.plate_tag || vehicle.name}.pdf`)
+      const dateStr = format(localDate, 'dd-MM-yyyy')
+      pdf.save(`parte-diaria-${vehicle.plate_tag || vehicle.name}-${dateStr}.pdf`)
     } catch (err: any) {
       console.error('Failed to download PDF', err)
       alert(`Erro ao gerar PDF: ${err.message || err}`)
     }
   }
 
-  const lastHistory = history.length > 0 ? history[history.length - 1] : null
+  const lastHistory = localHistory.length > 0 ? localHistory[localHistory.length - 1] : null
   let currentStatus = translateStatus(lastHistory ? lastHistory.new_status : (vehicle.status || 'Sem status'))
 
   if (!dispatch) {
@@ -897,7 +953,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
   const statusLower = currentStatus.toLowerCase()
 
   // Se turno ativo mas sem histórico ainda, mostra "Aguardando"
-  if (dispatch && !dispatch.shift_end_time && history.length === 0) {
+  if (dispatch && !dispatch.shift_end_time && localHistory.length === 0) {
     currentStatus = 'Aguardando'
   }
 
@@ -994,16 +1050,34 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
               <Edit size={14} /> Corrigir
             </button>
             
-            <button 
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors mr-2 cursor-pointer"
-              title="Ver todo o histórico por data"
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsHistoryModalOpen(true)
-              }}
-            >
-              <History size={14} /> Histórico
-            </button>
+            <div className="relative group/picker mr-2" onClick={e => e.stopPropagation()}>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer pointer-events-none relative">
+                <CalendarIcon size={14} />
+                <span>{format(localDate, 'dd/MM/yyyy')}</span>
+              </button>
+              <input 
+                type="date"
+                value={format(localDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  const newDate = new Date(e.target.value)
+                  if (!isNaN(newDate.getTime())) {
+                    const dt = new Date(newDate.getTime() + newDate.getTimezoneOffset() * 60000)
+                    setLocalDate(dt)
+                  }
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  try {
+                    if ('showPicker' in HTMLInputElement.prototype) {
+                      (e.target as HTMLInputElement).showPicker();
+                    }
+                  } catch (err) {}
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                title="Selecionar Data da Linha do Tempo"
+              />
+            </div>
 
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
               <DialogContent className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
@@ -1255,7 +1329,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           {/* Timeline Panel */}
           <div className="md:w-2/3">
             <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4 uppercase tracking-wider opacity-80">Linha do Tempo</h4>
-            {history.length === 0 && dispatch ? (
+            {localHistory.length === 0 && dispatch ? (
               <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
                   <TimelineItem
@@ -1276,8 +1350,8 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   />
                 </div>
               </div>
-            ) : history.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhuma atividade registrada para hoje.</p>
+            ) : localHistory.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhuma atividade registrada para {format(localDate, 'dd/MM/yyyy')}.</p>
             ) : (
               <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
@@ -1291,7 +1365,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                       isLast={false}
                     />
                   )}
-                  {history.map((h, i) => {
+                  {localHistory.map((h, i) => {
                     if (h.new_status === 'Finalizado (Auto)') return null;
 
                     const translatedNewStatus = translateStatus(h.new_status)
@@ -1308,7 +1382,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                         title={translatedNewStatus} 
                         subtitle={translatedPrevStatus && translatedPrevStatus !== translatedNewStatus ? `Anterior: ${translatedPrevStatus}` : undefined} 
                         status={mappedStatus} 
-                        isLast={i === history.length - 1} 
+                        isLast={i === localHistory.length - 1} 
                       />
                     )
                   })}
@@ -1325,7 +1399,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           ref={reportRef}
           motorista={driverName}
           ajudante={dispatch?.helper_name || '-'}
-          data={new Date()}
+          data={localDate}
           equipamentoNome={vehicle.type || 'Equipamento'}
           placa={vehicle.plate_tag || '-'}
           obra={vehicle.brand ? `OBRA: ${vehicle.brand}` : '4600012690'}
@@ -1341,7 +1415,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
               name: 'Inicio de Turno',
               type: 'Status Inicial'
             }] : []),
-            ...history.filter((h: any) => h.new_status !== 'Finalizado (Auto)').map((h: any) => ({
+            ...localHistory.filter((h: any) => h.new_status !== 'Finalizado (Auto)').map((h: any) => ({
               time: h.created_at,
               name: h.new_status,
               type: 'Status Alterado'
@@ -1355,30 +1429,61 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
         onClose={() => setIsHistoryModalOpen(false)} 
         vehicleId={vehicle.id} 
         vehicleName={`${vehicle.name} - ${vehicle.plate_tag}`} 
+        selectedDate={localDate}
       />
     </div>
   )
 }
 
-function TimelineItem({ time, title, subtitle, status, isLast = false }: { time: string, title: string, subtitle?: string, status: 'completed' | 'in-progress' | 'pending' | 'anomaly', isLast?: boolean }) {
+function TimelineItem({ time, title, subtitle, status, observation, latitude, longitude, isLast = false }: { time: string, title: string, subtitle?: string, status: 'completed' | 'in-progress' | 'pending' | 'anomaly', observation?: string, latitude?: string, longitude?: string, isLast?: boolean }) {
   const getStatusColor = () => {
     switch(status) {
-      case 'completed': return 'bg-emerald-500 border-emerald-200'
-      case 'in-progress': return 'bg-blue-500 border-blue-200'
-      case 'anomaly': return 'bg-orange-500 border-orange-200'
-      case 'pending': default: return 'bg-gray-300 dark:bg-zinc-600 border-gray-100 dark:border-zinc-800'
+      case 'completed': return 'border-emerald-500 bg-white dark:bg-black'
+      case 'in-progress': return 'border-indigo-500 bg-white dark:bg-black'
+      case 'anomaly': return 'border-red-500 bg-white dark:bg-black'
+      case 'pending': default: return 'border-orange-500 bg-white dark:bg-black'
     }
   }
 
   return (
-    <div className="relative flex items-start">
-      <div className={`absolute -left-[27px] w-3 h-3 rounded-full border-2 bg-white dark:bg-black mt-1 z-10 ${getStatusColor()}`}></div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-900 dark:text-white">{title}</span>
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">{time}</span>
+    <div className="relative flex items-start gap-4 group mb-4">
+      <div className={`absolute -left-[28px] mt-1 h-3 w-3 rounded-full border-2 ${getStatusColor()} transition-colors group-hover:scale-125 z-10 ring-4 ring-gray-50 dark:ring-zinc-900`} />
+      
+      <div className="flex-1 bg-white dark:bg-zinc-800/50 rounded-xl p-3 sm:p-4 border border-gray-100 dark:border-zinc-700/50 shadow-sm hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-colors">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-bold text-gray-900 dark:text-white">
+            {title}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
+            {time}
+          </span>
         </div>
-        {subtitle && <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+        
+        {subtitle && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Status anterior: <span className="line-through opacity-70">{subtitle.replace('Anterior: ', '')}</span>
+          </p>
+        )}
+        
+        {observation && (
+          <div className="mt-2 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 p-2 rounded-lg flex gap-2">
+            <p className="text-xs text-yellow-800 dark:text-yellow-200/80">{observation}</p>
+          </div>
+        )}
+
+        {latitude && longitude && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+            <a 
+              href={`https://maps.google.com/?q=${latitude},${longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+              onClick={e => e.stopPropagation()}
+            >
+              Ver Localização
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )

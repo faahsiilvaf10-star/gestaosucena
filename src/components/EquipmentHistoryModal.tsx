@@ -1,30 +1,47 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Clock, MapPin, AlertCircle, History } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { format } from 'date-fns'
+
+import { startOfDay, addDays } from 'date-fns'
 
 interface EquipmentHistoryModalProps {
   isOpen: boolean
   onClose: () => void
   vehicleId: string
   vehicleName: string
+  selectedDate?: Date
 }
 
-export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName }: EquipmentHistoryModalProps) {
+export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName, selectedDate }: EquipmentHistoryModalProps) {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterDate, setFilterDate] = useState<Date | undefined>(selectedDate)
+
+  // Sync prop changes
+  useEffect(() => {
+    setFilterDate(selectedDate)
+  }, [selectedDate])
 
   useEffect(() => {
     if (!isOpen || !vehicleId) return
 
     const fetchHistory = async () => {
       setLoading(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('eq_status_history')
         .select('*')
         .eq('equipment_id', vehicleId)
         .order('created_at', { ascending: false })
+
+      if (filterDate) {
+        const dateStart = startOfDay(filterDate).toISOString()
+        const dateEnd = startOfDay(addDays(filterDate, 1)).toISOString()
+        query = query.gte('created_at', dateStart).lt('created_at', dateEnd)
+      }
+
+      const { data, error } = await query
 
       if (!error && data) {
         setHistory(data)
@@ -33,7 +50,7 @@ export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName 
     }
 
     fetchHistory()
-  }, [isOpen, vehicleId])
+  }, [isOpen, vehicleId, filterDate])
 
   if (!isOpen) return null
 

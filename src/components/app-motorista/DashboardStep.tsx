@@ -358,11 +358,15 @@ export default function DashboardStep() {
     
     // Save to timeline
     const timeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-    let eventName = newStatus === 'operating' ? 'Em Operação' :
-                    newStatus === 'paused' ? 'Pausa / Almoço' :
-                    newStatus === 'waiting' ? 'Aguardando' :
-                    newStatus === 'raining' ? 'Chuva' : 
-                    newStatus === 'fueling' ? 'Abastecendo Veículo' : newStatus;
+    const translateStatus = (s: string) => {
+      return s === 'operating' ? 'Em Operação' :
+             s === 'paused' ? 'Pausa / Almoço' :
+             s === 'waiting' ? 'Aguardando' :
+             s === 'raining' ? 'Chuva' : 
+             s === 'fueling' ? 'Abastecendo Veículo' : s;
+    };
+
+    let eventName = translateStatus(newStatus);
     
     let eventColor = color || (
       newStatus === 'operating' ? 'bg-emerald-500' :
@@ -384,7 +388,7 @@ export default function DashboardStep() {
       dispatch_id: dispatch?.id,
       equipment_id: equipmentId,
       driver_id: dispatch?.driver_id || (JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id),
-      previous_status: activeStatus,
+      previous_status: translateStatus(activeStatus),
       new_status: eventName,
       created_at: now.toISOString()
     }).catch(console.error)
@@ -599,16 +603,24 @@ export default function DashboardStep() {
       // -------------------------
 
       // Update Equipment status to "Disponível"
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'outside', status: 'Disponível' })
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Disponível' })
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
       
+      const translateStatus = (s: string) => {
+        return s === 'operating' ? 'Em Operação' :
+               s === 'paused' ? 'Pausa / Almoço' :
+               s === 'waiting' ? 'Aguardando' :
+               s === 'raining' ? 'Chuva' : 
+               s === 'fueling' ? 'Abastecendo Veículo' : s;
+      };
+
       saveOfflineFirst('eq_status_history', 'INSERT', {
         dispatch_id: dispatch?.id,
         equipment_id: equipmentId,
         driver_id: dispatch?.driver_id || (JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.currentSession?.user?.id),
-        previous_status: activeStatus,
+        previous_status: translateStatus(activeStatus),
         new_status: 'Jornada Finalizada',
         created_at: new Date().toISOString()
       }).catch(console.error)
