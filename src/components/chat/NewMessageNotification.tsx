@@ -43,51 +43,66 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
     init()
 
-    // Escuta novas mensagens
+    // Escuta novas mensagens através das atualizações na tabela conversations
     const channel = supabase.channel(`new_msg_notif_${currentUserId}_${Date.now()}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload: any) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, async (payload: any) => {
         if (!initializedRef.current) return
-        const msg = payload.new
-        if (!msg || msg.sender_id === currentUserId) return
+        
+        const oldConv = payload.old
+        const newConv = payload.new
 
-        // Verifica se o usuário atual participa da conversa
-        const { data: participants } = await supabase
-          .from('conversation_participants')
-          .select('id')
-          .eq('conversation_id', msg.conversation_id)
-          .eq('user_id', currentUserId)
-
-        if (participants && participants.length > 0) {
-          const user = usersMapRef.current[msg.sender_id]
-          const notifId = `${msg.id}_${Date.now()}`
+        // Verifica se houve uma nova mensagem (last_message_id mudou)
+        if (newConv.last_message_id && newConv.last_message_id !== oldConv.last_message_id) {
           
-          let previewText = msg.text
-          if (msg.type !== 'text') {
-            previewText = `Enviou um(a) ${msg.type === 'image' ? 'imagem' : msg.type === 'audio' ? 'áudio' : 'arquivo'}`
-          }
+          // Verifica se o usuário atual participa da conversa
+          const { data: participants } = await supabase
+            .from('conversation_participants')
+            .select('id')
+            .eq('conversation_id', newConv.id)
+            .eq('user_id', currentUserId)
 
-          const newNotif: MessageNotif = {
-            id: notifId,
-            userId: msg.sender_id,
-            name: user?.name || 'Usuário',
-            avatarUrl: user?.avatar_url || '',
-            text: previewText
-          }
+          if (participants && participants.length > 0) {
+            
+            // Busca a mensagem em si
+            const { data: msg } = await supabase
+              .from('messages')
+              .select('*')
+              .eq('id', newConv.last_message_id)
+              .single()
 
-          // Toca o som de notificação
-          playNotificationSound()
+            if (!msg || msg.sender_id === currentUserId) return
 
-          setNotifications(prev => [...prev, newNotif])
+            const user = usersMapRef.current[msg.sender_id]
+            const notifId = `${msg.id}_${Date.now()}`
+            
+            let previewText = msg.text
+            if (msg.type !== 'text') {
+              previewText = `Enviou um(a) ${msg.type === 'image' ? 'imagem' : msg.type === 'audio' ? 'áudio' : 'arquivo'}`
+            }
 
-          // Remove automaticamente após 5s com animação de saída
-          setTimeout(() => {
-            setNotifications(prev =>
-              prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
-            )
+            const newNotif: MessageNotif = {
+              id: notifId,
+              userId: msg.sender_id,
+              name: user?.name || 'Usuário',
+              avatarUrl: user?.avatar_url || '',
+              text: previewText
+            }
+
+            // Toca o som de notificação
+            playNotificationSound()
+
+            setNotifications(prev => [...prev, newNotif])
+
+            // Remove automaticamente após 5s com animação de saída
             setTimeout(() => {
-              setNotifications(prev => prev.filter(n => n.id !== notifId))
-            }, 400)
-          }, 5000)
+              setNotifications(prev =>
+                prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
+              )
+              setTimeout(() => {
+                setNotifications(prev => prev.filter(n => n.id !== notifId))
+              }, 400)
+            }, 5000)
+          }
         }
       })
       .subscribe()

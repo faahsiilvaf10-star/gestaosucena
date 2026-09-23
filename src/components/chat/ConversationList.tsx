@@ -113,9 +113,18 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
         })
       }).subscribe()
 
+    // Inscrever-se para mensagens para atualizar o sidebar
+    const messagesSub = supabase.channel(`sidebar_messages_${currentUserId}_${Date.now()}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        // Atualiza a lista de conversas quando uma mensagem chega
+        fetchUsers()
+      })
+      .subscribe()
+
     return () => {
       clearInterval(recalcInterval)
       supabase.removeChannel(presenceSub)
+      supabase.removeChannel(messagesSub)
     }
   }, [currentUserId, fetchUsers])
 
