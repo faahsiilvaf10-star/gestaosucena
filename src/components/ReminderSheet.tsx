@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat } from 'lucide-react'
-import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder } from '../lib/api-reminders'
+import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat, ImagePlus } from 'lucide-react'
+import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder, uploadReminderImage } from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { DateInput } from './ui/DateInput'
@@ -31,6 +31,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [advanceNotice, setAdvanceNotice] = useState<number>(0)
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurringDays, setRecurringDays] = useState<number[]>([])
+  
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageUrl, setImageUrl] = useState<string>('')
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -50,6 +54,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setAdvanceNotice(reminder.recurrence_config?.advanceNotice || 0)
       setIsRecurring(reminder.is_recurring || false)
       setRecurringDays(reminder.recurrence_config?.days || [])
+      setImageUrl(reminder.image_url || '')
+      setImageFile(null)
     } else {
       setTitle('')
       setDescription('')
@@ -60,6 +66,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setAdvanceNotice(0)
       setIsRecurring(false)
       setRecurringDays([])
+      setImageUrl('')
+      setImageFile(null)
     }
   }, [reminder, isOpen])
 
@@ -92,7 +100,42 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       }
     }
 
-    saveMutation.mutate({
+    const triggerSave = (uploadedUrl: string) => {
+      saveMutation.mutate({
+        data: {
+          title,
+          description,
+          priority,
+          assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : undefined,
+          due_date: dueDate || undefined,
+          due_time: dueTime || undefined,
+          is_recurring: isRecurring,
+          recurrence_type: isRecurring ? 'weekly' : undefined,
+          recurrence_config: {
+            days: isRecurring ? recurringDays : undefined,
+            advanceNotice: advanceNotice > 0 ? advanceNotice : undefined
+          },
+          image_url: uploadedUrl || undefined
+        },
+        mentions: finalMentions
+      })
+    }
+
+    if (imageFile) {
+      setIsUploading(true)
+      uploadReminderImage(imageFile).then(url => {
+        setIsUploading(false)
+        setImageUrl(url)
+        triggerSave(url)
+      }).catch(err => {
+        setIsUploading(false)
+        alert('Erro ao fazer upload da imagem')
+        console.error(err)
+      })
+    } else {
+      triggerSave(imageUrl)
+    }
+  }
       data: {
         title,
         description,
@@ -344,6 +387,53 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
               </div>
             </div>
 
+            {/* Foto/Anexo */}
+            <div className="flex items-start gap-4 group cursor-pointer pt-2">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-900 dark:text-white/40 group-hover:text-gray-900 dark:text-white/70 transition-colors pt-1">
+                <ImagePlus size={16} />
+                <span>Foto anexa</span>
+              </div>
+              <div className="flex-1">
+                {imageUrl || imageFile ? (
+                  <div className="relative inline-block mt-1">
+                    <img 
+                      src={imageFile ? URL.createObjectURL(imageFile) : imageUrl} 
+                      alt="Anexo" 
+                      className="h-32 w-auto object-cover rounded-xl border border-gray-200 dark:border-white/10"
+                    />
+                    <button 
+                      onClick={() => {
+                        setImageFile(null)
+                        setImageUrl('')
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1">
+                    <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="flex flex-col items-center gap-1 text-gray-500 dark:text-white/40">
+                        <ImagePlus size={20} />
+                        <span className="text-xs font-medium">Clique para adicionar foto</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setImageFile(e.target.files[0])
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
 
           {/* Description */}
@@ -401,10 +491,10 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
             </button>
             <button 
               onClick={handleSave}
-              disabled={!title.trim() || saveMutation.isPending}
+              disabled={!title.trim() || saveMutation.isPending || isUploading}
               className="px-6 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-gray-900 dark:text-white transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
             >
-              {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
+              {saveMutation.isPending || isUploading ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </div>

@@ -18,6 +18,7 @@ export type Reminder = {
   updated_at: string
   reminder_mentions?: { user_id: string }[]
   environment?: string
+  image_url?: string
 }
 
 export type UserProfile = {
@@ -82,35 +83,49 @@ export async function createReminder(reminder: Partial<Reminder>, mentions?: str
   return data
 }
 
-export async function updateReminder(id: string, updates: Partial<Reminder>, mentions?: string[]) {
-  const { data: userData } = await supabase.auth.getUser()
-  
+export async function updateReminder(id: string, updates: Partial<Reminder>, mentions: string[] = []) {
+  // 1. Atualizar lembrete principal
   const { data, error } = await supabase
     .from('reminders')
     .update(updates)
     .eq('id', id)
     .select()
     .single()
-  
+
   if (error) throw error
 
-  if (mentions !== undefined) {
-    // Delete old mentions
-    await supabase.from('reminder_mentions').delete().eq('reminder_id', id)
-    
-    // Insert new mentions
-    if (mentions.length > 0 && userData.user) {
-      const mentionsData = mentions.map(userId => ({
-        reminder_id: id,
-        user_id: userId,
-        mentioned_by: userData.user.id
-      }))
-      const { error: mentionsError } = await supabase.from('reminder_mentions').insert(mentionsData)
-      if (mentionsError) throw mentionsError
-    }
+  // 2. Atualizar mencoes
+  await supabase.from('reminder_mentions').delete().eq('reminder_id', id)
+  
+  if (mentions.length > 0) {
+    const mentionsData = mentions.map(userId => ({
+      reminder_id: id,
+      user_id: userId
+    }))
+    await supabase.from('reminder_mentions').insert(mentionsData)
   }
 
   return data
+}
+
+export async function uploadReminderImage(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Math.random()}.${fileExt}`
+  const filePath = `${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('reminders_media')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    throw uploadError
+  }
+
+  const { data } = supabase.storage
+    .from('reminders_media')
+    .getPublicUrl(filePath)
+
+  return data.publicUrl
 }
 
 export async function toggleReminderCompletion(id: string, currentStatus: string) {

@@ -18,6 +18,7 @@ interface ReminderData {
   due_date?: string
   due_time?: string
   is_recurring: boolean
+  image_url?: string
 }
 
 interface ReminderNotif {
@@ -54,7 +55,7 @@ export function ReminderAlertNotification() {
         .select(`
           *,
           reminder:reminders (
-            id, title, description, priority, due_date, due_time, is_recurring
+            id, title, description, priority, due_date, due_time, is_recurring, image_url
           )
         `)
         .eq('user_id', currentUserId)
@@ -100,7 +101,7 @@ export function ReminderAlertNotification() {
           if (notif.reminder_id) {
             const { data } = await supabase
               .from('reminders')
-              .select('id, title, description, priority, due_date, due_time, is_recurring')
+              .select('id, title, description, priority, due_date, due_time, is_recurring, image_url')
               .eq('id', notif.reminder_id)
               .single()
             if (data) reminderData = data
@@ -239,6 +240,16 @@ export function ReminderAlertNotification() {
                               {notif.reminder.description}
                             </p>
                           </div>
+                        </div>
+                      )}
+                      
+                      {notif.reminder.image_url && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-white/10">
+                          <img 
+                            src={notif.reminder.image_url} 
+                            alt="Anexo do Lembrete" 
+                            className="w-full h-auto max-h-72 object-contain rounded-xl border border-gray-200 dark:border-white/10" 
+                          />
                         </div>
                       )}
                     </div>
