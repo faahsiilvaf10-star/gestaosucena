@@ -485,6 +485,17 @@ export default function DashboardStep() {
       return
     }
 
+    const nowFinish = new Date()
+    let tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+    tl = tl.filter((e: any) => e.name !== 'JORNADA FINALIZADA')
+    tl.push({
+      time: nowFinish.toISOString(),
+      name: 'JORNADA FINALIZADA',
+      type: 'Status Alterado',
+      color: 'bg-red-500'
+    })
+    localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
+
     setLoadingFinish(true)
     try {
       if (dispatch?.id) {
@@ -538,7 +549,7 @@ export default function DashboardStep() {
                 try {
                   await new Promise(r => setTimeout(r, 800))
                   const dataUrlCanvas = await htmlToImage.toPng(reportRef.current, { 
-                    pixelRatio: 2, 
+                    pixelRatio: 1.5, 
                     backgroundColor: '#ffffff' 
                   })
                   dataUrl = dataUrlCanvas
@@ -867,6 +878,7 @@ export default function DashboardStep() {
         <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '800px', backgroundColor: '#ffffff', pointerEvents: 'none' }}>
           <ParteDiariaReport
             ref={reportRef}
+            hideLogo={true}
             motorista={(() => { try { return JSON.parse(localStorage.getItem('app_motorista_driver') || '{}').name || '-' } catch { return '-' } })()}
             ajudante={dispatch?.helper_name || ''}
             data={new Date()}

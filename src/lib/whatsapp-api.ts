@@ -95,22 +95,35 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: 'POST' })
       // Default Evolution API endpoint
       let endpoint = `${baseUrl}/message/sendMedia/${data.instanceId}`;
       
+      let isWApiApp = false;
       // If it's w-api.app
       if (baseUrl.includes('api.w-api.app')) {
-        endpoint = `${baseUrl}/messages/send-media?instanceId=${data.instanceId}`
+        isWApiApp = true;
+        endpoint = `${baseUrl}/message/send-image?instanceId=${data.instanceId}`
       }
 
       // Base64 gerado pelo canvas vem como "data:image/png;base64,iVBORw0KGgo..."
       let pureBase64 = data.base64Media
+      let mime = "image/png"
+      if (pureBase64.includes('image/jpeg')) mime = "image/jpeg"
+      else if (data.fileName?.endsWith('.jpg') || data.fileName?.endsWith('.jpeg')) mime = "image/jpeg"
+
       if (pureBase64.includes('base64,')) {
         pureBase64 = pureBase64.split('base64,')[1]
       }
 
-      const payload = {
+      // Format payload depending on API
+      // W-API requires "image" with full data URL, Evolution expects pureBase64 in "media"
+      const payload = isWApiApp ? {
+        phone: data.phone,
+        number: data.phone,
+        image: data.base64Media, // full base64 data URI
+        caption: data.caption
+      } : {
         number: data.phone,
         phone: data.phone,
         mediatype: "image",
-        mimetype: "image/png",
+        mimetype: mime,
         fileName: data.fileName || "documento.png",
         caption: data.caption,
         message: data.caption,
