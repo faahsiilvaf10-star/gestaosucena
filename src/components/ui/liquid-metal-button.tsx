@@ -162,8 +162,6 @@ export function LiquidMetalButton({
     <div className="relative inline-block">
       <div
         style={{
-          perspective: "1000px",
-          perspectiveOrigin: "50% 50%",
         }}
       >
         <div
@@ -171,7 +169,6 @@ export function LiquidMetalButton({
             position: "relative",
             width: `${dimensions.width}px`,
             height: `${dimensions.height}px`,
-            transformStyle: "preserve-3d",
             transition:
               "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
             transform: "none",
@@ -188,10 +185,9 @@ export function LiquidMetalButton({
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              transformStyle: "preserve-3d",
               transition:
                 "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease, gap 0.4s ease",
-              transform: "translateZ(20px)",
+              transform: "none",
               zIndex: 30,
               pointerEvents: "none",
             }}
@@ -232,10 +228,9 @@ export function LiquidMetalButton({
               left: 0,
               width: `${dimensions.width}px`,
               height: `${dimensions.height}px`,
-              transformStyle: "preserve-3d",
               transition:
                 "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
-              transform: `translateZ(10px) ${isPressed ? "translateY(1px) scale(0.98)" : "translateY(0) scale(1)"}`,
+              transform: isPressed ? "translateY(1px) scale(0.98)" : "translateY(0) scale(1)",
               zIndex: 20,
             }}
           >
@@ -262,10 +257,9 @@ export function LiquidMetalButton({
               left: 0,
               width: `${dimensions.width}px`,
               height: `${dimensions.height}px`,
-              transformStyle: "preserve-3d",
               transition:
                 "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
-              transform: `translateZ(0px) ${isPressed ? "translateY(1px) scale(0.98)" : "translateY(0) scale(1)"}`,
+              transform: isPressed ? "translateY(1px) scale(0.98)" : "translateY(0) scale(1)",
               zIndex: 10,
             }}
           >
@@ -318,8 +312,7 @@ export function LiquidMetalButton({
               cursor: "pointer",
               outline: "none",
               zIndex: 40,
-              transformStyle: "preserve-3d",
-              transform: "translateZ(25px)",
+              transform: "none",
               transition:
                 "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
               overflow: "hidden",

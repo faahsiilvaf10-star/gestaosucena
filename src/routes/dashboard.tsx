@@ -12,6 +12,7 @@ import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from '
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
 import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
+import Chart02 from '../components/ui/chart-02'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
@@ -441,12 +442,13 @@ function DashboardComponent() {
               </button>
             </div>
             <div className="donut-wrapper">
-              <div className="donut" style={{ "--value": pctPresenca, "--accent": "var(--green)", "--track": "rgba(32, 199, 108, 0.15)" } as any}>
-                <div className="donut-content">
-                  <div className="donut-number">{todayData.presentes}</div>
-                  <div className="donut-total">de {totalFuncionarios}</div>
-                </div>
-              </div>
+              <Chart02 
+                value={todayData.presentes} 
+                total={totalFuncNum} 
+                color="#20c76c" 
+                trackColor="rgba(32, 199, 108, 0.15)" 
+                label="Presentes" 
+              />
               <div className="percent-box percent-green">
                 <div className="flex items-center gap-2">
                   <strong>{pctPresenca}%</strong>
@@ -482,12 +484,13 @@ function DashboardComponent() {
               </button>
             </div>
             <div className="donut-wrapper">
-              <div className="donut" style={{ "--value": pctAusencia, "--accent": "var(--red)", "--track": "rgba(242, 55, 89, 0.15)" } as any}>
-                <div className="donut-content">
-                  <div className="donut-number">{todayData.ausencias}</div>
-                  <div className="donut-total">de {totalFuncionarios}</div>
-                </div>
-              </div>
+              <Chart02 
+                value={todayData.ausencias} 
+                total={totalFuncNum} 
+                color="#f23759" 
+                trackColor="rgba(242, 55, 89, 0.15)" 
+                label="Ausências" 
+              />
               <div className="percent-box percent-red">
                 <div className="flex items-center gap-2">
                   <strong>{pctAusencia}%</strong>
@@ -659,12 +662,13 @@ function DashboardComponent() {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="donut-wrapper">
-              <div className="donut" style={{ "--value": pctOperacao, "--accent": "var(--blue)", "--track": "rgba(22, 119, 255, 0.15)" } as any}>
-                <div className="donut-content">
-                  <div className="donut-number">{eqData?.operacao || 0}</div>
-                  <div className="donut-total">de {totalVehiclesNum}</div>
-                </div>
-              </div>
+              <Chart02 
+                value={eqData?.operacao || 0} 
+                total={totalVehiclesNum} 
+                color="#1677ff" 
+                trackColor="rgba(22, 119, 255, 0.15)" 
+                label="Em Operação" 
+              />
               <div className="percent-box percent-blue">
                 <div className="flex items-center gap-2">
                   <strong>{pctOperacao}%</strong>
@@ -716,12 +720,13 @@ function DashboardComponent() {
               </button>
             </div>
             <div className="donut-wrapper">
-              <div className="donut" style={{ "--value": pctManutencao, "--accent": "var(--orange)", "--track": "rgba(255, 114, 0, 0.15)" } as any}>
-                <div className="donut-content">
-                  <div className="donut-number">{eqData?.manutencao || 0}</div>
-                  <div className="donut-total">de {totalEquipmentsNum}</div>
-                </div>
-              </div>
+              <Chart02 
+                value={eqData?.manutencao || 0} 
+                total={totalEquipmentsNum} 
+                color="#ff7200" 
+                trackColor="rgba(255, 114, 0, 0.15)" 
+                label="Em Manutenção" 
+              />
               <div className="percent-box percent-orange">
                 <div className="flex items-center gap-2">
                   <strong>{pctManutencao}%</strong>
