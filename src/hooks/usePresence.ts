@@ -2,8 +2,10 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 // Tempo máximo sem heartbeat para considerar o usuário OFFLINE (em ms)
-// Heartbeat é enviado a cada 20s, então 50s dá 2.5x de margem para falhas de rede
-const OFFLINE_THRESHOLD_MS = 50_000
+// Heartbeat é enviado a cada 25s, então 60s dá 2.4x de margem para falhas de rede
+const OFFLINE_THRESHOLD_MS = 60_000
+// Intervalo do heartbeat em ms — enviado MESMO com aba em background
+const HEARTBEAT_INTERVAL_MS = 25_000
 
 export function usePresence(userId?: string) {
   const presenceChannelRef = useRef<any>(null)
@@ -71,16 +73,18 @@ export function usePresence(userId?: string) {
         }
       })
 
-    // Heartbeat a cada 20s para manter "last_heartbeat" fresco no banco
+    // Heartbeat a cada 25s — SEMPRE enviado, mesmo com aba em background/segundo plano
+    // Isso garante que usuários com o app minimizado apareçam como online
     heartbeatRef.current = setInterval(() => {
-      if (document.visibilityState !== 'hidden' && navigator.onLine) {
+      if (navigator.onLine) {
         sendHeartbeat(true)
       }
-    }, 20_000)
+    }, HEARTBEAT_INTERVAL_MS)
 
-    // Quando a aba fica visível de novo, reenvia heartbeat imediato
+    // Quando a aba volta ao foco (visível), reenvia heartbeat imediato
+    // Importante para reduzir latência da detecção de online após o usuário voltar ao app
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine) {
+      if (navigator.onLine) {
         sendHeartbeat(true)
       }
     }

@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-// Threshold idêntico ao usePresence: 50s sem heartbeat = offline
-const OFFLINE_THRESHOLD_MS = 50_000
+// Threshold idêntico ao usePresence.ts: 60s sem heartbeat = offline
+const OFFLINE_THRESHOLD_MS = 60_000
 
 function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null } | null): boolean {
   if (!p || !p.is_online) return false
