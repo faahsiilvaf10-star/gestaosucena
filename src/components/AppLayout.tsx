@@ -116,7 +116,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'bg-[#000] text-gray-900 dark:text-white' : 'bg-[#f4f3f0] text-gray-900'}`}
+    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />

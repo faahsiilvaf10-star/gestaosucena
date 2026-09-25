@@ -243,7 +243,7 @@ function Index() {
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
 
   return (
-    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-gray-900 dark:text-white' : 'bg-[#d4d4d8] text-black'}`}>
+    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300`}>
       
       <AnimatePresence>
         {isAuthorized && (
@@ -383,26 +383,6 @@ function Index() {
         )}
       </AnimatePresence>
       
-      {/* Background Effects */}
-      <div className={`absolute top-[-20%] left-[-10%] w-[70%] h-[70%] blur-[150px] rounded-full pointer-events-none z-0 transition-colors duration-300 ${isDark ? 'bg-blue-600/20' : 'bg-blue-400/20'}`}></div>
-      <div className={`absolute top-[-20%] right-[-10%] w-[60%] h-[60%] blur-[150px] rounded-full pointer-events-none z-0 transition-colors duration-300 ${isDark ? 'bg-purple-600/20' : 'bg-purple-400/20'}`}></div>
-      
-      {/* Grid Pattern */}
-      <div 
-        className={`absolute inset-0 z-0 transition-opacity duration-300 ${isDark ? 'opacity-[0.03]' : 'opacity-[0.05]'}`} 
-        style={{
-          backgroundImage: `linear-gradient(to right, ${isDark ? '#ffffff' : '#000000'} 1px, transparent 1px), linear-gradient(to bottom, ${isDark ? '#ffffff' : '#000000'} 1px, transparent 1px)`,
-          backgroundSize: '4rem 4rem'
-        }}
-      ></div>
-
-      {/* Floating Squares */}
-      <div className={`absolute top-[25%] left-[12%] w-8 h-8 border z-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}></div>
-      <div className={`absolute top-[35%] left-[8%] w-6 h-6 border z-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}></div>
-      <div className={`absolute top-[15%] right-[28%] w-10 h-10 border z-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}></div>
-      <div className={`absolute top-[40%] right-[12%] w-12 h-12 border z-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}></div>
-      <div className={`absolute top-[25%] right-[5%] w-6 h-6 border z-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}></div>
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-[360px] mx-auto px-4 py-12">
         

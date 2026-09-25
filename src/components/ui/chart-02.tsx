@@ -74,14 +74,14 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
                     <tspan
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) - 4}
-                      className="fill-foreground text-[32px] font-bold"
+                      className="fill-foreground dark:fill-white text-[32px] font-bold"
                     >
                       {value}
                     </tspan>
                     <tspan
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) + 16}
-                      className="fill-muted-foreground text-[12px]"
+                      className="fill-muted-foreground dark:fill-white text-[12px]"
                     >
                       de {total}
                     </tspan>

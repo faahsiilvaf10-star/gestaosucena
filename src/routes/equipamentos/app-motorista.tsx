@@ -81,8 +81,8 @@ function AppMotoristaWrapper() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-zinc-900 sm:p-4 flex items-center justify-center w-full">
-      <div className="flex flex-col w-full h-screen sm:h-[850px] sm:max-h-[95vh] sm:max-w-[400px] sm:rounded-[40px] sm:border-[12px] sm:border-gray-900 sm:shadow-2xl bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 font-sans overflow-hidden relative">
+    <div className="min-h-screen sm:p-4 flex items-center justify-center w-full">
+      <div className="flex flex-col w-full h-screen sm:h-[850px] sm:max-h-[95vh] sm:max-w-[400px] sm:rounded-[40px] sm:border-[12px] sm:border-gray-900 sm:shadow-2xl bg-white/10 dark:bg-black/40 backdrop-blur-md text-gray-900 dark:text-gray-100 font-sans overflow-hidden relative">
       {/* STATUS BAR */}
       {!isOnline && (
         <div className="w-full bg-red-500 text-white text-xs text-center py-1 font-semibold flex items-center justify-center gap-2">

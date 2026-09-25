@@ -4,8 +4,19 @@ import { getConversations, getOrCreateDirectConversation } from '../../lib/api-c
 import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { User, Check, CheckCheck } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
+
+function formatLastSeen(dateStr?: string | null) {
+  if (!dateStr) return 'Offline'
+  try {
+    const d = new Date(dateStr)
+    return 'Visto ' + formatDistanceToNow(d, { addSuffix: true, locale: ptBR })
+  } catch(e) {
+    return 'Offline'
+  }
+}
 
 // Deve ser idêntico ao OFFLINE_THRESHOLD_MS do usePresence.ts
 const OFFLINE_THRESHOLD_MS = 60_000
@@ -172,7 +183,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   {isAdmin(user.name, user.role) && <VerifiedBadge />}
                 </p>
                 <p className={`text-xs truncate ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>
-                  {user.isOnline ? 'Online' : 'Offline'}
+                  {user.isOnline ? 'Online' : formatLastSeen(user._presenceRaw?.last_heartbeat)}
                 </p>
               </div>
             </button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { X, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 
 interface Story {
@@ -218,7 +219,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
   const isMyStory = activeStory.user_id === currentUserId;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
        <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-gray-900 dark:text-white transition-colors">
          <X size={24} />
@@ -374,7 +375,8 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
          )}
 
        </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -24,7 +24,7 @@
   --radius-main: 24px;
   --radius-item: 16px;
 
-  --nav-height: 62px;
+  --nav-height: 48px;
 
   --ease-liquid: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -143,10 +143,10 @@
 
   position: absolute;
 
-  top: 22px;
+  top: 14px;
   right: 0;
-  bottom: 22px;
-
+  bottom: 14px;
+  
   width: 1px;
 
   background: linear-gradient(

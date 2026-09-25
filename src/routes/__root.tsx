@@ -18,6 +18,7 @@ import { ChatProvider } from "../contexts/ChatContext";
 import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
+import { GlobalBackground } from "../components/GlobalBackground";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -26,7 +27,8 @@ function RootContent() {
   const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
-    <div className={`min-h-screen ${isDark ? 'dark' : 'light'}`}>
+    <div className={`min-h-screen ${isDark ? 'dark text-white' : 'light text-black'}`}>
+      <GlobalBackground />
       {isAppRoute ? (
         <AppLayout>
           <Outlet />

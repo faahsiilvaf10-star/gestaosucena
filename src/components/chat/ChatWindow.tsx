@@ -4,10 +4,20 @@ import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { supabase } from '../../lib/supabase'
 import { getConversationMessages, clearConversation, Message } from '../../lib/api-chat'
-import { format, isToday, isYesterday } from 'date-fns'
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns'
 import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
+
+function formatLastSeen(dateStr?: string | null) {
+  if (!dateStr) return 'Offline'
+  try {
+    const d = new Date(dateStr)
+    return 'Visto ' + formatDistanceToNow(d, { addSuffix: true, locale: localePtBr })
+  } catch(e) {
+    return 'Offline'
+  }
+}
 
 // Deve ser idêntico ao OFFLINE_THRESHOLD_MS do usePresence.ts
 const OFFLINE_THRESHOLD_MS = 60_000
@@ -68,7 +78,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
   const [messages, setMessages] = useState<Message[]>([])
   const [contactName, setContactName] = useState('Carregando...')
   const [contactRole, setContactRole] = useState('')
-  const [contactStatus, setContactStatus] = useState<'Online' | 'Offline'>('Offline')
+  const [contactStatus, setContactStatus] = useState<string>('Offline')
   const [contactAvatar, setContactAvatar] = useState('')
   const [showOptions, setShowOptions] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -122,13 +132,13 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         
         if (presence) {
           contactPresenceRawRef.current = presence
-          setContactStatus(isReallyOnline(presence) ? 'Online' : 'Offline')
+          setContactStatus(isReallyOnline(presence) ? 'Online' : formatLastSeen(presence?.last_heartbeat))
         }
 
         // Intervalo local para recalcular status por threshold (detecta queda sem update no banco)
         if (recalcIntervalRef.current) clearInterval(recalcIntervalRef.current)
         recalcIntervalRef.current = setInterval(() => {
-          setContactStatus(isReallyOnline(contactPresenceRawRef.current) ? 'Online' : 'Offline')
+          setContactStatus(isReallyOnline(contactPresenceRawRef.current) ? 'Online' : formatLastSeen(contactPresenceRawRef.current?.last_heartbeat))
         }, 15_000)
 
         // Subscription REALTIME na presença do contato
@@ -142,7 +152,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
               const p = payload.new
               if (p) {
                 contactPresenceRawRef.current = p
-                setContactStatus(isReallyOnline(p) ? 'Online' : 'Offline')
+                setContactStatus(isReallyOnline(p) ? 'Online' : formatLastSeen(p?.last_heartbeat))
               }
             }
           )

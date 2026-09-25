@@ -11,8 +11,8 @@
 
   --glass-bg: linear-gradient(
     145deg,
-    rgba(242, 245, 249, 0.95),
-    rgba(235, 240, 245, 0.85)
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.2)
   );
 
   --glass-border: rgba(255, 255, 255, 0.82);
@@ -760,9 +760,9 @@ body {
 }
 
 .dark .dashboard-card {
-  background: linear-gradient(145deg, rgba(30, 35, 45, 0.95), rgba(20, 25, 30, 0.85));
+  background: rgba(0, 0, 0, 0.35);
   border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .dark .icon-box {
@@ -812,7 +812,6 @@ body {
    ========================================================== */
 
 .dark .dashboard-page {
-  background: #050505; /* Preto quase absoluto */
   position: relative;
 }
 
@@ -931,7 +930,7 @@ body {
 }
 
 .dark .donut::after {
-  background: #050505 !important; /* Mesma cor do fundo da página */
+  background: #09090b !important;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
