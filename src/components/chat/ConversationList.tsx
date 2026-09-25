@@ -7,8 +7,8 @@ import { User, Check, CheckCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
 
-// Considera online apenas quem enviou heartbeat nos últimos 50s
-const OFFLINE_THRESHOLD_MS = 50_000
+// Deve ser idêntico ao OFFLINE_THRESHOLD_MS do usePresence.ts
+const OFFLINE_THRESHOLD_MS = 60_000
 
 function isReallyOnline(presence: { is_online: boolean; last_heartbeat?: string | null } | undefined | null): boolean {
   if (!presence || !presence.is_online) return false
