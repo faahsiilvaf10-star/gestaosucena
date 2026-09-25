@@ -1,0 +1,74 @@
+{
+  "name": "gestaosucena-launcher",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "build": {
+    "appId": "com.gestaosucena.launcher",
+    "productName": "Gestão Sucena Launcher",
+    "directories": {
+      "output": "dist-release"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "faahsiilvaf10-star",
+        "repo": "gestaosucena"
+      }
+    ]
+  },
+  "scripts": {
+    "dev": "concurrently \"vite\" \"npm run build:electron -- --watch\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
+    "build:electron": "esbuild electron/main.ts electron/preload.ts --outdir=dist-electron --platform=node --format=cjs --out-extension:.js=.cjs",
+    "build": "vite build && npm run build:electron",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "axios": "^1.20.0",
+    "clsx": "^2.1.1",
+    "electron-updater": "^6.8.9",
+    "extract-zip": "^2.0.1",
+    "framer-motion": "^13.4.4",
+    "lucide-react": "^1.48.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "npm-run-all": "^4.1.5",
+    "oxlint": "^1.81.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "wait-on": "^9.1.0"
+  }
+}
