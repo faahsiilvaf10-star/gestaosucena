@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import { X, Send, Bot, KeyRound, ExternalLink, Loader2, Database, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import Groq from 'groq-sdk'
 import { useTheme } from '../contexts/ThemeContext'
 
 export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { isDark } = useTheme()
   const [apiKey, setApiKey] = useState('')
+  const [groqKey, setGroqKey] = useState('')
   const [hasKey, setHasKey] = useState(false)
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
@@ -16,10 +18,12 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
 
   useEffect(() => {
     const saved = localStorage.getItem('sucena_gemini_api_key')
+    const savedGroq = localStorage.getItem('sucena_groq_api_key')
     if (saved) {
       setApiKey(saved)
       setHasKey(true)
     }
+    if (savedGroq) setGroqKey(savedGroq)
   }, [])
 
   useEffect(() => {
@@ -31,6 +35,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const saveKey = () => {
     if (apiKey.trim().length > 10) {
       localStorage.setItem('sucena_gemini_api_key', apiKey.trim())
+      if (groqKey.trim()) localStorage.setItem('sucena_groq_api_key', groqKey.trim())
       setHasKey(true)
       setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
     }
@@ -38,7 +43,9 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
 
   const removeKey = () => {
     localStorage.removeItem('sucena_gemini_api_key')
+    localStorage.removeItem('sucena_groq_api_key')
     setApiKey('')
+    setGroqKey('')
     setHasKey(false)
     setMessages([])
   }
@@ -115,8 +122,38 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
       console.error("Gemini Error:", error)
       let errorMessage = `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}`;
       
-      if (error.message?.includes('503') || error.message?.includes('high demand')) {
-        errorMessage = "A IA do Google está com um volume muito alto de uso neste exato segundo (Erro 503). Por favor, aguarde alguns segundos e tente perguntar novamente!";
+      if (error.message?.includes('503') || error.message?.includes('high demand') || error.message?.includes('429')) {
+        if (groqKey) {
+          try {
+            setMessages(prev => [...prev, { role: 'ai', text: 'Servidores do Google ocupados. Acionando IA Reserva (Groq/Llama-3)...' }])
+            const groq = new Groq({ dangerouslyAllowBrowser: true, apiKey: groqKey })
+            
+            const groqHistory: any[] = messages
+              .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
+              .map(m => ({
+                role: m.role === 'ai' ? 'assistant' : 'user',
+                content: m.text
+              }))
+              
+            const chatCompletion = await groq.chat.completions.create({
+              messages: [
+                { role: 'system', content: context },
+                ...groqHistory,
+                { role: 'user', content: userMessage }
+              ],
+              model: 'llama-3.3-70b-versatile',
+            })
+            
+            const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
+            setMessages(prev => [...prev, { role: 'ai', text: responseText }])
+            return
+          } catch(groqError) {
+            console.error("Groq fallback error:", groqError)
+            errorMessage = "Ambas as IAs (Principal e Reserva) falharam. Tente novamente mais tarde."
+          }
+        } else {
+          errorMessage = "A IA do Google está com um volume muito alto de uso neste exato segundo. Por favor, aguarde alguns segundos e tente perguntar novamente! Dica: Você pode configurar uma chave do Groq (IA Reserva) na tela inicial para evitar isso.";
+        }
       }
 
       setMessages(prev => [...prev, { role: 'ai', text: errorMessage }])
@@ -171,17 +208,27 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               </p>
               
               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium text-sm mb-6 bg-blue-500/10 px-4 py-2 rounded-lg transition-colors">
-                Gerar Chave Gratuita <ExternalLink size={14} />
+                Gerar Chave do Google Gemini <ExternalLink size={14} />
               </a>
 
               <div className="space-y-3">
                 <input
                   type="password"
-                  placeholder="Cole sua API Key gerada aqui..."
+                  placeholder="Cole sua API Key do Google aqui..."
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center"
+                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
                 />
+                <input
+                  type="password"
+                  placeholder="[Opcional] Cole sua API Key do Groq aqui..."
+                  value={groqKey}
+                  onChange={e => setGroqKey(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
+                />
+                <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="block text-xs text-orange-500 hover:text-orange-600 mb-2 mt-1">
+                  Não tem a chave Groq? Gere uma aqui de graça (Evita erros 503)
+                </a>
                 <button
                   onClick={saveKey}
                   disabled={apiKey.length < 10}
