@@ -44,6 +44,34 @@ export async function setRegistrationOpen(isOpen: boolean): Promise<boolean> {
   }
 }
 
+export async function getAITokens(): Promise<{ geminiKey: string, groqKey: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('key, value')
+      .in('key', ['ai_gemini_api_key', 'ai_groq_api_key'])
+    
+    if (error || !data) return { geminiKey: '', groqKey: '' }
+    
+    const geminiKey = data.find(r => r.key === 'ai_gemini_api_key')?.value || ''
+    const groqKey = data.find(r => r.key === 'ai_groq_api_key')?.value || ''
+    
+    return { geminiKey, groqKey }
+  } catch (err) {
+    return { geminiKey: '', groqKey: '' }
+  }
+}
+
+export async function setAITokens(geminiKey: string, groqKey: string): Promise<boolean> {
+  try {
+    if (geminiKey) await supabase.from('global_settings').upsert({ key: 'ai_gemini_api_key', value: geminiKey, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    if (groqKey || groqKey === '') await supabase.from('global_settings').upsert({ key: 'ai_groq_api_key', value: groqKey, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
 export type WhatsappSettings = {
   url: string;
   instanceId: string;

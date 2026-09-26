@@ -2,12 +2,17 @@ import React, { useState, useEffect, useRef } from 'react'
 import { X, Send, Bot, KeyRound, ExternalLink, Loader2, Database, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import Groq from 'groq-sdk'
 import { useTheme } from '../contexts/ThemeContext'
+import { getAITokens, setAITokens } from '../lib/settings'
 
 export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { isDark } = useTheme()
   const [apiKey, setApiKey] = useState('')
+  const [groqKey, setGroqKey] = useState('')
   const [hasKey, setHasKey] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [userName, setUserName] = useState('Usuário')
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,12 +20,27 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem('sucena_gemini_api_key')
-    if (saved) {
-      setApiKey(saved)
-      setHasKey(true)
-    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setIsAdmin(data.user.user_metadata?.role === 'admin')
+        setUserName(data.user.user_metadata?.full_name || 'Usuário')
+      }
+    })
   }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      getAITokens().then(tokens => {
+        if (tokens.geminiKey) {
+          setApiKey(tokens.geminiKey)
+          setHasKey(true)
+        }
+        if (tokens.groqKey) {
+          setGroqKey(tokens.groqKey)
+        }
+      })
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -28,18 +48,28 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
     }
   }, [messages, loading, gatheringData])
 
-  const saveKey = () => {
+  const saveKey = async () => {
     if (apiKey.trim().length > 10) {
-      localStorage.setItem('sucena_gemini_api_key', apiKey.trim())
+      const gKey = apiKey.trim()
+      const grKey = groqKey.trim()
+      
+      await setAITokens(gKey, grKey)
+      
       setHasKey(true)
-      setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
+      if (messages.length === 0) {
+        setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
+      }
     }
   }
 
-  const removeKey = () => {
-    localStorage.removeItem('sucena_gemini_api_key')
-    setApiKey('')
+  const openSettings = () => {
     setHasKey(false)
+  }
+
+  const deleteKeys = async () => {
+    await setAITokens('', '')
+    setApiKey('')
+    setGroqKey('')
     setMessages([])
   }
 
@@ -57,17 +87,21 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".
-RESPONDA SEMPRE EM PORTUGUÊS (PT-BR). SEJA DIRETO E PROFISSIONAL.
-Abaixo estão os dados reais do banco de dados neste exato momento. Responda às perguntas com base estritamente nestes dados:
+O NOME DO USUÁRIO QUE ESTÁ FALANDO COM VOCÊ É: ${userName}.
 
-### ESTOQUE E ALMOXARIFADO (MOVIMENTAÇÕES / QUANTIDADES)
-${products ? products.map(p => `- Produto: ${p.name} | Estoque Atual: ${p.current_stock} ${p.unit_of_measure} | Estoque Mín: ${p.min_stock}`).join('\n') : 'Sem dados'}
+INSTRUÇÃO MUITO IMPORTANTE: Quando for iniciar a conversa, SEJA EXTREMAMENTE SIMPLES. Diga apenas o nome do usuário e pergunte de forma amigável no que pode ajudar hoje.
+REGRA CRÍTICA: NUNCA explique como você funciona. NUNCA cite nomes de campos do sistema, tabelas, ou termos técnicos do prompt (como "EQP", "FUN", "inside", "outside", "campos fornecidos"). Aja como um humano natural e apenas responda a pergunta do usuário com a informação final.
+
+Abaixo estão os dados reais do sistema neste exato momento:
+
+### ESTOQUE E ALMOXARIFADO
+${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
 
 ### EQUIPAMENTOS (FROTA)
-${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status}`).join('\n') : 'Sem dados'}
+${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status === 'inside' ? 'Na Base/Estação' : e.location_status === 'outside' ? 'Em Rota/Fora' : e.location_status}`).join('\n') : 'Sem dados'}
 
-### FUNCIONÁRIOS ATIVOS (RH)
-${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status}`).join('\n') : 'Sem dados'}
+### FUNCIONÁRIOS (RH)
+${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status === 'active' ? 'Ativo' : e.status === 'inactive' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
 `
       return context
     } catch (error) {
@@ -86,27 +120,102 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
     setMessages(prev => [...prev, { role: 'user', text: userMessage }])
     setLoading(true)
 
+    let context = ''
     try {
+      context = await gatherSystemContext()
+      
+      // 1. Tenta usar Groq como PRINCIPAL (se a chave existir)
+      if (groqKey) {
+        try {
+          const groq = new Groq({ dangerouslyAllowBrowser: true, apiKey: groqKey })
+          
+          const groqHistory: any[] = messages
+            .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
+            .map(m => ({
+              role: m.role === 'ai' ? 'assistant' : 'user',
+              content: m.text
+            }))
+            
+          let selectedModel = 'llama-3.3-70b-versatile';
+          try {
+            const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+              headers: { Authorization: `Bearer ${groqKey}` }
+            });
+            if (modelsRes.ok) {
+              const data = await modelsRes.json();
+              const availableModels = data.data.map((m: any) => m.id);
+              if (!availableModels.includes(selectedModel)) {
+                 const validModels = availableModels.filter((m: string) => 
+                   !m.includes('guard') && !m.includes('whisper') && !m.includes('vision') && !m.includes('tool-use')
+                 );
+                 const bestAlternative = validModels.find((m: string) => m.includes('llama-3.3')) || 
+                                         validModels.find((m: string) => m.includes('llama-3.1')) || 
+                                         validModels.find((m: string) => m.includes('mixtral')) || 
+                                         validModels.find((m: string) => m.includes('llama'));
+                 selectedModel = bestAlternative || validModels[0] || 'mixtral-8x7b-32768';
+              }
+            }
+          } catch(e) {
+            console.log("Erro ao validar modelos suportados", e);
+          }
+
+          const chatCompletion = await groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: context },
+              ...groqHistory,
+              { role: 'user', content: userMessage }
+            ],
+            model: selectedModel,
+          })
+          
+          const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
+          setMessages(prev => [...prev, { role: 'ai', text: responseText }])
+          setLoading(false)
+          return
+        } catch(groqError: any) {
+          console.error("Groq as primary failed, falling back to Gemini:", groqError)
+          setMessages(prev => [...prev, { role: 'ai', text: `Groq indisponível no momento (${groqError.message}). Acionando IA Reserva (Google Gemini)...` }])
+        }
+      }
+
+      // 2. Se Groq falhou ou não tem chave Groq, tenta Gemini (RESERVA)
       const genAI = new GoogleGenerativeAI(apiKey)
-      const context = await gatherSystemContext()
       
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
+        model: "gemini-flash-latest",
         systemInstruction: context
       })
 
-      // Convert previous messages to Gemini format (optional, keeping it simple for now)
-      const prompt = userMessage
+      // Convert previous messages to Gemini format
+      const history = messages
+        .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
+        .map(m => ({
+          role: m.role === 'ai' ? 'model' : 'user',
+          parts: [{ text: m.text }]
+        }))
 
-      const result = await model.generateContent(prompt)
+      const chat = model.startChat({
+        history: history,
+      })
+
+      const result = await chat.sendMessage(userMessage)
       const responseText = result.response.text()
 
       setMessages(prev => [...prev, { role: 'ai', text: responseText }])
     } catch (error: any) {
       console.error("Gemini Error:", error)
-      setMessages(prev => [...prev, { role: 'ai', text: `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}` }])
+      let errorMessage = `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}`;
+      
+      if (error.message?.includes('503') || error.message?.includes('high demand') || error.message?.includes('429')) {
+         errorMessage = groqKey 
+           ? "Ambas as IAs (Groq Llama-3 e Google Gemini) falharam por congestionamento ou erro. Tente novamente mais tarde."
+           : "A IA do Google está com volume muito alto e você não tem uma chave do Groq configurada como fallback. Aguarde alguns segundos e tente novamente.";
+      }
+
+      setMessages(prev => [...prev, { role: 'ai', text: errorMessage }])
+      
       if (error.message?.includes('API key not valid')) {
-        removeKey()
+        setHasKey(false)
       }
     } finally {
       setLoading(false)
@@ -131,8 +240,8 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {hasKey && (
-              <button onClick={removeKey} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Remover API Key">
+            {hasKey && isAdmin && (
+              <button onClick={openSettings} className="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="Configurações da IA">
                 <ShieldAlert size={18} />
               </button>
             )}
@@ -145,36 +254,74 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
         {/* BODY */}
         <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 p-6 flex flex-col">
           {!hasKey ? (
-            <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
-                <KeyRound size={32} />
-              </div>
-              <h3 className="text-xl font-bold dark:text-white mb-2">Conecte a Inteligência Artificial</h3>
-              <p className="text-sm text-gray-500 dark:text-white/60 mb-6">
-                Para usar a IA da Sucena gratuitamente e sem limites, você precisa de uma chave do Google Gemini (é 100% grátis e super potente).
-              </p>
-              
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium text-sm mb-6 bg-blue-500/10 px-4 py-2 rounded-lg transition-colors">
-                Gerar Chave Gratuita <ExternalLink size={14} />
-              </a>
+            isAdmin ? (
+              <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
+                <div className="w-16 h-16 mx-auto bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
+                  <KeyRound size={32} />
+                </div>
+                <h3 className="text-xl font-bold dark:text-white mb-2">Conecte a Inteligência Artificial</h3>
+                <p className="text-sm text-gray-500 dark:text-white/60 mb-6">
+                  Configure as chaves da API globalmente para todos os usuários do sistema.
+                </p>
+                
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium text-sm mb-6 bg-blue-500/10 px-4 py-2 rounded-lg transition-colors">
+                  Gerar Chave do Google Gemini <ExternalLink size={14} />
+                </a>
 
-              <div className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="Cole sua API Key gerada aqui..."
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center"
-                />
-                <button
-                  onClick={saveKey}
-                  disabled={apiKey.length < 10}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                >
-                  Conectar e Treinar IA
-                </button>
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="Cole sua API Key do Google aqui..."
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
+                  />
+                  <input
+                    type="password"
+                    placeholder="[Opcional] Cole sua API Key do Groq aqui..."
+                    value={groqKey}
+                    onChange={e => setGroqKey(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
+                  />
+                  <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="block text-xs text-orange-500 hover:text-orange-600 mb-2 mt-1">
+                    Não tem a chave Groq? Gere uma aqui de graça
+                  </a>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveKey}
+                      disabled={apiKey.length > 0 && apiKey.length < 10}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg"
+                    >
+                      {apiKey ? 'Salvar APIs' : 'Conectar IA'}
+                    </button>
+                    {(apiKey || groqKey) && (
+                      <button
+                        onClick={deleteKeys}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg"
+                        title="Apagar chaves globalmente"
+                      >
+                        Apagar
+                      </button>
+                    )}
+                  </div>
+                  {messages.length > 0 && (
+                    <button onClick={() => setHasKey(true)} className="w-full mt-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                      Voltar para o chat
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
+                <div className="w-16 h-16 mx-auto bg-gray-500/10 text-gray-500 rounded-full flex items-center justify-center mb-6">
+                  <Bot size={32} />
+                </div>
+                <h3 className="text-xl font-bold dark:text-white mb-2">IA Desconectada</h3>
+                <p className="text-sm text-gray-500 dark:text-white/60">
+                  A Inteligência Artificial ainda não foi configurada. Por favor, solicite a um Administrador para adicionar as chaves de integração.
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-6 flex-1 flex flex-col justify-end">
               {messages.map((msg, idx) => (
