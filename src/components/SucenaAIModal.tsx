@@ -97,7 +97,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
         .limit(20)
 
       // 3. Efetivo
-      const { data: employees } = await supabase.from('rh_efetivo').select('nome, funcao, status')
+      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status')
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".
@@ -125,7 +125,7 @@ ${movements ? movements.map(m => {
 }).join('\n') : 'Sem dados'}
 
 ### FUNCIONÁRIOS (RH)
-${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status === 'active' ? 'Ativo' : e.status === 'inactive' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
+${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status: ${e.status === 'Ativo' ? 'Ativo' : e.status === 'Inativo' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
 `
       return context
     } catch (error) {
