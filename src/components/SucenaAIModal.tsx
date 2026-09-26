@@ -93,9 +93,10 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
     setMessages(prev => [...prev, { role: 'user', text: userMessage }])
     setLoading(true)
 
+    let context = ''
     try {
+      context = await gatherSystemContext()
       const genAI = new GoogleGenerativeAI(apiKey)
-      const context = await gatherSystemContext()
       
       const model = genAI.getGenerativeModel({ 
         model: "gemini-flash-latest",
