@@ -95,16 +95,32 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
         systemInstruction: context
       })
 
-      // Convert previous messages to Gemini format (optional, keeping it simple for now)
-      const prompt = userMessage
+      // Convert previous messages to Gemini format
+      const history = messages
+        .filter(m => !m.text.includes('Olá! Sou a IA da Gestão Sucena'))
+        .map(m => ({
+          role: m.role === 'ai' ? 'model' : 'user',
+          parts: [{ text: m.text }]
+        }))
 
-      const result = await model.generateContent(prompt)
+      const chat = model.startChat({
+        history: history,
+      })
+
+      const result = await chat.sendMessage(userMessage)
       const responseText = result.response.text()
 
       setMessages(prev => [...prev, { role: 'ai', text: responseText }])
     } catch (error: any) {
       console.error("Gemini Error:", error)
-      setMessages(prev => [...prev, { role: 'ai', text: `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}` }])
+      let errorMessage = `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}`;
+      
+      if (error.message?.includes('503') || error.message?.includes('high demand')) {
+        errorMessage = "A IA do Google está com um volume muito alto de uso neste exato segundo (Erro 503). Por favor, aguarde alguns segundos e tente perguntar novamente!";
+      }
+
+      setMessages(prev => [...prev, { role: 'ai', text: errorMessage }])
+      
       if (error.message?.includes('API key not valid')) {
         removeKey()
       }
