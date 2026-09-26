@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut
+  Menu, X, ChevronRight, LogOut, Video
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
@@ -35,6 +35,7 @@ export const MENU_ITEMS = [
   { id: 'relatorio', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
   { id: 'meio-ambiente', label: 'Meio Ambiente', href: '/meio-ambiente', icon: Leaf, routeMatch: '/meio-ambiente' },
   { id: 'planejamento', label: 'Planejamento', href: '#', icon: Calendar, routeMatch: '/planejamento' },
+  { id: 'reunioes', label: 'Reuniões', href: '/reunioes', icon: Video, routeMatch: '/reunioes' },
   { id: 'emergencia', label: 'Emergência', href: '/emergencia', icon: TriangleAlert, routeMatch: '/emergencia', isEmergency: true },
 ]
 
