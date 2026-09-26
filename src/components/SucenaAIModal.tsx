@@ -122,7 +122,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               ...groqHistory,
               { role: 'user', content: userMessage }
             ],
-            model: 'llama3-8b-8192',
+            model: 'llama-3.3-70b-versatile',
           })
           
           const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
