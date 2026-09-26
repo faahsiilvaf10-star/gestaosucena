@@ -41,9 +41,10 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square w-[120px] h-[120px]"
+      className="mx-auto aspect-square w-[140px] h-[140px]"
+      style={{ overflow: 'visible' }}
     >
-      <PieChart>
+      <PieChart style={{ overflow: 'visible' }}>
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent hideLabel />}
