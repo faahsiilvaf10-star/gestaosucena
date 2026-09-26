@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut, Video
+  Menu, X, ChevronRight, LogOut, Video, Bot
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
 import { GlobalSearchModal } from './GlobalSearchModal'
+import SucenaAIModal from './SucenaAIModal'
 import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
 import { LiquidMetalButton } from './ui/liquid-metal-button'
 
@@ -45,6 +46,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const currentPath = location.pathname
   const { isDark, toggleTheme } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isAiOpen, setIsAiOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const menuRef = useRef<HTMLDivElement>(null)
@@ -413,6 +415,13 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Search size={16} strokeWidth={1.8} />
             </button>
+            <button 
+              className="nav-action-btn" 
+              aria-label="IA Sucena"
+              onClick={() => setIsAiOpen(true)}
+            >
+              <Bot size={16} strokeWidth={1.8} />
+            </button>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <LiquidMetalButton 
                 viewMode="icon"
@@ -433,6 +442,11 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       <GlobalSearchModal 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
+      />
+      
+      <SucenaAIModal 
+        isOpen={isAiOpen} 
+        onClose={() => setIsAiOpen(false)} 
       />
     </>
   )
