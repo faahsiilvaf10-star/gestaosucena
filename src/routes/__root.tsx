@@ -19,12 +19,13 @@ import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
+import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
 
 function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
-  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho')) && !path.startsWith('/equipamentos/app-motorista')
+  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark text-white' : 'light text-black'}`}>
@@ -40,6 +41,7 @@ function RootContent() {
         <>
           <GlobalEquipmentAlert />
           <ReminderAlertNotification />
+          <GlobalMeetingAlert />
         </>
       )}
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />

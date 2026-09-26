@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut
+  Menu, X, ChevronRight, LogOut, Video, Bot
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
 import { GlobalSearchModal } from './GlobalSearchModal'
+import SucenaAIModal from './SucenaAIModal'
 import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
 import { LiquidMetalButton } from './ui/liquid-metal-button'
 
@@ -35,6 +36,7 @@ export const MENU_ITEMS = [
   { id: 'relatorio', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
   { id: 'meio-ambiente', label: 'Meio Ambiente', href: '/meio-ambiente', icon: Leaf, routeMatch: '/meio-ambiente' },
   { id: 'planejamento', label: 'Planejamento', href: '#', icon: Calendar, routeMatch: '/planejamento' },
+  { id: 'reunioes', label: 'Reuniões', href: '/reunioes', icon: Video, routeMatch: '/reunioes' },
   { id: 'emergencia', label: 'Emergência', href: '/emergencia', icon: TriangleAlert, routeMatch: '/emergencia', isEmergency: true },
 ]
 
@@ -44,6 +46,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const currentPath = location.pathname
   const { isDark, toggleTheme } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isAiOpen, setIsAiOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const menuRef = useRef<HTMLDivElement>(null)
@@ -413,12 +416,19 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
               <Search size={16} strokeWidth={1.8} />
             </button>
             <button 
-              className="nav-action-btn primary" 
-              aria-label="Alterar tema"
-              onClick={toggleTheme}
+              className="nav-action-btn" 
+              aria-label="IA Sucena"
+              onClick={() => setIsAiOpen(true)}
             >
-              {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+              <Bot size={16} strokeWidth={1.8} />
             </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LiquidMetalButton 
+                viewMode="icon"
+                icon={isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+                onClick={toggleTheme}
+              />
+            </div>
           </div>
 
           <GlobalSearchModal 
@@ -432,6 +442,11 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       <GlobalSearchModal 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
+      />
+      
+      <SucenaAIModal 
+        isOpen={isAiOpen} 
+        onClose={() => setIsAiOpen(false)} 
       />
     </>
   )

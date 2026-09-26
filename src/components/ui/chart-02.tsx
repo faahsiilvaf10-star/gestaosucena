@@ -7,6 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTheme } from "../../contexts/ThemeContext"
 
 export interface Chart02Props {
   value: number
@@ -17,28 +18,39 @@ export interface Chart02Props {
 }
 
 export default function Chart02({ value, total, color, trackColor, label }: Chart02Props) {
+  const { isDark } = useTheme()
+  const activeColor = isDark ? "#ffffff" : color;
+  const activeTrackColor = isDark ? "rgba(255, 255, 255, 0.1)" : trackColor;
+
   const data = [
-    { name: label, value: value, fill: color },
-    { name: "Restante", value: Math.max(total - value, 0), fill: trackColor },
+    { name: label, value: value, fill: activeColor },
+    { name: "Restante", value: Math.max(total - value, 0), fill: activeTrackColor },
   ]
 
   const chartConfig = {
     [label]: {
       label: label,
-      color: color,
+      color: activeColor,
     },
     Restante: {
       label: "Restante",
-      color: trackColor,
+      color: activeTrackColor,
     },
   } satisfies ChartConfig
 
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square w-[120px] h-[120px]"
+      className="mx-auto aspect-square w-[130px] h-[130px] overflow-visible"
+      style={{ overflow: 'visible' }}
     >
-      <PieChart>
+      <PieChart style={{ overflow: 'visible' }}>
+        <defs>
+          <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ffffff" floodOpacity="0.8"/>
+            <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.4"/>
+          </filter>
+        </defs>
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent hideLabel />}
@@ -47,8 +59,8 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
           data={data}
           dataKey="value"
           nameKey="name"
-          innerRadius={45}
-          outerRadius={60}
+          innerRadius={40}
+          outerRadius={55}
           strokeWidth={0}
           paddingAngle={0}
           startAngle={90}
@@ -59,7 +71,12 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
           animationEasing="ease-out"
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+            <Cell 
+              key={`cell-${index}`} 
+              fill={entry.fill} 
+              filter={index === 0 && isDark ? "url(#neon-glow)" : undefined}
+              style={{ outline: 'none' }}
+            />
           ))}
           <Label
             content={({ viewBox }) => {
@@ -75,6 +92,7 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) - 4}
                       className="fill-foreground dark:fill-white text-[32px] font-bold"
+                      style={isDark ? { filter: "drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8))" } : {}}
                     >
                       {value}
                     </tspan>
@@ -82,6 +100,7 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) + 16}
                       className="fill-muted-foreground dark:fill-white text-[12px]"
+                      style={isDark ? { filter: "drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.6))" } : {}}
                     >
                       de {total}
                     </tspan>
