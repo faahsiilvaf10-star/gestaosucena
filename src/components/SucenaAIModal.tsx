@@ -104,7 +104,8 @@ VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA"
 O NOME DO USUÁRIO QUE ESTÁ FALANDO COM VOCÊ É: ${userName}.
 
 INSTRUÇÃO MUITO IMPORTANTE: Quando for iniciar a conversa, SEJA EXTREMAMENTE SIMPLES. Diga apenas o nome do usuário e pergunte de forma amigável no que pode ajudar hoje.
-REGRA CRÍTICA: NUNCA explique como você funciona. NUNCA cite nomes de campos do sistema, tabelas, ou termos técnicos do prompt (como "EQP", "FUN", "inside", "outside", "campos fornecidos"). Aja como um humano natural e apenas responda a pergunta do usuário com a informação final.
+REGRA CRÍTICA 1: NUNCA explique como você funciona. NUNCA cite nomes de campos do sistema, tabelas, ou termos técnicos do prompt. Aja como um humano natural e apenas responda a pergunta do usuário com a informação final.
+REGRA CRÍTICA 2: NÃO use formatação markdown (como **asteriscos** para negrito ou itálico) nas suas respostas. Responda apenas com texto limpo.
 
 Abaixo estão os dados reais do sistema neste exato momento:
 
@@ -174,9 +175,10 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                  );
                  const bestAlternative = validModels.find((m: string) => m.includes('llama-3.3')) || 
                                          validModels.find((m: string) => m.includes('llama-3.1')) || 
+                                         validModels.find((m: string) => m.includes('llama3')) ||
                                          validModels.find((m: string) => m.includes('mixtral')) || 
                                          validModels.find((m: string) => m.includes('llama'));
-                 selectedModel = bestAlternative || validModels[0] || 'mixtral-8x7b-32768';
+                 selectedModel = bestAlternative || 'llama3-8b-8192';
               }
             }
           } catch(e) {
