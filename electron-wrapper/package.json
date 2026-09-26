@@ -9,15 +9,22 @@
   },
   "build": {
     "appId": "com.gestaosucena.app",
-    "productName": "Gestão Sucena",
+    "productName": "GestaoSucena",
     "win": {
-      "target": "nsis"
+      "target": ["zip"]
     },
     "directories": {
-      "output": "dist"
-    }
+      "output": "dist-release"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "faahsiilvaf10-star",
+        "repo": "gestaosucena"
+      }
+    ]
   },
-  "author": "",
+  "author": "Gestão Sucena",
   "license": "ISC",
   "devDependencies": {
     "electron": "^44.4.1",

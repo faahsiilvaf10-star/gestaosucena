@@ -512,7 +512,7 @@ function DashboardComponent() {
           </div>
 
           {/* ASO VENCENDO */}
-          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
@@ -524,9 +524,9 @@ function DashboardComponent() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
             </div>
-            <div className="birthday-list">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {asoVencendo.length > 0 ? (
-                asoVencendo.slice(0, 3).map((aso: any, idx: number) => (
+                asoVencendo.map((aso: any, idx: number) => (
                   <div key={idx} className="birthday-item" style={{ borderColor: aso.diasRestantes <= 0 ? 'rgba(239, 68, 68, 0.3)' : '' }}>
                     <span className={`birthday-name capitalize ${aso.diasRestantes <= 0 ? 'text-red-500 font-bold' : ''}`}>
                       {typeof aso.nome === 'string' ? aso.nome.toLowerCase() : aso.nome}
@@ -549,7 +549,7 @@ function DashboardComponent() {
 
           {/* ANIVERSARIANTE DO DIA */}
           {aniversariantesHoje.length > 0 && (
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
@@ -561,7 +561,7 @@ function DashboardComponent() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
             </div>
-            <div className="birthday-list">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {aniversariantesHoje.length > 0 ? (
                 aniversariantesHoje.map((aniv: any, idx: number) => (
                   <div key={idx} className="birthday-item active">
@@ -582,7 +582,7 @@ function DashboardComponent() {
           )}
 
           {/* ANIVERSARIANTES DO MÊS */}
-          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
@@ -594,7 +594,7 @@ function DashboardComponent() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
             </div>
-            <div className="birthday-list">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {aniversariantesMes.length > 0 ? (
                 aniversariantesMes.map((aniv: any, idx: number) => (
                   <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>

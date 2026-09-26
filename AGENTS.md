@@ -26,6 +26,7 @@
 >   2. **O que mudou:** Deve explicar claramente o que mudou no código.
 >   3. **Validação:** Deve descrever exatamente como as alterações foram validadas/testadas localmente.
 >   4. **Análise de Risco:** Deve registrar quaisquer riscos inerentes, limitações da abordagem e próximos passos caso existam.
+>   5. **Automação de PR:** Sempre que você criar uma branch e fizer o push, deve tentar abrir o Pull Request automaticamente via terminal usando o GitHub CLI (`gh pr create`). Se a ferramenta `gh` não estiver instalada, avise o usuário.
 
 ## Diretrizes de UI/UX (Padrão de Qualidade)
 > [!IMPORTANT]
