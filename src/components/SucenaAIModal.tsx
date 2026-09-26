@@ -79,10 +79,10 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
     setGatheringData(true)
     try {
       // 1. Produtos e Estoque (Movimentação Manual e Quantidade)
-      const { data: products } = await supabase.from('al_products').select('id, name, current_stock, unit_of_measure, min_stock')
+      const { data: products } = await supabase.from('al_products').select('id, name, current_stock, unit_of_measure, min_stock').limit(150)
       
       // 2. Equipamentos e Últimas Movimentações
-      const { data: equipments } = await supabase.from('eq_equipments').select('name, plate_tag, type, location_status')
+      const { data: equipments } = await supabase.from('eq_equipments').select('name, plate_tag, type, location_status').limit(150)
       
       const { data: movements } = await supabase
         .from('eq_movements')
@@ -97,7 +97,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
         .limit(20)
 
       // 3. Efetivo
-      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status')
+      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status').limit(150)
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".
