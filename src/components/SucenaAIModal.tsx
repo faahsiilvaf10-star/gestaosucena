@@ -130,13 +130,32 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               content: m.text
             }))
             
+          let selectedModel = 'llama-3.3-70b-versatile';
+          try {
+            const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+              headers: { Authorization: `Bearer ${groqKey}` }
+            });
+            if (modelsRes.ok) {
+              const data = await modelsRes.json();
+              const availableModels = data.data.map((m: any) => m.id);
+              if (!availableModels.includes(selectedModel)) {
+                 const bestAlternative = availableModels.find((m: string) => 
+                   m.includes('llama') && !m.includes('vision') && !m.includes('tool-use')
+                 );
+                 selectedModel = bestAlternative || availableModels[0];
+              }
+            }
+          } catch(e) {
+            console.log("Erro ao validar modelos suportados", e);
+          }
+
           const chatCompletion = await groq.chat.completions.create({
             messages: [
               { role: 'system', content: context },
               ...groqHistory,
               { role: 'user', content: userMessage }
             ],
-            model: 'llama-3.3-70b-versatile',
+            model: selectedModel,
           })
           
           const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
