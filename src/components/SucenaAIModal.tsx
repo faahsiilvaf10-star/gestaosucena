@@ -178,7 +178,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                                          validModels.find((m: string) => m.includes('llama3')) ||
                                          validModels.find((m: string) => m.includes('mixtral')) || 
                                          validModels.find((m: string) => m.includes('llama'));
-                 selectedModel = bestAlternative || 'llama3-8b-8192';
+                 selectedModel = bestAlternative || 'llama-3.1-8b-instant';
               }
             }
           } catch(e) {
