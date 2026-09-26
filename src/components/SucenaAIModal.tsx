@@ -161,7 +161,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               <div className="space-y-3">
                 <input
                   type="password"
-                  placeholder="Cole sua API Key aqui (AIzaSy...)"
+                  placeholder="Cole sua API Key gerada aqui..."
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center"
