@@ -160,30 +160,41 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
               role: m.role === 'ai' ? 'assistant' : 'user',
               content: m.text
             }))
-            
-          let selectedModel = 'llama-3.3-70b-versatile';
+
+          // Sempre busca os modelos disponíveis da conta para nunca usar modelos descontinuados
+          let selectedModel = '';
           try {
             const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
               headers: { Authorization: `Bearer ${groqKey}` }
             });
             if (modelsRes.ok) {
               const data = await modelsRes.json();
-              const availableModels = data.data.map((m: any) => m.id);
-              if (!availableModels.includes(selectedModel)) {
-                 const validModels = availableModels.filter((m: string) => 
-                   !m.includes('guard') && !m.includes('whisper') && !m.includes('vision') && !m.includes('tool-use')
-                 );
-                 const bestAlternative = validModels.find((m: string) => m.includes('llama-3.3')) || 
-                                         validModels.find((m: string) => m.includes('llama-3.1')) || 
-                                         validModels.find((m: string) => m.includes('llama3')) ||
-                                         validModels.find((m: string) => m.includes('mixtral')) || 
-                                         validModels.find((m: string) => m.includes('llama'));
-                 selectedModel = bestAlternative || 'llama-3.1-8b-instant';
-              }
+              const validModels: string[] = data.data
+                .map((m: any) => m.id)
+                .filter((id: string) =>
+                  !id.includes('guard') &&
+                  !id.includes('whisper') &&
+                  !id.includes('vision') &&
+                  !id.includes('tool-use') &&
+                  !id.includes('embed') &&
+                  !id.includes('arabic') &&
+                  !id.includes('orpheus') &&
+                  !id.includes('tts')
+                );
+              selectedModel =
+                validModels.find((m: string) => m.includes('llama-3.3') && m.includes('versatile')) ||
+                validModels.find((m: string) => m.includes('llama-3.3')) ||
+                validModels.find((m: string) => m.includes('llama-3.1') && m.includes('70b')) ||
+                validModels.find((m: string) => m.includes('llama-3.1')) ||
+                validModels.find((m: string) => m.includes('llama')) ||
+                validModels.find((m: string) => m.includes('gemma')) ||
+                validModels[0] || '';
             }
           } catch(e) {
-            console.log("Erro ao validar modelos suportados", e);
+            console.log("Erro ao buscar modelos do Groq:", e);
           }
+
+          if (!selectedModel) throw new Error('Nenhum modelo válido encontrado na conta Groq.');
 
           const chatCompletion = await groq.chat.completions.create({
             messages: [
@@ -200,7 +211,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
           return
         } catch(groqError: any) {
           console.error("Groq as primary failed, falling back to Gemini:", groqError)
-          setMessages(prev => [...prev, { role: 'ai', text: `Groq indisponível no momento (${groqError.message}). Acionando IA Reserva (Google Gemini)...` }])
+          setMessages(prev => [...prev, { role: 'ai', text: `Acionando IA Reserva (Google Gemini)...` }])
         }
       }
 
