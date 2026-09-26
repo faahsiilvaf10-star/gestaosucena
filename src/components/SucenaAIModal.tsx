@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { X, Send, Bot, KeyRound, ExternalLink, Loader2, Database, ShieldAlert } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { isDark } = useTheme()
