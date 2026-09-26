@@ -98,10 +98,10 @@ Abaixo estão os dados reais do sistema neste exato momento:
 ${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
 
 ### EQUIPAMENTOS (FROTA)
-${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status}`).join('\n') : 'Sem dados'}
+${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status === 'inside' ? 'Na Base/Estação' : e.location_status === 'outside' ? 'Em Rota/Fora' : e.location_status}`).join('\n') : 'Sem dados'}
 
 ### FUNCIONÁRIOS (RH)
-${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status}`).join('\n') : 'Sem dados'}
+${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status === 'active' ? 'Ativo' : e.status === 'inactive' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
 `
       return context
     } catch (error) {
