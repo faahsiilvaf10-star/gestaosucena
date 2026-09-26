@@ -41,10 +41,16 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square w-[140px] h-[140px]"
+      className="mx-auto aspect-square w-[130px] h-[130px] overflow-visible"
       style={{ overflow: 'visible' }}
     >
       <PieChart style={{ overflow: 'visible' }}>
+        <defs>
+          <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ffffff" floodOpacity="0.8"/>
+            <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.4"/>
+          </filter>
+        </defs>
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent hideLabel />}
@@ -53,8 +59,8 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
           data={data}
           dataKey="value"
           nameKey="name"
-          innerRadius={45}
-          outerRadius={60}
+          innerRadius={40}
+          outerRadius={55}
           strokeWidth={0}
           paddingAngle={0}
           startAngle={90}
@@ -68,11 +74,8 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
             <Cell 
               key={`cell-${index}`} 
               fill={entry.fill} 
-              style={
-                index === 0 && isDark 
-                  ? { filter: "drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.8)) drop-shadow(0px 0px 12px rgba(255, 255, 255, 0.4))" }
-                  : {}
-              }
+              filter={index === 0 && isDark ? "url(#neon-glow)" : undefined}
+              style={{ outline: 'none' }}
             />
           ))}
           <Label
