@@ -23,6 +23,7 @@ import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
+import { MiniWeatherWidget } from './MiniWeatherWidget'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -212,7 +213,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Bottom Right: Chat + Status */}
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <MiniWeatherWidget />
 
           {/* Chat Icon with Badge */}
           <button 

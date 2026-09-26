@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { WeatherWidget } from '../components/WeatherWidget'
+import { supabase } from '../lib/supabase'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
@@ -512,18 +512,8 @@ function DashboardComponent() {
             )}
           </div>
 
-          {/* WEATHER */}
-          <div className="neon-card neon-blue col-span-1 md:col-span-3 relative h-full">
-            <WeatherWidget />
-            {isDark && (
-              <div className="card-footer" style={{ bottom: '16px' }}>
-                <span className="footer-text text-[8px] opacity-80">CLIMA DA REGIÃO</span>
-              </div>
-            )}
-          </div>
-
           {/* ASO VENCENDO */}
-          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-3 pb-8">
+          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
@@ -560,7 +550,7 @@ function DashboardComponent() {
 
           {/* ANIVERSARIANTE DO DIA */}
           {aniversariantesHoje.length > 0 && (
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-3 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
@@ -593,7 +583,7 @@ function DashboardComponent() {
           )}
 
           {/* ANIVERSARIANTES DO MÊS */}
-          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-3 pb-8">
+          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
                 <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
