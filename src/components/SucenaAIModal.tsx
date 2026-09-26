@@ -13,6 +13,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const [hasKey, setHasKey] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [userName, setUserName] = useState('Usuário')
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
       if (data.user) {
         setIsAdmin(data.user.user_metadata?.role === 'admin')
         setUserName(data.user.user_metadata?.full_name || 'Usuário')
+        setUserAvatar(data.user.user_metadata?.avatar_url || null)
       }
     })
   }, [])
@@ -361,8 +363,12 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
                     {msg.text}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-white mt-1 uppercase text-xs font-bold">
-                      VOC
+                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-white mt-1 uppercase text-xs font-bold overflow-hidden">
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="Você" className="w-full h-full object-cover" />
+                      ) : (
+                        userName.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                   )}
                 </div>
