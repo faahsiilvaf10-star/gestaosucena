@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import net from 'net';
@@ -109,7 +109,17 @@ async function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'geolocation') {
+      callback(true);
+    } else {
+      callback(true); // Allow other permissions like notifications if needed
+    }
+  });
+  
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

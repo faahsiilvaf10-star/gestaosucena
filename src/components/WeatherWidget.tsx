@@ -79,18 +79,43 @@ export function WeatherWidget() {
     }
 
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchWeather(position.coords.latitude, position.coords.longitude)
-        },
-        (err) => {
+      let isResolved = false;
+
+      // Fallback manual para caso a geolocalização trave (comum no Electron sem handler)
+      const fallbackTimer = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
           const env = localStorage.getItem('sucena_environment')
           if (env === 'paragominas') {
-            console.warn("Geolocation blocked, using default (Paragominas).")
+            console.warn("Geolocation fallback timeout, using default (Paragominas).")
             fetchWeather(-2.9998, -47.3537)
           } else {
-            console.warn("Geolocation blocked, using default (Barcarena).")
+            console.warn("Geolocation fallback timeout, using default (Barcarena).")
             fetchWeather(-1.5061, -48.6258)
+          }
+        }
+      }, 3000);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (!isResolved) {
+            isResolved = true;
+            clearTimeout(fallbackTimer);
+            fetchWeather(position.coords.latitude, position.coords.longitude)
+          }
+        },
+        (err) => {
+          if (!isResolved) {
+            isResolved = true;
+            clearTimeout(fallbackTimer);
+            const env = localStorage.getItem('sucena_environment')
+            if (env === 'paragominas') {
+              console.warn("Geolocation blocked, using default (Paragominas).")
+              fetchWeather(-2.9998, -47.3537)
+            } else {
+              console.warn("Geolocation blocked, using default (Barcarena).")
+              fetchWeather(-1.5061, -48.6258)
+            }
           }
         },
         { timeout: 5000 }
