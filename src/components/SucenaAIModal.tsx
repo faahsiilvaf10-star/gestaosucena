@@ -11,11 +11,20 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const [apiKey, setApiKey] = useState('')
   const [groqKey, setGroqKey] = useState('')
   const [hasKey, setHasKey] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [gatheringData, setGatheringData] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setIsAdmin(data.user.user_metadata?.role === 'admin')
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -45,15 +54,20 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
       await setAITokens(gKey, grKey)
       
       setHasKey(true)
-      setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
+      if (messages.length === 0) {
+        setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
+      }
     }
   }
 
-  const removeKey = async () => {
+  const openSettings = () => {
+    setHasKey(false)
+  }
+
+  const deleteKeys = async () => {
     await setAITokens('', '')
     setApiKey('')
     setGroqKey('')
-    setHasKey(false)
     setMessages([])
   }
 
@@ -172,7 +186,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
       setMessages(prev => [...prev, { role: 'ai', text: errorMessage }])
       
       if (error.message?.includes('API key not valid')) {
-        removeKey()
+        setHasKey(false)
       }
     } finally {
       setLoading(false)
@@ -197,8 +211,8 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {hasKey && (
-              <button onClick={removeKey} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Remover API Key">
+            {hasKey && isAdmin && (
+              <button onClick={openSettings} className="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="Configurações da IA">
                 <ShieldAlert size={18} />
               </button>
             )}
@@ -211,46 +225,74 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
         {/* BODY */}
         <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 p-6 flex flex-col">
           {!hasKey ? (
-            <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
-              <div className="w-16 h-16 mx-auto bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
-                <KeyRound size={32} />
-              </div>
-              <h3 className="text-xl font-bold dark:text-white mb-2">Conecte a Inteligência Artificial</h3>
-              <p className="text-sm text-gray-500 dark:text-white/60 mb-6">
-                Para usar a IA da Sucena gratuitamente e sem limites, você precisa de uma chave do Google Gemini (é 100% grátis e super potente).
-              </p>
-              
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium text-sm mb-6 bg-blue-500/10 px-4 py-2 rounded-lg transition-colors">
-                Gerar Chave do Google Gemini <ExternalLink size={14} />
-              </a>
-
-              <div className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="Cole sua API Key do Google aqui..."
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
-                />
-                <input
-                  type="password"
-                  placeholder="[Opcional] Cole sua API Key do Groq aqui..."
-                  value={groqKey}
-                  onChange={e => setGroqKey(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
-                />
-                <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="block text-xs text-orange-500 hover:text-orange-600 mb-2 mt-1">
-                  Não tem a chave Groq? Gere uma aqui de graça (Evita erros 503)
+            isAdmin ? (
+              <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
+                <div className="w-16 h-16 mx-auto bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
+                  <KeyRound size={32} />
+                </div>
+                <h3 className="text-xl font-bold dark:text-white mb-2">Conecte a Inteligência Artificial</h3>
+                <p className="text-sm text-gray-500 dark:text-white/60 mb-6">
+                  Configure as chaves da API globalmente para todos os usuários do sistema.
+                </p>
+                
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium text-sm mb-6 bg-blue-500/10 px-4 py-2 rounded-lg transition-colors">
+                  Gerar Chave do Google Gemini <ExternalLink size={14} />
                 </a>
-                <button
-                  onClick={saveKey}
-                  disabled={apiKey.length < 10}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                >
-                  Conectar e Treinar IA
-                </button>
+
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="Cole sua API Key do Google aqui..."
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
+                  />
+                  <input
+                    type="password"
+                    placeholder="[Opcional] Cole sua API Key do Groq aqui..."
+                    value={groqKey}
+                    onChange={e => setGroqKey(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
+                  />
+                  <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="block text-xs text-orange-500 hover:text-orange-600 mb-2 mt-1">
+                    Não tem a chave Groq? Gere uma aqui de graça
+                  </a>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveKey}
+                      disabled={apiKey.length > 0 && apiKey.length < 10}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg"
+                    >
+                      {apiKey ? 'Salvar APIs' : 'Conectar IA'}
+                    </button>
+                    {(apiKey || groqKey) && (
+                      <button
+                        onClick={deleteKeys}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg"
+                        title="Apagar chaves globalmente"
+                      >
+                        Apagar
+                      </button>
+                    )}
+                  </div>
+                  {messages.length > 0 && (
+                    <button onClick={() => setHasKey(true)} className="w-full mt-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                      Voltar para o chat
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="m-auto max-w-md w-full bg-white dark:bg-[#1a1a1c] p-8 rounded-2xl border border-gray-200 dark:border-white/5 shadow-xl text-center">
+                <div className="w-16 h-16 mx-auto bg-gray-500/10 text-gray-500 rounded-full flex items-center justify-center mb-6">
+                  <Bot size={32} />
+                </div>
+                <h3 className="text-xl font-bold dark:text-white mb-2">IA Desconectada</h3>
+                <p className="text-sm text-gray-500 dark:text-white/60">
+                  A Inteligência Artificial ainda não foi configurada. Por favor, solicite a um Administrador para adicionar as chaves de integração.
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-6 flex-1 flex flex-col justify-end">
               {messages.map((msg, idx) => (
