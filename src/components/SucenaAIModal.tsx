@@ -139,10 +139,14 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               const data = await modelsRes.json();
               const availableModels = data.data.map((m: any) => m.id);
               if (!availableModels.includes(selectedModel)) {
-                 const bestAlternative = availableModels.find((m: string) => 
-                   m.includes('llama') && !m.includes('vision') && !m.includes('tool-use')
+                 const validModels = availableModels.filter((m: string) => 
+                   !m.includes('guard') && !m.includes('whisper') && !m.includes('vision') && !m.includes('tool-use')
                  );
-                 selectedModel = bestAlternative || availableModels[0];
+                 const bestAlternative = validModels.find((m: string) => m.includes('llama-3.3')) || 
+                                         validModels.find((m: string) => m.includes('llama-3.1')) || 
+                                         validModels.find((m: string) => m.includes('mixtral')) || 
+                                         validModels.find((m: string) => m.includes('llama'));
+                 selectedModel = bestAlternative || validModels[0] || 'mixtral-8x7b-32768';
               }
             }
           } catch(e) {
