@@ -91,7 +91,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
       const context = await gatherSystemContext()
       
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-flash-latest",
         systemInstruction: context
       })
 
