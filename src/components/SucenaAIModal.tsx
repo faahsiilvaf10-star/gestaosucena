@@ -12,6 +12,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const [groqKey, setGroqKey] = useState('')
   const [hasKey, setHasKey] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userName, setUserName] = useState('Usuário')
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,6 +23,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setIsAdmin(data.user.user_metadata?.role === 'admin')
+        setUserName(data.user.user_metadata?.full_name || 'Usuário')
       }
     })
   }, [])
@@ -85,16 +87,20 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".
-RESPONDA SEMPRE EM PORTUGUÊS (PT-BR). SEJA DIRETO E PROFISSIONAL.
-Abaixo estão os dados reais do banco de dados neste exato momento. Responda às perguntas com base estritamente nestes dados:
+O NOME DO USUÁRIO QUE ESTÁ FALANDO COM VOCÊ É: ${userName}.
 
-### ESTOQUE E ALMOXARIFADO (MOVIMENTAÇÕES / QUANTIDADES)
-${products ? products.map(p => `- Produto: ${p.name} | Estoque Atual: ${p.current_stock} ${p.unit_of_measure} | Estoque Mín: ${p.min_stock}`).join('\n') : 'Sem dados'}
+INSTRUÇÃO MUITO IMPORTANTE: Quando for iniciar a conversa, SEJA EXTREMAMENTE SIMPLES. Diga apenas o nome do usuário e pergunte de forma amigável no que pode ajudar hoje.
+REGRA CRÍTICA: NUNCA explique como você funciona. NUNCA cite nomes de campos do sistema, tabelas, ou termos técnicos do prompt (como "EQP", "FUN", "inside", "outside", "campos fornecidos"). Aja como um humano natural e apenas responda a pergunta do usuário com a informação final.
+
+Abaixo estão os dados reais do sistema neste exato momento:
+
+### ESTOQUE E ALMOXARIFADO
+${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
 
 ### EQUIPAMENTOS (FROTA)
 ${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status}`).join('\n') : 'Sem dados'}
 
-### FUNCIONÁRIOS ATIVOS (RH)
+### FUNCIONÁRIOS (RH)
 ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status}`).join('\n') : 'Sem dados'}
 `
       return context
