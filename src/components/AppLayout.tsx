@@ -116,6 +116,37 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }, 5000)
   }
 
+  const handleHardRefresh = async () => {
+    const toastId = toast.loading('Baixando atualizações e limpando cache...')
+    
+    try {
+      // 1. Limpa os arquivos cacheados pelo PWA / Service Worker (CSS, JS, Imagens antigos)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+
+      // 2. Desregistra e força atualização do Service Worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        for (const registration of registrations) {
+          await registration.unregister()
+        }
+      }
+
+      toast.success('Atualização concluída! Reiniciando...', { id: toastId })
+      
+      // Pequeno delay para ler a mensagem antes de forçar o refresh e aplicar o novo código
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      
+    } catch (error) {
+      console.error('Erro ao atualizar:', error)
+      window.location.reload()
+    }
+  }
+
   return (
     <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
@@ -188,8 +219,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           
           <button 
             className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
-            title="Recarregar"
-            onClick={() => window.location.reload()}
+            title="Sincronizar Atualizações e Limpar Cache"
+            onClick={handleHardRefresh}
             style={{ minWidth: 44, minHeight: 44 }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
