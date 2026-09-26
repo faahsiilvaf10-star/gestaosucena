@@ -13,6 +13,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const [hasKey, setHasKey] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [userName, setUserName] = useState('Usuário')
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
       if (data.user) {
         setIsAdmin(data.user.user_metadata?.role === 'admin')
         setUserName(data.user.user_metadata?.full_name || 'Usuário')
+        setUserAvatar(data.user.user_metadata?.avatar_url || null)
       }
     })
   }, [])
@@ -95,7 +97,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
         .limit(20)
 
       // 3. Efetivo
-      const { data: employees } = await supabase.from('rh_efetivo').select('nome, funcao, status')
+      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status')
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".
@@ -123,7 +125,7 @@ ${movements ? movements.map(m => {
 }).join('\n') : 'Sem dados'}
 
 ### FUNCIONÁRIOS (RH)
-${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status === 'active' ? 'Ativo' : e.status === 'inactive' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
+${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status: ${e.status === 'Ativo' ? 'Ativo' : e.status === 'Inativo' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
 `
       return context
     } catch (error) {
@@ -361,8 +363,12 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
                     {msg.text}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-white mt-1 uppercase text-xs font-bold">
-                      VOC
+                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-white mt-1 uppercase text-xs font-bold overflow-hidden">
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="Você" className="w-full h-full object-cover" />
+                      ) : (
+                        userName.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                   )}
                 </div>
