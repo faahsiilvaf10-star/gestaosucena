@@ -122,16 +122,16 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
               ...groqHistory,
               { role: 'user', content: userMessage }
             ],
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-70b-versatile',
           })
           
           const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
           setMessages(prev => [...prev, { role: 'ai', text: responseText }])
           setLoading(false)
           return
-        } catch(groqError) {
+        } catch(groqError: any) {
           console.error("Groq as primary failed, falling back to Gemini:", groqError)
-          setMessages(prev => [...prev, { role: 'ai', text: 'Groq indisponível no momento. Acionando IA Reserva (Google Gemini)...' }])
+          setMessages(prev => [...prev, { role: 'ai', text: `Groq indisponível no momento (${groqError.message}). Acionando IA Reserva (Google Gemini)...` }])
         }
       }
 
