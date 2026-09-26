@@ -79,8 +79,20 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
       // 1. Produtos e Estoque (Movimentação Manual e Quantidade)
       const { data: products } = await supabase.from('al_products').select('id, name, current_stock, unit_of_measure, min_stock')
       
-      // 2. Equipamentos
+      // 2. Equipamentos e Últimas Movimentações
       const { data: equipments } = await supabase.from('eq_equipments').select('name, plate_tag, type, location_status')
+      
+      const { data: movements } = await supabase
+        .from('eq_movements')
+        .select(`
+          movement_type,
+          created_at,
+          created_by,
+          exit_reason,
+          eq_equipments ( name, plate_tag )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20)
 
       // 3. Efetivo
       const { data: employees } = await supabase.from('rh_efetivo').select('nome, funcao, status')
@@ -95,10 +107,20 @@ REGRA CRÍTICA: NUNCA explique como você funciona. NUNCA cite nomes de campos d
 Abaixo estão os dados reais do sistema neste exato momento:
 
 ### ESTOQUE E ALMOXARIFADO
-${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
+${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock || p.current_quantity || 0} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
 
-### EQUIPAMENTOS (FROTA)
+### EQUIPAMENTOS (FROTA) - STATUS ATUAL
 ${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status === 'inside' ? 'Na Base/Estação' : e.location_status === 'outside' ? 'Em Rota/Fora' : e.location_status}`).join('\n') : 'Sem dados'}
+
+### ÚLTIMAS 20 MOVIMENTAÇÕES DE EQUIPAMENTOS (ENTRADAS/SAÍDAS)
+${movements ? movements.map(m => {
+  const eqName = m.eq_equipments ? `${m.eq_equipments.name} (${m.eq_equipments.plate_tag})` : 'Equipamento Desconhecido';
+  const type = m.movement_type === 'exit' ? 'SAÍDA' : 'ENTRADA';
+  const date = new Date(m.created_at).toLocaleString('pt-BR');
+  const reason = m.exit_reason ? ` | Motivo: ${m.exit_reason}` : '';
+  const by = m.created_by ? ` | Por: ${m.created_by}` : '';
+  return `- ${date} | ${type} | ${eqName}${reason}${by}`;
+}).join('\n') : 'Sem dados'}
 
 ### FUNCIONÁRIOS (RH)
 ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | Status: ${e.status === 'active' ? 'Ativo' : e.status === 'inactive' ? 'Inativo' : e.status}`).join('\n') : 'Sem dados'}
