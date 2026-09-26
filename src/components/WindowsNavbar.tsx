@@ -413,13 +413,13 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Search size={16} strokeWidth={1.8} />
             </button>
-            <button 
-              className="nav-action-btn primary" 
-              aria-label="Alterar tema"
-              onClick={toggleTheme}
-            >
-              {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LiquidMetalButton 
+                viewMode="icon"
+                icon={isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+                onClick={toggleTheme}
+              />
+            </div>
           </div>
 
           <GlobalSearchModal 

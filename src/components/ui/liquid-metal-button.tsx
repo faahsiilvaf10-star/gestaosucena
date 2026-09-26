@@ -7,12 +7,14 @@ interface LiquidMetalButtonProps {
   label?: string;
   onClick?: () => void;
   viewMode?: "text" | "icon";
+  icon?: React.ReactNode;
 }
 
 export function LiquidMetalButton({
   label = "Get Started",
   onClick,
   viewMode = "text",
+  icon,
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -91,8 +93,8 @@ export function LiquidMetalButton({
             {
               u_repetition: 4,
               u_softness: 0.5,
-              u_shiftRed: 0.3,
-              u_shiftBlue: 0.3,
+              u_shiftRed: 0.0,
+              u_shiftBlue: 0.0,
               u_distortion: 0,
               u_contour: 0,
               u_angle: 45,
@@ -193,15 +195,21 @@ export function LiquidMetalButton({
             }}
           >
             {viewMode === "icon" && (
-              <Sparkles
-                size={16}
-                style={{
-                  color: "#ffffff", /* Alterado de #666666 para #ffffff para ficar mais visivel no tema escuro/claro com fundo preto */
-                  filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
-                  transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  transform: "scale(1)",
-                }}
-              />
+              icon ? (
+                <div style={{ color: "#ffffff", filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {icon}
+                </div>
+              ) : (
+                <Sparkles
+                  size={16}
+                  style={{
+                    color: "#ffffff", /* Alterado de #666666 para #ffffff para ficar mais visivel no tema escuro/claro com fundo preto */
+                    filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
+                    transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    transform: "scale(1)",
+                  }}
+                />
+              )
             )}
             {viewMode === "text" && (
               <span
