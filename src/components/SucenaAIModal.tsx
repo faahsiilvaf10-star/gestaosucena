@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Groq from 'groq-sdk'
 import { useTheme } from '../contexts/ThemeContext'
+import { getAITokens, setAITokens } from '../lib/settings'
 
 export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { isDark } = useTheme()
@@ -17,14 +18,18 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem('sucena_gemini_api_key')
-    const savedGroq = localStorage.getItem('sucena_groq_api_key')
-    if (saved) {
-      setApiKey(saved)
-      setHasKey(true)
+    if (isOpen) {
+      getAITokens().then(tokens => {
+        if (tokens.geminiKey) {
+          setApiKey(tokens.geminiKey)
+          setHasKey(true)
+        }
+        if (tokens.groqKey) {
+          setGroqKey(tokens.groqKey)
+        }
+      })
     }
-    if (savedGroq) setGroqKey(savedGroq)
-  }, [])
+  }, [isOpen])
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -32,18 +37,20 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
     }
   }, [messages, loading, gatheringData])
 
-  const saveKey = () => {
+  const saveKey = async () => {
     if (apiKey.trim().length > 10) {
-      localStorage.setItem('sucena_gemini_api_key', apiKey.trim())
-      if (groqKey.trim()) localStorage.setItem('sucena_groq_api_key', groqKey.trim())
+      const gKey = apiKey.trim()
+      const grKey = groqKey.trim()
+      
+      await setAITokens(gKey, grKey)
+      
       setHasKey(true)
       setMessages([{ role: 'ai', text: 'Olá! Sou a IA da Gestão Sucena. Estou conectada ao seu banco de dados e pronta para responder perguntas sobre o almoxarifado, movimentações, quantidades e equipamentos. Como posso ajudar hoje?' }])
     }
   }
 
-  const removeKey = () => {
-    localStorage.removeItem('sucena_gemini_api_key')
-    localStorage.removeItem('sucena_groq_api_key')
+  const removeKey = async () => {
+    await setAITokens('', '')
     setApiKey('')
     setGroqKey('')
     setHasKey(false)
