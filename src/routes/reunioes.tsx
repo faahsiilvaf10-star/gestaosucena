@@ -21,9 +21,33 @@ function ReunioesRoute() {
         setUserName(user.user_metadata?.full_name || user.email || 'Usuário')
       }
       setLoading(false)
+
+      const params = new URLSearchParams(window.location.search)
+      const room = params.get('room')
+      if (room) {
+        setRoomName(room)
+        setInMeeting(true)
+        window.history.replaceState({}, '', '/reunioes')
+      }
     }
     loadUser()
   }, [])
+
+  const broadcastMeeting = async (rName: string) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    const currentUserName = user?.user_metadata?.full_name || user?.email || 'Um usuário'
+    
+    await supabase.channel('global_meetings').send({
+      type: 'broadcast',
+      event: 'meeting_started',
+      payload: {
+        roomName: rName,
+        startedBy: user?.id,
+        startedByName: currentUserName,
+        timestamp: Date.now()
+      }
+    })
+  }
 
   if (loading) return null
 
@@ -101,8 +125,10 @@ function ReunioesRoute() {
             
             <button
               onClick={() => {
-                if(!roomName) setRoomName('Geral');
+                const finalRoom = roomName || 'Geral';
+                setRoomName(finalRoom);
                 setInMeeting(true);
+                broadcastMeeting(finalRoom);
               }}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
             >
@@ -116,7 +142,7 @@ function ReunioesRoute() {
           <div>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white"><LinkIcon className="text-purple-500" /> Salas Frequentes</h2>
             <div className="space-y-3">
-              <button onClick={() => { setRoomName('Geral'); setInMeeting(true); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
+              <button onClick={() => { setRoomName('Geral'); setInMeeting(true); broadcastMeeting('Geral'); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
                 <div>
                   <div className="font-bold text-gray-900 dark:text-white">Reunião Geral</div>
                   <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">Sala principal para todos</div>
@@ -126,7 +152,7 @@ function ReunioesRoute() {
                 </div>
               </button>
               
-              <button onClick={() => { setRoomName('Operacao'); setInMeeting(true); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
+              <button onClick={() => { setRoomName('Operacao'); setInMeeting(true); broadcastMeeting('Operacao'); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
                 <div>
                   <div className="font-bold text-gray-900 dark:text-white">Operação</div>
                   <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">Alinhamento diário da operação</div>

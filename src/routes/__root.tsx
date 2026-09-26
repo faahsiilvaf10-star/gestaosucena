@@ -19,6 +19,7 @@ import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
+import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -40,6 +41,7 @@ function RootContent() {
         <>
           <GlobalEquipmentAlert />
           <ReminderAlertNotification />
+          <GlobalMeetingAlert />
         </>
       )}
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
