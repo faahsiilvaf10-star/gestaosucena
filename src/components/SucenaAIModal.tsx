@@ -96,6 +96,39 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
     let context = ''
     try {
       context = await gatherSystemContext()
+      
+      // 1. Tenta usar Groq como PRINCIPAL (se a chave existir)
+      if (groqKey) {
+        try {
+          const groq = new Groq({ dangerouslyAllowBrowser: true, apiKey: groqKey })
+          
+          const groqHistory: any[] = messages
+            .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
+            .map(m => ({
+              role: m.role === 'ai' ? 'assistant' : 'user',
+              content: m.text
+            }))
+            
+          const chatCompletion = await groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: context },
+              ...groqHistory,
+              { role: 'user', content: userMessage }
+            ],
+            model: 'llama-3.3-70b-versatile',
+          })
+          
+          const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
+          setMessages(prev => [...prev, { role: 'ai', text: responseText }])
+          setLoading(false)
+          return
+        } catch(groqError) {
+          console.error("Groq as primary failed, falling back to Gemini:", groqError)
+          setMessages(prev => [...prev, { role: 'ai', text: 'Groq indisponível no momento. Acionando IA Reserva (Google Gemini)...' }])
+        }
+      }
+
+      // 2. Se Groq falhou ou não tem chave Groq, tenta Gemini (RESERVA)
       const genAI = new GoogleGenerativeAI(apiKey)
       
       const model = genAI.getGenerativeModel({ 
@@ -105,7 +138,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
 
       // Convert previous messages to Gemini format
       const history = messages
-        .filter(m => !m.text.includes('Olá! Sou a IA da Gestão Sucena'))
+        .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
         .map(m => ({
           role: m.role === 'ai' ? 'model' : 'user',
           parts: [{ text: m.text }]
@@ -124,37 +157,9 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Função: ${e.funcao} | St
       let errorMessage = `Desculpe, ocorreu um erro de conexão com a IA: ${error.message}`;
       
       if (error.message?.includes('503') || error.message?.includes('high demand') || error.message?.includes('429')) {
-        if (groqKey) {
-          try {
-            setMessages(prev => [...prev, { role: 'ai', text: 'Servidores do Google ocupados. Acionando IA Reserva (Groq/Llama-3)...' }])
-            const groq = new Groq({ dangerouslyAllowBrowser: true, apiKey: groqKey })
-            
-            const groqHistory: any[] = messages
-              .filter(m => !m.text.includes('Olá! Sou a IA') && !m.text.includes('IA Reserva'))
-              .map(m => ({
-                role: m.role === 'ai' ? 'assistant' : 'user',
-                content: m.text
-              }))
-              
-            const chatCompletion = await groq.chat.completions.create({
-              messages: [
-                { role: 'system', content: context },
-                ...groqHistory,
-                { role: 'user', content: userMessage }
-              ],
-              model: 'llama-3.3-70b-versatile',
-            })
-            
-            const responseText = chatCompletion.choices[0]?.message?.content || 'Sem resposta do Groq.'
-            setMessages(prev => [...prev, { role: 'ai', text: responseText }])
-            return
-          } catch(groqError) {
-            console.error("Groq fallback error:", groqError)
-            errorMessage = "Ambas as IAs (Principal e Reserva) falharam. Tente novamente mais tarde."
-          }
-        } else {
-          errorMessage = "A IA do Google está com um volume muito alto de uso neste exato segundo. Por favor, aguarde alguns segundos e tente perguntar novamente! Dica: Você pode configurar uma chave do Groq (IA Reserva) na tela inicial para evitar isso.";
-        }
+         errorMessage = groqKey 
+           ? "Ambas as IAs (Groq Llama-3 e Google Gemini) falharam por congestionamento ou erro. Tente novamente mais tarde."
+           : "A IA do Google está com volume muito alto e você não tem uma chave do Groq configurada como fallback. Aguarde alguns segundos e tente novamente.";
       }
 
       setMessages(prev => [...prev, { role: 'ai', text: errorMessage }])
