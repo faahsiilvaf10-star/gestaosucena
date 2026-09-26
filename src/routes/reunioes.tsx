@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { JitsiMeeting } from '@jitsi/react-sdk'
-import { Video, Users, Link as LinkIcon, ArrowLeft } from 'lucide-react'
+import { Video, Users, Link as LinkIcon, ArrowLeft, History, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/reunioes')({
@@ -13,6 +13,7 @@ function ReunioesRoute() {
   const [roomName, setRoomName] = useState('')
   const [userName, setUserName] = useState('Usuário')
   const [loading, setLoading] = useState(true)
+  const [history, setHistory] = useState<any[]>([])
 
   useEffect(() => {
     async function loadUser() {
@@ -30,7 +31,16 @@ function ReunioesRoute() {
         window.history.replaceState({}, '', '/reunioes')
       }
     }
+    
+    async function loadHistory() {
+      const { data, error } = await supabase.from('meeting_history').select('*').order('created_at', { ascending: false }).limit(10)
+      if (data) {
+        setHistory(data)
+      }
+    }
+
     loadUser()
+    loadHistory()
   }, [])
 
   const broadcastMeeting = async (rName: string) => {
@@ -47,6 +57,17 @@ function ReunioesRoute() {
         timestamp: Date.now()
       }
     })
+
+    // Salvar no banco
+    await supabase.from('meeting_history').insert({
+      room_name: rName,
+      started_by: user?.id,
+      started_by_name: currentUserName
+    })
+    
+    // Atualiza a lista
+    const { data } = await supabase.from('meeting_history').select('*').order('created_at', { ascending: false }).limit(10)
+    if(data) setHistory(data)
   }
 
   if (loading) return null
@@ -163,6 +184,44 @@ function ReunioesRoute() {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Histórico */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white">
+          <History className="text-blue-500" /> Histórico de Reuniões
+        </h2>
+        <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+          {history.length > 0 ? (
+            <div className="space-y-4">
+              {history.map(item => (
+                 <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 gap-4 hover:border-blue-500/30 transition-colors">
+                   <div>
+                     <div className="font-bold text-gray-900 dark:text-white text-lg">{item.room_name}</div>
+                     <div className="text-sm text-gray-500 dark:text-white/60">Iniciada por {item.started_by_name || 'Usuário'}</div>
+                   </div>
+                   <div className="flex items-center gap-4 justify-between sm:justify-end">
+                     <div className="text-xs text-gray-400 dark:text-white/40 flex items-center gap-1">
+                       <Clock size={12}/> 
+                       {new Date(item.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                     </div>
+                     <button 
+                       onClick={() => { setRoomName(item.room_name); setInMeeting(true); broadcastMeeting(item.room_name); }} 
+                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2"
+                     >
+                       <Video size={14} /> Entrar
+                     </button>
+                   </div>
+                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 dark:text-white/40">
+              Nenhum histórico de reunião encontrado.<br/>
+              <span className="text-sm opacity-70">Lembre-se de rodar a query SQL para criar a tabela `meeting_history`.</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
