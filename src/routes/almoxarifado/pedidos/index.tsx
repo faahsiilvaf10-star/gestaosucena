@@ -46,8 +46,9 @@ function PedidosPage() {
   const filteredPedidos = displayList.filter(pedido => {
     const matchesSearch =
       pedido.order_number?.toString().includes(searchTerm) ||
-      pedido.responsible?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pedido.items?.some(item => item.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      pedido.items?.some(item => item.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (pedido.responsibles && pedido.responsibles.some(r => r.nome.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+      (!pedido.responsibles?.length && pedido.responsible?.nome?.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const matchesStatus = statusFilter === 'Todos' || pedido.status === statusFilter
     return matchesSearch && matchesStatus
@@ -247,7 +248,9 @@ function PedidosPage() {
                       {getAtrasoInfo(pedido.expected_delivery_date, pedido.status)}
                     </td>
                     <td className="px-4 py-3">
-                      {pedido.responsible?.nome || '-'}
+                      {pedido.responsibles && pedido.responsibles.length > 0 
+                        ? pedido.responsibles.map(r => r.nome).join(', ') 
+                        : (pedido.responsible?.nome || '-')}
                     </td>
                     <td className="px-4 py-3">
                       {activeTab === 'meus' ? (
@@ -319,7 +322,11 @@ function PedidosPage() {
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground block">Responsável</span>
-                  <span className="font-medium">{pedido.responsible?.nome || '-'}</span>
+                  <span className="font-medium">
+                    {pedido.responsibles && pedido.responsibles.length > 0 
+                        ? pedido.responsibles.map(r => r.nome).join(', ') 
+                        : (pedido.responsible?.nome || '-')}
+                  </span>
                 </div>
               </div>
 

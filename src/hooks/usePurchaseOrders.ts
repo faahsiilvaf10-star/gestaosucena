@@ -40,6 +40,11 @@ export interface PurchaseOrder {
     nome: string
     cargo: string
   }
+  responsibles?: {
+    id: string
+    nome: string
+    cargo: string
+  }[]
 }
 
 export type CreatePurchaseOrderInput = Omit<PurchaseOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'received_at' | 'items' | 'responsible'> & {
@@ -55,7 +60,8 @@ export function usePurchaseOrders() {
         .from('al_purchase_orders')
         .select(`
           *,
-          items:al_purchase_order_items(*)
+          items:al_purchase_order_items(*),
+          al_purchase_order_responsibles(responsible_id)
         `)
         .order('created_at', { ascending: false })
 
@@ -67,12 +73,19 @@ export function usePurchaseOrders() {
       const { data: usersData } = await supabase.rpc('get_active_system_users')
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
 
-      return data.map((order: any) => ({
-        ...order,
-        responsible: order.responsible_id && usersMap.has(order.responsible_id)
-          ? usersMap.get(order.responsible_id)
-          : null
-      })) as PurchaseOrder[]
+      return data.map((order: any) => {
+        const respIds = order.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
+        if (order.responsible_id && !respIds.includes(order.responsible_id)) {
+          respIds.push(order.responsible_id)
+        }
+        const responsibles = respIds.map((id: string) => usersMap.get(id)).filter(Boolean)
+
+        return {
+          ...order,
+          responsibles,
+          responsible: responsibles.length > 0 ? responsibles[0] : null
+        }
+      }) as PurchaseOrder[]
     },
   })
 }
@@ -85,7 +98,8 @@ export function usePurchaseOrderById(id: string) {
         .from('al_purchase_orders')
         .select(`
           *,
-          items:al_purchase_order_items(*)
+          items:al_purchase_order_items(*),
+          al_purchase_order_responsibles(responsible_id)
         `)
         .eq('id', id)
         .single()
@@ -98,11 +112,16 @@ export function usePurchaseOrderById(id: string) {
       const { data: usersData } = await supabase.rpc('get_active_system_users')
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
 
+      const respIds = data.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
+      if (data.responsible_id && !respIds.includes(data.responsible_id)) {
+        respIds.push(data.responsible_id)
+      }
+      const responsibles = respIds.map((rid: string) => usersMap.get(rid)).filter(Boolean)
+
       return {
         ...data,
-        responsible: data.responsible_id && usersMap.has(data.responsible_id)
-          ? usersMap.get(data.responsible_id)
-          : null
+        responsibles,
+        responsible: responsibles.length > 0 ? responsibles[0] : null
       } as PurchaseOrder
     },
     enabled: !!id,
@@ -294,7 +313,7 @@ export function usePurchaseOrdersByCurrentUser() {
         // fallback: busca pelo campo legado responsible_id
         const { data, error } = await supabase
           .from('al_purchase_orders')
-          .select('*, items:al_purchase_order_items(*)')
+          .select('*, items:al_purchase_order_items(*), al_purchase_order_responsibles(responsible_id)')
           .eq('responsible_id', user.id)
           .order('created_at', { ascending: false })
         if (error) throw error
@@ -302,17 +321,24 @@ export function usePurchaseOrdersByCurrentUser() {
         const { data: usersData } = await supabase.rpc('get_active_system_users')
         const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
         
-        return (data || []).map((order: any) => ({
-          ...order,
-          responsible: order.responsible_id && usersMap.has(order.responsible_id)
-            ? usersMap.get(order.responsible_id)
-            : null
-        })) as PurchaseOrder[]
+        return (data || []).map((order: any) => {
+          const respIds = order.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
+          if (order.responsible_id && !respIds.includes(order.responsible_id)) {
+            respIds.push(order.responsible_id)
+          }
+          const responsibles = respIds.map((rid: string) => usersMap.get(rid)).filter(Boolean)
+
+          return {
+            ...order,
+            responsibles,
+            responsible: responsibles.length > 0 ? responsibles[0] : null
+          }
+        }) as PurchaseOrder[]
       }
 
       const { data, error } = await supabase
         .from('al_purchase_orders')
-        .select('*, items:al_purchase_order_items(*)')
+        .select('*, items:al_purchase_order_items(*), al_purchase_order_responsibles(responsible_id)')
         .in('id', orderIds)
         .order('created_at', { ascending: false })
 
@@ -321,12 +347,19 @@ export function usePurchaseOrdersByCurrentUser() {
       const { data: usersData } = await supabase.rpc('get_active_system_users')
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
 
-      return (data || []).map((order: any) => ({
-        ...order,
-        responsible: order.responsible_id && usersMap.has(order.responsible_id)
-          ? usersMap.get(order.responsible_id)
-          : null
-      })) as PurchaseOrder[]
+      return (data || []).map((order: any) => {
+        const respIds = order.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
+        if (order.responsible_id && !respIds.includes(order.responsible_id)) {
+          respIds.push(order.responsible_id)
+        }
+        const responsibles = respIds.map((rid: string) => usersMap.get(rid)).filter(Boolean)
+
+        return {
+          ...order,
+          responsibles,
+          responsible: responsibles.length > 0 ? responsibles[0] : null
+        }
+      }) as PurchaseOrder[]
     },
   })
 }

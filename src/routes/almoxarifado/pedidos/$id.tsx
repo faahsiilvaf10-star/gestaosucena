@@ -276,8 +276,19 @@ function PedidoDetailsPage() {
             <div className="space-y-4 text-sm">
               <div>
                 <p className="text-muted-foreground text-xs">Responsável pelo Pedido</p>
-                <div className="font-medium text-base">{pedido.responsible?.nome || '-'}</div>
-                <div className="text-xs text-muted-foreground">{pedido.responsible?.cargo || 'Cargo não informado'}</div>
+                {pedido.responsibles && pedido.responsibles.length > 0 ? (
+                  pedido.responsibles.map((resp, idx) => (
+                    <div key={idx} className={idx > 0 ? "mt-3" : ""}>
+                      <div className="font-medium text-base">{resp.nome}</div>
+                      <div className="text-xs text-muted-foreground">{resp.cargo || 'Cargo não informado'}</div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="font-medium text-base">{pedido.responsible?.nome || '-'}</div>
+                    <div className="text-xs text-muted-foreground">{pedido.responsible?.cargo || 'Cargo não informado'}</div>
+                  </>
+                )}
               </div>
             </div>
           </div>
