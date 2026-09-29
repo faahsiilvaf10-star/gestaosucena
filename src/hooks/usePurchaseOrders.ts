@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
+import { getWhatsappSettings } from '../lib/settings'
+import { sendWhatsappTextOnServer } from '../lib/whatsapp-api'
 
 export type PurchaseOrderStatus = 'Rascunho' | 'Solicitado' | 'Em Compra' | 'Comprado' | 'Recebimento Parcial' | 'Recebido' | 'Cancelado'
 export type PurchaseOrderPriority = 'Normal' | 'Urgente' | 'Crítico'
@@ -248,6 +250,110 @@ export function useUploadItemImage() {
     onError: (error) => {
       console.error('Erro ao fazer upload da imagem:', error)
       toast.error('Erro ao fazer upload da imagem.')
+    }
+  })
+}
+
+/**
+ * Retorna os pedidos onde o usuário logado é responsável.
+ * Busca na tabela de múltiplos responsáveis (al_purchase_order_responsibles).
+ */
+export function usePurchaseOrdersByCurrentUser() {
+  return useQuery({
+    queryKey: ['purchase_orders_mine'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return []
+
+      // IDs dos pedidos onde o usuário é responsável
+      const { data: respRows } = await supabase
+        .from('al_purchase_order_responsibles')
+        .select('purchase_order_id')
+        .eq('responsible_id', user.id)
+
+      // Também pedidos onde responsible_id legado = user.id
+      const orderIds = (respRows || []).map((r: any) => r.purchase_order_id)
+
+      if (orderIds.length === 0) {
+        // fallback: busca pelo campo legado responsible_id
+        const { data, error } = await supabase
+          .from('al_purchase_orders')
+          .select('*, items:al_purchase_order_items(*)')
+          .eq('responsible_id', user.id)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return (data || []) as PurchaseOrder[]
+      }
+
+      const { data, error } = await supabase
+        .from('al_purchase_orders')
+        .select('*, items:al_purchase_order_items(*)')
+        .in('id', orderIds)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return (data || []) as PurchaseOrder[]
+    },
+  })
+}
+
+/**
+ * Altera o status de um pedido e envia mensagem WhatsApp ao grupo.
+ */
+export function useUpdateStatusWithWhatsApp() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      orderNumber,
+      newStatus,
+      changedByName,
+    }: {
+      orderId: string
+      orderNumber: number | null
+      newStatus: PurchaseOrderStatus
+      changedByName: string
+    }) => {
+      // 1. Atualiza no banco
+      const { error } = await supabase
+        .from('al_purchase_orders')
+        .update({ status: newStatus, ...(newStatus === 'Recebido' ? { received_at: new Date().toISOString() } : {}) })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      // 2. Envia WhatsApp
+      try {
+        const wSettings = await getWhatsappSettings()
+        const targetPhone = wSettings?.purchaseOrders?.specificGroupId || wSettings?.groupId
+        if (wSettings?.url && wSettings?.token && wSettings?.instanceId && targetPhone) {
+          const numStr = orderNumber ? String(orderNumber).padStart(4, '0') : 'Rascunho'
+          const msg = `🔄 *Status do Pedido Atualizado*\n\n📋 *Pedido #${numStr}*\n📊 *Novo Status:* ${newStatus}\n👤 *Alterado por:* ${changedByName}\n\n_Mensagem Automática - G. Sucena_`
+
+          await sendWhatsappTextOnServer({
+            data: {
+              url: wSettings.url,
+              instanceId: wSettings.instanceId,
+              token: wSettings.token,
+              phone: targetPhone,
+              text: msg,
+            }
+          })
+        }
+      } catch (wpErr) {
+        // Não bloqueia o fluxo se WhatsApp falhar
+        console.error('WhatsApp notify failed:', wpErr)
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders_mine'] })
+      toast.success('Status atualizado!')
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar status:', error)
+      toast.error('Erro ao atualizar o status.')
     }
   })
 }

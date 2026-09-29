@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { usePurchaseOrderById, useUpdatePurchaseOrder, useUpdatePurchaseOrderItem } from '@/hooks/usePurchaseOrders'
+import { usePurchaseOrderById, useUpdatePurchaseOrder, useUpdatePurchaseOrderItem, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
 import { PriorityBadge } from '@/components/pedidos/PriorityBadge'
 import { ArrowLeft, Calendar, Package, ShoppingCart, User, AlertCircle, FileText, CheckCircle2, History } from 'lucide-react'
@@ -10,8 +10,10 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/almoxarifado/pedidos/$id')({
   component: PedidoDetailsPage,
@@ -22,6 +24,19 @@ function PedidoDetailsPage() {
   const { data: pedido, isLoading } = usePurchaseOrderById(id)
   const updateOrder = useUpdatePurchaseOrder()
   const updateItem = useUpdatePurchaseOrderItem()
+  const updateStatus = useUpdateStatusWithWhatsApp()
+
+  const { data: currentUserName } = useQuery({
+    queryKey: ['current_user_name'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      return user?.user_metadata?.full_name || user?.email || 'Usuário'
+    }
+  })
+
+  const ALL_STATUSES: PurchaseOrderStatus[] = [
+    'Rascunho', 'Solicitado', 'Em Compra', 'Comprado', 'Recebimento Parcial', 'Recebido', 'Cancelado'
+  ]
 
   const [isReceiving, setIsReceiving] = useState(false)
   const [receiveModalOpen, setReceiveModalOpen] = useState(false)
@@ -199,6 +214,31 @@ function PedidoDetailsPage() {
                 Pedido Atrasado
               </div>
             )}
+
+            {/* Alterar status */}
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground mb-2">Alterar Status</p>
+              <Select
+                value={pedido.status}
+                onValueChange={(val) => updateStatus.mutate({
+                  orderId: pedido.id,
+                  orderNumber: pedido.order_number,
+                  newStatus: val as PurchaseOrderStatus,
+                  changedByName: currentUserName || 'Usuário',
+                })}
+                disabled={updateStatus.isPending}
+              >
+                <SelectTrigger className="w-full h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_STATUSES.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             
             <div className="pt-4 space-y-3 text-sm">
               <div className="flex items-start gap-3">

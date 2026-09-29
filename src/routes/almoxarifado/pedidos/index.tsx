@@ -1,35 +1,58 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, ShoppingCart, Clock, Package, AlertTriangle, ArrowLeft } from 'lucide-react'
-import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
+import { Plus, Search, ShoppingCart, Clock, Package, AlertTriangle, ArrowLeft, User } from 'lucide-react'
+import { usePurchaseOrders, usePurchaseOrdersByCurrentUser, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
 import { format } from 'date-fns'
 import { isPast, isToday, differenceInDays } from 'date-fns'
+import { supabase } from '@/lib/supabase'
+import { useQuery } from '@tanstack/react-query'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export const Route = createFileRoute('/almoxarifado/pedidos/')({
   component: PedidosPage,
 })
 
+const ALL_STATUSES: PurchaseOrderStatus[] = [
+  'Rascunho', 'Solicitado', 'Em Compra', 'Comprado', 'Recebimento Parcial', 'Recebido', 'Cancelado'
+]
+
+function useCurrentUserName() {
+  return useQuery({
+    queryKey: ['current_user_name'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      return user?.user_metadata?.full_name || user?.email || 'Usuário'
+    }
+  })
+}
+
 function PedidosPage() {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
-  const { data: pedidos, isLoading } = usePurchaseOrders()
+  const [activeTab, setActiveTab] = useState<'todos' | 'meus'>('todos')
 
-  const filteredPedidos = pedidos?.filter(pedido => {
-    const matchesSearch = 
+  const { data: pedidos, isLoading } = usePurchaseOrders()
+  const { data: meusPedidos, isLoading: isLoadingMine } = usePurchaseOrdersByCurrentUser()
+  const { data: currentUserName } = useCurrentUserName()
+  const updateStatus = useUpdateStatusWithWhatsApp()
+
+  const displayList = activeTab === 'meus' ? (meusPedidos || []) : (pedidos || [])
+  const isLoadingAny = activeTab === 'meus' ? isLoadingMine : isLoading
+
+  const filteredPedidos = displayList.filter(pedido => {
+    const matchesSearch =
       pedido.order_number?.toString().includes(searchTerm) ||
-      pedido.responsible?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pedido.responsible?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pedido.items?.some(item => item.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const matchesStatus = statusFilter === 'Todos' || pedido.status === statusFilter
-
     return matchesSearch && matchesStatus
-  }) || []
+  })
 
-  // Calcular métricas
   const totalPedidos = pedidos?.length || 0
   const solicitados = pedidos?.filter(p => p.status === 'Solicitado').length || 0
   const emCompra = pedidos?.filter(p => p.status === 'Em Compra').length || 0
@@ -38,13 +61,8 @@ function PedidosPage() {
 
   const getAtrasoInfo = (dateString: string, status: string) => {
     if (status === 'Recebido' || status === 'Cancelado' || status === 'Rascunho') return null
-    
     const date = new Date(dateString)
-    
-    if (isToday(date)) {
-      return <span className="text-amber-600 font-medium text-xs ml-2">Hoje</span>
-    }
-    
+    if (isToday(date)) return <span className="text-amber-600 font-medium text-xs ml-2">Hoje</span>
     if (isPast(date)) {
       const days = differenceInDays(new Date(), date)
       return (
@@ -54,8 +72,16 @@ function PedidosPage() {
         </span>
       )
     }
-    
     return null
+  }
+
+  const handleStatusChange = (pedidoId: string, orderNumber: number | null, newStatus: PurchaseOrderStatus) => {
+    updateStatus.mutate({
+      orderId: pedidoId,
+      orderNumber,
+      newStatus,
+      changedByName: currentUserName || 'Usuário',
+    })
   }
 
   return (
@@ -76,9 +102,9 @@ function PedidosPage() {
             Solicitações, acompanhamento e recebimento de materiais
           </p>
         </div>
-        
-        <Button 
-          size="lg" 
+
+        <Button
+          size="lg"
           className="w-full sm:w-auto shadow-sm"
           onClick={() => navigate({ to: '/almoxarifado/pedidos/novo' })}
         >
@@ -96,7 +122,6 @@ function PedidosPage() {
           </div>
           <div className="text-2xl font-bold">{isLoading ? '-' : totalPedidos}</div>
         </div>
-        
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-center border-l-4 border-l-blue-500">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Solicitados</h3>
@@ -104,7 +129,6 @@ function PedidosPage() {
           </div>
           <div className="text-2xl font-bold">{isLoading ? '-' : solicitados}</div>
         </div>
-        
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-center border-l-4 border-l-amber-500">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Em Compra</h3>
@@ -112,7 +136,6 @@ function PedidosPage() {
           </div>
           <div className="text-2xl font-bold">{isLoading ? '-' : emCompra}</div>
         </div>
-        
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-center border-l-4 border-l-purple-500">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Aguardando Recebimento</h3>
@@ -120,7 +143,6 @@ function PedidosPage() {
           </div>
           <div className="text-2xl font-bold">{isLoading ? '-' : aguardandoRecebimento}</div>
         </div>
-
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-center border-l-4 border-l-green-500">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Recebidos</h3>
@@ -128,6 +150,28 @@ function PedidosPage() {
           </div>
           <div className="text-2xl font-bold">{isLoading ? '-' : recebidos}</div>
         </div>
+      </div>
+
+      {/* Abas */}
+      <div className="flex gap-2 border-b">
+        <button
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'todos' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => setActiveTab('todos')}
+        >
+          Todos os Pedidos
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'meus' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => setActiveTab('meus')}
+        >
+          <User className="w-3.5 h-3.5" />
+          Meus Pedidos
+          {(meusPedidos?.length ?? 0) > 0 && (
+            <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5 leading-none">
+              {meusPedidos!.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Filtros */}
@@ -142,11 +186,11 @@ function PedidosPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="flex w-full sm:w-auto gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
-          {['Todos', 'Solicitados', 'Em Compra', 'Comprados', 'Recebimento Parcial', 'Recebidos', 'Cancelados'].map((status) => (
-            <Button 
-              key={status} 
+          {['Todos', ...ALL_STATUSES].map((status) => (
+            <Button
+              key={status}
               variant={statusFilter === status ? "default" : "outline"}
               size="sm"
               onClick={() => setStatusFilter(status)}
@@ -174,7 +218,7 @@ function PedidosPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {isLoading ? (
+              {isLoadingAny ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     Carregando pedidos...
@@ -183,7 +227,7 @@ function PedidosPage() {
               ) : filteredPedidos.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum pedido encontrado.
+                    {activeTab === 'meus' ? 'Você não possui pedidos atribuídos.' : 'Nenhum pedido encontrado.'}
                   </td>
                 </tr>
               ) : (
@@ -206,7 +250,24 @@ function PedidosPage() {
                       {pedido.responsible?.nome || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={pedido.status} />
+                      {activeTab === 'meus' ? (
+                        <Select
+                          value={pedido.status}
+                          onValueChange={(val) => handleStatusChange(pedido.id, pedido.order_number, val as PurchaseOrderStatus)}
+                          disabled={updateStatus.isPending}
+                        >
+                          <SelectTrigger className="w-44 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALL_STATUSES.map(s => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <StatusBadge status={pedido.status} />
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
@@ -223,10 +284,12 @@ function PedidosPage() {
 
       {/* Lista em Cards (Mobile) */}
       <div className="md:hidden space-y-4">
-        {isLoading ? (
+        {isLoadingAny ? (
           <div className="text-center py-8 text-muted-foreground">Carregando pedidos...</div>
         ) : filteredPedidos.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado.</div>
+          <div className="text-center py-8 text-muted-foreground">
+            {activeTab === 'meus' ? 'Você não possui pedidos atribuídos.' : 'Nenhum pedido encontrado.'}
+          </div>
         ) : (
           filteredPedidos.map((pedido) => (
             <div key={pedido.id} className="bg-card border rounded-xl p-4 shadow-sm space-y-3">
@@ -241,7 +304,7 @@ function PedidosPage() {
                 </div>
                 <StatusBadge status={pedido.status} />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
                 <div>
                   <span className="text-muted-foreground block">Itens</span>
@@ -259,7 +322,28 @@ function PedidosPage() {
                   <span className="font-medium">{pedido.responsible?.nome || '-'}</span>
                 </div>
               </div>
-              
+
+              {/* Alterar status no mobile (aba Meus Pedidos) */}
+              {activeTab === 'meus' && (
+                <div className="pt-2 border-t">
+                  <span className="text-xs text-muted-foreground mb-1 block">Alterar Status</span>
+                  <Select
+                    value={pedido.status}
+                    onValueChange={(val) => handleStatusChange(pedido.id, pedido.order_number, val as PurchaseOrderStatus)}
+                    disabled={updateStatus.isPending}
+                  >
+                    <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALL_STATUSES.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="pt-2">
                 <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
                   <Button variant="outline" className="w-full">Ver Pedido</Button>
@@ -269,7 +353,6 @@ function PedidosPage() {
           ))
         )}
       </div>
-
     </div>
   )
 }
