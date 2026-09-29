@@ -24,6 +24,7 @@ import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { MiniWeatherWidget } from './MiniWeatherWidget'
+import { BackButton } from './BackButton'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -179,6 +180,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }}
       >
         <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">
+          {/* Back Button: visible only on sub-pages (depth >= 2) */}
+          {location.pathname.split('/').filter(Boolean).length >= 2 && (
+            <div className="pt-5">
+              <BackButton />
+            </div>
+          )}
           {children}
         </div>
       </main>

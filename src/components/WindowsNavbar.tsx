@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut, Video, Bot, ArrowLeft
+  Menu, X, ChevronRight, LogOut, Video, Bot
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
@@ -196,27 +196,16 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           MOBILE HEADER (< 1024px) — Hamburger + Título + Tema
           ============================================================ */}
       <div className="sucena-mobile-header 2xl:hidden">
-        {/* Back and Hamburger Button */}
-        <div className="flex items-center">
-          {currentPath !== '/' && currentPath !== '/dashboard' && (
-            <button
-              className="sucena-mobile-hamburger text-muted-foreground mr-1"
-              onClick={() => window.history.back()}
-              aria-label="Voltar"
-            >
-              <ArrowLeft size={22} strokeWidth={1.8} />
-            </button>
-          )}
-          <button
-            className="sucena-mobile-hamburger"
-            onClick={() => setIsDrawerOpen(true)}
-            aria-label="Abrir menu"
-            aria-expanded={isDrawerOpen}
-            aria-controls="mobile-drawer"
-          >
-            <Menu size={22} strokeWidth={1.8} />
-          </button>
-        </div>
+        {/* Hamburger Button */}
+        <button
+          className="sucena-mobile-hamburger"
+          onClick={() => setIsDrawerOpen(true)}
+          aria-label="Abrir menu"
+          aria-expanded={isDrawerOpen}
+          aria-controls="mobile-drawer"
+        >
+          <Menu size={22} strokeWidth={1.8} />
+        </button>
 
         {/* Título da Página Atual */}
         <span className="sucena-mobile-title">
@@ -432,16 +421,6 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
 
           {/* AÇÕES */}
           <div className="nav-actions">
-            {currentPath !== '/' && currentPath !== '/dashboard' && (
-              <button 
-                className="nav-action-btn flex items-center gap-1.5 px-3 mr-2" 
-                onClick={() => window.history.back()}
-                aria-label="Voltar"
-              >
-                <ArrowLeft size={16} strokeWidth={1.8} />
-                <span className="text-xs font-semibold">Voltar</span>
-              </button>
-            )}
             <button 
               className="nav-action-btn" 
               aria-label="Pesquisar"
