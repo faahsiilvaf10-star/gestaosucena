@@ -15,7 +15,10 @@ export const Route = createFileRoute('/almoxarifado/requisicoes/')(
 )
 
 function RequisicoesList() {
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
   const [search, setSearch] = useState('')
+  const [startDate, setStartDate] = useState(todayStr)
+  const [endDate, setEndDate] = useState(todayStr)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [reqToDelete, setReqToDelete] = useState<{id: string, name: string} | null>(null)
 
@@ -47,14 +50,27 @@ function RequisicoesList() {
   })
 
   const filteredRequisitions = requisitions?.filter(r => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      r.employee?.nome?.toLowerCase().includes(q) ||
-      r.authorizer?.nome?.toLowerCase().includes(q) ||
-      r.reason?.toLowerCase().includes(q) ||
-      r.destination_area?.toLowerCase().includes(q)
-    )
+    let match = true
+
+    if (search) {
+      const q = search.toLowerCase()
+      match = match && !!(
+        r.employee?.nome?.toLowerCase().includes(q) ||
+        r.authorizer?.nome?.toLowerCase().includes(q) ||
+        r.reason?.toLowerCase().includes(q) ||
+        r.destination_area?.toLowerCase().includes(q)
+      )
+    }
+
+    if (startDate) {
+      match = match && (r.requisition_date && r.requisition_date >= startDate)
+    }
+
+    if (endDate) {
+      match = match && (r.requisition_date && r.requisition_date <= endDate)
+    }
+
+    return match
   }) || []
 
   return (
@@ -84,20 +100,53 @@ function RequisicoesList() {
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-lg">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-        <Input
-          placeholder="Buscar por nome, autorizador ou motivo..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-10 pr-10"
-        />
-        {search && (
-          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X size={16} />
-          </button>
-        )}
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 max-w-4xl">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <Input
+            placeholder="Buscar por nome, autorizador ou motivo..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">De:</span>
+            <Input 
+              type="date" 
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="w-[140px]"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Até:</span>
+            <Input 
+              type="date" 
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              className="w-[140px]"
+            />
+          </div>
+          {(startDate || endDate) && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              title="Limpar datas"
+            >
+              <X size={16} />
+            </Button>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">{filteredRequisitions.length} registro(s)</p>

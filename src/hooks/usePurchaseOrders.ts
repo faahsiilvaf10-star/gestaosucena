@@ -42,6 +42,7 @@ export interface PurchaseOrder {
 
 export type CreatePurchaseOrderInput = Omit<PurchaseOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'received_at' | 'items' | 'responsible'> & {
   items: Omit<PurchaseOrderItem, 'id' | 'purchase_order_id' | 'created_at' | 'updated_at' | 'quantity_received'>[]
+  responsible_ids?: string[]
 }
 
 export function usePurchaseOrders() {
@@ -52,8 +53,7 @@ export function usePurchaseOrders() {
         .from('al_purchase_orders')
         .select(`
           *,
-          items:al_purchase_order_items(*),
-          responsible:rh_efetivo(id, nome, cargo)
+          items:al_purchase_order_items(*)
         `)
         .order('created_at', { ascending: false })
 
@@ -75,8 +75,7 @@ export function usePurchaseOrderById(id: string) {
         .from('al_purchase_orders')
         .select(`
           *,
-          items:al_purchase_order_items(*),
-          responsible:rh_efetivo(id, nome, cargo)
+          items:al_purchase_order_items(*)
         `)
         .eq('id', id)
         .single()
@@ -119,8 +118,13 @@ export function useCreatePurchaseOrder() {
 
   return useMutation({
     mutationFn: async (input: CreatePurchaseOrderInput) => {
-      const { items, ...orderData } = input
+      const { items, responsible_ids, ...orderData } = input
       
+      // se tiver múltiplos, gravamos o primeiro no responsible_id por retrocompatibilidade
+      if (responsible_ids && responsible_ids.length > 0) {
+        orderData.responsible_id = responsible_ids[0]
+      }
+
       // Criar o pedido
       const { data: order, error: orderError } = await supabase
         .from('al_purchase_orders')
@@ -129,6 +133,19 @@ export function useCreatePurchaseOrder() {
         .single()
 
       if (orderError) throw orderError
+
+      // Criar os múltiplos responsáveis se existirem
+      if (responsible_ids && responsible_ids.length > 0) {
+        const responsiblesToInsert = responsible_ids.map(id => ({
+          purchase_order_id: order.id,
+          responsible_id: id
+        }))
+        const { error: respError } = await supabase
+          .from('al_purchase_order_responsibles')
+          .insert(responsiblesToInsert)
+          
+        if (respError) console.error("Erro ao inserir multiplos responsaveis:", respError)
+      }
 
       // Criar os itens
       if (items && items.length > 0) {

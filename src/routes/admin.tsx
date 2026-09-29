@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone } from 'lucide-react'
+import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone, Package } from 'lucide-react'
 import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'
 import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings } from '../lib/settings'
 import { createServerFn } from '@tanstack/react-start'
+import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
 export const testWhatsappOnServer = createServerFn({ method: 'POST' })
@@ -77,7 +78,10 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions'>('users')
+
+  const [permissions, setPermissions] = useState<AllUsersPermissions>({})
+  const [savingPermissions, setSavingPermissions] = useState(false)
 
   // WhatsApp Settings
   const [whatsappSettings, setWhatsappSettings] = useState<WhatsappSettings>({
@@ -93,6 +97,11 @@ function AdminRoute() {
     },
     requisitionAlerts: {
       enabled: false,
+      specificGroupId: ''
+    },
+    purchaseOrders: {
+      enabled_group: false,
+      enabled_individual: false,
       specificGroupId: ''
     }
   })
@@ -198,6 +207,13 @@ function AdminRoute() {
       }
     } catch (e) {
       console.error("Erro ao carregar configurações do whatsapp", e)
+    }
+
+    try {
+      const perms = await getAllPermissions()
+      setPermissions(perms)
+    } catch (e) {
+      console.error("Erro ao carregar permissoes", e)
     }
   }
 
@@ -444,6 +460,17 @@ function AdminRoute() {
     }
   }
 
+  const handleSavePermissions = async () => {
+    setSavingPermissions(true)
+    const success = await saveAllPermissions(permissions)
+    if (success) {
+      toast.success('Permissões salvas com sucesso!')
+    } else {
+      toast.error('Erro ao salvar permissões.')
+    }
+    setSavingPermissions(false)
+  }
+
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#090A0C] text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8 pb-32`}>
       
@@ -498,6 +525,14 @@ function AdminRoute() {
           >
             <MessageCircle size={18} />
             WhatsApp API
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('permissions')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'permissions' ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50') }`}
+          >
+            <Lock size={18} />
+            Permissões de Páginas
           </button>
         </div>
 
@@ -1249,6 +1284,66 @@ function AdminRoute() {
                   Requisitos: integração W-API habilitada e <strong>ID do grupo</strong> preenchido (use o campo acima para enviar para um grupo diferente do padrão). Lembre-se de salvar a configuração após alterar este botão.
                 </p>
               </div>
+              </div>
+            <div className="mt-8 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Package size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Alertas de Pedidos de Compra
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Configure o envio automático de mensagens e fotos de novos Pedidos de Compra.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-6 rounded-xl border border-white/5 bg-black/5 dark:bg-white/5 transition-all">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, enabled_group: !prev.purchaseOrders?.enabled_group } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_group ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_group ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Enviar notificações para um Grupo com a foto do pedido</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_group ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.purchaseOrders?.enabled_group ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-6 rounded-xl border border-white/5 bg-black/5 dark:bg-white/5 transition-all">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, enabled_individual: !prev.purchaseOrders?.enabled_individual } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_individual ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_individual ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Enviar mensagens individuais (DM) para os responsáveis do pedido</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_individual ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.purchaseOrders?.enabled_individual ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para Pedidos de Compra (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.purchaseOrders?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Se não preenchido, será enviado para o grupo padrão configurado na seção principal.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Nova Seção: Modelos de Mensagens (Templates) */}
@@ -1272,7 +1367,9 @@ function AdminRoute() {
                     { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' },
                     { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
                     { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' },
-                    { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' }
+                    { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' },
+                    { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
+                    { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -1307,6 +1404,7 @@ function AdminRoute() {
                     {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
                     {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
                     {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
+                    {selectedTemplate.startsWith('pedidoCompra') && '{requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
                   </div>
                 </div>
               </div>
@@ -1341,6 +1439,80 @@ function AdminRoute() {
                 Testar W-API
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'permissions' && (
+        <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+          <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Lock className="text-indigo-500" size={20} />
+              Controle de Acesso por Usuário
+            </h2>
+            <button
+              onClick={handleSavePermissions}
+              disabled={savingPermissions}
+              className="flex items-center justify-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+            >
+              <Save size={18} />
+              {savingPermissions ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </div>
+          
+          <div className="p-4 overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-max border-collapse">
+              <thead className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <tr>
+                  <th className="px-4 py-4 font-medium sticky left-0 z-10 bg-inherit shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]">Usuário</th>
+                  {MODULES.map(mod => (
+                    <th key={mod.id} className="px-4 py-4 font-medium text-center">{mod.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-white/5">
+                {users.map(user => (
+                  <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
+                    <td className={`px-4 py-4 sticky left-0 z-10 border-r ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-gray-100'}`}>
+                      <div className="font-medium flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <UserIcon size={16} className="text-gray-400" />
+                          )}
+                        </div>
+                        <div className="truncate w-32 md:w-48" title={user.name}>{user.name}</div>
+                      </div>
+                    </td>
+                    {MODULES.map(mod => {
+                      const level = permissions[user.id]?.[mod.id] || 'full';
+                      return (
+                        <td key={mod.id} className="px-4 py-2 text-center">
+                          <select
+                            value={level}
+                            onChange={(e) => {
+                              setPermissions(prev => ({
+                                ...prev,
+                                [user.id]: {
+                                  ...(prev[user.id] || {}),
+                                  [mod.id]: e.target.value as AccessLevel
+                                }
+                              }))
+                            }}
+                            className={`px-2 py-1.5 rounded-lg border outline-none text-xs font-semibold ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'} ${level === 'full' ? 'text-green-600 dark:text-green-400' : level === 'view_only' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}
+                          >
+                            <option value="full">Total</option>
+                            <option value="view_only">Somente Ver</option>
+                            <option value="hidden">Oculto</option>
+                          </select>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

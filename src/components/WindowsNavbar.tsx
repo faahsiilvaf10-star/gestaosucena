@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut, Video, Bot
+  Menu, X, ChevronRight, LogOut, Video, Bot, ArrowLeft
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
@@ -11,6 +11,8 @@ import { GlobalSearchModal } from './GlobalSearchModal'
 import SucenaAIModal from './SucenaAIModal'
 import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
 import { LiquidMetalButton } from './ui/liquid-metal-button'
+import { usePermissions } from '../hooks/usePermissions'
+import { MODULES } from '../lib/permissions'
 
 interface UserInfo {
   id: string
@@ -25,7 +27,7 @@ interface WindowsNavbarProps {
 }
 
 export const MENU_ITEMS = [
-  { id: 'destaques', label: 'Destaques', href: '/dashboard', icon: Home, routeMatch: '/dashboard' },
+  { id: 'dashboard', label: 'Destaques', href: '/dashboard', icon: Home, routeMatch: '/dashboard' },
   { id: 'lembretes', label: 'Lembretes', href: '/lembretes', icon: Bell, routeMatch: '/lembretes' },
   { id: 'instacena', label: 'Instacena', href: '/instacena', icon: Instagram, routeMatch: '/instacena' },
   { id: 'almoxarifado', label: 'Almoxarifado', href: '/almoxarifado', icon: Package, routeMatch: '/almoxarifado' },
@@ -33,7 +35,7 @@ export const MENU_ITEMS = [
   { id: 'equipamentos', label: 'Equipamentos', href: '/equipamentos', icon: Truck, routeMatch: '/equipamentos' },
   { id: 'seguranca', label: 'Segurança', href: '/seguranca', icon: ShieldCheck, routeMatch: '/seguranca' },
   { id: 'rh', label: 'RH', href: '/rh', icon: Users, routeMatch: '/rh' },
-  { id: 'relatorio', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
+  { id: 'relatorio-obra', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
   { id: 'meio-ambiente', label: 'Meio Ambiente', href: '/meio-ambiente', icon: Leaf, routeMatch: '/meio-ambiente' },
   { id: 'planejamento', label: 'Planejamento', href: '#', icon: Calendar, routeMatch: '/planejamento' },
   { id: 'reunioes', label: 'Reuniões', href: '/reunioes', icon: Video, routeMatch: '/reunioes' },
@@ -49,6 +51,17 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const [isAiOpen, setIsAiOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
+  const { canView } = usePermissions(currentUser.id)
+
+  const visibleMenuItems = MENU_ITEMS.filter(item => {
+    // Se a página está sob controle de acesso, checamos a permissão
+    const isControlled = MODULES.some(m => m.id === item.id)
+    if (isControlled) {
+      return canView(item.id)
+    }
+    return true // Se não, é liberado por padrão
+  })
+  
   const menuRef = useRef<HTMLDivElement>(null)
   const indicatorRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLElement | null)[]>([])
@@ -56,7 +69,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const drawerRef = useRef<HTMLDivElement>(null)
 
   // Detectar o nome da página atual
-  const currentPageLabel = MENU_ITEMS.find(m => 
+  const currentPageLabel = visibleMenuItems.find(m => 
     currentPath === m.routeMatch || currentPath.startsWith(m.routeMatch + '/')
   )?.label || 'Sucena'
 
@@ -112,7 +125,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       }, 650)
     }
 
-    let activeIndex = MENU_ITEMS.findIndex(m => currentPath === m.routeMatch || currentPath.startsWith(m.routeMatch + '/'))
+    let activeIndex = visibleMenuItems.findIndex(m => currentPath === m.routeMatch || currentPath.startsWith(m.routeMatch + '/'))
     if (activeIndex === -1) activeIndex = 0
 
     const activeItem = itemRefs.current[activeIndex]
@@ -183,16 +196,27 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           MOBILE HEADER (< 1024px) — Hamburger + Título + Tema
           ============================================================ */}
       <div className="sucena-mobile-header 2xl:hidden">
-        {/* Hamburger Button */}
-        <button
-          className="sucena-mobile-hamburger"
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Abrir menu"
-          aria-expanded={isDrawerOpen}
-          aria-controls="mobile-drawer"
-        >
-          <Menu size={22} strokeWidth={1.8} />
-        </button>
+        {/* Back and Hamburger Button */}
+        <div className="flex items-center">
+          {currentPath !== '/' && currentPath !== '/dashboard' && (
+            <button
+              className="sucena-mobile-hamburger text-muted-foreground mr-1"
+              onClick={() => window.history.back()}
+              aria-label="Voltar"
+            >
+              <ArrowLeft size={22} strokeWidth={1.8} />
+            </button>
+          )}
+          <button
+            className="sucena-mobile-hamburger"
+            onClick={() => setIsDrawerOpen(true)}
+            aria-label="Abrir menu"
+            aria-expanded={isDrawerOpen}
+            aria-controls="mobile-drawer"
+          >
+            <Menu size={22} strokeWidth={1.8} />
+          </button>
+        </div>
 
         {/* Título da Página Atual */}
         <span className="sucena-mobile-title">
@@ -286,7 +310,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
 
         {/* Menu Items */}
         <nav className="sucena-drawer-nav" aria-label="Navegação principal">
-          {MENU_ITEMS.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = currentPath === item.routeMatch || currentPath.startsWith(item.routeMatch + '/')
             const Icon = item.icon
             return (
@@ -360,7 +384,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             <div className="nav-menu-scroll">
               <nav className="nav-menu" id="mainNavigation" ref={menuRef}>
                 
-                {MENU_ITEMS.map((item, idx) => {
+                {visibleMenuItems.map((item, idx) => {
                   const isActive = currentPath === item.routeMatch || currentPath.startsWith(item.routeMatch + '/')
                   const Icon = item.icon
                   
@@ -408,6 +432,16 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
 
           {/* AÇÕES */}
           <div className="nav-actions">
+            {currentPath !== '/' && currentPath !== '/dashboard' && (
+              <button 
+                className="nav-action-btn flex items-center gap-1.5 px-3 mr-2" 
+                onClick={() => window.history.back()}
+                aria-label="Voltar"
+              >
+                <ArrowLeft size={16} strokeWidth={1.8} />
+                <span className="text-xs font-semibold">Voltar</span>
+              </button>
+            )}
             <button 
               className="nav-action-btn" 
               aria-label="Pesquisar"

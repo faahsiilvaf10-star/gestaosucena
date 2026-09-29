@@ -108,6 +108,11 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  purchaseOrders?: {
+    enabled_group: boolean;
+    enabled_individual: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     ddsHoje: string;
     ddsAmanha: string;
@@ -123,6 +128,8 @@ export type WhatsappSettings = {
     cintasInspecionada: string;
     equipamentoEntrada: string;
     equipamentoSaida: string;
+    pedidoCompraGrupo: string;
+    pedidoCompraIndividual: string;
   };
 }
 
@@ -162,6 +169,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: false,
     specificGroupId: ''
   },
+  purchaseOrders: {
+    enabled_group: false,
+    enabled_individual: false,
+    specificGroupId: ''
+  },
   messageTemplates: {
     ddsHoje: '🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
     ddsAmanha: '🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
@@ -176,7 +188,9 @@ const defaultWhatsappSettings: WhatsappSettings = {
     fimJornadaApp: '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_',
     cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_',
     equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
-    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
+    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_',
+    pedidoCompraGrupo: '📦 *NOVO PEDIDO DE COMPRA*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_',
+    pedidoCompraIndividual: '📦 *NOVO PEDIDO DE COMPRA ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._'
   }
 }
 

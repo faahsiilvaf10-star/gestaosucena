@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarIcon, Plus, Trash2, Image as ImageIcon, Send, Save, CheckCircle2, AlertTriangle } from 'lucide-react'
@@ -18,8 +19,8 @@ import { cn } from '@/lib/utils'
 import { useCreatePurchaseOrder, useUploadItemImage } from '@/hooks/usePurchaseOrders'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-// import { useAuth } from '@/hooks/useAuth' // Asumindo que existe, usaremos para preencher solicitante
-
+import { sendPurchaseOrderWhatsappNotification } from '@/lib/whatsappHelpers'
+import { useEffect } from 'react'
 interface PurchaseOrderFormProps {
   nextNumber?: number;
 }
@@ -41,7 +42,7 @@ const itemSchema = z.object({
 
 const formSchema = z.object({
   expected_delivery_date: z.date({ required_error: 'A data prevista é obrigatória' }),
-  responsible_id: z.string({ required_error: 'Selecione um responsável' }).min(1, 'Selecione um responsável'),
+  responsible_ids: z.array(z.string()).min(1, 'Selecione pelo menos um responsável'),
   priority: z.enum(['Normal', 'Urgente', 'Crítico']),
   notes: z.string().optional(),
   items: z.array(itemSchema).min(1, 'Adicione pelo menos 1 item ao pedido'),
@@ -57,38 +58,76 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
   const createOrder = useCreatePurchaseOrder()
   const uploadImage = useUploadItemImage()
 
+  const [currentUser, setCurrentUser] = useState<any>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setCurrentUser(data.user)
+    })
+  }, [])
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [formDataForConfirm, setFormDataForConfirm] = useState<FormValues | null>(null)
-  const [cargoFilter, setCargoFilter] = useState<string>('Todos')
+  const [cargoFilters, setCargoFilters] = useState<string[]>([])
 
-  // Fetch de Responsáveis Autorizados
+  // Fetch de Responsáveis Autorizados (agora puxando de Usuários do Sistema)
   const { data: responsaveis, isLoading: isLoadingResponsaveis } = useQuery({
-    queryKey: ['rh_efetivo_responsaveis'],
+    queryKey: ['system_users_responsaveis'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rh_efetivo')
-        .select('id, nome, cargo')
-        .or('cargo.ilike.%almoxarif%,cargo.ilike.%auxiliar administrativo%')
-        .ilike('status', 'Ativo')
-        .order('nome')
+      const { data, error } = await supabase.rpc('get_active_system_users')
       
-      if (error) throw error
-      return data || []
+      let users = data || []
+      
+      // Fallback para admin caso a RPC não tenha sido criada ainda (evita quebrar a tela pra admin)
+      if (error) {
+        console.error("RPC get_active_system_users falhou. Rodou o script SQL?", error)
+        const fallback = await supabase.rpc('admin_list_users')
+        if (!fallback.error && fallback.data) {
+          users = fallback.data.map((u:any) => ({ id: u.id, nome: u.name, cargo: u.role }))
+        } else {
+          throw error
+        }
+      }
+
+      // Filtra apenas os cargos desejados
+      return users.filter((u: any) => {
+        const c = (u.cargo || '').toLowerCase()
+        return c.includes('apontador') || 
+               c.includes('preposto') || 
+               c.includes('tecnico de seguran') || 
+               c.includes('técnico de seguran') || 
+               c.includes('encarregado')
+      }).sort((a: any, b: any) => a.nome.localeCompare(b.nome))
     }
   })
 
+  // Extrair cargos únicos e garantir que os solicitados sempre apareçam
+  const cargosPadrao = [
+    'APONTADOR', 
+    'PREPOSTO', 
+    'TECNICO DE SEGURANÇA DO TRABALHO', 
+    'ENCARREGADO DE FRENTE DE SERVIÇO', 
+    'ENCARREGADO GERAL'
+  ];
+  
+  const cargosDisponiveis = Array.from(
+    new Set([
+      ...cargosPadrao,
+      ...(responsaveis?.map(r => r.cargo?.toUpperCase()).filter(Boolean) || [])
+    ])
+  ).sort() as string[];
+
   const responsaveisFiltrados = responsaveis?.filter(r => {
-    if (cargoFilter === 'Todos') return true
-    if (cargoFilter === 'Almoxarife' && r.cargo?.toLowerCase().includes('almoxarif')) return true
-    if (cargoFilter === 'Auxiliar Administrativo' && r.cargo?.toLowerCase().includes('auxiliar administrativo')) return true
-    return false
+    if (cargoFilters.length === 0) return true
+    return cargoFilters.includes(r.cargo?.toUpperCase())
   }) || []
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       priority: 'Normal',
+      responsible_ids: [],
       items: [{
         product_name: '',
         category: '',
@@ -160,7 +199,7 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
       // Criar o pedido
       const order = await createOrder.mutateAsync({
         requester_user_id: mockUserId, // Idealmente user.id
-        responsible_id: data.responsible_id,
+        responsible_ids: data.responsible_ids,
         expected_delivery_date: data.expected_delivery_date.toISOString(),
         priority: data.priority,
         notes: data.notes || null,
@@ -175,6 +214,18 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
         module: 'Almoxarifado',
         action: `Novo Pedido de Compra criado (${data.items.length} itens) - Status: ${status}`
       });
+
+      // Notificar no WhatsApp
+      if (responsaveis) {
+        const responsiblesList = responsaveis.filter((r: any) => data.responsible_ids.includes(r.id))
+        const requesterName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Usuário do Sistema'
+        
+        await sendPurchaseOrderWhatsappNotification(
+          { ...order, items: processedItems, expected_delivery_date: data.expected_delivery_date },
+          requesterName,
+          responsiblesList
+        )
+      }
 
       // Limpar formulário
       form.reset()
@@ -241,35 +292,93 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Cargo do Responsável</Label>
-              <Select onValueChange={(val) => { setCargoFilter(val); form.setValue('responsible_id', ''); }} value={cargoFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos (Ambos)</SelectItem>
-                  <SelectItem value="Auxiliar Administrativo">Auxiliar Administrativo</SelectItem>
-                  <SelectItem value="Almoxarife">Almoxarife</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Cargos (Filtro)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal truncate">
+                    {cargoFilters.length === 0 ? 'Todos os permitidos' : `${cargoFilters.length} cargo(s) selecionado(s)`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-2" align="start">
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium px-2 py-1.5 text-muted-foreground">Selecione os cargos</div>
+                    <div className="max-h-60 overflow-auto space-y-1">
+                      {cargosDisponiveis.map(cargo => (
+                        <div 
+                          key={cargo} 
+                          className="flex items-start space-x-3 px-2 py-2 hover:bg-muted/50 rounded-md cursor-pointer transition-colors" 
+                          onClick={() => {
+                            setCargoFilters(prev => prev.includes(cargo) ? prev.filter(c => c !== cargo) : [...prev, cargo]);
+                            form.setValue('responsible_id', '');
+                          }}
+                        >
+                          <Checkbox checked={cargoFilters.includes(cargo)} className="mt-0.5" />
+                          <label className="text-sm leading-tight font-medium cursor-pointer select-none">
+                            {cargo}
+                          </label>
+                        </div>
+                      ))}
+                      {cargosDisponiveis.length === 0 && !isLoadingResponsaveis && (
+                        <div className="text-sm text-muted-foreground px-2 py-2">Nenhum cargo encontrado.</div>
+                      )}
+                    </div>
+                    {cargoFilters.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full mt-2 text-xs h-8" onClick={() => { setCargoFilters([]); form.setValue('responsible_ids', []); }}>
+                        Limpar filtros
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
-              <Label>Responsável <span className="text-destructive">*</span></Label>
-              <Select onValueChange={(val) => form.setValue('responsible_id', val)} value={form.watch('responsible_id')}>
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingResponsaveis ? "Carregando..." : "Selecionar responsável..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {responsaveisFiltrados.map(r => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.nome} — {r.cargo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.responsible_id && (
-                <p className="text-sm text-destructive">{form.formState.errors.responsible_id.message}</p>
+              <Label>Responsáveis <span className="text-destructive">*</span></Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={`w-full justify-start text-left font-normal ${!form.watch('responsible_ids')?.length && "text-muted-foreground"}`}>
+                    {isLoadingResponsaveis ? "Carregando..." : 
+                     (form.watch('responsible_ids')?.length > 0 
+                      ? `${form.watch('responsible_ids').length} selecionado(s)` 
+                      : "Selecionar responsáveis...")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-2" align="start">
+                  <div className="space-y-2">
+                    <div className="max-h-60 overflow-auto space-y-1">
+                      {responsaveisFiltrados.map(r => {
+                        const currentIds = form.watch('responsible_ids') || []
+                        const isSelected = currentIds.includes(r.id)
+                        return (
+                          <div 
+                            key={r.id} 
+                            className="flex items-start space-x-3 px-2 py-2 hover:bg-muted/50 rounded-md cursor-pointer transition-colors" 
+                            onClick={() => {
+                              const newIds = isSelected 
+                                ? currentIds.filter(id => id !== r.id)
+                                : [...currentIds, r.id]
+                              form.setValue('responsible_ids', newIds)
+                            }}
+                          >
+                            <Checkbox checked={isSelected} className="mt-0.5" />
+                            <div className="flex flex-col">
+                              <label className="text-sm leading-tight font-medium cursor-pointer select-none">
+                                {r.nome}
+                              </label>
+                              <span className="text-xs text-muted-foreground">{r.cargo}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {responsaveisFiltrados.length === 0 && !isLoadingResponsaveis && (
+                        <div className="text-sm text-muted-foreground px-2 py-2">Nenhum responsável encontrado para este filtro.</div>
+                      )}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {form.formState.errors.responsible_ids && (
+                <p className="text-sm text-destructive">{form.formState.errors.responsible_ids.message}</p>
               )}
             </div>
 
@@ -503,9 +612,9 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
                 </div>
                 
                 <div className="bg-muted/50 p-3 rounded-lg col-span-2">
-                  <span className="text-muted-foreground block mb-1">Responsável</span>
+                  <span className="text-muted-foreground block mb-1">Responsáveis</span>
                   <span className="font-bold">
-                    {responsaveis?.find(r => r.id === formDataForConfirm.responsible_id)?.nome || 'Selecionado'}
+                    {formDataForConfirm.responsible_ids.map(id => responsaveis?.find(r => r.id === id)?.nome).filter(Boolean).join(', ')}
                   </span>
                 </div>
                 
