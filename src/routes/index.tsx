@@ -135,20 +135,13 @@ function Index() {
       return
     }
     
-    if (!captchaToken) {
-      const msg = 'Por favor, marque a caixa "Sou humano".'
-      toast.error(msg)
-      setErrorMessage(msg)
-      return
-    }
-
     setIsLoading(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
+      options: captchaToken ? {
         captchaToken: captchaToken
-      }
+      } : undefined
     })
     setIsLoading(false)
 
