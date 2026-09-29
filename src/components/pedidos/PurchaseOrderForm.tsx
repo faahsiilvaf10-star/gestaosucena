@@ -90,32 +90,16 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
         }
       }
 
-      // Filtra apenas os cargos desejados
-      return users.filter((u: any) => {
-        const c = (u.cargo || '').toLowerCase()
-        return c.includes('apontador') || 
-               c.includes('preposto') || 
-               c.includes('tecnico de seguran') || 
-               c.includes('técnico de seguran') || 
-               c.includes('encarregado')
-      }).sort((a: any, b: any) => a.nome.localeCompare(b.nome))
+      // Retorna todos os usuários ordenados
+      return users.sort((a: any, b: any) => a.nome.localeCompare(b.nome))
     }
   })
 
-  // Extrair cargos únicos e garantir que os solicitados sempre apareçam
-  const cargosPadrao = [
-    'APONTADOR', 
-    'PREPOSTO', 
-    'TECNICO DE SEGURANÇA DO TRABALHO', 
-    'ENCARREGADO DE FRENTE DE SERVIÇO', 
-    'ENCARREGADO GERAL'
-  ];
-  
+  // Extrair cargos únicos dos usuários atuais
   const cargosDisponiveis = Array.from(
-    new Set([
-      ...cargosPadrao,
-      ...(responsaveis?.map(r => r.cargo?.toUpperCase()).filter(Boolean) || [])
-    ])
+    new Set(
+      responsaveis?.map(r => r.cargo?.toUpperCase()).filter(Boolean) || []
+    )
   ).sort() as string[];
 
   const responsaveisFiltrados = responsaveis?.filter(r => {
