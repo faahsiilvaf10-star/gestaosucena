@@ -64,7 +64,15 @@ export function usePurchaseOrders() {
         throw error
       }
 
-      return data as PurchaseOrder[]
+      const { data: usersData } = await supabase.rpc('get_active_system_users')
+      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
+
+      return data.map((order: any) => ({
+        ...order,
+        responsible: order.responsible_id && usersMap.has(order.responsible_id)
+          ? usersMap.get(order.responsible_id)
+          : null
+      })) as PurchaseOrder[]
     },
   })
 }
@@ -87,7 +95,15 @@ export function usePurchaseOrderById(id: string) {
         throw error
       }
 
-      return data as PurchaseOrder
+      const { data: usersData } = await supabase.rpc('get_active_system_users')
+      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
+
+      return {
+        ...data,
+        responsible: data.responsible_id && usersMap.has(data.responsible_id)
+          ? usersMap.get(data.responsible_id)
+          : null
+      } as PurchaseOrder
     },
     enabled: !!id,
   })
@@ -282,7 +298,16 @@ export function usePurchaseOrdersByCurrentUser() {
           .eq('responsible_id', user.id)
           .order('created_at', { ascending: false })
         if (error) throw error
-        return (data || []) as PurchaseOrder[]
+        
+        const { data: usersData } = await supabase.rpc('get_active_system_users')
+        const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
+        
+        return (data || []).map((order: any) => ({
+          ...order,
+          responsible: order.responsible_id && usersMap.has(order.responsible_id)
+            ? usersMap.get(order.responsible_id)
+            : null
+        })) as PurchaseOrder[]
       }
 
       const { data, error } = await supabase
@@ -292,7 +317,16 @@ export function usePurchaseOrdersByCurrentUser() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return (data || []) as PurchaseOrder[]
+
+      const { data: usersData } = await supabase.rpc('get_active_system_users')
+      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
+
+      return (data || []).map((order: any) => ({
+        ...order,
+        responsible: order.responsible_id && usersMap.has(order.responsible_id)
+          ? usersMap.get(order.responsible_id)
+          : null
+      })) as PurchaseOrder[]
     },
   })
 }
