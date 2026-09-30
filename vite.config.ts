@@ -6,6 +6,25 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+import fs from "fs";
+import path from "path";
+
+// Plugin para gerar version.json automaticamente a cada build
+const generateVersionPlugin = () => {
+  return {
+    name: 'generate-version-json',
+    buildStart() {
+      const version = Math.random().toString(36).substring(2, 10);
+      const timestamp = new Date().toISOString();
+      const content = JSON.stringify({ version, updatedAt: timestamp });
+      const publicDir = path.resolve(process.cwd(), 'public');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(publicDir, 'version.json'), content);
+    }
+  };
+};
 
 export default defineConfig({
   tanstackStart: {
@@ -13,6 +32,7 @@ export default defineConfig({
   },
   vite: {
     plugins: [
+      generateVersionPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
         manifest: {
