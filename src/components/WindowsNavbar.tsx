@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Bot, Video
+  Bot, Video, Menu, X, ChevronRight
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
@@ -49,6 +49,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const { isDark, toggleTheme } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const { canView } = usePermissions(currentUser.id)
 
@@ -170,9 +171,142 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   return (
     <>
       {/* ============================================================
-          NAVBAR PRINCIPAL (LIQUID GLASS) — Agora ativa em todas as resoluções
+          MOBILE HEADER — visible only on < 1024px
           ============================================================ */}
-      <div className="pt-2 sm:pt-3 px-2 sm:px-3 md:px-6 w-full mb-6 sm:mb-8 relative z-50">
+      <div className="lg:hidden">
+        {/* Backdrop */}
+        <div
+          className={`sucena-drawer-backdrop ${isDrawerOpen ? 'sucena-drawer-backdrop--open' : ''}`}
+          onClick={() => setIsDrawerOpen(false)}
+          aria-hidden="true"
+        />
+
+        {/* Drawer lateral */}
+        <aside className={`sucena-drawer ${isDrawerOpen ? 'sucena-drawer--open' : ''} ${isDark ? 'sucena-drawer--dark' : 'sucena-drawer--light'}`}>
+          {/* Drawer Header */}
+          <div className="sucena-drawer-header">
+            <div className="sucena-drawer-logo">
+              <img
+                src={isDark ? '/logo.png' : '/logo-light-theme.png'}
+                alt="Sucena"
+                style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+              />
+              <div className="sucena-drawer-contract">
+                <span className="sucena-drawer-contract-label">Contrato</span>
+                <span className="sucena-drawer-contract-number">4600012690</span>
+              </div>
+            </div>
+            <button
+              className="sucena-drawer-close"
+              onClick={() => setIsDrawerOpen(false)}
+              aria-label="Fechar menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Usuário */}
+          <div
+            className="sucena-drawer-user"
+            onClick={() => { navigate({ to: '/configuracoes' as any }); setIsDrawerOpen(false) }}
+          >
+            <div className="sucena-drawer-avatar">
+              {currentUser.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt="Avatar" />
+              ) : (
+                <div className="sucena-drawer-avatar-placeholder">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+              <span className="sucena-drawer-avatar-online" />
+            </div>
+            <div className="sucena-drawer-user-info">
+              <span className="sucena-drawer-user-name">{currentUser.name || 'Usuário'}</span>
+              <span className="sucena-drawer-user-role">{currentUser.role || 'Colaborador'}</span>
+            </div>
+            <ChevronRight size={16} className="sucena-drawer-user-chevron" />
+          </div>
+
+          <div className="sucena-drawer-divider" />
+
+          {/* Nav items */}
+          <nav className="sucena-drawer-nav">
+            {visibleMenuItems.map((item) => {
+              const isActive = currentPath === item.routeMatch || currentPath.startsWith(item.routeMatch + '/')
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.id}
+                  className={`sucena-drawer-item ${isActive ? 'sucena-drawer-item--active' : ''} ${item.isEmergency ? 'sucena-drawer-item--emergency' : ''}`}
+                  onClick={() => {
+                    if (item.href !== '#') {
+                      navigate({ to: item.href as any })
+                    }
+                    setIsDrawerOpen(false)
+                  }}
+                >
+                  <span className="sucena-drawer-item-icon">
+                    <Icon size={20} strokeWidth={1.8} />
+                  </span>
+                  <span className="sucena-drawer-item-label">{item.label}</span>
+                  {isActive && <span className="sucena-drawer-item-active-dot" />}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Footer drawer */}
+          <div className="sucena-drawer-footer">
+            <button className="sucena-drawer-theme-toggle" onClick={toggleTheme}>
+              {isDark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
+              <span>{isDark ? 'Modo claro' : 'Modo escuro'}</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile top bar */}
+        <div className="sucena-mobile-header">
+          <button
+            className="sucena-mobile-hamburger"
+            onClick={() => setIsDrawerOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <Menu size={22} />
+          </button>
+
+          <span className="sucena-mobile-title">{currentPageLabel}</span>
+
+          <div className="sucena-mobile-actions">
+            <button
+              className="sucena-mobile-action-btn"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Pesquisar"
+            >
+              <Search size={20} strokeWidth={1.8} />
+            </button>
+            <button
+              className="sucena-mobile-action-btn"
+              onClick={() => setIsAiOpen(true)}
+              aria-label="IA Sucena"
+            >
+              <Bot size={20} strokeWidth={1.8} />
+            </button>
+            <button
+              className="sucena-mobile-action-btn sucena-mobile-theme-btn"
+              onClick={toggleTheme}
+              aria-label="Alternar tema"
+            >
+              {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+          NAVBAR PRINCIPAL (LIQUID GLASS) — hidden on mobile, visible on desktop (lg+)
+          ============================================================ */}
+      <div className="hidden lg:block pt-2 sm:pt-3 px-2 sm:px-3 md:px-6 w-full mb-6 sm:mb-8 relative z-50">
+
 
         <header className="sucena-navbar">
           {/* CONTRATO */}
