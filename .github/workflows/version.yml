@@ -1,0 +1,33 @@
+name: Gerar version.json
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gerar version.json
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "{\"version\": \"$COMMIT_HASH\", \"updatedAt\": \"$TIMESTAMP\"}" > public/version.json
+          echo "Version: $COMMIT_HASH at $TIMESTAMP"
+
+      - name: Commit version.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/version.json
+          git diff --staged --quiet || git commit -m "chore: atualiza versao para ${{ github.sha }}"
+          git push
