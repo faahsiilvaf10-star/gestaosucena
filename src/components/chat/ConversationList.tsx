@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
-import { getConversations, getOrCreateDirectConversation } from '../../lib/api-chat'
+import { getConversations, getOrCreateDirectConversation, clearConversation } from '../../lib/api-chat'
 import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
-import { User, Check, CheckCheck } from 'lucide-react'
+import { User, Check, CheckCheck, X } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
@@ -36,6 +36,16 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
   const [loading, setLoading] = useState(true)
   // Guarda os dados de presença brutos para re-calcular ao longo do tempo
   const [presenceData, setPresenceData] = useState<any[]>([])
+
+  const handleHideConversation = async (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation()
+    setConversations(prev => prev.filter(c => c.id !== convId))
+    try {
+      await clearConversation(convId, currentUserId)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const fetchUsers = useCallback(async () => {
     // 1. Pega os usuários
@@ -71,7 +81,19 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
     // 3. Pega conversas existentes
     const convs = await getConversations()
     // Filtra para as minhas conversas
-    const myConvs = convs.filter((c: any) => c.participants?.some((p: any) => p.user_id === currentUserId))
+    const myConvs = convs.filter((c: any) => {
+      const myPart = c.participants?.find((p: any) => p.user_id === currentUserId)
+      if (!myPart) return false
+      
+      // Hides if cleared_at is greater or equal to last_message_at (or if no last_message)
+      if (myPart.cleared_at) {
+        if (!c.last_message) return false
+        const clearedTime = new Date(myPart.cleared_at).getTime()
+        const lastMsgTime = new Date(c.last_message.created_at).getTime()
+        if (clearedTime >= lastMsgTime) return false
+      }
+      return true
+    })
       .map((conv: any) => {
         const activeUsers = conv.participants.filter((p: any) => p.user_id !== currentUserId).map((p: any) => usersMap[p.user_id])
         const title = conv.is_group ? conv.title : activeUsers[0]?.name || 'Usuário Desconhecido'
@@ -206,14 +228,17 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
               const msgTime = lastMsg ? format(new Date(lastMsg.created_at), 'HH:mm') : ''
 
               return (
-                <button
+                <div
                   key={conv.id}
-                  onClick={() => {
-                    openChat(conv.id)
-                    if (window.innerWidth < 768) setIsSidebarOpen(false)
-                  }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${ isDark ? 'hover:bg-white/5' : 'hover:bg-black/5' }`}
+                  className={`relative w-full flex items-center p-2 rounded-lg transition-colors group ${ isDark ? 'hover:bg-white/5' : 'hover:bg-black/5' }`}
                 >
+                  <button
+                    onClick={() => {
+                      openChat(conv.id)
+                      if (window.innerWidth < 768) setIsSidebarOpen(false)
+                    }}
+                    className="flex-1 flex items-center gap-3 text-left overflow-hidden cursor-pointer"
+                  >
                   <div className="relative shrink-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                       {otherUser?.avatar_url ? (
@@ -252,8 +277,16 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                         </div>
                       )}
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  <button 
+                    onClick={(e) => handleHideConversation(e, conv.id)}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'hover:bg-white/10 text-white/50 hover:text-red-400' : 'hover:bg-black/10 text-gray-400 hover:text-red-500'}`}
+                    title="Remover conversa"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               )
             })}
           </div>
