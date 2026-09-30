@@ -20,7 +20,7 @@ function formatLastSeen(dateStr?: string | null) {
 }
 
 // Deve ser idêntico ao OFFLINE_THRESHOLD_MS do usePresence.ts
-const OFFLINE_THRESHOLD_MS = 60_000
+const OFFLINE_THRESHOLD_MS = 120_000
 
 function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null } | null | undefined): boolean {
   if (!p || !p.is_online) return false
