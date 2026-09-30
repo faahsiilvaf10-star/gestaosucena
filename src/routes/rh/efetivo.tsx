@@ -45,32 +45,44 @@ function RhEfetivoPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [canEdit, setCanEdit] = useState(false)
   const [selectedColaborador, setSelectedColaborador] = useState<EfetivoItem | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setUserEmail(user?.email || null)
+      const email = user?.email || null
+      setUserEmail(email)
       if (user) {
+        // Tenta pegar o role do metadata primeiro (mais rápido)
+        const metaRole = user.user_metadata?.role || ''
+        
+        // Também busca via RPC
         const { data: users } = await supabase.rpc('get_users')
+        let rpcRole = ''
         if (users) {
           const currentUserProfile = (users as any[]).find((u: any) => u.id === user.id)
-          setUserRole(currentUserProfile?.role || null)
+          rpcRole = currentUserProfile?.role || currentUserProfile?.cargo || ''
         }
+        
+        const finalRole = rpcRole || metaRole
+        setUserRole(finalRole)
+        
+        const isAdmin = email === 'ffaahsiilva@gmail.com'
+        const roleStr = finalRole.toLowerCase()
+        const hasEditRole = (
+          roleStr.includes('auxiliar administrativo') ||
+          roleStr.includes('aux. administrativo') ||
+          roleStr.includes('admin') ||
+          roleStr.includes('diretor')
+        )
+        setCanEdit(isAdmin || hasEditRole)
       }
     }
     fetchUser()
     fetchEfetivo()
   }, [])
-
-  const canEdit = userEmail === 'ffaahsiilva@gmail.com' || 
-    (typeof userRole === 'string' && (
-      userRole.toLowerCase().includes('auxiliar administrativo') || 
-      userRole.toLowerCase().includes('aux. administrativo') || 
-      userRole.toLowerCase().includes('admin') || 
-      userRole.toLowerCase().includes('diretor')
-    ));
 
   const fetchEfetivo = async () => {
     try {
