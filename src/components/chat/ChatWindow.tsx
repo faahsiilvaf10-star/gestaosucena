@@ -348,7 +348,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
                       const fileName = parts.length > 1 ? parts[1] : 'Anexo'
 
                       if (msg.type === 'text') {
-                        return <p className="text-[14.5px] leading-snug whitespace-pre-wrap break-words">{msg.text}</p>
+                        return <p className="text-[14.5px] leading-snug whitespace-pre-wrap break-words" style={{ fontFamily: '"Inter", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif' }}>{msg.text}</p>
                       }
                       
                       if (msg.type === 'audio') {

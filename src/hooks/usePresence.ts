@@ -106,6 +106,7 @@ export function usePresence(userId?: string) {
     }
 
     document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', handleVisibility)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -113,6 +114,7 @@ export function usePresence(userId?: string) {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current)
       document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleVisibility)
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
       window.removeEventListener('beforeunload', handleBeforeUnload)

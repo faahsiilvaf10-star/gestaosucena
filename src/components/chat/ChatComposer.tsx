@@ -239,7 +239,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
               placeholder="Digite uma mensagem"
               className="w-full bg-transparent px-4 py-2.5 outline-none resize-none max-h-32 text-[15px] custom-scrollbar"
               rows={1}
-              style={{ minHeight: '44px', lineHeight: '1.4' }}
+              style={{ minHeight: '44px', lineHeight: '1.4', fontFamily: '"Inter", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif' }}
             />
           </div>
           
