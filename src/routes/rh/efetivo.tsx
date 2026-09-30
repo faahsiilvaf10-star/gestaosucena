@@ -531,6 +531,25 @@ function RhEfetivoPage() {
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Setor</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.setor || '-'}</p>
                 </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Função</p>
+                  {canEdit ? (
+                    <input 
+                      type="text"
+                      value={selectedColaborador.cargo || ''}
+                      onChange={(e) => setSelectedColaborador({...selectedColaborador, cargo: e.target.value})}
+                      onBlur={(e) => {
+                        if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.cargo || '')) {
+                          handleUpdateField(selectedColaborador.id, 'cargo', e.target.value)
+                        }
+                      }}
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                      placeholder="Digite a função..."
+                    />
+                  ) : (
+                    <p className="font-medium text-[15px]">{selectedColaborador.cargo || '-'}</p>
+                  )}
+                </div>
 
                 <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
                   <h3 className="font-bold text-lg mb-4">Controle Médico (ASO)</h3>
@@ -646,7 +665,7 @@ function RhEfetivoPage() {
                   // Skip existing/duplicated fields
                   const ignoreList = [
                     'nome', 'cargo', 'matricula', 'data de admissão', 'status', 'setor',
-                    'qtd', '45 dias', '90 dias', 'função', 'admissão', 'localidade', 'colaborador'
+                    'qtd', '45 dias', '90 dias', 'função', 'admissão', 'localidade', 'colaborador', 'habilidades'
                   ];
                   if (ignoreList.includes(key.toLowerCase().trim())) return null;
                   if (value === null || value === undefined || value === '') return null;
