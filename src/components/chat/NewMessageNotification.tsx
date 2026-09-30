@@ -116,7 +116,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
   // Usamos as mesmas classes da notificação de online
   return (
-    <div className="fixed bottom-[140px] right-5 z-[200] flex flex-col-reverse gap-3 pointer-events-none">
+    <div className="fixed bottom-[140px] right-5 z-[9999] flex flex-col-reverse gap-3 pointer-events-none">
       {notifications.map((notif) => (
         <div
           key={notif.id}
