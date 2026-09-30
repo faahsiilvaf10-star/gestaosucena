@@ -73,14 +73,16 @@ async function createWindow() {
         titlebar.style.left = '0';
         titlebar.style.width = '100%';
         titlebar.style.height = '28px';
-        titlebar.style.backgroundColor = 'rgba(10, 10, 12, 0.65)'; // Transparente escura
-        titlebar.style.backdropFilter = 'blur(12px)'; // Efeito Glass
+        titlebar.style.backgroundColor = 'rgba(10, 10, 12, 0.65)';
+        titlebar.style.backdropFilter = 'blur(12px)';
         titlebar.style.webkitBackdropFilter = 'blur(12px)';
-        titlebar.style.zIndex = '2147483647';
+        // z-index abaixo dos popups de notificação (z-[200] = 200)
+        // mas acima do conteúdo normal da página
+        titlebar.style.zIndex = '150';
         titlebar.style.webkitAppRegion = 'drag';
         titlebar.style.display = 'flex';
         titlebar.style.alignItems = 'center';
-        titlebar.style.justifyContent = 'center'; // Texto centralizado
+        titlebar.style.justifyContent = 'center';
         titlebar.style.boxSizing = 'border-box';
         titlebar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
         
@@ -95,10 +97,16 @@ async function createWindow() {
         
         document.body.appendChild(titlebar);
         
-        // Empurrar o conteúdo do site para baixo
-        document.body.style.paddingTop = '28px';
+        // Empurra apenas o wrapper principal do app (não o body)
+        // para não afetar o posicionamento de elementos fixed
+        const appRoot = document.getElementById('root') || document.querySelector('#app') || document.body;
+        if (appRoot && appRoot !== document.body) {
+          appRoot.style.paddingTop = '28px';
+        } else {
+          document.body.style.paddingTop = '28px';
+        }
         
-        // Ocultar a barra de rolagem padrão para ficar mais elegante
+        // Estiliza a scrollbar para ficar mais elegante
         const style = document.createElement('style');
         style.innerHTML = \`
           ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -119,12 +127,20 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Desabilita cache HTTP para garantir que o EXE sempre carregue
+  // a versão mais recente do site (sem CSS/JS antigo do Vercel)
+  session.defaultSession.clearCache()
+  session.defaultSession.clearStorageData({ storages: ['appcache'] })
+
+  // Configura cache para revalidar sempre
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    details.requestHeaders['Pragma'] = 'no-cache'
+    callback({ requestHeaders: details.requestHeaders })
+  })
+
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    if (permission === 'geolocation') {
-      callback(true);
-    } else {
-      callback(true); // Allow other permissions like notifications if needed
-    }
+    callback(true); // Permite todas as permissões (geolocation, notifications, etc.)
   });
   
   createWindow();

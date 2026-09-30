@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-// Threshold idêntico ao usePresence.ts: 60s sem heartbeat = offline
-const OFFLINE_THRESHOLD_MS = 60_000
+// Threshold idêntico ao usePresence.ts: 120s sem heartbeat = offline
+const OFFLINE_THRESHOLD_MS = 120_000
 
 function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null } | null): boolean {
   if (!p || !p.is_online) return false
@@ -113,7 +113,7 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
   if (notifications.length === 0) return null
 
   return (
-    <div className="fixed bottom-20 right-5 z-[200] flex flex-col-reverse gap-3 pointer-events-none">
+    <div className="fixed bottom-20 right-5 z-[9999] flex flex-col-reverse gap-3 pointer-events-none">
       {notifications.map((notif) => (
         <div
           key={notif.id}
