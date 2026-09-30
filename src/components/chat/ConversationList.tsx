@@ -277,6 +277,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                         </div>
                       )}
                     </div>
+                    </div>
                   </button>
 
                   <button 
