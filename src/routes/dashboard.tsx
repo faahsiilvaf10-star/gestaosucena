@@ -153,7 +153,9 @@ function DashboardComponent() {
       today.setHours(0,0,0,0)
       
       return data.filter((pt: any) => {
+        if (!pt.data_vencimento) return false
         const vencDate = parseISO(pt.data_vencimento)
+        if (isNaN(vencDate.getTime())) return false
         vencDate.setHours(0,0,0,0)
         const diff = differenceInDays(vencDate, today)
         return diff <= 5 // Vencendo em 5 dias ou menos (inclui vencidas)

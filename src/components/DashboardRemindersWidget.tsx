@@ -62,8 +62,15 @@ export function DashboardRemindersWidget() {
 
     // Mostrar os que têm data para hoje ou estão atrasados
     if (r.due_date) {
-      const isDueTodayOrPast = isToday(parseISO(r.due_date)) || isPast(new Date(`${r.due_date}T${r.due_time || '23:59:00'}`))
-      return isDueTodayOrPast
+      try {
+        const parsedDate = parseISO(r.due_date)
+        if (isNaN(parsedDate.getTime())) return false
+        
+        const isDueTodayOrPast = isToday(parsedDate) || isPast(new Date(`${r.due_date}T${r.due_time || '23:59:00'}`))
+        return isDueTodayOrPast
+      } catch {
+        return false
+      }
     }
     
     // Se não tem data, mostra sempre como algo pendente pra fazer
