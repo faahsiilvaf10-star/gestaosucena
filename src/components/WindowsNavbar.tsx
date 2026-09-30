@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { 
   FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
   Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Menu, X, ChevronRight, LogOut, Video, Bot
+  Bot, Video
 } from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
@@ -49,7 +49,6 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const { isDark, toggleTheme } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const { canView } = usePermissions(currentUser.id)
 
@@ -73,23 +72,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
     currentPath === m.routeMatch || currentPath.startsWith(m.routeMatch + '/')
   )?.label || 'Sucena'
 
-  // Fechar drawer ao pressionar Escape
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsDrawerOpen(false)
-    }
-    if (isDrawerOpen) {
-      window.addEventListener('keydown', handleKeyDown)
-      // Prevenir scroll do body quando drawer está aberto
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
-    }
-  }, [isDrawerOpen])
+
 
   // Desktop: liquid indicator
   useEffect(() => {
@@ -182,169 +165,15 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
     }
   }
 
-  // Handler para o drawer mobile
-  const handleDrawerItemClick = useCallback((href: string) => {
-    setIsDrawerOpen(false)
-    if (href !== '#') {
-      navigate({ to: href as any })
-    }
-  }, [navigate])
+
 
   return (
     <>
       {/* ============================================================
-          MOBILE HEADER (< 1024px) — Hamburger + Título + Tema
+          NAVBAR PRINCIPAL (LIQUID GLASS) — Agora ativa em todas as resoluções
           ============================================================ */}
-      <div className="sucena-mobile-header lg:hidden">
-        {/* Hamburger Button */}
-        <button
-          className="sucena-mobile-hamburger"
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Abrir menu"
-          aria-expanded={isDrawerOpen}
-          aria-controls="mobile-drawer"
-        >
-          <Menu size={22} strokeWidth={1.8} />
-        </button>
+      <div className="pt-2 sm:pt-3 px-2 sm:px-3 md:px-6 w-full mb-6 sm:mb-8 relative z-50">
 
-        {/* Título da Página Atual */}
-        <span className="sucena-mobile-title">
-          {currentPageLabel}
-        </span>
-
-        {/* Ações: Busca + Tema */}
-        <div className="sucena-mobile-actions">
-          <button
-            className="sucena-mobile-action-btn"
-            aria-label="Pesquisar"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <Search size={20} strokeWidth={1.8} />
-          </button>
-          <button
-            className="sucena-mobile-action-btn sucena-mobile-theme-btn"
-            aria-label="Alterar tema"
-            onClick={toggleTheme}
-          >
-            {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================================
-          MOBILE DRAWER — Menu lateral
-          ============================================================ */}
-      {/* Backdrop */}
-      <div
-        className={`sucena-drawer-backdrop ${isDrawerOpen ? 'sucena-drawer-backdrop--open' : ''}`}
-        onClick={() => setIsDrawerOpen(false)}
-        aria-hidden="true"
-      />
-
-      {/* Drawer */}
-      <div
-        id="mobile-drawer"
-        ref={drawerRef}
-        className={`sucena-drawer lg:hidden ${isDrawerOpen ? 'sucena-drawer--open' : ''} ${isDark ? 'sucena-drawer--dark' : 'sucena-drawer--light'}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menu de navegação"
-      >
-        {/* Drawer Header */}
-        <div className="sucena-drawer-header">
-          <div className="sucena-drawer-logo">
-            <img 
-              src={isDark ? "/logo.png" : "/logo-light-theme.png"} 
-              alt="Sucena" 
-              className={`h-6 w-auto object-contain ${isDark ? 'filter brightness-0 invert' : ''}`}
-            />
-            <div className="sucena-drawer-contract">
-              <span className="sucena-drawer-contract-label">Contrato</span>
-              <span className="sucena-drawer-contract-number">4600012690</span>
-            </div>
-          </div>
-          <button
-            className="sucena-drawer-close"
-            onClick={() => setIsDrawerOpen(false)}
-            aria-label="Fechar menu"
-          >
-            <X size={20} strokeWidth={1.8} />
-          </button>
-        </div>
-
-        {/* Avatar + Usuário */}
-        <div className="sucena-drawer-user" onClick={() => { setIsDrawerOpen(false); navigate({ to: '/configuracoes' as any }) }}>
-          <div className="sucena-drawer-avatar">
-            {currentUser.avatarUrl ? (
-              <img src={currentUser.avatarUrl} alt="Usuário" />
-            ) : (
-              <div className="sucena-drawer-avatar-placeholder">
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
-              </div>
-            )}
-            <span className="sucena-drawer-avatar-online" />
-          </div>
-          <div className="sucena-drawer-user-info">
-            <span className="sucena-drawer-user-name flex items-center gap-1">
-              <span className="truncate">{currentUser.name || 'Usuário'}</span>
-              {isAdmin(currentUser.name, currentUser.role) && <VerifiedBadge size={14} />}
-            </span>
-            <span className="sucena-drawer-user-role">{currentUser.role || 'Usuário'}</span>
-          </div>
-          <ChevronRight size={16} className="sucena-drawer-user-chevron" />
-        </div>
-
-        {/* Divider */}
-        <div className="sucena-drawer-divider" />
-
-        {/* Menu Items */}
-        <nav className="sucena-drawer-nav" aria-label="Navegação principal">
-          {visibleMenuItems.map((item) => {
-            const isActive = currentPath === item.routeMatch || currentPath.startsWith(item.routeMatch + '/')
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                className={`sucena-drawer-item ${isActive ? 'sucena-drawer-item--active' : ''} ${item.isEmergency ? 'sucena-drawer-item--emergency' : ''}`}
-                onClick={() => handleDrawerItemClick(item.href)}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <span className="sucena-drawer-item-icon">
-                  <Icon size={20} strokeWidth={1.8} />
-                </span>
-                <span className="sucena-drawer-item-label">{item.label}</span>
-                {isActive && <span className="sucena-drawer-item-active-dot" />}
-              </button>
-            )
-          })}
-        </nav>
-
-        {/* Drawer Footer */}
-        <div className="sucena-drawer-footer">
-          <button
-            className="sucena-drawer-theme-toggle"
-            onClick={toggleTheme}
-            aria-label={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-          >
-            {isDark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
-            <span>{isDark ? 'Tema Claro (☀️ SOL)' : 'Tema Escuro (🌙 LUA)'}</span>
-          </button>
-          {onLogoutRequest && (
-            <button
-              className="sucena-drawer-logout"
-              onClick={() => { setIsDrawerOpen(false); onLogoutRequest() }}
-            >
-              <LogOut size={18} strokeWidth={1.8} />
-              <span>Sair</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ============================================================
-          DESKTOP NAVBAR (>= 1024px) — original mantido
-          ============================================================ */}
-      <div className="hidden lg:block pt-3 px-3 md:px-6 w-full mb-8 relative z-50">
         <header className="sucena-navbar">
           {/* CONTRATO */}
           <div className="nav-contract">
