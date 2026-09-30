@@ -67,6 +67,7 @@ function RhEfetivoPage() {
   const canEdit = userEmail === 'ffaahsiilva@gmail.com' || 
     (userRole && (
       userRole.toLowerCase().includes('auxiliar administrativo') || 
+      userRole.toLowerCase().includes('aux. administrativo') || 
       userRole.toLowerCase().includes('admin') || 
       userRole.toLowerCase().includes('diretor')
     ));
