@@ -455,21 +455,22 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <a href="#" className={linkClass} onClick={(e) => {
-                e.preventDefault()
+              <button type="button" className={`${linkClass} p-2`} onClick={() => {
                 setErrorMessage('')
                 setViewState('FORGOT_PASSWORD')
               }}>
                 Esqueceu a senha?
-              </a>
+              </button>
               {registrationOpen ? (
-                <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
-                  Não tem uma conta?{' '}
-                  <span className={linkClass} onClick={() => {
+                <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
+                  <span>Não tem uma conta?</span>
+                  <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                     setErrorMessage('')
                     !isLoading && setViewState('REGISTER')
-                  }}>Cadastre-se</span>
-                </p>
+                  }}>
+                    Cadastre-se
+                  </button>
+                </div>
               ) : (
                 <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-black/40'}`}>
                   A criação de novas contas está temporariamente desativada.
@@ -572,13 +573,15 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
-                Já tem uma conta?{' '}
-                <span className={linkClass} onClick={() => {
+              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
+                <span>Já tem uma conta?</span>
+                <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                   setErrorMessage('')
                   !isLoading && setViewState('LOGIN')
-                }}>Entre agora</span>
-              </p>
+                }}>
+                  Entre agora
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -634,13 +637,15 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <p className={`text-xs ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
-                Lembrou sua senha?{' '}
-                <span className={linkClass} onClick={() => {
+              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-black/60'}`}>
+                <span>Lembrou sua senha?</span>
+                <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                   setErrorMessage('')
                   !isLoading && setViewState('LOGIN')
-                }}>Voltar para o Login</span>
-              </p>
+                }}>
+                  Voltar para o Login
+                </button>
+              </div>
             </div>
           </form>
         )}
