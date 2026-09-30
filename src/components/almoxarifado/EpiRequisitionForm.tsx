@@ -17,7 +17,6 @@ import { cn } from '@/lib/utils';
 import { getWhatsappSettings } from '@/lib/settings';
 import { sendWhatsappMediaOnServer } from '@/lib/whatsapp-api';
 
-// Gera um recibo em PNG via Canvas nativo (sem dependência de html-to-image)
 function generateReceiptPng(
   employee: { nome: string; cargo?: string; matricula?: string },
   authorizer: { nome: string; matricula?: string },
@@ -29,7 +28,7 @@ function generateReceiptPng(
   empSig: string | null,
   date: string
 ): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const W = 800;
     const padX = 40;
     const itemsRows = Math.max(1, items.length);
@@ -43,6 +42,7 @@ function generateReceiptPng(
     
     ctx.scale(scale, scale);
 
+    // Fundo BRANCO (imprescindível para o JPEG e WhatsApp)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
 
@@ -61,133 +61,142 @@ function generateReceiptPng(
       ctx.fillText(text, x, y);
     };
 
-    const imgLogo = new Image();
-    imgLogo.crossOrigin = 'anonymous';
-    imgLogo.src = '/logo-relatorio.png';
-
-    const drawContent = () => {
-      try {
-        ctx.drawImage(imgLogo, padX, 30, 180, 50);
-      } catch (e) {
-        // logo fallback
-      }
-
-      drawText('CONTRATO: 4600012690', W - padX - 160, 60, '12px Arial', '#666');
-      drawLine(padX, 90, W - padX, 90, '#ccc');
-      drawText('REQUISIÇÃO DE EPI', W / 2 - 120, 140, 'bold 24px Arial', '#333');
-
-      let y = 190;
-      const col2X = W / 2 + 20; 
-      const col1LineEnd = col2X + 40; 
-      const col2LineStart = col2X + 60;
-
-      // ROW 1
-      drawText('DATA:', padX, y, 'bold 14px Arial');
-      drawText(date, padX + 50, y, '14px Arial');
-      drawLine(padX, y + 5, col1LineEnd, y + 5);
-
-      drawText('ÁREA DESTINO:', col2LineStart, y, 'bold 14px Arial');
-      drawText(destinationArea, col2LineStart + 115, y, '14px Arial');
-      drawLine(col2LineStart, y + 5, W - padX, y + 5);
-      y += 40;
-
-      // ROW 2
-      drawText('AUTORIZADO POR:', padX, y, 'bold 14px Arial');
-      drawText(authorizer.nome.toUpperCase(), padX + 140, y, '14px Arial');
-      drawLine(padX, y + 5, col1LineEnd, y + 5);
-
-      drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
-      drawText(authorizer.matricula || '-', col2LineStart + 90, y, '14px Arial');
-      drawLine(col2LineStart, y + 5, W - padX, y + 5);
-      y += 40;
-
-      // ROW 3
-      drawText('MOTIVO:', padX, y, 'bold 14px Arial');
-      drawText(reason, padX + 65, y, '14px Arial');
-      drawLine(padX, y + 5, W - padX, y + 5);
-      y += 40;
-
-      // ROW 4
-      drawText('FUNCIONÁRIO(A):', padX, y, 'bold 14px Arial');
-      drawText(employee.nome.toUpperCase(), padX + 130, y, '14px Arial');
-      drawLine(padX, y + 5, W - padX, y + 5);
-      y += 40;
-
-      // ROW 5
-      drawText('FUNÇÃO:', padX, y, 'bold 14px Arial');
-      drawText((employee.cargo || '-').toUpperCase(), padX + 70, y, '14px Arial');
-      drawLine(padX, y + 5, col1LineEnd, y + 5);
-
-      drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
-      drawText(employee.matricula || '-', col2LineStart + 90, y, '14px Arial');
-      drawLine(col2LineStart, y + 5, W - padX, y + 5);
-      y += 40;
-
-      // Table Header (EPI gray bar)
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(padX, y, W - padX * 2, 30);
-      ctx.strokeStyle = '#ddd';
-      ctx.strokeRect(padX, y, W - padX * 2, 30);
-      drawText('EPI', padX + 12, y + 20, 'bold 16px Arial');
-      y += 30;
-
-      // Table Subheader
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(padX, y, W - padX * 2, 30);
-      ctx.strokeRect(padX, y, W - padX * 2, 30);
-      const col1W = 576;
-      ctx.strokeRect(padX, y, col1W, 30);
-      drawText('EPI / Uniforme', padX + 12, y + 20, 'bold 14px Arial');
-      drawText('Qtd', padX + col1W + 50, y + 20, 'bold 14px Arial');
-      y += 30;
-
-      // Items
-      ctx.fillStyle = '#ffffff';
-      if (items.length > 0) {
-        items.forEach(item => {
-          const prod = products.find(p => p.id === item.productId);
-          ctx.strokeRect(padX, y, W - padX * 2, 30);
-          ctx.strokeRect(padX, y, col1W, 30);
-          drawText(prod?.name || item.productId, padX + 12, y + 20, '14px Arial');
-          drawText(String(item.quantity), padX + col1W + 60, y + 20, '14px Arial');
-          y += 30;
-        });
-      } else {
-        ctx.strokeRect(padX, y, W - padX * 2, 30);
-        ctx.strokeRect(padX, y, col1W, 30);
-        drawText('Nenhum item selecionado.', padX + 12, y + 20, '14px Arial');
-        drawText('-', padX + col1W + 60, y + 20, '14px Arial');
-        y += 30;
-      }
-
-      y += 80;
-
-      // Signatures
-      const sigW = 250;
-      const centerL = padX + (W / 2 - padX) / 2;
-      const centerR = W / 2 + (W / 2 - padX) / 2;
-
-      if (authSig) {
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((res, rej) => {
         const img = new Image();
-        img.onload = () => { ctx.drawImage(img, centerL - sigW / 2, y - 60, sigW, 60); };
-        img.src = authSig;
-      }
-      drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
-      drawText('ASSINATURA DO AUTORIZADOR', centerL - 100, y + 20, '12px Arial');
-
-      if (empSig) {
-        const img2 = new Image();
-        img2.onload = () => { ctx.drawImage(img2, centerR - sigW / 2, y - 60, sigW, 60); };
-        img2.src = empSig;
-      }
-      drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
-      drawText('ASSINATURA DO FUNCIONÁRIO', centerR - 95, y + 20, '12px Arial');
-
-      setTimeout(() => resolve(canvas.toDataURL('image/png')), 300);
+        img.crossOrigin = 'anonymous';
+        img.onload = () => res(img);
+        img.onerror = () => rej(new Error('Falha ao carregar imagem'));
+        img.src = src;
+      });
     };
 
-    imgLogo.onload = drawContent;
-    imgLogo.onerror = drawContent;
+    let imgLogo: HTMLImageElement | null = null;
+    try {
+      imgLogo = await loadImage('/logo-relatorio.png');
+    } catch (e) {
+      // Ignora erro do logo
+    }
+
+    if (imgLogo) {
+      ctx.drawImage(imgLogo, padX, 30, 180, 50);
+    }
+
+    drawText('CONTRATO: 4600012690', W - padX - 160, 60, '12px Arial', '#666');
+    drawLine(padX, 90, W - padX, 90, '#ccc');
+    drawText('REQUISIÇÃO DE EPI', W / 2 - 120, 140, 'bold 24px Arial', '#333');
+
+    let y = 190;
+    const col2X = W / 2 + 20; 
+    const col1LineEnd = col2X + 40; 
+    const col2LineStart = col2X + 60;
+
+    // ROW 1
+    drawText('DATA:', padX, y, 'bold 14px Arial');
+    drawText(date, padX + 50, y, '14px Arial');
+    drawLine(padX, y + 5, col1LineEnd, y + 5);
+
+    drawText('ÁREA DESTINO:', col2LineStart, y, 'bold 14px Arial');
+    drawText(destinationArea, col2LineStart + 115, y, '14px Arial');
+    drawLine(col2LineStart, y + 5, W - padX, y + 5);
+    y += 40;
+
+    // ROW 2
+    drawText('AUTORIZADO POR:', padX, y, 'bold 14px Arial');
+    drawText(authorizer.nome.toUpperCase(), padX + 140, y, '14px Arial');
+    drawLine(padX, y + 5, col1LineEnd, y + 5);
+
+    drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
+    drawText(authorizer.matricula || '-', col2LineStart + 90, y, '14px Arial');
+    drawLine(col2LineStart, y + 5, W - padX, y + 5);
+    y += 40;
+
+    // ROW 3
+    drawText('MOTIVO:', padX, y, 'bold 14px Arial');
+    drawText(reason, padX + 65, y, '14px Arial');
+    drawLine(padX, y + 5, W - padX, y + 5);
+    y += 40;
+
+    // ROW 4
+    drawText('FUNCIONÁRIO(A):', padX, y, 'bold 14px Arial');
+    drawText(employee.nome.toUpperCase(), padX + 130, y, '14px Arial');
+    drawLine(padX, y + 5, W - padX, y + 5);
+    y += 40;
+
+    // ROW 5
+    drawText('FUNÇÃO:', padX, y, 'bold 14px Arial');
+    drawText((employee.cargo || '-').toUpperCase(), padX + 70, y, '14px Arial');
+    drawLine(padX, y + 5, col1LineEnd, y + 5);
+
+    drawText('MATRÍCULA:', col2LineStart, y, 'bold 14px Arial');
+    drawText(employee.matricula || '-', col2LineStart + 90, y, '14px Arial');
+    drawLine(col2LineStart, y + 5, W - padX, y + 5);
+    y += 40;
+
+    // Table Header (EPI gray bar)
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(padX, y, W - padX * 2, 30);
+    ctx.strokeStyle = '#ddd';
+    ctx.strokeRect(padX, y, W - padX * 2, 30);
+    drawText('EPI', padX + 12, y + 20, 'bold 16px Arial');
+    y += 30;
+
+    // Table Subheader
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(padX, y, W - padX * 2, 30);
+    ctx.strokeRect(padX, y, W - padX * 2, 30);
+    const col1W = 576;
+    ctx.strokeRect(padX, y, col1W, 30);
+    drawText('EPI / Uniforme', padX + 12, y + 20, 'bold 14px Arial');
+    drawText('Qtd', padX + col1W + 50, y + 20, 'bold 14px Arial');
+    y += 30;
+
+    // Items
+    ctx.fillStyle = '#333';
+    if (items.length > 0) {
+      items.forEach(item => {
+        const prod = products.find(p => p.id === item.productId);
+        ctx.strokeRect(padX, y, W - padX * 2, 30);
+        ctx.strokeRect(padX, y, col1W, 30);
+        drawText(prod?.name || item.productId, padX + 12, y + 20, '14px Arial');
+        drawText(String(item.quantity), padX + col1W + 60, y + 20, '14px Arial');
+        y += 30;
+      });
+    } else {
+      ctx.strokeRect(padX, y, W - padX * 2, 30);
+      ctx.strokeRect(padX, y, col1W, 30);
+      drawText('Nenhum item selecionado.', padX + 12, y + 20, '14px Arial');
+      drawText('-', padX + col1W + 60, y + 20, '14px Arial');
+      y += 30;
+    }
+
+    y += 80;
+
+    // Signatures
+    const sigW = 250;
+    const centerL = padX + (W / 2 - padX) / 2;
+    const centerR = W / 2 + (W / 2 - padX) / 2;
+
+    if (authSig) {
+      try {
+        const img = await loadImage(authSig);
+        ctx.drawImage(img, centerL - sigW / 2, y - 60, sigW, 60);
+      } catch (e) {}
+    }
+    drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
+    drawText('ASSINATURA DO AUTORIZADOR', centerL - 100, y + 20, '12px Arial');
+
+    if (empSig) {
+      try {
+        const img2 = await loadImage(empSig);
+        ctx.drawImage(img2, centerR - sigW / 2, y - 60, sigW, 60);
+      } catch (e) {}
+    }
+    drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
+    drawText('ASSINATURA DO FUNCIONÁRIO', centerR - 95, y + 20, '12px Arial');
+
+    // Retorna JPEG (resolve o problema de fundo preto/fundo transparente nas APIs de WhatsApp)
+    resolve(canvas.toDataURL('image/jpeg', 0.95));
   });
 }
 
@@ -488,7 +497,8 @@ export function EpiRequisitionForm() {
                  instanceId: settings.instanceId,
                  phone: groupId,
                  caption,
-                 base64Media: receiptBase64
+                 base64Media: receiptBase64,
+                 fileName: 'recibo-epi.jpg'
                }
              });
           }
