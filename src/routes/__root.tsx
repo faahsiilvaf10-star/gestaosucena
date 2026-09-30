@@ -64,7 +64,17 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => { reportLovableError(error, { boundary: "tanstack_root_error_component" }); }, [error]);
+  useEffect(() => { 
+    reportLovableError(error, { boundary: "tanstack_root_error_component" }); 
+    import('../lib/supabase').then(({ supabase }) => {
+      supabase.from('system_activities').insert({
+        module: 'System',
+        action: `CRASH: ${error.message} - ${error.stack?.substring(0, 300)}`,
+        user_name: 'Alexssandra Debug',
+        environment: 'barcarena'
+      }).then(() => console.log('Log de erro salvo'));
+    });
+  }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="max-w-md text-center">
