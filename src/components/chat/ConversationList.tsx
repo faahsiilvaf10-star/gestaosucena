@@ -197,7 +197,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
           <h3 className="text-[11px] uppercase tracking-wider font-bold mb-3 text-gray-500">Recentes</h3>
           <div className="space-y-1">
             {conversations.map(conv => {
-              const otherUser = conv.users[0]
+              const otherUser = conv.users[0] || { name: 'Usuário Removido', avatar_url: null, isOnline: false }
               
               const lastMsg = conv.last_message
               const isMe = lastMsg?.sender_id === currentUserId
@@ -216,13 +216,13 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                 >
                   <div className="relative shrink-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                      {otherUser.avatar_url ? (
-                        <img src={otherUser.avatar_url} alt={otherUser.name} className="w-full h-full object-cover" />
+                      {otherUser?.avatar_url ? (
+                        <img src={otherUser.avatar_url} alt={otherUser?.name || ''} className="w-full h-full object-cover" />
                       ) : (
                         <User size={24} className="text-gray-400" />
                       )}
                     </div>
-                    {otherUser.isOnline && (
+                    {otherUser?.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-current" style={{ borderColor: isDark ? '#090A0C' : '#F9FAFB' }} />
                     )}
                   </div>
@@ -230,8 +230,8 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   <div className="flex-1 text-left overflow-hidden border-b pb-3 pt-1 border-black/5 dark:border-white/5">
                     <div className="flex justify-between items-center mb-1">
                       <p className={`text-[15px] font-semibold truncate flex items-center ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
-                        {otherUser.name}
-                        {isAdmin(otherUser.name, otherUser.role) && <VerifiedBadge />}
+                        {otherUser?.name || 'Usuário Desconhecido'}
+                        {otherUser && isAdmin(otherUser.name, otherUser.role) && <VerifiedBadge />}
                       </p>
                       <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500')}`}>{msgTime}</span>
                     </div>
