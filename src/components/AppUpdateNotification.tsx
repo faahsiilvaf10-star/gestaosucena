@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+ï»¿import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { RefreshCw, ArrowUpCircle } from "lucide-react"
 
@@ -25,14 +25,14 @@ export function AppUpdateNotification() {
   }
 
   useEffect(() => {
-    // Busca versão atual na primeira vez
+    // Busca versÃ£o atual na primeira vez
     const fetchVersion = async () => {
       try {
         const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" })
         if (!res.ok) return
         const data = await res.json()
         if (!currentVersionRef.current) {
-          // Primeira leitura — guarda como versão base
+          // Primeira leitura - guarda como versÃ£o base
           currentVersionRef.current = data.version
           return
         }
@@ -110,10 +110,10 @@ export function AppUpdateNotification() {
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm leading-tight">
-                  ?? Nova atualização disponível!
+                  ðŸš€ Nova atualizaÃ§Ã£o disponÃ­vel!
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  Versão <span className="text-yellow-400 font-mono">{newVersion}</span> detectada.
+                  VersÃ£o <span className="text-yellow-400 font-mono">{newVersion}</span> detectada.
                   Atualizando em <span className="text-white font-bold">{countdown}s</span>...
                 </p>
               </div>
