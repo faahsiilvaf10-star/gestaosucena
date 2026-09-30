@@ -9,14 +9,15 @@ import { VitePWA } from "vite-plugin-pwa";
 import fs from "fs";
 import path from "path";
 
+const appVersion = Math.random().toString(36).substring(2, 10);
+const timestamp = new Date().toISOString();
+
 // Plugin para gerar version.json automaticamente a cada build
 const generateVersionPlugin = () => {
   return {
     name: 'generate-version-json',
     buildStart() {
-      const version = Math.random().toString(36).substring(2, 10);
-      const timestamp = new Date().toISOString();
-      const content = JSON.stringify({ version, updatedAt: timestamp });
+      const content = JSON.stringify({ version: appVersion, updatedAt: timestamp });
       const publicDir = path.resolve(process.cwd(), 'public');
       if (!fs.existsSync(publicDir)) {
         fs.mkdirSync(publicDir, { recursive: true });
@@ -31,6 +32,9 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion)
+    },
     plugins: [
       generateVersionPlugin(),
       VitePWA({

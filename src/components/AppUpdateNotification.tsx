@@ -1,15 +1,21 @@
-﻿import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { RefreshCw, ArrowUpCircle } from "lucide-react"
 
 const CHECK_INTERVAL_MS = 2 * 60 * 1000 // 2 minutos
 const AUTO_RELOAD_SECONDS = 10
 
+declare const __APP_VERSION__: string | undefined;
+
+// Acessa a versão gerada no build time (injetada via Vite define)
+const CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
+
 export function AppUpdateNotification() {
   const [hasUpdate, setHasUpdate] = useState(false)
   const [countdown, setCountdown] = useState(AUTO_RELOAD_SECONDS)
   const [newVersion, setNewVersion] = useState("")
-  const currentVersionRef = useRef<string | null>(null)
+  // Inicializa com a versão exata que foi compilada no JS (se existir)
+  const currentVersionRef = useRef<string | null>(CURRENT_VERSION)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const doReload = () => {
@@ -31,12 +37,15 @@ export function AppUpdateNotification() {
         const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" })
         if (!res.ok) return
         const data = await res.json()
+        
+        // Se ainda não tivermos a versão base (ex: dev local sem o plugin rodar), adotamos a primeira que vier
         if (!currentVersionRef.current) {
-          // Primeira leitura - guarda como versão base
           currentVersionRef.current = data.version
           return
         }
-        if (data.version !== currentVersionRef.current) {
+        
+        // Se a versão do servidor for diferente da versão do nosso código rodando, ATUALIZA!
+        if (data.version && data.version !== currentVersionRef.current) {
           setNewVersion(data.version)
           setHasUpdate(true)
         }
