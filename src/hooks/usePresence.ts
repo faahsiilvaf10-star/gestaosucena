@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 // Tempo máximo sem heartbeat para considerar o usuário OFFLINE (em ms)
-// Heartbeat é enviado a cada 25s, então 60s dá 2.4x de margem para falhas de rede
-const OFFLINE_THRESHOLD_MS = 60_000
+// Heartbeat é enviado a cada 20s, então 120s dá 6x de margem para falhas de rede
+const OFFLINE_THRESHOLD_MS = 120_000
 // Intervalo do heartbeat em ms — enviado MESMO com aba em background
-const HEARTBEAT_INTERVAL_MS = 25_000
+const HEARTBEAT_INTERVAL_MS = 20_000
 
 export function usePresence(userId?: string) {
   const presenceChannelRef = useRef<any>(null)

@@ -3,6 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import net from 'net';
 
+// Desabilita o cache HTTP do Chromium para sempre buscar a versão mais nova do servidor
+app.commandLine.appendSwitch('disable-http-cache');
+app.commandLine.appendSwitch('disable-application-cache');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -48,8 +52,13 @@ async function createWindow() {
     }
   });
 
-  // Carregar o site diretamente
-  mainWindow.loadURL('https://gestaosucena.vercel.app/');
+  // Limpa o cache da sessão na inicialização para garantir conteúdo fresco
+  session.defaultSession.clearCache();
+  session.defaultSession.clearStorageData({ storages: ['appcache', 'cachestorage'] });
+  
+  // Carregar o site diretamente (com cache-buster na URL para forçar nova versão)
+  const buildUrl = `https://gestaosucena.vercel.app/?t=${Date.now()}`;
+  mainWindow.loadURL(buildUrl);
 
   // Assim que estiver pronta, exibe a principal e fecha a splash
   mainWindow.webContents.once('did-finish-load', async () => {
