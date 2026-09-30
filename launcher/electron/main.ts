@@ -16,8 +16,8 @@ const APP_INSTALL_DIR = path.join(app.getPath('userData'), 'AppInstall');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1066,
-    height: 671,
+    width: 800,
+    height: 500,
     frame: false,
     transparent: true,
     resizable: false,
@@ -31,7 +31,6 @@ function createWindow() {
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
@@ -170,6 +169,12 @@ ipcMain.handle('launch-main-app', () => {
     autoHideMenuBar: true,
     show: true,
     backgroundColor: '#111111', // Fundo escuro enquanto carrega
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#00000000', // Transparente para sumir com a barra cinza
+      symbolColor: '#ffffff', // Cor dos ícones (Minimizar, Maximizar, Fechar)
+      height: 28
+    }
   });
 
   appWindow.setMenu(null);

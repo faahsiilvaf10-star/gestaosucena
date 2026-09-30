@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Minus, Settings, Play, Download, CheckCircle, AlertTriangle, HardHat, Users, FileText } from 'lucide-react';
 
 function App() {
@@ -9,6 +9,8 @@ function App() {
   const [launcherUpdate, setLauncherUpdate] = useState(false);
   const [isDownloadingLauncher, setIsDownloadingLauncher] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const loopCountRef = useRef(0);
 
   useEffect(() => {
     if (!window.electronAPI) return;
@@ -73,79 +75,94 @@ function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col rounded-xl overflow-hidden shadow-2xl relative bg-black font-sans">
+    <div className="h-screen w-screen flex flex-col rounded-2xl overflow-hidden shadow-2xl relative bg-transparent font-sans">
       
-      {/* Background Image - no overlays, original colors preserved */}
-      <div 
-        className="absolute inset-0 bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('./bg.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
-      />
+      {/* Background - Video em loop, proporcional, com som na 1ª vez */}
+      <div className="absolute inset-0 z-0 bg-black flex items-center justify-center rounded-2xl overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          onEnded={() => {
+            loopCountRef.current += 1;
+            const vid = videoRef.current;
+            if (vid) {
+              vid.muted = loopCountRef.current >= 1; // muta a partir do 2º loop
+              vid.play();
+            }
+          }}
+          className="w-full h-full object-contain"
+        >
+          <source src="./videointro.mp4" type="video/mp4" />
+        </video>
+      </div>
 
-      {/* Titlebar */}
-      <div className="h-10 shrink-0 bg-black/40 backdrop-blur-sm flex items-center justify-between drag-region px-4 z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 rounded bg-yellow-500 flex items-center justify-center font-bold text-[10px] text-black shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-            GS
-          </div>
-          <span className="text-xs font-medium text-white/80 tracking-widest uppercase">GESTÃO SUCENA LAUNCHER</span>
-        </div>
-        <div className="flex items-center gap-1 no-drag">
-          <button onClick={handleMinimize} className="p-2 hover:bg-white/10 rounded transition-colors text-white/70">
-            <Minus size={16} />
-          </button>
-          <button onClick={handleClose} className="p-2 hover:bg-red-500/80 hover:text-white rounded transition-colors text-white/70">
-            <X size={16} />
-          </button>
-        </div>
+      {/* Invisible Drag Area at the top */}
+      <div className="absolute top-0 left-0 right-0 h-12 z-40 drag-region" />
+
+      {/* Floating window controls - top right */}
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-1 no-drag">
+        <button
+          onClick={() => window.electronAPI?.minimizeWindow()}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-sm no-drag"
+        >
+          <Minus size={14} />
+        </button>
+        <button
+          onClick={() => window.electronAPI?.closeWindow()}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-red-500 text-white/80 hover:text-white transition-all backdrop-blur-sm no-drag"
+        >
+          <X size={14} />
+        </button>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative z-10 px-8">
         <div className="flex-1 w-full" />
 
-        {/* Bottom Panel */}
-        <div className="mb-8 w-full rounded-2xl border border-yellow-500/40 bg-[#0a0a0a]/80 backdrop-blur-xl p-4 flex items-center shadow-2xl relative overflow-hidden">
+        {/* Bottom Panel - compacto */}
+        <div className="mb-5 w-full rounded-xl border border-yellow-500/30 bg-[#0a0a0a]/85 backdrop-blur-xl px-4 py-2.5 flex items-center shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
           
           <button 
             onClick={handleStart}
             disabled={isUpdating || isDownloadingLauncher}
-            className={`relative group px-12 py-4 rounded-xl font-bold text-xl flex items-center gap-4 transition-all ${
+            className={`relative group px-8 py-2.5 rounded-lg font-bold text-base flex items-center gap-3 transition-all ${
               (isUpdating || isDownloadingLauncher)
                 ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/10' 
-                : 'bg-yellow-500 text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(234,179,8,0.4)] border border-yellow-300'
+                : 'bg-yellow-500 text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_16px_rgba(234,179,8,0.4)] border border-yellow-300'
             }`}
           >
-            {(isUpdating || isDownloadingLauncher) ? <Download size={24} className="animate-pulse" /> : <Play size={24} className="fill-black" />}
+            {(isUpdating || isDownloadingLauncher) ? <Download size={18} className="animate-pulse" /> : <Play size={18} className="fill-black" />}
             {launcherUpdate 
               ? (isDownloadingLauncher ? 'ATUALIZANDO...' : 'ATUALIZAR LAUNCHER')
               : (isUpdating ? 'ATUALIZANDO...' : (isInstalled ? 'INICIAR SUCENA' : 'INSTALAR'))}
           </button>
 
-          <div className="flex-1 ml-8 flex flex-col justify-center">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-lg font-medium text-white shadow-black drop-shadow-md">{status}</span>
-              {isUpdating && <span className="text-sm font-bold text-yellow-500">{progress}%</span>}
+          <div className="flex-1 ml-6 flex flex-col justify-center">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-white drop-shadow-md">{status}</span>
+              {isUpdating && <span className="text-xs font-bold text-yellow-500">{progress}%</span>}
             </div>
             
             {isUpdating ? (
-              <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 mt-2">
+              <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 mt-1.5">
                 <div 
                   className="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-200" 
                   style={{ width: `${progress}%` }}
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-sm mt-1">
+              <div className="flex items-center gap-1.5 text-xs mt-0.5">
                 {isInstalled ? (
                   <>
-                    <CheckCircle size={16} className="text-green-500" />
-                    <span className="text-white/60">Pronto para uso</span>
+                    <CheckCircle size={13} className="text-green-500" />
+                    <span className="text-white/50">Pronto para uso</span>
                   </>
                 ) : (
                   <>
-                    <AlertTriangle size={16} className="text-yellow-500" />
-                    <span className="text-white/60">Não instalado</span>
+                    <AlertTriangle size={13} className="text-yellow-500" />
+                    <span className="text-white/50">Não instalado</span>
                   </>
                 )}
               </div>
@@ -154,10 +171,10 @@ function App() {
 
           <button 
             onClick={() => setShowSettings(true)}
-            className="p-4 ml-6 hover:bg-white/5 rounded-xl transition-all text-white/50 hover:text-white border border-transparent hover:border-white/10" 
+            className="p-2.5 ml-4 hover:bg-white/5 rounded-lg transition-all text-white/40 hover:text-white border border-transparent hover:border-white/10" 
             title="Configurações"
           >
-            <Settings size={28} />
+            <Settings size={20} />
           </button>
         </div>
       </div>

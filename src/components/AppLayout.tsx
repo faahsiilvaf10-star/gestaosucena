@@ -178,7 +178,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         style={{ 
           /* Em mobile: sem padding lateral excessivo */
           paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
-          marginTop: '-1rem' // Compensate slightly for visual flow if needed
         }}
       >
         <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">

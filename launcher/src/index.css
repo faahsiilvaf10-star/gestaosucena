@@ -10,7 +10,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg-dark);
+  background-color: transparent;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;

@@ -1746,9 +1746,10 @@
 }
 
 /* ==========================================================
-  DESKTOP OVERRIDES
+  DESKTOP OVERRIDES — mobile nav hidden on lg+
+  Tailwind 'lg' breakpoint = 1024px
   ========================================================== */
-@media (min-width: 1536px) {
+@media (min-width: 1024px) {
   .sucena-mobile-header,
   .sucena-drawer,
   .sucena-drawer-backdrop {

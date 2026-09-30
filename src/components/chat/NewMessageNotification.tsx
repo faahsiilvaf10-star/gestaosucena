@@ -91,6 +91,25 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
             // Toca o som de notificação
             playNotificationSound()
 
+            // Dispara a notificação nativa do Windows/Sistema Operacional
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+              if (Notification.permission === 'granted') {
+                new Notification(user?.name || 'Nova Mensagem', {
+                  body: previewText,
+                  icon: user?.avatar_url || '/icon.png'
+                });
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                  if (permission === 'granted') {
+                    new Notification(user?.name || 'Nova Mensagem', {
+                      body: previewText,
+                      icon: user?.avatar_url || '/icon.png'
+                    });
+                  }
+                });
+              }
+            }
+
             setNotifications(prev => [...prev, newNotif])
 
             // Remove automaticamente após 5s com animação de saída
@@ -116,13 +135,13 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
   // Usamos as mesmas classes da notificação de online
   return (
-    <div className="fixed bottom-[140px] right-5 z-[9999] flex flex-col-reverse gap-3 pointer-events-none">
+    <div className="fixed bottom-14 left-4 z-[9999] flex flex-col-reverse gap-3 pointer-events-none">
       {notifications.map((notif) => (
         <div
           key={notif.id}
-          className={`pointer-events-auto flex items-center gap-3 bg-white dark:bg-[#1A1B20] 
+          className={`pointer-events-auto flex items-start gap-3 bg-white dark:bg-[#1A1B20] 
             border border-black/8 dark:border-white/10 rounded-2xl shadow-2xl px-4 py-3 
-            min-w-[240px] max-w-[300px] transition-all duration-400
+            min-w-[240px] max-w-[350px] transition-all duration-400
             ${notif.exiting
               ? 'opacity-0 translate-y-4 scale-95'
               : 'opacity-100 translate-y-0 scale-100 animate-slide-up-notif'
@@ -147,11 +166,11 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
           </div>
 
           {/* Texto */}
-          <div className="flex-1 overflow-hidden">
-            <p className="font-semibold text-[13px] text-gray-900 dark:text-white truncate leading-tight">
+          <div className="flex-1 overflow-hidden mt-1">
+            <p className="font-semibold text-[13px] text-gray-900 dark:text-white leading-tight">
               {notif.name}
             </p>
-            <p className="text-[11px] text-[#53BDEB] font-medium mt-0.5 truncate max-w-full">
+            <p className="text-[12px] text-[#53BDEB] font-medium mt-1 break-words">
               {notif.text}
             </p>
           </div>

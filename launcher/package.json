@@ -8,7 +8,7 @@
     "appId": "com.gestaosucena.launcher",
     "productName": "Gestão Sucena Launcher",
     "directories": {
-      "output": "dist-release"
+      "output": "dist-final"
     },
     "win": {
       "target": [
@@ -22,7 +22,8 @@
       "allowToChangeInstallationDirectory": false,
       "deleteAppDataOnUninstall": false,
       "installerIcon": "public/icon.ico",
-      "uninstallerIcon": "public/icon.ico"
+      "uninstallerIcon": "public/icon.ico",
+      "include": "build/installer.nsh"
     },
     "publish": [
       {
@@ -35,7 +36,7 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"npm run build:electron -- --watch\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
     "build:electron": "esbuild electron/main.ts electron/preload.ts --outdir=dist-electron --platform=node --format=cjs --out-extension:.js=.cjs",
-    "build": "vite build && npm run build:electron",
+    "build": "node patch-nsis.cjs && vite build && npm run build:electron",
     "lint": "oxlint",
     "preview": "vite preview",
     "dist": "npm run build && electron-builder"
@@ -61,7 +62,7 @@
     "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
     "electron": "^44.4.5",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^24.13.3",
     "esbuild": "^0.28.2",
     "npm-run-all": "^4.1.5",
     "oxlint": "^1.81.0",
