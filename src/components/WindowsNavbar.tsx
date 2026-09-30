@@ -195,7 +195,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       {/* ============================================================
           MOBILE HEADER (< 1024px) — Hamburger + Título + Tema
           ============================================================ */}
-      <div className="sucena-mobile-header 2xl:hidden">
+      <div className="sucena-mobile-header lg:hidden">
         {/* Hamburger Button */}
         <button
           className="sucena-mobile-hamburger"
@@ -245,7 +245,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       <div
         id="mobile-drawer"
         ref={drawerRef}
-        className={`sucena-drawer 2xl:hidden ${isDrawerOpen ? 'sucena-drawer--open' : ''} ${isDark ? 'sucena-drawer--dark' : 'sucena-drawer--light'}`}
+        className={`sucena-drawer lg:hidden ${isDrawerOpen ? 'sucena-drawer--open' : ''} ${isDark ? 'sucena-drawer--dark' : 'sucena-drawer--light'}`}
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navegação"
@@ -344,7 +344,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
       {/* ============================================================
           DESKTOP NAVBAR (>= 1024px) — original mantido
           ============================================================ */}
-      <div className="hidden 2xl:block pt-3 px-3 md:px-6 w-full mb-8 relative z-50">
+      <div className="hidden lg:block pt-3 px-3 md:px-6 w-full mb-8 relative z-50">
         <header className="sucena-navbar">
           {/* CONTRATO */}
           <div className="nav-contract">
