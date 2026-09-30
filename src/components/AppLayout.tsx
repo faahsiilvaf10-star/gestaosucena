@@ -25,6 +25,7 @@ import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
+import { AppUpdateNotification } from './AppUpdateNotification'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -153,6 +154,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
+      <AppUpdateNotification />
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
       <DdsAlertManager />
       {currentUser.id && (
