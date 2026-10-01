@@ -1,8 +1,8 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
-// URL do projeto no Lovable
-const APP_URL = 'https://gestaosucena.lovable.app';
+// URL do projeto no Lovable / Vercel
+const APP_URL = 'https://gestaosucena.vercel.app';
 
 function createWindow() {
   const win = new BrowserWindow({
