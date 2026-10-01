@@ -17,8 +17,6 @@ export function useMonthlyColors() {
     console.log("Colors are fixed and cannot be changed.")
   }
 
-  return { colors, updateColor }
-
   const currentMonthIndex = new Date().getMonth()
   const currentColor = colors[currentMonthIndex]
 

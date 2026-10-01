@@ -1,7 +1,9 @@
+import Wifi from 'lucide-react/dist/esm/icons/wifi.js';
+import WifiOff from 'lucide-react/dist/esm/icons/wifi-off.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 
 // Sub-components that we will build out
 import LoginStep from '../../components/app-motorista/LoginStep'
@@ -122,7 +124,7 @@ function AppMotoristaWrapper() {
           />
         )}
         {currentStep === 'wizard' && <WizardStep onFinish={() => setCurrentStep('dashboard')} onCancel={() => setCurrentStep('equipment')} />}
-        {currentStep === 'dashboard' && <DashboardStep />}
+        {currentStep === 'dashboard' && <DashboardStep onBack={() => setCurrentStep('equipment')} />}
       </div>
       </div>
     </div>
