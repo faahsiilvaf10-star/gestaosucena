@@ -518,6 +518,7 @@ function DashboardComponent() {
           </div>
 
           {/* ASO VENCENDO */}
+          {asoVencendo.length > 0 && (
           <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
@@ -552,6 +553,7 @@ function DashboardComponent() {
               </div>
             )}
           </div>
+          )}
 
           {/* ANIVERSARIANTE DO DIA */}
           {aniversariantesHoje.length > 0 && (
