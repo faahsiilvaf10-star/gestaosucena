@@ -1,5 +1,10 @@
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import ReceiptText from 'lucide-react/dist/esm/icons/receipt-text.js';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import Sprout from 'lucide-react/dist/esm/icons/sprout.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Package, ReceiptText, ShoppingCart, ShieldCheck, Sprout, MapPin } from 'lucide-react'
 
 export const Route = createFileRoute('/almoxarifado/')({
   component: AlmoxarifadoHub,

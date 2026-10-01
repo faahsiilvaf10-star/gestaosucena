@@ -1,5 +1,10 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import MoreVertical from 'lucide-react/dist/esm/icons/ellipsis-vertical.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Play from 'lucide-react/dist/esm/icons/play.js';
+import Minus from 'lucide-react/dist/esm/icons/minus.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
 import { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, MoreVertical, Search, Play, Minus, User } from 'lucide-react'
 import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { supabase } from '../../lib/supabase'

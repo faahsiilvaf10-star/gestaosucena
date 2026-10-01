@@ -1,5 +1,8 @@
+import CloudRain from 'lucide-react/dist/esm/icons/cloud-rain.js';
+import Droplets from 'lucide-react/dist/esm/icons/droplets.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Droplet from 'lucide-react/dist/esm/icons/droplet.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { CloudRain, Droplets, Trash2, Droplet } from 'lucide-react'
 
 export const Route = createFileRoute('/meio-ambiente/')({
   component: MeioAmbienteHub,

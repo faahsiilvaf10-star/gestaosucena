@@ -1,10 +1,8 @@
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
+import Shield from 'lucide-react/dist/esm/icons/shield.js';
 import { useState, useEffect, ReactNode } from 'react'
 import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import {
-  LogOut,
-  Shield,
-} from 'lucide-react'
 import { LogoutOverlay } from './LogoutOverlay'
 import { useTheme } from '../contexts/ThemeContext'
 import { MonthlyColorsModal } from './MonthlyColorsModal'

@@ -1,7 +1,16 @@
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark.js';
+import MoreVertical from 'lucide-react/dist/esm/icons/ellipsis-vertical.js';
+import Music from 'lucide-react/dist/esm/icons/music.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
+import Film from 'lucide-react/dist/esm/icons/film.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Music, X, Loader2, User, Film } from 'lucide-react'
 
 export const Route = createFileRoute('/instacena/reels')({
   component: ReelsRoute,

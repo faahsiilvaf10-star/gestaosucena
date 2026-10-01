@@ -1,6 +1,7 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import FileSignature from 'lucide-react/dist/esm/icons/file-pen-line.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { EpiRequisitionForm } from '@/components/almoxarifado/EpiRequisitionForm'
-import { ArrowLeft, FileSignature } from 'lucide-react'
 
 export const Route = createFileRoute('/almoxarifado/requisicoes/nova')({
   component: NovaRequisicaoEpiPage,

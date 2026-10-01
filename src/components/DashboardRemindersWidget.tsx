@@ -1,7 +1,12 @@
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Circle from 'lucide-react/dist/esm/icons/circle.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import UserIcon from 'lucide-react/dist/esm/icons/user.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchReminders, toggleReminderCompletion, updateReminder, fetchUsers } from '../lib/api-reminders'
-import { CheckCircle2, Circle, Clock, Calendar as CalendarIcon, User as UserIcon, Users } from 'lucide-react'
 import { format, parseISO, isPast, isToday, getDay, getDate } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '../lib/supabase'

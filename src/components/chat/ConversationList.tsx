@@ -1,9 +1,12 @@
+import User from 'lucide-react/dist/esm/icons/user.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import CheckCheck from 'lucide-react/dist/esm/icons/check-check.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getConversations, getOrCreateDirectConversation, clearConversation } from '../../lib/api-chat'
 import { useChat } from '../../contexts/ChatContext'
 import { useTheme } from '../../contexts/ThemeContext'
-import { User, Check, CheckCheck, X } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'

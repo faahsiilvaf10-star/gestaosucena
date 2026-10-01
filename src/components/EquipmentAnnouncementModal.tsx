@@ -1,5 +1,11 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ArrowRightCircle from 'lucide-react/dist/esm/icons/circle-arrow-right.js';
+import ArrowLeftCircle from 'lucide-react/dist/esm/icons/circle-arrow-left.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import React, { useEffect, useState } from 'react';
-import { X, ArrowRightCircle, ArrowLeftCircle, User, Clock, Info, MapPin } from 'lucide-react';
 
 interface EquipmentAnnouncementModalProps {
   announcement: {

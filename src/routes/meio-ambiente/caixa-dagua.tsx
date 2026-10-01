@@ -1,9 +1,9 @@
+import Save from 'lucide-react/dist/esm/icons/save.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { Save } from 'lucide-react'
 
 export const Route = createFileRoute('/meio-ambiente/caixa-dagua')({
   component: CaixaDaguaPage,

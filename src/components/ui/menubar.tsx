@@ -1,6 +1,8 @@
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
+import Circle from 'lucide-react/dist/esm/icons/circle.js';
 import * as React from "react";
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
-import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 

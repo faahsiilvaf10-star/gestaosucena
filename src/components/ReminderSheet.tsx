@@ -1,6 +1,14 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import UserIcon from 'lucide-react/dist/esm/icons/user.js';
+import Tag from 'lucide-react/dist/esm/icons/tag.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Circle from 'lucide-react/dist/esm/icons/circle.js';
+import Repeat from 'lucide-react/dist/esm/icons/repeat.js';
+import ImagePlus from 'lucide-react/dist/esm/icons/image-plus.js';
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Calendar, User as UserIcon, Tag, Clock, CheckCircle2, Circle, Repeat, ImagePlus } from 'lucide-react'
 import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder, uploadReminderImage } from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'

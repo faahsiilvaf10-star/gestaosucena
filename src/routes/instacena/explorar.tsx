@@ -1,7 +1,10 @@
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Heart, MessageCircle, X, Image as ImageIcon } from 'lucide-react'
 
 export const Route = createFileRoute('/instacena/explorar')({
   component: ExplorarRoute,

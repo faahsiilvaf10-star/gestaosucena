@@ -1,5 +1,5 @@
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut } from 'lucide-react'
 
 interface LogoutOverlayProps {
   isVisible: boolean

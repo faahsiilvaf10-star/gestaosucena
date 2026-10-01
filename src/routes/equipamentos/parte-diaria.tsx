@@ -1,14 +1,39 @@
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import Maximize from 'lucide-react/dist/esm/icons/maximize.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Undo2 from 'lucide-react/dist/esm/icons/undo-2.js';
+import MoreVertical from 'lucide-react/dist/esm/icons/ellipsis-vertical.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.js';
+import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Edit from 'lucide-react/dist/esm/icons/square-pen.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import Waves from 'lucide-react/dist/esm/icons/waves.js';
+import Droplet from 'lucide-react/dist/esm/icons/droplet.js';
+import Sprout from 'lucide-react/dist/esm/icons/sprout.js';
+import Fuel from 'lucide-react/dist/esm/icons/fuel.js';
+import CloudRain from 'lucide-react/dist/esm/icons/cloud-rain.js';
+import Car from 'lucide-react/dist/esm/icons/car.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Pencil from 'lucide-react/dist/esm/icons/pencil.js';
+import ArrowUp from 'lucide-react/dist/esm/icons/arrow-up.js';
+import ArrowDown from 'lucide-react/dist/esm/icons/arrow-down.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getEquipmentActivities, setEquipmentActivities, EquipmentActivity, getWhatsappSettings } from '@/lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
-import {
-  MapPin, Calendar as CalendarIcon, RefreshCw, Maximize,
-  Truck, Search, Filter, AlertTriangle, Clock, CheckCircle2,
-  Undo2, MoreVertical, X, Image as ImageIcon, ChevronDown, ChevronUp, Download, Trash2, Edit, History,
-  Waves, Droplet, Sprout, Fuel, CloudRain, Car, Plus, Save, Pencil, ArrowUp, ArrowDown
-} from 'lucide-react'
 
 export const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck

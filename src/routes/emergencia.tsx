@@ -1,8 +1,13 @@
+import Phone from 'lucide-react/dist/esm/icons/phone.js';
+import PhoneCall from 'lucide-react/dist/esm/icons/phone-call.js';
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import Flame from 'lucide-react/dist/esm/icons/flame.js';
+import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
+import Bug from 'lucide-react/dist/esm/icons/bug.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import Antenna from 'lucide-react/dist/esm/icons/antenna.js';
 import { createFileRoute } from '@tanstack/react-router'
-import { 
-  Phone, PhoneCall, Heart, Flame, Leaf, Bug, Info, MapPin, 
-  Antenna
-} from 'lucide-react'
 
 export const Route = createFileRoute('/emergencia')({
   component: EmergenciaComponent,

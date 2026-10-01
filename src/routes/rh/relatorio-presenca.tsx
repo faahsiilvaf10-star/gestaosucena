@@ -1,9 +1,14 @@
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import XCircle from 'lucide-react/dist/esm/icons/circle-x.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Activity from 'lucide-react/dist/esm/icons/activity.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
-import { FileText, Calendar, CheckCircle2, XCircle, Users, Activity } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { toast } from 'sonner'

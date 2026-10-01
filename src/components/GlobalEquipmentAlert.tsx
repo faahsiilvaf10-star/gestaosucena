@@ -1,6 +1,9 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import LogIn from 'lucide-react/dist/esm/icons/log-in.js';
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { X, Truck, LogIn, LogOut } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { format } from 'date-fns'
 

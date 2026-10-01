@@ -1,6 +1,21 @@
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import Smile from 'lucide-react/dist/esm/icons/smile.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import ZoomOut from 'lucide-react/dist/esm/icons/zoom-out.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Heart, MessageCircle, Send, Bookmark, Camera, Image as ImageIcon, Smile, Plus, User, Loader2, X, Check, ZoomIn, ZoomOut, Trash2, Edit2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
 import { Area, Point } from 'react-easy-crop'

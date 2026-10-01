@@ -1,13 +1,23 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import CheckCircle from 'lucide-react/dist/esm/icons/circle-check-big.js';
+import FileCheck from 'lucide-react/dist/esm/icons/file-check.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Pencil from 'lucide-react/dist/esm/icons/pencil.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import CalendarDays from 'lucide-react/dist/esm/icons/calendar-days.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
-import { 
-  Search, Filter, RefreshCw, AlertCircle, AlertTriangle, 
-  CheckCircle, FileCheck, Save, X, Pencil, Clock, CalendarDays,
-  ShieldAlert, ShieldCheck, Info
-} from 'lucide-react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/equipamentos/vistoria')({

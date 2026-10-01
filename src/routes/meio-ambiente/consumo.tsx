@@ -1,3 +1,5 @@
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
 import { createFileRoute } from '@tanstack/react-router'
 import {
   BarChart,
@@ -10,7 +12,6 @@ import {
   Cell
 } from 'recharts'
 import { useTheme } from '../../contexts/ThemeContext'
-import { Calendar, Download } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'

@@ -1,4 +1,4 @@
-import { QrCode } from 'lucide-react'
+import QrCode from 'lucide-react/dist/esm/icons/qr-code.js';
 
 export default function MercosulPlate({ plate }: { plate?: string }) {
   if (!plate || plate.toLowerCase() === 'sem placa') {

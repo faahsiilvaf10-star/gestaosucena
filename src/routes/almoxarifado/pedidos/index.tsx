@@ -1,8 +1,15 @@
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, ShoppingCart, Clock, Package, AlertTriangle, ArrowLeft, User } from 'lucide-react'
 import { usePurchaseOrders, usePurchaseOrdersByCurrentUser, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
 import { format } from 'date-fns'

@@ -1,20 +1,26 @@
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import BookOpen from 'lucide-react/dist/esm/icons/book-open.js';
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
+import Shuffle from 'lucide-react/dist/esm/icons/shuffle.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, addMonths, subMonths, isSameMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { 
-  Sun, Calendar as CalendarIcon, BookOpen, ChevronLeft, ChevronRight, 
-  Shuffle, Trash2, Edit2, ImageIcon 
-} from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 

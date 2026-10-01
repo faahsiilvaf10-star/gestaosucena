@@ -1,6 +1,12 @@
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Edit3 from 'lucide-react/dist/esm/icons/pen-line.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js';
+import XCircle from 'lucide-react/dist/esm/icons/circle-x.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
 import { Badge } from '@/components/ui/badge'
 import { PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
-import { CheckCircle2, Clock, Edit3, Package, ShoppingCart, XCircle, AlertCircle } from 'lucide-react'
 
 interface StatusBadgeProps {
   status: PurchaseOrderStatus

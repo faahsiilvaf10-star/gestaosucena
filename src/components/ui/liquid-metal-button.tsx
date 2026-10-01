@@ -1,5 +1,5 @@
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
 import { liquidMetalFragmentShader, ShaderMount } from "@paper-design/shaders";
-import { Sparkles } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 

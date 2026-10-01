@@ -1,7 +1,13 @@
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
+import FileLineChart from 'lucide-react/dist/esm/icons/file-chart-line.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
+import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Package, HardHat, FileLineChart, ShieldAlert, Users, Building2, Hammer } from 'lucide-react';
 import { CargoDocsViewer } from '@/components/documentos/CargoDocsViewer';
 
 export const Route = createFileRoute('/documentos/')({

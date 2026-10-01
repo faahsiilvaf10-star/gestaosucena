@@ -1,6 +1,10 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Clock, MapPin, AlertCircle, History } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { format } from 'date-fns'
 

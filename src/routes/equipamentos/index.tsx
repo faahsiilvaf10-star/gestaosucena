@@ -1,5 +1,9 @@
+import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import ListChecks from 'lucide-react/dist/esm/icons/list-checks.js';
+import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeftRight, Truck, ListChecks, ClipboardCheck, MapPin } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { isAdmin } from '../../components/ui/VerifiedBadge'

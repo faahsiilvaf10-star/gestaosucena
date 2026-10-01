@@ -1,8 +1,16 @@
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import Folder from 'lucide-react/dist/esm/icons/folder.js';
+import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check.js';
+import Link2 from 'lucide-react/dist/esm/icons/link-2.js';
+import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
+import Droplets from 'lucide-react/dist/esm/icons/droplets.js';
+import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import Flame from 'lucide-react/dist/esm/icons/flame.js';
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import Grid3X3 from 'lucide-react/dist/esm/icons/grid-3x3.js';
+import GraduationCap from 'lucide-react/dist/esm/icons/graduation-cap.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { 
-  Sun, Folder, BadgeCheck, Link2, HardHat, Droplets, 
-  TriangleAlert, ShieldCheck, Flame, Heart, Grid3X3, GraduationCap 
-} from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/')({
   component: SegurancaComponent,

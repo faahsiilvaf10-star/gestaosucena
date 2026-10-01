@@ -8,12 +8,26 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>App Motorista - Gestão Sucena</title>
   <meta name="description" content="App de gestão operacional para motoristas da frota Sucena" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <script type="module" crossorigin src="/assets/index-Dw1Q4801.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-Dd_uD5pT.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-B_Z1oIlP.css">
-<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <script type="module" crossorigin src="./assets/index-DuKbb3_E.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CvmjHA1S.css">
+<link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
 <body>
+  <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; word-wrap:break-word; font-family:monospace; font-size:12px; height:100%; overflow:auto;">
+    <b>JavaScript Error:</b><br><br>
+    <div id="error-message"></div>
+  </div>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      document.getElementById('error-overlay').style.display = 'block';
+      document.getElementById('error-message').innerText += msg + '\n' + url + ':' + line + ':' + col + '\n' + (error && error.stack ? error.stack : '') + '\n\n';
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      document.getElementById('error-overlay').style.display = 'block';
+      document.getElementById('error-message').innerText += 'Unhandled Promise Rejection: ' + event.reason + '\n\n';
+    });
+  </script>
   <div id="root"></div>
 </body>
 </html>

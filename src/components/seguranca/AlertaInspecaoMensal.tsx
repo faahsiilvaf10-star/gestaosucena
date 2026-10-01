@@ -1,6 +1,11 @@
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { AlertCircle, CheckCircle2, Save, Camera, Image as ImageIcon, MessageCircle } from 'lucide-react'
 import { useCintasStore, Cinta } from '../../store/cintasStore'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'

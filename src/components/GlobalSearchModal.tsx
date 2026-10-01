@@ -1,5 +1,6 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { useState, useEffect, useRef } from 'react'
-import { Search, X } from 'lucide-react'
 import { MENU_ITEMS } from './WindowsNavbar'
 import { useNavigate } from '@tanstack/react-router'
 import { useTheme } from '../contexts/ThemeContext'

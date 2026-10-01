@@ -1,5 +1,6 @@
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { MapPin, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/ambientes')({

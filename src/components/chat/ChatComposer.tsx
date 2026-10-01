@@ -1,5 +1,13 @@
+import Paperclip from 'lucide-react/dist/esm/icons/paperclip.js';
+import Mic from 'lucide-react/dist/esm/icons/mic.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Smile from 'lucide-react/dist/esm/icons/smile.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Square from 'lucide-react/dist/esm/icons/square.js';
+import Play from 'lucide-react/dist/esm/icons/play.js';
+import Pause from 'lucide-react/dist/esm/icons/pause.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import { useState, useRef, useEffect, ChangeEvent } from 'react'
-import { Paperclip, Mic, Send, Smile, X, Square, Play, Pause, Image as ImageIcon } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react'
 import { sendMessage } from '../../lib/api-chat'

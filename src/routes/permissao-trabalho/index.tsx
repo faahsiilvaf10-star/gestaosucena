@@ -1,7 +1,17 @@
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import Edit from 'lucide-react/dist/esm/icons/square-pen.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Upload from 'lucide-react/dist/esm/icons/upload.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { FileText, Clock, AlertTriangle, Search, Filter, History, Edit, Plus, X, Upload, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { format, differenceInDays, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'

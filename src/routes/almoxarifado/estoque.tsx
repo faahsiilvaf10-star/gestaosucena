@@ -1,10 +1,26 @@
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
+import Shield from 'lucide-react/dist/esm/icons/shield.js';
+import Beaker from 'lucide-react/dist/esm/icons/beaker.js';
+import ArrowDownToLine from 'lucide-react/dist/esm/icons/arrow-down-to-line.js';
+import ArrowUpFromLine from 'lucide-react/dist/esm/icons/arrow-up-from-line.js';
+import RefreshCcw from 'lucide-react/dist/esm/icons/refresh-ccw.js';
+import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.js';
+import BookOpen from 'lucide-react/dist/esm/icons/book-open.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import Settings from 'lucide-react/dist/esm/icons/settings.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Edit from 'lucide-react/dist/esm/icons/square-pen.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import ArchiveBox from 'lucide-react/dist/esm/icons/archive-box.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { 
-  Package, Wrench, Shield, Beaker, ArrowDownToLine, ArrowUpFromLine, 
-  RefreshCcw, ClipboardList, BookOpen, Truck, Settings, Search, Filter, 
-  Plus, Edit, Eye, Trash2, AlertTriangle, AlertCircle, CheckCircle2, Archive as ArchiveBox
-} from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import { NewItemModal } from '../../components/almoxarifado/NewItemModal'

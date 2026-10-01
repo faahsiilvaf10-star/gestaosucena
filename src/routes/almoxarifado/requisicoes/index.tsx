@@ -1,8 +1,17 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
-import { ArrowLeft, Plus, Search, X, Eye, Calendar, User, ShieldCheck, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Input } from '@/components/ui/input'

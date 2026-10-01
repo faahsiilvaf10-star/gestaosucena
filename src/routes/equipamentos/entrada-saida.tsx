@@ -1,12 +1,22 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import ArrowRightToLine from 'lucide-react/dist/esm/icons/arrow-right-to-line.js';
+import ArrowRightFromLine from 'lucide-react/dist/esm/icons/arrow-right-from-line.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import LogIn from 'lucide-react/dist/esm/icons/log-in.js';
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import FileDown from 'lucide-react/dist/esm/icons/file-down.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
-import { 
-  Search, Filter, ArrowRightToLine, ArrowRightFromLine, RefreshCw, AlertCircle, 
-  History, Clock, LogIn, LogOut, Info, Truck, FileDown, Calendar
-} from 'lucide-react'
 import { toast } from 'sonner' // Assuming sonner is the toast library used
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'

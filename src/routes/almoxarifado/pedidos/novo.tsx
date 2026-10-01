@@ -1,6 +1,8 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PurchaseOrderForm } from '@/components/pedidos/PurchaseOrderForm'
-import { ArrowLeft, ShoppingCart, Loader2 } from 'lucide-react'
 import { useNextPurchaseOrderNumber } from '@/hooks/usePurchaseOrders'
 
 export const Route = createFileRoute('/almoxarifado/pedidos/novo')({
