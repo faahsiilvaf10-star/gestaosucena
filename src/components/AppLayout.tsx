@@ -165,6 +165,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       
+      {/* Draggable title bar for Electron .exe — allows moving the window */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          height: 28, 
+          zIndex: 9998,
+          // @ts-ignore — Electron-specific CSS property
+          WebkitAppRegion: 'drag',
+          pointerEvents: 'auto',
+        }} 
+      />
+
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
       <div className="sticky top-0 z-[60] pointer-events-none">
         <div className="pointer-events-auto">
