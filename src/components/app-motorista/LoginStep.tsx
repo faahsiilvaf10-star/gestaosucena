@@ -33,12 +33,23 @@ export default function LoginStep({ onLogin }: { onLogin: () => void }) {
     // Simular delay de rede
     await new Promise(r => setTimeout(r, 600))
 
-    if (pin === '0000') {
+    const savedPin = localStorage.getItem(`app_motorista_pin_${selectedDriver.id}`)
+    
+    if (!savedPin) {
+      // Primeiro acesso: salva o código como definitivo
+      localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin)
       localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
       localStorage.setItem('app_motorista_current_step', 'environment')
       onLogin()
     } else {
-      setError('Código inválido')
+      // Já possui código salvo: verifica se confere
+      if (pin === savedPin) {
+        localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
+        localStorage.setItem('app_motorista_current_step', 'environment')
+        onLogin()
+      } else {
+        setError('Código inválido')
+      }
     }
     
     setLoading(false)
