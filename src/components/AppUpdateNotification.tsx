@@ -18,14 +18,18 @@ export function AppUpdateNotification() {
   const currentVersionRef = useRef<string | null>(CURRENT_VERSION)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const doReload = () => {
+  const doReload = async () => {
     if ("caches" in window) {
-      caches.keys().then((names) => names.forEach((n) => caches.delete(n)))
+      try {
+        const names = await caches.keys()
+        await Promise.all(names.map(n => caches.delete(n)))
+      } catch (e) {}
     }
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then((regs) =>
-        regs.forEach((r) => r.unregister())
-      )
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(regs.map(r => r.unregister()))
+      } catch (e) {}
     }
     window.location.href = window.location.pathname + '?t=' + Date.now()
   }
