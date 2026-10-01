@@ -1,9 +1,4 @@
-import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
 import { useState, useEffect, useRef } from 'react'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Popover, PopoverContent, PopoverTrigger } from './popover'
-import { Calendar } from './calendar'
 
 interface DateInputProps {
   value: string // expects yyyy-mm-dd
@@ -64,43 +59,17 @@ export function DateInput({ value, onChange, className = '', placeholder = 'dd/m
     }
   }
 
-  const selectedDate = value ? new Date(`${value}T12:00:00`) : undefined
-
   return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        inputMode="numeric"
-        value={display}
-        onChange={handleChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`${className} pr-9`}
-        maxLength={10}
-      />
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-80 transition-opacity"
-            tabIndex={-1}
-            disabled={disabled}
-            aria-label="Abrir calendário"
-          >
-            <CalendarIcon size={16} />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => date && onChange(format(date, 'yyyy-MM-dd'))}
-            locale={ptBR}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onChange={handleChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      maxLength={10}
+    />
   )
 }
