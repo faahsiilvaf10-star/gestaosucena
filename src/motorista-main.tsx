@@ -23,11 +23,13 @@ import DashboardStep from './components/app-motorista/DashboardStep'
 export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' | 'dashboard'
 
 function AppMotoristaStandalone() {
-  const [currentStep, setCurrentStepState] = useState<AppMotoristaStep>(
-    typeof window !== 'undefined'
-      ? ((localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login')
-      : 'login'
-  )
+  const [currentStep, setCurrentStepState] = useState<AppMotoristaStep>(() => {
+    if (typeof window === 'undefined') return 'login'
+    const driver = localStorage.getItem('app_motorista_driver')
+    const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+    if (driver && savedStep) return savedStep
+    return 'login'
+  })
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
   const setCurrentStep = (step: AppMotoristaStep) => {
@@ -36,17 +38,25 @@ function AppMotoristaStandalone() {
   }
 
   useEffect(() => {
-    const onOnline = () => setIsOnline(true)
+    const onOnline = () => {
+      setIsOnline(true)
+      import('./lib/offline-sync').then(m => m.processSyncQueue())
+    }
     const onOffline = () => setIsOnline(false)
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
+
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      import('./lib/offline-sync').then(m => m.processSyncQueue())
+    }
+
     return () => {
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
     }
   }, [])
 
-  // Restaurar sessão salva no localStorage
+  // Restaurar sessão salva no localStorage ao iniciar
   useEffect(() => {
     const driver = localStorage.getItem('app_motorista_driver')
     const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
@@ -58,18 +68,15 @@ function AppMotoristaStandalone() {
     }
   }, [])
 
-  const handleLogin = (driver: any) => {
-    localStorage.setItem('app_motorista_driver', JSON.stringify(driver))
-    if (driver.id === 'ADMIN') {
-      const env = localStorage.getItem('sucena_environment')
-      if (!env) {
-        setCurrentStep('environment')
-      } else {
-        setCurrentStep('equipment')
-      }
+  const handleLogin = (stepOrDriver?: any) => {
+    let target: AppMotoristaStep = 'environment'
+    if (typeof stepOrDriver === 'string' && stepOrDriver) {
+      target = stepOrDriver as AppMotoristaStep
     } else {
-      setCurrentStep('environment')
+      const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+      if (savedStep) target = savedStep
     }
+    setCurrentStep(target)
   }
 
   const handleLogout = () => {
@@ -81,6 +88,7 @@ function AppMotoristaStandalone() {
     localStorage.removeItem('app_motorista_active_status')
     localStorage.removeItem('app_motorista_active_status_color')
     localStorage.removeItem('app_motorista_status_start')
+    localStorage.removeItem('app_motorista_wizard_state')
     setCurrentStep('login')
   }
 
@@ -88,8 +96,8 @@ function AppMotoristaStandalone() {
     <div className="min-h-screen bg-[#0A0A0A] text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
       {/* Indicador offline */}
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white text-xs font-bold text-center py-1 px-3">
-          📡 Offline — dados serão sincronizados quando conectar
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-600 text-white text-xs font-bold text-center py-1 px-3 shadow-md flex items-center justify-center gap-2">
+          <span>📡 Modo Offline ativo — registros salvos e sincronizados ao conectar</span>
         </div>
       )}
 
@@ -123,7 +131,9 @@ function AppMotoristaStandalone() {
         )}
         {currentStep === 'wizard' && (
           <WizardStep
+            onFinish={() => setCurrentStep('dashboard')}
             onComplete={() => setCurrentStep('dashboard')}
+            onCancel={() => setCurrentStep('equipment')}
             onBack={() => setCurrentStep('equipment')}
           />
         )}

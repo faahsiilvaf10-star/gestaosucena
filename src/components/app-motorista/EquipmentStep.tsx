@@ -6,20 +6,36 @@ import { supabase } from '../../lib/supabase'
 import MercosulPlate from './MercosulPlate'
 
 export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipmentId: string) => void, onBack?: () => void }) {
-  const [equipments, setEquipments] = useState<any[]>([])
+  const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  
+  const [equipments, setEquipments] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+      return cached ? JSON.parse(cached) : []
+    } catch {
+      return []
+    }
+  })
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+      return !cached
+    } catch {
+      return true
+    }
+  })
 
   useEffect(() => {
     fetchEquipments()
-  }, [])
+  }, [currentEnv])
 
   const fetchEquipments = async () => {
     try {
       const { data, error } = await supabase
         .from('eq_equipments')
         .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
-        .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .eq('environment', currentEnv)
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
       
@@ -48,9 +64,18 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         }
       }
 
-      setEquipments(enrichedData)
+      if (enrichedData.length > 0) {
+        setEquipments(enrichedData)
+        localStorage.setItem(`app_motorista_equipments_${currentEnv}`, JSON.stringify(enrichedData))
+      }
     } catch (err) {
-      console.error('Error fetching equipments', err)
+      console.warn('Erro ao buscar equipamentos online, mantendo cache:', err)
+      try {
+        const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+        if (cached) {
+          setEquipments(JSON.parse(cached))
+        }
+      } catch {}
     } finally {
       setLoading(false)
     }
@@ -75,10 +100,10 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
       alert('Equipamento indisponível para operação.')
       return
     }
-    // TODO: Verify if another driver is using this equipment today
     
-    // Save to local storage for the wizard flow
+    // Save to local storage for the wizard flow and dashboard
     localStorage.setItem('app_motorista_equipment_id', eq.id)
+    localStorage.setItem(`app_motorista_eq_${eq.id}`, JSON.stringify(eq))
     onSelect(eq.id)
   }
 

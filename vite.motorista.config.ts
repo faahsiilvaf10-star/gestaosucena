@@ -1,24 +1,37 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import tailwindcss from '@tailwindcss/postcss'
-import cascadeLayers from '@csstools/postcss-cascade-layers'
 import path from 'path'
-import { browserslistToTargets } from 'lightningcss'
-import browserslist from 'browserslist'
+import fs from 'fs'
+
+// Plugin para garantir que o dist-motorista sempre tenha index.html
+const copyToIndexHtmlPlugin = () => ({
+  name: 'copy-to-index-html',
+  closeBundle() {
+    const src = path.resolve(import.meta.dirname, 'dist-motorista/index-motorista.html')
+    const dest = path.resolve(import.meta.dirname, 'dist-motorista/index.html')
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dest)
+      console.log('✓ Copiado index-motorista.html -> dist-motorista/index.html com sucesso!')
+    }
+  }
+})
 
 // Build config separado para gerar o APK do App Motorista
-// sem dependência do servidor (funciona offline)
+// sem dependência do servidor (funciona 100% offline no dispositivo)
 export default defineConfig({
   root: '.',
   base: './',
   plugins: [
+    tailwindcss(),
     react(),
+    copyToIndexHtmlPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'generateSW',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2,ttf,otf}'],
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/\.supabase\.co/],
         runtimeCaching: [
@@ -33,7 +46,7 @@ export default defineConfig({
             },
           },
           {
-            // Assets externos — Cache First
+            // Assets externos e locais — Cache First
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|woff|woff2|ttf|otf)$/,
             handler: 'CacheFirst',
             options: {
@@ -42,7 +55,7 @@ export default defineConfig({
             },
           },
         ],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
       },
       manifest: {
         name: 'App Motorista - Gestão Sucena',
@@ -64,14 +77,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
       '@tanstack/react-start': path.resolve(import.meta.dirname, './src/lib/dummy-start.ts'),
-    }
-  },
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss(),
-        cascadeLayers()
-      ]
     }
   },
   build: {

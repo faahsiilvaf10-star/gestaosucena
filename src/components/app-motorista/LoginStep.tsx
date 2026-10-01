@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import KeyRound from 'lucide-react/dist/esm/icons/key-round.js';
@@ -21,6 +21,21 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Pré-carrega todos os PINs cadastrados na nuvem para permitir login 100% offline
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      supabase.from('app_motorista_pins').select('driver_id, pin').then(({ data, error }) => {
+        if (!error && data) {
+          data.forEach((p: any) => {
+            if (p.driver_id && p.pin) {
+              localStorage.setItem(`app_motorista_pin_${p.driver_id}`, p.pin)
+            }
+          })
+        }
+      }).catch(err => console.warn('Erro ao sincronizar PINs offline:', err))
+    }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
