@@ -6,7 +6,7 @@ import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js'
 import Search from 'lucide-react/dist/esm/icons/search.js'
 
 export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
-  const [motoristas, setMotoristas] = useState<{ id: string, name: string, matricula: string }[]>([])
+  const [motoristas, setMotoristas] = useState<{ id: string, nome: string, matricula: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMotorista, setSelectedMotorista] = useState<string | null>(null)
@@ -19,8 +19,8 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
       try {
         const { data, error } = await supabase
           .from('rh_efetivo')
-          .select('id, name, matricula')
-          .order('name', { ascending: true })
+          .select('id, nome, matricula')
+          .order('nome', { ascending: true })
 
         if (error) throw error
         setMotoristas(data || [])
@@ -35,7 +35,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
   }, [])
 
   const filteredMotoristas = motoristas.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (m.matricula && m.matricula.includes(searchTerm))
   )
 
@@ -64,7 +64,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
       setBody('')
     } catch (err: any) {
       console.error(err)
-      toast.error('Erro ao enviar notificação')
+      toast.error('Erro ao enviar notificação: ' + (err.message || err.details || 'Verifique se criou a tabela no Supabase.'))
     } finally {
       setSending(false)
     }
@@ -85,6 +85,12 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
         body: body.trim()
       }))
       
+      if (payloads.length === 0) {
+        toast.error('Nenhum motorista encontrado na lista.')
+        setSending(false)
+        return
+      }
+
       const { error } = await supabase.from('app_notifications').insert(payloads)
 
       if (error) throw error
@@ -94,7 +100,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
       setBody('')
     } catch (err: any) {
       console.error(err)
-      toast.error('Erro ao enviar notificação em massa')
+      toast.error('Erro ao enviar notificação em massa: ' + (err.message || err.details || 'Verifique o console ou se criou a tabela no Supabase.'))
     } finally {
       setSending(false)
     }
@@ -150,7 +156,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
                     className={`p-3 cursor-pointer transition-colors ${selectedMotorista === m.id ? 'bg-blue-500/10 border-l-2 border-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-2 border-transparent'}`}
                     onClick={() => setSelectedMotorista(m.id)}
                   >
-                    <p className="font-semibold text-sm">{m.name}</p>
+                    <p className="font-semibold text-sm">{m.nome}</p>
                     {m.matricula && <p className="text-xs text-gray-500">Matrícula: {m.matricula}</p>}
                   </div>
                 ))}
