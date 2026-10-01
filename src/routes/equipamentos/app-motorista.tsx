@@ -83,6 +83,17 @@ function AppMotoristaWrapper() {
   return (
     <div className="min-h-screen sm:p-4 flex items-center justify-center w-full">
       <div className="flex flex-col w-full h-screen sm:h-[850px] sm:max-h-[95vh] sm:max-w-[400px] sm:rounded-[40px] sm:border-[12px] sm:border-gray-900 sm:shadow-2xl bg-white/10 dark:bg-black/40 backdrop-blur-md text-gray-900 dark:text-gray-100 font-sans overflow-hidden relative">
+      {/* ONLINE/OFFLINE INDICATOR */}
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm border border-white/5">
+        <span className="text-[10px] font-bold tracking-wider uppercase opacity-70">
+          {isOnline ? 'Online' : 'Offline'}
+        </span>
+        <span className="relative flex h-2.5 w-2.5">
+          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isOnline ? 'bg-green-400' : 'bg-red-400'}`}></span>
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+        </span>
+      </div>
+
       {/* STATUS BAR */}
       {!isOnline && (
         <div className="w-full bg-red-500 text-white text-xs text-center py-1 font-semibold flex items-center justify-center gap-2">
