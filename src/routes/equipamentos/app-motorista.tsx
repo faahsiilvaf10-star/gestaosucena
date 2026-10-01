@@ -107,7 +107,14 @@ function AppMotoristaWrapper() {
         {currentStep === 'environment' && <EnvironmentStep onSelect={() => setCurrentStep('equipment')} />}
         {currentStep === 'equipment' && (
           <EquipmentStep 
-            onSelect={() => setCurrentStep('wizard')} 
+            onSelect={() => {
+              const driver = JSON.parse(localStorage.getItem('app_motorista_driver') || '{}')
+              if (driver.id === 'ADMIN') {
+                setCurrentStep('dashboard')
+              } else {
+                setCurrentStep('wizard')
+              }
+            }} 
             onBack={() => {
               localStorage.removeItem('app_motorista_driver')
               setCurrentStep('login')
