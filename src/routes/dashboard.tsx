@@ -1,3 +1,8 @@
+import CalendarDays from 'lucide-react/dist/esm/icons/calendar-days.js';
+import Gift from 'lucide-react/dist/esm/icons/gift.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -5,7 +10,6 @@ import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
-import { CalendarDays, Gift, MapPin, X, AlertTriangle } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import '../dashboard.css'
@@ -539,7 +543,7 @@ function DashboardComponent() {
                   </div>
                 ))
               ) : (
-                <div className="text-sm text-gray-500 text-center mt-4">Nenhum ASO próximo do vencimento</div>
+                <div className="col-span-full py-6 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium">Nenhum ASO próximo do vencimento</div>
               )}
             </div>
             {isDark && (
