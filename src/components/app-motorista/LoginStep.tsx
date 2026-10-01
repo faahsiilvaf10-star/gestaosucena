@@ -10,7 +10,8 @@ export const DRIVERS = [
   { id: 'RG', name: 'RICELIO GONÇALVES CARDOSO' },
   { id: 'AD', name: 'ANDERSON DA CRUZ PINHEIRO' },
   { id: 'FG', name: 'FABIO GENILSON FERNANDES DOS REMEDIOS' },
-  { id: 'PF', name: 'PAULO FELIX CARDOSO' }
+  { id: 'PF', name: 'PAULO FELIX CARDOSO' },
+  { id: 'ADMIN', name: 'Acesso de Administrador' }
 ]
 
 export default function LoginStep({ onLogin }: { onLogin: (step?: string) => void }) {
@@ -30,6 +31,18 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
 
     setLoading(true)
     setError('')
+    
+    if (selectedDriver.id === 'ADMIN') {
+      if (pin === '9666') {
+        localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
+        localStorage.setItem('app_motorista_current_step', 'environment')
+        onLogin('environment')
+      } else {
+        setError('Código inválido')
+        setLoading(false)
+      }
+      return
+    }
     
     try {
       let dbPin = null
@@ -133,7 +146,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
         </button>
 
         <div className="flex-1 flex flex-col items-center justify-center -mt-10">
-          <div className="w-20 h-20 bg-slate-600 rounded-full flex items-center justify-center mb-4 text-2xl font-bold shadow-lg">
+          <div className={`w-20 h-20 bg-slate-600 rounded-full flex items-center justify-center mb-4 font-bold shadow-lg ${selectedDriver.id === 'ADMIN' ? 'text-sm' : 'text-2xl'}`}>
             {selectedDriver.id}
           </div>
           <h2 className="text-xl font-bold text-center mb-1">{selectedDriver.name}</h2>
@@ -189,7 +202,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
             onClick={() => setSelectedDriver(driver)}
             className="w-full bg-transparent hover:bg-white/5 p-3 rounded-2xl flex items-center gap-4 transition-colors text-left group"
           >
-            <div className="w-14 h-14 rounded-full bg-[#4A5568] flex items-center justify-center font-bold text-white text-lg shrink-0 group-active:scale-95 transition-transform">
+            <div className={`w-14 h-14 rounded-full bg-[#4A5568] flex items-center justify-center font-bold text-white shrink-0 group-active:scale-95 transition-transform ${driver.id === 'ADMIN' ? 'text-[10px]' : 'text-lg'}`}>
               {driver.id}
             </div>
             <div className="flex-1">

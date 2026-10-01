@@ -22,7 +22,31 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         .order('name', { ascending: true })
       
       if (error) throw error
-      setEquipments(data || [])
+
+      // Check active dispatches to ensure correct 'Operando' status
+      let enrichedData = data || []
+      if (navigator.onLine) {
+        try {
+          const { data: activeDispatches } = await supabase
+            .from('eq_driver_dispatch')
+            .select('equipment_id')
+            .eq('status', 'Em atividade')
+          
+          if (activeDispatches && activeDispatches.length > 0) {
+            const activeIds = new Set(activeDispatches.map(d => d.equipment_id))
+            enrichedData = enrichedData.map(eq => {
+              if (activeIds.has(eq.id)) {
+                return { ...eq, status: 'Operando' }
+              }
+              return eq
+            })
+          }
+        } catch (e) {
+          console.error('Error fetching active dispatches', e)
+        }
+      }
+
+      setEquipments(enrichedData)
     } catch (err) {
       console.error('Error fetching equipments', err)
     } finally {
@@ -31,10 +55,13 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   }
 
   const lastEquipmentId = localStorage.getItem('app_motorista_last_equipment')
+  const driverData = localStorage.getItem('app_motorista_driver')
+  const isAdmin = driverData ? JSON.parse(driverData).id === 'ADMIN' : false
 
   const filteredEq = equipments.filter(eq => 
-    (eq.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (eq.plate_tag || '').toLowerCase().includes(search.toLowerCase())
+    (isAdmin || eq.status !== 'Operando') &&
+    ((eq.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (eq.plate_tag || '').toLowerCase().includes(search.toLowerCase()))
   ).sort((a, b) => {
     if (a.id === lastEquipmentId) return -1
     if (b.id === lastEquipmentId) return 1

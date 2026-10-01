@@ -445,7 +445,7 @@ function RhEfetivoPage() {
                     <th className="p-4">Matrícula</th>
                     <th className="p-4">Nome</th>
                     <th className="p-4">Cargo</th>
-                    <th className="p-4">Contato</th>
+                    <th className="p-4">Admissional</th>
 
                     <th className="p-4">Status</th>
                   </tr>
@@ -481,7 +481,9 @@ function RhEfetivoPage() {
                       </td>
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
-                      <td className="p-4">{item.raw_data?.CONTATO || '-'}</td>
+                      <td className="p-4 text-gray-600 dark:text-gray-400">
+                        {item.aso_admissional ? item.aso_admissional.split('-').reverse().join('/') : '-'}
+                      </td>
                       
 
 

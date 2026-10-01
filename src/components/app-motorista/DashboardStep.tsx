@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
-import { saveOfflineFirst } from '../../lib/offline-sync'
-import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle } from 'lucide-react'
+import { saveOfflineFirst as realSaveOfflineFirst } from '../../lib/offline-sync'
+import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
-import { queueWhatsappMessage, queueWhatsappMedia } from '../../lib/offline-sync'
+import { queueWhatsappMessage as realQueueWhatsappMessage, queueWhatsappMedia as realQueueWhatsappMedia } from '../../lib/offline-sync'
 import * as htmlToImage from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
@@ -34,6 +34,24 @@ export default function DashboardStep() {
   const [gateDescription, setGateDescription] = useState('')
 
   // Anomaly State
+  const driverData = localStorage.getItem('app_motorista_driver')
+  const driver = driverData ? JSON.parse(driverData) : null
+  const isAdmin = driver?.id === 'ADMIN'
+
+  // Proxies to prevent DB and Whatsapp writes when in Admin mock mode
+  const saveOfflineFirst = async (...args: any[]) => {
+    if (isAdmin) return Promise.resolve()
+    return realSaveOfflineFirst(args[0], args[1], args[2])
+  }
+  const queueWhatsappMessage = async (...args: any[]) => {
+    if (isAdmin) return Promise.resolve()
+    return realQueueWhatsappMessage(args[0], args[1], args[2])
+  }
+  const queueWhatsappMedia = async (...args: any[]) => {
+    if (isAdmin) return Promise.resolve()
+    return realQueueWhatsappMedia(args[0], args[1], args[2], args[3])
+  }
+
   const [anomalyType, setAnomalyType] = useState('Problema mecânico')
   const [anomalyDescription, setAnomalyDescription] = useState('')
   const [anomalyResolved, setAnomalyResolved] = useState(false)
@@ -184,18 +202,129 @@ export default function DashboardStep() {
       const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
       if (eq) setEquipment(eq)
 
-      const { data: dsp } = await supabase
+      const { data: dspReal } = await supabase
         .from('eq_driver_dispatch')
         .select('*')
         .eq('equipment_id', equipmentId)
         .eq('status', 'Em atividade')
         .order('shift_start_time', { ascending: false })
         .limit(1)
-        .single()
-      
+        .maybeSingle()
+
+      let dsp = dspReal
+
+      if (isAdmin) {
+        if (dsp) {
+          setDispatch(dsp)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        } else {
+          const fakeDispatch = {
+            id: 'admin_session',
+            shift_start_time: new Date().toISOString(),
+            helper_name: 'Nenhum',
+            odometer_start: 0,
+            horimeter_start: 0,
+            equipment_id: equipmentId,
+            driver_id: 'ADMIN'
+          }
+          setDispatch(fakeDispatch)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(fakeDispatch))
+          if (!localStorage.getItem('app_motorista_active_status')) {
+            const status = eq?.status === 'Disponível' ? 'waiting' : 'operating'
+            setActiveStatus(status)
+            localStorage.setItem('app_motorista_active_status', status)
+            localStorage.setItem('app_motorista_status_start', new Date().toISOString())
+            setStatusStartTime(new Date())
+            localStorage.setItem('app_motorista_timeline', JSON.stringify([
+              { time: new Date().toISOString(), name: 'Jornada Iniciada', type: 'Início', color: 'bg-emerald-500' },
+              { time: new Date().toISOString(), name: status === 'waiting' ? 'Aguardando' : 'Em Operação', type: 'Status Inicial', color: status === 'waiting' ? 'bg-amber-500' : 'bg-emerald-500' }
+            ]))
+          }
+          return
+        }
+      } else {
+        if (!dsp) {
+          if (navigator.onLine) {
+            localStorage.removeItem('app_motorista_driver')
+            localStorage.removeItem('app_motorista_current_step')
+            localStorage.removeItem('app_motorista_current_dispatch')
+            localStorage.removeItem('app_motorista_equipment_id')
+            localStorage.removeItem('app_motorista_timeline')
+            localStorage.removeItem('app_motorista_active_status')
+            localStorage.removeItem('app_motorista_active_status_color')
+            localStorage.removeItem('app_motorista_status_start')
+            window.location.reload()
+            return
+          }
+        } else {
+          setDispatch(dsp)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        }
+      }
+
       if (dsp) {
-        setDispatch(dsp)
-        localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+
+        // RESTORE TIMELINE SE ESTIVER VAZIA (Ex: Troca de celular/login em nova guia)
+        const currentTimeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+        if ((currentTimeline.length === 0 || isAdmin) && navigator.onLine) {
+          try {
+            const { data: history } = await supabase
+              .from('eq_status_history')
+              .select('*')
+              .eq('dispatch_id', dsp.id)
+              .order('created_at', { ascending: true })
+            
+            if (history && history.length > 0) {
+              const newTimeline = history.map((h: any) => {
+                let color = 'bg-emerald-500'
+                if (h.new_status === 'Aguardando') color = 'bg-amber-500'
+                if (h.new_status === 'Parado - Manutenção') color = 'bg-red-500'
+                if (h.new_status === 'Pausa / Almoço') color = 'bg-orange-500'
+                if (h.new_status === 'Chuva') color = 'bg-blue-500'
+                if (h.new_status === 'Abastecendo') color = 'bg-orange-600'
+                if (h.new_status.includes('Anomalia')) color = 'bg-red-500'
+                
+                return {
+                  time: h.created_at,
+                  name: h.new_status,
+                  type: h.previous_status === 'Jornada Iniciada' ? 'Status Inicial' : 'Mudança de Status',
+                  color
+                }
+              })
+              
+              if (!newTimeline.find((t: any) => t.name === 'Jornada Iniciada')) {
+                newTimeline.unshift({
+                  time: dsp.shift_start_time,
+                  name: 'Jornada Iniciada',
+                  type: 'Início',
+                  color: 'bg-emerald-500'
+                })
+              }
+              
+              localStorage.setItem('app_motorista_timeline', JSON.stringify(newTimeline))
+              
+              if (isAdmin || !localStorage.getItem('app_motorista_active_status')) {
+                const lastStatusStr = history[history.length - 1].new_status
+                let resolvedStatus = 'operating'
+                if (lastStatusStr === 'Aguardando') resolvedStatus = 'waiting'
+                else if (lastStatusStr === 'Pausa / Almoço') resolvedStatus = 'paused'
+                else if (lastStatusStr === 'Chuva') resolvedStatus = 'raining'
+                else if (lastStatusStr === 'Abastecendo') resolvedStatus = 'fueling'
+                else {
+                  resolvedStatus = lastStatusStr 
+                  localStorage.setItem('app_motorista_active_status_color', 'bg-emerald-600')
+                }
+
+                localStorage.setItem('app_motorista_active_status', resolvedStatus)
+                localStorage.setItem('app_motorista_status_start', history[history.length - 1].created_at)
+                setActiveStatus(resolvedStatus)
+                setStatusStartTime(new Date(history[history.length - 1].created_at))
+              }
+            }
+          } catch (e) {
+            console.error('Erro ao restaurar timeline do Supabase', e)
+          }
+        }
       } else {
         if (navigator.onLine) {
           // Se estamos online e não tem turno ativo no banco, o turno foi fechado por outro lugar.
@@ -232,7 +361,7 @@ export default function DashboardStep() {
 
   // GPS Tracking Effect
   useEffect(() => {
-    if (!equipmentId) return;
+    if (!equipmentId || isAdmin) return;
 
     let watchId: number;
     let lastSent = 0;
@@ -280,6 +409,32 @@ export default function DashboardStep() {
       }
     };
   }, [equipmentId]);
+
+  // Sincroniza o cronômetro do status com o último evento da timeline para evitar perdas no reload
+  useEffect(() => {
+    const tlStr = localStorage.getItem('app_motorista_timeline')
+    if (tlStr) {
+      try {
+        const tl = JSON.parse(tlStr)
+        if (tl.length > 0) {
+          const lastEvent = tl[tl.length - 1]
+          if (lastEvent && lastEvent.time && !lastEvent.name.includes('Abastecimento')) {
+            const expectedTime = new Date(lastEvent.time)
+            if (statusStartTime) {
+              const diff = Math.abs(statusStartTime.getTime() - expectedTime.getTime())
+              if (diff > 5000) { 
+                setStatusStartTime(expectedTime)
+                localStorage.setItem('app_motorista_status_start', expectedTime.toISOString())
+              }
+            } else {
+              setStatusStartTime(expectedTime)
+              localStorage.setItem('app_motorista_status_start', expectedTime.toISOString())
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }, [statusStartTime, activeStatus, viewState])
 
 
   useEffect(() => {
@@ -425,7 +580,7 @@ export default function DashboardStep() {
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-black/5 dark:bg-white/10 ${color.text}`}>
         <Icon size={24} />
       </div>
-      <span className={`font-bold ${color.text} text-[13px] leading-tight`}>
+      <span className={`font-bold text-gray-900 dark:text-white text-[13px] leading-tight`}>
         {label}
       </span>
     </button>
@@ -433,7 +588,7 @@ export default function DashboardStep() {
 
   const getStatusColors = () => {
     if (activeStatus === 'paused') return { bg: 'bg-orange-500 dark:bg-orange-600 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - PAUSA/ALMOÇO', timeLabel: 'Tempo de Pausa' }
-    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-gray-900', dot: 'bg-gray-900', label: 'PARADO - AGUARDANDO', timeLabel: 'Tempo Aguardando' }
+    if (activeStatus === 'waiting') return { bg: 'bg-amber-500 dark:bg-amber-600 shadow-amber-500/20', text: 'text-amber-50', dot: 'bg-amber-200', label: 'PARADO - AGUARDANDO', timeLabel: 'Tempo Aguardando' }
     if (activeStatus === 'raining') return { bg: 'bg-blue-500 dark:bg-blue-600 shadow-blue-500/20', text: 'text-blue-50', dot: 'bg-blue-200', label: 'PARADO - CHUVA', timeLabel: 'Tempo em Chuva' }
     if (activeStatus === 'fueling') return { bg: 'bg-orange-600 dark:bg-orange-700 shadow-orange-500/20', text: 'text-orange-50', dot: 'bg-orange-200', label: 'PARADO - ABASTECENDO', timeLabel: 'Tempo Abastecendo' }
     
@@ -766,12 +921,12 @@ export default function DashboardStep() {
         <div className="p-6 pb-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+              <button onClick={() => setViewState('operating')} className="text-gray-400 active:text-white p-2 -ml-2 transition-colors">
+                <ArrowLeft size={24} />
+              </button>
               <History size={22} className="text-emerald-500" />
               Histórico do Turno
             </h2>
-            <button onClick={() => setViewState('operating')} className="text-gray-400 active:text-gray-900 dark:active:text-white p-2">
-              <X size={24} />
-            </button>
           </div>
         </div>
 
