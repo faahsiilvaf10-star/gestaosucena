@@ -23,6 +23,8 @@ type EfetivoItem = {
   nome: string
   cargo: string | null
   matricula: string | null
+  matricula_hydro?: string | null
+  matricula_sucena?: string | null
   data_admissao: string | null
   status: string
   setor: string | null
@@ -218,6 +220,8 @@ function RhEfetivoPage() {
             const nome = getVal(['NOME', 'NOME COMPLETO', 'COLABORADOR', 'FUNCIONÁRIO']) || 'Sem Nome'
             const cargo = getVal(['CARGO', 'FUNÇÃO', 'FUNCAO'])
             const matricula = getVal(['MATRÍCULA', 'MATRICULA', 'RE'])
+            const matriculaHydro = getVal(['MATRÍCULA HYDRO', 'MATRICULA HYDRO', 'HYDRO', 'MAT. HYDRO', 'MAT HYDRO'])
+            const matriculaSucena = getVal(['MATRÍCULA SUCENA', 'MATRICULA SUCENA', 'SUCENA', 'MAT. SUCENA', 'MAT SUCENA'])
             const status = getVal(['STATUS', 'SITUAÇÃO', 'SITUACAO']) || 'ATIVO'
             const setor = getVal(['SETOR', 'DEPARTAMENTO', 'ÁREA', 'AREA', 'LOCALIDADE', 'LOCALIDADE '])
             
@@ -241,6 +245,8 @@ function RhEfetivoPage() {
               nome,
               cargo: cargo ? String(cargo) : null,
               matricula: finalMatricula,
+              matricula_hydro: matriculaHydro ? String(matriculaHydro) : null,
+              matricula_sucena: matriculaSucena ? String(matriculaSucena) : null,
               status: String(status),
               setor: setor ? String(setor) : null,
               aso_admissional: asoAdmissional ? String(asoAdmissional) : null,
@@ -249,7 +255,7 @@ function RhEfetivoPage() {
           })
 
           // Prevent duplicates and retrieve existing matriculas
-          const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula')
+          const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena')
           const existingMap = new Map((existingData || []).map(d => [d.nome.toUpperCase(), d]))
 
           const uniqueNewProcessedData: any[] = []
@@ -267,6 +273,9 @@ function RhEfetivoPage() {
               if (existingRec !== 'processed') {
                 // Keep the database matricula so we don't wipe it!
                 d.matricula = existingRec.matricula
+                // Preserve existing matricula_hydro/sucena only if the sheet doesn't have them
+                if (!d.matricula_hydro) d.matricula_hydro = existingRec.matricula_hydro
+                if (!d.matricula_sucena) d.matricula_sucena = existingRec.matricula_sucena
                 d.id = existingRec.id // Needed for update
                 recordsToUpdate.push(d)
                 
@@ -526,6 +535,14 @@ function RhEfetivoPage() {
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.matricula || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Hydro</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.matricula_hydro || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Sucena</p>
+                  <p className="font-medium text-[15px]">{selectedColaborador.matricula_sucena || '-'}</p>
                 </div>
                 {/* Ocultando ASO Admissional daqui para criar uma seção dedicada */}
                 <div>
