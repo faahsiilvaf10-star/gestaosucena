@@ -32,7 +32,7 @@ export function BackButton({ to, label = 'Voltar' }: BackButtonProps) {
         inline-flex items-center gap-2
         mb-4
         text-sm font-semibold
-        text-gray-600 dark:text-white/60
+        text-white/
         hover:text-gray-900 dark:hover:text-white
         transition-colors duration-200
         group

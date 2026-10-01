@@ -431,7 +431,7 @@ function ParteDiariaPage() {
       <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-sm p-4 sm:p-6 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
               Parte Diária
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
@@ -493,7 +493,7 @@ function ParteDiariaPage() {
 
       {/* DADOS GERAIS HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+        <h2 className="text-xl font-semibold text-white uppercase tracking-wider">
           Dados Gerais
         </h2>
         
@@ -518,19 +518,19 @@ function ParteDiariaPage() {
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="autoRefresh" className="cursor-pointer">
-              Atualiza em <strong className="text-gray-900 dark:text-white">{refreshCountdown} segundos</strong>
+              Atualiza em <strong className="text-white">{refreshCountdown} segundos</strong>
             </label>
           </div>
 
           <div className="flex bg-gray-200/50 dark:bg-zinc-800/50 p-1 rounded-lg">
             <button 
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${groupMode === 'motorista' ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${groupMode === 'motorista' ? 'bg-white dark:bg-zinc-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
               onClick={() => setGroupMode('motorista')}
             >
               Motoristas
             </button>
             <button 
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${groupMode === 'veiculo' ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${groupMode === 'veiculo' ? 'bg-white dark:bg-zinc-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
               onClick={() => setGroupMode('veiculo')}
             >
               Veículos
@@ -650,7 +650,7 @@ function ParteDiariaPage() {
                   return (
                     <div key={act.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 group hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg text-gray-900 dark:text-white">
+                        <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg text-white">
                           <Icon size={18} />
                         </div>
                         <div>
@@ -994,7 +994,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{vehicle.name || vehicle.plate_tag}</h3>
+              <h3 className="text-lg font-bold text-white">{vehicle.name || vehicle.plate_tag}</h3>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusColor}`}>
                 <span className={`w-1.5 h-1.5 inline-block rounded-full mr-1.5 mb-0.5 ${statusDot}`}></span>
                 {statusLabel}
@@ -1247,19 +1247,19 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
             <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-xl text-sm">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Placa</p>
-                <p className="font-semibold text-gray-900 dark:text-white uppercase">{vehicle.plate_tag || '-'}</p>
+                <p className="font-semibold text-white uppercase">{vehicle.plate_tag || '-'}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Tipo</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.type || 'Equipamento'}</p>
+                <p className="font-semibold text-white">{vehicle.type || 'Equipamento'}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">Horímetro</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_horimeter || dispatch?.horimeter_start || '-'}</p>
+                <p className="font-semibold text-white">{vehicle.current_horimeter || dispatch?.horimeter_start || '-'}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">KM Atual</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{vehicle.current_km || dispatch?.odometer_start || '-'}</p>
+                <p className="font-semibold text-white">{vehicle.current_km || dispatch?.odometer_start || '-'}</p>
               </div>
             </div>
             
@@ -1328,7 +1328,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
 
           {/* Timeline Panel */}
           <div className="md:w-2/3">
-            <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4 uppercase tracking-wider opacity-80">Linha do Tempo</h4>
+            <h4 className="font-semibold text-sm text-white mb-4 uppercase tracking-wider opacity-80">Linha do Tempo</h4>
             {localHistory.length === 0 && dispatch ? (
               <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
@@ -1451,7 +1451,7 @@ function TimelineItem({ time, title, subtitle, status, observation, latitude, lo
       
       <div className="flex-1 bg-white dark:bg-zinc-800/50 rounded-xl p-3 sm:p-4 border border-gray-100 dark:border-zinc-700/50 shadow-sm hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-colors">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-bold text-gray-900 dark:text-white">
+          <span className="text-sm font-bold text-white">
             {title}
           </span>
           <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">

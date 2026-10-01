@@ -623,7 +623,7 @@ function DashboardComponent() {
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-1/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
+              <h4 className="text-sm font-light mb-2 text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
               {eqData?.operacaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.operacaoList.map((eq: any, i: number) => (
@@ -679,7 +679,7 @@ function DashboardComponent() {
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-3/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-light mb-2 text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
+              <h4 className="text-sm font-light mb-2 text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
               {eqData?.manutencaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.manutencaoList.map((eq: any, i: number) => (
@@ -944,7 +944,7 @@ function DashboardComponent() {
               <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500 mb-4 animate-bounce">
                 <Gift size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tem festa hoje! 🎉</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Tem festa hoje! 🎉</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Hoje é o aniversário de:
               </p>
@@ -952,7 +952,7 @@ function DashboardComponent() {
               <div className="w-full flex flex-col gap-3 mb-8">
                 {aniversariantesHoje.map((aniv: any, i: number) => (
                   <div key={i} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl p-4 flex items-center justify-center">
-                    <span className="font-bold text-lg text-gray-800 dark:text-white capitalize">
+                    <span className="font-bold text-lg text-white capitalize">
                       {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
                     </span>
                   </div>

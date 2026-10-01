@@ -43,6 +43,7 @@
     }
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.2",
     "@google/generative-ai": "^0.24.1",
     "@hcaptcha/react-hcaptcha": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
@@ -117,6 +118,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.6.2",
     "@types/node": "^22.16.5",

@@ -539,7 +539,7 @@ function EntradaSaidaPage() {
   };
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -586,7 +586,7 @@ function EntradaSaidaPage() {
               <input 
                 type="text" 
                 placeholder="Buscar equipamento ou placa/tag..." 
-                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-gray-900 dark:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -594,7 +594,7 @@ function EntradaSaidaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowFilterMenu(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterCategory === 'Todas as categorias' ? 'Categoria' : filterCategory}</span> {filterCategory !== 'Todas as categorias' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
@@ -618,7 +618,7 @@ function EntradaSaidaPage() {
             <div className="relative">
               <button 
                 onClick={() => { setShowFilterMenu(!showFilterMenu); setShowCategoryMenu(false); }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-gray-900 dark:text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterStatus !== 'Todos' ? 'bg-[#0866ff] text-white border-[#0866ff]' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterStatus === 'Todos' ? 'Status' : filterStatus}</span> {filterStatus !== 'Todos' && <span className="w-2 h-2 rounded-full bg-white ml-1"></span>}
               </button>
@@ -653,7 +653,7 @@ function EntradaSaidaPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-gray-900 dark:text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -667,7 +667,7 @@ function EntradaSaidaPage() {
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-gray-900 dark:text-white/50' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
@@ -706,7 +706,7 @@ function EntradaSaidaPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button 
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-gray-900 dark:text-white/70 hover:text-gray-900 dark:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/ hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                                   title="Histórico"
                                 >
                                   <History size={18} />
@@ -721,7 +721,7 @@ function EntradaSaidaPage() {
                                 ) : (
                                   <button 
                                     onClick={() => handleOpenEntry(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-gray-900 dark:text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors"
                                   >
                                     <ArrowRightToLine size={14} /> REGISTRAR ENTRADA
                                   </button>
@@ -783,7 +783,7 @@ function EntradaSaidaPage() {
                             ) : (
                               <button 
                                 onClick={() => handleOpenEntry(eq)}
-                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-blue-600 text-gray-900 dark:text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors min-h-[44px]"
+                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors min-h-[44px]"
                               >
                                 <ArrowRightToLine size={16} /> REGISTRAR ENTRADA
                               </button>
@@ -803,7 +803,7 @@ function EntradaSaidaPage() {
       {isEntryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEntryModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-500">
               <LogIn size={28} />
               <h2 className="text-2xl">Registrar Entrada</h2>
@@ -856,7 +856,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={handleConfirmEntry}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-bold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 min-h-[44px]"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 min-h-[44px]"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'CONFIRMAR ENTRADA'}
               </button>
@@ -869,7 +869,7 @@ function EntradaSaidaPage() {
       {isExitModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsExitModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-500">
               <LogOut size={28} />
               <h2 className="text-2xl">Registrar Saída</h2>
@@ -969,7 +969,7 @@ function EntradaSaidaPage() {
       {isHistoryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
-          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl">Histórico de Movimentação</h2>
@@ -1038,7 +1038,7 @@ function EntradaSaidaPage() {
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
-          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-gray-900 dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-2xl mb-2">Relatório PDF</h2>
             <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
             
@@ -1072,7 +1072,7 @@ function EntradaSaidaPage() {
               <button 
                 onClick={generatePDFReport}
                 disabled={isGeneratingReport}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-gray-900 dark:text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
               >
                 {isGeneratingReport ? <RefreshCw size={18} className="animate-spin" /> : <><FileDown size={18} /> Baixar PDF</>}
               </button>

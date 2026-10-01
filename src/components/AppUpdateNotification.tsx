@@ -27,7 +27,7 @@ export function AppUpdateNotification() {
         regs.forEach((r) => r.unregister())
       )
     }
-    window.location.reload()
+    window.location.href = window.location.pathname + '?t=' + Date.now()
   }
 
   useEffect(() => {

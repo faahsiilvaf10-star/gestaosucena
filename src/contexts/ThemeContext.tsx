@@ -8,39 +8,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState(false) // Default to light
+  const [isDark, setIsDark] = useState(true) // Always dark
 
   useEffect(() => {
-    // Load preference on mount
-    const saved = localStorage.getItem('sucena_theme')
-    if (saved) {
-      const isDarkMode = saved === 'dark'
-      setIsDark(isDarkMode)
-      if (isDarkMode) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    } else {
-      // If no preference, default is light (false)
-      document.documentElement.classList.remove('dark')
-    }
+    // Force dark mode
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('sucena_theme', 'dark')
+    setIsDark(true)
   }, [])
 
   const toggleTheme = () => {
-    setIsDark((prev) => {
-      const newTheme = !prev
-      localStorage.setItem('sucena_theme', newTheme ? 'dark' : 'light')
-      
-      // Update global body classes for Tailwind's `dark:` classes
-      if (newTheme) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-      
-      return newTheme
-    })
+    // Do nothing, theme is locked to dark
   }
 
   return (

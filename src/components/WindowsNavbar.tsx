@@ -255,13 +255,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             })}
           </nav>
 
-          {/* Footer drawer */}
-          <div className="sucena-drawer-footer">
-            <button className="sucena-drawer-theme-toggle" onClick={toggleTheme}>
-              {isDark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
-              <span>{isDark ? 'Modo claro' : 'Modo escuro'}</span>
-            </button>
-          </div>
+          {/* Footer drawer removido */}
         </aside>
 
         {/* Mobile top bar */}
@@ -291,13 +285,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Bot size={20} strokeWidth={1.8} />
             </button>
-            <button
-              className="sucena-mobile-action-btn sucena-mobile-theme-btn"
-              onClick={toggleTheme}
-              aria-label="Alternar tema"
-            >
-              {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
-            </button>
+            {/* Botão tema mobile removido */}
           </div>
         </div>
       </div>
@@ -398,13 +386,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Bot size={16} strokeWidth={1.8} />
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <LiquidMetalButton 
-                viewMode="icon"
-                icon={isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
-                onClick={toggleTheme}
-              />
-            </div>
+            {/* Botão tema desktop removido */}
           </div>
 
           <GlobalSearchModal 

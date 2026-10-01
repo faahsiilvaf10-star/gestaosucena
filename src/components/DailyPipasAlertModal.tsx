@@ -90,7 +90,7 @@ export function DailyPipasAlertModal({ enabled }: { enabled: boolean }) {
                       {i + 1}
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{p.name}</h4>
+                      <h4 className="font-bold text-white text-sm">{p.name}</h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">TAG / Placa: {p.plate_tag || 'S/ Placa'}</p>
                     </div>
                   </div>

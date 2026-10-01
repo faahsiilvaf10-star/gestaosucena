@@ -215,7 +215,7 @@ export function AlertaInspecaoMensal() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-white/10 sm:max-w-[600px] max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold font-serif tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+            <DialogTitle className="text-xl font-bold font-serif tracking-tight text-white flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
               Realizar Inspeção em Lote
             </DialogTitle>
@@ -225,7 +225,7 @@ export function AlertaInspecaoMensal() {
 
             {/* Cintas List */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 dark:text-white">
+              <Label className="text-sm font-medium text-white">
                 Selecione as cintas inspecionadas ({selectedIds.length} de {cintasPendentes.length}):
               </Label>
               <div className="border border-gray-200 dark:border-white/10 rounded-xl divide-y divide-gray-100 dark:divide-white/5 bg-gray-50/50 dark:bg-[#111] max-h-[250px] overflow-y-auto custom-scrollbar">
@@ -248,28 +248,28 @@ export function AlertaInspecaoMensal() {
 
             {/* Data */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 dark:text-white">Data da Inspeção</Label>
+              <Label className="text-sm font-medium text-white">Data da Inspeção</Label>
               <DateInput
                 value={dataInspecao}
                 onChange={setDataInspecao}
-                className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-white"
               />
             </div>
 
             {/* Observações */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 dark:text-white">Observações Gerais</Label>
+              <Label className="text-sm font-medium text-white">Observações Gerais</Label>
               <Input
                 placeholder="Descreva observações aplicáveis às cintas selecionadas..."
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-white"
               />
             </div>
 
             {/* Foto */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 dark:text-white">Comprovante / Foto</Label>
+              <Label className="text-sm font-medium text-white">Comprovante / Foto</Label>
               <div className="border border-dashed border-gray-300 dark:border-white/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                 <ImageIcon className="w-6 h-6 text-gray-400 dark:text-gray-500 mb-2" />
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center">

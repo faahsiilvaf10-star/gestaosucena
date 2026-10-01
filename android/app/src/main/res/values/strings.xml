@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gestao Sucena</string>
+    <string name="title_activity_main">Gestao Sucena</string>
+    <string name="package_name">com.gestaosucena.app</string>
+    <string name="custom_url_scheme">com.gestaosucena.app</string>
+</resources>

@@ -152,13 +152,13 @@ function PermissaoTrabalhoPage() {
       <div className="flex gap-4 border-b border-gray-200 dark:border-white/10 pb-4">
         <button
           onClick={() => setActiveTab('pt')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'pt' ? 'bg-white/10 dark:bg-white/5 text-gray-900 dark:text-white border border-gray-200 dark:border-white/10' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'pt' ? 'bg-white/10 dark:bg-white/5 text-white border border-gray-200 dark:border-white/10' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
         >
           Permissão de Trabalho
         </button>
         <button
           onClick={() => setActiveTab('sem_pt')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'sem_pt' ? 'bg-white/10 dark:bg-white/5 text-gray-900 dark:text-white border border-gray-200 dark:border-white/10' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'sem_pt' ? 'bg-white/10 dark:bg-white/5 text-white border border-gray-200 dark:border-white/10' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
         >
           Atividades sem PT
         </button>
@@ -181,7 +181,7 @@ function PermissaoTrabalhoPage() {
                 <FileText className="text-yellow-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{pts.length}</div>
+                <div className="text-2xl font-bold text-white">{pts.length}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Total / Pendentes</div>
               </div>
             </div>
@@ -191,7 +191,7 @@ function PermissaoTrabalhoPage() {
                 <Clock className="text-orange-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{aVencerCount}</div>
+                <div className="text-2xl font-bold text-white">{aVencerCount}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">A vencer</div>
               </div>
             </div>
@@ -201,7 +201,7 @@ function PermissaoTrabalhoPage() {
                 <AlertTriangle className="text-red-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{vencidosCount}</div>
+                <div className="text-2xl font-bold text-white">{vencidosCount}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Vencidos</div>
               </div>
             </div>
@@ -278,7 +278,7 @@ function PermissaoTrabalhoPage() {
                       return (
                         <tr key={pt.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
                           <td className="py-4 pl-4">
-                            <div className="font-bold text-sm text-gray-900 dark:text-white">{pt.titulo}</div>
+                            <div className="font-bold text-sm text-white">{pt.titulo}</div>
                             <div className="text-xs text-gray-500">Numero: {pt.numero}</div>
                           </td>
                           <td className="py-4">
@@ -338,7 +338,7 @@ function PermissaoTrabalhoPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5">
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Nova Permissão</h3>
+              <h3 className="font-semibold text-lg text-white">Nova Permissão</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>

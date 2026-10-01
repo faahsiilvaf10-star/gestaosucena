@@ -162,7 +162,7 @@ function RelatorioPresencaPage() {
   }
 
   return (
-    <div className={`flex flex-col h-full min-h-screen ${isDark ? 'bg-[#111111] text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8`}>
+    <div className={`flex flex-col h-full min-h-screen ${isDark ? 'bg-[#111111] text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8`}>
       <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
         
         {/* Header */}
@@ -184,7 +184,7 @@ function RelatorioPresencaPage() {
             <button 
               onClick={handleGeneratePDF}
               disabled={!hasData}
-              className="px-5 py-2.5 rounded-xl font-semibold bg-[#0866ff] hover:bg-[#0866ff]/90 text-gray-900 dark:text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl font-semibold bg-[#0866ff] hover:bg-[#0866ff]/90 text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileText size={18} /> Gerar PDF
             </button>
@@ -195,10 +195,10 @@ function RelatorioPresencaPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-gray-500 dark:text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Total</p>
+              <p className="text-white/ text-xs font-medium uppercase tracking-wider mb-1">Total</p>
               <p className="text-2xl font-bold">{totalEfetivo}</p>
             </div>
-            <Users className="text-gray-400 dark:text-white/20" size={28} />
+            <Users className="text-white/" size={28} />
           </div>
           
           <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center justify-between">
@@ -237,11 +237,11 @@ function RelatorioPresencaPage() {
         {/* Content */}
         <div className="flex-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 rounded-3xl overflow-hidden flex flex-col">
           {loading ? (
-            <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-white/50">
+            <div className="flex-1 flex items-center justify-center text-white/">
               Carregando relatório...
             </div>
           ) : !hasData ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-white/50 p-8">
+            <div className="flex-1 flex flex-col items-center justify-center text-white/ p-8">
               <Calendar size={48} className="mb-4 opacity-20" />
               <p className="text-lg">Nenhum registro de presença encontrado para {date.split('-').reverse().join('/')}</p>
               <p className="text-sm opacity-70 mt-2">Você precisa primeiro salvar a lista de presença desta data.</p>
@@ -257,7 +257,7 @@ function RelatorioPresencaPage() {
                         {r.status}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-white/50 flex justify-between">
+                    <div className="text-xs text-white/ flex justify-between">
                       <span>{r.cargo || 'Sem Cargo'}</span>
                       <span>{r.area}</span>
                     </div>

@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Users, Gauge, Droplet, ClipboardCheck, Camera, Loader2, ArrowLeftRight, AlertTriangle } from 'lucide-react'
 import { getWhatsappSettings } from '../../lib/settings'
-import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
 import { format } from 'date-fns'
-import { saveOfflineFirst } from '../../lib/offline-sync'
+import { saveOfflineFirst, queueWhatsappMessage } from '../../lib/offline-sync'
 import FuelGauge from './FuelGauge'
 
 export default function WizardStep({ onFinish, onCancel }: { onFinish: () => void, onCancel: () => void }) {
@@ -173,36 +172,27 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP PNEUS ---
-        if (navigator.onLine) {
-          try {
-            const wSettings = await getWhatsappSettings()
-            if (wSettings.appMotoristaAlerts?.enabled !== false) {
-              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-                let text = wSettings.messageTemplates.anomaliaRegistrada
-                text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                text = text.replace('{tag}', equipment?.name || '-')
-                text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', 'Pneus')
-                text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
-                const driverData = localStorage.getItem('app_motorista_driver')
-                const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-                text = text.replace('{motorista}', driverName)
+        // --- DISPARO WHATSAPP PNEUS ---
+        try {
+          const wSettings = await getWhatsappSettings()
+          if (wSettings.appMotoristaAlerts?.enabled !== false) {
+            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+              let text = wSettings.messageTemplates.anomaliaRegistrada
+              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', 'Pneus')
+              text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
+              const driverData = localStorage.getItem('app_motorista_driver')
+              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+              text = text.replace('{motorista}', driverName)
 
-                sendWhatsappTextOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: targetPhone,
-                    text
-                  }
-                }).catch(e => console.error('Erro WP', e))
-              }
+              await queueWhatsappMessage(wSettings, targetPhone, text)
             }
-          } catch (e) {}
-        }
+          }
+        } catch (e) {}
         // -----------------------------
       }
 
@@ -261,36 +251,27 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP CHECKLIST ---
-        if (navigator.onLine) {
-          try {
-            const wSettings = await getWhatsappSettings()
-            if (wSettings.appMotoristaAlerts?.enabled !== false) {
-              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-                let text = wSettings.messageTemplates.anomaliaRegistrada
-                text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                text = text.replace('{tag}', equipment?.name || '-')
-                text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', anomalyType)
-                text = text.replace('{descricao}', anomalyDesc)
-                const driverData = localStorage.getItem('app_motorista_driver')
-                const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-                text = text.replace('{motorista}', driverName)
+        // --- DISPARO WHATSAPP CHECKLIST ---
+        try {
+          const wSettings = await getWhatsappSettings()
+          if (wSettings.appMotoristaAlerts?.enabled !== false) {
+            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+              let text = wSettings.messageTemplates.anomaliaRegistrada
+              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', anomalyType)
+              text = text.replace('{descricao}', anomalyDesc)
+              const driverData = localStorage.getItem('app_motorista_driver')
+              const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+              text = text.replace('{motorista}', driverName)
 
-                sendWhatsappTextOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: targetPhone,
-                    text
-                  }
-                }).catch(e => console.error('Erro WP', e))
-              }
+              await queueWhatsappMessage(wSettings, targetPhone, text)
             }
-          } catch (e) {}
-        }
+          }
+        } catch (e) {}
         // -----------------------------
       }
 
@@ -368,7 +349,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
             <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
               <Users size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">IDENTIFICAÇÃO <br/>DA EQUIPE</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">IDENTIFICAÇÃO <br/>DA EQUIPE</h2>
           </div>
           
           <div className="space-y-6 flex-1">
@@ -397,7 +378,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
             <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
               <Gauge size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">DADOS <br/>INICIAIS</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">DADOS <br/>INICIAIS</h2>
           </div>
 
           <div className="space-y-6 flex-1 overflow-y-auto pb-8 custom-scrollbar">
@@ -456,14 +437,14 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
             <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
               <ClipboardCheck size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">CHECKLIST <br/>PRÉ-OPERACIONAL</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">CHECKLIST <br/>PRÉ-OPERACIONAL</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pb-8 custom-scrollbar">
             {checklist.map(item => (
               <div key={item.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-4">
                 <div>
-                  <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h4 className="font-bold text-white flex items-center gap-2">
                     {item.name}
                     {item.critical && <span className="text-[10px] uppercase font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">Crítico</span>}
                   </h4>
@@ -508,7 +489,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
             
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Relatar Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">
@@ -612,7 +593,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Freios com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com os freios.</p>
@@ -659,7 +640,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Buzina com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com a buzina.</p>
@@ -706,7 +687,7 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-4 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
                 <AlertTriangle className="text-yellow-500" /> Faróis com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Toque nas peças que estão com defeito ou queimadas.</p>
