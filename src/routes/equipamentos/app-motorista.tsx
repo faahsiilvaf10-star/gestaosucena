@@ -84,7 +84,7 @@ function AppMotoristaWrapper() {
     <div className="min-h-screen sm:p-4 flex items-center justify-center w-full">
       <div className="flex flex-col w-full h-screen sm:h-[850px] sm:max-h-[95vh] sm:max-w-[400px] sm:rounded-[40px] sm:border-[12px] sm:border-gray-900 sm:shadow-2xl bg-white/10 dark:bg-black/40 backdrop-blur-md text-gray-900 dark:text-gray-100 font-sans overflow-hidden relative">
       {/* ONLINE/OFFLINE INDICATOR */}
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm border border-white/5">
+      <div className="absolute top-14 right-4 sm:top-8 sm:right-6 z-50 flex items-center gap-2 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm border border-white/5 shadow-md">
         <span className="text-[10px] font-bold tracking-wider uppercase opacity-70">
           {isOnline ? 'Online' : 'Offline'}
         </span>
@@ -96,13 +96,13 @@ function AppMotoristaWrapper() {
 
       {/* STATUS BAR */}
       {!isOnline && (
-        <div className="w-full bg-red-500 text-white text-xs text-center py-1 font-semibold flex items-center justify-center gap-2">
+        <div className="w-full bg-red-500 text-white text-xs text-center py-2 pt-12 sm:pt-2 font-semibold flex items-center justify-center gap-2">
           <WifiOff size={14} /> Trabalhando offline. Sincronizaremos em breve.
         </div>
       )}
       
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto pt-14 sm:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {currentStep === 'login' && <LoginStep onLogin={() => setCurrentStep('environment')} />}
         {currentStep === 'environment' && <EnvironmentStep onSelect={() => setCurrentStep('equipment')} />}
         {currentStep === 'equipment' && (
