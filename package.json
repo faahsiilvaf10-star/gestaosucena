@@ -15,9 +15,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:desktop": "cd launcher && npm install && npm run dist",
-    "dev:electron": "cd launcher && npm install && npm run dev",
-    "build:motorista": "vite build --config vite.motorista.config.ts && powershell -Command \"Copy-Item dist-motorista/index-motorista.html dist-motorista/index.html\"",
-    "build:apk": "npm run build:motorista && npx cap sync android && echo 'Agora abra o Android Studio e gere o APK'"
+    "build:motorista": "vite build --config vite.motorista.config.ts",
+    "build:apk": "npm run build:motorista && npx cap sync android && powershell -Command \"cd android; ./gradlew assembleDebug\""
   },
   "build": {
     "appId": "com.gestaosucena.app",
