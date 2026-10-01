@@ -1433,6 +1433,7 @@ function AdminRoute() {
                     { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
                     { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' },
                     { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' },
+                    { key: 'inicioJornadaApp', label: 'Início de Jornada (App)' },
                     { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
                     { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' }
                   ].map(t => (
@@ -1469,6 +1470,7 @@ function AdminRoute() {
                     {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
                     {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
                     {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
+                    {selectedTemplate === 'inicioJornadaApp' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}'}
                     {selectedTemplate.startsWith('pedidoCompra') && '{requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
                   </div>
                 </div>

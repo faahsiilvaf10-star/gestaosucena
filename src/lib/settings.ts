@@ -187,6 +187,7 @@ export type WhatsappSettings = {
     statusAlterado: string;
     cintasAvisoMensal: string;
     fimJornadaApp: string;
+    inicioJornadaApp: string;
     cintasInspecionada: string;
     equipamentoEntrada: string;
     equipamentoSaida: string;
@@ -252,7 +253,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
     equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
     equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_',
     pedidoCompraGrupo: '📦 *NOVO PEDIDO DE COMPRA*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_',
-    pedidoCompraIndividual: '📦 *NOVO PEDIDO DE COMPRA ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._'
+    pedidoCompraIndividual: '📦 *NOVO PEDIDO DE COMPRA ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._',
+    inicioJornadaApp: '🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}'
   }
 }
 

@@ -288,6 +288,29 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
 
       localStorage.setItem('app_motorista_fuel_level', fuel)
       localStorage.setItem('app_motorista_current_step', 'dashboard')
+
+      // --- DISPARO WHATSAPP INÍCIO DE JORNADA ---
+      try {
+        const wSettings = await getWhatsappSettings()
+        if (wSettings.appMotoristaAlerts?.enabled !== false) {
+          const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+          if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.inicioJornadaApp) {
+            let text = wSettings.messageTemplates.inicioJornadaApp
+            text = text.replace('{hora}', format(new Date(), 'HH:mm'))
+            text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+            text = text.replace('{tag}', equipment?.name || '-')
+            text = text.replace('{placa}', equipment?.plate_tag || '-')
+            const driverData = localStorage.getItem('app_motorista_driver')
+            const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+            text = text.replace('{motorista}', driverName)
+            text = text.replace('{ajudante}', helperName || 'Não Informado')
+
+            await queueWhatsappMessage(wSettings, targetPhone, text)
+          }
+        }
+      } catch (e) {}
+      // -------------------------------------------
+
       onFinish()
     } catch (err) {
       console.error(err)
