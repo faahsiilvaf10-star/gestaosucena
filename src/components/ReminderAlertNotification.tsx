@@ -184,7 +184,7 @@ export function ReminderAlertNotification() {
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                   </svg>
                 </div>
-                <h3 className="font-bold text-lg sm:text-xl text-gray-900 dark:text-white leading-tight">
+                <h3 className="font-bold text-lg sm:text-xl text-white leading-tight">
                   {notif.title}
                 </h3>
               </div>

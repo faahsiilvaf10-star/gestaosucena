@@ -140,17 +140,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
       
       // Pequeno delay para ler a mensagem antes de forçar o refresh e aplicar o novo código
       setTimeout(() => {
-        window.location.reload()
+        window.location.href = window.location.pathname + '?t=' + Date.now()
       }, 1000)
       
     } catch (error) {
       console.error('Erro ao atualizar:', error)
-      window.location.reload()
+      window.location.href = window.location.pathname + '?t=' + Date.now()
     }
   }
 
   return (
-    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}
+    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
@@ -218,7 +218,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-3 sm:gap-4">
           <button 
             onClick={() => setShowLogoutConfirm(true)}
-            className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors touch-target ${isDark ? 'text-gray-900 dark:text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
+            className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors touch-target ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
             style={{ minWidth: 44, minHeight: 44 }}
           >
             <LogOut size={13} />
@@ -226,7 +226,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
           
           <button 
-            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
+            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/ hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
             title="Sincronizar Atualizações e Limpar Cache"
             onClick={handleHardRefresh}
             style={{ minWidth: 44, minHeight: 44 }}
@@ -237,7 +237,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {isAdmin(currentUser.name, currentUser.role) && (
             <Link 
               to="/admin"
-              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
+              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/ hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
               title="Administração"
               style={{ minWidth: 44, minHeight: 44 }}
             >
@@ -258,12 +258,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {/* Chat Icon with Badge */}
           <button 
             onClick={toggleSidebar}
-            className={`relative transition-colors ${isDark ? 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            className={`relative transition-colors ${isDark ? 'text-white/ hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             {unreadCountGlobally > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-gray-900 dark:text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                 {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
               </span>
             )}
@@ -291,13 +291,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className={`p-6 rounded-2xl w-full max-w-sm border shadow-2xl ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
-            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
-            <p className={`text-sm mb-6 ${isDark ? 'text-gray-900 dark:text-white/70' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
+            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
+            <p className={`text-sm mb-6 ${isDark ? 'text-white/' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
             
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setShowLogoutConfirm(false)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
                 style={{ minHeight: 44 }}
               >
                 Cancelar

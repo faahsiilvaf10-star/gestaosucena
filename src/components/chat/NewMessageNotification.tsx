@@ -179,7 +179,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
           {/* Texto */}
           <div className="flex-1 overflow-hidden mt-1">
-            <p className="font-semibold text-[13px] text-gray-900 dark:text-white leading-tight">
+            <p className="font-semibold text-[13px] text-white leading-tight">
               {notif.name}
             </p>
             <p className="text-[12px] text-[#53BDEB] font-medium mt-1 break-words">

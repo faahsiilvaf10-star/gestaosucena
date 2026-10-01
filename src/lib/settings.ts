@@ -74,6 +74,9 @@ export async function setAITokens(geminiKey: string, groqKey: string): Promise<b
 
 export type GlobalAppearanceSettings = {
   backgroundCss: string;
+  opacity?: number;
+  darkCardOpacity?: number;
+  lightCardOpacity?: number;
 }
 
 export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSettings> {
@@ -86,7 +89,10 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
       
     if (error || !data) {
       return { 
-        backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+        backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
+        opacity: 100,
+        darkCardOpacity: 35,
+        lightCardOpacity: 75
       }
     }
     
@@ -96,11 +102,17 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
     }
     
     return {
-      backgroundCss: parsed?.backgroundCss || `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+      backgroundCss: parsed?.backgroundCss || `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
+      opacity: parsed?.opacity !== undefined ? parsed.opacity : 100,
+      darkCardOpacity: parsed?.darkCardOpacity !== undefined ? parsed.darkCardOpacity : 35,
+      lightCardOpacity: parsed?.lightCardOpacity !== undefined ? parsed.lightCardOpacity : 75
     }
   } catch (err) {
     return { 
-      backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+      backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
+      opacity: 100,
+      darkCardOpacity: 35,
+      lightCardOpacity: 75
     }
   }
 }

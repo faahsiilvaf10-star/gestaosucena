@@ -107,7 +107,7 @@ export function DashboardRemindersWidget() {
         <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600'}`}>
           <Clock size={20} />
         </div>
-        <h2 className={`text-lg font-medium ${isDark ? 'text-gray-900 dark:text-white/90' : 'text-gray-900'}`}>Lembretes para Hoje</h2>
+        <h2 className={`text-lg font-medium ${isDark ? 'text-white/' : 'text-gray-900'}`}>Lembretes para Hoje</h2>
       </div>
 
       <div className="space-y-3 relative z-10">
@@ -144,17 +144,17 @@ export function DashboardRemindersWidget() {
                   {isCrossedOut ? (
                     <CheckCircle2 size={20} className="text-indigo-500" />
                   ) : (
-                    <Circle size={20} className={`transition-colors ${isDark ? 'text-gray-900 dark:text-white/20 group-hover:text-gray-900 dark:text-white/50' : 'text-gray-300 group-hover:text-gray-500'}`} />
+                    <Circle size={20} className={`transition-colors ${isDark ? 'text-white/ group-hover:text-white/' : 'text-gray-300 group-hover:text-gray-500'}`} />
                   )}
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate transition-all ${ isCrossedOut ? (isDark ? 'text-gray-900 dark:text-white/40 line-through' : 'text-gray-500 line-through') : (isDark ? 'text-gray-900 dark:text-white/90 group-hover:text-gray-900 dark:text-white' : 'text-gray-900') }`}>
+                  <p className={`text-sm font-medium truncate transition-all ${ isCrossedOut ? (isDark ? 'text-white/ line-through' : 'text-gray-500 line-through') : (isDark ? 'text-white/ group-hover:text-white' : 'text-gray-900') }`}>
                     {reminder.title}
                   </p>
                   
                   {reminder.description && (
-                    <p className={`text-xs mt-0.5 line-clamp-1 transition-all ${ isCrossedOut ? (isDark ? 'text-gray-900 dark:text-white/30 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-gray-900 dark:text-white/60 group-hover:text-gray-900 dark:text-white/80' : 'text-gray-500') }`}>
+                    <p className={`text-xs mt-0.5 line-clamp-1 transition-all ${ isCrossedOut ? (isDark ? 'text-white/ line-through' : 'text-gray-400 line-through') : (isDark ? 'text-white/ group-hover:text-white/' : 'text-gray-500') }`}>
                       {reminder.description}
                     </p>
                   )}
@@ -191,7 +191,7 @@ export function DashboardRemindersWidget() {
                         if (!user) return null
                         const isMeUser = user.id === currentUserId
                         return (
-                          <div key={user.id} className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-white/5 border-white/10 text-gray-900 dark:text-white/60' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
+                          <div key={user.id} className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDark ? 'bg-white/5 border-white/10 text-white/' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
                             {user.avatar_url ? (
                               <img src={user.avatar_url} className="w-3 h-3 rounded-full" />
                             ) : (
@@ -219,7 +219,7 @@ export function DashboardRemindersWidget() {
                       setSnoozeDate(reminder.due_date || '')
                       setSnoozeTime(reminder.due_time || '')
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-gray-900 dark:text-white/60 hover:text-gray-900 dark:text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/ hover:text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}
                   >
                     Adiar
                   </button>
@@ -238,25 +238,25 @@ export function DashboardRemindersWidget() {
                   <DateInput 
                     value={snoozeDate}
                     onChange={val => setSnoozeDate(val)}
-                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-gray-900 dark:text-white border-white/10' : 'bg-white text-gray-900 border-gray-300'}`}
+                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-white border-white/10' : 'bg-white text-gray-900 border-gray-300'}`}
                   />
                   <input 
                     type="time"
                     value={snoozeTime}
                     onChange={e => setSnoozeTime(e.target.value)}
-                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-gray-900 dark:text-white border-white/10 [color-scheme:dark]' : 'bg-white text-gray-900 border-gray-300'}`}
+                    className={`text-sm px-2 py-1.5 rounded-md border focus:outline-none focus:border-indigo-500 ${isDark ? 'bg-black/20 text-white border-white/10 [color-scheme:dark]' : 'bg-white text-gray-900 border-gray-300'}`}
                   />
                   <div className="flex-1" />
                   <button 
                     onClick={() => setSnoozeReminderId(null)}
-                    className={`px-3 py-1.5 text-xs transition-colors ${isDark ? 'text-gray-900 dark:text-white/40 hover:text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+                    className={`px-3 py-1.5 text-xs transition-colors ${isDark ? 'text-white/ hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
                   >
                     Cancelar
                   </button>
                   <button 
                     onClick={() => snoozeMutation.mutate({ id: reminder.id, date: snoozeDate, time: snoozeTime })}
                     disabled={!snoozeDate}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-medium text-gray-900 dark:text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
                   >
                     Salvar
                   </button>

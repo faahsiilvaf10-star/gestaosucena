@@ -11,11 +11,11 @@ localforage.config({
 
 const QUEUE_KEY = 'sync_queue';
 
-export type SyncAction = 'INSERT' | 'UPDATE' | 'UPSERT';
+export type SyncAction = 'INSERT' | 'UPDATE' | 'UPSERT' | 'WHATSAPP';
 
 export interface SyncTask {
   id: string; // Unique ID for the task
-  table: string;
+  table: string; // If action is WHATSAPP, table will be 'whatsapp'
   action: SyncAction;
   data: any;
   timestamp: number;
@@ -64,6 +64,37 @@ export const processSyncQueue = async () => {
         result = await supabase.from(task.table).update(task.data).eq('id', task.data.id);
       } else if (task.action === 'UPSERT') {
         result = await supabase.from(task.table).upsert(task.data);
+      } else if (task.action === 'WHATSAPP') {
+        if (task.data.isMedia) {
+          const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
+          const payload = {
+            data: {
+              url: task.data.settings.url,
+              token: task.data.settings.token,
+              instanceId: task.data.settings.instanceId,
+              phone: task.data.phone,
+              caption: task.data.message,
+              base64Media: task.data.base64Media,
+              fileName: task.data.fileName
+            }
+          };
+          const res = await sendWhatsappMediaOnServer(payload as any);
+          if (!res.success) throw new Error('Falha media: ' + res.error);
+        } else {
+          const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
+          const payload = {
+            data: {
+              url: task.data.settings.url,
+              token: task.data.settings.token,
+              instanceId: task.data.settings.instanceId,
+              phone: task.data.phone,
+              text: task.data.message
+            }
+          };
+          const res = await sendWhatsappTextOnServer(payload as any);
+          if (!res.success) throw new Error('Falha text: ' + res.error);
+        }
+        result = { error: null };
       }
 
       if (result?.error) {
@@ -111,5 +142,63 @@ export const saveOfflineFirst = async (table: string, action: SyncAction, data: 
     // Offline immediately
     await addToSyncQueue({ table, action, data });
     return { success: true, data: data, offline: true };
+  }
+};
+
+export const queueWhatsappMessage = async (settings: any, phone: string, message: string) => {
+  const taskData = { settings, phone, message };
+  if (navigator.onLine) {
+    try {
+      const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
+      const payload = {
+        data: {
+          url: settings.url,
+          token: settings.token,
+          instanceId: settings.instanceId,
+          phone: phone,
+          text: message
+        }
+      };
+      const res = await sendWhatsappTextOnServer(payload as any);
+      if (!res.success) throw new Error(res.error || 'Unknown error');
+      return { success: true, offline: false };
+    } catch (error) {
+      console.warn('Erro ao enviar whatsapp online, enfileirando:', error);
+      await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+      return { success: true, offline: true };
+    }
+  } else {
+    await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+    return { success: true, offline: true };
+  }
+};
+
+export const queueWhatsappMedia = async (settings: any, phone: string, caption: string, base64Media: string, fileName: string) => {
+  const taskData = { settings, phone, message: caption, base64Media, fileName, isMedia: true };
+  if (navigator.onLine) {
+    try {
+      const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
+      const payload = {
+        data: {
+          url: settings.url,
+          token: settings.token,
+          instanceId: settings.instanceId,
+          phone: phone,
+          caption: caption,
+          base64Media,
+          fileName
+        }
+      };
+      const res = await sendWhatsappMediaOnServer(payload as any);
+      if (!res.success) throw new Error(res.error || 'Unknown error');
+      return { success: true, offline: false };
+    } catch (error) {
+      console.warn('Erro ao enviar whatsapp media online, enfileirando:', error);
+      await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+      return { success: true, offline: true };
+    }
+  } else {
+    await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+    return { success: true, offline: true };
   }
 };

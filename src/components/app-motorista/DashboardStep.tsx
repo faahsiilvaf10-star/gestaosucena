@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst } from '../../lib/offline-sync'
 import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
-import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from '../../lib/whatsapp-api'
+import { queueWhatsappMessage, queueWhatsappMedia } from '../../lib/offline-sync'
 import * as htmlToImage from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import FuelGauge from './FuelGauge'
@@ -154,7 +154,7 @@ export default function DashboardStep() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
         <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-          <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">{confirmModal.title}</h3>
+          <h3 className="text-xl font-black text-white mb-2">{confirmModal.title}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">{confirmModal.description}</p>
           <div className="flex gap-3">
             <button 
@@ -397,34 +397,24 @@ export default function DashboardStep() {
     }
 
     // --- DISPARO WHATSAPP STATUS ---
-    if (navigator.onLine) {
-      getWhatsappSettings().then(wSettings => {
-        if (wSettings.appMotoristaAlerts?.enabled !== false) {
-          const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-          if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.statusAlterado) {
-            let text = wSettings.messageTemplates.statusAlterado
-            text = text.replace('{hora}', format(now, 'HH:mm'))
-            text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-            text = text.replace('{tag}', equipment?.name || '-')
-            text = text.replace('{placa}', equipment?.plate_tag || '-')
-            text = text.replace('{status}', eventName)
-            const driverData = localStorage.getItem('app_motorista_driver')
-            const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-            text = text.replace('{motorista}', driverName)
+    getWhatsappSettings().then(wSettings => {
+      if (wSettings.appMotoristaAlerts?.enabled !== false) {
+        const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+        if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.statusAlterado) {
+          let text = wSettings.messageTemplates.statusAlterado
+          text = text.replace('{hora}', format(now, 'HH:mm'))
+          text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+          text = text.replace('{tag}', equipment?.name || '-')
+          text = text.replace('{placa}', equipment?.plate_tag || '-')
+          text = text.replace('{status}', eventName)
+          const driverData = localStorage.getItem('app_motorista_driver')
+          const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
+          text = text.replace('{motorista}', driverName)
 
-            sendWhatsappTextOnServer({
-              data: {
-                url: wSettings.url,
-                token: wSettings.token,
-                instanceId: wSettings.instanceId,
-                phone: targetPhone,
-                text
-              }
-            }).catch(e => console.error('Erro WP Status', e))
-          }
+          queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro WP Status', e))
         }
-      }).catch(err => console.error(err))
-    }
+      }
+    }).catch(err => console.error(err))
     // -------------------------------
 
     localStorage.setItem('app_motorista_status_start', now.toISOString())
@@ -579,27 +569,15 @@ export default function DashboardStep() {
               }
 
               if (dataUrl) {
-                await sendWhatsappMediaOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: targetPhone,
-                    caption: msg,
-                    base64Media: dataUrl,
-                    fileName: `parte-diaria-${equipment?.plate_tag || 'eq'}.png`
-                  }
-                })
+                await queueWhatsappMedia(
+                  wSettings, 
+                  targetPhone, 
+                  msg, 
+                  dataUrl, 
+                  `parte-diaria-${equipment?.plate_tag || 'eq'}.png`
+                )
               } else {
-                await sendWhatsappTextOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: targetPhone,
-                    text: msg
-                  }
-                })
+                await queueWhatsappMessage(wSettings, targetPhone, msg)
               }
             }
           }
@@ -728,7 +706,7 @@ export default function DashboardStep() {
             <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 flex items-center justify-center">
               <MapPin size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{title}</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">{title}</h2>
           </div>
         </div>
 
@@ -740,7 +718,7 @@ export default function DashboardStep() {
                 <select 
                   value={gateReason}
                   onChange={e => setGateReason(e.target.value)}
-                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-gray-900 dark:text-white"
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-white"
                 >
                   <option value="">Selecione um motivo...</option>
                   <option value="preventive_maintenance">Manutenção Preventiva</option>
@@ -758,7 +736,7 @@ export default function DashboardStep() {
                   value={gateDescription}
                   onChange={e => setGateDescription(e.target.value)}
                   placeholder="Detalhes..."
-                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-gray-900 dark:text-white"
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-white"
                 />
               </div>
             </>
@@ -787,7 +765,7 @@ export default function DashboardStep() {
       <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-6 relative">
         <div className="p-6 pb-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold flex items-center gap-2 text-white">
               <History size={22} className="text-emerald-500" />
               Histórico do Turno
             </h2>
@@ -830,7 +808,7 @@ export default function DashboardStep() {
             <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
               <Square size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">FINALIZAR <br/>OPERAÇÃO</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">FINALIZAR <br/>OPERAÇÃO</h2>
           </div>
         </div>
 
@@ -1088,35 +1066,25 @@ export default function DashboardStep() {
           localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
 
           // --- DISPARO WHATSAPP ---
-          if (navigator.onLine) {
-            try {
-              const wSettings = await getWhatsappSettings()
-              if (wSettings.appMotoristaAlerts?.enabled !== false) {
-                const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-                const templateKey = 'anomaliaCorrigida'
-                if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
-                  let text = wSettings.messageTemplates[templateKey]
-                  text = text.replace('{hora}', format(now, 'HH:mm'))
-                  text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                  text = text.replace('{tag}', equipment?.name || '-')
-                  text = text.replace('{placa}', equipment?.plate_tag || '-')
-                  text = text.replace('{anomalia}', a.type)
-                  text = text.replace('{descricao}', correctionDescription)
-                  text = text.replace('{motorista}', driverName)
+          try {
+            const wSettings = await getWhatsappSettings()
+            if (wSettings.appMotoristaAlerts?.enabled !== false) {
+              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+              const templateKey = 'anomaliaCorrigida'
+              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
+                let text = wSettings.messageTemplates[templateKey]
+                text = text.replace('{hora}', format(now, 'HH:mm'))
+                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replace('{tag}', equipment?.name || '-')
+                text = text.replace('{placa}', equipment?.plate_tag || '-')
+                text = text.replace('{anomalia}', a.type)
+                text = text.replace('{descricao}', correctionDescription)
+                text = text.replace('{motorista}', driverName)
 
-                  sendWhatsappTextOnServer({
-                    data: {
-                      url: wSettings.url,
-                      token: wSettings.token,
-                      instanceId: wSettings.instanceId,
-                      phone: targetPhone,
-                      text
-                    }
-                  }).catch(e => console.error('Erro ao disparar WP anomalia', e))
-                }
+                queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro ao disparar WP anomalia', e))
               }
-            } catch (err) {}
-          }
+            }
+          } catch (err) {}
           // -------------------------
         }
 
@@ -1189,37 +1157,27 @@ export default function DashboardStep() {
         localStorage.setItem('app_motorista_timeline', JSON.stringify(timeline))
 
         // --- DISPARO WHATSAPP ---
-        if (navigator.onLine) {
-          try {
-            const wSettings = await getWhatsappSettings()
-            if (wSettings.appMotoristaAlerts?.enabled !== false) {
-              const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-              const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
-              if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
-                let text = wSettings.messageTemplates[templateKey]
-                text = text.replace('{hora}', format(now, 'HH:mm'))
-                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                text = text.replace('{tag}', equipment?.name || '-')
-                text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', anomalyType)
-                text = text.replace('{descricao}', anomalyDescription)
-                text = text.replace('{motorista}', driverName)
+        // --- DISPARO WHATSAPP ---
+        try {
+          const wSettings = await getWhatsappSettings()
+          if (wSettings.appMotoristaAlerts?.enabled !== false) {
+            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
+            const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
+              let text = wSettings.messageTemplates[templateKey]
+              text = text.replace('{hora}', format(now, 'HH:mm'))
+              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replace('{tag}', equipment?.name || '-')
+              text = text.replace('{placa}', equipment?.plate_tag || '-')
+              text = text.replace('{anomalia}', anomalyType)
+              text = text.replace('{descricao}', anomalyDescription)
+              text = text.replace('{motorista}', driverName)
 
-                // Dispara no modo fire-and-forget
-                sendWhatsappTextOnServer({
-                  data: {
-                    url: wSettings.url,
-                    token: wSettings.token,
-                    instanceId: wSettings.instanceId,
-                    phone: targetPhone,
-                    text
-                  }
-                }).catch(e => console.error('Erro ao disparar WP anomalia', e))
-              }
+              queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro ao disparar WP anomalia', e))
             }
-          } catch (err) {
-            console.error('Falha ao tentar notificar WhatsApp', err)
           }
+        } catch (err) {
+          console.error('Falha ao tentar notificar WhatsApp', err)
         }
         // -------------------------
 
@@ -1246,7 +1204,7 @@ export default function DashboardStep() {
             <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
               <ClipboardList size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">CHECK-LIST<br/>(ANOMALIAS)</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">CHECK-LIST<br/>(ANOMALIAS)</h2>
           </div>
         </div>
 
@@ -1274,7 +1232,7 @@ export default function DashboardStep() {
                   value={correctionDescription}
                   onChange={e => setCorrectionDescription(e.target.value)}
                   placeholder="Descreva o que foi feito para corrigir..."
-                  className="w-full h-24 p-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-gray-900 dark:text-white resize-none"
+                  className="w-full h-24 p-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-white resize-none"
                 />
               </div>
 
@@ -1290,13 +1248,13 @@ export default function DashboardStep() {
 
           <div className={pendingAnomalies.length > 0 ? "pt-6 border-t border-gray-200 dark:border-zinc-800" : ""}>
             {pendingAnomalies.length > 0 && (
-              <h3 className="font-bold text-gray-900 dark:text-white mb-4">Registrar Nova Anomalia</h3>
+              <h3 className="font-bold text-white mb-4">Registrar Nova Anomalia</h3>
             )}
             <label className="text-xs font-semibold text-gray-500 block mb-1">Tipo de Anomalia</label>
             <select 
               value={anomalyType}
               onChange={e => setAnomalyType(e.target.value)}
-              className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-gray-900 dark:text-white"
+              className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-white"
             >
               <option value="Problema mecânico">Problema mecânico</option>
               <option value="Pneu">Pneu</option>
@@ -1317,13 +1275,13 @@ export default function DashboardStep() {
               onChange={e => setAnomalyDescription(e.target.value)}
               placeholder="Descreva o que aconteceu..."
               rows={4}
-              className="w-full p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-gray-900 dark:text-white resize-none"
+              className="w-full p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-white resize-none"
             />
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white">Problema Corrigido?</p>
+              <p className="font-semibold text-white">Problema Corrigido?</p>
               <p className="text-xs text-gray-500">Marque se o problema já foi solucionado.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -1445,7 +1403,7 @@ export default function DashboardStep() {
 
       {/* QUICK ACTIONS GRID */}
       <div className="px-6 flex-1">
-        <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
           <History size={18} className="text-emerald-500" /> 
           Ações Operacionais
         </h3>

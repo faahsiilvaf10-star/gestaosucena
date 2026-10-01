@@ -157,7 +157,7 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
 
           {/* Texto */}
           <div className="flex-1 overflow-hidden">
-            <p className="font-semibold text-[13px] text-gray-900 dark:text-white truncate leading-tight">
+            <p className="font-semibold text-[13px] text-white truncate leading-tight">
               {notif.name}
             </p>
             <p className="text-[11px] text-green-500 font-medium mt-0.5 flex items-center gap-1">

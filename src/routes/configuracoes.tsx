@@ -155,7 +155,7 @@ function ConfiguracoesRoute() {
         
         <div className="mb-8">
           <h1 className="tracking-tight" style={{ fontSize: 'clamp(24px, 7vw, 54px)', lineHeight: '1' }}>Configurações de Perfil</h1>
-          <p className="text-gray-900 dark:text-white/60 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
+          <p className="text-white/ text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
         </div>
 
         {message && (
@@ -202,7 +202,7 @@ function ConfiguracoesRoute() {
                 {name || 'Usuário'}
                 {isAdmin(name, role) && <VerifiedBadge />}
               </h3>
-              <p className="text-sm text-gray-900 dark:text-white/50 break-all">{email}</p>
+              <p className="text-sm text-white/ break-all">{email}</p>
             </div>
           </div>
 
@@ -222,23 +222,23 @@ function ConfiguracoesRoute() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">Nome Completo</label>
+                        <label className="text-xs font-medium text-white/ pl-1">Nome Completo</label>
                         <input
                           type="text"
                           value={name}
                           onChange={e => setName(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="Seu nome"
                         />
                       </div>
                       
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">WhatsApp <span className="text-yellow-500">*</span></label>
+                        <label className="text-xs font-medium text-white/ pl-1">WhatsApp <span className="text-yellow-500">*</span></label>
                         <input
                           type="tel"
                           value={whatsapp}
                           onChange={e => setWhatsapp(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="Ex: 5591999999999"
                         />
                         {!whatsapp && (
@@ -263,26 +263,26 @@ function ConfiguracoesRoute() {
                     
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">E-mail de Login</label>
+                        <label className="text-xs font-medium text-white/ pl-1">E-mail de Login</label>
                         <input
                           type="email"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="seu@email.com"
                         />
                       </div>
                       
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-900 dark:text-white/60 pl-1">Nova Senha</label>
+                        <label className="text-xs font-medium text-white/ pl-1">Nova Senha</label>
                         <input
                           type="password"
                           value={password}
                           onChange={e => setPassword(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
                           placeholder="Deixe em branco para não alterar"
                         />
-                        <p className="text-[11px] text-gray-900 dark:text-white/40 pl-1">Apenas preencha se desejar trocar sua senha atual.</p>
+                        <p className="text-[11px] text-white/ pl-1">Apenas preencha se desejar trocar sua senha atual.</p>
                       </div>
                     </div>
                   </div>

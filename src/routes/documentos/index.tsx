@@ -25,10 +25,10 @@ function DocumentosIndex() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
-        <h1 className="tracking-tight text-gray-900 dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
+        <h1 className="tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           Documentações
         </h1>
-        <p className="text-gray-900 dark:text-white/70 text-sm mt-1 font-medium">Acesse, baixe e envie documentos específicos por cargo.</p>
+        <p className="text-white/ text-sm mt-1 font-medium">Acesse, baixe e envie documentos específicos por cargo.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -36,15 +36,15 @@ function DocumentosIndex() {
           <button
             key={cargo.id}
             onClick={() => setSelectedCargo(cargo)}
-            className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+            className="group relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full"
           >
             {/* Ícone */}
-            <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
-              <cargo.icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
+            <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
+              <cargo.icon className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
             </div>
             
             {/* Texto */}
-            <h3 className="text-2xl text-gray-900 tracking-wide font-medium text-center">
+            <h3 className="text-xl tracking-wide font-medium text-center z-10 text-current">
               {cargo.name}
             </h3>
           </button>

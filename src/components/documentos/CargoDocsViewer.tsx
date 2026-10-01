@@ -80,7 +80,7 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
         <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
           <div>
             <h2 className="text-2xl font-bold">Documentos - {cargoName}</h2>
-            <p className={`text-sm mt-1 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-white/' : 'text-gray-500'}`}>
               Gerencie arquivos, planilhas, PDFs e imagens deste cargo.
             </p>
           </div>
@@ -107,12 +107,12 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
             {uploadMutation.isPending ? (
               <Loader2 className="w-8 h-8 animate-spin text-yellow-500 mb-2" />
             ) : (
-              <UploadCloud className={`w-8 h-8 mb-2 ${isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-400'}`} />
+              <UploadCloud className={`w-8 h-8 mb-2 ${isDark ? 'text-white/' : 'text-gray-400'}`} />
             )}
             <p className="font-medium text-center">
               {uploadMutation.isPending ? 'Enviando arquivo...' : 'Clique para enviar documento'}
             </p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-500'}`}>
+            <p className={`text-xs mt-1 ${isDark ? 'text-white/' : 'text-gray-500'}`}>
               Suporta PDF, Word, Excel, Imagens, etc.
             </p>
           </div>
@@ -123,13 +123,13 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
               <h3 className="text-sm font-bold uppercase tracking-wider opacity-70">Arquivos Salvos</h3>
               
               <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors w-full sm:w-auto ${isDark ? 'border-white/10 bg-black/20 focus-within:border-white/30' : 'border-gray-200 bg-white focus-within:border-gray-300'}`}>
-                <Search className={`w-4 h-4 ${isDark ? 'text-gray-900 dark:text-white/40' : 'text-gray-400'}`} />
+                <Search className={`w-4 h-4 ${isDark ? 'text-white/' : 'text-gray-400'}`} />
                 <input 
                   type="text" 
                   placeholder="Pesquisar arquivo..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`bg-transparent border-none outline-none text-sm w-full sm:w-48 focus:sm:w-64 transition-all ${isDark ? 'text-gray-900 dark:text-white placeholder:text-gray-900 dark:text-white/30' : 'text-gray-900 placeholder:text-gray-400'}`}
+                  className={`bg-transparent border-none outline-none text-sm w-full sm:w-48 focus:sm:w-64 transition-all ${isDark ? 'text-white placeholder:text-white/30' : 'text-gray-900 placeholder:text-gray-400'}`}
                 />
               </div>
             </div>
@@ -139,11 +139,11 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
                 <Loader2 className="w-6 h-6 animate-spin text-yellow-500" />
               </div>
             ) : documentos?.length === 0 ? (
-              <div className={`text-center p-8 rounded-xl border border-dashed ${isDark ? 'border-white/10 text-gray-900 dark:text-white/40' : 'border-gray-200 text-gray-500'}`}>
+              <div className={`text-center p-8 rounded-xl border border-dashed ${isDark ? 'border-white/10 text-white/' : 'border-gray-200 text-gray-500'}`}>
                 Nenhum documento salvo para {cargoName} ainda.
               </div>
             ) : filteredDocumentos?.length === 0 ? (
-              <div className={`text-center p-8 rounded-xl border border-dashed ${isDark ? 'border-white/10 text-gray-900 dark:text-white/40' : 'border-gray-200 text-gray-500'}`}>
+              <div className={`text-center p-8 rounded-xl border border-dashed ${isDark ? 'border-white/10 text-white/' : 'border-gray-200 text-gray-500'}`}>
                 Nenhum arquivo encontrado com "{searchTerm}".
               </div>
             ) : (
@@ -166,7 +166,7 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
                       )}
                       <div className="overflow-hidden">
                         <p className="font-medium text-sm truncate" title={doc.file_name}>{doc.file_name}</p>
-                        <div className={`flex items-center gap-2 text-xs mt-0.5 ${isDark ? 'text-gray-900 dark:text-white/50' : 'text-gray-500'}`}>
+                        <div className={`flex items-center gap-2 text-xs mt-0.5 ${isDark ? 'text-white/' : 'text-gray-500'}`}>
                           <span>{formatBytes(doc.file_size)}</span>
                           <span>•</span>
                           <span>{format(new Date(doc.created_at), "dd 'de' MMM, HH:mm", { locale: ptBR })}</span>
@@ -200,16 +200,16 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
       </div>
 
       <AlertDialog open={!!docToDelete} onOpenChange={(open) => !open && setDocToDelete(null)}>
-        <AlertDialogContent className={isDark ? 'bg-[#121214] border-white/10 text-gray-900 dark:text-white' : 'bg-white border-gray-200 text-gray-900'}>
+        <AlertDialogContent className={isDark ? 'bg-[#121214] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}>
           <AlertDialogHeader>
-            <AlertDialogTitle className={isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}>Excluir Arquivo</AlertDialogTitle>
-            <AlertDialogDescription className={isDark ? 'text-gray-900 dark:text-white/60' : 'text-gray-500'}>
+            <AlertDialogTitle className={isDark ? 'text-white' : 'text-gray-900'}>Excluir Arquivo</AlertDialogTitle>
+            <AlertDialogDescription className={isDark ? 'text-white/' : 'text-gray-500'}>
               Tem certeza que deseja excluir permanentemente o arquivo "{docToDelete?.file_name}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className={isDark ? 'border-white/20 text-gray-900 dark:text-white hover:bg-white/10 hover:text-gray-900 dark:text-white' : 'text-gray-900 hover:bg-gray-100'}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 text-gray-900 dark:text-white">
+            <AlertDialogCancel className={isDark ? 'border-white/20 text-white hover:bg-white/10 hover:text-white' : 'text-gray-900 hover:bg-gray-100'}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 text-white">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

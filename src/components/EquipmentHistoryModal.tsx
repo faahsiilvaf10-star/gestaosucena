@@ -77,7 +77,7 @@ export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName,
               <History size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Histórico Completo</h2>
+              <h2 className="text-lg font-semibold text-white">Histórico Completo</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">{vehicleName}</p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName,
               {Object.keys(groupedHistory).map((date) => (
                 <div key={date}>
                   <div className="sticky top-0 z-10 -mx-4 px-4 py-2 sm:-mx-6 sm:px-6 bg-gray-50/90 dark:bg-[#121214]/90 backdrop-blur-sm">
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full px-4 py-1 inline-block shadow-sm">
+                    <h3 className="text-sm font-bold text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full px-4 py-1 inline-block shadow-sm">
                       {date}
                     </h3>
                   </div>
@@ -123,7 +123,7 @@ export function EquipmentHistoryModal({ isOpen, onClose, vehicleId, vehicleName,
                           
                           <div className="flex-1 bg-white dark:bg-zinc-800/50 rounded-xl p-3 sm:p-4 border border-gray-100 dark:border-zinc-700/50 shadow-sm hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-colors">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              <span className="text-sm font-bold text-white">
                                 {item.new_status || 'Status Atualizado'}
                               </span>
                               <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">

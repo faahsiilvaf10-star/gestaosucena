@@ -98,22 +98,22 @@ function AddCollaboratorModal({
       <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
-          <h2 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
+          <h2 className="text-white font-semibold flex items-center gap-2">
             <Plus size={18} /> 
             Adicionar a {currentArea}
           </h2>
-          <button onClick={onClose} className="text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-white/ hover:text-gray-900 dark:hover:text-white transition-colors p-1">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-4 border-b border-black/10 dark:border-white/10">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/40" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/" size={16} />
             <input 
               type="text" 
               placeholder="Buscar colaborador no efetivo..." 
-              className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
+              className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-white text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -123,9 +123,9 @@ function AddCollaboratorModal({
 
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? (
-            <div className="py-10 text-center text-gray-500 dark:text-white/50">Carregando efetivo...</div>
+            <div className="py-10 text-center text-white/">Carregando efetivo...</div>
           ) : filteredEfetivo.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 dark:text-white/50">Nenhum colaborador encontrado.</div>
+            <div className="py-10 text-center text-white/">Nenhum colaborador encontrado.</div>
           ) : (
             <div className="flex flex-col gap-1">
               {filteredEfetivo.map(c => (
@@ -135,10 +135,10 @@ function AddCollaboratorModal({
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
                 >
                   <div>
-                    <div className="text-gray-900 dark:text-white font-medium text-sm">{c.nome}</div>
-                    <div className="text-gray-500 dark:text-white/50 text-xs mt-0.5">{c.cargo || 'Sem cargo'} • {c.setor || 'Sem setor'}</div>
+                    <div className="text-white font-medium text-sm">{c.nome}</div>
+                    <div className="text-white/ text-xs mt-0.5">{c.cargo || 'Sem cargo'} • {c.setor || 'Sem setor'}</div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-white/40 group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-gray-900 dark:group-hover:text-white transition-all">
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-white/ group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-gray-900 dark:group-hover:text-white transition-all">
                     <Plus size={16} />
                   </div>
                 </button>
@@ -245,23 +245,23 @@ function PreviewModal({
       <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
-          <h2 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
+          <h2 className="text-white font-semibold flex items-center gap-2">
             <Eye size={18} /> 
             Pré-visualizar
           </h2>
-          <button onClick={onClose} className="text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-white/ hover:text-gray-900 dark:hover:text-white transition-colors p-1">
             <X size={20} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 bg-black/5 dark:bg-black/20">
-          <pre className="font-mono text-xs sm:text-sm text-gray-900 dark:text-white/90 whitespace-pre-wrap break-words">
+          <pre className="font-mono text-xs sm:text-sm text-white/ whitespace-pre-wrap break-words">
             {generatePreviewText()}
           </pre>
         </div>
 
         <div className="p-4 border-t border-black/10 dark:border-white/10 flex gap-2 justify-end bg-white dark:bg-[#1e1e1e]">
-          <button onClick={onClose} className="px-4 py-2 rounded-full text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors">
+          <button onClick={onClose} className="px-4 py-2 rounded-full text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 text-white transition-colors">
             Fechar
           </button>
           <button onClick={handleCopy} className="px-4 py-2 rounded-full text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 transition-colors">
@@ -773,14 +773,14 @@ function RhListaPresencaPage() {
   // Externos and Atestados aren't explicitly counted in the top bar according to the image, but ausentes is marked in red.
 
   return (
-    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-[#111111] text-gray-900 dark:text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
+    <div className={`flex flex-col min-h-screen ${isDark ? 'bg-[#111111] text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-7xl mx-auto flex-1">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-gray-900 dark:text-white transition-colors">
+              <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
               <h1 className="text-[42px] tracking-tight" style={{ lineHeight: '1' }}>Lista de Presença</h1>
@@ -826,7 +826,7 @@ function RhListaPresencaPage() {
                   value={newAreaName}
                   onChange={e => setNewAreaName(e.target.value)}
                   placeholder="Nome da área"
-                  className="bg-transparent border-none outline-none text-sm w-32 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                  className="bg-transparent border-none outline-none text-sm w-32 text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   autoFocus
                   onKeyDown={e => {
                     if (e.key === 'Enter' && newAreaName.trim()) {
@@ -870,18 +870,18 @@ function RhListaPresencaPage() {
               <div className="grid grid-cols-3 gap-2 md:gap-4">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
                   <div className="flex flex-col items-center md:items-start">
-                    <p className="text-gray-900 dark:text-white/50 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Total</p>
-                    <p className="text-gray-900 dark:text-white text-xl md:text-3xl font-bold">{total}</p>
+                    <p className="text-white/ text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Total</p>
+                    <p className="text-white text-xl md:text-3xl font-bold">{total}</p>
                   </div>
-                  <Users className="text-gray-900 dark:text-white/20 hidden md:block" size={32} />
+                  <Users className="text-white/ hidden md:block" size={32} />
                 </div>
                 
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
                   <div className="flex flex-col items-center md:items-start">
-                    <p className="text-gray-900 dark:text-white/50 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Presentes</p>
-                    <p className="text-gray-900 dark:text-white text-xl md:text-3xl font-bold">{presentes}</p>
+                    <p className="text-white/ text-[10px] md:text-xs font-medium uppercase tracking-wider mb-0.5 md:mb-1">Presentes</p>
+                    <p className="text-white text-xl md:text-3xl font-bold">{presentes}</p>
                   </div>
-                  <CheckCircle2 className="text-gray-900 dark:text-white/20 hidden md:block" size={32} />
+                  <CheckCircle2 className="text-white/ hidden md:block" size={32} />
                 </div>
                 
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 md:p-4 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left">
@@ -899,24 +899,24 @@ function RhListaPresencaPage() {
                   <input 
                     type="text" 
                     placeholder="Buscar por nome ou função..." 
-                    className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-full pl-4 pr-10 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-gray-900 dark:text-white text-sm"
+                    className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-full pl-4 pr-10 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-white text-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {searchQuery ? (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-900 dark:text-white/40 hover:text-gray-900 dark:text-white">
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/ hover:text-white">
                       <X size={16} />
                     </button>
                   ) : (
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900 dark:text-white/40" size={16} />
+                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-white/" size={16} />
                   )}
                 </div>
                 
                 <div className="flex flex-wrap gap-2 w-full md:w-auto pb-2 md:pb-0">
-                  <button onClick={() => markAll('PRESENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => markAll('PRESENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos presentes
                   </button>
-                  <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => markAll('AUSENTE')} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-white border border-black/10 dark:border-white/10 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Todos ausentes
                   </button>
                   <button 
@@ -932,7 +932,7 @@ function RhListaPresencaPage() {
                   >
                     Limpar Lista
                   </button>
-                  <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} /> Adicionar
                   </button>
                   
@@ -952,7 +952,7 @@ function RhListaPresencaPage() {
                     </button>
                   )}
                   
-                  <button onClick={() => setIsPreviewOpen(true)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-gray-900 dark:text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors">
+                  <button onClick={() => setIsPreviewOpen(true)} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-black/60 text-white border border-black/10 dark:border-white/10 flex items-center gap-2 whitespace-nowrap transition-colors">
                     <Eye size={14} /> Pré-visualizar
                   </button>
                   <button onClick={handleGeneratePDF} className="shrink-0 px-4 py-2.5 rounded-full text-xs font-semibold bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-2 whitespace-nowrap transition-colors">
@@ -963,14 +963,14 @@ function RhListaPresencaPage() {
 
               {/* List */}
               <div className="mt-4">
-                <h3 className="text-gray-900 dark:text-white text-lg mb-4">{activeTab} — {total} funcionário(s)</h3>
+                <h3 className="text-white text-lg mb-4">{activeTab} — {total} funcionário(s)</h3>
                 
                 {loading ? (
-                  <div className="py-10 text-center text-gray-900 dark:text-white/50">Carregando...</div>
+                  <div className="py-10 text-center text-white/">Carregando...</div>
                 ) : filteredColaboradores.length === 0 ? (
-                  <div className="py-12 flex flex-col items-center justify-center gap-4 text-gray-900 dark:text-white/50 mt-4">
+                  <div className="py-12 flex flex-col items-center justify-center gap-4 text-white/ mt-4">
                     <p>Nenhum colaborador nesta área.</p>
-                    <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={() => setIsAddModalOpen(true)} disabled={lockedAreas.includes(activeTab)} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-white/10 hover:bg-white/20 text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                       <Plus size={16} /> Adicionar colaborador
                     </button>
                   </div>
@@ -989,19 +989,19 @@ function RhListaPresencaPage() {
                                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'AUSENTE' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'AUSENTE' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
-                                <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">AUSENTE</span>
+                                <span className="text-[9px] font-bold tracking-wider text-white/">AUSENTE</span>
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer group/opt">
                                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'EXTERNO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'EXTERNO' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
-                                <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">EXTERNO</span>
+                                <span className="text-[9px] font-bold tracking-wider text-white/">EXTERNO</span>
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer group/opt">
                                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${c.status === 'ATESTADO' ? 'border-amber-400 bg-amber-400' : 'border-white/30 group-hover/opt:border-white/60'}`}>
                                   {c.status === 'ATESTADO' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                 </div>
-                                <span className="text-[9px] font-bold tracking-wider text-gray-900 dark:text-white/70">ATESTADO</span>
+                                <span className="text-[9px] font-bold tracking-wider text-white/">ATESTADO</span>
                               </label>
                               
                               {/* Invisible clickable overlays to handle the logic easily without messing with native inputs */}
@@ -1020,10 +1020,10 @@ function RhListaPresencaPage() {
                             </div>
 
                             <div className="flex flex-col pl-4">
-                              <span className={`text-gray-900 dark:text-white font-bold transition-all ${isStriked ? 'line-through text-gray-900 dark:text-white/40' : ''}`}>
+                              <span className={`text-white font-bold transition-all ${isStriked ? 'line-through text-white/' : ''}`}>
                                 {c.nome}
                               </span>
-                              <span className={`text-xs text-gray-900 dark:text-white/50 tracking-wider uppercase ${isStriked ? 'opacity-50' : ''}`}>
+                              <span className={`text-xs text-white/ tracking-wider uppercase ${isStriked ? 'opacity-50' : ''}`}>
                                 {c.cargo || 'SEM CARGO'}
                               </span>
                             </div>
@@ -1045,7 +1045,7 @@ function RhListaPresencaPage() {
                               </div>
                             )}
                             
-                            <button onClick={() => handleRemoveColaborador(c.id)} disabled={lockedAreas.includes(activeTab)} className="text-gray-900 dark:text-white/20 hover:text-gray-900 dark:text-white/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Remover da lista">
+                            <button onClick={() => handleRemoveColaborador(c.id)} disabled={lockedAreas.includes(activeTab)} className="text-white/ hover:text-white/ transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Remover da lista">
                               <Trash2 size={16} />
                             </button>
                           </div>
@@ -1081,12 +1081,12 @@ function RhListaPresencaPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col p-6 text-center">
             <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-gray-900 dark:text-white font-bold text-xl mb-2">Excluir Área?</h3>
-            <p className="text-gray-600 dark:text-white/60 text-sm mb-6">
+            <h3 className="text-white font-bold text-xl mb-2">Excluir Área?</h3>
+            <p className="text-white/ text-sm mb-6">
               Tem certeza que deseja remover a aba <strong>{areaToDelete}</strong>? Os colaboradores não serão excluídos do sistema.
             </p>
             <div className="flex gap-2 w-full">
-              <button onClick={() => setAreaToDelete(null)} className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors">
+              <button onClick={() => setAreaToDelete(null)} className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-white transition-colors">
                 Cancelar
               </button>
               <button onClick={confirmDeleteArea} className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition-colors">

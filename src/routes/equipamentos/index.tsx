@@ -22,12 +22,12 @@ function EquipamentosHub() {
         {/* Title */}
         <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
-            className="tracking-tight text-gray-900 dark:text-white drop-shadow-md text-center py-1"
+            className="tracking-tight text-white drop-shadow-md text-center py-1"
             style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: 'normal' }}
           >
             Equipamentos
           </h1>
-          <p className="text-gray-900 dark:text-white/70 text-sm mt-2 font-medium text-center">
+          <p className="text-white/ text-sm mt-2 font-medium text-center">
             Controle de frotas, movimentações e vistorias
           </p>
         </div>
@@ -40,12 +40,12 @@ function EquipamentosHub() {
               <Link
                 key={idx}
                 to={item.href as any}
-                className="group relative flex flex-col items-center justify-center p-3 rounded-[32px] bg-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 border border-gray-100"
+                className="group relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
               >
-                <div className="mb-6 transition-transform duration-500 group-hover:scale-110">
-                  <Icon className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
+                <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
+                  <Icon className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-2xl text-gray-900 tracking-wide font-medium text-center whitespace-pre-line leading-tight">
+                <h3 className="text-xl tracking-wide font-medium text-center whitespace-pre-line leading-tight z-10 text-current">
                   {item.name}
                 </h3>
               </Link>

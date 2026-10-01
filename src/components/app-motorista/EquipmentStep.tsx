@@ -76,7 +76,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         <button onClick={onBack} className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
           &larr; Voltar
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">SELECIONE O <br/> EQUIPAMENTO</h1>
+        <h1 className="text-2xl font-bold text-white leading-tight">SELECIONE O <br/> EQUIPAMENTO</h1>
       </div>
 
       <div className="relative mb-6">
@@ -108,7 +108,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 min-w-0">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2 min-w-0">
                     <span className="truncate">{eq.name}</span>
                     {eq.id === lastEquipmentId && (
                       <span className="flex-shrink-0 text-[10px] uppercase font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-800">

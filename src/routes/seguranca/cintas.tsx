@@ -103,7 +103,7 @@ function VistoriaCintas() {
             <Link2 className="w-6 h-6 text-gray-700 dark:text-gray-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl font-semibold text-white tracking-tight">
               Vistoria de Cintas
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -113,7 +113,7 @@ function VistoriaCintas() {
         </div>
         <Button
           variant="outline"
-          className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 rounded-full"
+          className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-white hover:bg-gray-50 dark:hover:bg-white/10 rounded-full"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Cinta
@@ -221,7 +221,7 @@ function VistoriaCintas() {
       {/* Table Section */}
       <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#0f0f0f] shadow-sm overflow-hidden flex flex-col">
         <div className="p-5 border-b border-gray-200 dark:border-white/5">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className="text-lg font-medium text-white">
             Equipamentos Cadastrados
           </h3>
         </div>
@@ -316,7 +316,7 @@ function VistoriaCintas() {
 
       {/* Legend / Calendar */}
       <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#141414] shadow-sm p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
+        <h3 className="text-lg font-medium text-white mb-6">
           Calendário de Inspeções por Cor
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -332,7 +332,7 @@ function VistoriaCintas() {
             >
               <div className={`w-5 h-5 rounded-full ${item.cls} shrink-0`}></div>
               <div>
-                <p className="text-gray-900 dark:text-white font-medium">{item.cor}</p>
+                <p className="text-white font-medium">{item.cor}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{item.meses}</p>
               </div>
             </div>
@@ -343,8 +343,8 @@ function VistoriaCintas() {
       {/* History Table */}
       <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#111111] shadow-sm overflow-hidden flex flex-col">
         <div className="p-5 border-b border-gray-200 dark:border-white/5 flex items-center space-x-2">
-          <History className="w-5 h-5 text-gray-900 dark:text-white" />
-          <h3 className="text-lg font-bold font-serif tracking-tight text-gray-900 dark:text-white">
+          <History className="w-5 h-5 text-white" />
+          <h3 className="text-lg font-bold font-serif tracking-tight text-white">
             Histórico de Vistoria de Cintas
           </h3>
         </div>
@@ -476,7 +476,7 @@ function VistoriaCintas() {
       >
         <DialogContent className="bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-white/10 sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold font-serif tracking-tight text-gray-900 dark:text-white">
+            <DialogTitle className="text-xl font-bold font-serif tracking-tight text-white">
               Registrar Inspeção
             </DialogTitle>
           </DialogHeader>
@@ -490,7 +490,7 @@ function VistoriaCintas() {
                     className={`w-6 h-6 rounded-full ${colorMap[editingCinta.cor]}`}
                   ></div>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white font-mono text-sm">
+                    <h4 className="font-medium text-white font-mono text-sm">
                       {editingCinta.tag}
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -508,32 +508,32 @@ function VistoriaCintas() {
 
               {/* Data da Inspeção */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-white">
+                <Label className="text-sm font-medium text-white">
                   Data da Inspeção
                 </Label>
                 <DateInput
                   value={dataInspecao}
                   onChange={setDataInspecao}
-                  className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus-visible:ring-gray-300 dark:focus-visible:ring-white/20"
+                  className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-white focus-visible:ring-gray-300 dark:focus-visible:ring-white/20"
                 />
               </div>
 
               {/* Observações */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-white">
+                <Label className="text-sm font-medium text-white">
                   Observações da Vistoria
                 </Label>
                 <Textarea
                   placeholder="Descreva os achados durante a inspeção, condição da cinta, etc..."
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white resize-none h-24 focus-visible:ring-gray-300 dark:focus-visible:ring-white/20"
+                  className="bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-white/10 text-white resize-none h-24 focus-visible:ring-gray-300 dark:focus-visible:ring-white/20"
                 />
               </div>
 
               {/* Foto */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-white">
+                <Label className="text-sm font-medium text-white">
                   Foto da Cinta
                 </Label>
                 <div className="border border-dashed border-gray-300 dark:border-white/20 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
@@ -546,7 +546,7 @@ function VistoriaCintas() {
 
               {/* Status Actions */}
               <div className="space-y-3 pt-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-white">
+                <Label className="text-sm font-medium text-white">
                   Status
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -560,7 +560,7 @@ function VistoriaCintas() {
                   <Button
                     variant="outline"
                     onClick={() => handleSave('Não é mês de inspeção')}
-                    className="w-full bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl"
+                    className="w-full bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Salvar como Cancelada

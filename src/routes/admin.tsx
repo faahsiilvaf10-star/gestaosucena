@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone, Package } from 'lucide-react'
+import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone, Package, UploadCloud, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'
@@ -9,6 +9,7 @@ import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings, GlobalAppearanceSettings, getGlobalAppearanceSettings, saveGlobalAppearanceSettings } from '../lib/settings'
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
+import '../dashboard.css'
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
 export const testWhatsappOnServer = createServerFn({ method: 'POST' })
@@ -380,6 +381,40 @@ function AdminRoute() {
       toast.error('Erro ao salvar as configurações de aparência.')
     }
     setSavingAppearance(false)
+  }
+
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const toastId = toast.loading('Enviando imagem...')
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `bg_${Date.now()}.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file)
+        
+      if (uploadError) throw uploadError
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+        
+      const cssString = `url('${publicUrl}')`
+      setAppearance({ ...appearance, backgroundCss: cssString })
+      toast.success('Imagem carregada! Não esqueça de clicar em Salvar Fundo.', { id: toastId })
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Erro ao enviar imagem: ' + err.message, { id: toastId })
+    }
+  }
+
+  const handleResetBackground = () => {
+    const defaultCss = `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+    setAppearance({ ...appearance, backgroundCss: defaultCss })
+    toast.success('Fundo resetado para o padrão. Clique em Salvar Fundo para confirmar.')
   }
 
   const handleUnlockWhatsapp = () => {
@@ -1559,25 +1594,150 @@ function AdminRoute() {
             </p>
 
             <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-              <label className="block text-sm font-semibold mb-2">Background CSS</label>
-              <textarea
-                value={appearance.backgroundCss}
-                onChange={e => setAppearance({ ...appearance, backgroundCss: e.target.value })}
-                className={`w-full h-32 px-4 py-3 rounded-lg border outline-none transition-colors font-mono text-sm resize-y ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-pink-500' : 'bg-white border-gray-300 focus:border-pink-500'}`}
-                placeholder="Ex: linear-gradient(to right, #ff7e5f, #feb47b) ou url('...')"
-              />
-              <p className={`text-xs mt-3 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                <strong>Dica:</strong> Para imagem, use <code>url('SUA_URL_AQUI') no-repeat center center fixed</code> junto com <code>background-size: cover</code>.
-              </p>
               
+              {appearance.backgroundCss && appearance.backgroundCss.includes('url(') && (
+                <div className="mb-6">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                    <label className="text-sm font-semibold">Fundo Atualizado (Miniatura)</label>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Opacidade:</span>
+                      <input 
+                        type="range" 
+                        min="0" max="100" 
+                        value={appearance.opacity ?? 100} 
+                        onChange={(e) => setAppearance(prev => ({ ...prev, opacity: Number(e.target.value) }))}
+                        className="w-32 accent-pink-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold w-8 text-right">{appearance.opacity ?? 100}%</span>
+                    </div>
+                  </div>
+                  <div 
+                    className="w-full h-40 md:h-64 rounded-xl border-2 border-dashed relative overflow-hidden shadow-inner flex items-center justify-center bg-black"
+                    style={{ 
+                      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-200"
+                      style={{ 
+                        backgroundImage: appearance.backgroundCss,
+                        opacity: (appearance.opacity ?? 100) / 100
+                      }}
+                    />
+                    <span className="relative z-10 px-3 py-1 rounded bg-black/50 text-white text-xs font-bold pointer-events-none backdrop-blur-sm">
+                      Pré-visualização
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Sliders for Cards Opacity */}
+              <div className="mb-6 mt-6 border-t border-white/10 pt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  Opacidade dos Cards do Dashboard
+                </h3>
+                <p className={`text-xs mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Ajuste a transparência dos cards principais do dashboard (exceto os que possuem cores fixas como "Em Operação").
+                </p>
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <label className="text-sm font-semibold">Opacidade - Tema Escuro (Neon)</label>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="range" 
+                        min="0" max="100" 
+                        value={appearance.darkCardOpacity ?? 35} 
+                        onChange={(e) => setAppearance(prev => ({ ...prev, darkCardOpacity: Number(e.target.value) }))}
+                        className="w-32 accent-pink-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold w-8 text-right">{appearance.darkCardOpacity ?? 35}%</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <label className="text-sm font-semibold">Opacidade - Tema Claro (Glass)</label>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="range" 
+                        min="0" max="100" 
+                        value={appearance.lightCardOpacity ?? 75} 
+                        onChange={(e) => setAppearance(prev => ({ ...prev, lightCardOpacity: Number(e.target.value) }))}
+                        className="w-32 accent-pink-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold w-8 text-right">{appearance.lightCardOpacity ?? 75}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PREVIEW DA OPACIDADE */}
+                {appearance.backgroundCss && (
+                  <div className="mt-6">
+                    <label className="text-sm font-semibold block mb-2">Pré-visualização do Card no {isDark ? 'Tema Escuro' : 'Tema Claro'}</label>
+                    <div 
+                      className="w-full h-40 md:h-64 rounded-xl border-2 border-dashed relative overflow-hidden shadow-inner flex items-center justify-center bg-black"
+                      style={{ 
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-200"
+                        style={{ 
+                          backgroundImage: appearance.backgroundCss,
+                          opacity: (appearance.opacity ?? 100) / 100
+                        }}
+                      />
+                      
+                      <style>{`
+                        .mock-preview-card {
+                          background: ${isDark ? `rgba(0, 0, 0, ${(appearance.darkCardOpacity ?? 35) / 100})` : `rgba(255, 255, 255, ${(appearance.lightCardOpacity ?? 75) / 100})`} !important;
+                        }
+                      `}</style>
+                      
+                      {/* Renderiza o card mock com a classe correspondente ao tema */}
+                      <div 
+                        className={`mock-preview-card dashboard-card ${isDark ? "neon-card neon-yellow" : ""} p-6 w-64 h-32 flex flex-col justify-center items-center text-center shadow-2xl relative z-10`}
+                      >
+                        <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-[#07173f]'}`}>Exemplo de Card</span>
+                        <span className={`text-xs mt-2 ${isDark ? 'text-gray-300' : 'text-[#53698e]'}`}>Opacidade: {isDark ? (appearance.darkCardOpacity ?? 35) : (appearance.lightCardOpacity ?? 75)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <label className="relative flex-1 cursor-pointer">
+                  <div className={`flex flex-col items-center justify-center h-32 px-4 py-3 rounded-xl border-2 border-dashed transition-colors ${isDark ? 'border-white/20 hover:border-pink-500 bg-[#0a0a0c]' : 'border-gray-300 hover:border-pink-500 bg-white'}`}>
+                    <UploadCloud size={32} className={isDark ? "text-gray-400" : "text-gray-500"} />
+                    <span className="mt-2 text-sm font-semibold">Fazer upload de nova imagem</span>
+                    <span className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>PNG, JPG ou WEBP</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBackgroundUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </label>
+
+                <div className="flex flex-col gap-4 justify-center">
+                  <button
+                    onClick={handleResetBackground}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl border transition-colors font-semibold text-sm ${isDark ? 'border-white/20 hover:bg-white/10 text-white' : 'border-gray-300 hover:bg-gray-100 text-gray-800'}`}
+                  >
+                    <RefreshCw size={18} />
+                    Usar Fundo Padrão
+                  </button>
+                </div>
+              </div>
+
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleSaveAppearance}
                   disabled={savingAppearance}
-                  className="flex items-center justify-center gap-2 px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 w-full md:w-auto px-10 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
                   <Save size={18} />
-                  {savingAppearance ? 'Salvando...' : 'Salvar Fundo'}
+                  {savingAppearance ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
               </div>
             </div>

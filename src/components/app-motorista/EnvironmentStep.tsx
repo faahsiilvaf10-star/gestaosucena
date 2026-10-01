@@ -23,7 +23,7 @@ export default function EnvironmentStep({ onSelect }: { onSelect: (envId: string
   return (
     <div className="min-h-full flex flex-col p-6 bg-gray-50 dark:bg-zinc-950 pb-24">
       <div className="mt-8 mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">SELECIONE O AMBIENTE</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">SELECIONE O AMBIENTE</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Toque para entrar no ambiente</p>
       </div>
 
@@ -39,7 +39,7 @@ export default function EnvironmentStep({ onSelect }: { onSelect: (envId: string
             </div>
             
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-1">
+              <h2 className="text-lg font-bold text-white leading-tight mb-1">
                 {env.name}
               </h2>
               <span className="text-sm font-medium text-emerald-600 dark:text-emerald-500">

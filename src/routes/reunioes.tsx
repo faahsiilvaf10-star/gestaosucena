@@ -123,23 +123,23 @@ function ReunioesRoute() {
         </div>
         <div>
           <h1 className="tracking-tight text-4xl font-bold dark:text-white">Salas de Reunião</h1>
-          <p className="text-gray-600 dark:text-white/60 mt-1">Crie ou acesse salas de videoconferência instantâneas.</p>
+          <p className="text-white/ mt-1">Crie ou acesse salas de videoconferência instantâneas.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white"><Users className="text-yellow-500" /> Nova Reunião</h2>
-          <p className="text-gray-600 dark:text-white/60 text-sm mb-6">Crie uma nova sala ou digite o nome de uma sala existente para entrar.</p>
+          <p className="text-white/ text-sm mb-6">Crie uma nova sala ou digite o nome de uma sala existente para entrar.</p>
           
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-gray-700 dark:text-white/80 pl-1 mb-1.5 block uppercase tracking-wider">Nome da Sala</label>
+              <label className="text-xs font-bold text-white/ pl-1 mb-1.5 block uppercase tracking-wider">Nome da Sala</label>
               <input
                 type="text"
                 value={roomName}
                 onChange={e => setRoomName(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
                 placeholder="Ex: Reunião Diretoria"
               />
             </div>
@@ -165,21 +165,21 @@ function ReunioesRoute() {
             <div className="space-y-3">
               <button onClick={() => { setRoomName('Geral'); setInMeeting(true); broadcastMeeting('Geral'); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white">Reunião Geral</div>
-                  <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">Sala principal para todos</div>
+                  <div className="font-bold text-white">Reunião Geral</div>
+                  <div className="text-xs text-white/ mt-0.5">Sala principal para todos</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Video size={14} className="text-gray-500 dark:text-white/40" />
+                  <Video size={14} className="text-white/" />
                 </div>
               </button>
               
               <button onClick={() => { setRoomName('Operacao'); setInMeeting(true); broadcastMeeting('Operacao'); }} className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all border border-gray-200 dark:border-white/5 flex items-center justify-between group">
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white">Operação</div>
-                  <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">Alinhamento diário da operação</div>
+                  <div className="font-bold text-white">Operação</div>
+                  <div className="text-xs text-white/ mt-0.5">Alinhamento diário da operação</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Video size={14} className="text-gray-500 dark:text-white/40" />
+                  <Video size={14} className="text-white/" />
                 </div>
               </button>
             </div>
@@ -198,11 +198,11 @@ function ReunioesRoute() {
               {history.map(item => (
                  <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 gap-4 hover:border-blue-500/30 transition-colors">
                    <div>
-                     <div className="font-bold text-gray-900 dark:text-white text-lg">{item.room_name}</div>
-                     <div className="text-sm text-gray-500 dark:text-white/60">Iniciada por {item.started_by_name || 'Usuário'}</div>
+                     <div className="font-bold text-white text-lg">{item.room_name}</div>
+                     <div className="text-sm text-white/">Iniciada por {item.started_by_name || 'Usuário'}</div>
                    </div>
                    <div className="flex items-center gap-4 justify-between sm:justify-end">
-                     <div className="text-xs text-gray-400 dark:text-white/40 flex items-center gap-1">
+                     <div className="text-xs text-white/ flex items-center gap-1">
                        <Clock size={12}/> 
                        {new Date(item.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                      </div>
@@ -217,7 +217,7 @@ function ReunioesRoute() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500 dark:text-white/40">
+            <div className="text-center py-8 text-white/">
               Nenhum histórico de reunião encontrado.<br/>
               <span className="text-sm opacity-70">Lembre-se de rodar a query SQL para criar a tabela `meeting_history`.</span>
             </div>

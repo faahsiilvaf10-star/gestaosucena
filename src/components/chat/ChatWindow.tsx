@@ -330,7 +330,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         {groupedMessages.map((group, gIdx) => (
           <div key={gIdx} className="space-y-3">
             <div className="flex flex-col items-center sticky top-2 z-10 my-4">
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-gray-900 dark:text-white/50 border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-white/ border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
                 {group.date}
               </span>
             </div>
@@ -341,7 +341,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
               
               return (
                 <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-2.5 shadow-sm relative group ${isMine ? (isDark ? 'bg-[#25200F] text-gray-900 dark:text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') : (isDark ? 'bg-[#202126] text-gray-900 dark:text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5') }`}>
+                  <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-2.5 shadow-sm relative group ${isMine ? (isDark ? 'bg-[#25200F] text-white rounded-tr-sm' : 'bg-[#e7f8d6] text-gray-900 rounded-tr-sm') : (isDark ? 'bg-[#202126] text-white rounded-tl-sm border border-white/5' : 'bg-white text-gray-900 rounded-tl-sm border border-black/5') }`}>
                     {(() => {
                       const parts = (msg.text || '').split('|')
                       const url = parts[0]
@@ -378,7 +378,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
                       
                       if (msg.type === 'document') {
                         return (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isMine ? (isDark ? 'border-white/10 hover:bg-white/5 text-gray-900 dark:text-white' : 'border-black/10 hover:bg-black/5 text-gray-900') : (isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-black/10 hover:bg-black/5 text-gray-900')}`}>
+                          <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isMine ? (isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-black/10 hover:bg-black/5 text-gray-900') : (isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-black/10 hover:bg-black/5 text-gray-900')}`}>
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isMine ? 'bg-[#D6A72B]' : 'bg-gray-500/20'}`}>
                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isMine ? 'text-black' : 'text-current'}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                             </div>
