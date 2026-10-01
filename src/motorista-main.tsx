@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
+import { LocalNotifications } from '@capacitor/local-notifications'
+import { supabase } from './lib/supabase'
 
 // Registra o Service Worker para funcionamento offline
 if ('serviceWorker' in navigator) {
@@ -67,6 +69,63 @@ function AppMotoristaStandalone() {
       setCurrentStepState('login')
     }
   }, [])
+
+  // Push Notifications Local
+  useEffect(() => {
+    const setupNotifications = async () => {
+      try {
+        const permStatus = await LocalNotifications.requestPermissions()
+        console.log('Permissão para notificações:', permStatus)
+        
+        const driverDataStr = localStorage.getItem('app_motorista_driver')
+        if (!driverDataStr) return
+
+        const driver = JSON.parse(driverDataStr)
+        if (!driver.id) return
+
+        // Subscribe to real-time notification messages
+        const channel = supabase.channel('motorista_notif')
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'app_notifications', 
+            filter: `driver_id=eq.${driver.id}` 
+          }, async (payload) => {
+            const newNotif = payload.new as any
+            
+            // Disparar notificação no celular
+            await LocalNotifications.schedule({
+              notifications: [
+                {
+                  title: newNotif.title || 'Nova Mensagem',
+                  body: newNotif.body || 'Você tem uma nova mensagem do painel.',
+                  id: new Date().getTime(),
+                  schedule: { at: new Date(Date.now() + 1000) },
+                  sound: null,
+                  attachments: null,
+                  actionTypeId: '',
+                  extra: null
+                }
+              ]
+            })
+
+            // Marca como lida se desejar, ou só avisa no painel
+          })
+          .subscribe()
+
+        return () => {
+          supabase.removeChannel(channel)
+        }
+      } catch (err) {
+        console.error('Erro ao configurar LocalNotifications:', err)
+      }
+    }
+
+    // Configura e tenta pedir permissão ao abrir se tiver motorista logado
+    if (currentStep !== 'login') {
+      setupNotifications()
+    }
+  }, [currentStep])
 
   const handleLogin = (stepOrDriver?: any) => {
     let target: AppMotoristaStep = 'environment'

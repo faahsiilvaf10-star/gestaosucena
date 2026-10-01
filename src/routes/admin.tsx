@@ -33,6 +33,7 @@ import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings, GlobalAppearanceSettings, getGlobalAppearanceSettings, saveGlobalAppearanceSettings } from '../lib/settings'
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
+import { NotificacoesMotoristas } from '../components/admin/NotificacoesMotoristas'
 import '../dashboard.css'
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
@@ -103,7 +104,7 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance' | 'motoristas'>('users')
 
   const [permissions, setPermissions] = useState<AllUsersPermissions>({})
   const [savingPermissions, setSavingPermissions] = useState(false)
@@ -623,7 +624,19 @@ function AdminRoute() {
             <Megaphone size={18} />
             Aparência Global
           </button>
+          
+          <button 
+            onClick={() => setActiveTab('motoristas')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'motoristas' ? (isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50') }`}
+          >
+            <Smartphone size={18} />
+            Motoristas (App)
+          </button>
         </div>
+
+        {activeTab === 'motoristas' && (
+          <NotificacoesMotoristas isDark={isDark} />
+        )}
 
         {activeTab === 'users' && (
           <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
