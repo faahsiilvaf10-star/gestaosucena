@@ -202,48 +202,71 @@ export default function DashboardStep() {
       const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
       if (eq) setEquipment(eq)
 
-      if (isAdmin) {
-        const fakeDispatch = {
-          id: 'admin_session',
-          shift_start_time: new Date().toISOString(),
-          helper_name: 'Nenhum',
-          odometer_start: 0,
-          horimeter_start: 0,
-          equipment_id: equipmentId,
-          driver_id: 'ADMIN'
-        }
-        setDispatch(fakeDispatch)
-        localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(fakeDispatch))
-        if (!localStorage.getItem('app_motorista_active_status')) {
-          const status = eq?.status === 'Disponível' ? 'waiting' : 'operating'
-          setActiveStatus(status)
-          localStorage.setItem('app_motorista_active_status', status)
-          localStorage.setItem('app_motorista_status_start', new Date().toISOString())
-          setStatusStartTime(new Date())
-          localStorage.setItem('app_motorista_timeline', JSON.stringify([
-            { time: new Date().toISOString(), name: 'Jornada Iniciada', type: 'Início', color: 'bg-emerald-500' },
-            { time: new Date().toISOString(), name: status === 'waiting' ? 'Aguardando' : 'Em Operação', type: 'Status Inicial', color: status === 'waiting' ? 'bg-amber-500' : 'bg-emerald-500' }
-          ]))
-        }
-        return
-      }
-
-      const { data: dsp } = await supabase
+      const { data: dspReal } = await supabase
         .from('eq_driver_dispatch')
         .select('*')
         .eq('equipment_id', equipmentId)
         .eq('status', 'Em atividade')
         .order('shift_start_time', { ascending: false })
         .limit(1)
-        .single()
-      
+        .maybeSingle()
+
+      let dsp = dspReal
+
+      if (isAdmin) {
+        if (dsp) {
+          setDispatch(dsp)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        } else {
+          const fakeDispatch = {
+            id: 'admin_session',
+            shift_start_time: new Date().toISOString(),
+            helper_name: 'Nenhum',
+            odometer_start: 0,
+            horimeter_start: 0,
+            equipment_id: equipmentId,
+            driver_id: 'ADMIN'
+          }
+          setDispatch(fakeDispatch)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(fakeDispatch))
+          if (!localStorage.getItem('app_motorista_active_status')) {
+            const status = eq?.status === 'Disponível' ? 'waiting' : 'operating'
+            setActiveStatus(status)
+            localStorage.setItem('app_motorista_active_status', status)
+            localStorage.setItem('app_motorista_status_start', new Date().toISOString())
+            setStatusStartTime(new Date())
+            localStorage.setItem('app_motorista_timeline', JSON.stringify([
+              { time: new Date().toISOString(), name: 'Jornada Iniciada', type: 'Início', color: 'bg-emerald-500' },
+              { time: new Date().toISOString(), name: status === 'waiting' ? 'Aguardando' : 'Em Operação', type: 'Status Inicial', color: status === 'waiting' ? 'bg-amber-500' : 'bg-emerald-500' }
+            ]))
+          }
+          return
+        }
+      } else {
+        if (!dsp) {
+          if (navigator.onLine) {
+            localStorage.removeItem('app_motorista_driver')
+            localStorage.removeItem('app_motorista_current_step')
+            localStorage.removeItem('app_motorista_current_dispatch')
+            localStorage.removeItem('app_motorista_equipment_id')
+            localStorage.removeItem('app_motorista_timeline')
+            localStorage.removeItem('app_motorista_active_status')
+            localStorage.removeItem('app_motorista_active_status_color')
+            localStorage.removeItem('app_motorista_status_start')
+            window.location.reload()
+            return
+          }
+        } else {
+          setDispatch(dsp)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        }
+      }
+
       if (dsp) {
-        setDispatch(dsp)
-        localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
 
         // RESTORE TIMELINE SE ESTIVER VAZIA (Ex: Troca de celular/login em nova guia)
         const currentTimeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-        if (currentTimeline.length === 0 && navigator.onLine) {
+        if ((currentTimeline.length === 0 || isAdmin) && navigator.onLine) {
           try {
             const { data: history } = await supabase
               .from('eq_status_history')
@@ -280,7 +303,7 @@ export default function DashboardStep() {
               
               localStorage.setItem('app_motorista_timeline', JSON.stringify(newTimeline))
               
-              if (!localStorage.getItem('app_motorista_active_status')) {
+              if (isAdmin || !localStorage.getItem('app_motorista_active_status')) {
                 const lastStatusStr = history[history.length - 1].new_status
                 let resolvedStatus = 'operating'
                 if (lastStatusStr === 'Aguardando') resolvedStatus = 'waiting'
