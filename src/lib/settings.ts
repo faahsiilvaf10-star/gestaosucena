@@ -72,6 +72,56 @@ export async function setAITokens(geminiKey: string, groqKey: string): Promise<b
   }
 }
 
+export type GlobalAppearanceSettings = {
+  backgroundCss: string;
+}
+
+export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSettings> {
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', 'global_appearance')
+      .single()
+      
+    if (error || !data) {
+      return { 
+        backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+      }
+    }
+    
+    let parsed = data.value
+    if (typeof parsed === 'string') {
+      try { parsed = JSON.parse(parsed) } catch(e) {}
+    }
+    
+    return {
+      backgroundCss: parsed?.backgroundCss || `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+    }
+  } catch (err) {
+    return { 
+      backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+    }
+  }
+}
+
+export async function saveGlobalAppearanceSettings(settings: GlobalAppearanceSettings): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('global_settings')
+      .upsert({
+        key: 'global_appearance',
+        value: settings,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' })
+      
+    return !error
+  } catch (err) {
+    console.error('Erro ao salvar aparência:', err)
+    return false
+  }
+}
+
 export type WhatsappSettings = {
   url: string;
   instanceId: string;

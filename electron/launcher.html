@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Sucena Launcher</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: transparent;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+    }
+    .launcher-bg {
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 15, 20, 0.95);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+    }
+    .logo-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    img {
+      width: 50%;
+      max-width: 250px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+    }
+    .pulse {
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    .loading-container {
+      width: 250px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      display: none;
+    }
+    .loading-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 30%;
+      background: #facc15;
+      border-radius: 4px;
+      box-shadow: 0 0 12px #facc15;
+      animation: loading 1.5s ease-in-out infinite alternate;
+    }
+    .btn-launch {
+      padding: 12px 32px;
+      background: #facc15;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+      -webkit-app-region: no-drag;
+    }
+    .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(250, 204, 21, 0.4);
+      background: #fde047;
+    }
+    .drag-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      -webkit-app-region: drag;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: #a1a1aa;
+      cursor: pointer;
+      font-size: 18px;
+      -webkit-app-region: no-drag;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    .close-btn:hover {
+      color: #fff;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.85; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.85; }
+    }
+    @keyframes loading {
+      0% { transform: translateX(-100%); width: 20%; }
+      100% { transform: translateX(250px); width: 60%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher-bg">
+    <div class="drag-area"></div>
+    <div class="close-btn" id="btn-close">✕</div>
+    
+    <div class="logo-container">
+      <img id="logo-img" src="../public/logo.png" alt="Logo">
+    </div>
+    
+    <button class="btn-launch" id="btn-launch">Abrir Sucena</button>
+    
+    <div class="loading-container" id="loading">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('btn-close').addEventListener('click', () => {
+      window.close();
+    });
+
+    document.getElementById('btn-launch').addEventListener('click', () => {
+      document.getElementById('btn-launch').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('logo-img').classList.add('pulse');
+      
+      // Simulate loading time before launching app
+      setTimeout(() => {
+        try {
+          const { ipcRenderer } = require('electron');
+          ipcRenderer.send('launch-app');
+        } catch (err) {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('btn-launch').style.display = 'block';
+          document.getElementById('btn-launch').innerText = 'Erro: ' + err.message;
+        }
+      }, 2500);
+    });
+  </script>
+</body>
+</html>

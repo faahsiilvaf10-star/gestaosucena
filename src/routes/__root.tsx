@@ -20,12 +20,35 @@ import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
 import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
+import { getGlobalAppearanceSettings } from "../lib/settings";
 
 function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
   const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes')) && !path.startsWith('/equipamentos/app-motorista')
+  
+  useEffect(() => {
+    getGlobalAppearanceSettings().then(settings => {
+      if (settings?.backgroundCss) {
+        document.body.style.setProperty('--theme-bg-image', settings.backgroundCss);
+        // Force the inline style in case CSS variable fails to override:
+        document.body.style.backgroundImage = settings.backgroundCss;
+        
+        // Se houver "url" mas não tiver background-size configurado manualmente, adiciona cover por padrão:
+        if (settings.backgroundCss.includes('url') && !settings.backgroundCss.includes('background-size')) {
+           document.body.style.backgroundSize = 'cover';
+           document.body.style.backgroundPosition = 'center center';
+           document.body.style.backgroundAttachment = 'fixed';
+           document.body.style.backgroundRepeat = 'no-repeat';
+        } else {
+           // Default fallback pra gradient
+           document.body.style.backgroundSize = '24px 24px, 24px 24px, 100% 100%';
+           document.body.style.backgroundAttachment = 'fixed';
+        }
+      }
+    }).catch(console.error);
+  }, []);
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark text-white' : 'light text-black'}`}>

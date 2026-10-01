@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import net from 'net';
@@ -11,29 +11,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
-let splashWindow;
+let launcherWindow;
 
 // Função de sleep para o splash durar pelo menos um pouco
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function createWindow() {
-  // 1. Criar janela de Splash transparente
-  splashWindow = new BrowserWindow({
+  // 1. Criar janela do Launcher
+  launcherWindow = new BrowserWindow({
     width: 600,
     height: 400,
     transparent: true,
     frame: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     hasShadow: false,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
-  await splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  await launcherWindow.loadFile(path.join(__dirname, 'launcher.html'));
+}
 
-  // 2. Criar a janela principal escondida, com bordas arredondadas e titlebar moderno
+ipcMain.on('launch-app', () => {
+  // 2. Criar a janela principal escondida, sem barra no topo
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -52,18 +54,13 @@ async function createWindow() {
     }
   });
 
-  // Limpa o cache da sessão na inicialização para garantir conteúdo fresco
-  session.defaultSession.clearCache();
-  session.defaultSession.clearStorageData({ storages: ['appcache', 'cachestorage'] });
-  
   // Carregar o site diretamente (com cache-buster na URL para forçar nova versão)
   const buildUrl = `https://gestaosucena.vercel.app/?t=${Date.now()}`;
   mainWindow.loadURL(buildUrl);
 
-  // Assim que estiver pronta, exibe a principal e fecha a splash
-  mainWindow.webContents.once('did-finish-load', async () => {
-    
-    // Injetar uma barra de título customizada no topo do site para arrastar a janela
+  // Assim que estiver pronta, exibe a principal e fecha o launcher
+  const showMainWindow = async () => {
+    // Injetar uma área de drag customizada transparente
     await mainWindow.webContents.executeJavaScript(`
       if (!document.getElementById('custom-electron-titlebar')) {
         const titlebar = document.createElement('div');
@@ -73,27 +70,9 @@ async function createWindow() {
         titlebar.style.left = '0';
         titlebar.style.width = '100%';
         titlebar.style.height = '28px';
-        titlebar.style.backgroundColor = 'rgba(10, 10, 12, 0.65)';
-        titlebar.style.backdropFilter = 'blur(12px)';
-        titlebar.style.webkitBackdropFilter = 'blur(12px)';
-        // z-index abaixo dos popups de notificação (z-[200] = 200)
-        // mas acima do conteúdo normal da página
+        titlebar.style.backgroundColor = 'transparent';
         titlebar.style.zIndex = '150';
         titlebar.style.webkitAppRegion = 'drag';
-        titlebar.style.display = 'flex';
-        titlebar.style.alignItems = 'center';
-        titlebar.style.justifyContent = 'center';
-        titlebar.style.boxSizing = 'border-box';
-        titlebar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-        
-        const titleText = document.createElement('span');
-        titleText.innerText = 'Sucena Empreendimentos';
-        titleText.style.color = '#a1a1aa';
-        titleText.style.fontFamily = 'system-ui, sans-serif';
-        titleText.style.fontSize = '12px';
-        titleText.style.fontWeight = '600';
-        titleText.style.letterSpacing = '0.5px';
-        titlebar.appendChild(titleText);
         
         document.body.appendChild(titlebar);
         
@@ -108,23 +87,29 @@ async function createWindow() {
         
         // Estiliza a scrollbar para ficar mais elegante
         const style = document.createElement('style');
-        style.innerHTML = \`
+        style.innerHTML = \\\`
           ::-webkit-scrollbar { width: 8px; height: 8px; }
           ::-webkit-scrollbar-track { background: #0a0a0c; }
           ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
           ::-webkit-scrollbar-thumb:hover { background: #52525b; }
-        \`;
+        \\\`;
         document.head.appendChild(style);
       }
-    `);
+    `).catch(err => console.log('Erro ao injetar drag area:', err));
 
-    // Dá um tempinho extra na splash para charme
-    await sleep(3500); 
-    splashWindow.destroy();
-    mainWindow.maximize();
-    mainWindow.show();
-  });
-}
+    if (launcherWindow && !launcherWindow.isDestroyed()) {
+      launcherWindow.destroy();
+    }
+    if (!mainWindow.isVisible()) {
+      mainWindow.maximize();
+      mainWindow.show();
+    }
+  };
+
+  mainWindow.webContents.once('dom-ready', showMainWindow);
+  // Fallback: se a página demorar mais de 3 segundos para reportar 'dom-ready', força a exibição
+  setTimeout(showMainWindow, 3000);
+});
 
 app.whenReady().then(() => {
   // Desabilita cache HTTP para garantir que o EXE sempre carregue

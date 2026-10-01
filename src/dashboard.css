@@ -9,20 +9,18 @@
   --red: #f23759;
   --orange: #ff7200;
 
-  --glass-bg: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.4),
-    rgba(255, 255, 255, 0.2)
-  );
+  --glass-bg: rgba(255, 255, 255, 0.75);
 
-  --glass-border: rgba(255, 255, 255, 0.82);
+  --glass-border: #ffd033; /* Golden yellow border matching the image */
 
   --shadow-soft:
     0 10px 30px rgba(31, 73, 125, 0.08),
+    0 0 10px rgba(255, 208, 51, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.68);
 
   --shadow-hover:
-    0 16px 38px rgba(31, 73, 125, 0.13);
+    0 16px 38px rgba(31, 73, 125, 0.13),
+    0 0 15px rgba(255, 208, 51, 0.25);
 
   --radius: 22px;
 }
@@ -279,6 +277,11 @@ body {
   color: var(--orange);
 }
 
+.icon-yellow {
+  background: rgba(245, 196, 0, 0.15);
+  color: #b89300;
+}
+
 .icon-purple {
   background: rgba(111, 83, 255, 0.12);
   color: #6747ef;
@@ -468,6 +471,11 @@ body {
 .percent-red {
   background: rgba(242, 55, 89, 0.10);
   color: #e31b42;
+}
+
+.percent-yellow {
+  background: rgba(245, 196, 0, 0.15);
+  color: #b89300;
 }
 
 .percent-orange {
@@ -842,7 +850,7 @@ body {
   position: relative;
 }
 
-.neon-card::before {
+.dark .neon-card::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -851,7 +859,7 @@ body {
   background: conic-gradient(
     from var(--border-angle),
     transparent 20%,
-    var(--neon-border-color, #000000) 50%,
+    var(--neon-border-color, #ffffff) 50%,
     transparent 80%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);

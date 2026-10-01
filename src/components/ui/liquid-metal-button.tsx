@@ -297,6 +297,7 @@ export function LiquidMetalButton({
                   maxWidth: `${dimensions.shaderWidth}px`,
                   height: `${dimensions.shaderHeight}px`,
                   transition: "width 0.4s ease, height 0.4s ease",
+                  filter: "sepia(1) saturate(4) hue-rotate(-15deg) brightness(1.3) drop-shadow(0 0 6px rgba(245, 196, 0, 0.4))",
                 }}
               />
             </div>

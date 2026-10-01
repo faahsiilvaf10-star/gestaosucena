@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { X, Truck, LogIn, LogOut } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
@@ -22,6 +22,8 @@ export function GlobalEquipmentAlert() {
   const { isDark } = useTheme()
   const [queue, setQueue] = useState<MovementAlert[]>([])
   const [currentAlert, setCurrentAlert] = useState<MovementAlert | null>(null)
+  const [userId, setUserId] = useState<string>('default')
+  const userIdRef = useRef('default')
 
   // Load today's non-dismissed movements on mount
   useEffect(() => {
@@ -39,7 +41,12 @@ export function GlobalEquipmentAlert() {
 
         if (error || !data) return
 
-        const dismissed = JSON.parse(localStorage.getItem('dismissed_eq_movements') || '[]')
+        const { data: userData } = await supabase.auth.getUser()
+        const currentUserId = userData?.user?.id || 'default'
+        setUserId(currentUserId)
+        userIdRef.current = currentUserId
+
+        const dismissed = JSON.parse(localStorage.getItem(`dismissed_eq_movements_${currentUserId}`) || '[]')
         const unDismissed = data.filter((m: any) => !dismissed.includes(m.id)).map((m: any) => ({
           ...m,
           equipment: m.eq_equipments
@@ -74,7 +81,7 @@ export function GlobalEquipmentAlert() {
             equipment: eqData
           }
           
-          const dismissed = JSON.parse(localStorage.getItem('dismissed_eq_movements') || '[]')
+          const dismissed = JSON.parse(localStorage.getItem(`dismissed_eq_movements_${userIdRef.current}`) || '[]')
           if (!dismissed.includes(alert.id)) {
             setQueue(prev => [...prev, alert])
           }
@@ -98,7 +105,7 @@ export function GlobalEquipmentAlert() {
     if (!currentAlert) return
     
     // Save to local storage
-    const dismissed = JSON.parse(localStorage.getItem('dismissed_eq_movements') || '[]')
+    const dismissed = JSON.parse(localStorage.getItem(`dismissed_eq_movements_${userId}`) || '[]')
     dismissed.push(currentAlert.id)
     
     // Keep only last 100 to prevent local storage from growing infinitely
@@ -106,7 +113,7 @@ export function GlobalEquipmentAlert() {
       dismissed.shift()
     }
     
-    localStorage.setItem('dismissed_eq_movements', JSON.stringify(dismissed))
+    localStorage.setItem(`dismissed_eq_movements_${userId}`, JSON.stringify(dismissed))
     
     // Remove from queue
     setQueue(prev => prev.slice(1))
