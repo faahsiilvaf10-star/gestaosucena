@@ -51,8 +51,8 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
             .eq('status', 'Em atividade')
           
           if (activeDispatches && activeDispatches.length > 0) {
-            const activeIds = new Set(activeDispatches.map(d => d.equipment_id))
-            enrichedData = enrichedData.map(eq => {
+            const activeIds = new Set(activeDispatches.map((d: any) => d.equipment_id))
+            enrichedData = enrichedData.map((eq: any) => {
               if (activeIds.has(eq.id)) {
                 return { ...eq, status: 'Operando' }
               }

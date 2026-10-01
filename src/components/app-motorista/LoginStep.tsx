@@ -25,15 +25,15 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
   // Pré-carrega todos os PINs cadastrados na nuvem para permitir login 100% offline
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.onLine) {
-      supabase.from('app_motorista_pins').select('driver_id, pin').then(({ data, error }) => {
-        if (!error && data) {
-          data.forEach((p: any) => {
+      supabase.from('app_motorista_pins').select('driver_id, pin').then((res: any) => {
+        if (!res?.error && res?.data) {
+          res.data.forEach((p: any) => {
             if (p.driver_id && p.pin) {
               localStorage.setItem(`app_motorista_pin_${p.driver_id}`, p.pin)
             }
           })
         }
-      }).catch(err => console.warn('Erro ao sincronizar PINs offline:', err))
+      }).catch((err: any) => console.warn('Erro ao sincronizar PINs offline:', err))
     }
   }, [])
 

@@ -96,7 +96,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
   const queueWhatsappMedia = async (...args: any[]) => {
     if (isAdmin) return Promise.resolve()
-    return realQueueWhatsappMedia(args[0], args[1], args[2], args[3])
+    return realQueueWhatsappMedia(args[0], args[1], args[2], args[3], args[4])
   }
 
   const [anomalyType, setAnomalyType] = useState('Problema mecânico')
@@ -144,9 +144,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       })
       
       const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      const pdfPageHeight = pdf.internal.pageSize.getHeight()
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfPageHeight)
       pdf.save(`${fileName}.pdf`)
       
     } catch (error) {
@@ -708,13 +708,15 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       })
 
       // Save last km and horimeter for this equipment
-      const equipmentData = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
-      equipmentData[equipmentId] = {
-        lastKm: endKm,
-        lastHorimeter: endHorimeter
+      if (equipmentId) {
+        const equipmentData = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+        equipmentData[equipmentId] = {
+          lastKm: endKm,
+          lastHorimeter: endHorimeter
+        }
+        localStorage.setItem('app_motorista_equipment_data', JSON.stringify(equipmentData))
+        localStorage.setItem('app_motorista_last_equipment', equipmentId)
       }
-      localStorage.setItem('app_motorista_equipment_data', JSON.stringify(equipmentData))
-      localStorage.setItem('app_motorista_last_equipment', equipmentId)
 
       localStorage.setItem('app_motorista_fuel_level', endFuel)
 
@@ -1068,7 +1070,6 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
             abastecimentoFinal={endFuel || ''}
             timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
-            hideLogo={true}
           />
         </div>
       </div>

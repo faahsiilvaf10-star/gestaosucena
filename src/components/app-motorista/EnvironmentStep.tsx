@@ -1,7 +1,8 @@
 import Factory from 'lucide-react/dist/esm/icons/factory.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 
-export default function EnvironmentStep({ onSelect }: { onSelect: (envId: string) => void }) {
+export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId: string) => void, onBack?: () => void }) {
   
   const environments = [
     {
@@ -22,7 +23,17 @@ export default function EnvironmentStep({ onSelect }: { onSelect: (envId: string
   }
 
   return (
-    <div className="min-h-full flex flex-col p-6 bg-gray-50 dark:bg-zinc-950 pb-24">
+    <div className="min-h-full flex flex-col p-6 bg-gray-50 dark:bg-zinc-950 pb-24 relative">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 text-gray-400 hover:text-white flex items-center gap-2 text-sm font-semibold transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Voltar</span>
+        </button>
+      )}
+
       <div className="mt-8 mb-8 text-center">
         <h1 className="text-2xl font-bold text-white mb-2">SELECIONE O AMBIENTE</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Toque para entrar no ambiente</p>

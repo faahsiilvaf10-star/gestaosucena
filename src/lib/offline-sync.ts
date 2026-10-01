@@ -82,7 +82,7 @@ export const processSyncQueue = async () => {
             }
           };
           const res = await sendWhatsappMediaOnServer(payload as any);
-          if (!res.success) throw new Error('Falha media: ' + res.error);
+          if (!res.success) throw new Error('Falha media: ' + ((res as any).error || ''));
         } else {
           const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
           const payload = {
@@ -95,7 +95,7 @@ export const processSyncQueue = async () => {
             }
           };
           const res = await sendWhatsappTextOnServer(payload as any);
-          if (!res.success) throw new Error('Falha text: ' + res.error);
+          if (!res.success) throw new Error('Falha text: ' + ((res as any).error || ''));
         }
         result = { error: null };
       }
@@ -179,7 +179,7 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
         }
       };
       const res = await sendWhatsappTextOnServer(payload as any);
-      if (!res.success) throw new Error(res.error || 'Unknown error');
+      if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
       console.warn('Erro ao enviar whatsapp online, enfileirando:', error);
@@ -209,7 +209,7 @@ export const queueWhatsappMedia = async (settings: any, phone: string, caption: 
         }
       };
       const res = await sendWhatsappMediaOnServer(payload as any);
-      if (!res.success) throw new Error(res.error || 'Unknown error');
+      if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
       console.warn('Erro ao enviar whatsapp media online, enfileirando:', error);

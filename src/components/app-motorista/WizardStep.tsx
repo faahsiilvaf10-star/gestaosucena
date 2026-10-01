@@ -27,6 +27,19 @@ export default function WizardStep({
   const cancel = onCancel || onBack || (() => {})
 
   const equipmentId = typeof window !== 'undefined' ? localStorage.getItem('app_motorista_equipment_id') : null
+  const equipment = (() => {
+    try {
+      const eqStr = localStorage.getItem(`app_motorista_eq_${equipmentId}`)
+      if (eqStr) return JSON.parse(eqStr)
+      const env = localStorage.getItem('sucena_environment') || 'barcarena'
+      const listStr = localStorage.getItem(`app_motorista_equipments_${env}`)
+      if (listStr) {
+        const list = JSON.parse(listStr)
+        return list.find((e: any) => e.id === equipmentId) || null
+      }
+    } catch {}
+    return null
+  })()
 
   // Restaura progresso do wizard se o app foi fechado em segundo plano
   const savedWizard = (() => {
@@ -75,7 +88,7 @@ export default function WizardStep({
   const [fuel, setFuel] = useState(() => savedWizard?.fuel || localStorage.getItem('app_motorista_fuel_level') || '100') // percentage
 
   // Mock checklist items
-  const [checklist, setChecklist] = useState(() => savedWizard?.checklist || [
+  const [checklist, setChecklist] = useState<any[]>(() => savedWizard?.checklist || [
     { id: '1', name: 'Pneus', status: 'conforme', critical: true },
     { id: '2', name: 'Freios', status: 'conforme', critical: true },
     { id: '3', name: 'Faróis', status: 'conforme', critical: false },
