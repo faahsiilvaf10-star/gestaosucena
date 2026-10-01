@@ -613,16 +613,12 @@ function RhEfetivoPage() {
                   <p className="font-medium text-[15px]">{selectedColaborador.status}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Sucena</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.matricula || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Hydro</p>
                   <p className="font-medium text-[15px]">{selectedColaborador.matricula_hydro || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Sucena</p>
-                  <p className="font-medium text-[15px]">{selectedColaborador.matricula_sucena || '-'}</p>
                 </div>
                 {/* Ocultando ASO Admissional daqui para criar uma seção dedicada */}
                 <div>
