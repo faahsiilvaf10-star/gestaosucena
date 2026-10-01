@@ -1,5 +1,5 @@
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
 import { useState, useEffect, useRef } from 'react'
-import { Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
@@ -76,7 +76,7 @@ export function DateInput({ value, onChange, className = '', placeholder = 'dd/m
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
-        className={className}
+        className={`${className} pr-9`}
         maxLength={10}
       />
       <Popover>

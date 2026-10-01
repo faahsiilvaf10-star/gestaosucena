@@ -1,18 +1,16 @@
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Upload from 'lucide-react/dist/esm/icons/upload.js';
+import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { DateInput } from '../../components/ui/DateInput'
 import { toast } from 'sonner'
-import { 
-  Users, 
-  Upload, 
-  FileSpreadsheet, 
-  Search, 
-  X, 
-  ArrowLeft,
-  Filter
-} from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useTheme } from '../../contexts/ThemeContext'
 
@@ -29,6 +27,7 @@ type EfetivoItem = {
   status: string
   setor: string | null
   aso_admissional?: string | null
+  aso_admissional_2?: string | null
   aso_periodico?: string | null
   retorno_ao_trabalho?: string | null
   mudanca_de_risco?: string | null
@@ -555,23 +554,31 @@ function RhEfetivoPage() {
 
                 <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
                   <h3 className="font-bold text-lg mb-4">Controle Médico (ASO)</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                     {/* ASO Admissional */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
+                      {false ? (null) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+
+                    {/* ASO Admissional 2 */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
                       {canEdit ? (
                         <DateInput
-                          value={selectedColaborador.aso_admissional || ''}
+                          value={selectedColaborador.aso_admissional_2 || ''}
                           onChange={(value) => {
-                            setSelectedColaborador({...selectedColaborador, aso_admissional: value})
-                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional || '')) {
-                              handleUpdateField(selectedColaborador.id, 'aso_admissional', value)
+                            setSelectedColaborador({...selectedColaborador, aso_admissional_2: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional_2 || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
                             }
                           }}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
                         />
                       ) : (
-                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : '-'}</p>
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
                       )}
                     </div>
                     
@@ -658,7 +665,16 @@ function RhEfetivoPage() {
                     {/* Validade ASO Efetiva */}
                     <div className="col-span-1">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Validade ASO (Efetiva)</p>
-                      <p className="font-bold text-[15px] text-[#0866ff] dark:text-white">{items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva ? items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva?.split('-').reverse().join('/') : '-'}</p>
+                      {/* FRONTEND CALCULATION FOR VALIDADE ASO EFFECTIVE */}
+                      <p className="font-bold text-[15px] text-[#0866ff] dark:text-white">{(() => { 
+                        const item = items.find(i => i.id === selectedColaborador.id); 
+                        if (item && item.aso_admissional_2) { 
+                          const date = new Date(item.aso_admissional_2 + 'T12:00:00'); 
+                          date.setFullYear(date.getFullYear() + 1); 
+                          return date.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}); 
+                        } 
+                        return '-'; 
+                      })()}</p>
                     </div>
                   </div>
                 </div>
