@@ -15,6 +15,6 @@ export function isAdmin(name?: string, role?: string) {
   if (!name && !role) return false;
   const n = name?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
   const r = role?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
-  // Consider Fabricio Silva as admin, plus any role containing admin
-  return n.includes('fabricio silva') || r.includes('admin') || r.includes('diretor');
+  // Consider Fabricio Silva as admin, plus any role containing admin but excluding administrativo/administracao
+  return n.includes('fabricio silva') || (r.includes('admin') && !r.includes('administrativo') && !r.includes('administracao')) || r.includes('diretor');
 }
