@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeftRight, Truck, ListChecks, ClipboardCheck, MapPin } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
+import { isAdmin } from '../../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/equipamentos/')({
   component: EquipamentosHub,
@@ -8,13 +11,25 @@ export const Route = createFileRoute('/equipamentos/')({
 const HUB_ITEMS = [
   { name: 'Entrada e Saída', icon: ArrowLeftRight, href: '/equipamentos/entrada-saida', desc: 'Registrar movimentações' },
 
-  { name: 'App Motorista', icon: Truck, href: '/equipamentos/app-motorista', desc: 'Aplicativo do motorista' },
+  { name: 'App Motorista', icon: Truck, href: '/equipamentos/app-motorista', desc: 'Aplicativo do motorista', adminOnly: true },
   { name: 'Parte Diária', icon: Truck, href: '/equipamentos/parte-diaria', desc: 'Relatório diário' },
   { name: 'Todos os Equipamentos', icon: ListChecks, href: '/equipamentos/todos', desc: 'Visualizar a frota completa' },
   { name: 'Vistoria de Equipamentos', icon: ClipboardCheck, href: '/equipamentos/vistoria', desc: 'Laudos e manutenções' },
 ]
 
 function EquipamentosHub() {
+  const [isUserAdmin, setIsUserAdmin] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const name = data.user.user_metadata?.full_name || ''
+        const role = data.user.user_metadata?.role || ''
+        setIsUserAdmin(isAdmin(name, role))
+      }
+    })
+  }, [])
+
   return (
     <div className="flex flex-col h-full bg-transparent">
       <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-2 sm:mt-4">
@@ -35,6 +50,8 @@ function EquipamentosHub() {
         {/* Grid — 1 col mobile, 2 col tablet+ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full animate-in fade-in zoom-in-95 duration-700">
           {HUB_ITEMS.map((item, idx) => {
+            if (item.adminOnly && !isUserAdmin) return null;
+            
             const Icon = item.icon
             return (
               <Link
