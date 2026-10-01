@@ -4,6 +4,7 @@ import { RefreshCw, ArrowUpCircle } from "lucide-react"
 
 const CHECK_INTERVAL_MS = 2 * 60 * 1000 // 2 minutos
 const AUTO_RELOAD_SECONDS = 10
+const STORAGE_KEY = 'app_acknowledged_version'
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -13,46 +14,63 @@ const CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__
 export function AppUpdateNotification() {
   const [hasUpdate, setHasUpdate] = useState(false)
   const [countdown, setCountdown] = useState(AUTO_RELOAD_SECONDS)
-  const [newVersion, setNewVersion] = useState("")
-  // Inicializa com a versão exata que foi compilada no JS (se existir)
-  const currentVersionRef = useRef<string | null>(CURRENT_VERSION)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const doReload = async () => {
+    // Salva a versão que estamos atualizando para não mostrar de novo após reload
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY + '_pending')
+      if (stored) {
+        localStorage.setItem(STORAGE_KEY, stored)
+        localStorage.removeItem(STORAGE_KEY + '_pending')
+      }
+    } catch {}
+
     if ("caches" in window) {
       try {
         const names = await caches.keys()
         await Promise.all(names.map(n => caches.delete(n)))
-      } catch (e) {}
+      } catch {}
     }
     if ("serviceWorker" in navigator) {
       try {
         const regs = await navigator.serviceWorker.getRegistrations()
         await Promise.all(regs.map(r => r.unregister()))
-      } catch (e) {}
+      } catch {}
     }
     window.location.href = window.location.pathname + '?t=' + Date.now()
   }
 
   useEffect(() => {
-    // Busca versão atual na primeira vez
     const fetchVersion = async () => {
       try {
         const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" })
         if (!res.ok) return
         const data = await res.json()
-        
-        // Se ainda não tivermos a versão base (ex: dev local sem o plugin rodar), adotamos a primeira que vier
-        if (!currentVersionRef.current) {
-          currentVersionRef.current = data.version
+        const serverVersion = data.version
+        if (!serverVersion) return
+
+        // Versão que o usuário já reconheceu (salva no localStorage após reload)
+        const acknowledgedVersion = localStorage.getItem(STORAGE_KEY)
+
+        // Se a versão do servidor já foi reconhecida, não mostra nada
+        if (serverVersion === acknowledgedVersion) return
+
+        // Se é a mesma versão que está rodando agora, marca como reconhecida e ignora
+        if (CURRENT_VERSION && serverVersion === CURRENT_VERSION) {
+          localStorage.setItem(STORAGE_KEY, serverVersion)
           return
         }
-        
-        // Se a versão do servidor for diferente da versão do nosso código rodando, ATUALIZA!
-        if (data.version && data.version !== currentVersionRef.current) {
-          setNewVersion(data.version)
-          setHasUpdate(true)
+
+        // Se não temos versão base (dev), adotamos a do servidor e ignoramos
+        if (!CURRENT_VERSION) {
+          localStorage.setItem(STORAGE_KEY, serverVersion)
+          return
         }
+
+        // Nova versão detectada! Salva como pendente e mostra notificação
+        localStorage.setItem(STORAGE_KEY + '_pending', serverVersion)
+        setHasUpdate(true)
       } catch {
         // silencioso
       }
@@ -126,7 +144,6 @@ export function AppUpdateNotification() {
                   🚀 Nova atualização disponível!
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  Versão <span className="text-yellow-400 font-mono">{newVersion}</span> detectada.
                   Atualizando em <span className="text-white font-bold">{countdown}s</span>...
                 </p>
               </div>
