@@ -503,7 +503,7 @@ function RhEfetivoPage() {
       {/* Modal de Detalhes do Colaborador */}
       {selectedColaborador && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-[#1a1a1b] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+          <div className="bg-white dark:bg-[#1a1a1b] text-gray-900 dark:text-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 shrink-0">
               <div>
                 <h2 className="text-xl font-bold">{selectedColaborador.nome}</h2>
@@ -656,7 +656,7 @@ function RhEfetivoPage() {
                     {/* Validade ASO Efetiva */}
                     <div className="col-span-1">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Validade ASO (Efetiva)</p>
-                      <p className="font-bold text-[15px] text-[#0866ff]">{items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva ? items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva?.split('-').reverse().join('/') : '-'}</p>
+                      <p className="font-bold text-[15px] text-[#0866ff] dark:text-white">{items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva ? items.find(i => i.id === selectedColaborador.id)?.validade_aso_efetiva?.split('-').reverse().join('/') : '-'}</p>
                     </div>
                   </div>
                 </div>
