@@ -1,7 +1,12 @@
+import Video from 'lucide-react/dist/esm/icons/video.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import LinkIcon from 'lucide-react/dist/esm/icons/link.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { JitsiMeeting } from '@jitsi/react-sdk'
-import { Video, Users, Link as LinkIcon, ArrowLeft, History, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/reunioes')({

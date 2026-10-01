@@ -261,7 +261,7 @@ function RhEfetivoPage() {
 
           // Prevent duplicates and retrieve existing matriculas
           const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena')
-          const existingMap = new Map((existingData || []).map(d => [d.nome.toUpperCase(), d]))
+          const existingMap = new Map<string, any>((existingData || []).map(d => [d.nome.toUpperCase(), d]))
 
           const uniqueNewProcessedData: any[] = []
           const recordsToUpdate: any[] = []
@@ -295,7 +295,7 @@ function RhEfetivoPage() {
 
           // Find IDs of employees that are in DB but NOT in the new spreadsheet
           const idsToDelete: string[] = []
-          existingMap.forEach((rec, upperName) => {
+          existingMap.forEach((rec: any, upperName: string) => {
             if (rec !== 'processed' && !allNamesInSheet.has(upperName)) {
               idsToDelete.push(rec.id)
             }

@@ -1,6 +1,10 @@
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import AlignLeft from 'lucide-react/dist/esm/icons/text-align-start.js';
+import Repeat from 'lucide-react/dist/esm/icons/repeat.js';
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Calendar, Clock, AlertCircle, AlignLeft, Repeat } from 'lucide-react'
 
 function playReminderSound() {
   try {

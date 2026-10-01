@@ -1,5 +1,9 @@
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
+import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { FileText, Leaf, Hammer, Clock, Plus } from 'lucide-react'
 
 export const Route = createFileRoute('/relatorio-obra/')({
   component: RelatorioObraHub,

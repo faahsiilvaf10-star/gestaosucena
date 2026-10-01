@@ -1,5 +1,7 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import React, { useState, useEffect } from 'react'
-import { X, Image as ImageIcon, UploadCloud } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { useTheme } from '../contexts/ThemeContext'

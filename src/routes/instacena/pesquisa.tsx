@@ -1,6 +1,7 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
-import { Search, User } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 export const Route = createFileRoute('/instacena/pesquisa')({

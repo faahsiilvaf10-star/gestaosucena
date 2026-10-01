@@ -1,5 +1,10 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import Upload from 'lucide-react/dist/esm/icons/upload.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
 import { useState, useRef, useEffect } from 'react'
-import { X, Loader2, Upload, CheckCircle2, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 interface ImportStockModalProps {

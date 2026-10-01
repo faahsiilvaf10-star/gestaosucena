@@ -1,11 +1,19 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import Pencil from 'lucide-react/dist/esm/icons/pencil.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Settings from 'lucide-react/dist/esm/icons/settings.js';
+import Car from 'lucide-react/dist/esm/icons/car.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
-import { 
-  Search, Filter, Eye, Pencil, RefreshCw, AlertCircle, CheckCircle2,
-  Settings, Car, Truck, Plus, Check
-} from 'lucide-react'
 
 const EXIT_REASONS = [
   { value: 'preventive_maintenance', label: 'Manutenção Preventiva' },

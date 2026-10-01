@@ -1,5 +1,6 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
 import { useEffect } from 'react'
-import { X, Search } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { ConversationList } from './chat/ConversationList'

@@ -1,5 +1,7 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
 import { useState, useEffect } from 'react'
-import { X, Loader2, Save } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 interface Category {

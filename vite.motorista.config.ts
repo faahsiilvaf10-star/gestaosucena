@@ -1,15 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import tailwindcss from '@tailwindcss/vite'
+import tailwindcss from '@tailwindcss/postcss'
+import cascadeLayers from '@csstools/postcss-cascade-layers'
 import path from 'path'
+import { browserslistToTargets } from 'lightningcss'
+import browserslist from 'browserslist'
 
 // Build config separado para gerar o APK do App Motorista
 // sem dependência do servidor (funciona offline)
 export default defineConfig({
   root: '.',
+  base: './',
   plugins: [
-    tailwindcss(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -39,6 +42,7 @@ export default defineConfig({
             },
           },
         ],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
       manifest: {
         name: 'App Motorista - Gestão Sucena',
@@ -47,7 +51,7 @@ export default defineConfig({
         theme_color: '#10b981',
         background_color: '#0a0a0a',
         display: 'standalone',
-        start_url: '/',
+        start_url: '.',
         orientation: 'portrait',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -59,9 +63,22 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
+      '@tanstack/react-start': path.resolve(import.meta.dirname, './src/lib/dummy-start.ts'),
+    }
+  },
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss(),
+        cascadeLayers()
+      ]
     }
   },
   build: {
+    target: 'es2020',
+    minify: false,
+    cssMinify: 'lightningcss',
+    modulePreload: false,
     outDir: 'dist-motorista',
     emptyOutDir: true,
     rollupOptions: {
@@ -72,8 +89,5 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       }
     }
-  },
-  define: {
-    'process.env': {}
   }
 })

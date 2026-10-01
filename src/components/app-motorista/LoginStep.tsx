@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Loader2, ArrowLeft, KeyRound } from 'lucide-react'
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import KeyRound from 'lucide-react/dist/esm/icons/key-round.js';
 import { supabase } from '../../lib/supabase'
 
 export const DRIVERS = [

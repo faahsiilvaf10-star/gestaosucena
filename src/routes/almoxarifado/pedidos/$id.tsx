@@ -1,8 +1,16 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { usePurchaseOrderById, useUpdatePurchaseOrder, useUpdatePurchaseOrderItem, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
 import { PriorityBadge } from '@/components/pedidos/PriorityBadge'
-import { ArrowLeft, Calendar, Package, ShoppingCart, User, AlertCircle, FileText, CheckCircle2, History } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'

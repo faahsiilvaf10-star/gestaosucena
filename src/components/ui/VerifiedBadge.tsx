@@ -1,4 +1,4 @@
-import { BadgeCheck } from 'lucide-react'
+import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check.js';
 
 export function VerifiedBadge({ className = "", size = 16 }: { className?: string, size?: number }) {
   return (

@@ -1,3 +1,11 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Eraser from 'lucide-react/dist/esm/icons/eraser.js';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -11,7 +19,6 @@ import { useEpiProducts, useCreateEpiRequisition } from '@/hooks/useEpiRequisiti
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { Search, ChevronsUpDown, Check, AlertCircle, Save, ArrowRight, ArrowLeft, Eraser } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { getWhatsappSettings } from '@/lib/settings';

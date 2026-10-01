@@ -1,3 +1,5 @@
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
 import { createFileRoute } from '@tanstack/react-router'
 import {
   BarChart,
@@ -13,7 +15,6 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { Save, Download } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 

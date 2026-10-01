@@ -1,6 +1,8 @@
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
 import { Badge } from '@/components/ui/badge'
 import { PurchaseOrderPriority } from '@/hooks/usePurchaseOrders'
-import { AlertCircle, AlertTriangle, Info } from 'lucide-react'
 
 interface PriorityBadgeProps {
   priority: PurchaseOrderPriority

@@ -1,6 +1,18 @@
+import Link2 from 'lucide-react/dist/esm/icons/link-2.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import Edit from 'lucide-react/dist/esm/icons/square-pen.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.js';
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Link2, Calendar, Filter, Plus, FileSpreadsheet, Camera, Edit, Save, Image as ImageIcon, History, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'

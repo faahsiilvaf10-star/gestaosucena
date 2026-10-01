@@ -1,6 +1,8 @@
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import Info from 'lucide-react/dist/esm/icons/info.js';
 import React from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Calendar as CalendarIcon, Info } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import {
   startOfMonth,

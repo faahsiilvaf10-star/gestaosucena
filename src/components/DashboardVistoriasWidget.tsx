@@ -1,7 +1,11 @@
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../contexts/ThemeContext'
-import { AlertTriangle, Clock, ShieldAlert, ArrowRight, ShieldCheck } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
 

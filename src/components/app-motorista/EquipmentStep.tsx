@@ -1,5 +1,7 @@
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
-import { Search, Truck, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import MercosulPlate from './MercosulPlate'
 

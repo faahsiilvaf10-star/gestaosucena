@@ -1,5 +1,15 @@
+import Settings from 'lucide-react/dist/esm/icons/settings.js';
+import Grid from 'lucide-react/dist/esm/icons/grid-3x3.js';
+import Film from 'lucide-react/dist/esm/icons/film.js';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark.js';
+import UserCheck from 'lucide-react/dist/esm/icons/user-check.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import { createFileRoute } from '@tanstack/react-router'
-import { Settings, Grid, Film, Bookmark, UserCheck, MessageCircle, Heart, Image as ImageIcon, MapPin, X, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'

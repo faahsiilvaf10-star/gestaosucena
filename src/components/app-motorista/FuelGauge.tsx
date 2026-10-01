@@ -1,4 +1,6 @@
-import { Fuel, ChevronLeft, ChevronRight } from 'lucide-react'
+import Fuel from 'lucide-react/dist/esm/icons/fuel.js';
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 
 const FUEL_VALUES = [0, 25, 50, 75, 100]
 const FUEL_LABELS: Record<number, string> = { 0: 'E', 25: '1/4', 50: '1/2', 75: '3/4', 100: 'F' }

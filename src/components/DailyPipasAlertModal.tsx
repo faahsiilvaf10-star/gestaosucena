@@ -1,6 +1,6 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { X } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function DailyPipasAlertModal({ enabled }: { enabled: boolean }) {

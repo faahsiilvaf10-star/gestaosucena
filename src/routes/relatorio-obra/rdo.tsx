@@ -1,8 +1,13 @@
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Copy from 'lucide-react/dist/esm/icons/copy.js';
+import Phone from 'lucide-react/dist/esm/icons/phone.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { 
-  Calendar as CalendarIcon, History, FileText, Save, Copy, Phone, Lock, Sun
-} from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'

@@ -1,5 +1,8 @@
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.js';
+import FileBarChart from 'lucide-react/dist/esm/icons/file-chart-column-increasing.js';
+import CalendarDays from 'lucide-react/dist/esm/icons/calendar-days.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Users, ClipboardList, FileBarChart, CalendarDays } from 'lucide-react'
 
 export const Route = createFileRoute('/rh/')({
   component: RhHub,

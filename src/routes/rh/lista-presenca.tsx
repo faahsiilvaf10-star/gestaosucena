@@ -1,3 +1,19 @@
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import XCircle from 'lucide-react/dist/esm/icons/circle-x.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
+import Unlock from 'lucide-react/dist/esm/icons/lock-open.js';
+import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
+import Copy from 'lucide-react/dist/esm/icons/copy.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { getWhatsappSettings } from '@/lib/settings'
@@ -5,24 +21,6 @@ import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { 
-  Users,
-  Search,
-  X,
-  ArrowLeft,
-  CheckCircle2,
-  XCircle,
-  Plus,
-  Save,
-  Eye,
-  Trash2,
-  Check,
-  Lock,
-  Unlock,
-  Edit2,
-  Copy,
-  FileText
-} from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'

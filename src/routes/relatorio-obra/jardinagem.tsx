@@ -1,9 +1,18 @@
+import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Copy from 'lucide-react/dist/esm/icons/copy.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import TreePine from 'lucide-react/dist/esm/icons/tree-pine.js';
+import PenLine from 'lucide-react/dist/esm/icons/pen-line.js';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
+import Droplets from 'lucide-react/dist/esm/icons/droplets.js';
+import Phone from 'lucide-react/dist/esm/icons/phone.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { 
-  Leaf, Calendar as CalendarIcon, History, FileText, Save, Copy, Plus, 
-  TreePine, PenLine, Sparkles, Droplets, Phone, Lock
-} from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'

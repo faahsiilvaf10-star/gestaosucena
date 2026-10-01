@@ -1,6 +1,7 @@
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import ArrowUpCircle from 'lucide-react/dist/esm/icons/circle-arrow-up.js';
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { RefreshCw, ArrowUpCircle } from "lucide-react"
 
 const CHECK_INTERVAL_MS = 2 * 60 * 1000 // 2 minutos
 const AUTO_RELOAD_SECONDS = 10

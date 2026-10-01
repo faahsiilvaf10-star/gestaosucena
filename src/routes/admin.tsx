@@ -1,7 +1,31 @@
+import Shield from 'lucide-react/dist/esm/icons/shield.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
+import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
+import Ban from 'lucide-react/dist/esm/icons/ban.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import UserIcon from 'lucide-react/dist/esm/icons/user.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
+import Unlock from 'lucide-react/dist/esm/icons/lock-open.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import Bell from 'lucide-react/dist/esm/icons/bell.js';
+import Play from 'lucide-react/dist/esm/icons/play.js';
+import Megaphone from 'lucide-react/dist/esm/icons/megaphone.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
-import { Shield, ShieldAlert, Edit2, Ban, Trash2, CheckCircle2, User as UserIcon, Search, AlertTriangle, ArrowLeft, Users, Lock, Unlock, Plus, X, MessageCircle, Save, Bell, Play, Megaphone, Send, Smartphone, Package, UploadCloud, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'

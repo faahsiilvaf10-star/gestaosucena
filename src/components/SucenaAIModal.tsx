@@ -1,5 +1,12 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Bot from 'lucide-react/dist/esm/icons/bot.js';
+import KeyRound from 'lucide-react/dist/esm/icons/key-round.js';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import Database from 'lucide-react/dist/esm/icons/database.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import React, { useState, useEffect, useRef } from 'react'
-import { X, Send, Bot, KeyRound, ExternalLink, Loader2, Database, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Groq from 'groq-sdk'

@@ -1,14 +1,12 @@
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import Cloud from 'lucide-react/dist/esm/icons/cloud.js';
+import CloudRain from 'lucide-react/dist/esm/icons/cloud-rain.js';
+import CloudLightning from 'lucide-react/dist/esm/icons/cloud-lightning.js';
+import CloudSnow from 'lucide-react/dist/esm/icons/cloud-snow.js';
+import CloudFog from 'lucide-react/dist/esm/icons/cloud-fog.js';
+import CloudDrizzle from 'lucide-react/dist/esm/icons/cloud-drizzle.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { useState, useEffect } from 'react'
-import {
-  Sun,
-  Cloud,
-  CloudRain,
-  CloudLightning,
-  CloudSnow,
-  CloudFog,
-  CloudDrizzle,
-  Loader2
-} from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 // WMO Weather interpretation codes

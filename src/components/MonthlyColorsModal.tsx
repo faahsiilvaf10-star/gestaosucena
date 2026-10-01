@@ -1,5 +1,5 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
 import React from 'react'
-import { X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { ColorOption, useMonthlyColors } from '../hooks/useMonthlyColors'
 

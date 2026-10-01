@@ -1,8 +1,9 @@
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTheme } from '../../contexts/ThemeContext'
-import { FileText, ShieldAlert } from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/homologados')({
   component: Homologados

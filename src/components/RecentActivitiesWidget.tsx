@@ -1,6 +1,14 @@
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
+import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import Activity from 'lucide-react/dist/esm/icons/activity.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Clock, ArrowRight, Hammer, Users, Wrench, Package, ShieldCheck, MapPin, Activity } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'

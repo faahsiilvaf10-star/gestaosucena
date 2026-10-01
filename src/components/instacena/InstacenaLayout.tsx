@@ -1,7 +1,14 @@
+import Home from 'lucide-react/dist/esm/icons/house.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Compass from 'lucide-react/dist/esm/icons/compass.js';
+import Film from 'lucide-react/dist/esm/icons/film.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
+import Heart from 'lucide-react/dist/esm/icons/heart.js';
+import PlusSquare from 'lucide-react/dist/esm/icons/square-plus.js';
+import User from 'lucide-react/dist/esm/icons/user.js';
 import { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useTheme } from '../../contexts/ThemeContext'
-import { Home, Search, Compass, Film, MessageCircle, Heart, PlusSquare, User } from 'lucide-react'
 
 interface InstacenaLayoutProps {
   children: ReactNode

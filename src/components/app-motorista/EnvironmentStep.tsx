@@ -1,4 +1,5 @@
-import { Factory, MapPin } from 'lucide-react'
+import Factory from 'lucide-react/dist/esm/icons/factory.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 
 export default function EnvironmentStep({ onSelect }: { onSelect: (envId: string) => void }) {
   

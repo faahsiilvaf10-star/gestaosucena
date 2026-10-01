@@ -1,6 +1,7 @@
+import Video from 'lucide-react/dist/esm/icons/video.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Video, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface MeetingAlert {

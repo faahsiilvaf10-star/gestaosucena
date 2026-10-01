@@ -1,19 +1,17 @@
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import ListIcon from 'lucide-react/dist/esm/icons/list.js';
+import KanbanSquare from 'lucide-react/dist/esm/icons/square-kanban.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import Star from 'lucide-react/dist/esm/icons/star.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Circle from 'lucide-react/dist/esm/icons/circle.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import UserIcon from 'lucide-react/dist/esm/icons/user.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import {
-  Plus,
-  Search,
-  List as ListIcon,
-  KanbanSquare,
-  Calendar as CalendarIcon,
-  Star,
-  CheckCircle2,
-  Circle,
-  Clock,
-  User as UserIcon,
-} from 'lucide-react'
 import { fetchReminders, createReminder, toggleReminderCompletion, fetchUsers, type Reminder } from '../lib/api-reminders'
 import { format, isPast, isToday, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'

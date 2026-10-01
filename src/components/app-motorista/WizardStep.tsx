@@ -1,5 +1,12 @@
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Gauge from 'lucide-react/dist/esm/icons/gauge.js';
+import Droplet from 'lucide-react/dist/esm/icons/droplet.js';
+import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState } from 'react'
-import { Users, Gauge, Droplet, ClipboardCheck, Camera, Loader2, ArrowLeftRight, AlertTriangle } from 'lucide-react'
 import { getWhatsappSettings } from '../../lib/settings'
 import { format } from 'date-fns'
 import { saveOfflineFirst, queueWhatsappMessage } from '../../lib/offline-sync'

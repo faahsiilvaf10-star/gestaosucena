@@ -1,3 +1,8 @@
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import { useState, useEffect, useRef } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -5,7 +10,6 @@ import { supabase } from '../lib/supabase'
 import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
 import { getCroppedImg } from '../lib/cropImage'
 import { Area } from 'react-easy-crop'
-import { Camera, Loader2, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { VerifiedBadge, isAdmin } from '../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/configuracoes')({

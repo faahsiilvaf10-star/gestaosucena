@@ -1,6 +1,9 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import ZoomOut from 'lucide-react/dist/esm/icons/zoom-out.js';
 import React, { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
-import { X, Check, ZoomIn, ZoomOut } from 'lucide-react'
 import { Point, Area } from 'react-easy-crop'
 
 interface AvatarCropperModalProps {

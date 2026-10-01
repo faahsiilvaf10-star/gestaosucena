@@ -1,8 +1,17 @@
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import File from 'lucide-react/dist/esm/icons/file.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
 import React, { useRef, useState } from 'react';
 import { useDocumentos, useUploadDocumento, useDeleteDocumento, DocArquivo } from '@/hooks/useDocumentos';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Loader2, File, FileText, Image as ImageIcon, FileSpreadsheet, Download, Trash2, UploadCloud, X, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useTheme } from '@/contexts/ThemeContext';
 import { format } from 'date-fns';

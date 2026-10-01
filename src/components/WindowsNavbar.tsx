@@ -1,10 +1,25 @@
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import Home from 'lucide-react/dist/esm/icons/house.js';
+import Bell from 'lucide-react/dist/esm/icons/bell.js';
+import Instagram from 'lucide-react/dist/esm/icons/instagram.js';
+import Package from 'lucide-react/dist/esm/icons/package.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import BarChart2 from 'lucide-react/dist/esm/icons/chart-no-axes-column.js';
+import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import Moon from 'lucide-react/dist/esm/icons/moon.js';
+import Bot from 'lucide-react/dist/esm/icons/bot.js';
+import Video from 'lucide-react/dist/esm/icons/video.js';
+import Menu from 'lucide-react/dist/esm/icons/menu.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
-import { 
-  FileText, Home, Bell, Instagram, Package, Truck, ShieldCheck, 
-  Users, BarChart2, Leaf, Calendar, TriangleAlert, Search, Sun, Moon,
-  Bot, Video, Menu, X, ChevronRight
-} from 'lucide-react'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
 import { GlobalSearchModal } from './GlobalSearchModal'

@@ -1,5 +1,9 @@
+import X from 'lucide-react/dist/esm/icons/x.js';
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import React, { useState, useEffect, useRef } from 'react'
-import { X, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 

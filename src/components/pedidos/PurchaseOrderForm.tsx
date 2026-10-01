@@ -1,3 +1,11 @@
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
+import Send from 'lucide-react/dist/esm/icons/send.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,7 +22,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarIcon, Plus, Trash2, Image as ImageIcon, Send, Save, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCreatePurchaseOrder, useUploadItemImage } from '@/hooks/usePurchaseOrders'
 import { useNavigate } from '@tanstack/react-router'

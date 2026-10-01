@@ -1,4 +1,13 @@
-import { Moon, Sun, Eye, EyeOff, Loader2, CheckCircle2, Shield, UserCircle2, Clock, Lock } from 'lucide-react'
+import Moon from 'lucide-react/dist/esm/icons/moon.js';
+import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import EyeOff from 'lucide-react/dist/esm/icons/eye-off.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Shield from 'lucide-react/dist/esm/icons/shield.js';
+import UserCircle2 from 'lucide-react/dist/esm/icons/circle-user-round.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
