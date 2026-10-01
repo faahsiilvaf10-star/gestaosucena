@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Loader2, ArrowLeft, KeyRound } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 export const DRIVERS = [
   { id: 'EM', name: 'EDIELSON MARINHO MENDES' },
@@ -30,26 +31,62 @@ export default function LoginStep({ onLogin }: { onLogin: () => void }) {
     setLoading(true)
     setError('')
     
-    // Simular delay de rede
-    await new Promise(r => setTimeout(r, 600))
+    try {
+      let dbPin = null
+      const isOffline = !navigator.onLine
 
-    const savedPin = localStorage.getItem(`app_motorista_pin_${selectedDriver.id}`)
-    
-    if (!savedPin) {
-      // Primeiro acesso: salva o código como definitivo
-      localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin)
-      localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
-      localStorage.setItem('app_motorista_current_step', 'environment')
-      onLogin()
-    } else {
-      // Já possui código salvo: verifica se confere
-      if (pin === savedPin) {
+      if (!isOffline) {
+        // Tenta buscar da nuvem
+        const { data, error: fetchError } = await supabase
+          .from('app_motorista_pins')
+          .select('pin')
+          .eq('driver_id', selectedDriver.id)
+          .maybeSingle()
+          
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error(fetchError)
+        } else {
+          dbPin = data?.pin
+        }
+      }
+
+      const localPin = localStorage.getItem(`app_motorista_pin_${selectedDriver.id}`)
+      const definitivePin = dbPin || localPin
+      
+      if (!definitivePin) {
+        // Primeiro acesso (não tem no banco nem no cache local)
+        if (isOffline) {
+          setError('Conecte à internet para criar sua senha')
+          setLoading(false)
+          return
+        }
+
+        // Salva na nuvem para funcionar em outros celulares
+        const { error: insertError } = await supabase
+          .from('app_motorista_pins')
+          .insert({ driver_id: selectedDriver.id, pin: pin })
+          
+        if (insertError) throw insertError
+        
+        // Salva localmente para uso offline
+        localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin)
         localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
         localStorage.setItem('app_motorista_current_step', 'environment')
         onLogin()
       } else {
-        setError('Código inválido')
+        // Já possui código salvo (na nuvem ou cache)
+        if (pin === definitivePin) {
+          localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin) // Atualiza cache
+          localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
+          localStorage.setItem('app_motorista_current_step', 'environment')
+          onLogin()
+        } else {
+          setError('Código inválido')
+        }
       }
+    } catch (err: any) {
+      console.error(err)
+      setError('Erro de conexão ao verificar senha')
     }
     
     setLoading(false)
