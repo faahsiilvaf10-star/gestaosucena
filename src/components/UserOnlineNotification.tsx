@@ -92,15 +92,27 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
 
           setNotifications(prev => [...prev, newNotif])
 
-          // Remove automaticamente após 5s com animação de saída
-          setTimeout(() => {
-            setNotifications(prev =>
-              prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
-            )
+          // Remove após 10s, mas se estiver em segundo plano, espera o foco primeiro
+          const startRemovalTimer = () => {
             setTimeout(() => {
-              setNotifications(prev => prev.filter(n => n.id !== notifId))
-            }, 400)
-          }, 5000)
+              setNotifications(prev =>
+                prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
+              )
+              setTimeout(() => {
+                setNotifications(prev => prev.filter(n => n.id !== notifId))
+              }, 400)
+            }, 10000)
+          }
+
+          if (document.hasFocus()) {
+            startRemovalTimer()
+          } else {
+            const onFocus = () => {
+              window.removeEventListener('focus', onFocus)
+              startRemovalTimer()
+            }
+            window.addEventListener('focus', onFocus)
+          }
         }
       })
       .subscribe()

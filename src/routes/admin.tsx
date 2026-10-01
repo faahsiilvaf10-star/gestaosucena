@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { isAdmin } from '../components/ui/VerifiedBadge'
 import { useTheme } from '../contexts/ThemeContext'
 import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
-import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings } from '../lib/settings'
+import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings, GlobalAppearanceSettings, getGlobalAppearanceSettings, saveGlobalAppearanceSettings } from '../lib/settings'
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
 
@@ -78,10 +78,14 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance'>('users')
 
   const [permissions, setPermissions] = useState<AllUsersPermissions>({})
   const [savingPermissions, setSavingPermissions] = useState(false)
+
+  // Appearance Settings
+  const [appearance, setAppearance] = useState<GlobalAppearanceSettings>({ backgroundCss: '' })
+  const [savingAppearance, setSavingAppearance] = useState(false)
 
   // WhatsApp Settings
   const [whatsappSettings, setWhatsappSettings] = useState<WhatsappSettings>({
@@ -214,6 +218,13 @@ function AdminRoute() {
       setPermissions(perms)
     } catch (e) {
       console.error("Erro ao carregar permissoes", e)
+    }
+
+    try {
+      const appSets = await getGlobalAppearanceSettings()
+      setAppearance(appSets)
+    } catch (e) {
+      console.error("Erro ao carregar aparência", e)
     }
   }
 
@@ -358,6 +369,17 @@ function AdminRoute() {
       toast.error('Erro ao salvar as configurações: ' + (result.error || 'Desconhecido'))
     }
     setSavingWhatsapp(false)
+  }
+
+  const handleSaveAppearance = async () => {
+    setSavingAppearance(true)
+    const success = await saveGlobalAppearanceSettings(appearance)
+    if (success) {
+      toast.success('Aparência salva com sucesso! Atualize a página para ver o resultado caso já tenha sido aplicado globalmente.')
+    } else {
+      toast.error('Erro ao salvar as configurações de aparência.')
+    }
+    setSavingAppearance(false)
   }
 
   const handleUnlockWhatsapp = () => {
@@ -533,6 +555,14 @@ function AdminRoute() {
           >
             <Lock size={18} />
             Permissões de Páginas
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('appearance')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'appearance' ? (isDark ? 'bg-pink-500/20 text-pink-400' : 'bg-pink-50 text-pink-600') : (isDark ? 'text-gray-400 hover:text-pink-400 hover:bg-pink-500/10' : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50') }`}
+          >
+            <Megaphone size={18} />
+            Aparência Global
           </button>
         </div>
 
@@ -1513,6 +1543,44 @@ function AdminRoute() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'appearance' && (
+        <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+          <div className="p-6">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+              <Megaphone className="text-pink-500" size={24} />
+              Personalização Global (CSS Background)
+            </h2>
+            <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Aqui você pode definir o estilo de fundo global usando código CSS. Pode ser uma cor sólida, um gradiente, ou uma URL de imagem.
+            </p>
+
+            <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+              <label className="block text-sm font-semibold mb-2">Background CSS</label>
+              <textarea
+                value={appearance.backgroundCss}
+                onChange={e => setAppearance({ ...appearance, backgroundCss: e.target.value })}
+                className={`w-full h-32 px-4 py-3 rounded-lg border outline-none transition-colors font-mono text-sm resize-y ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-pink-500' : 'bg-white border-gray-300 focus:border-pink-500'}`}
+                placeholder="Ex: linear-gradient(to right, #ff7e5f, #feb47b) ou url('...')"
+              />
+              <p className={`text-xs mt-3 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                <strong>Dica:</strong> Para imagem, use <code>url('SUA_URL_AQUI') no-repeat center center fixed</code> junto com <code>background-size: cover</code>.
+              </p>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleSaveAppearance}
+                  disabled={savingAppearance}
+                  className="flex items-center justify-center gap-2 px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {savingAppearance ? 'Salvando...' : 'Salvar Fundo'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

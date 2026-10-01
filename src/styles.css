@@ -142,7 +142,11 @@
 
 @layer base {
   :root {
-    --theme-bg: hsl(35 18% 86%);
+    --theme-bg: #e5e5f0;
+    --theme-bg-image: 
+      linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px),
+      linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%);
     --theme-surface: hsl(35 14% 92%);
     --theme-text-primary: hsl(0 0% 4%);
     --theme-muted: hsl(0 0% 45%);
@@ -224,6 +228,9 @@
     width: 100%;
 
     background-color: var(--theme-bg);
+    background-image: var(--theme-bg-image, none);
+    background-size: 24px 24px, 24px 24px, 100% 100%;
+    background-attachment: fixed;
     color: var(--theme-text-primary);
     font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;

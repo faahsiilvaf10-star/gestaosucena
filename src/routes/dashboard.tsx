@@ -362,7 +362,7 @@ function DashboardComponent() {
                 <span className="hidden sm:inline">{currentDate}</span>
               </div>
               <div className={`hidden sm:flex gap-3 text-[9px] tracking-[0.2em] font-sans mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                <span className={`cursor-pointer transition-colors border-b pb-1 ${isDark ? 'hover:text-white border-[#00d2ff] text-white' : 'hover:text-gray-900 border-gray-900 text-gray-900'}`}>PESSOAS</span>
+                <span className={`cursor-pointer transition-colors border-b-2 pb-1 ${isDark ? 'hover:text-white border-[#00d2ff] text-white' : 'hover:text-gray-900 border-[#f5c400] text-gray-900 font-bold'}`}>PESSOAS</span>
                 <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
                 <span className={`cursor-pointer transition-colors ${isDark ? 'hover:text-white' : 'hover:text-gray-900'}`}>OPERAÇÃO</span>
                 <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
@@ -403,11 +403,11 @@ function DashboardComponent() {
           )}
           
           {/* TOTAL FUNCIONARIOS */}
-          <div className="dashboard-card neon-card neon-blue col-span-1 md:col-span-4 relative pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 relative pb-8">
             <div className="card-header relative z-10">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-blue"}>
-                  {!isDark ? <img src="/icons/users_total.png" alt="Users" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/users_total.png" alt="Users" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
                 </div>
                 <h3 className="card-title">TOTAL DE FUNCIONÁRIOS</h3>
               </div>
@@ -430,11 +430,11 @@ function DashboardComponent() {
           </div>
 
           {/* PRESENÇA */}
-          <div className="dashboard-card neon-card neon-green col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-green"}>
-                  {!isDark ? <img src="/icons/users.png" alt="Presentes" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/users.png" alt="Presentes" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
                 </div>
                 <h3 className="card-title">PRESENTES HOJE</h3>
               </div>
@@ -446,11 +446,11 @@ function DashboardComponent() {
               <Chart02 
                 value={todayData.presentes} 
                 total={totalFuncNum} 
-                color="#20c76c" 
-                trackColor="rgba(32, 199, 108, 0.15)" 
+                color="#f5c400" 
+                trackColor="rgba(245, 196, 0, 0.15)" 
                 label="Presentes" 
               />
-              <div className="percent-box percent-green">
+              <div className="percent-box percent-yellow">
                 <div className="flex items-center gap-2">
                   <strong>{pctPresenca}%</strong>
                   {isDark && (
@@ -472,11 +472,11 @@ function DashboardComponent() {
           </div>
 
           {/* AUSÊNCIAS */}
-          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
-                  {!isDark ? <img src="/icons/user_x.png" alt="Ausências" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/user_x.png" alt="Ausências" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>}
                 </div>
                 <h3 className="card-title">AUSÊNCIAS</h3>
               </div>
@@ -488,11 +488,11 @@ function DashboardComponent() {
               <Chart02 
                 value={todayData.ausencias} 
                 total={totalFuncNum} 
-                color="#f23759" 
-                trackColor="rgba(242, 55, 89, 0.15)" 
+                color="#f5c400" 
+                trackColor="rgba(245, 196, 0, 0.15)" 
                 label="Ausências" 
               />
-              <div className="percent-box percent-red">
+              <div className="percent-box percent-yellow">
                 <div className="flex items-center gap-2">
                   <strong>{pctAusencia}%</strong>
                   {isDark && (
@@ -514,11 +514,11 @@ function DashboardComponent() {
           </div>
 
           {/* ASO VENCENDO */}
-          <div className="dashboard-card neon-card neon-red col-span-1 md:col-span-12 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-red"}>
-                  {!isDark ? <img src="/icons/alert.png" alt="ASO" className="w-12 h-12 object-contain drop-shadow-sm" /> : <AlertTriangle size={20} className="animate-pulse" />}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/alert.png" alt="ASO" className="w-8 h-8 object-contain drop-shadow-sm" /> : <AlertTriangle size={20} className="animate-pulse" />}
                 </div>
                 <h3 className="card-title">VENCIMENTO ASO</h3>
               </div>
@@ -554,8 +554,8 @@ function DashboardComponent() {
           <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-yellow"}>
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-8 h-8 object-contain drop-shadow-sm" /> : <Gift size={20} />}
                 </div>
                 <h3 className="card-title">ANIVERSARIANTE DO DIA</h3>
               </div>
@@ -584,11 +584,11 @@ function DashboardComponent() {
           )}
 
           {/* ANIVERSARIANTES DO MÊS */}
-          <div className="dashboard-card neon-card neon-purple col-span-1 md:col-span-12 pb-8">
+          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-purple"}>
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-12 h-12 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                <div className="icon-box icon-yellow">
+                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-8 h-8 object-contain drop-shadow-sm" /> : <Gift size={20} />}
                 </div>
                 <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
               </div>

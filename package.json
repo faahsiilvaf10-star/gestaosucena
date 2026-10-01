@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "build:desktop": "electron-builder"
+    "build:desktop": "cd launcher && npm install && npm run dist",
+    "dev:electron": "cd launcher && npm install && npm run dev"
   },
   "build": {
     "appId": "com.gestaosucena.app",
