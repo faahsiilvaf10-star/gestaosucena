@@ -1,12 +1,14 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.gestaosucena.app',
-  appName: 'Gestao Sucena',
-  webDir: '.output/public',
-  server: {
-    url: 'https://gestaosucena.vercel.app/equipamentos/app-motorista',
-    cleartext: true
+  appId: 'com.gestaosucena.appmotorista',
+  appName: 'App Motorista',
+  webDir: 'dist-motorista',
+  // SEM server.url — assets carregados localmente do APK (funciona offline!)
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
   }
 };
 

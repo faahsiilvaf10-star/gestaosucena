@@ -1,0 +1,24 @@
+<html>
+<body style="margin:0;padding:0;background:#333;text-align:center">
+  <h1 style="color:white;font-family:sans-serif">Clique exatamente na PLACA e depois na PORTA</h1>
+  <p style="color:#aaa;font-family:sans-serif">Copie os números que aparecerem no fim da tela e mande no chat!</p>
+  <div style="position:relative;display:inline-block;">
+    <img id="img" src="/logoonibus.png" style="max-width:1000px;height:auto;cursor:crosshair;" />
+  </div>
+  <h2 id="out" style="color:#0f0;font-family:monospace;padding:20px;"></h2>
+  <script>
+    document.getElementById('img').onclick = function(e){
+      var rect = e.target.getBoundingClientRect();
+      var x = ((e.clientX - rect.left) / rect.width) * 100;
+      var y = ((e.clientY - rect.top) / rect.height) * 100;
+      var right = 100 - x;
+      var bottom = 100 - y;
+      
+      var out = "Left: " + x.toFixed(1) + "% | Top: " + y.toFixed(1) + "% <br>" +
+                "Right: " + right.toFixed(1) + "% | Bottom: " + bottom.toFixed(1) + "% <br><br>";
+      
+      document.getElementById('out').innerHTML += out;
+    }
+  </script>
+</body>
+</html>
