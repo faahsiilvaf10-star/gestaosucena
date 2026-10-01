@@ -633,7 +633,22 @@ function RhEfetivoPage() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Sucena</p>
-                  <p className="font-medium text-[15px]">{selectedColaborador.matricula_sucena || '-'}</p>
+                  {canEdit ? (
+                    <input
+                      type="text"
+                      value={selectedColaborador.matricula_sucena || ''}
+                      onChange={(e) => setSelectedColaborador({...selectedColaborador, matricula_sucena: e.target.value})}
+                      onBlur={(e) => {
+                        if (e.target.value !== (items.find(i => i.id === selectedColaborador.id)?.matricula_sucena || '')) {
+                          handleUpdateField(selectedColaborador.id, 'matricula_sucena', e.target.value)
+                        }
+                      }}
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                      placeholder="Matrícula Sucena..."
+                    />
+                  ) : (
+                    <p className="font-medium text-[15px]">{selectedColaborador.matricula_sucena || '-'}</p>
+                  )}
                 </div>
                 {/* Ocultando ASO Admissional daqui para criar uma seção dedicada */}
                 <div>
