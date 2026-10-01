@@ -17,9 +17,26 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
   useEffect(() => {
     async function loadMotoristas() {
       try {
+        // Busca motoristas com turno ativo (jornada iniciada e não finalizada)
+        const { data: dispatches, error: dispatchError } = await supabase
+          .from('eq_driver_dispatch')
+          .select('driver_id')
+          .is('shift_end_time', null)
+
+        if (dispatchError) throw dispatchError
+
+        if (!dispatches || dispatches.length === 0) {
+          setMotoristas([])
+          setLoading(false)
+          return
+        }
+
+        const activeDriverIds = Array.from(new Set(dispatches.map(d => d.driver_id).filter(Boolean)))
+
         const { data, error } = await supabase
           .from('rh_efetivo')
           .select('id, nome, matricula')
+          .in('id', activeDriverIds)
           .order('nome', { ascending: true })
 
         if (error) throw error
