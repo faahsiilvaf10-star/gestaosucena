@@ -4,6 +4,8 @@ import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Save from 'lucide-react/dist/esm/icons/save.js';
 import Filter from 'lucide-react/dist/esm/icons/funnel.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
@@ -48,6 +50,9 @@ function RhEfetivoPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [canEdit, setCanEdit] = useState(false)
   const [selectedColaborador, setSelectedColaborador] = useState<EfetivoItem | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -357,6 +362,38 @@ function RhEfetivoPage() {
     }
   }
 
+
+  const handleDeleteColaborador = async (id: string) => {
+    try {
+      const { error } = await supabase.from('rh_efetivo').delete().eq('id', id)
+      if (error) throw error
+      setItems(prev => prev.filter(item => item.id !== id))
+      setSelectedColaborador(null)
+      setShowDeleteConfirm(false)
+      toast.success('Colaborador removido com sucesso')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao remover colaborador')
+    }
+  }
+
+  const handleSaveAll = async () => {
+    if (!selectedColaborador) return
+    setIsSaving(true)
+    try {
+      const { id, raw_data, ...updateData } = selectedColaborador
+      const { error } = await supabase.from('rh_efetivo').update(updateData).eq('id', id)
+      if (error) throw error
+      setItems(prev => prev.map(item => item.id === id ? { ...item, ...updateData } : item))
+      setHasUnsavedChanges(false)
+      toast.success('Alterações salvas com sucesso!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar alterações')
+    } finally {
+      setIsSaving(false)
+    }
+  }
   const filteredItems = items.filter(item => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -513,18 +550,61 @@ function RhEfetivoPage() {
       {/* Modal de Detalhes do Colaborador */}
       {selectedColaborador && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-[#1a1a1b] text-gray-900 dark:text-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+          <div className="bg-white dark:bg-[#1a1a1b] text-gray-900 dark:text-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 shrink-0">
               <div>
                 <h2 className="text-xl font-bold">{selectedColaborador.nome}</h2>
                 <p className="text-sm text-gray-500 mt-1">{selectedColaborador.cargo || 'Sem cargo'}</p>
               </div>
-              <button 
-                onClick={() => setSelectedColaborador(null)}
-                className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {canEdit && (
+                  <button
+                    onClick={handleSaveAll}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <Save size={15} />
+                    {isSaving ? 'Salvando...' : 'Salvar'}
+                  </button>
+                )}
+                {canEdit && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowDeleteConfirm(v => !v)}
+                      className="p-2 bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full hover:bg-red-500/20 dark:hover:bg-red-500/30 transition-colors"
+                      title="Excluir colaborador"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    {showDeleteConfirm && (
+                      <div className="absolute right-0 top-10 z-50 bg-white dark:bg-[#2a2a2b] border border-red-300 dark:border-red-500/40 rounded-xl shadow-2xl p-4 w-64 animate-in fade-in zoom-in-95">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">Excluir colaborador?</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Esta ação não pode ser desfeita.</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleDeleteColaborador(selectedColaborador.id)}
+                            className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+                          >
+                            Sim, excluir
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteConfirm(false)}
+                            className="flex-1 py-1.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-sm rounded-lg transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => { setSelectedColaborador(null); setShowDeleteConfirm(false); }}
+                  className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             <div className="p-6 overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -571,13 +651,13 @@ function RhEfetivoPage() {
 
                 <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
                   <h3 className="font-bold text-lg mb-4">Controle Médico (ASO)</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                    {/* ASO Admissional */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
+                    {/* ASO Admissional - read-only, aligned with inputs */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
-                      {false ? (null) : (
-                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : '-'}</p>
-                      )}
+                      <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
+                        {selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
+                      </div>
                     </div>
 
                     {/* ASO Admissional 2 */}
