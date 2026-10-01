@@ -103,7 +103,7 @@ function AppMotoristaWrapper() {
       
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-y-auto pt-24 sm:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {currentStep === 'login' && <LoginStep onLogin={() => setCurrentStep('environment')} />}
+        {currentStep === 'login' && <LoginStep onLogin={(step) => setCurrentStep((step as AppMotoristaStep) || 'environment')} />}
         {currentStep === 'environment' && <EnvironmentStep onSelect={() => setCurrentStep('equipment')} />}
         {currentStep === 'equipment' && (
           <EquipmentStep 

@@ -13,7 +13,7 @@ export const DRIVERS = [
   { id: 'PF', name: 'PAULO FELIX CARDOSO' }
 ]
 
-export default function LoginStep({ onLogin }: { onLogin: () => void }) {
+export default function LoginStep({ onLogin }: { onLogin: (step?: string) => void }) {
   const [selectedDriver, setSelectedDriver] = useState<typeof DRIVERS[0] | null>(null)
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
@@ -52,6 +52,32 @@ export default function LoginStep({ onLogin }: { onLogin: () => void }) {
 
       const localPin = localStorage.getItem(`app_motorista_pin_${selectedDriver.id}`)
       const definitivePin = dbPin || localPin
+
+      const finishLogin = async () => {
+        let targetStep = 'environment'
+        if (!isOffline) {
+          try {
+            const { data: activeShift } = await supabase
+              .from('eq_driver_dispatch')
+              .select('*')
+              .eq('driver_id', selectedDriver.id)
+              .eq('status', 'Em atividade')
+              .order('shift_start_time', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (activeShift) {
+              localStorage.setItem('app_motorista_equipment_id', activeShift.equipment_id)
+              localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(activeShift))
+              targetStep = 'dashboard'
+            }
+          } catch (e) {
+            console.error('Error checking active shift', e)
+          }
+        }
+        localStorage.setItem('app_motorista_current_step', targetStep)
+        onLogin(targetStep)
+      }
       
       if (!definitivePin) {
         // Primeiro acesso (não tem no banco nem no cache local)
@@ -71,15 +97,15 @@ export default function LoginStep({ onLogin }: { onLogin: () => void }) {
         // Salva localmente para uso offline
         localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin)
         localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
-        localStorage.setItem('app_motorista_current_step', 'environment')
-        onLogin()
+        
+        await finishLogin()
       } else {
         // Já possui código salvo (na nuvem ou cache)
         if (pin === definitivePin) {
           localStorage.setItem(`app_motorista_pin_${selectedDriver.id}`, pin) // Atualiza cache
           localStorage.setItem('app_motorista_driver', JSON.stringify(selectedDriver))
-          localStorage.setItem('app_motorista_current_step', 'environment')
-          onLogin()
+          
+          await finishLogin()
         } else {
           setError('Código inválido')
         }
