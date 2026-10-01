@@ -80,6 +80,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Solicita permissão de localização no Android (Capacitor) ao abrir o app
+    const requestLocation = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.Capacitor?.isNative) {
+          const { Geolocation } = await import('@capacitor/geolocation')
+          const permissions = await Geolocation.checkPermissions()
+          if (permissions.location !== 'granted') {
+            await Geolocation.requestPermissions()
+          }
+        }
+      } catch (error) {
+        console.log('Erro ao solicitar localização:', error)
+      }
+    }
+    requestLocation()
+  }, [])
+
+  useEffect(() => {
     // Global listener for Equipment Movements (Entry/Exit announcements)
     const handleMovement = async (move: any) => {
       const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', move.equipment_id).single()
