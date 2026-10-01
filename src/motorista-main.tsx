@@ -5,7 +5,7 @@ import './styles.css'
 // Registra o Service Worker para funcionamento offline
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(() => {
+    navigator.serviceWorker.register('sw.js').then(() => {
       console.log('[SW] Service Worker registrado com sucesso')
     }).catch((err) => {
       console.error('[SW] Erro ao registrar Service Worker:', err)
@@ -24,9 +24,11 @@ export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' 
 
 function AppMotoristaStandalone() {
   const [currentStep, setCurrentStepState] = useState<AppMotoristaStep>(
-    (localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login'
+    typeof window !== 'undefined'
+      ? ((localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login')
+      : 'login'
   )
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
   const setCurrentStep = (step: AppMotoristaStep) => {
     setCurrentStepState(step)
@@ -129,6 +131,7 @@ function AppMotoristaStandalone() {
           <DashboardStep
             onLogout={handleLogout}
             isOnline={isOnline}
+            onBack={() => setCurrentStep('equipment')}
           />
         )}
       </div>

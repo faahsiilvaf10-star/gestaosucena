@@ -1,7 +1,32 @@
+import Play from 'lucide-react/dist/esm/icons/play.js';
+import Square from 'lucide-react/dist/esm/icons/square.js';
+import Coffee from 'lucide-react/dist/esm/icons/coffee.js';
+import Droplet from 'lucide-react/dist/esm/icons/droplet.js';
+import Fuel from 'lucide-react/dist/esm/icons/fuel.js';
+import AlertOctagon from 'lucide-react/dist/esm/icons/octagon-alert.js';
+import ListTodo from 'lucide-react/dist/esm/icons/list-todo.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import History from 'lucide-react/dist/esm/icons/history.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
+import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.js';
+import Utensils from 'lucide-react/dist/esm/icons/utensils.js';
+import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Waves from 'lucide-react/dist/esm/icons/waves.js';
+import Sprout from 'lucide-react/dist/esm/icons/sprout.js';
+import CloudRain from 'lucide-react/dist/esm/icons/cloud-rain.js';
+import Car from 'lucide-react/dist/esm/icons/car.js';
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { saveOfflineFirst as realSaveOfflineFirst } from '../../lib/offline-sync'
-import { Play, Square, Coffee, Droplet, Fuel, AlertOctagon, ListTodo, MapPin, Truck, History, Camera, Loader2, ClipboardCheck, ClipboardList, Utensils, Wrench, X, Waves, Sprout, CloudRain, Car, LogOut, Clock, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { format, differenceInSeconds } from 'date-fns'
 import { queueWhatsappMessage as realQueueWhatsappMessage, queueWhatsappMedia as realQueueWhatsappMedia } from '../../lib/offline-sync'
 import * as htmlToImage from 'html-to-image'
@@ -15,7 +40,7 @@ import { sendEntryExitWhatsappNotification } from '../../lib/whatsappHelpers'
 const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
 }
-export default function DashboardStep() {
+export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?: () => void, onLogout?: () => void, isOnline?: boolean }) {
   const [equipment, setEquipment] = useState<any>(null)
   const [dispatch, setDispatch] = useState<any>(null)
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
@@ -34,7 +59,7 @@ export default function DashboardStep() {
   const [gateDescription, setGateDescription] = useState('')
 
   // Anomaly State
-  const driverData = localStorage.getItem('app_motorista_driver')
+  const driverData = typeof window !== 'undefined' ? localStorage.getItem('app_motorista_driver') : null
   const driver = driverData ? JSON.parse(driverData) : null
   const isAdmin = driver?.id === 'ADMIN'
 
@@ -1469,6 +1494,16 @@ export default function DashboardStep() {
       <div className={`${sColors.bg} ${sColors.text} p-6 rounded-b-[40px] shadow-xl mb-6 transition-colors duration-500`}>
         <div className="flex items-start justify-between mb-6">
           <div>
+            {isAdmin && onBack && (
+              <button
+                onClick={onBack}
+                className={`flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider ${sColors.text} opacity-80 hover:opacity-100 active:scale-95 transition-all`}
+                title="Selecionar outro equipamento"
+              >
+                <ArrowLeft size={14} />
+                Trocar equipamento
+              </button>
+            )}
             <div className={`${sColors.text} font-semibold text-xs tracking-wider uppercase mb-1 flex items-center gap-1.5 opacity-90`}>
               <div className={`w-2 h-2 rounded-full ${sColors.dot} ${activeStatus !== 'operating' ? 'animate-pulse' : ''}`}></div>
               {sColors.label}
