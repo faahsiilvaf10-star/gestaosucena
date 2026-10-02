@@ -802,8 +802,8 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       }
       // -------------------------
 
-      // Update Equipment status to "Disponível"
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Disponível' })
+      // Update Equipment status to "Finalizado" (turno encerrado, disponível para novo turno)
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' })
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')

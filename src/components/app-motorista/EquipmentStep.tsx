@@ -57,7 +57,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
           if (activeDispatches && activeDispatches.length > 0) {
             const activeIds = new Set(activeDispatches.map((d: any) => d.equipment_id))
             enrichedData = enrichedData.map((eq: any) => {
-              if (activeIds.has(eq.id)) {
+              if (activeIds.has(eq.id) && eq.status !== 'Finalizado' && eq.status !== 'Manutenção' && eq.status !== 'Interditado') {
                 return { ...eq, status: 'Operando' }
               }
               return eq
@@ -114,6 +114,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const getStatusColor = (status: string) => {
     if (status === 'Disponível') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200'
     if (status === 'Operando') return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200'
+    if (status === 'Finalizado') return 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 border-teal-200'
     if (status === 'Manutenção') return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200'
     if (status === 'Interditado') return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400 border-gray-300'
     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 border-yellow-200'
@@ -122,6 +123,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const getStatusDot = (status: string) => {
     if (status === 'Disponível') return 'bg-emerald-500'
     if (status === 'Operando') return 'bg-blue-500'
+    if (status === 'Finalizado') return 'bg-teal-500'
     if (status === 'Manutenção') return 'bg-red-500'
     if (status === 'Interditado') return 'bg-gray-500'
     return 'bg-yellow-500'
