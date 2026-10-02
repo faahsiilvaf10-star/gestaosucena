@@ -296,7 +296,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
         const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })
         
         const isPastMidnight = shiftDay !== today
-        const isAlreadyFinished = d.status === 'Finalizada'
+        const isAlreadyFinished = d.status === 'Concluído'
 
         if (isPastMidnight || isAlreadyFinished) {
           
@@ -306,7 +306,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             saveOfflineFirst('eq_driver_dispatch', 'UPDATE', {
               id: d.id,
               shift_end_time: new Date().toISOString(),
-              status: 'Finalizada'
+              status: 'Concluído'
             }).catch()
           }
 
@@ -759,7 +759,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           horimeter_end: parseFloat(endHorimeter),
           fuel_end_percent: parseInt(endFuel),
           shift_end_time: new Date().toISOString(),
-          status: 'Finalizada'
+          status: 'Concluído'
         })
       }
 
