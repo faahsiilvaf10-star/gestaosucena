@@ -4,6 +4,7 @@ import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import MercosulPlate from './MercosulPlate'
+import { DRIVERS } from './LoginStep'
 
 export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipmentId: string) => void, onBack?: () => void }) {
   const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
@@ -49,7 +50,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
 
           const { data: recentDispatches } = await supabase
             .from('eq_driver_dispatch')
-            .select('equipment_id, status, shift_start_time, shift_end_time')
+            .select('equipment_id, status, shift_start_time, shift_end_time, driver_id')
             .gte('shift_start_time', yesterday.toISOString())
             .order('shift_start_time', { ascending: false })
           
@@ -66,7 +67,9 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
               
               if (latestDispatch) {
                 if (latestDispatch.status === 'Em atividade') {
-                  return { ...eq, status: 'Operando' }
+                  const driverInfo = DRIVERS.find(d => d.id === latestDispatch.driver_id)
+                  const dName = driverInfo ? driverInfo.name : latestDispatch.driver_id
+                  return { ...eq, status: 'Operando', active_driver_id: latestDispatch.driver_id, active_driver_name: dName }
                 } else if (latestDispatch.status === 'Finalizada') {
                   return { ...eq, status: 'Finalizado' }
                 }
@@ -102,7 +105,6 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const isAdmin = driverData ? JSON.parse(driverData).id === 'ADMIN' : false
 
   const filteredEq = equipments.filter(eq => 
-    (isAdmin || eq.status !== 'Operando') &&
     ((eq.name || '').toLowerCase().includes(search.toLowerCase()) ||
     (eq.plate_tag || '').toLowerCase().includes(search.toLowerCase()))
   ).sort((a, b) => {
@@ -114,6 +116,12 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const handleSelect = (eq: any) => {
     if (eq.status === 'Manutenção' || eq.status === 'Interditado') {
       alert('Equipamento indisponível para operação.')
+      return
+    }
+
+    const currentDriver = driverData ? JSON.parse(driverData) : null
+    if (eq.status === 'Operando' && eq.active_driver_id && eq.active_driver_id !== currentDriver?.id && !isAdmin) {
+      alert(`O motorista ${eq.active_driver_name || eq.active_driver_id} já iniciou o turno neste equipamento. Você não pode iniciar com ele.`)
       return
     }
     
