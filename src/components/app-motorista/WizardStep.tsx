@@ -180,8 +180,8 @@ export default function WizardStep({
         })
       }
 
-      // 3. Update Equipment status to "Operando" (actually handled by backend or we update it directly)
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside' })
+      // 3. Update Equipment status to "Operando"
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside', status: 'Operando' })
 
       // Save local cache for dashboard if offline
       localStorage.setItem('app_motorista_current_dispatch', JSON.stringify({ ...dispatchData, id: newDispatchId }))

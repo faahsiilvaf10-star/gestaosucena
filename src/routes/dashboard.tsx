@@ -183,7 +183,7 @@ function DashboardComponent() {
   const { data: eqData } = useQuery({
     queryKey: ['equipments_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('eq_equipments').select('location_status, last_exit_reason, name, plate_tag, type, category, updated_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+      const { data, error } = await supabase.from('eq_equipments').select('location_status, status, last_exit_reason, name, plate_tag, type, category, updated_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
       if (error) throw error
       
       let operacaoCount = 0
@@ -199,8 +199,8 @@ function DashboardComponent() {
         
         if (isVehicle) {
           totalVehicles++
-          const isInside = eq.location_status !== 'outside'
-          if (isInside) {
+          const isOperando = eq.status === 'Operando'
+          if (isOperando) {
             operacaoCount++
             operacaoList.push(eq)
           }

@@ -45,10 +45,14 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
       let enrichedData = data || []
       if (navigator.onLine) {
         try {
+          const yesterday = new Date()
+          yesterday.setHours(yesterday.getHours() - 24)
+
           const { data: activeDispatches } = await supabase
             .from('eq_driver_dispatch')
             .select('equipment_id')
             .eq('status', 'Em atividade')
+            .gte('shift_start_time', yesterday.toISOString())
           
           if (activeDispatches && activeDispatches.length > 0) {
             const activeIds = new Set(activeDispatches.map((d: any) => d.equipment_id))
