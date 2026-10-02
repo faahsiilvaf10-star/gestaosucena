@@ -128,7 +128,7 @@ function AppMotoristaStandalone() {
             })
           }
         }
-      } catch {
+      } catch (e) {
         // Ignora erros silenciosamente
       }
     }
