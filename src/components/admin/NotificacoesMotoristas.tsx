@@ -5,6 +5,18 @@ import Send from 'lucide-react/dist/esm/icons/send.js'
 import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js'
 import Search from 'lucide-react/dist/esm/icons/search.js'
 
+// Lista de motoristas registrados no app — deve estar em sincronia com LoginStep.tsx
+const ALL_DRIVERS = [
+  { id: 'EM', name: 'EDIELSON MARINHO MENDES' },
+  { id: 'ED', name: 'ENISON DA SILVA SANTOS' },
+  { id: 'JB', name: 'JOÃO BOSCO DA SILVA COSTA' },
+  { id: 'JC', name: 'JOÃO CARLOS PAIXÃO MELO' },
+  { id: 'RG', name: 'RICELIO GONÇALVES CARDOSO' },
+  { id: 'AD', name: 'ANDERSON DA CRUZ PINHEIRO' },
+  { id: 'FG', name: 'FABIO GENILSON FERNANDES DOS REMEDIOS' },
+  { id: 'PF', name: 'PAULO FELIX CARDOSO' },
+]
+
 export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
   const [motoristas, setMotoristas] = useState<{ id: string, nome: string, matricula: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,32 +29,29 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
   useEffect(() => {
     async function loadMotoristas() {
       try {
-        // Busca motoristas com turno ativo (jornada iniciada e não finalizada)
+        // Busca jornadas ativas para filtrar apenas motoristas em turno
         const { data: dispatches, error: dispatchError } = await supabase
           .from('eq_driver_dispatch')
           .select('driver_id')
           .is('shift_end_time', null)
+          .eq('status', 'Em atividade')
 
         if (dispatchError) throw dispatchError
 
-        if (!dispatches || dispatches.length === 0) {
-          setMotoristas([])
-          setLoading(false)
-          return
-        }
+        const activeDriverIds = new Set(
+          (dispatches || []).map((d: any) => d.driver_id).filter(Boolean)
+        )
 
-        const activeDriverIds = Array.from(new Set(dispatches.map(d => d.driver_id).filter(Boolean)))
+        // Se houver turno ativo, mostra apenas esses; caso contrário mostra todos
+        const result = activeDriverIds.size > 0
+          ? ALL_DRIVERS.filter(d => activeDriverIds.has(d.id))
+          : ALL_DRIVERS
 
-        const { data, error } = await supabase
-          .from('rh_efetivo')
-          .select('id, nome, matricula')
-          .in('id', activeDriverIds)
-          .order('nome', { ascending: true })
-
-        if (error) throw error
-        setMotoristas(data || [])
+        setMotoristas(result.map(d => ({ id: d.id, nome: d.name, matricula: '' })))
       } catch (err) {
         console.error('Erro ao carregar motoristas:', err)
+        // Fallback: exibe todos os motoristas registrados
+        setMotoristas(ALL_DRIVERS.map(d => ({ id: d.id, nome: d.name, matricula: '' })))
         toast.error('Erro ao carregar motoristas')
       } finally {
         setLoading(false)
@@ -51,8 +60,8 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
     loadMotoristas()
   }, [])
 
-  const filteredMotoristas = motoristas.filter(m => 
-    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredMotoristas = motoristas.filter(m =>
+    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.matricula && m.matricula.includes(searchTerm))
   )
 
@@ -75,7 +84,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
       })
 
       if (error) throw error
-      
+
       toast.success('Notificação enviada com sucesso!')
       setTitle('')
       setBody('')
@@ -101,7 +110,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
         title: title.trim(),
         body: body.trim()
       }))
-      
+
       if (payloads.length === 0) {
         toast.error('Nenhum motorista encontrado na lista.')
         setSending(false)
@@ -111,7 +120,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
       const { error } = await supabase.from('app_notifications').insert(payloads)
 
       if (error) throw error
-      
+
       toast.success(`Notificação enviada para ${motoristas.length} motoristas!`)
       setTitle('')
       setBody('')
@@ -141,12 +150,12 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
         {/* Lado Esquerdo: Seleção do Motorista */}
         <div>
           <h3 className="text-lg font-semibold mb-4">1. Selecionar Destinatário</h3>
-          
+
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border mb-4 ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-blue-500' : 'bg-gray-50 border-gray-200 focus-within:border-blue-500'}`}>
             <Search size={16} className="text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Buscar motorista por nome..." 
+            <input
+              type="text"
+              placeholder="Buscar motorista por nome..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-none w-full text-sm"
@@ -160,7 +169,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
               <div className="p-4 text-center text-sm text-gray-500">Nenhum motorista encontrado</div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-white/5">
-                <div 
+                <div
                   className={`p-3 cursor-pointer transition-colors ${selectedMotorista === null ? 'bg-blue-500/10 border-l-2 border-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-2 border-transparent'}`}
                   onClick={() => setSelectedMotorista(null)}
                 >
@@ -168,7 +177,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
                   <p className="text-xs text-gray-500">Ou envie para todos abaixo</p>
                 </div>
                 {filteredMotoristas.map(m => (
-                  <div 
+                  <div
                     key={m.id}
                     className={`p-3 cursor-pointer transition-colors ${selectedMotorista === m.id ? 'bg-blue-500/10 border-l-2 border-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-2 border-transparent'}`}
                     onClick={() => setSelectedMotorista(m.id)}
@@ -185,12 +194,12 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
         {/* Lado Direito: Composição da Mensagem */}
         <div>
           <h3 className="text-lg font-semibold mb-4">2. Compor Mensagem</h3>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Título</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Ex: Novo Aviso"
@@ -199,7 +208,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Mensagem</label>
-              <textarea 
+              <textarea
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 placeholder="Escreva a mensagem aqui..."
@@ -209,14 +218,14 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
             </div>
 
             <div className="pt-4 flex items-center justify-end gap-3">
-              <button 
+              <button
                 onClick={handleSendAll}
                 disabled={sending}
                 className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-sm font-semibold rounded-lg transition-colors"
               >
                 Enviar para TODOS
               </button>
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={sending || !selectedMotorista}
                 className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
