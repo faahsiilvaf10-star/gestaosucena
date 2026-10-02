@@ -22,50 +22,39 @@ export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' 
 function AppMotoristaWrapper() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [currentStepState, setCurrentStepState] = useState<AppMotoristaStep>(
-    (localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login'
-  )
-
   const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
-  const pollingSetupRef = useRef(false)
-
-  const getDriverId = () => {
-    try {
-      const str = localStorage.getItem('app_motorista_driver')
-      if (!str) return null
-      const d = JSON.parse(str)
-      return d.id && d.id !== 'ADMIN' ? d.id : null
-    } catch { return null }
-  }
 
   // Exibe notificação no sistema e in-app banner
   const showNotif = async (title: string, body: string) => {
     setAnnouncements(prev => [...prev, { title, body }])
-
-    // Tenta Web Notification API
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        new Notification(title, { body, icon: '/favicon.ico' })
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(p => {
-          if (p === 'granted') new Notification(title, { body, icon: '/favicon.ico' })
-        })
+    try {
+      if ('Notification' in window && Notification.permission !== 'denied') {
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body, icon: '/favicon.ico' })
+        } else {
+          Notification.requestPermission().then(p => {
+            if (p === 'granted') new Notification(title, { body, icon: '/favicon.ico' })
+          })
+        }
       }
-    }
+    } catch(e) {}
   }
 
+  // BULLETPROOF GLOBAL POLLING (Ignores React lifecycles to guarantee it never stops)
   useEffect(() => {
-    if (currentStepState === 'login' || pollingSetupRef.current) return;
-    pollingSetupRef.current = true;
+    let isPolling = false;
     
-    let channel: any;
-    let pollInterval: any;
-
-    const pollNotifications = async () => {
-      const driverId = getDriverId()
-      if (!driverId) return
-
+    const tick = async () => {
+      if (isPolling) return;
+      isPolling = true;
       try {
+        const str = localStorage.getItem('app_motorista_driver')
+        if (!str) return;
+        const d = JSON.parse(str)
+        const driverId = d.id && d.id !== 'ADMIN' ? d.id : null
+        
+        if (!driverId) return;
+
         const { data, error } = await supabase
           .from('app_notifications')
           .select('id, title, body, created_at')
@@ -73,68 +62,35 @@ function AppMotoristaWrapper() {
           .eq('is_read', false)
           .order('created_at', { ascending: true })
 
-        if (error) { console.warn('[Notif Polling] Erro:', error.message); return }
-
-        if (data && data.length > 0) {
+        if (!error && data && data.length > 0) {
           await supabase.from('app_notifications')
             .update({ is_read: true })
             .in('id', data.map(d => d.id))
-            .catch(console.warn)
+            .catch(() => {})
 
-          for (const notif of (data || [])) {
+          for (const notif of data) {
             if (notif.title === '__ADMIN_RESET__') {
-              const keysToRemove = [
-                'app_motorista_driver', 'app_motorista_current_step',
-                'app_motorista_current_dispatch', 'app_motorista_equipment_id',
-                'app_motorista_timeline', 'app_motorista_active_status',
-                'app_motorista_active_status_color', 'app_motorista_status_start',
-                'app_motorista_wizard_state', 'app_motorista_water_point',
-                'app_motorista_water_start', 'app_motorista_fuel_level'
-              ]
-              keysToRemove.forEach(k => localStorage.removeItem(k))
+              const keys = ['app_motorista_driver', 'app_motorista_current_step', 'app_motorista_current_dispatch', 'app_motorista_equipment_id', 'app_motorista_timeline', 'app_motorista_active_status', 'app_motorista_active_status_color', 'app_motorista_status_start', 'app_motorista_wizard_state', 'app_motorista_water_point', 'app_motorista_water_start', 'app_motorista_fuel_level']
+              keys.forEach(k => localStorage.removeItem(k))
               window.location.reload()
               return
             }
-            await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+            showNotif(notif.title || 'Nova Mensagem', notif.body || '')
             await new Promise(r => setTimeout(r, 500))
           }
         }
-      } catch (err) {
-        console.warn('[Notif Polling] Falha:', err)
+      } catch (e) {
+        console.warn('Global Poll error', e)
+      } finally {
+        isPolling = false;
       }
-    }
+    };
 
-    const setup = async () => {
-      const driverId = getDriverId()
-      if (!driverId) return
-
-      await pollNotifications()
-      pollInterval = setInterval(pollNotifications, 30000)
-
-      channel = supabase.channel(`motorista_notif_${driverId}_web`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'app_notifications',
-          filter: `driver_id=eq.${driverId}`
-        }, async (payload) => {
-          const notif = payload.new as any
-          if (!notif.is_read) {
-            supabase.from('app_notifications').update({ is_read: true }).eq('id', notif.id).catch()
-            await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
-          }
-        })
-        .subscribe()
-    }
-
-    setup()
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval)
-      if (channel) supabase.removeChannel(channel)
-      pollingSetupRef.current = false
-    }
-  }, [currentStepState])
+    // Run immediately and then every 10 seconds
+    tick();
+    const interval = setInterval(tick, 10000);
+    return () => clearInterval(interval);
+  }, [])
 
   const currentStep = currentStepState
   const setCurrentStep = (step: AppMotoristaStep) => {
