@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
-import { LocalNotifications } from '@capacitor/local-notifications'
 import { supabase } from './lib/supabase'
 
 // Registra o Service Worker para funcionamento offline
@@ -70,60 +69,92 @@ function AppMotoristaStandalone() {
     }
   }, [])
 
-  // Push Notifications Local
+  // Push Notifications — funciona em native (Capacitor) e browser (Web API)
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
     const setupNotifications = async () => {
       try {
-        const permStatus = await LocalNotifications.requestPermissions()
-        console.log('Permissão para notificações:', permStatus)
-        
         const driverDataStr = localStorage.getItem('app_motorista_driver')
         if (!driverDataStr) return
 
         const driver = JSON.parse(driverDataStr)
-        if (!driver.id) return
+        if (!driver.id || driver.id === 'ADMIN') return
 
-        // Subscribe to real-time notification messages
-        const channel = supabase.channel('motorista_notif')
-          .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'app_notifications', 
-            filter: `driver_id=eq.${driver.id}` 
-          }, async (payload) => {
-            const newNotif = payload.new as any
-            
-            // Disparar notificação no celular
-            await LocalNotifications.schedule({
-              notifications: [
-                {
-                  title: newNotif.title || 'Nova Mensagem',
-                  body: newNotif.body || 'Você tem uma nova mensagem do painel.',
-                  id: new Date().getTime(),
-                  schedule: { at: new Date(Date.now() + 1000) },
-                  sound: null,
-                  attachments: null,
-                  actionTypeId: '',
-                  extra: null
-                }
-              ]
-            })
-
-            // Marca como lida se desejar, ou só avisa no painel
-          })
-          .subscribe()
-
-        return () => {
-          supabase.removeChannel(channel)
+        // --- Pede permissão de notificação do sistema ---
+        // 1. Tenta via Capacitor LocalNotifications (APK nativo)
+        let canUseCapacitor = false
+        try {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          const perm = await LocalNotifications.requestPermissions()
+          canUseCapacitor = perm.display === 'granted'
+        } catch {
+          // Capacitor não disponível (browser), ignorar
         }
+
+        // 2. Tenta via Web Notification API (PWA / browser)
+        let canUseWebNotif = false
+        if (!canUseCapacitor && 'Notification' in window) {
+          const webPerm = await Notification.requestPermission()
+          canUseWebNotif = webPerm === 'granted'
+        }
+
+        const showSystemNotif = async (title: string, body: string) => {
+          if (canUseCapacitor) {
+            const { LocalNotifications } = await import('@capacitor/local-notifications')
+            await LocalNotifications.schedule({
+              notifications: [{
+                title,
+                body,
+                id: Date.now(),
+                schedule: { at: new Date(Date.now() + 500) },
+                sound: undefined,
+                attachments: undefined,
+                actionTypeId: '',
+                extra: null
+              }]
+            })
+          } else if (canUseWebNotif) {
+            new Notification(title, { body, icon: '/favicon.ico' })
+          }
+        }
+
+        // --- Subscribe ao Realtime para notificações do motorista ---
+        channel = supabase.channel(`motorista_notif_${driver.id}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'app_notifications',
+            filter: `driver_id=eq.${driver.id}`
+          }, async (payload) => {
+            const notif = payload.new as any
+
+            // Exibe notificação no sistema operacional
+            await showSystemNotif(
+              notif.title || 'Nova Mensagem',
+              notif.body || 'Você tem uma nova mensagem do painel.'
+            )
+
+            // Emite evento DOM para mostrar banner in-app no DashboardStep
+            window.dispatchEvent(new CustomEvent('app_notification', {
+              detail: { title: notif.title, body: notif.body }
+            }))
+          })
+          .subscribe((status) => {
+            console.log('[Notif] Canal Supabase Realtime:', status)
+          })
+
       } catch (err) {
-        console.error('Erro ao configurar LocalNotifications:', err)
+        console.error('Erro ao configurar notificações:', err)
       }
     }
 
-    // Configura e tenta pedir permissão ao abrir se tiver motorista logado
     if (currentStep !== 'login') {
       setupNotifications()
+    }
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
     }
   }, [currentStep])
 

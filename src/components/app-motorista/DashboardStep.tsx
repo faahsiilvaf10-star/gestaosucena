@@ -77,6 +77,20 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   const [elapsedStatusTime, setElapsedStatusTime] = useState('00:00:00')
   const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history' | 'gate' | 'anomaly'>('operating')
 
+  // Notificação in-app
+  const [inAppNotif, setInAppNotif] = useState<{ title: string; body: string } | null>(null)
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setInAppNotif({ title: detail?.title || 'Nova mensagem', body: detail?.body || '' })
+      // Auto-dismiss após 8 segundos
+      setTimeout(() => setInAppNotif(null), 8000)
+    }
+    window.addEventListener('app_notification', handler)
+    return () => window.removeEventListener('app_notification', handler)
+  }, [])
+
   const [gateReason, setGateReason] = useState('')
   const [gateDescription, setGateDescription] = useState('')
 
@@ -1510,6 +1524,27 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   return (
     <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-20">
       
+      {/* BANNER IN-APP: Notificação do Painel Admin */}
+      {inAppNotif && (
+        <div className="fixed top-4 left-4 right-4 z-50 animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-blue-600 text-white rounded-2xl shadow-2xl shadow-blue-500/40 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-sm">📢</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm leading-tight">{inAppNotif.title}</p>
+              <p className="text-blue-100 text-sm mt-0.5 leading-snug">{inAppNotif.body}</p>
+            </div>
+            <button
+              onClick={() => setInAppNotif(null)}
+              className="text-white/70 hover:text-white text-lg leading-none flex-shrink-0 active:scale-90 transition-all"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER WIDGET */}
       <div className={`${sColors.bg} ${sColors.text} p-6 rounded-b-[40px] shadow-xl mb-6 transition-colors duration-500`}>
         <div className="flex items-start justify-between mb-6">
