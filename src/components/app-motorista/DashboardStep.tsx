@@ -287,6 +287,54 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
       let dsp = dspReal
       const localCache = localStorage.getItem('app_motorista_current_dispatch')
+      let cachedDispatch = localCache ? JSON.parse(localCache) : null
+
+      // --- Verificação de Auto-Reset da Meia-noite ou Turno Preso ---
+      const checkAndResetStuckShift = (d: any) => {
+        if (!d?.shift_start_time) return false;
+        const shiftDay = new Date(d.shift_start_time).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })
+        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })
+        
+        const isPastMidnight = shiftDay !== today
+        const isAlreadyFinished = d.status === 'Finalizada'
+
+        if (isPastMidnight || isAlreadyFinished) {
+          
+          if (isPastMidnight && !isAlreadyFinished) {
+            // Auto-finaliza no banco local/offline
+            saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' }).catch()
+            saveOfflineFirst('eq_driver_dispatch', 'UPDATE', {
+              id: d.id,
+              shift_end_time: new Date().toISOString(),
+              status: 'Finalizada'
+            }).catch()
+          }
+
+          const keysToRemove = [
+            'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+            'app_motorista_timeline', 'app_motorista_active_status',
+            'app_motorista_active_status_color', 'app_motorista_status_start',
+            'app_motorista_wizard_state', 'app_motorista_water_point',
+            'app_motorista_water_start', 'app_motorista_fuel_level'
+          ]
+          keysToRemove.forEach(k => localStorage.removeItem(k))
+          
+          if (isPastMidnight && !isAlreadyFinished) {
+            alert('Seu turno do dia anterior foi encerrado automaticamente. Registre um novo turno para hoje.')
+          } else {
+            alert('Seu turno foi finalizado. A tela será recarregada para iniciar nova operação.')
+          }
+
+          if (onBack) {
+            onBack()
+          } else {
+            window.location.reload()
+          }
+          return true;
+        }
+        return false;
+      }
+      // -----------------------------------------------
 
       if (isAdmin) {
         if (dsp) {
@@ -321,11 +369,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
         }
       } else {
         if (dsp) {
+          if (checkAndResetStuckShift(dsp)) return;
           setDispatch(dsp)
           localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
-        } else if (localCache) {
+        } else if (cachedDispatch) {
+          if (checkAndResetStuckShift(cachedDispatch)) return;
           // Mantém o turno iniciado localmente (offline ou ainda em sincronização)
-          setDispatch(JSON.parse(localCache))
+          setDispatch(cachedDispatch)
         } else {
           if (navigator.onLine) {
             localStorage.removeItem('app_motorista_driver')
