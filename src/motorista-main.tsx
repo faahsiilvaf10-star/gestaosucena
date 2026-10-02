@@ -95,7 +95,14 @@ function AppMotoristaStandalone() {
 
     // Exibe notificação no sistema e in-app banner
     const showNotif = async (title: string, body: string) => {
-      // 1. Tenta Capacitor (APK nativo)
+      // Exibe o modal detalhado global do app IMEDIATAMENTE (não espera o Capacitor)
+      setAnnouncements(prev => [...prev, { title, body }])
+
+      window.dispatchEvent(new CustomEvent('app_notification', {
+        detail: { title, body }
+      }))
+
+      // Tenta Capacitor (APK nativo) em background
       try {
         const { LocalNotifications } = await import('@capacitor/local-notifications')
         const perm = await LocalNotifications.requestPermissions()
@@ -121,15 +128,9 @@ function AppMotoristaStandalone() {
             })
           }
         }
+      } catch {
+        // Ignora erros silenciosamente
       }
-
-      // 2. Sempre dispara o banner in-app (funciona sem permissão do sistema)
-      window.dispatchEvent(new CustomEvent('app_notification', {
-        detail: { title, body }
-      }))
-
-      // 3. Exibe o modal detalhado global do app
-      setAnnouncements(prev => [...prev, { title, body }])
     }
 
     // --- Polling: verifica novas notificações a cada 30s ---
@@ -214,9 +215,45 @@ function AppMotoristaStandalone() {
       setup()
     }
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentStep !== 'login') {
+        const driverId = getDriverId()
+        if (driverId) {
+          // Chama a mesma lógica do polling
+          supabase.from('app_notifications')
+            .select('id, title, body, created_at')
+            .eq('driver_id', driverId)
+            .eq('is_read', false)
+            .order('created_at', { ascending: true })
+            .then(({ data, error }) => {
+              if (error || !data || data.length === 0) return
+              supabase.from('app_notifications').update({ is_read: true }).in('id', data.map(d => d.id)).catch()
+              for (const notif of data) {
+                if (notif.title === '__ADMIN_RESET__') {
+                  const keysToRemove = [
+                    'app_motorista_driver', 'app_motorista_current_step',
+                    'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+                    'app_motorista_timeline', 'app_motorista_active_status',
+                    'app_motorista_active_status_color', 'app_motorista_status_start',
+                    'app_motorista_wizard_state', 'app_motorista_water_point',
+                    'app_motorista_water_start', 'app_motorista_fuel_level'
+                  ]
+                  keysToRemove.forEach(k => localStorage.removeItem(k))
+                  window.location.reload()
+                  return
+                }
+                showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+              }
+            })
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
       if (channel) supabase.removeChannel(channel)
       if (pollInterval) clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [currentStep])
 
