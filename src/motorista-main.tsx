@@ -127,30 +127,27 @@ function AppMotoristaStandalone() {
       }))
     }
 
-    // Marca o timestamp de verificação para evitar duplicatas no polling
-    const LAST_CHECK_KEY = 'app_notif_last_check'
-    const getLastCheck = () => localStorage.getItem(LAST_CHECK_KEY) || new Date(Date.now() - 60000).toISOString()
-    const setLastCheck = (ts: string) => localStorage.setItem(LAST_CHECK_KEY, ts)
-
     // --- Polling: verifica novas notificações a cada 30s ---
     const pollNotifications = async () => {
       const driverId = getDriverId()
       if (!driverId) return
 
       try {
-        const lastCheck = getLastCheck()
-        const now = new Date().toISOString()
-
         const { data, error } = await supabase
           .from('app_notifications')
           .select('id, title, body, created_at')
           .eq('driver_id', driverId)
-          .gt('created_at', lastCheck)
+          .eq('is_read', false)
           .order('created_at', { ascending: true })
 
         if (error) { console.warn('[Notif Polling] Erro:', error.message); return }
 
-        setLastCheck(now)
+        if (data && data.length > 0) {
+          // Marca como lidas no banco
+          await supabase.from('app_notifications')
+            .update({ is_read: true })
+            .in('id', data.map(d => d.id))
+            .catch(console.warn)
 
         for (const notif of (data || [])) {
           // Comando especial de reset enviado pelo administrador
@@ -162,8 +159,7 @@ function AppMotoristaStandalone() {
               'app_motorista_timeline', 'app_motorista_active_status',
               'app_motorista_active_status_color', 'app_motorista_status_start',
               'app_motorista_wizard_state', 'app_motorista_water_point',
-              'app_motorista_water_start', 'app_motorista_fuel_level',
-              'app_notif_last_check'
+              'app_motorista_water_start', 'app_motorista_fuel_level'
             ]
             keysToRemove.forEach(k => localStorage.removeItem(k))
             // Retorna para a tela inicial de seleção de motorista
@@ -174,6 +170,7 @@ function AppMotoristaStandalone() {
           await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
           // Pequeno delay entre múltiplas notificações
           await new Promise(r => setTimeout(r, 500))
+        }
         }
       } catch (err) {
         console.warn('[Notif Polling] Falha:', err)
@@ -197,8 +194,11 @@ function AppMotoristaStandalone() {
           filter: `driver_id=eq.${driverId}`
         }, async (payload) => {
           const notif = payload.new as any
-          setLastCheck(new Date().toISOString()) // Evita duplicata no próximo poll
-          await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+          if (!notif.is_read) {
+            // Marca como lido
+            supabase.from('app_notifications').update({ is_read: true }).eq('id', notif.id).catch()
+            await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+          }
         })
         .subscribe((status) => {
           console.log('[Notif] Realtime:', status)
