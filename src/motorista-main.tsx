@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
 import { supabase } from './lib/supabase'
@@ -34,6 +34,7 @@ function AppMotoristaStandalone() {
   })
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
   const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
+  const pollingSetupRef = useRef(false)
 
   const setCurrentStep = (step: AppMotoristaStep) => {
     setCurrentStepState(step)
@@ -81,6 +82,9 @@ function AppMotoristaStandalone() {
 
   // Push Notifications — Realtime (rápido) + Polling a cada 30s (fallback confiável)
   useEffect(() => {
+    if (currentStep === 'login' || pollingSetupRef.current) return;
+    pollingSetupRef.current = true;
+
     let channel: ReturnType<typeof supabase.channel> | null = null
     let pollInterval: ReturnType<typeof setInterval> | null = null
 
@@ -209,9 +213,7 @@ function AppMotoristaStandalone() {
         })
     }
 
-    if (currentStep !== 'login') {
-      setup()
-    }
+    setup()
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentStep !== 'login') {
@@ -252,6 +254,7 @@ function AppMotoristaStandalone() {
       if (channel) supabase.removeChannel(channel)
       if (pollInterval) clearInterval(pollInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      pollingSetupRef.current = false;
     }
   }, [currentStep])
 
