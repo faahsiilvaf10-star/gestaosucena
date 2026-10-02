@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
 import { supabase } from './lib/supabase'
+import Bell from 'lucide-react/dist/esm/icons/bell.js'
 
 // Registra o Service Worker para funcionamento offline
 if ('serviceWorker' in navigator) {
@@ -32,6 +33,7 @@ function AppMotoristaStandalone() {
     return 'login'
   })
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
 
   const setCurrentStep = (step: AppMotoristaStep) => {
     setCurrentStepState(step)
@@ -125,6 +127,9 @@ function AppMotoristaStandalone() {
       window.dispatchEvent(new CustomEvent('app_notification', {
         detail: { title, body }
       }))
+
+      // 3. Exibe o modal detalhado global do app
+      setAnnouncements(prev => [...prev, { title, body }])
     }
 
     // --- Polling: verifica novas notificações a cada 30s ---
@@ -303,6 +308,43 @@ function AppMotoristaStandalone() {
           />
         )}
       </div>
+
+      {/* MODAL DE COMUNICADO OFICIAL */}
+      {announcements.length > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#1A1C20] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Banner/Header decoration */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+            
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Bell className="w-6 h-6" />
+              </div>
+              <div className="flex-1 mt-1">
+                <h2 className="text-xl font-bold text-white leading-tight">
+                  {announcements[0].title}
+                </h2>
+                <p className="text-blue-400 text-xs font-semibold mt-1">
+                  COMUNICADO OFICIAL
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-black/20 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {announcements[0].body}
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setAnnouncements(prev => prev.slice(1))}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-center shadow-lg"
+            >
+              Estou ciente / Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
