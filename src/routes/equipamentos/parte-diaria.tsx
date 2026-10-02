@@ -399,19 +399,21 @@ function ParteDiariaPage() {
         if (error) throw error
       }
 
-      // Limpa dados do turno no localStorage do dispositivo (caso seja o mesmo)
-      const storedEquipmentId = localStorage.getItem('app_motorista_equipment_id')
-      if (storedEquipmentId === vehicleId) {
-        localStorage.removeItem('app_motorista_timeline')
-        localStorage.removeItem('app_motorista_active_status')
-        localStorage.removeItem('app_motorista_active_status_color')
-        localStorage.removeItem('app_motorista_status_start')
-        localStorage.removeItem('app_motorista_water_point')
-        localStorage.removeItem('app_motorista_water_start')
-        localStorage.removeItem('app_motorista_current_dispatch')
-        localStorage.removeItem('app_motorista_equipment_id')
-        localStorage.removeItem('app_motorista_current_step')
-        localStorage.removeItem('app_motorista_fuel_level')
+      // 4. Reseta o status do equipamento para 'Disponível'
+      await supabase
+        .from('eq_equipments')
+        .update({ status: 'Disponível', location_status: 'outside' })
+        .eq('id', vehicleId)
+
+      // 5. Envia comando remoto de reset para o APK do motorista
+      const activeDispatch = vehicleDispatches[vehicleId]
+      const driverId = activeDispatch?.driver_id
+      if (driverId) {
+        await supabase.from('app_notifications').insert({
+          driver_id: driverId,
+          title: '__ADMIN_RESET__',
+          body: 'Jornada apagada pelo administrador. Cache limpo.'
+        }).catch(console.warn) // Não bloqueia se tabela não existir
       }
       
       fetchDashboardData()

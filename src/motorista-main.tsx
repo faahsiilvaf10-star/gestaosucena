@@ -145,6 +145,24 @@ function AppMotoristaStandalone() {
         setLastCheck(now)
 
         for (const notif of (data || [])) {
+          // Comando especial de reset enviado pelo administrador
+          if (notif.title === '__ADMIN_RESET__') {
+            // Limpa todo o cache do turno do motorista
+            const keysToRemove = [
+              'app_motorista_driver', 'app_motorista_current_step',
+              'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+              'app_motorista_timeline', 'app_motorista_active_status',
+              'app_motorista_active_status_color', 'app_motorista_status_start',
+              'app_motorista_wizard_state', 'app_motorista_water_point',
+              'app_motorista_water_start', 'app_motorista_fuel_level',
+              'app_notif_last_check'
+            ]
+            keysToRemove.forEach(k => localStorage.removeItem(k))
+            // Retorna para a tela inicial de seleção de motorista
+            window.location.reload()
+            return
+          }
+
           await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
           // Pequeno delay entre múltiplas notificações
           await new Promise(r => setTimeout(r, 500))
