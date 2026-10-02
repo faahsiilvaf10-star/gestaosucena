@@ -851,22 +851,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
 
   const handleLogout = async () => {
-    // Só bloqueia se há um turno REALMENTE ativo (status 'Em atividade')
-    let hasActiveShift = false
-    try {
-      const cachedStr = localStorage.getItem('app_motorista_current_dispatch')
-      if (cachedStr && dispatch?.id) {
-        const cachedDispatch = JSON.parse(cachedStr)
-        hasActiveShift = cachedDispatch?.status === 'Em atividade'
-      }
-    } catch { /* ignora erro de parse */ }
-
-    if (hasActiveShift) {
-      alert('Você ainda tem um turno ativo. Use o botão "Finalizar Jornada" antes de sair.')
-      return
-    }
-
-    // Turno finalizado ou inexistente — pode deslogar
+    // Sempre permite deslogar (já existe um modal de confirmação antes de chamar esta função)
     localStorage.removeItem('app_motorista_driver')
     localStorage.removeItem('app_motorista_current_step')
     localStorage.removeItem('app_motorista_current_dispatch')
@@ -876,6 +861,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
     localStorage.removeItem('app_motorista_active_status_color')
     localStorage.removeItem('app_motorista_status_start')
     localStorage.removeItem('app_motorista_wizard_state')
+    
     if (onLogout) onLogout()
     else window.location.reload()
   }
