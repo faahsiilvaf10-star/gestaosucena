@@ -117,8 +117,8 @@ function AppMotoristaStandalone() {
             }]
           })
         }
-      } catch {
-        // Não é APK nativo — tenta Web Notification API
+      } catch (e) {
+        // Não é APK nativo ou erro no Capacitor — tenta Web Notification API
         if ('Notification' in window) {
           if (Notification.permission === 'granted') {
             new Notification(title, { body, icon: '/favicon.ico' })
@@ -128,8 +128,6 @@ function AppMotoristaStandalone() {
             })
           }
         }
-      } catch (e) {
-        // Ignora erros silenciosamente
       }
     }
 
