@@ -833,6 +833,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       localStorage.removeItem('app_motorista_water_start')
       localStorage.removeItem('app_motorista_timeline')
       
+      // Limpa o estado React do dispatch para liberar o logout
+      setDispatch(null)
+
       // Ao finalizar o turno, desloga o motorista e volta para a seleção de motorista
       localStorage.removeItem('app_motorista_driver')
       localStorage.removeItem('app_motorista_current_step')
@@ -848,8 +851,27 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
 
   const handleLogout = async () => {
-    // Apenas avisa que não pode
-    alert('Só é possível deslogar quando finalizar o turno atual. Use o botão "Finalizar Jornada".')
+    // Verifica se ainda há um turno ativo (dispatch não finalizado)
+    const cachedDispatch = localStorage.getItem('app_motorista_current_dispatch')
+    const hasActiveShift = cachedDispatch && dispatch?.id
+
+    if (hasActiveShift) {
+      alert('Você ainda tem um turno ativo. Use o botão "Finalizar Jornada" antes de sair.')
+      return
+    }
+
+    // Turno já finalizado ou não existe — pode deslogar
+    localStorage.removeItem('app_motorista_driver')
+    localStorage.removeItem('app_motorista_current_step')
+    localStorage.removeItem('app_motorista_current_dispatch')
+    localStorage.removeItem('app_motorista_equipment_id')
+    localStorage.removeItem('app_motorista_timeline')
+    localStorage.removeItem('app_motorista_active_status')
+    localStorage.removeItem('app_motorista_active_status_color')
+    localStorage.removeItem('app_motorista_status_start')
+    localStorage.removeItem('app_motorista_wizard_state')
+    if (onLogout) onLogout()
+    else window.location.reload()
   }
 
   if (!equipment) {
