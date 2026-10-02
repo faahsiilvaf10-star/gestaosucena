@@ -69,92 +69,123 @@ function AppMotoristaStandalone() {
     }
   }, [])
 
-  // Push Notifications — funciona em native (Capacitor) e browser (Web API)
+  // Push Notifications — Realtime (rápido) + Polling a cada 30s (fallback confiável)
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let pollInterval: ReturnType<typeof setInterval> | null = null
 
-    const setupNotifications = async () => {
+    const getDriverId = () => {
       try {
-        const driverDataStr = localStorage.getItem('app_motorista_driver')
-        if (!driverDataStr) return
+        const str = localStorage.getItem('app_motorista_driver')
+        if (!str) return null
+        const d = JSON.parse(str)
+        return d.id && d.id !== 'ADMIN' ? d.id : null
+      } catch { return null }
+    }
 
-        const driver = JSON.parse(driverDataStr)
-        if (!driver.id || driver.id === 'ADMIN') return
-
-        // --- Pede permissão de notificação do sistema ---
-        // 1. Tenta via Capacitor LocalNotifications (APK nativo)
-        let canUseCapacitor = false
-        try {
-          const { LocalNotifications } = await import('@capacitor/local-notifications')
-          const perm = await LocalNotifications.requestPermissions()
-          canUseCapacitor = perm.display === 'granted'
-        } catch {
-          // Capacitor não disponível (browser), ignorar
+    // Exibe notificação no sistema e in-app banner
+    const showNotif = async (title: string, body: string) => {
+      // 1. Tenta Capacitor (APK nativo)
+      try {
+        const { LocalNotifications } = await import('@capacitor/local-notifications')
+        const perm = await LocalNotifications.requestPermissions()
+        if (perm.display === 'granted') {
+          await LocalNotifications.schedule({
+            notifications: [{
+              title, body,
+              id: Date.now() % 2147483647,
+              schedule: { at: new Date(Date.now() + 300) },
+              sound: undefined, attachments: undefined,
+              actionTypeId: '', extra: null
+            }]
+          })
         }
-
-        // 2. Tenta via Web Notification API (PWA / browser)
-        let canUseWebNotif = false
-        if (!canUseCapacitor && 'Notification' in window) {
-          const webPerm = await Notification.requestPermission()
-          canUseWebNotif = webPerm === 'granted'
-        }
-
-        const showSystemNotif = async (title: string, body: string) => {
-          if (canUseCapacitor) {
-            const { LocalNotifications } = await import('@capacitor/local-notifications')
-            await LocalNotifications.schedule({
-              notifications: [{
-                title,
-                body,
-                id: Date.now(),
-                schedule: { at: new Date(Date.now() + 500) },
-                sound: undefined,
-                attachments: undefined,
-                actionTypeId: '',
-                extra: null
-              }]
-            })
-          } else if (canUseWebNotif) {
+      } catch {
+        // Não é APK nativo — tenta Web Notification API
+        if ('Notification' in window) {
+          if (Notification.permission === 'granted') {
             new Notification(title, { body, icon: '/favicon.ico' })
+          } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(p => {
+              if (p === 'granted') new Notification(title, { body, icon: '/favicon.ico' })
+            })
           }
         }
+      }
 
-        // --- Subscribe ao Realtime para notificações do motorista ---
-        channel = supabase.channel(`motorista_notif_${driver.id}`)
-          .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'app_notifications',
-            filter: `driver_id=eq.${driver.id}`
-          }, async (payload) => {
-            const notif = payload.new as any
+      // 2. Sempre dispara o banner in-app (funciona sem permissão do sistema)
+      window.dispatchEvent(new CustomEvent('app_notification', {
+        detail: { title, body }
+      }))
+    }
 
-            // Exibe notificação no sistema operacional
-            await showSystemNotif(
-              notif.title || 'Nova Mensagem',
-              notif.body || 'Você tem uma nova mensagem do painel.'
-            )
+    // Marca o timestamp de verificação para evitar duplicatas no polling
+    const LAST_CHECK_KEY = 'app_notif_last_check'
+    const getLastCheck = () => localStorage.getItem(LAST_CHECK_KEY) || new Date(Date.now() - 60000).toISOString()
+    const setLastCheck = (ts: string) => localStorage.setItem(LAST_CHECK_KEY, ts)
 
-            // Emite evento DOM para mostrar banner in-app no DashboardStep
-            window.dispatchEvent(new CustomEvent('app_notification', {
-              detail: { title: notif.title, body: notif.body }
-            }))
-          })
-          .subscribe((status) => {
-            console.log('[Notif] Canal Supabase Realtime:', status)
-          })
+    // --- Polling: verifica novas notificações a cada 30s ---
+    const pollNotifications = async () => {
+      const driverId = getDriverId()
+      if (!driverId) return
 
+      try {
+        const lastCheck = getLastCheck()
+        const now = new Date().toISOString()
+
+        const { data, error } = await supabase
+          .from('app_notifications')
+          .select('id, title, body, created_at')
+          .eq('driver_id', driverId)
+          .gt('created_at', lastCheck)
+          .order('created_at', { ascending: true })
+
+        if (error) { console.warn('[Notif Polling] Erro:', error.message); return }
+
+        setLastCheck(now)
+
+        for (const notif of (data || [])) {
+          await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+          // Pequeno delay entre múltiplas notificações
+          await new Promise(r => setTimeout(r, 500))
+        }
       } catch (err) {
-        console.error('Erro ao configurar notificações:', err)
+        console.warn('[Notif Polling] Falha:', err)
       }
     }
 
+    const setup = async () => {
+      const driverId = getDriverId()
+      if (!driverId) return
+
+      // Polling inicial + intervalo de 30s
+      await pollNotifications()
+      pollInterval = setInterval(pollNotifications, 30000)
+
+      // Realtime como caminho rápido (complementar ao polling)
+      channel = supabase.channel(`motorista_notif_${driverId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'app_notifications',
+          filter: `driver_id=eq.${driverId}`
+        }, async (payload) => {
+          const notif = payload.new as any
+          setLastCheck(new Date().toISOString()) // Evita duplicata no próximo poll
+          await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+        })
+        .subscribe((status) => {
+          console.log('[Notif] Realtime:', status)
+        })
+    }
+
     if (currentStep !== 'login') {
-      setupNotifications()
+      setup()
     }
 
     return () => {
       if (channel) supabase.removeChannel(channel)
+      if (pollInterval) clearInterval(pollInterval)
     }
   }, [currentStep])
 
