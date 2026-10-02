@@ -387,8 +387,8 @@ function ParteDiariaPage() {
         const dispatchIds = dispatchesToDelete.map(d => d.id)
 
         // 2. Explicitly delete related records to avoid FK constraints lacking CASCADE
+        await supabase.from('eq_driver_activities').delete().in('dispatch_id', dispatchIds)
         await supabase.from('eq_status_history').delete().in('dispatch_id', dispatchIds)
-        await supabase.from('eq_anomalies').delete().in('dispatch_id', dispatchIds)
         
         const { data: checklists } = await supabase.from('eq_checklists').select('id').in('dispatch_id', dispatchIds)
         if (checklists && checklists.length > 0) {
