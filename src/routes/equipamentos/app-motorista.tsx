@@ -132,6 +132,7 @@ function AppMotoristaWrapper() {
     return () => {
       if (pollInterval) clearInterval(pollInterval)
       if (channel) supabase.removeChannel(channel)
+      pollingSetupRef.current = false
     }
   }, [currentStepState])
 
