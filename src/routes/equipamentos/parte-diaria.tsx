@@ -386,9 +386,19 @@ function ParteDiariaPage() {
       if (dispatchesToDelete && dispatchesToDelete.length > 0) {
         const dispatchIds = dispatchesToDelete.map(d => d.id)
 
-        // 2. Explicitly delete related status history and anomalies
+        // 2. Explicitly delete related records to avoid FK constraints lacking CASCADE
         await supabase.from('eq_status_history').delete().in('dispatch_id', dispatchIds)
         await supabase.from('eq_anomalies').delete().in('dispatch_id', dispatchIds)
+        
+        const { data: checklists } = await supabase.from('eq_checklists').select('id').in('dispatch_id', dispatchIds)
+        if (checklists && checklists.length > 0) {
+          const checklistIds = checklists.map(c => c.id)
+          await supabase.from('eq_checklist_items').delete().in('checklist_id', checklistIds)
+        }
+        
+        await supabase.from('eq_checklists').delete().in('dispatch_id', dispatchIds)
+        await supabase.from('eq_fuel_records').delete().in('dispatch_id', dispatchIds)
+        await supabase.from('eq_water_refills').delete().in('dispatch_id', dispatchIds)
 
         // 3. Delete the dispatches
         const { error } = await supabase
@@ -417,7 +427,7 @@ function ParteDiariaPage() {
       fetchDashboardData()
     } catch (err) {
       console.error('Failed to clear journey', err)
-      alert('Erro ao apagar jornada do dia.')
+      alert('Erro ao apagar jornada do dia. Detalhes: ' + (err.message || String(err)))
     }
   }
 

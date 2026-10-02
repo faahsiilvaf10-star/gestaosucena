@@ -47,7 +47,7 @@ export async function sendEntryExitWhatsappNotification(
     }
 
     try {
-      await sendWhatsappTextOnServer({
+      const serverRes = await sendWhatsappTextOnServer({
         data: {
           url: whatsappSettings.url,
           instanceId: whatsappSettings.instanceId,
@@ -56,6 +56,7 @@ export async function sendEntryExitWhatsappNotification(
           text: msg
         }
       })
+      if (!serverRes?.success) throw new Error("ServerFn returned false success");
     } catch (serverErr) {
       console.warn("ServerFn failed, attempting direct fetch fallback...", serverErr);
       

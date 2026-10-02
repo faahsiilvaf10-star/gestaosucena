@@ -63,10 +63,13 @@ export const sendWhatsappTextOnServer = createServerFn({ method: 'POST' })
       }
 
       const resultText = await res.text();
-      return { success: res.ok, result: resultText };
+      if (!res.ok) {
+        throw new Error(`W-API error (${res.status}): ${resultText}`)
+      }
+      return { success: true, result: resultText };
     } catch (e: any) {
       console.error("sendWhatsappTextOnServer error:", e)
-      return { success: false, error: e.message }
+      throw new Error(e.message || "Erro no envio W-API")
     }
   })
 

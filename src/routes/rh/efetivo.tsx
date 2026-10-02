@@ -261,7 +261,7 @@ function RhEfetivoPage() {
 
           // Prevent duplicates and retrieve existing matriculas
           const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena')
-          const existingMap = new Map<string, any>((existingData || []).map(d => [d.nome.toUpperCase(), d]))
+          const existingMap = new Map<string, any>((existingData || []).map((d: any) => [d.nome.toUpperCase(), d]))
 
           const uniqueNewProcessedData: any[] = []
           const recordsToUpdate: any[] = []
