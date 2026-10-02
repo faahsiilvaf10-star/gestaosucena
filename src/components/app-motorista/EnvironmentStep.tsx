@@ -1,8 +1,15 @@
 import Factory from 'lucide-react/dist/esm/icons/factory.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
+import { useState } from 'react';
 
 export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId: string) => void, onBack?: () => void }) {
+  const [remember, setRemember] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('app_motorista_remember_env') === 'true'
+    }
+    return false
+  })
   
   const environments = [
     {
@@ -19,6 +26,7 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
 
   const handleSelect = (envId: string) => {
     localStorage.setItem('sucena_environment', envId)
+    localStorage.setItem('app_motorista_remember_env', remember ? 'true' : 'false')
     onSelect(envId)
   }
 
@@ -66,6 +74,8 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
         <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-zinc-900 px-4 py-2.5 rounded-full border border-gray-200 dark:border-zinc-800 shadow-sm">
           <input 
             type="checkbox" 
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
             className="w-5 h-5 rounded text-emerald-500 focus:ring-emerald-500 border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
           />
           <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Lembrar este ambiente</span>

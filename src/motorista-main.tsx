@@ -60,9 +60,17 @@ function AppMotoristaStandalone() {
   // Restaurar sessão salva no localStorage ao iniciar
   useEffect(() => {
     const driver = localStorage.getItem('app_motorista_driver')
-    const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+    let savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
 
     if (driver && savedStep && savedStep !== 'login') {
+      if (savedStep === 'environment') {
+        const rememberEnv = localStorage.getItem('app_motorista_remember_env')
+        const env = localStorage.getItem('sucena_environment')
+        if (rememberEnv === 'true' && env) {
+          savedStep = 'equipment'
+          localStorage.setItem('app_motorista_current_step', 'equipment')
+        }
+      }
       setCurrentStepState(savedStep)
     } else if (!driver) {
       setCurrentStepState('login')
@@ -215,6 +223,17 @@ function AppMotoristaStandalone() {
       const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
       if (savedStep) target = savedStep
     }
+
+    // Auto-skip environment if remembered
+    if (target === 'environment') {
+      const rememberEnv = localStorage.getItem('app_motorista_remember_env')
+      const env = localStorage.getItem('sucena_environment')
+      if (rememberEnv === 'true' && env) {
+        target = 'equipment'
+        localStorage.setItem('app_motorista_current_step', 'equipment')
+      }
+    }
+
     setCurrentStep(target)
   }
 
