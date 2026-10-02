@@ -22,6 +22,9 @@ export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' 
 function AppMotoristaWrapper() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [currentStepState, setCurrentStepState] = useState<AppMotoristaStep>(
+    (localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login'
+  )
   const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
 
   // Exibe notificação no sistema e in-app banner
