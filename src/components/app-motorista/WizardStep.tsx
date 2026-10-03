@@ -6,59 +6,122 @@ import Camera from 'lucide-react/dist/esm/icons/camera.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getWhatsappSettings } from '../../lib/settings'
 import { format } from 'date-fns'
 import { saveOfflineFirst, queueWhatsappMessage } from '../../lib/offline-sync'
 import FuelGauge from './FuelGauge'
 
-export default function WizardStep({ onFinish, onCancel }: { onFinish: () => void, onCancel: () => void }) {
-  const [step, setStep] = useState(1)
+export default function WizardStep({ 
+  onFinish, 
+  onCancel, 
+  onComplete, 
+  onBack 
+}: { 
+  onFinish?: () => void, 
+  onCancel?: () => void, 
+  onComplete?: () => void, 
+  onBack?: () => void 
+}) {
+  const finish = onFinish || onComplete || (() => {})
+  const cancel = onCancel || onBack || (() => {})
+
+  const equipmentId = typeof window !== 'undefined' ? localStorage.getItem('app_motorista_equipment_id') : null
+  const equipment = (() => {
+    try {
+      const eqStr = localStorage.getItem(`app_motorista_eq_${equipmentId}`)
+      if (eqStr) return JSON.parse(eqStr)
+      const env = localStorage.getItem('sucena_environment') || 'barcarena'
+      const listStr = localStorage.getItem(`app_motorista_equipments_${env}`)
+      if (listStr) {
+        const list = JSON.parse(listStr)
+        return list.find((e: any) => e.id === equipmentId) || null
+      }
+    } catch {}
+    return null
+  })()
+
+  // Restaura progresso do wizard se o app foi fechado em segundo plano
+  const savedWizard = (() => {
+    try {
+      const s = localStorage.getItem('app_motorista_wizard_state')
+      return s ? JSON.parse(s) : null
+    } catch {
+      return null
+    }
+  })()
+
+  const [step, setStep] = useState<number>(savedWizard?.step || 1)
   const [loading, setLoading] = useState(false)
 
   // Tire Selector State
   const [isTireModalOpen, setIsTireModalOpen] = useState(false)
-  const [selectedTires, setSelectedTires] = useState<string[]>([])
-  const [tireObservation, setTireObservation] = useState('')
+  const [selectedTires, setSelectedTires] = useState<string[]>(savedWizard?.selectedTires || [])
+  const [tireObservation, setTireObservation] = useState(savedWizard?.tireObservation || '')
   const [tireModalStep, setTireModalStep] = useState<'select' | 'obs'>('select')
 
   // Brakes State
   const [isBrakesModalOpen, setIsBrakesModalOpen] = useState(false)
-  const [brakesObservation, setBrakesObservation] = useState('')
+  const [brakesObservation, setBrakesObservation] = useState(savedWizard?.brakesObservation || '')
 
   // Horn State
   const [isHornModalOpen, setIsHornModalOpen] = useState(false)
-  const [hornObservation, setHornObservation] = useState('')
+  const [hornObservation, setHornObservation] = useState(savedWizard?.hornObservation || '')
 
   // Lights State
   const [isLightsModalOpen, setIsLightsModalOpen] = useState(false)
-  const [lightsIssues, setLightsIssues] = useState<string[]>([])
-  const [lightsObservation, setLightsObservation] = useState('')
-
-  const equipmentId = localStorage.getItem('app_motorista_equipment_id')
+  const [lightsIssues, setLightsIssues] = useState<string[]>(savedWizard?.lightsIssues || [])
+  const [lightsObservation, setLightsObservation] = useState(savedWizard?.lightsObservation || '')
 
   // Form Data
-  const [helperName, setHelperName] = useState('')
+  const [helperName, setHelperName] = useState(savedWizard?.helperName || '')
   const [km, setKm] = useState(() => {
+    if (savedWizard?.km !== undefined) return savedWizard.km
     const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
     return data[equipmentId || '']?.lastKm || ''
   })
   const [horimeter, setHorimeter] = useState(() => {
+    if (savedWizard?.horimeter !== undefined) return savedWizard.horimeter
     const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
     return data[equipmentId || '']?.lastHorimeter || ''
   })
-  const [fuel, setFuel] = useState(() => localStorage.getItem('app_motorista_fuel_level') || '100') // percentage
+  const [fuel, setFuel] = useState(() => savedWizard?.fuel || localStorage.getItem('app_motorista_fuel_level') || '100') // percentage
 
   // Mock checklist items
-  const [checklist, setChecklist] = useState([
+  const [checklist, setChecklist] = useState<any[]>(() => savedWizard?.checklist || [
     { id: '1', name: 'Pneus', status: 'conforme', critical: true },
     { id: '2', name: 'Freios', status: 'conforme', critical: true },
     { id: '3', name: 'Faróis', status: 'conforme', critical: false },
     { id: '4', name: 'Buzina', status: 'conforme', critical: false },
   ])
 
+  // Salva no localStorage para que fechar o app em segundo plano não perca nada
+  useEffect(() => {
+    localStorage.setItem('app_motorista_wizard_state', JSON.stringify({
+      step,
+      helperName,
+      km,
+      horimeter,
+      fuel,
+      checklist,
+      selectedTires,
+      tireObservation,
+      brakesObservation,
+      hornObservation,
+      lightsIssues,
+      lightsObservation
+    }))
+  }, [step, helperName, km, horimeter, fuel, checklist, selectedTires, tireObservation, brakesObservation, hornObservation, lightsIssues, lightsObservation])
+
   const handleNext = () => setStep(prev => prev + 1)
-  const handlePrev = () => setStep(prev => prev - 1)
+  const handlePrev = () => {
+    if (step > 1) {
+      setStep(prev => prev - 1)
+    } else {
+      localStorage.removeItem('app_motorista_wizard_state')
+      cancel()
+    }
+  }
 
   const handleStartShift = async () => {
     // Validate critical checklist items (Allow 'Pneus' if they recorded the anomaly, or just don't block for 'Pneus')
@@ -117,8 +180,8 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
         })
       }
 
-      // 3. Update Equipment status to "Operando" (actually handled by backend or we update it directly)
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside' })
+      // 3. Update Equipment status to "Operando"
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside', status: 'Operando' })
 
       // Save local cache for dashboard if offline
       localStorage.setItem('app_motorista_current_dispatch', JSON.stringify({ ...dispatchData, id: newDispatchId }))
@@ -316,9 +379,8 @@ export default function WizardStep({ onFinish, onCancel }: { onFinish: () => voi
           }
         }
       } catch (e) {}
-      // -------------------------------------------
-
-      onFinish()
+      localStorage.removeItem('app_motorista_wizard_state')
+      finish()
     } catch (err) {
       console.error(err)
       alert('Erro ao iniciar jornada.')

@@ -312,7 +312,7 @@ function ParteDiariaPage() {
           let isManutencao = false
 
           // Regra: Qualquer equipamento que iniciou jornada e ainda não finalizou conta como "Em Trabalho"
-          if (dMap[vehicle.id] && !statusLower.includes('jornada finalizada') && !statusLower.includes('finalizada')) {
+          if (dMap[vehicle.id] && !dMap[vehicle.id].shift_end_time && !statusLower.includes('jornada finalizada') && !statusLower.includes('finalizada') && dispatch.status !== 'Finalizada') {
             countAtividade++
             isAtividade = true
           }
@@ -409,19 +409,21 @@ function ParteDiariaPage() {
         if (error) throw error
       }
 
-      // Limpa dados do turno no localStorage do dispositivo (caso seja o mesmo)
-      const storedEquipmentId = localStorage.getItem('app_motorista_equipment_id')
-      if (storedEquipmentId === vehicleId) {
-        localStorage.removeItem('app_motorista_timeline')
-        localStorage.removeItem('app_motorista_active_status')
-        localStorage.removeItem('app_motorista_active_status_color')
-        localStorage.removeItem('app_motorista_status_start')
-        localStorage.removeItem('app_motorista_water_point')
-        localStorage.removeItem('app_motorista_water_start')
-        localStorage.removeItem('app_motorista_current_dispatch')
-        localStorage.removeItem('app_motorista_equipment_id')
-        localStorage.removeItem('app_motorista_current_step')
-        localStorage.removeItem('app_motorista_fuel_level')
+      // 4. Reseta o status do equipamento para 'Disponível'
+      await supabase
+        .from('eq_equipments')
+        .update({ status: 'Disponível', location_status: 'outside' })
+        .eq('id', vehicleId)
+
+      // 5. Envia comando remoto de reset para o APK do motorista
+      const activeDispatch = vehicleDispatches[vehicleId]
+      const driverId = activeDispatch?.driver_id
+      if (driverId) {
+        await supabase.from('app_notifications').insert({
+          driver_id: driverId,
+          title: '__ADMIN_RESET__',
+          body: 'Jornada apagada pelo administrador. Cache limpo.'
+        }).catch(console.warn) // Não bloqueia se tabela não existir
       }
       
       fetchDashboardData()
@@ -1369,7 +1371,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                 <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-zinc-700 before:to-transparent">
                   <TimelineItem
                     key="dispatch-start"
-                    time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
+                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
                     title="Inicio de Turno"
                     subtitle={`Motorista: ${driverName}`}
                     status="in-progress"
@@ -1377,7 +1379,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   />
                   <TimelineItem
                     key="dispatch-waiting"
-                    time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
+                    time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
                     title="Aguardando"
                     subtitle="Status inicial"
                     status="pending"
@@ -1393,7 +1395,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                   {dispatch && (
                     <TimelineItem
                       key="dispatch-start"
-                      time={format(subHours(new Date(dispatch.shift_start_time), 1), 'HH:mm')}
+                      time={format(new Date(dispatch.shift_start_time), 'HH:mm')}
                       title="Inicio de Turno"
                       subtitle={`Motorista: ${driverName}`}
                       status="in-progress"
@@ -1413,7 +1415,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
                     return (
                       <TimelineItem 
                         key={h.id}
-                        time={format(subHours(new Date(h.created_at), 1), 'HH:mm')} 
+                        time={format(new Date(h.created_at), 'HH:mm')} 
                         title={translatedNewStatus} 
                         subtitle={translatedPrevStatus && translatedPrevStatus !== translatedNewStatus ? `Anterior: ${translatedPrevStatus}` : undefined} 
                         status={mappedStatus} 

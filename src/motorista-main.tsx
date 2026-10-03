@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
+import { supabase } from './lib/supabase'
+import Bell from 'lucide-react/dist/esm/icons/bell.js'
 
 // Registra o Service Worker para funcionamento offline
 if ('serviceWorker' in navigator) {
@@ -23,12 +25,16 @@ import DashboardStep from './components/app-motorista/DashboardStep'
 export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' | 'dashboard'
 
 function AppMotoristaStandalone() {
-  const [currentStep, setCurrentStepState] = useState<AppMotoristaStep>(
-    typeof window !== 'undefined'
-      ? ((localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login')
-      : 'login'
-  )
+  const [currentStep, setCurrentStepState] = useState<AppMotoristaStep>(() => {
+    if (typeof window === 'undefined') return 'login'
+    const driver = localStorage.getItem('app_motorista_driver')
+    const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+    if (driver && savedStep) return savedStep
+    return 'login'
+  })
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
+  const pollingSetupRef = useRef(false)
 
   const setCurrentStep = (step: AppMotoristaStep) => {
     setCurrentStepState(step)
@@ -36,40 +42,242 @@ function AppMotoristaStandalone() {
   }
 
   useEffect(() => {
-    const onOnline = () => setIsOnline(true)
+    const onOnline = () => {
+      setIsOnline(true)
+      import('./lib/offline-sync').then(m => m.processSyncQueue())
+    }
     const onOffline = () => setIsOnline(false)
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
+
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      import('./lib/offline-sync').then(m => m.processSyncQueue())
+    }
+
     return () => {
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
     }
   }, [])
 
-  // Restaurar sessão salva no localStorage
+  // Restaurar sessão salva no localStorage ao iniciar
   useEffect(() => {
     const driver = localStorage.getItem('app_motorista_driver')
-    const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+    let savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
 
     if (driver && savedStep && savedStep !== 'login') {
+      if (savedStep === 'environment') {
+        const rememberEnv = localStorage.getItem('app_motorista_remember_env')
+        const env = localStorage.getItem('sucena_environment')
+        if (rememberEnv === 'true' && env) {
+          savedStep = 'equipment'
+          localStorage.setItem('app_motorista_current_step', 'equipment')
+        }
+      }
       setCurrentStepState(savedStep)
     } else if (!driver) {
       setCurrentStepState('login')
     }
   }, [])
 
-  const handleLogin = (driver: any) => {
-    localStorage.setItem('app_motorista_driver', JSON.stringify(driver))
-    if (driver.id === 'ADMIN') {
-      const env = localStorage.getItem('sucena_environment')
-      if (!env) {
-        setCurrentStep('environment')
-      } else {
-        setCurrentStep('equipment')
-      }
-    } else {
-      setCurrentStep('environment')
+  // Push Notifications — Realtime (rápido) + Polling a cada 30s (fallback confiável)
+  useEffect(() => {
+    if (currentStep === 'login' || pollingSetupRef.current) return;
+    pollingSetupRef.current = true;
+
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+
+    const getDriverId = () => {
+      try {
+        const str = localStorage.getItem('app_motorista_driver')
+        if (!str) return null
+        const d = JSON.parse(str)
+        return d.id && d.id !== 'ADMIN' ? d.id : null
+      } catch { return null }
     }
+
+    // Exibe notificação no sistema e in-app banner
+    const showNotif = async (title: string, body: string) => {
+      // Exibe o modal detalhado global do app IMEDIATAMENTE (não espera o Capacitor)
+      setAnnouncements(prev => [...prev, { title, body }])
+
+      window.dispatchEvent(new CustomEvent('app_notification', {
+        detail: { title, body }
+      }))
+
+      // Tenta Capacitor (APK nativo) em background
+      try {
+        const { LocalNotifications } = await import('@capacitor/local-notifications')
+        const perm = await LocalNotifications.requestPermissions()
+        if (perm.display === 'granted') {
+          await LocalNotifications.schedule({
+            notifications: [{
+              title, body,
+              id: Date.now() % 2147483647,
+              schedule: { at: new Date(Date.now() + 300) },
+              sound: undefined, attachments: undefined,
+              actionTypeId: '', extra: null
+            }]
+          })
+        }
+      } catch (e) {
+        // Não é APK nativo ou erro no Capacitor — tenta Web Notification API
+        if ('Notification' in window) {
+          if (Notification.permission === 'granted') {
+            new Notification(title, { body, icon: '/favicon.ico' })
+          } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(p => {
+              if (p === 'granted') new Notification(title, { body, icon: '/favicon.ico' })
+            })
+          }
+        }
+      }
+    }
+
+    // --- Polling: verifica novas notificações a cada 30s ---
+    const pollNotifications = async () => {
+      const driverId = getDriverId()
+      if (!driverId) return
+
+      try {
+        const { data, error } = await supabase
+          .from('app_notifications')
+          .select('id, title, body, created_at')
+          .eq('driver_id', driverId)
+          .eq('is_read', false)
+          .order('created_at', { ascending: true })
+
+        if (error) { console.warn('[Notif Polling] Erro:', error.message); return }
+
+        if (data && data.length > 0) {
+          // Marca como lidas no banco
+          await supabase.from('app_notifications')
+            .update({ is_read: true })
+            .in('id', data.map(d => d.id))
+            .catch(console.warn)
+
+        for (const notif of (data || [])) {
+          // Comando especial de reset enviado pelo administrador
+          if (notif.title === '__ADMIN_RESET__') {
+            // Limpa todo o cache do turno do motorista
+            const keysToRemove = [
+              'app_motorista_driver', 'app_motorista_current_step',
+              'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+              'app_motorista_timeline', 'app_motorista_active_status',
+              'app_motorista_active_status_color', 'app_motorista_status_start',
+              'app_motorista_wizard_state', 'app_motorista_water_point',
+              'app_motorista_water_start', 'app_motorista_fuel_level'
+            ]
+            keysToRemove.forEach(k => localStorage.removeItem(k))
+            // Retorna para a tela inicial de seleção de motorista
+            window.location.reload()
+            return
+          }
+
+          await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+          // Pequeno delay entre múltiplas notificações
+          await new Promise(r => setTimeout(r, 500))
+        }
+        }
+      } catch (err) {
+        console.warn('[Notif Polling] Falha:', err)
+      }
+    }
+
+    const setup = async () => {
+      const driverId = getDriverId()
+      if (!driverId) return
+
+      // Polling inicial + intervalo de 30s
+      await pollNotifications()
+      pollInterval = setInterval(pollNotifications, 30000)
+
+      // Realtime como caminho rápido (complementar ao polling)
+      channel = supabase.channel(`motorista_notif_${driverId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'app_notifications',
+          filter: `driver_id=eq.${driverId}`
+        }, async (payload) => {
+          const notif = payload.new as any
+          if (!notif.is_read) {
+            // Marca como lido
+            supabase.from('app_notifications').update({ is_read: true }).eq('id', notif.id).catch()
+            await showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+          }
+        })
+        .subscribe((status) => {
+          console.log('[Notif] Realtime:', status)
+        })
+    }
+
+    setup()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentStep !== 'login') {
+        const driverId = getDriverId()
+        if (driverId) {
+          // Chama a mesma lógica do polling
+          supabase.from('app_notifications')
+            .select('id, title, body, created_at')
+            .eq('driver_id', driverId)
+            .eq('is_read', false)
+            .order('created_at', { ascending: true })
+            .then(({ data, error }) => {
+              if (error || !data || data.length === 0) return
+              supabase.from('app_notifications').update({ is_read: true }).in('id', data.map(d => d.id)).catch()
+              for (const notif of data) {
+                if (notif.title === '__ADMIN_RESET__') {
+                  const keysToRemove = [
+                    'app_motorista_driver', 'app_motorista_current_step',
+                    'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+                    'app_motorista_timeline', 'app_motorista_active_status',
+                    'app_motorista_active_status_color', 'app_motorista_status_start',
+                    'app_motorista_wizard_state', 'app_motorista_water_point',
+                    'app_motorista_water_start', 'app_motorista_fuel_level'
+                  ]
+                  keysToRemove.forEach(k => localStorage.removeItem(k))
+                  window.location.reload()
+                  return
+                }
+                showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+              }
+            })
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+      if (pollInterval) clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      pollingSetupRef.current = false;
+    }
+  }, [currentStep])
+
+  const handleLogin = (stepOrDriver?: any) => {
+    let target: AppMotoristaStep = 'environment'
+    if (typeof stepOrDriver === 'string' && stepOrDriver) {
+      target = stepOrDriver as AppMotoristaStep
+    } else {
+      const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+      if (savedStep) target = savedStep
+    }
+
+    // Auto-skip environment if remembered
+    if (target === 'environment') {
+      const rememberEnv = localStorage.getItem('app_motorista_remember_env')
+      const env = localStorage.getItem('sucena_environment')
+      if (rememberEnv === 'true' && env) {
+        target = 'equipment'
+        localStorage.setItem('app_motorista_current_step', 'equipment')
+      }
+    }
+
+    setCurrentStep(target)
   }
 
   const handleLogout = () => {
@@ -81,6 +289,7 @@ function AppMotoristaStandalone() {
     localStorage.removeItem('app_motorista_active_status')
     localStorage.removeItem('app_motorista_active_status_color')
     localStorage.removeItem('app_motorista_status_start')
+    localStorage.removeItem('app_motorista_wizard_state')
     setCurrentStep('login')
   }
 
@@ -88,8 +297,8 @@ function AppMotoristaStandalone() {
     <div className="min-h-screen bg-[#0A0A0A] text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
       {/* Indicador offline */}
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white text-xs font-bold text-center py-1 px-3">
-          📡 Offline — dados serão sincronizados quando conectar
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-600 text-white text-xs font-bold text-center py-1 px-3 shadow-md flex items-center justify-center gap-2">
+          <span>📡 Modo Offline ativo — registros salvos e sincronizados ao conectar</span>
         </div>
       )}
 
@@ -123,7 +332,9 @@ function AppMotoristaStandalone() {
         )}
         {currentStep === 'wizard' && (
           <WizardStep
+            onFinish={() => setCurrentStep('dashboard')}
             onComplete={() => setCurrentStep('dashboard')}
+            onCancel={() => setCurrentStep('equipment')}
             onBack={() => setCurrentStep('equipment')}
           />
         )}
@@ -135,6 +346,43 @@ function AppMotoristaStandalone() {
           />
         )}
       </div>
+
+      {/* MODAL DE COMUNICADO OFICIAL */}
+      {announcements.length > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#1A1C20] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Banner/Header decoration */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+            
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Bell className="w-6 h-6" />
+              </div>
+              <div className="flex-1 mt-1">
+                <h2 className="text-xl font-bold text-white leading-tight">
+                  {announcements[0].title}
+                </h2>
+                <p className="text-blue-400 text-xs font-semibold mt-1">
+                  COMUNICADO OFICIAL
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-black/20 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {announcements[0].body}
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setAnnouncements(prev => prev.slice(1))}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-center shadow-lg"
+            >
+              Estou ciente / Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

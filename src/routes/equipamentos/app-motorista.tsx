@@ -2,8 +2,9 @@ import Wifi from 'lucide-react/dist/esm/icons/wifi.js';
 import WifiOff from 'lucide-react/dist/esm/icons/wifi-off.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
+import Bell from 'lucide-react/dist/esm/icons/bell.js';
 
 // Sub-components that we will build out
 import LoginStep from '../../components/app-motorista/LoginStep'
@@ -24,6 +25,75 @@ function AppMotoristaWrapper() {
   const [currentStepState, setCurrentStepState] = useState<AppMotoristaStep>(
     (localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login'
   )
+  const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
+
+  // Exibe notificação no sistema e in-app banner
+  const showNotif = async (title: string, body: string) => {
+    setAnnouncements(prev => [...prev, { title, body }])
+    try {
+      if ('Notification' in window && Notification.permission !== 'denied') {
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body, icon: '/favicon.ico' })
+        } else {
+          Notification.requestPermission().then(p => {
+            if (p === 'granted') new Notification(title, { body, icon: '/favicon.ico' })
+          })
+        }
+      }
+    } catch(e) {}
+  }
+
+  // BULLETPROOF GLOBAL POLLING (Ignores React lifecycles to guarantee it never stops)
+  useEffect(() => {
+    let isPolling = false;
+    
+    const tick = async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        const str = localStorage.getItem('app_motorista_driver')
+        if (!str) return;
+        const d = JSON.parse(str)
+        const driverId = d.id && d.id !== 'ADMIN' ? d.id : null
+        
+        if (!driverId) return;
+
+        const { data, error } = await supabase
+          .from('app_notifications')
+          .select('id, title, body, created_at')
+          .eq('driver_id', driverId)
+          .eq('is_read', false)
+          .order('created_at', { ascending: true })
+
+        if (!error && data && data.length > 0) {
+          await supabase.from('app_notifications')
+            .update({ is_read: true })
+            .in('id', data.map(d => d.id))
+            .catch(() => {})
+
+          for (const notif of data) {
+            if (notif.title === '__ADMIN_RESET__') {
+              const keys = ['app_motorista_driver', 'app_motorista_current_step', 'app_motorista_current_dispatch', 'app_motorista_equipment_id', 'app_motorista_timeline', 'app_motorista_active_status', 'app_motorista_active_status_color', 'app_motorista_status_start', 'app_motorista_wizard_state', 'app_motorista_water_point', 'app_motorista_water_start', 'app_motorista_fuel_level']
+              keys.forEach(k => localStorage.removeItem(k))
+              window.location.reload()
+              return
+            }
+            showNotif(notif.title || 'Nova Mensagem', notif.body || '')
+            await new Promise(r => setTimeout(r, 500))
+          }
+        }
+      } catch (e) {
+        console.warn('Global Poll error', e)
+      } finally {
+        isPolling = false;
+      }
+    };
+
+    // Run immediately and then every 10 seconds
+    tick();
+    const interval = setInterval(tick, 10000);
+    return () => clearInterval(interval);
+  }, [])
 
   const currentStep = currentStepState
   const setCurrentStep = (step: AppMotoristaStep) => {
@@ -126,6 +196,44 @@ function AppMotoristaWrapper() {
         {currentStep === 'wizard' && <WizardStep onFinish={() => setCurrentStep('dashboard')} onCancel={() => setCurrentStep('equipment')} />}
         {currentStep === 'dashboard' && <DashboardStep onBack={() => setCurrentStep('equipment')} />}
       </div>
+      
+      {/* MODAL DE COMUNICADO OFICIAL */}
+      {announcements.length > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#1A1C20] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Banner/Header decoration */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+            
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Bell className="w-6 h-6" />
+              </div>
+              <div className="flex-1 mt-1">
+                <h2 className="text-xl font-bold text-white leading-tight">
+                  {announcements[0].title}
+                </h2>
+                <p className="text-blue-400 text-xs font-semibold mt-1">
+                  COMUNICADO OFICIAL
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-black/20 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {announcements[0].body}
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setAnnouncements(prev => prev.slice(1))}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-center shadow-lg"
+            >
+              Estou ciente / Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   )

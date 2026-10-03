@@ -44,15 +44,18 @@ export const getSyncQueue = async (): Promise<SyncTask[]> => {
 };
 
 // Process queue when online
+let isSyncing = false;
 export const processSyncQueue = async () => {
-  if (!navigator.onLine) return;
+  if (typeof navigator === 'undefined' || !navigator.onLine || isSyncing) return;
+  isSyncing = true;
 
-  const queue = await getSyncQueue();
-  if (queue.length === 0) return;
+  try {
+    const queue = await getSyncQueue();
+    if (queue.length === 0) return;
 
-  console.log(`Iniciando sincronização de ${queue.length} itens...`);
-  
-  const failedTasks: SyncTask[] = [];
+    console.log(`[OfflineSync] Iniciando sincronização de ${queue.length} itens...`);
+    
+    const failedTasks: SyncTask[] = [];
 
   for (const task of queue) {
     try {
@@ -79,7 +82,7 @@ export const processSyncQueue = async () => {
             }
           };
           const res = await sendWhatsappMediaOnServer(payload as any);
-          if (!res.success) throw new Error('Falha media: ' + res.error);
+          if (!res.success) throw new Error('Falha media: ' + ((res as any).error || ''));
         } else {
           const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
           const payload = {
@@ -92,7 +95,7 @@ export const processSyncQueue = async () => {
             }
           };
           const res = await sendWhatsappTextOnServer(payload as any);
-          if (!res.success) throw new Error('Falha text: ' + res.error);
+          if (!res.success) throw new Error('Falha text: ' + ((res as any).error || ''));
         }
         result = { error: null };
       }
@@ -114,7 +117,23 @@ export const processSyncQueue = async () => {
   } else {
     console.log('Sincronização concluída com sucesso!');
   }
+} finally {
+  isSyncing = false;
+}
 };
+
+// Auto-sincronização automática quando a rede voltar
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('[OfflineSync] Internet detectada! Processando fila offline...');
+    setTimeout(processSyncQueue, 1000);
+  });
+
+  // Tenta sincronizar 3s após o app abrir se já estiver online
+  if (navigator.onLine) {
+    setTimeout(processSyncQueue, 3000);
+  }
+}
 
 // Generic Offline-first save wrapper
 export const saveOfflineFirst = async (table: string, action: SyncAction, data: any) => {
@@ -160,7 +179,7 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
         }
       };
       const res = await sendWhatsappTextOnServer(payload as any);
-      if (!res.success) throw new Error(res.error || 'Unknown error');
+      if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
       console.warn('Erro ao enviar whatsapp online, enfileirando:', error);
@@ -190,7 +209,7 @@ export const queueWhatsappMedia = async (settings: any, phone: string, caption: 
         }
       };
       const res = await sendWhatsappMediaOnServer(payload as any);
-      if (!res.success) throw new Error(res.error || 'Unknown error');
+      if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
       console.warn('Erro ao enviar whatsapp media online, enfileirando:', error);

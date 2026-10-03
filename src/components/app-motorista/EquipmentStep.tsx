@@ -4,22 +4,39 @@ import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import MercosulPlate from './MercosulPlate'
+import { DRIVERS } from './LoginStep'
 
 export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipmentId: string) => void, onBack?: () => void }) {
-  const [equipments, setEquipments] = useState<any[]>([])
+  const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  
+  const [equipments, setEquipments] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+      return cached ? JSON.parse(cached) : []
+    } catch {
+      return []
+    }
+  })
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+      return !cached
+    } catch {
+      return true
+    }
+  })
 
   useEffect(() => {
     fetchEquipments()
-  }, [])
+  }, [currentEnv])
 
   const fetchEquipments = async () => {
     try {
       const { data, error } = await supabase
         .from('eq_equipments')
         .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
-        .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+        .eq('environment', currentEnv)
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
       
@@ -29,17 +46,36 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
       let enrichedData = data || []
       if (navigator.onLine) {
         try {
-          const { data: activeDispatches } = await supabase
+          const yesterday = new Date()
+          yesterday.setHours(yesterday.getHours() - 24)
+
+          const { data: recentDispatches } = await supabase
             .from('eq_driver_dispatch')
-            .select('equipment_id')
-            .eq('status', 'Em atividade')
+            .select('equipment_id, status, shift_start_time, shift_end_time, driver_id')
+            .gte('shift_start_time', yesterday.toISOString())
+            .order('shift_start_time', { ascending: false })
           
-          if (activeDispatches && activeDispatches.length > 0) {
-            const activeIds = new Set(activeDispatches.map(d => d.equipment_id))
-            enrichedData = enrichedData.map(eq => {
-              if (activeIds.has(eq.id)) {
-                return { ...eq, status: 'Operando' }
+          if (recentDispatches && recentDispatches.length > 0) {
+            const dispatchMap = new Map()
+            recentDispatches.forEach((d: any) => {
+              if (!dispatchMap.has(d.equipment_id)) {
+                dispatchMap.set(d.equipment_id, d)
               }
+            })
+            
+            enrichedData = enrichedData.map((eq: any) => {
+              const latestDispatch = dispatchMap.get(eq.id)
+              
+              if (latestDispatch) {
+                if (latestDispatch.status === 'Em atividade') {
+                  const driverInfo = DRIVERS.find(d => d.id === latestDispatch.driver_id)
+                  const dName = driverInfo ? driverInfo.name : latestDispatch.driver_id
+                  return { ...eq, status: 'Operando', active_driver_id: latestDispatch.driver_id, active_driver_name: dName }
+                } else if (latestDispatch.status === 'Finalizada') {
+                  return { ...eq, status: 'Finalizado' }
+                }
+              }
+              
               return eq
             })
           }
@@ -48,9 +84,18 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         }
       }
 
-      setEquipments(enrichedData)
+      if (enrichedData.length > 0) {
+        setEquipments(enrichedData)
+        localStorage.setItem(`app_motorista_equipments_${currentEnv}`, JSON.stringify(enrichedData))
+      }
     } catch (err) {
-      console.error('Error fetching equipments', err)
+      console.warn('Erro ao buscar equipamentos online, mantendo cache:', err)
+      try {
+        const cached = localStorage.getItem(`app_motorista_equipments_${currentEnv}`)
+        if (cached) {
+          setEquipments(JSON.parse(cached))
+        }
+      } catch {}
     } finally {
       setLoading(false)
     }
@@ -61,7 +106,6 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const isAdmin = driverData ? JSON.parse(driverData).id === 'ADMIN' : false
 
   const filteredEq = equipments.filter(eq => 
-    (isAdmin || eq.status !== 'Operando') &&
     ((eq.name || '').toLowerCase().includes(search.toLowerCase()) ||
     (eq.plate_tag || '').toLowerCase().includes(search.toLowerCase()))
   ).sort((a, b) => {
@@ -75,16 +119,23 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
       alert('Equipamento indisponível para operação.')
       return
     }
-    // TODO: Verify if another driver is using this equipment today
+
+    const currentDriver = driverData ? JSON.parse(driverData) : null
+    if (eq.status === 'Operando' && eq.active_driver_id && eq.active_driver_id !== currentDriver?.id && !isAdmin) {
+      alert(`O motorista ${eq.active_driver_name || eq.active_driver_id} já iniciou o turno neste equipamento. Você não pode iniciar com ele.`)
+      return
+    }
     
-    // Save to local storage for the wizard flow
+    // Save to local storage for the wizard flow and dashboard
     localStorage.setItem('app_motorista_equipment_id', eq.id)
+    localStorage.setItem(`app_motorista_eq_${eq.id}`, JSON.stringify(eq))
     onSelect(eq.id)
   }
 
   const getStatusColor = (status: string) => {
     if (status === 'Disponível') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200'
     if (status === 'Operando') return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200'
+    if (status === 'Finalizado') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200'
     if (status === 'Manutenção') return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200'
     if (status === 'Interditado') return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400 border-gray-300'
     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 border-yellow-200'
@@ -93,6 +144,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
   const getStatusDot = (status: string) => {
     if (status === 'Disponível') return 'bg-emerald-500'
     if (status === 'Operando') return 'bg-blue-500'
+    if (status === 'Finalizado') return 'bg-emerald-500'
     if (status === 'Manutenção') return 'bg-red-500'
     if (status === 'Interditado') return 'bg-gray-500'
     return 'bg-yellow-500'

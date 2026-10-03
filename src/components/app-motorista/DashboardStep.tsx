@@ -41,8 +41,30 @@ const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
 }
 export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?: () => void, onLogout?: () => void, isOnline?: boolean }) {
-  const [equipment, setEquipment] = useState<any>(null)
-  const [dispatch, setDispatch] = useState<any>(null)
+  const equipmentId = typeof window !== 'undefined' ? localStorage.getItem('app_motorista_equipment_id') : null
+  const [equipment, setEquipment] = useState<any>(() => {
+    if (!equipmentId) return null
+    try {
+      const cached = localStorage.getItem(`app_motorista_eq_${equipmentId}`)
+      if (cached) return JSON.parse(cached)
+      const env = localStorage.getItem('sucena_environment') || 'barcarena'
+      const listStr = localStorage.getItem(`app_motorista_equipments_${env}`)
+      if (listStr) {
+        const list = JSON.parse(listStr)
+        const found = list.find((e: any) => e.id === equipmentId)
+        if (found) return found
+      }
+    } catch {}
+    return null
+  })
+  const [dispatch, setDispatch] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('app_motorista_current_dispatch')
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  })
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
   const [activeStatus, setActiveStatus] = useState<string>(
     localStorage.getItem('app_motorista_active_status') || 'waiting'
@@ -54,6 +76,20 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   )
   const [elapsedStatusTime, setElapsedStatusTime] = useState('00:00:00')
   const [viewState, setViewState] = useState<'operating' | 'finishing' | 'loading_water' | 'new_activity' | 'history' | 'gate' | 'anomaly'>('operating')
+
+  // Notificação in-app
+  const [inAppNotif, setInAppNotif] = useState<{ title: string; body: string } | null>(null)
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setInAppNotif({ title: detail?.title || 'Nova mensagem', body: detail?.body || '' })
+      // Auto-dismiss após 8 segundos
+      setTimeout(() => setInAppNotif(null), 8000)
+    }
+    window.addEventListener('app_notification', handler)
+    return () => window.removeEventListener('app_notification', handler)
+  }, [])
 
   const [gateReason, setGateReason] = useState('')
   const [gateDescription, setGateDescription] = useState('')
@@ -74,7 +110,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
   const queueWhatsappMedia = async (...args: any[]) => {
     if (isAdmin) return Promise.resolve()
-    return realQueueWhatsappMedia(args[0], args[1], args[2], args[3])
+    return realQueueWhatsappMedia(args[0], args[1], args[2], args[3], args[4])
   }
 
   const [anomalyType, setAnomalyType] = useState('Problema mecânico')
@@ -122,9 +158,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       })
       
       const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      const pdfPageHeight = pdf.internal.pageSize.getHeight()
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfPageHeight)
       pdf.save(`${fileName}.pdf`)
       
     } catch (error) {
@@ -218,30 +254,94 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
     )
   }
 
-  const equipmentId = localStorage.getItem('app_motorista_equipment_id')
-
   useEffect(() => {
     const fetchData = async () => {
       if (!equipmentId) return
 
-      const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
-      if (eq) setEquipment(eq)
+      try {
+        const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
+        if (eq) {
+          setEquipment(eq)
+          localStorage.setItem(`app_motorista_eq_${equipmentId}`, JSON.stringify(eq))
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar equipamento online, mantendo cache:', err)
+      }
 
-      const { data: dspReal } = await supabase
-        .from('eq_driver_dispatch')
-        .select('*')
-        .eq('equipment_id', equipmentId)
-        .eq('status', 'Em atividade')
-        .order('shift_start_time', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      let dspReal = null
+      if (navigator.onLine) {
+        try {
+          const { data } = await supabase
+            .from('eq_driver_dispatch')
+            .select('*')
+            .eq('equipment_id', equipmentId)
+            .eq('status', 'Em atividade')
+            .order('shift_start_time', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          dspReal = data
+        } catch (err) {
+          console.warn('Erro ao consultar turno ativo no Supabase:', err)
+        }
+      }
 
       let dsp = dspReal
+      const localCache = localStorage.getItem('app_motorista_current_dispatch')
+      let cachedDispatch = localCache ? JSON.parse(localCache) : null
+
+      // --- Verificação de Auto-Reset da Meia-noite ou Turno Preso ---
+      const checkAndResetStuckShift = (d: any) => {
+        if (!d?.shift_start_time) return false;
+        const shiftDay = new Date(d.shift_start_time).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })
+        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Belem' })
+        
+        const isPastMidnight = shiftDay !== today
+        const isAlreadyFinished = d.status === 'Concluído'
+
+        if (isPastMidnight || isAlreadyFinished) {
+          
+          if (isPastMidnight && !isAlreadyFinished) {
+            // Auto-finaliza no banco local/offline
+            saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' }).catch()
+            saveOfflineFirst('eq_driver_dispatch', 'UPDATE', {
+              id: d.id,
+              shift_end_time: new Date().toISOString(),
+              status: 'Concluído'
+            }).catch()
+          }
+
+          const keysToRemove = [
+            'app_motorista_current_dispatch', 'app_motorista_equipment_id',
+            'app_motorista_timeline', 'app_motorista_active_status',
+            'app_motorista_active_status_color', 'app_motorista_status_start',
+            'app_motorista_wizard_state', 'app_motorista_water_point',
+            'app_motorista_water_start', 'app_motorista_fuel_level'
+          ]
+          keysToRemove.forEach(k => localStorage.removeItem(k))
+          
+          if (isPastMidnight && !isAlreadyFinished) {
+            alert('Seu turno do dia anterior foi encerrado automaticamente. Registre um novo turno para hoje.')
+          } else {
+            alert('Seu turno foi finalizado. A tela será recarregada para iniciar nova operação.')
+          }
+
+          if (onBack) {
+            onBack()
+          } else {
+            window.location.reload()
+          }
+          return true;
+        }
+        return false;
+      }
+      // -----------------------------------------------
 
       if (isAdmin) {
         if (dsp) {
           setDispatch(dsp)
           localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        } else if (localCache) {
+          setDispatch(JSON.parse(localCache))
         } else {
           const fakeDispatch = {
             id: 'admin_session',
@@ -255,20 +355,28 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           setDispatch(fakeDispatch)
           localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(fakeDispatch))
           if (!localStorage.getItem('app_motorista_active_status')) {
-            const status = eq?.status === 'Disponível' ? 'waiting' : 'operating'
+            const status = 'operating'
             setActiveStatus(status)
             localStorage.setItem('app_motorista_active_status', status)
             localStorage.setItem('app_motorista_status_start', new Date().toISOString())
             setStatusStartTime(new Date())
             localStorage.setItem('app_motorista_timeline', JSON.stringify([
               { time: new Date().toISOString(), name: 'Jornada Iniciada', type: 'Início', color: 'bg-emerald-500' },
-              { time: new Date().toISOString(), name: status === 'waiting' ? 'Aguardando' : 'Em Operação', type: 'Status Inicial', color: status === 'waiting' ? 'bg-amber-500' : 'bg-emerald-500' }
+              { time: new Date().toISOString(), name: 'Em Operação', type: 'Status Inicial', color: 'bg-emerald-500' }
             ]))
           }
           return
         }
       } else {
-        if (!dsp) {
+        if (dsp) {
+          if (checkAndResetStuckShift(dsp)) return;
+          setDispatch(dsp)
+          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
+        } else if (cachedDispatch) {
+          if (checkAndResetStuckShift(cachedDispatch)) return;
+          // Mantém o turno iniciado localmente (offline ou ainda em sincronização)
+          setDispatch(cachedDispatch)
+        } else {
           if (navigator.onLine) {
             localStorage.removeItem('app_motorista_driver')
             localStorage.removeItem('app_motorista_current_step')
@@ -280,18 +388,21 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             localStorage.removeItem('app_motorista_status_start')
             window.location.reload()
             return
+          } else {
+            setDispatch({
+              shift_start_time: new Date().toISOString(),
+              helper_name: 'Desconhecido (Offline)',
+              odometer_start: 10000,
+              horimeter_start: 5000,
+            })
           }
-        } else {
-          setDispatch(dsp)
-          localStorage.setItem('app_motorista_current_dispatch', JSON.stringify(dsp))
         }
       }
 
-      if (dsp) {
-
-        // RESTORE TIMELINE SE ESTIVER VAZIA (Ex: Troca de celular/login em nova guia)
+      // Restaura timeline do Supabase se online e se a timeline local estiver vazia
+      if (dsp && navigator.onLine) {
         const currentTimeline = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
-        if ((currentTimeline.length === 0 || isAdmin) && navigator.onLine) {
+        if (currentTimeline.length === 0 || isAdmin) {
           try {
             const { data: history } = await supabase
               .from('eq_status_history')
@@ -349,34 +460,6 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           } catch (e) {
             console.error('Erro ao restaurar timeline do Supabase', e)
           }
-        }
-      } else {
-        if (navigator.onLine) {
-          // Se estamos online e não tem turno ativo no banco, o turno foi fechado por outro lugar.
-          // Devemos limpar o estado local para forçar a nova seleção de equipamento/motorista.
-          localStorage.removeItem('app_motorista_driver')
-          localStorage.removeItem('app_motorista_current_step')
-          localStorage.removeItem('app_motorista_current_dispatch')
-          localStorage.removeItem('app_motorista_equipment_id')
-          localStorage.removeItem('app_motorista_timeline')
-          localStorage.removeItem('app_motorista_active_status')
-          localStorage.removeItem('app_motorista_active_status_color')
-          localStorage.removeItem('app_motorista_status_start')
-          
-          window.location.reload()
-          return
-        }
-        
-        const localCache = localStorage.getItem('app_motorista_current_dispatch')
-        if (localCache) {
-          setDispatch(JSON.parse(localCache))
-        } else {
-          setDispatch({
-            shift_start_time: new Date().toISOString(),
-            helper_name: 'Desconhecido (Offline)',
-            odometer_start: 10000,
-            horimeter_start: 5000,
-          })
         }
       }
     }
@@ -676,7 +759,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           horimeter_end: parseFloat(endHorimeter),
           fuel_end_percent: parseInt(endFuel),
           shift_end_time: new Date().toISOString(),
-          status: 'Finalizada'
+          status: 'Concluído'
         })
       }
 
@@ -689,13 +772,15 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       })
 
       // Save last km and horimeter for this equipment
-      const equipmentData = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
-      equipmentData[equipmentId] = {
-        lastKm: endKm,
-        lastHorimeter: endHorimeter
+      if (equipmentId) {
+        const equipmentData = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
+        equipmentData[equipmentId] = {
+          lastKm: endKm,
+          lastHorimeter: endHorimeter
+        }
+        localStorage.setItem('app_motorista_equipment_data', JSON.stringify(equipmentData))
+        localStorage.setItem('app_motorista_last_equipment', equipmentId)
       }
-      localStorage.setItem('app_motorista_equipment_data', JSON.stringify(equipmentData))
-      localStorage.setItem('app_motorista_last_equipment', equipmentId)
 
       localStorage.setItem('app_motorista_fuel_level', endFuel)
 
@@ -767,8 +852,8 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       }
       // -------------------------
 
-      // Update Equipment status to "Disponível"
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Disponível' })
+      // Update Equipment status to "Finalizado" (turno encerrado, disponível para novo turno)
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' })
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
@@ -798,6 +883,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       localStorage.removeItem('app_motorista_water_start')
       localStorage.removeItem('app_motorista_timeline')
       
+      // Limpa o estado React do dispatch para liberar o logout
+      setDispatch(null)
+
       // Ao finalizar o turno, desloga o motorista e volta para a seleção de motorista
       localStorage.removeItem('app_motorista_driver')
       localStorage.removeItem('app_motorista_current_step')
@@ -813,8 +901,19 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
 
   const handleLogout = async () => {
-    // Apenas avisa que não pode
-    alert('Só é possível deslogar quando finalizar o turno atual. Use o botão "Finalizar Jornada".')
+    // Sempre permite deslogar (já existe um modal de confirmação antes de chamar esta função)
+    localStorage.removeItem('app_motorista_driver')
+    localStorage.removeItem('app_motorista_current_step')
+    localStorage.removeItem('app_motorista_current_dispatch')
+    localStorage.removeItem('app_motorista_equipment_id')
+    localStorage.removeItem('app_motorista_timeline')
+    localStorage.removeItem('app_motorista_active_status')
+    localStorage.removeItem('app_motorista_active_status_color')
+    localStorage.removeItem('app_motorista_status_start')
+    localStorage.removeItem('app_motorista_wizard_state')
+    
+    if (onLogout) onLogout()
+    else window.location.reload()
   }
 
   if (!equipment) {
@@ -1049,7 +1148,6 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             abastecimentoInicial={dispatch?.fuel_start_percent ?? ''}
             abastecimentoFinal={endFuel || ''}
             timeline={JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')}
-            hideLogo={true}
           />
         </div>
       </div>
@@ -1490,6 +1588,27 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   return (
     <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-20">
       
+      {/* BANNER IN-APP: Notificação do Painel Admin */}
+      {inAppNotif && (
+        <div className="fixed top-4 left-4 right-4 z-50 animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-blue-600 text-white rounded-2xl shadow-2xl shadow-blue-500/40 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-sm">📢</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm leading-tight">{inAppNotif.title}</p>
+              <p className="text-blue-100 text-sm mt-0.5 leading-snug">{inAppNotif.body}</p>
+            </div>
+            <button
+              onClick={() => setInAppNotif(null)}
+              className="text-white/70 hover:text-white text-lg leading-none flex-shrink-0 active:scale-90 transition-all"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER WIDGET */}
       <div className={`${sColors.bg} ${sColors.text} p-6 rounded-b-[40px] shadow-xl mb-6 transition-colors duration-500`}>
         <div className="flex items-start justify-between mb-6">
