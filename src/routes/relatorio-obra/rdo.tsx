@@ -141,22 +141,41 @@ function RDOPage() {
       const endDate = new Date(`${dateStr}T23:59:59.999-03:00`).toISOString();
       
       const { data: movements } = await supabase
-        .from('eq_movements').select('equipment_id, created_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .eq('movement_type', 'exit')
-        .gte('created_at', startDate)
+        .from('eq_movements')
+        .select('equipment_id, movement_type, created_at')
+        .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         .lte('created_at', endDate)
         .order('created_at', { ascending: false });
         
-      const exits = movements || [];
+      const movs = movements || [];
 
       const filtered = (allEqs || []).filter(eq => {
-        if (eq.location_status === 'inside') return true;
-        return !!exits.find(m => m.equipment_id === eq.id);
+        const eqMovs = movs.filter(m => m.equipment_id === eq.id);
+        
+        if (eqMovs.length === 0) {
+          // If no movements exist before this date, we look at the current location_status
+          // This ensures backward compatibility for equipments without history
+          return eq.location_status === 'inside';
+        }
+
+        const lastMov = eqMovs[0];
+        
+        // If the last movement before the end of the day is an entry, it was inside
+        if (lastMov.movement_type === 'entry') return true;
+        
+        // If the last movement is an exit, it was outside at the end of the day.
+        // BUT if it exited ON THIS DAY, it was inside for part of the day, so it should be included.
+        if (lastMov.movement_type === 'exit' && lastMov.created_at >= startDate) {
+           return true;
+        }
+
+        return false;
       }).map(eq => {
-        const exitMove = exits.find(m => m.equipment_id === eq.id);
-        if (eq.location_status === 'outside' && exitMove) {
-          // Convert the UTC exit time to local time (BRT) for display
-          const time = new Date(exitMove.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const eqMovs = movs.filter(m => m.equipment_id === eq.id);
+        const lastMov = eqMovs[0];
+        // If it exited on this day, we want to show the exit time
+        if (lastMov && lastMov.movement_type === 'exit' && lastMov.created_at >= startDate) {
+          const time = new Date(lastMov.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           return { ...eq, exitTime: time };
         }
         return eq;
