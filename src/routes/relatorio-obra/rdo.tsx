@@ -12,12 +12,41 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
+import { useMonthlyColors } from '../../hooks/useMonthlyColors'
+
+const COLOR_NAMES: Record<string, string> = {
+  red: 'Vermelha',
+  blue: 'Azul',
+  yellow: 'Amarela',
+  green: 'Verde'
+}
+
+const COLOR_CLASSES: Record<string, string> = {
+  red: 'text-red-600',
+  blue: 'text-blue-600',
+  yellow: 'text-yellow-600',
+  green: 'text-green-600'
+}
+
+const COLOR_ICONS: Record<string, string> = {
+  red: '🔴',
+  blue: '🔵',
+  yellow: '🟡',
+  green: '🟢'
+}
+
+const MONTH_NAMES = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+]
 
 export const Route = createFileRoute('/relatorio-obra/rdo')({
   component: RDOPage,
 })
 
 function RDOPage() {
+  const { colors } = useMonthlyColors();
+
   const [empresa, setEmpresa] = useState('Sucena Empreendimentos');
   const [contrato, setContrato] = useState('460001269');
   const [gerencia, setGerencia] = useState('Hydro');
@@ -857,7 +886,19 @@ function RDOPage() {
               <div className="mt-6 font-bold text-red-600">⚠️ DIFICULDADES/DESVIOS</div>
               <div className="text-gray-700">{dificuldades}</div>
 
-              <div className="mt-6 font-bold text-red-600">🔴 Cor Proibida do Mês (setembro): Vermelha</div>
+              {(() => {
+                const selectedMonthIndex = parseInt(selectedDate.split('-')[1], 10) - 1;
+                const activeColor = colors[selectedMonthIndex] || 'red';
+                const colorName = COLOR_NAMES[activeColor] || 'Vermelha';
+                const monthName = MONTH_NAMES[selectedMonthIndex] || 'mês';
+                const colorClass = COLOR_CLASSES[activeColor] || 'text-red-600';
+                const colorIcon = COLOR_ICONS[activeColor] || '🔴';
+                return (
+                  <div className={`mt-6 font-bold ${colorClass}`}>
+                    {colorIcon} Cor Proibida do Mês ({monthName}): {colorName}
+                  </div>
+                );
+              })()}
               
             </div>
 
