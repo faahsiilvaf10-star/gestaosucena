@@ -105,11 +105,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
     return realSaveOfflineFirst(args[0], args[1], args[2])
   }
   const queueWhatsappMessage = async (...args: any[]) => {
-    if (isAdmin) return Promise.resolve()
     return realQueueWhatsappMessage(args[0], args[1], args[2])
   }
   const queueWhatsappMedia = async (...args: any[]) => {
-    if (isAdmin) return Promise.resolve()
     return realQueueWhatsappMedia(args[0], args[1], args[2], args[3], args[4])
   }
 
