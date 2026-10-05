@@ -132,12 +132,12 @@ function RhEfetivoPage() {
     try {
       const payload: any = { [field]: value || null }
       
-      if (['aso_admissional_2', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
+      if (['aso_admissional', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
         const item = items.find(i => i.id === id)
         if (item) {
           const tempColab = { ...item, ...payload }
           const dates = [
-            tempColab.aso_admissional_2,
+            tempColab.aso_admissional,
             tempColab.aso_periodico,
             tempColab.retorno_ao_trabalho,
             tempColab.mudanca_de_risco
@@ -244,13 +244,22 @@ function RhEfetivoPage() {
             const setor = getVal(['SETOR', 'DEPARTAMENTO', 'ÁREA', 'AREA', 'LOCALIDADE', 'LOCALIDADE '])
             
             // Format admission date if exists
-            let asoAdmissional = getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO', 'ASO ADMISSIONAL'])
+            let asoAdmissional = getVal(['ASO ADMISSIONAL'])
             if (typeof asoAdmissional === 'number') {
               const d = new Date((asoAdmissional - (25567 + 2)) * 86400 * 1000)
               asoAdmissional = d.toISOString().split('T')[0]
             } else if (typeof asoAdmissional === 'string' && asoAdmissional.includes('/')) {
               const parts = asoAdmissional.split('/')
               if (parts.length === 3) asoAdmissional = `${parts[2]}-${parts[1]}-${parts[0]}`
+            }
+
+            let admissional = getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO'])
+            if (typeof admissional === 'number') {
+              const d = new Date((admissional - (25567 + 2)) * 86400 * 1000)
+              admissional = d.toISOString().split('T')[0]
+            } else if (typeof admissional === 'string' && admissional.includes('/')) {
+              const parts = admissional.split('/')
+              if (parts.length === 3) admissional = `${parts[2]}-${parts[1]}-${parts[0]}`
             }
 
             // Force matricula to be null for Auxiliar Administrativo as requested
@@ -267,6 +276,7 @@ function RhEfetivoPage() {
               matricula_sucena: matriculaSucena ? String(matriculaSucena) : null,
               status: String(status),
               setor: setor ? String(setor) : null,
+              aso_admissional_2: admissional ? String(admissional) : null,
               aso_admissional: asoAdmissional ? String(asoAdmissional) : null,
               raw_data: row
             }
@@ -411,7 +421,7 @@ function RhEfetivoPage() {
       }
 
       const dates = [
-        payload.aso_admissional_2,
+        payload.aso_admissional,
         payload.aso_periodico,
         payload.retorno_ao_trabalho,
         payload.mudanca_de_risco
@@ -548,7 +558,7 @@ function RhEfetivoPage() {
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400">
-                        {item.aso_admissional ? item.aso_admissional.split('-').reverse().join('/') : '-'}
+                        {item.aso_admissional_2 ? item.aso_admissional_2.split('-').reverse().join('/') : '-'}
                       </td>
                       
 
@@ -718,9 +728,9 @@ function RhEfetivoPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
-                    {/* ASO Admissional 2 */}
+                    {/* Admissional (Hiring Date) */}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
                       {canEdit ? (
                         <DateInput
                           value={selectedColaborador.aso_admissional_2 || ''}
@@ -734,13 +744,15 @@ function RhEfetivoPage() {
                           className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
-                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
+                        <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
+                          {selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
+                        </div>
                       )}
                     </div>
 
-                    {/* ASO Admissional (Hiring Date) */}
+                    {/* ASO Admissional (Medical Exam) */}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
                       {canEdit ? (
                         <DateInput
                           value={selectedColaborador.aso_admissional || ''}
@@ -754,9 +766,7 @@ function RhEfetivoPage() {
                           className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
-                        <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
-                          {selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
-                        </div>
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : '-'}</p>
                       )}
                     </div>
                     
@@ -851,7 +861,7 @@ function RhEfetivoPage() {
                         const item = items.find(i => i.id === selectedColaborador.id); 
                         if (item) { 
                           const dates = [
-                            item.aso_admissional_2,
+                            item.aso_admissional,
                             item.aso_periodico,
                             item.retorno_ao_trabalho,
                             item.mudanca_de_risco

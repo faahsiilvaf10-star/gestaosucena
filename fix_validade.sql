@@ -5,5 +5,5 @@ ALTER TABLE public.rh_efetivo DROP COLUMN IF EXISTS validade_aso_efetiva;
 
 ALTER TABLE public.rh_efetivo
 ADD COLUMN validade_aso_efetiva DATE GENERATED ALWAYS AS (
-    GREATEST(aso_admissional_2, aso_periodico, retorno_ao_trabalho, mudanca_de_risco) + integer '365'
+    GREATEST(aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco) + integer '365'
 ) STORED;
