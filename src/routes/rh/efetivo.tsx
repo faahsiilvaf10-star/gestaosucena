@@ -130,21 +130,39 @@ function RhEfetivoPage() {
 
   const handleUpdateField = async (id: string, field: string, value: string | null) => {
     try {
+      const payload: any = { [field]: value || null }
+      
+      if (['aso_admissional_2', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
+        const item = items.find(i => i.id === id)
+        if (item) {
+          const tempColab = { ...item, ...payload }
+          const dates = [
+            tempColab.aso_admissional_2,
+            tempColab.aso_periodico,
+            tempColab.retorno_ao_trabalho,
+            tempColab.mudanca_de_risco
+          ].filter(Boolean) as string[];
+          if (dates.length > 0) {
+            const latestDate = dates.reduce((a, b) => (a > b ? a : b));
+            const date = new Date(latestDate + 'T12:00:00'); 
+            date.setFullYear(date.getFullYear() + 1); 
+            payload.validade_aso_efetiva = date.toISOString().split('T')[0];
+          } else {
+            payload.validade_aso_efetiva = null;
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('rh_efetivo')
-        .update({ [field]: value || null })
+        .update(payload)
         .eq('id', id)
       
       if (error) throw error
       
-      setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value || null } : item))
-      setSelectedColaborador(prev => (prev && prev.id === id) ? { ...prev, [field]: value || null } : prev)
+      setItems(prev => prev.map(item => item.id === id ? { ...item, ...payload } : item))
+      setSelectedColaborador(prev => (prev && prev.id === id) ? { ...prev, ...payload } : prev)
       toast.success('Atualizado com sucesso')
-      
-      // If a date field was updated, we re-fetch to get the new calculated Validade ASO
-      if (['aso_admissional', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
-        fetchEfetivo()
-      }
     } catch (err) {
       console.error(err)
       toast.error('Erro ao atualizar informação')
@@ -383,7 +401,7 @@ function RhEfetivoPage() {
     if (!selectedColaborador) return
     setIsSaving(true)
     try {
-      const payload = {
+      const payload: any = {
         nome: selectedColaborador.nome,
         cargo: selectedColaborador.cargo,
         matricula: selectedColaborador.matricula,
@@ -398,6 +416,23 @@ function RhEfetivoPage() {
         mudanca_de_risco: selectedColaborador.mudanca_de_risco,
         observacao: selectedColaborador.observacao
       }
+
+      const dates = [
+        payload.aso_admissional_2,
+        payload.aso_periodico,
+        payload.retorno_ao_trabalho,
+        payload.mudanca_de_risco
+      ].filter(Boolean) as string[];
+      
+      if (dates.length > 0) {
+        const latestDate = dates.reduce((a, b) => (a > b ? a : b));
+        const date = new Date(latestDate + 'T12:00:00'); 
+        date.setFullYear(date.getFullYear() + 1); 
+        payload.validade_aso_efetiva = date.toISOString().split('T')[0];
+      } else {
+        payload.validade_aso_efetiva = null;
+      }
+
       const { error } = await supabase.from('rh_efetivo').update(payload).eq('id', selectedColaborador.id)
       if (error) throw error
       setItems(prev => prev.map(item => item.id === selectedColaborador.id ? { ...item, ...payload } : item))
@@ -826,10 +861,20 @@ function RhEfetivoPage() {
                       {/* FRONTEND CALCULATION FOR VALIDADE ASO EFFECTIVE */}
                       <p className="font-bold text-[15px] text-[#0866ff] dark:text-white">{(() => { 
                         const item = items.find(i => i.id === selectedColaborador.id); 
-                        if (item && item.aso_admissional_2) { 
-                          const date = new Date(item.aso_admissional_2 + 'T12:00:00'); 
-                          date.setFullYear(date.getFullYear() + 1); 
-                          return date.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}); 
+                        if (item) { 
+                          const dates = [
+                            item.aso_admissional_2,
+                            item.aso_periodico,
+                            item.retorno_ao_trabalho,
+                            item.mudanca_de_risco
+                          ].filter(Boolean) as string[];
+                          
+                          if (dates.length > 0) {
+                            const latestDate = dates.reduce((a, b) => (a > b ? a : b));
+                            const date = new Date(latestDate + 'T12:00:00'); 
+                            date.setFullYear(date.getFullYear() + 1); 
+                            return date.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}); 
+                          }
                         } 
                         return '-'; 
                       })()}</p>
