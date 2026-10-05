@@ -400,7 +400,8 @@ function RhEfetivoPage() {
     return (
       item.nome.toLowerCase().includes(q) ||
       (item.cargo?.toLowerCase().includes(q)) ||
-      (item.matricula?.toLowerCase().includes(q))
+      (item.matricula?.toLowerCase().includes(q)) ||
+      (item.matricula_hydro?.toLowerCase().includes(q))
     )
   })
 
@@ -487,7 +488,7 @@ function RhEfetivoPage() {
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-gray-50 dark:bg-[#2a2a2b] border-b border-black/10 dark:border-white/10 text-gray-500 font-semibold sticky top-0 z-10">
                   <tr>
-                    <th className="p-4">Matrícula</th>
+                    <th className="p-4">Matrícula Hydro</th>
                     <th className="p-4">Nome</th>
                     <th className="p-4">Cargo</th>
                     <th className="p-4">Admissional</th>
@@ -506,10 +507,10 @@ function RhEfetivoPage() {
                         {canEdit ? (
                           <input 
                             type="text"
-                            defaultValue={item.matricula || ''}
+                            defaultValue={item.matricula_hydro || ''}
                             onBlur={(e) => {
-                              if (e.target.value !== (item.matricula || '')) {
-                                handleUpdateMatricula(item.id, e.target.value)
+                              if (e.target.value !== (item.matricula_hydro || '')) {
+                                handleUpdateField(item.id, 'matricula_hydro', e.target.value)
                               }
                             }}
                             onKeyDown={(e) => {
@@ -521,7 +522,7 @@ function RhEfetivoPage() {
                             placeholder="Vazio"
                           />
                         ) : (
-                          item.matricula || '-'
+                          item.matricula_hydro || '-'
                         )}
                       </td>
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
@@ -533,8 +534,16 @@ function RhEfetivoPage() {
 
 
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${item.status.toUpperCase() === 'ATIVO' ? 'bg-green-500/20 text-green-600 dark:text-green-500' : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.status.toUpperCase() === 'ATIVO' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${
+                          item.status.toUpperCase() === 'ATIVO' || item.status.toUpperCase() === 'EFETIVADO' 
+                            ? 'bg-[#39ff14]/10 text-[#39ff14] dark:bg-[#39ff14]/20 dark:text-[#39ff14] drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]' 
+                            : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            item.status.toUpperCase() === 'ATIVO' || item.status.toUpperCase() === 'EFETIVADO' 
+                              ? 'bg-[#39ff14] shadow-[0_0_8px_#39ff14]' 
+                              : 'bg-gray-500'
+                          }`}></span>
                           {item.status.toUpperCase()}
                         </span>
                       </td>
