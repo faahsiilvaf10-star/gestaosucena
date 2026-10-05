@@ -142,14 +142,7 @@ function RhEfetivoPage() {
             tempColab.retorno_ao_trabalho,
             tempColab.mudanca_de_risco
           ].filter(Boolean) as string[];
-          if (dates.length > 0) {
-            const latestDate = dates.reduce((a, b) => (a > b ? a : b));
-            const date = new Date(latestDate + 'T12:00:00'); 
-            date.setFullYear(date.getFullYear() + 1); 
-            payload.validade_aso_efetiva = date.toISOString().split('T')[0];
-          } else {
-            payload.validade_aso_efetiva = null;
-          }
+          // Postgres handles validade_aso_efetiva via GENERATED ALWAYS column.
         }
       }
 
@@ -424,13 +417,8 @@ function RhEfetivoPage() {
         payload.mudanca_de_risco
       ].filter(Boolean) as string[];
       
-      if (dates.length > 0) {
-        const latestDate = dates.reduce((a, b) => (a > b ? a : b));
-        const date = new Date(latestDate + 'T12:00:00'); 
-        date.setFullYear(date.getFullYear() + 1); 
-        payload.validade_aso_efetiva = date.toISOString().split('T')[0];
-      } else {
-        payload.validade_aso_efetiva = null;
+      if (dates.length === 0) {
+        // Do nothing, Postgres will generate it
       }
 
       const { error } = await supabase.from('rh_efetivo').update(payload).eq('id', selectedColaborador.id)
