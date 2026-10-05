@@ -505,27 +505,8 @@ function RhEfetivoPage() {
                       onClick={() => setSelectedColaborador(item)}
                       className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                     >
-                      <td className="p-4 font-mono text-xs w-40" onClick={e => e.stopPropagation()}>
-                        {canEdit ? (
-                          <input 
-                            type="text"
-                            defaultValue={item.matricula || ''}
-                            onBlur={(e) => {
-                              if (e.target.value !== (item.matricula || '')) {
-                                handleUpdateMatricula(item.id, e.target.value)
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.currentTarget.blur()
-                              }
-                            }}
-                            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-2 py-1 outline-none focus:border-[#0866ff]"
-                            placeholder="Vazio"
-                          />
-                        ) : (
-                          item.matricula || '-'
-                        )}
+                      <td className="p-4 font-mono text-[13px] w-40">
+                        {item.matricula || '-'}
                       </td>
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
