@@ -7,6 +7,7 @@ import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import Filter from 'lucide-react/dist/esm/icons/funnel.js';
+import Pencil from 'lucide-react/dist/esm/icons/pencil.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -53,6 +54,7 @@ function RhEfetivoPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditingAso, setIsEditingAso] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -685,7 +687,18 @@ function RhEfetivoPage() {
                 </div>
 
                 <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
-                  <h3 className="font-bold text-lg mb-4">Controle Médico (ASO)</h3>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="font-bold text-lg">Controle Médico (ASO)</h3>
+                    {canEdit && (
+                      <button
+                        onClick={() => setIsEditingAso(v => !v)}
+                        className={`p-1.5 rounded-md transition-colors ${isEditingAso ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                        title={isEditingAso ? "Travar edição" : "Editar datas ASO"}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
                     {/* ASO Admissional - read-only, aligned with inputs */}
                     <div>
@@ -707,7 +720,8 @@ function RhEfetivoPage() {
                               handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
                             }
                           }}
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
                         <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
@@ -726,7 +740,8 @@ function RhEfetivoPage() {
                               handleUpdateField(selectedColaborador.id, 'aso_periodico', value)
                             }
                           }}
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
                         <p className="font-medium text-[15px]">{selectedColaborador.aso_periodico ? selectedColaborador.aso_periodico.split('-').reverse().join('/') : '-'}</p>
@@ -745,7 +760,8 @@ function RhEfetivoPage() {
                               handleUpdateField(selectedColaborador.id, 'retorno_ao_trabalho', value)
                             }
                           }}
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
                         <p className="font-medium text-[15px]">{selectedColaborador.retorno_ao_trabalho ? selectedColaborador.retorno_ao_trabalho.split('-').reverse().join('/') : '-'}</p>
@@ -764,7 +780,8 @@ function RhEfetivoPage() {
                               handleUpdateField(selectedColaborador.id, 'mudanca_de_risco', value)
                             }
                           }}
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
                         />
                       ) : (
                         <p className="font-medium text-[15px]">{selectedColaborador.mudanca_de_risco ? selectedColaborador.mudanca_de_risco.split('-').reverse().join('/') : '-'}</p>
