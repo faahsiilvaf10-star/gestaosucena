@@ -1469,6 +1469,7 @@ function AdminRoute() {
                     { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' },
                     { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
                     { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' },
+                    { key: 'statusAlterado', label: 'Status Alterado (Equipamentos)' },
                     { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' },
                     { key: 'inicioJornadaApp', label: 'Início de Jornada (App)' },
                     { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
@@ -1506,6 +1507,7 @@ function AdminRoute() {
                     {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
                     {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
                     {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
+                    {selectedTemplate === 'statusAlterado' && '{hora}, {equipamento}, {tag}, {placa}, {status}, {motorista}'}
                     {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
                     {selectedTemplate === 'inicioJornadaApp' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}'}
                     {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
