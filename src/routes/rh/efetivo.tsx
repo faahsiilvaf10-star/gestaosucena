@@ -507,10 +507,10 @@ function RhEfetivoPage() {
                         {canEdit ? (
                           <input 
                             type="text"
-                            defaultValue={item.matricula_hydro || ''}
+                            defaultValue={item.matricula || ''}
                             onBlur={(e) => {
-                              if (e.target.value !== (item.matricula_hydro || '')) {
-                                handleUpdateField(item.id, 'matricula_hydro', e.target.value)
+                              if (e.target.value !== (item.matricula || '')) {
+                                handleUpdateMatricula(item.id, e.target.value)
                               }
                             }}
                             onKeyDown={(e) => {
@@ -522,7 +522,7 @@ function RhEfetivoPage() {
                             placeholder="Vazio"
                           />
                         ) : (
-                          item.matricula_hydro || '-'
+                          item.matricula || '-'
                         )}
                       </td>
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
