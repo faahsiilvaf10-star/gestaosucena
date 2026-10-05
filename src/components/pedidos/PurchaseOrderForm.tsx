@@ -207,7 +207,7 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
       });
 
       // Notificar no WhatsApp
-      if (responsaveis) {
+      if (responsaveis && status !== 'Rascunho') {
         const responsiblesList = responsaveis.filter((r: any) => data.responsible_ids.includes(r.id))
         const requesterName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Usuário do Sistema'
         

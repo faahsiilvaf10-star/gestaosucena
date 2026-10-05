@@ -81,7 +81,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <Badge 
       variant={config.variant} 
-      className={`flex items-center gap-1.5 whitespace-nowrap ${config.className} ${className || ''}`}
+      className={`flex items-center gap-1.5 whitespace-nowrap no-underline ${config.className} ${className || ''}`}
     >
       <Icon className="w-3.5 h-3.5" />
       {config.label}

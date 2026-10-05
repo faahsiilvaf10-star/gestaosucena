@@ -306,48 +306,42 @@ export function usePurchaseOrdersByCurrentUser() {
         .select('purchase_order_id')
         .eq('responsible_id', user.id)
 
-      // Também pedidos onde responsible_id legado = user.id
       const orderIds = (respRows || []).map((r: any) => r.purchase_order_id)
 
-      if (orderIds.length === 0) {
-        // fallback: busca pelo campo legado responsible_id
-        const { data, error } = await supabase
-          .from('al_purchase_orders')
-          .select('*, items:al_purchase_order_items(*), al_purchase_order_responsibles(responsible_id)')
-          .eq('responsible_id', user.id)
-          .order('created_at', { ascending: false })
-        if (error) throw error
-        
-        const { data: usersData } = await supabase.rpc('get_active_system_users')
-        const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
-        
-        return (data || []).map((order: any) => {
-          const respIds = order.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
-          if (order.responsible_id && !respIds.includes(order.responsible_id)) {
-            respIds.push(order.responsible_id)
-          }
-          const responsibles = respIds.map((rid: string) => usersMap.get(rid)).filter(Boolean)
-
-          return {
-            ...order,
-            responsibles,
-            responsible: responsibles.length > 0 ? responsibles[0] : null
-          }
-        }) as PurchaseOrder[]
-      }
-
-      const { data, error } = await supabase
+      // Busca os pedidos em que o usuário é requisitante ou responsável diretamente
+      const { data: data1, error: err1 } = await supabase
         .from('al_purchase_orders')
         .select('*, items:al_purchase_order_items(*), al_purchase_order_responsibles(responsible_id)')
-        .in('id', orderIds)
-        .order('created_at', { ascending: false })
+        .or(`requester_user_id.eq.${user.id},responsible_id.eq.${user.id}`)
 
-      if (error) throw error
+      if (err1) throw err1
+
+      // Busca os pedidos em que o usuário está na tabela de múltiplos responsáveis
+      let data2: any[] = []
+      if (orderIds.length > 0) {
+        const { data: d2, error: err2 } = await supabase
+          .from('al_purchase_orders')
+          .select('*, items:al_purchase_order_items(*), al_purchase_order_responsibles(responsible_id)')
+          .in('id', orderIds)
+        if (!err2 && d2) {
+          data2 = d2
+        }
+      }
+
+      // Une as duas listas e remove duplicatas
+      const allDataMap = new Map()
+      ;[...(data1 || []), ...data2].forEach(order => {
+        allDataMap.set(order.id, order)
+      })
+
+      const allData = Array.from(allDataMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
 
       const { data: usersData } = await supabase.rpc('get_active_system_users')
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]))
 
-      return (data || []).map((order: any) => {
+      return allData.map((order: any) => {
         const respIds = order.al_purchase_order_responsibles?.map((r: any) => r.responsible_id) || []
         if (order.responsible_id && !respIds.includes(order.responsible_id)) {
           respIds.push(order.responsible_id)
@@ -391,26 +385,28 @@ export function useUpdateStatusWithWhatsApp() {
       if (error) throw error
 
       // 2. Envia WhatsApp
-      try {
-        const wSettings = await getWhatsappSettings()
-        const targetPhone = wSettings?.purchaseOrders?.specificGroupId || wSettings?.groupId
-        if (wSettings?.url && wSettings?.token && wSettings?.instanceId && targetPhone) {
-          const numStr = orderNumber ? String(orderNumber).padStart(4, '0') : 'Rascunho'
-          const msg = `🔄 *Status do Pedido Atualizado*\n\n📋 *Pedido #${numStr}*\n📊 *Novo Status:* ${newStatus}\n👤 *Alterado por:* ${changedByName}\n\n_Mensagem Automática - G. Sucena_`
+      if (newStatus !== 'Rascunho') {
+        try {
+          const wSettings = await getWhatsappSettings()
+          const targetPhone = wSettings?.purchaseOrders?.specificGroupId || wSettings?.groupId
+          if (wSettings?.url && wSettings?.token && wSettings?.instanceId && targetPhone) {
+            const numStr = orderNumber ? String(orderNumber).padStart(4, '0') : 'Rascunho'
+            const msg = `🔄 *Status do Pedido Atualizado*\n\n📋 *Pedido #${numStr}*\n📊 *Novo Status:* ${newStatus}\n👤 *Alterado por:* ${changedByName}\n\n_Mensagem Automática - G. Sucena_`
 
-          await sendWhatsappTextOnServer({
-            data: {
-              url: wSettings.url,
-              instanceId: wSettings.instanceId,
-              token: wSettings.token,
-              phone: targetPhone,
-              text: msg,
-            }
-          })
+            await sendWhatsappTextOnServer({
+              data: {
+                url: wSettings.url,
+                instanceId: wSettings.instanceId,
+                token: wSettings.token,
+                phone: targetPhone,
+                text: msg,
+              }
+            })
+          }
+        } catch (wpErr) {
+          // Não bloqueia o fluxo se WhatsApp falhar
+          console.error('WhatsApp notify failed:', wpErr)
         }
-      } catch (wpErr) {
-        // Não bloqueia o fluxo se WhatsApp falhar
-        console.error('WhatsApp notify failed:', wpErr)
       }
     },
     onSuccess: () => {

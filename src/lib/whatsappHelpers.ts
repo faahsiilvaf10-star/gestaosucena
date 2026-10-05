@@ -124,9 +124,12 @@ export async function sendPurchaseOrderWhatsappNotification(
       }
     }
     
+    const numStr = order.order_number ? String(order.order_number).padStart(4, '0') : 'Rascunho'
+
     // Função helper para baixar a imagem em base64 e enviar como Media
     const sendMsg = async (phone: string, template: string) => {
       let msg = template
+      msg = msg.replace('{numero_pedido}', numStr)
       msg = msg.replace('{requisitante}', requesterName)
       msg = msg.replace('{responsaveis}', responsiblesNames)
       msg = msg.replace('{data_esperada}', dataEsperada)
@@ -178,13 +181,13 @@ export async function sendPurchaseOrderWhatsappNotification(
 
     // 1. Enviar para o GRUPO
     if (enabled_group && groupNumber) {
-      const groupTemplate = whatsappSettings.messageTemplates?.pedidoCompraGrupo || '📦 *NOVO PEDIDO DE COMPRA*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_'
+      const groupTemplate = whatsappSettings.messageTemplates?.pedidoCompraGrupo || '📦 *NOVO PEDIDO DE COMPRA #{numero_pedido}*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_'
       await sendMsg(groupNumber, groupTemplate)
     }
 
     // 2. Enviar para o INDIVIDUAL (Responsaveis)
     if (enabled_individual && responsiblesList.length > 0) {
-      const individualTemplate = whatsappSettings.messageTemplates?.pedidoCompraIndividual || '📦 *NOVO PEDIDO DE COMPRA ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._'
+      const individualTemplate = whatsappSettings.messageTemplates?.pedidoCompraIndividual || '📦 *NOVO PEDIDO DE COMPRA #{numero_pedido} ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._'
       
       for (const resp of responsiblesList) {
         if (resp.telefone || resp.phone) {

@@ -11,6 +11,76 @@ localforage.config({
 
 const QUEUE_KEY = 'sync_queue';
 
+// DIRECT FETCH FALLBACKS FOR APK
+const directWhatsappSendText = async (settings: any, phone: string, text: string) => {
+  let baseUrl = settings.url.trim();
+  if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+  if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1';
+  else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1';
+
+  let endpoint = `${baseUrl}/message/sendText/${settings.instanceId}`;
+  if (baseUrl.includes('api.w-api.app')) endpoint = `${baseUrl}/messages/send-text?instanceId=${settings.instanceId}`;
+
+  const payload = { number: phone, phone: phone, text, message: text };
+  let res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.token}`, 'apikey': settings.token },
+    body: JSON.stringify(payload)
+  });
+  if (res.status === 404) {
+    const fallback = endpoint.includes('/message/') ? endpoint.replace('/message/', '/messages/') : endpoint.replace('/messages/', '/message/');
+    res = await fetch(fallback, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.token}`, 'apikey': settings.token },
+      body: JSON.stringify(payload)
+    });
+  }
+  if (!res.ok) throw new Error("Direct fetch text failed: " + await res.text());
+  return true;
+};
+
+const directWhatsappSendMedia = async (settings: any, phone: string, caption: string, base64Media: string, fileName: string) => {
+  let baseUrl = settings.url.trim();
+  if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+  if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1';
+  else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1';
+
+  let endpoint = `${baseUrl}/message/sendMedia/${settings.instanceId}`;
+  let isWApiApp = false;
+  if (baseUrl.includes('api.w-api.app')) {
+    isWApiApp = true;
+    endpoint = `${baseUrl}/message/send-image?instanceId=${settings.instanceId}`;
+  }
+
+  let pureBase64 = base64Media;
+  let mime = "image/png";
+  if (pureBase64.includes('image/jpeg') || fileName?.endsWith('.jpg') || fileName?.endsWith('.jpeg')) mime = "image/jpeg";
+  if (pureBase64.includes('base64,')) pureBase64 = pureBase64.split('base64,')[1];
+
+  const payload = isWApiApp ? {
+    phone, number: phone, image: base64Media, caption
+  } : {
+    number: phone, phone, mediatype: "image", mimetype: mime, fileName: fileName || "documento.png",
+    caption, message: caption, media: pureBase64, base64: pureBase64
+  };
+
+  let res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.token}`, 'apikey': settings.token },
+    body: JSON.stringify(payload)
+  });
+  if (res.status === 404) {
+    const fallback = endpoint.includes('/message/') ? endpoint.replace('/message/', '/messages/') : endpoint.replace('/messages/', '/message/');
+    res = await fetch(fallback, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.token}`, 'apikey': settings.token },
+      body: JSON.stringify(payload)
+    });
+  }
+  if (!res.ok) throw new Error("Direct fetch media failed: " + await res.text());
+  return true;
+};
+
 export type SyncAction = 'INSERT' | 'UPDATE' | 'UPSERT' | 'WHATSAPP';
 
 export interface SyncTask {
@@ -69,33 +139,43 @@ export const processSyncQueue = async () => {
         result = await supabase.from(task.table).upsert(task.data);
       } else if (task.action === 'WHATSAPP') {
         if (task.data.isMedia) {
-          const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
-          const payload = {
-            data: {
-              url: task.data.settings.url,
-              token: task.data.settings.token,
-              instanceId: task.data.settings.instanceId,
-              phone: task.data.phone,
-              caption: task.data.message,
-              base64Media: task.data.base64Media,
-              fileName: task.data.fileName
-            }
-          };
-          const res = await sendWhatsappMediaOnServer(payload as any);
-          if (!res.success) throw new Error('Falha media: ' + ((res as any).error || ''));
+          try {
+            const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
+            const payload = {
+              data: {
+                url: task.data.settings.url,
+                token: task.data.settings.token,
+                instanceId: task.data.settings.instanceId,
+                phone: task.data.phone,
+                caption: task.data.message,
+                base64Media: task.data.base64Media,
+                fileName: task.data.fileName
+              }
+            };
+            const res = await sendWhatsappMediaOnServer(payload as any);
+            if (!res.success) throw new Error('Falha media: ' + ((res as any).error || ''));
+          } catch (serverErr) {
+            console.warn('Server media fetch failed, fallback to direct fetch', serverErr);
+            await directWhatsappSendMedia(task.data.settings, task.data.phone, task.data.message, task.data.base64Media, task.data.fileName);
+          }
         } else {
-          const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
-          const payload = {
-            data: {
-              url: task.data.settings.url,
-              token: task.data.settings.token,
-              instanceId: task.data.settings.instanceId,
-              phone: task.data.phone,
-              text: task.data.message
-            }
-          };
-          const res = await sendWhatsappTextOnServer(payload as any);
-          if (!res.success) throw new Error('Falha text: ' + ((res as any).error || ''));
+          try {
+            const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
+            const payload = {
+              data: {
+                url: task.data.settings.url,
+                token: task.data.settings.token,
+                instanceId: task.data.settings.instanceId,
+                phone: task.data.phone,
+                text: task.data.message
+              }
+            };
+            const res = await sendWhatsappTextOnServer(payload as any);
+            if (!res.success) throw new Error('Falha text: ' + ((res as any).error || ''));
+          } catch (serverErr) {
+            console.warn('Server text fetch failed, fallback to direct fetch', serverErr);
+            await directWhatsappSendText(task.data.settings, task.data.phone, task.data.message);
+          }
         }
         result = { error: null };
       }
@@ -182,9 +262,15 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
       if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
-      console.warn('Erro ao enviar whatsapp online, enfileirando:', error);
-      await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
-      return { success: true, offline: true };
+      console.warn('Server text fetch failed online, fallback to direct fetch:', error);
+      try {
+        await directWhatsappSendText(settings, phone, message);
+        return { success: true, offline: false };
+      } catch (fallbackError) {
+        console.warn('Direct fallback also failed, enfileirando:', fallbackError);
+        await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+        return { success: true, offline: true };
+      }
     }
   } else {
     await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
@@ -212,9 +298,15 @@ export const queueWhatsappMedia = async (settings: any, phone: string, caption: 
       if (!res.success) throw new Error((res as any)?.error || 'Unknown error');
       return { success: true, offline: false };
     } catch (error) {
-      console.warn('Erro ao enviar whatsapp media online, enfileirando:', error);
-      await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
-      return { success: true, offline: true };
+      console.warn('Server media fetch failed online, fallback to direct fetch:', error);
+      try {
+        await directWhatsappSendMedia(settings, phone, caption, base64Media, fileName);
+        return { success: true, offline: false };
+      } catch (fallbackError) {
+        console.warn('Direct media fallback also failed, enfileirando:', fallbackError);
+        await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+        return { success: true, offline: true };
+      }
     }
   } else {
     await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });

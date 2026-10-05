@@ -1508,7 +1508,7 @@ function AdminRoute() {
                     {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
                     {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
                     {selectedTemplate === 'inicioJornadaApp' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}'}
-                    {selectedTemplate.startsWith('pedidoCompra') && '{requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
+                    {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
                   </div>
                 </div>
               </div>

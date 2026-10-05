@@ -180,10 +180,8 @@ export default function WizardStep({
         })
       }
 
-      // 3. Update Equipment status to "Operando"
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, location_status: 'inside', status: 'Operando' })
-
-      // Save local cache for dashboard if offline
+      // 3. Update Equipment status to "Operando" (but DO NOT change location_status to inside here)
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Operando' })
       localStorage.setItem('app_motorista_current_dispatch', JSON.stringify({ ...dispatchData, id: newDispatchId }))
 
       // Define o status inicial como 'Aguardando'
@@ -248,6 +246,7 @@ export default function WizardStep({
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
             const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+              const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
               let text = wSettings.messageTemplates.anomaliaRegistrada
               text = text.replace('{hora}', format(new Date(), 'HH:mm'))
               text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
@@ -327,6 +326,7 @@ export default function WizardStep({
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
             const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
+              const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
               let text = wSettings.messageTemplates.anomaliaRegistrada
               text = text.replace('{hora}', format(new Date(), 'HH:mm'))
               text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
@@ -365,6 +365,7 @@ export default function WizardStep({
         if (wSettings.appMotoristaAlerts?.enabled !== false) {
           const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
           if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.inicioJornadaApp) {
+            const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
             let text = wSettings.messageTemplates.inicioJornadaApp
             text = text.replace('{hora}', format(new Date(), 'HH:mm'))
             text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')

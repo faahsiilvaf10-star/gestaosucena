@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 dist-release
 dist-electron
+dist-final
+dist-final/**

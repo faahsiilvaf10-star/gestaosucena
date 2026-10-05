@@ -240,7 +240,7 @@ function PedidosPage() {
                 </tr>
               ) : (
                 filteredPedidos.map((pedido) => (
-                  <tr key={pedido.id} className="hover:bg-muted/50 transition-colors">
+                  <tr key={pedido.id} className={`hover:bg-muted/50 transition-colors ${pedido.status === 'Cancelado' ? 'text-red-500/70 line-through' : ''}`}>
                     <td className="px-4 py-3 font-medium">
                       {pedido.order_number ? String(pedido.order_number).padStart(4, '0') : 'Rascunho'}
                     </td>
@@ -281,7 +281,7 @@ function PedidosPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
-                        <Button variant="ghost" size="sm">Ver pedido</Button>
+                        <Button variant="ghost" size="sm" className="no-underline text-foreground">Ver pedido</Button>
                       </Link>
                     </td>
                   </tr>
@@ -302,7 +302,7 @@ function PedidosPage() {
           </div>
         ) : (
           filteredPedidos.map((pedido) => (
-            <div key={pedido.id} className="bg-card border rounded-xl p-4 shadow-sm space-y-3">
+            <div key={pedido.id} className={`bg-card border rounded-xl p-4 shadow-sm space-y-3 ${pedido.status === 'Cancelado' ? 'text-red-500/70 line-through' : ''}`}>
               <div className="flex justify-between items-start">
                 <div>
                   <div className="font-bold text-lg">
@@ -360,7 +360,7 @@ function PedidosPage() {
 
               <div className="pt-2">
                 <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
-                  <Button variant="outline" className="w-full">Ver Pedido</Button>
+                  <Button variant="outline" className="w-full no-underline text-foreground">Ver Pedido</Button>
                 </Link>
               </div>
             </div>

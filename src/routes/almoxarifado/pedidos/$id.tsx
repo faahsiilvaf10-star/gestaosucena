@@ -7,6 +7,8 @@ import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import History from 'lucide-react/dist/esm/icons/history.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { usePurchaseOrderById, useUpdatePurchaseOrder, useUpdatePurchaseOrderItem, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
@@ -34,13 +36,28 @@ function PedidoDetailsPage() {
   const updateItem = useUpdatePurchaseOrderItem()
   const updateStatus = useUpdateStatusWithWhatsApp()
 
-  const { data: currentUserName } = useQuery({
-    queryKey: ['current_user_name'],
+  const { data: currentUserInfo } = useQuery({
+    queryKey: ['current_user_info'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      return user?.user_metadata?.full_name || user?.email || 'Usuário'
+      if (!user) return null
+      return {
+        id: user.id,
+        name: user.user_metadata?.full_name || user.email || 'Usuário',
+        isAdmin: user.user_metadata?.role?.toLowerCase().includes('admin') || user.user_metadata?.role?.toLowerCase().includes('diretor')
+      }
     }
   })
+
+  const currentUserName = currentUserInfo?.name || 'Usuário'
+  
+  const isRequester = pedido?.requester_user_id === currentUserInfo?.id
+  const isResponsible = pedido?.responsibles?.some(r => r.id === currentUserInfo?.id) || pedido?.responsible?.id === currentUserInfo?.id
+  const isAdmin = currentUserInfo?.isAdmin
+
+  const canChangeAnyStatus = isResponsible || isAdmin
+  const canCancelOnly = isRequester && !canChangeAnyStatus
+  const canChangeStatusAtAll = canChangeAnyStatus || canCancelOnly
 
   const ALL_STATUSES: PurchaseOrderStatus[] = [
     'Rascunho', 'Solicitado', 'Em Compra', 'Comprado', 'Recebimento Parcial', 'Recebido', 'Cancelado'
@@ -49,6 +66,24 @@ function PedidoDetailsPage() {
   const [isReceiving, setIsReceiving] = useState(false)
   const [receiveModalOpen, setReceiveModalOpen] = useState(false)
   const [receiveData, setReceiveData] = useState<Record<string, number>>({})
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
+
+  const handleDownloadImage = async (url: string) => {
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `imagem-${Date.now()}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (e) {
+      window.open(url, '_blank')
+    }
+  }
 
   if (isLoading) {
     return <div className="p-8 flex justify-center text-muted-foreground">Carregando detalhes do pedido...</div>
@@ -226,25 +261,41 @@ function PedidoDetailsPage() {
             {/* Alterar status */}
             <div className="pt-2 border-t">
               <p className="text-xs text-muted-foreground mb-2">Alterar Status</p>
-              <Select
-                value={pedido.status}
-                onValueChange={(val) => updateStatus.mutate({
-                  orderId: pedido.id,
-                  orderNumber: pedido.order_number,
-                  newStatus: val as PurchaseOrderStatus,
-                  changedByName: currentUserName || 'Usuário',
-                })}
-                disabled={updateStatus.isPending}
-              >
-                <SelectTrigger className="w-full h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALL_STATUSES.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              {!canChangeStatusAtAll ? (
+                <div className="text-sm bg-muted/50 p-2 rounded text-muted-foreground text-center">
+                  Você não tem permissão para alterar este status.
+                </div>
+              ) : (
+                <Select
+                  value={pedido.status}
+                  onValueChange={(val) => updateStatus.mutate({
+                    orderId: pedido.id,
+                    orderNumber: pedido.order_number,
+                    newStatus: val as PurchaseOrderStatus,
+                    changedByName: currentUserName,
+                  })}
+                  disabled={updateStatus.isPending}
+                >
+                  <SelectTrigger className="w-full h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {canCancelOnly ? (
+                      // Se for só requisitante (e não admin/responsável), 
+                      // só pode manter o status atual ou Cancelar.
+                      [pedido.status, 'Cancelado'].filter((v, i, a) => a.indexOf(v) === i).map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))
+                    ) : (
+                      // Responsáveis/Admins podem ver todos
+                      ALL_STATUSES.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             
@@ -312,78 +363,83 @@ function PedidoDetailsPage() {
           )}
         </div>
 
-        {/* Lista de Itens */}
+        {/* Lista de Itens (Estilo Nota / Cupom) */}
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b bg-muted/20 flex justify-between items-center">
+          <div className="bg-card border-2 border-dashed rounded-xl shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-dashed flex justify-between items-center bg-muted/10">
               <h3 className="font-bold text-lg flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                 Itens Solicitados
-                <span className="text-sm font-normal bg-background px-2 py-0.5 rounded-full border">
-                  {pedido.items?.length || 0}
-                </span>
               </h3>
+              <span className="text-sm font-bold bg-muted px-3 py-1 rounded-full">
+                {pedido.items?.length || 0} {(pedido.items?.length || 0) === 1 ? 'item' : 'itens'}
+              </span>
             </div>
             
-            <div className="divide-y">
+            <div className="p-2 sm:p-5">
               {pedido.items?.map((item, index) => {
                 const percRecebido = Math.min(100, Math.round(((Number(item.quantity_received) || 0) / Number(item.quantity)) * 100))
                 
                 return (
-                  <div key={item.id} className="p-5 hover:bg-muted/30 transition-colors">
-                    <div className="flex flex-col sm:flex-row gap-5">
-                      {item.image_path ? (
-                        <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden border flex-shrink-0">
-                          {/* supabase storage fetcher (na vida real usar a url publica) */}
-                          <img 
-                            src={supabase.storage.from('purchase-order-items').getPublicUrl(item.image_path).data.publicUrl} 
-                            alt={item.product_name}
-                            className="w-full h-full object-cover"
-                          />
+                  <div key={item.id} className="flex flex-col sm:flex-row items-start gap-4 p-3 hover:bg-muted/30 transition-colors rounded-lg mb-2">
+                    {/* Imagem do item */}
+                    {item.image_path ? (
+                      <div 
+                        className="w-16 h-16 bg-muted rounded-md overflow-hidden border flex-shrink-0 cursor-pointer relative group"
+                        onClick={() => setFullscreenImage(item.image_path!.startsWith('http') ? item.image_path! : supabase.storage.from('purchase-order-items').getPublicUrl(item.image_path!).data.publicUrl)}
+                        title="Ver imagem ampliada"
+                      >
+                        <img 
+                          src={item.image_path.startsWith('http') ? item.image_path : supabase.storage.from('purchase-order-items').getPublicUrl(item.image_path).data.publicUrl} 
+                          alt={item.product_name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <ZoomIn className="w-6 h-6 text-white drop-shadow-md" />
                         </div>
-                      ) : (
-                        <div className="w-24 h-24 bg-muted/50 rounded-lg border border-dashed flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                          Sem Foto
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 bg-muted/50 rounded-md border border-dashed flex items-center justify-center flex-shrink-0 text-[10px] text-muted-foreground text-center px-1">
+                        Sem Foto
+                      </div>
+                    )}
+                    
+                    {/* Detalhes na Nota */}
+                    <div className="flex-1 w-full flex flex-col justify-center min-h-[4rem]">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-base text-foreground leading-tight">
+                            <span className="text-muted-foreground font-normal text-sm mr-2">{String(index+1).padStart(2, '0')}</span>
+                            {item.product_name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">Cat: {item.category || '-'}</p>
+                        </div>
+                        
+                        <div className="text-right shrink-0 flex flex-col items-end">
+                          <div className="text-lg font-bold bg-muted/40 px-2 py-0.5 rounded">{item.quantity} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span></div>
+                        </div>
+                      </div>
+                      
+                      {item.description && (
+                        <div className="text-xs text-muted-foreground mt-2 italic border-l-2 border-muted pl-2">
+                          {item.description}
                         </div>
                       )}
                       
-                      <div className="flex-1 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-bold text-lg text-foreground">
-                              <span className="text-muted-foreground font-normal text-sm mr-2">{String(index+1).padStart(2, '0')}</span>
-                              {item.product_name}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">Categoria: {item.category}</p>
+                      {(pedido.status === 'Recebido' || pedido.status === 'Recebimento Parcial') && (
+                        <div className="pt-3 mt-2 border-t border-dashed">
+                          <div className="flex justify-between text-[11px] mb-1 font-medium">
+                            <span>Progresso:</span>
+                            <span>{item.quantity_received || 0} de {item.quantity}</span>
                           </div>
-                          
-                          <div className="text-right">
-                            <div className="text-2xl font-bold">{item.quantity} <span className="text-sm font-normal text-muted-foreground">{item.unit}</span></div>
+                          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className={`h-full ${percRecebido === 100 ? 'bg-green-500' : 'bg-primary'}`} 
+                              style={{ width: `${percRecebido}%` }}
+                            ></div>
                           </div>
                         </div>
-                        
-                        {item.description && (
-                          <div className="text-sm bg-muted/30 p-2 rounded border">
-                            <span className="font-medium block text-xs text-muted-foreground mb-1">Especificação:</span>
-                            {item.description}
-                          </div>
-                        )}
-                        
-                        {(pedido.status === 'Recebido' || pedido.status === 'Recebimento Parcial') && (
-                          <div className="pt-2">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span>Progresso de recebimento:</span>
-                              <span className="font-medium">{item.quantity_received || 0} de {item.quantity}</span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                              <div 
-                                className={`h-full ${percRecebido === 100 ? 'bg-green-500' : 'bg-primary'}`} 
-                                style={{ width: `${percRecebido}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -416,6 +472,34 @@ function PedidoDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Modal */}
+      <Dialog open={!!fullscreenImage} onOpenChange={(open) => !open && setFullscreenImage(null)}>
+        <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none focus-visible:outline-none">
+          {fullscreenImage && (
+            <div className="relative flex flex-col items-center justify-center">
+              <div className="relative group rounded-xl overflow-hidden shadow-2xl bg-black/80 ring-1 ring-white/10">
+                <img 
+                  src={fullscreenImage} 
+                  alt="Imagem ampliada" 
+                  className="max-h-[80vh] w-auto object-contain" 
+                />
+                
+                {/* Ações que aparecem no hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                  <Button 
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md shadow-xl rounded-full px-6 flex items-center gap-2"
+                    onClick={() => handleDownloadImage(fullscreenImage)}
+                  >
+                    <Download className="w-4 h-4" />
+                    Baixar Imagem
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
