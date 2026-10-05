@@ -718,7 +718,27 @@ function RhEfetivoPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
-                    {/* ASO Admissional */}
+                    {/* ASO Admissional 2 */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
+                      {canEdit ? (
+                        <DateInput
+                          value={selectedColaborador.aso_admissional_2 || ''}
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, aso_admissional_2: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional_2 || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
+                            }
+                          }}
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
+                        />
+                      ) : (
+                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
+                      )}
+                    </div>
+
+                    {/* ASO Admissional (Hiring Date) */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
                       {canEdit ? (
@@ -737,26 +757,6 @@ function RhEfetivoPage() {
                         <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
                           {selectedColaborador.aso_admissional ? selectedColaborador.aso_admissional.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
                         </div>
-                      )}
-                    </div>
-
-                    {/* ASO Admissional 2 */}
-                    <div>
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
-                      {canEdit ? (
-                        <DateInput
-                          value={selectedColaborador.aso_admissional_2 || ''}
-                          onChange={(value) => {
-                            setSelectedColaborador({...selectedColaborador, aso_admissional_2: value})
-                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional_2 || '')) {
-                              handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
-                            }
-                          }}
-                          disabled={!isEditingAso}
-                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
-                        />
-                      ) : (
-                        <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
                       )}
                     </div>
                     
