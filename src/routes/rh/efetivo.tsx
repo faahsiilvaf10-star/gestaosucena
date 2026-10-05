@@ -383,10 +383,24 @@ function RhEfetivoPage() {
     if (!selectedColaborador) return
     setIsSaving(true)
     try {
-      const { id, raw_data, ...updateData } = selectedColaborador
-      const { error } = await supabase.from('rh_efetivo').update(updateData).eq('id', id)
+      const payload = {
+        nome: selectedColaborador.nome,
+        cargo: selectedColaborador.cargo,
+        matricula: selectedColaborador.matricula,
+        matricula_hydro: selectedColaborador.matricula_hydro,
+        matricula_sucena: selectedColaborador.matricula_sucena,
+        status: selectedColaborador.status,
+        setor: selectedColaborador.setor,
+        aso_admissional: selectedColaborador.aso_admissional,
+        aso_admissional_2: selectedColaborador.aso_admissional_2,
+        aso_periodico: selectedColaborador.aso_periodico,
+        retorno_ao_trabalho: selectedColaborador.retorno_ao_trabalho,
+        mudanca_de_risco: selectedColaborador.mudanca_de_risco,
+        observacao: selectedColaborador.observacao
+      }
+      const { error } = await supabase.from('rh_efetivo').update(payload).eq('id', selectedColaborador.id)
       if (error) throw error
-      setItems(prev => prev.map(item => item.id === id ? { ...item, ...updateData } : item))
+      setItems(prev => prev.map(item => item.id === selectedColaborador.id ? { ...item, ...payload } : item))
       setHasUnsavedChanges(false)
       toast.success('Alterações salvas com sucesso!')
     } catch (err) {
