@@ -1,6 +1,7 @@
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Upload from 'lucide-react/dist/esm/icons/upload.js';
 import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
@@ -15,6 +16,8 @@ import { supabase } from '../../lib/supabase'
 import { DateInput } from '../../components/ui/DateInput'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 import { useTheme } from '../../contexts/ThemeContext'
 
 export const Route = createFileRoute('/rh/efetivo')({
@@ -46,6 +49,7 @@ function RhEfetivoPage() {
   const [items, setItems] = useState<EfetivoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -443,6 +447,103 @@ function RhEfetivoPage() {
       setIsSaving(false)
     }
   }
+
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      const workbook = new ExcelJS.Workbook()
+      const sheet = workbook.addWorksheet('Efetivo ASO')
+      
+      let logoId: number | null = null
+      try {
+        const response = await fetch('/logo-relatorio.png')
+        const arrayBuffer = await response.arrayBuffer()
+        logoId = workbook.addImage({
+          buffer: arrayBuffer,
+          extension: 'png',
+        })
+      } catch (e) {
+        console.warn('Could not load logo for export')
+      }
+
+      // Add empty rows for header space
+      sheet.addRow([])
+      sheet.addRow([])
+      sheet.addRow([])
+      sheet.addRow([])
+      sheet.addRow([])
+
+      if (logoId !== null) {
+        sheet.addImage(logoId, {
+          tl: { col: 0, row: 0 },
+          ext: { width: 180, height: 60 },
+        })
+      }
+
+      // Add Headers
+      const headerRow = sheet.addRow([
+        'Matrícula', 'Nome', 'Cargo', 'Admissional', 'ASO Admissional', 
+        'Periódico', 'Retorno ao Trabalho', 'Mudança de Risco', 'Validade ASO'
+      ])
+      
+      headerRow.font = { bold: true }
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEEEEEE' }
+      }
+
+      // Format date helper
+      const formatDate = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '-'
+        return dateStr.split('-').reverse().join('/')
+      }
+
+      // Calculate validades
+      filteredItems.forEach(item => {
+        let validade = '-'
+        const dates = [
+          item.aso_admissional, // Agora este é o ASO Admissional
+          item.aso_periodico,
+          item.retorno_ao_trabalho,
+          item.mudanca_de_risco
+        ].filter(Boolean) as string[]
+        
+        if (dates.length > 0) {
+          const latestDate = dates.reduce((a, b) => (a > b ? a : b))
+          const date = new Date(latestDate + 'T12:00:00') 
+          date.setFullYear(date.getFullYear() + 1)
+          validade = date.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})
+        }
+
+        sheet.addRow([
+          item.matricula || '-',
+          item.nome || '-',
+          item.cargo || '-',
+          formatDate(item.aso_admissional_2), // Admissional (Hiring Date) is saved here
+          formatDate(item.aso_admissional),   // ASO Admissional (Medical Exam) is saved here
+          formatDate(item.aso_periodico),
+          formatDate(item.retorno_ao_trabalho),
+          formatDate(item.mudanca_de_risco),
+          validade
+        ])
+      })
+
+      sheet.columns.forEach((col, idx) => {
+        col.width = idx === 1 ? 40 : 20 // Nome is wider
+      })
+
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      saveAs(blob, `Controle_ASO_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`)
+      toast.success('Relatório exportado com sucesso!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao exportar planilha')
+    } finally {
+      setIsExporting(false)
+    }
+  }
   const filteredItems = items.filter(item => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -485,6 +586,14 @@ function RhEfetivoPage() {
             >
               <FileSpreadsheet size={18} />
               {isImporting ? 'Lendo...' : 'Importar Planilha'}
+            </button>
+            <button 
+              onClick={handleExportExcel}
+              disabled={isExporting}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <Download size={18} />
+              {isExporting ? 'Baixando...' : 'Exportar ASO'}
             </button>
           </div>
         </div>
