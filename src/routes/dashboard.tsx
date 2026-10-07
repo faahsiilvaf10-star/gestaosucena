@@ -171,7 +171,7 @@ function DashboardComponent() {
   const { data: efetivo = [] } = useQuery({
     queryKey: ['efetivo_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status, validade_aso_efetiva')
+      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco')
       if (error) throw error
       return data || []
     }
@@ -274,10 +274,28 @@ function DashboardComponent() {
 
   // Calcular ASO vencendo em 10 dias ou menos (ou já vencidos)
   const asoVencendo = (efetivo || [])
-    .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO' && emp.validade_aso_efetiva)
+    .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO')
     .map((emp: any) => {
-      const parts = emp.validade_aso_efetiva.split('-')
-      if (parts.length !== 3) return null
+      // Recalcular no frontend para não depender do BD caso o script de migration não tenha sido rodado
+      const dates = [
+        emp.aso_admissional,
+        emp.aso_periodico,
+        emp.retorno_ao_trabalho,
+        emp.mudanca_de_risco
+      ].filter(Boolean);
+      
+      let validadeString = emp.validade_aso_efetiva;
+      if (dates.length > 0) {
+        const latestDate = dates.reduce((a: string, b: string) => (a > b ? a : b));
+        const date = new Date(latestDate + 'T12:00:00'); 
+        date.setFullYear(date.getFullYear() + 1); 
+        validadeString = date.toISOString().split('T')[0];
+      }
+
+      if (!validadeString) return null;
+
+      const parts = validadeString.split('-');
+      if (parts.length !== 3) return null;
       
       const validade = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
       const hoje = new Date()

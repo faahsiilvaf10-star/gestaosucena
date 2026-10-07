@@ -655,18 +655,38 @@ function RhEfetivoPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                  {filteredItems.map(item => (
+                  {filteredItems.map(item => {
+                    let isVencido = false;
+                    const dates = [
+                      item.aso_admissional,
+                      item.aso_periodico,
+                      item.retorno_ao_trabalho,
+                      item.mudanca_de_risco
+                    ].filter(Boolean) as string[];
+                    
+                    if (dates.length > 0) {
+                      const latestDate = dates.reduce((a, b) => (a > b ? a : b));
+                      const validade = new Date(latestDate + 'T12:00:00'); 
+                      validade.setFullYear(validade.getFullYear() + 1); 
+                      
+                      const hoje = new Date();
+                      hoje.setHours(0,0,0,0);
+                      const diffDays = Math.ceil((validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                      isVencido = diffDays <= 0;
+                    }
+
+                    return (
                     <tr 
                       key={item.id} 
                       onClick={() => setSelectedColaborador(item)}
-                      className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className={`transition-colors cursor-pointer ${isVencido ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
                     >
-                      <td className="p-4 font-mono text-[13px] w-40">
+                      <td className={`p-4 font-mono text-[13px] w-40 ${isVencido ? 'text-red-500 font-bold' : ''}`}>
                         {item.matricula || '-'}
                       </td>
-                      <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
-                      <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
-                      <td className="p-4 text-gray-600 dark:text-gray-400">
+                      <td className={`p-4 font-bold max-w-xs truncate ${isVencido ? 'text-red-500' : ''}`} title={item.nome}>{item.nome}</td>
+                      <td className={`p-4 max-w-xs truncate ${isVencido ? 'text-red-400' : 'text-gray-600 dark:text-gray-400'}`} title={item.cargo || ''}>{item.cargo || '-'}</td>
+                      <td className={`p-4 ${isVencido ? 'text-red-400 font-bold' : 'text-gray-600 dark:text-gray-400'}`}>
                         {item.aso_admissional_2 ? item.aso_admissional_2.split('-').reverse().join('/') : '-'}
                       </td>
                       
@@ -687,7 +707,7 @@ function RhEfetivoPage() {
                         </span>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             )}
