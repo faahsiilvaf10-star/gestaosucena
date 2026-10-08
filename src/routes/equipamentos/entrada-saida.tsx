@@ -12,6 +12,7 @@ import Info from 'lucide-react/dist/esm/icons/info.js';
 import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import FileDown from 'lucide-react/dist/esm/icons/file-down.js';
 import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
@@ -85,6 +86,7 @@ function EntradaSaidaPage() {
   
   const [eqHistory, setEqHistory] = useState<Movement[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [deletingMovId, setDeletingMovId] = useState<string | null>(null)
 
   // Exit Form
   const [exitReason, setExitReason] = useState('')
@@ -238,6 +240,67 @@ function EntradaSaidaPage() {
       toast.error('Erro ao carregar histórico')
     } finally {
       setLoadingHistory(false)
+    }
+  }
+
+  const handleDeleteMovement = async (movId: string) => {
+    if (!selectedEq) return
+    const confirmDelete = window.confirm('Deseja realmente excluir este registro de movimentação?')
+    if (!confirmDelete) return
+
+    setDeletingMovId(movId)
+    try {
+      const { error: delError } = await supabase
+        .from('eq_movements')
+        .delete()
+        .eq('id', movId)
+
+      if (delError) throw delError
+
+      // Buscar histórico remanescente
+      const { data: remainingMovs, error: remError } = await supabase
+        .from('eq_movements')
+        .select('id, equipment_id, movement_type, exit_reason, description, created_by, created_at')
+        .eq('equipment_id', selectedEq.id)
+        .order('created_at', { ascending: false })
+
+      if (remError) throw remError
+
+      const updatedHistory = remainingMovs || []
+      setEqHistory(updatedHistory)
+
+      // Recalcular localização do equipamento
+      const newStatus = locationFromMovements(updatedHistory) ?? 'inside'
+      const lastMov = updatedHistory[0]
+      const newReason = newStatus === 'outside' ? (lastMov?.exit_reason || null) : null
+      const newDesc = newStatus === 'outside' ? (lastMov?.description || null) : null
+
+      const { error: updateError } = await supabase
+        .from('eq_equipments')
+        .update({
+          location_status: newStatus,
+          last_exit_reason: newReason,
+          last_exit_description: newDesc,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedEq.id)
+
+      if (updateError) console.error('Erro ao atualizar eq_equipments:', updateError)
+
+      setSelectedEq(prev => prev ? {
+        ...prev,
+        location_status: newStatus,
+        last_exit_reason: newReason,
+        last_exit_description: newDesc
+      } : null)
+
+      fetchEquipments()
+      toast.success('Movimentação excluída e status recalculado com sucesso!')
+    } catch (err: any) {
+      console.error('Erro ao excluir movimentação:', err)
+      toast.error('Erro ao excluir movimentação: ' + (err.message || 'Erro desconhecido'))
+    } finally {
+      setDeletingMovId(null)
     }
   }
 
@@ -1087,9 +1150,27 @@ function EntradaSaidaPage() {
                             <span className={`font-bold text-sm ${isEntry ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                               {isEntry ? 'ENTRADA' : 'SAÍDA'}
                             </span>
-                            <span className="text-[10px] opacity-60 font-medium">
-                              {new Date(mov.created_at).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] opacity-60 font-medium">
+                                {new Date(mov.created_at).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteMovement(mov.id)
+                                }}
+                                disabled={deletingMovId === mov.id}
+                                title="Excluir movimentação"
+                                className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors disabled:opacity-50"
+                              >
+                                {deletingMovId === mov.id ? (
+                                  <RefreshCw size={12} className="animate-spin" />
+                                ) : (
+                                  <Trash2 size={12} />
+                                )}
+                              </button>
+                            </div>
                           </div>
                           
                           {!isEntry && mov.exit_reason && (
