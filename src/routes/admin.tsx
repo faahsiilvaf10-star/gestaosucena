@@ -1472,6 +1472,8 @@ function AdminRoute() {
                     { key: 'statusAlterado', label: 'Status Alterado (Equipamentos)' },
                     { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' },
                     { key: 'inicioJornadaApp', label: 'Início de Jornada (App)' },
+                    { key: 'equipamentoEntrada', label: 'Entrada de Equipamento' },
+                    { key: 'equipamentoSaida', label: 'Saída de Equipamento' },
                     { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
                     { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' }
                   ].map(t => (
@@ -1510,6 +1512,8 @@ function AdminRoute() {
                     {selectedTemplate === 'statusAlterado' && '{hora}, {equipamento}, {tag}, {placa}, {status}, {motorista}'}
                     {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
                     {selectedTemplate === 'inicioJornadaApp' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}'}
+                    {selectedTemplate === 'equipamentoEntrada' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}'}
+                    {selectedTemplate === 'equipamentoSaida' && '{hora}, {equipamento}, {tag}, {placa}, {motivo}, {motorista}'}
                     {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
                   </div>
                 </div>

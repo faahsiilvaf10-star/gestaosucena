@@ -20,6 +20,7 @@ import Sprout from 'lucide-react/dist/esm/icons/sprout.js';
 import CloudRain from 'lucide-react/dist/esm/icons/cloud-rain.js';
 import Car from 'lucide-react/dist/esm/icons/car.js';
 import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
+import LogIn from 'lucide-react/dist/esm/icons/log-in.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
@@ -93,6 +94,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
   const [gateReason, setGateReason] = useState('')
   const [gateDescription, setGateDescription] = useState('')
+  const [gateAction, setGateAction] = useState<'entry' | 'exit'>('exit')
 
   // Anomaly State
   const driverData = typeof window !== 'undefined' ? localStorage.getItem('app_motorista_driver') : null
@@ -257,7 +259,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       if (!equipmentId) return
 
       try {
-        const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', equipmentId).single()
+        const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('id', equipmentId).single()
         if (eq) {
           setEquipment(eq)
           localStorage.setItem(`app_motorista_eq_${equipmentId}`, JSON.stringify(eq))
@@ -299,8 +301,10 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
         if (isPastMidnight || isAlreadyFinished) {
           
           if (isPastMidnight && !isAlreadyFinished) {
-            // Auto-finaliza no banco local/offline
-            saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' }).catch()
+            // Auto-finaliza no banco local/offline.
+            // NÃO altera location_status: encerrar o turno não significa sair
+            // da obra. A localização só muda com registro em eq_movements.
+            saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado' }).catch()
             saveOfflineFirst('eq_driver_dispatch', 'UPDATE', {
               id: d.id,
               shift_end_time: new Date().toISOString(),
@@ -662,11 +666,12 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       if (wSettings.appMotoristaAlerts?.enabled !== false) {
         const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
         if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.statusAlterado) {
+          const currentEq = equipment || JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
           let text = wSettings.messageTemplates.statusAlterado
           text = text.replace('{hora}', format(now, 'HH:mm'))
-          text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-          text = text.replace('{tag}', equipment?.name || '-')
-          text = text.replace('{placa}', equipment?.plate_tag || '-')
+          text = text.replace('{equipamento}', currentEq?.name || currentEq?.type || '-')
+          text = text.replace('{tag}', currentEq?.name || '-')
+          text = text.replace('{placa}', currentEq?.plate_tag || '-')
           text = text.replace('{status}', eventName)
           const driverData = localStorage.getItem('app_motorista_driver')
           const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
@@ -851,7 +856,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       // -------------------------
 
       // Update Equipment status to "Finalizado" (turno encerrado, disponível para novo turno)
-      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado', location_status: 'outside' })
+      // NÃO altera location_status: encerrar a jornada não é registrar saída
+      // da obra. A localização é derivada exclusivamente de eq_movements.
+      await saveOfflineFirst('eq_equipments', 'UPDATE', { id: equipmentId, status: 'Finalizado' })
 
       localStorage.removeItem('app_motorista_current_dispatch')
       localStorage.removeItem('app_motorista_equipment_id')
@@ -919,9 +926,10 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
   }
 
   if (viewState === 'gate') {
-    const isExit = equipment?.location_status === 'inside'
+    const isCurrentlyOutside = equipment?.location_status === 'outside'
+    const isExit = gateAction === 'exit'
     const title = isExit ? 'SAÍDA DE EQUIPAMENTO' : 'ENTRADA DE EQUIPAMENTO'
-    
+
     const handleGateSubmit = async () => {
       if (isExit && !gateReason) {
         alert('Selecione um motivo para a saída.')
@@ -931,7 +939,8 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       try {
         const driverData = localStorage.getItem('app_motorista_driver')
         const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-        
+        const currentEq = equipment || JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
+
         await saveOfflineFirst('eq_movements', 'INSERT', {
           equipment_id: equipmentId,
           movement_type: isExit ? 'exit' : 'entry',
@@ -941,29 +950,48 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           created_at: new Date().toISOString()
         })
 
+        // Atualiza cache em eq_equipments diretamente (e compatível se houver trigger guard)
         await saveOfflineFirst('eq_equipments', 'UPDATE', {
           id: equipmentId,
           location_status: isExit ? 'outside' : 'inside',
           last_exit_reason: isExit ? gateReason : null,
           last_exit_description: isExit ? gateDescription : null,
           updated_at: new Date().toISOString()
-        })
+        }).catch(err => console.warn('eq_equipments location sync warning:', err))
         
         try {
           await sendEntryExitWhatsappNotification(
             isExit ? 'exit' : 'entry',
-            equipment,
+            currentEq,
             new Date(),
             isExit ? gateReason : undefined,
-            isExit ? gateDescription : undefined
+            isExit ? gateDescription : undefined,
+            driverName
           )
         } catch(e) {
           console.error("Failed to send WhatsApp from app-motorista", e)
         }
         
-        setEquipment((prev: any) => ({ ...prev, location_status: isExit ? 'outside' : 'inside' }))
+        const updatedEq = {
+          ...currentEq,
+          location_status: isExit ? 'outside' : 'inside',
+          last_exit_reason: isExit ? gateReason : null,
+          last_exit_description: isExit ? gateDescription : null,
+        }
+        setEquipment(updatedEq)
+        localStorage.setItem(`app_motorista_eq_${equipmentId}`, JSON.stringify(updatedEq))
+
+        // Adicionar evento na timeline do motorista
+        const tl = JSON.parse(localStorage.getItem('app_motorista_timeline') || '[]')
+        tl.push({
+          time: new Date().toISOString(),
+          name: isExit ? `Saída da Obra (${gateReason || 'Sem motivo'})` : 'Entrada na Obra',
+          type: isExit ? 'Fora da Obra' : 'Dentro da Obra',
+          color: isExit ? 'bg-orange-500' : 'bg-emerald-500'
+        })
+        localStorage.setItem('app_motorista_timeline', JSON.stringify(tl))
         
-        alert(`Equipamento registrado como ${isExit ? 'FORA' : 'DENTRO'} da obra.`)
+        alert(`Equipamento registrado como ${isExit ? 'FORA' : 'DENTRO'} da obra. Notificação enviada para o WhatsApp!`)
         setViewState('operating')
       } catch (err) {
         console.error(err)
@@ -979,11 +1007,42 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-1 active:opacity-70">
             &larr; Voltar
           </button>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 flex items-center justify-center">
-              <MapPin size={24} />
+          
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isExit ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400' : 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'}`}>
+                {isExit ? <LogOut size={24} /> : <LogIn size={24} />}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{title}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-500">Status atual:</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${isCurrentlyOutside ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'}`}>
+                    {isCurrentlyOutside ? 'Fora da Obra' : 'Dentro da Obra'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">{title}</h2>
+          </div>
+
+          {/* Seletor visual de Ação: Saída vs Entrada */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 dark:bg-zinc-900 rounded-2xl mb-4">
+            <button
+              type="button"
+              onClick={() => setGateAction('exit')}
+              className={`py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${gateAction === 'exit' ? 'bg-orange-500 text-white shadow-md scale-[1.02]' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+            >
+              <LogOut size={16} />
+              REGISTRAR SAÍDA
+            </button>
+            <button
+              type="button"
+              onClick={() => setGateAction('entry')}
+              className={`py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${gateAction === 'entry' ? 'bg-emerald-600 text-white shadow-md scale-[1.02]' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+            >
+              <LogIn size={16} />
+              REGISTRAR ENTRADA
+            </button>
           </div>
         </div>
 
@@ -991,11 +1050,11 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
           {isExit ? (
             <>
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Motivo da Saída</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">Motivo da Saída <span className="text-red-500">*</span></label>
                 <select 
                   value={gateReason}
                   onChange={e => setGateReason(e.target.value)}
-                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-white"
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm text-gray-900 dark:text-white"
                 >
                   <option value="">Selecione um motivo...</option>
                   <option value="preventive_maintenance">Manutenção Preventiva</option>
@@ -1007,28 +1066,40 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
               </div>
               
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Observações (Opcional)</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">Observações (Opcional)</label>
                 <input 
                   type="text" 
                   value={gateDescription}
                   onChange={e => setGateDescription(e.target.value)}
-                  placeholder="Detalhes..."
-                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm text-white"
+                  placeholder="Ex: Destino, oficina ou detalhes do serviço..."
+                  className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm text-gray-900 dark:text-white"
                 />
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              O equipamento está atualmente registrado como fora da obra. Deseja registrar o seu retorno?
-            </p>
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-2xl p-4 text-emerald-800 dark:text-emerald-200 space-y-4">
+              <p className="text-sm leading-relaxed">
+                Confirme a <strong>Entrada</strong> do equipamento de volta ao canteiro/obra. Esta movimentação será registrada com auditoria e notificada no grupo do WhatsApp.
+              </p>
+              <div>
+                <label className="text-xs font-semibold block mb-1">Observações da Entrada (Opcional)</label>
+                <input 
+                  type="text" 
+                  value={gateDescription}
+                  onChange={e => setGateDescription(e.target.value)}
+                  placeholder="Ex: Retorno de manutenção, combustível, etc..."
+                  className="w-full h-12 px-4 bg-white dark:bg-zinc-900 border border-emerald-300 dark:border-emerald-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+            </div>
           )}
 
           <button 
             onClick={handleGateSubmit}
             disabled={loadingFinish}
-            className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+            className={`w-full h-14 font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 text-white shadow-lg ${isExit ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/30' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'}`}
           >
-            {loadingFinish ? <Loader2 className="animate-spin" size={24} /> : 'CONFIRMAR'}
+            {loadingFinish ? <Loader2 className="animate-spin" size={24} /> : (isExit ? 'CONFIRMAR SAÍDA' : 'CONFIRMAR ENTRADA')}
           </button>
         </div>
       </div>
@@ -1755,6 +1826,8 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             label="ENTRADA/SAÍDA"
             color={{ bg: 'bg-gray-200 dark:bg-zinc-800', text: 'text-gray-800 dark:text-gray-200' }}
             onClick={() => {
+              const isCurrentlyOutside = equipment?.location_status === 'outside'
+              setGateAction(isCurrentlyOutside ? 'entry' : 'exit')
               setGateReason('')
               setGateDescription('')
               setViewState('gate')

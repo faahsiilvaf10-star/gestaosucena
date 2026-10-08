@@ -1,5 +1,6 @@
 import { getWhatsappSettings } from './settings'
 import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from './whatsapp-api'
+import { queueWhatsappMessage } from './offline-sync'
 import { supabase } from './supabase'
 import { toast } from 'sonner'
 
@@ -16,29 +17,44 @@ export async function sendEntryExitWhatsappNotification(
   equipment: { name: string; id: string; plate_tag?: string },
   actionDateTime: string | Date,
   exitReasonRaw?: string | null,
-  exitDescription?: string | null
+  exitDescription?: string | null,
+  driverName?: string | null
 ) {
   try {
     const whatsappSettings = await getWhatsappSettings()
-    if (!whatsappSettings?.equipamentosMovimentacao?.enabled) return
+    
+    // Coletar todos os destinatários configurados (grupo de movimentação e grupo do app motorista)
+    const targetNumbers = new Set<string>()
+    if (whatsappSettings.equipamentosMovimentacao?.enabled !== false) {
+      const num = whatsappSettings.equipamentosMovimentacao?.specificGroupId || whatsappSettings.groupId
+      if (num) targetNumbers.add(num)
+    }
+    if (whatsappSettings.appMotoristaAlerts?.enabled !== false) {
+      const num = whatsappSettings.appMotoristaAlerts?.specificGroupId || whatsappSettings.groupId
+      if (num) targetNumbers.add(num)
+    }
 
-    const number = whatsappSettings.equipamentosMovimentacao.specificGroupId || whatsappSettings.groupId
-    if (!number) return
+    if (targetNumbers.size === 0) return
 
     const d = new Date(actionDateTime)
     const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' de ' + d.toLocaleDateString('pt-BR')
 
     let msg = ''
     if (type === 'entry') {
-      msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_'
+      msg = whatsappSettings.messageTemplates?.equipamentoEntrada || '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n👤 *Motorista:* {motorista}\n\n_Mensagem automática - Sucena_'
     } else {
-      msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_'
+      msg = whatsappSettings.messageTemplates?.equipamentoSaida || '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n👤 *Motorista:* {motorista}\n\n_Mensagem automática - Sucena_'
     }
 
+    const eqName = equipment?.name || 'Equipamento'
+    const eqPlate = equipment?.plate_tag || 'N/A'
+    const eqTag = equipment?.id ? equipment.id.substring(0, 8).toUpperCase() : eqName
+
     msg = msg.replace('{hora}', hora)
-    msg = msg.replace('{equipamento}', equipment.name)
-    msg = msg.replace('{placa}', equipment.plate_tag || 'N/A')
-    msg = msg.replace('{tag}', equipment.id.substring(0, 8).toUpperCase())
+    msg = msg.replace('{equipamento}', eqName)
+    msg = msg.replace('{placa}', eqPlate)
+    msg = msg.replace('{tag}', eqTag)
+    msg = msg.replace('{motorista}', driverName || 'Não informado')
 
     if (type === 'exit') {
       const reasonLabel = (exitReasonRaw && EXIT_REASONS_MAP[exitReasonRaw]) || exitReasonRaw || 'Não informado'
@@ -46,42 +62,13 @@ export async function sendEntryExitWhatsappNotification(
       msg = msg.replace('{motivo}', motivoText)
     }
 
-    try {
-      const serverRes = await sendWhatsappTextOnServer({
-        data: {
-          url: whatsappSettings.url,
-          instanceId: whatsappSettings.instanceId,
-          token: whatsappSettings.token,
-          phone: number,
-          text: msg
-        }
-      })
-      if (!serverRes?.success) throw new Error("ServerFn returned false success");
-    } catch (serverErr) {
-      console.warn("ServerFn failed, attempting direct fetch fallback...", serverErr);
-      
-      let baseUrl = whatsappSettings.url.trim()
-      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-      if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
-      else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) baseUrl = baseUrl + '/v1'
-
-      const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
-      const payload = { number, phone: number, text: msg, message: msg }
-      
-      let res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${whatsappSettings.token}`,
-          'apikey': whatsappSettings.token
-        },
-        body: JSON.stringify(payload)
-      })
-      if (res.status === 404) {
-        const fallback = endpoint.includes('/message/') ? endpoint.replace('/message/', '/messages/') : endpoint.replace('/messages/', '/message/');
-        res = await fetch(fallback, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${whatsappSettings.token}`, 'apikey': whatsappSettings.token }, body: JSON.stringify(payload) });
+    // Disparar para cada grupo alvo usando a fila offline-first resiliente
+    for (const phone of targetNumbers) {
+      try {
+        await queueWhatsappMessage(whatsappSettings, phone, msg)
+      } catch (err) {
+        console.warn(`Falha ao enviar WP movimentação para ${phone}:`, err)
       }
-      if (!res.ok) throw new Error("Direct fetch failed: " + await res.text())
     }
   } catch (error: any) {
     console.error('Error sending Entry/Exit WhatsApp Notification:', error)
