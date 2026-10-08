@@ -28,6 +28,10 @@ import { cn } from '../../lib/utils'
 import { getWhatsappSettings } from '../../lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { sendEntryExitWhatsappNotification } from '@/lib/whatsappHelpers'
+import { isOutside, locationFromMovements, MovementRecord, EXIT_REASONS as LOCATION_EXIT_REASONS } from '@/lib/equipamentos/locationStatus'
+
+// EXIT_REASONS passou a ter fonte única em @/lib/equipamentos/locationStatus.
+const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
 
 export const Route = createFileRoute('/equipamentos/entrada-saida')({
   component: EntradaSaidaPage,
@@ -38,9 +42,9 @@ interface Equipment {
   name: string
   plate_tag: string
   category?: string
-  location_status?: 'inside' | 'outside' // Added by schema
-  last_exit_reason?: string
-  last_exit_description?: string
+  location_status?: 'inside' | 'outside' | null // Cache derivado de eq_movements pelo trigger
+  last_exit_reason?: string | null
+  last_exit_description?: string | null
   updated_at: string
 }
 
@@ -53,14 +57,6 @@ interface Movement {
   created_at: string
   created_by: string | null
 }
-
-const EXIT_REASONS = [
-  { value: 'preventive_maintenance', label: 'Manutenção Preventiva' },
-  { value: 'corrective_maintenance', label: 'Manutenção Corretiva' },
-  { value: 'inspection', label: 'Vistoria' },
-  { value: 'external_service', label: 'Serviço Externo' },
-  { value: 'other', label: 'Outro' },
-]
 
 function EntradaSaidaPage() {
   const { isDark } = useTheme()
@@ -107,12 +103,65 @@ function EntradaSaidaPage() {
       setError(null)
       if (!isRefreshing) setLoading(true)
       
-      const { data, error: sbError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .order('name', { ascending: true })
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
 
-      if (sbError) throw sbError
-      setEquipments(data || [])
+      const [eqRes, movRes] = await Promise.all([
+        supabase
+          .from('eq_equipments')
+          .select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description')
+          .eq('environment', currentEnv)
+          .order('name', { ascending: true }),
+        supabase
+          .from('eq_movements')
+          .select('id, equipment_id, movement_type, exit_reason, description, created_at, created_by')
+          .order('created_at', { ascending: false })
+      ])
+
+      if (eqRes.error) throw eqRes.error
+
+      const movementsByEq = new Map<string, MovementRecord[]>()
+      if (movRes.data) {
+        for (const m of movRes.data) {
+          if (!movementsByEq.has(m.equipment_id)) {
+            movementsByEq.set(m.equipment_id, [])
+          }
+          movementsByEq.get(m.equipment_id)!.push(m)
+        }
+      }
+
+      const reconciledEquipments = (eqRes.data || []).map(eq => {
+        const movements = movementsByEq.get(eq.id) || []
+        const lastMov = movements[0]
+        
+        // REGRA DE OURO:
+        // Só está 'outside' se houver um registro de movimento do tipo 'exit'.
+        // Sem movimento de saída => 'inside' (Dentro da Obra).
+        const derivedStatus = locationFromMovements(movements) ?? 'inside'
+        const derivedReason = derivedStatus === 'outside' ? (lastMov?.exit_reason || eq.last_exit_reason) : null
+        const derivedDesc = derivedStatus === 'outside' ? (lastMov?.description || eq.last_exit_description) : null
+
+        // Auto-reconcilia o cache na tabela eq_equipments se estiver divergente
+        if (eq.location_status !== derivedStatus || (eq.last_exit_reason || null) !== (derivedReason || null)) {
+          supabase
+            .from('eq_equipments')
+            .update({
+              location_status: derivedStatus,
+              last_exit_reason: derivedReason,
+              last_exit_description: derivedDesc
+            })
+            .eq('id', eq.id)
+            .then()
+        }
+
+        return {
+          ...eq,
+          location_status: derivedStatus,
+          last_exit_reason: derivedReason,
+          last_exit_description: derivedDesc
+        }
+      })
+
+      setEquipments(reconciledEquipments)
     } catch (err: any) {
       console.error('Error fetching equipments:', err)
       setError('Não foi possível carregar os equipamentos.')
@@ -127,7 +176,10 @@ function EntradaSaidaPage() {
 
     const subscription = supabase
       .channel('eq_equipments_changes_es')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'eq_equipments' }, payload => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
+        fetchEquipments()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_movements' }, () => {
         fetchEquipments()
       })
       .subscribe()
@@ -199,13 +251,16 @@ function EntradaSaidaPage() {
     if (!selectedEq) return
     setIsSaving(true)
     try {
-      // Check current status
-      const { data: currentEq } = await supabase
-        .from('eq_equipments').select('location_status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .eq('id', selectedEq.id)
-        .single()
+      // Fonte de verdade: o último movimento registrado em eq_movements
+      const { data: lastMovements } = await supabase
+        .from('eq_movements')
+        .select('movement_type, created_at')
+        .eq('equipment_id', selectedEq.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (currentEq?.location_status === 'inside') {
+      const lastMovement = lastMovements?.[0]
+      if (lastMovement?.movement_type === 'entry' || (!lastMovement && selectedEq.location_status === 'inside')) {
         toast.error('Este equipamento já está dentro da obra. Atualize a página.')
         setIsEntryModalOpen(false)
         fetchEquipments()
@@ -214,38 +269,42 @@ function EntradaSaidaPage() {
 
       const userName = await getUserName()
 
-      // Record movement
+      // Registra a movimentação em eq_movements
       const { error: moveError } = await supabase
         .from('eq_movements')
         .insert({
           equipment_id: selectedEq.id,
           movement_type: 'entry',
           created_by: userName,
-          created_at: new Date(actionDateTime).toISOString()
+          created_at: new Date(actionDateTime).toISOString(),
+          environment: typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
         })
 
       if (moveError) throw moveError
 
-      // Update equipment
-      const { error: updateError } = await supabase
+      const timestamp = new Date(actionDateTime).toISOString()
+      const payload = {
+        equipment_id: selectedEq.id,
+        movement_type: 'entry',
+        created_by: userName,
+        created_at: timestamp
+      };
+
+      // Atualiza o equipamento para 'inside', limpando motivos de saída
+      const { error: touchError } = await supabase
         .from('eq_equipments')
         .update({
           location_status: 'inside',
           last_exit_reason: null,
           last_exit_description: null,
-          updated_at: new Date(actionDateTime).toISOString()
+          updated_at: timestamp
         })
         .eq('id', selectedEq.id)
 
-      if (updateError) throw updateError
-      
-      const payload = {
-        equipment_id: selectedEq.id,
-        movement_type: 'entry',
-        created_by: userName,
-        created_at: new Date(actionDateTime).toISOString()
-      };
-      
+      if (touchError) {
+        console.warn('Falha ao atualizar eq_equipments:', touchError.message)
+      }
+
       // Broadcast para os outros clientes
       supabase.channel('global_eq_movements').send({
         type: 'broadcast',
@@ -301,13 +360,16 @@ function EntradaSaidaPage() {
 
     setIsSaving(true)
     try {
-      // Check current status
-      const { data: currentEq } = await supabase
-        .from('eq_equipments').select('location_status').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .eq('id', selectedEq.id)
-        .single()
+      // Fonte de verdade: o último movimento registrado em eq_movements
+      const { data: lastMovements } = await supabase
+        .from('eq_movements')
+        .select('movement_type, created_at')
+        .eq('equipment_id', selectedEq.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (currentEq?.location_status === 'outside') {
+      const lastMovement = lastMovements?.[0]
+      if (lastMovement?.movement_type === 'exit') {
         toast.error('Este equipamento já está fora da obra. Atualize a página.')
         setIsExitModalOpen(false)
         fetchEquipments()
@@ -316,7 +378,7 @@ function EntradaSaidaPage() {
 
       const userName = await getUserName()
 
-      // Record movement
+      // Registra a saída em eq_movements
       const { error: moveError } = await supabase
         .from('eq_movements')
         .insert({
@@ -325,34 +387,38 @@ function EntradaSaidaPage() {
           exit_reason: exitReason,
           description: exitDescription.trim() || null,
           created_by: userName,
-          created_at: new Date(actionDateTime).toISOString()
+          created_at: new Date(actionDateTime).toISOString(),
+          environment: typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
         })
 
       if (moveError) throw moveError
 
-      // Update equipment
-      const { error: updateError } = await supabase
+      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
+      const timestamp = new Date(actionDateTime).toISOString()
+
+      const payload = {
+        equipment_id: selectedEq.id,
+        movement_type: 'exit',
+        created_by: userName,
+        created_at: timestamp,
+        exit_reason: reasonLabel,
+        description: exitDescription.trim() || null
+      };
+
+      // Atualiza o equipamento para 'outside' com o motivo e descrição
+      const { error: touchError } = await supabase
         .from('eq_equipments')
         .update({
           location_status: 'outside',
           last_exit_reason: exitReason,
           last_exit_description: exitDescription.trim() || null,
-          updated_at: new Date(actionDateTime).toISOString()
+          updated_at: timestamp
         })
         .eq('id', selectedEq.id)
 
-      if (updateError) throw updateError
-      
-      const reasonLabel = EXIT_REASONS.find(r => r.value === exitReason)?.label || exitReason
-      
-      const payload = {
-        equipment_id: selectedEq.id,
-        movement_type: 'exit',
-        created_by: userName,
-        created_at: new Date(actionDateTime).toISOString(),
-        exit_reason: reasonLabel,
-        description: exitDescription.trim() || null
-      };
+      if (touchError) {
+        console.warn('Falha ao atualizar eq_equipments:', touchError.message)
+      }
 
       // Broadcast para os outros clientes
       supabase.channel('global_eq_movements').send({
@@ -502,12 +568,14 @@ function EntradaSaidaPage() {
 
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
-      const isInside = eq.location_status !== 'outside' // Default to inside if null
-      
+      // Só existe "fora da obra" com registro de saída no banco. Sem
+      // movimento, o equipamento é tratado como dentro.
+      const isInside = isOutside(eq) === false
+
       if (filterStatus === 'Dentro da Obra' && !isInside) return false
       if (filterStatus === 'Fora da Obra' && isInside) return false
       if (filterCategory !== 'Todas as categorias' && eq.category !== filterCategory) return false
-      
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matchName = eq.name?.toLowerCase().includes(query)
@@ -524,7 +592,7 @@ function EntradaSaidaPage() {
     let outside = 0
 
     equipments.forEach(eq => {
-      if (eq.location_status === 'outside') outside++
+      if (isOutside(eq)) outside++
       else inside++
     })
 
@@ -689,7 +757,7 @@ function EntradaSaidaPage() {
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
                       {filteredEquipments.map(eq => {
-                        const isInside = eq.location_status !== 'outside'
+                        const isInside = !isOutside(eq)
                         return (
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
                             <td className="p-4 font-bold text-base">{eq.name}</td>
@@ -748,7 +816,7 @@ function EntradaSaidaPage() {
                 {/* Mobile Cards */}
                 <div className="md:hidden flex flex-col gap-3 p-4">
                   {filteredEquipments.map(eq => {
-                    const isInside = eq.location_status !== 'outside'
+                    const isInside = !isOutside(eq)
                     return (
                       <div key={eq.id} className={`w-full p-4 rounded-2xl border flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                         <div className="flex items-start justify-between gap-2">

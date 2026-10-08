@@ -178,35 +178,31 @@ function RDOPage() {
         
       const movs = movements || [];
 
-      const filtered = (allEqs || []).filter(eq => {
-        const eqMovs = movs.filter(m => m.equipment_id === eq.id);
-        
-        if (eqMovs.length === 0) {
-          // If no movements exist before this date, we look at the current location_status
-          // This ensures backward compatibility for equipments without history
-          return eq.location_status === 'inside';
-        }
-
-        const lastMov = eqMovs[0];
-        
-        // If the last movement before the end of the day is an entry, it was inside
-        if (lastMov.movement_type === 'entry') return true;
-        
-        // If the last movement is an exit, it was outside at the end of the day.
-        // BUT if it exited ON THIS DAY, it was inside for part of the day, so it should be included.
-        if (lastMov.movement_type === 'exit' && lastMov.created_at >= startDate) {
-           return true;
-        }
-
-        return false;
-      }).map(eq => {
+      const filtered = (allEqs || []).map(eq => {
         const eqMovs = movs.filter(m => m.equipment_id === eq.id);
         const lastMov = eqMovs[0];
-        // If it exited on this day, we want to show the exit time
-        if (lastMov && lastMov.movement_type === 'exit' && lastMov.created_at >= startDate) {
-          const time = new Date(lastMov.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        if (lastMov?.movement_type === 'exit') {
+          // Saiu em dia anterior: o equipamento já estava FORA no dia inteiro.
+          // Antes retornava `false` e ele sumia do relatório sem qualquer
+          // indicação — falha silenciosa.
+          if (lastMov.created_at < startDate) {
+            const since = new Date(lastMov.created_at).toLocaleString('pt-BR', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+            });
+            return { ...eq, outsideSince: since };
+          }
+          // Saiu neste dia: trabalhou parte do dia. Mostramos o horário.
+          const time = new Date(lastMov.created_at).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
           return { ...eq, exitTime: time };
         }
+
+        // Último movimento é entrada, ou nunca houve movimento algum.
+        // Sem registro de saída não existe "fora da obra".
         return eq;
       });
 
@@ -578,16 +574,23 @@ function RDOPage() {
       return cat.includes('leve') || cat.includes('canteiro') || eq.name.toUpperCase().includes('SUC 01'); // explicitly include SUC 01 just in case
     };
     const isJardinagem = (eq: any) => (eq.category || '').toLowerCase().includes('jardinagem');
+    // Já estava fora da obra no dia inteiro (saída registrada em dia anterior).
+    // Não contam como equipamentos em operação no relatório.
+    const jaForaDesdeAntes = (eq: any) => !!eq.outsideSince;
+    const labelFora = (eq: any) => ` (Fora desde ${eq.outsideSince})`;
 
     const eqPesados = equipamentos.filter(eq => !isJardinagem(eq) && !isLeveOuCanteiro(eq));
     const eqLeves = equipamentos.filter(eq => isLeveOuCanteiro(eq));
 
-    lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesados.length})`);
-    if (eqPesados.length > 0) {
-      eqPesados.forEach(eq => {
+    const eqPesadosNaObra = eqPesados.filter(eq => !jaForaDesdeAntes(eq));
+    const eqLevesNaObra = eqLeves.filter(eq => !jaForaDesdeAntes(eq));
+
+    lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesadosNaObra.length})`);
+    if (eqPesadosNaObra.length > 0) {
+      eqPesadosNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if ((eq as any).exitTime) {
-          eqNameStr += ` (Saiu às ${(eq as any).exitTime})`;
+        if (eq.exitTime) {
+          eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
       });
@@ -595,19 +598,35 @@ function RDOPage() {
       lines.push(`Nenhum equipamento pesado na obra.`);
     }
 
+    if (eqPesados.some(jaForaDesdeAntes)) {
+      lines.push('');
+      lines.push(`⛔ FORA DA OBRA (${eqPesados.filter(jaForaDesdeAntes).length})`);
+      eqPesados.filter(jaForaDesdeAntes).forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}${labelFora(eq)}`);
+      });
+    }
+
     lines.push('');
 
-    lines.push(`✅ EQUIPAMENTOS LEVES E CANTEIRO (${eqLeves.length})`);
-    if (eqLeves.length > 0) {
-      eqLeves.forEach(eq => {
+    lines.push(`✅ EQUIPAMENTOS LEVES E CANTEIRO (${eqLevesNaObra.length})`);
+    if (eqLevesNaObra.length > 0) {
+      eqLevesNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if ((eq as any).exitTime) {
-          eqNameStr += ` (Saiu às ${(eq as any).exitTime})`;
+        if (eq.exitTime) {
+          eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
       });
     } else {
       lines.push(`Nenhum equipamento leve ou de canteiro na obra.`);
+    }
+
+    if (eqLeves.some(jaForaDesdeAntes)) {
+      lines.push('');
+      lines.push(`⛔ FORA DA OBRA - LEVES/CANTEIRO (${eqLeves.filter(jaForaDesdeAntes).length})`);
+      eqLeves.filter(jaForaDesdeAntes).forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}${labelFora(eq)}`);
+      });
     }
 
     return lines.join('\n');

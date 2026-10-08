@@ -120,7 +120,7 @@ Abaixo estão os dados reais do sistema neste exato momento:
 ${products ? products.map(p => `- Produto: ${p.name} | Estoque: ${p.current_stock || p.current_quantity || 0} ${p.unit_of_measure}`).join('\n') : 'Sem dados'}
 
 ### EQUIPAMENTOS (FROTA) - STATUS ATUAL
-${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status === 'inside' ? 'Na Base/Estação' : e.location_status === 'outside' ? 'Em Rota/Fora' : e.location_status}`).join('\n') : 'Sem dados'}
+${equipments ? equipments.map(e => `- Eqp: ${e.name} (${e.plate_tag}) | Tipo: ${e.type} | Status: ${e.location_status === 'outside' ? 'Em Rota/Fora (saída registrada)' : 'Na Base/Obra (sem saída registrada)'}`).join('\n') : 'Sem dados'}
 
 ### ÚLTIMAS 20 MOVIMENTAÇÕES DE EQUIPAMENTOS (ENTRADAS/SAÍDAS)
 ${movements ? movements.map(m => {

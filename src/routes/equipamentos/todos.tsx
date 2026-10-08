@@ -14,14 +14,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
+import {
+  EXIT_REASONS as LOCATION_EXIT_REASONS,
+  isOutside,
+  locationFromMovements,
+  MovementRecord
+} from '../../lib/equipamentos/locationStatus'
 
-const EXIT_REASONS = [
-  { value: 'preventive_maintenance', label: 'Manutenção Preventiva' },
-  { value: 'corrective_maintenance', label: 'Manutenção Corretiva' },
-  { value: 'inspection', label: 'Vistoria' },
-  { value: 'external_service', label: 'Serviço Externo' },
-  { value: 'other', label: 'Outro' },
-]
+const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
 
 export const Route = createFileRoute('/equipamentos/todos')({
   component: TodosEquipamentosPage,
@@ -34,9 +34,9 @@ interface Equipment {
   type: string
   status?: string // kept for legacy
   category?: string
-  location_status?: 'inside' | 'outside'
-  last_exit_reason?: string
-  last_exit_description?: string
+  location_status?: 'inside' | 'outside' | null // Cache derivado de eq_movements
+  last_exit_reason?: string | null
+  last_exit_description?: string | null
   created_at: string
   updated_at: string
 }
@@ -75,12 +75,48 @@ function TodosEquipamentosPage() {
       setError(null)
       if (!isRefreshing) setLoading(true)
       
-      const { data, error: sbError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .order('name', { ascending: true })
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
 
-      if (sbError) throw sbError
-      setEquipments(data || [])
+      const [eqRes, movRes] = await Promise.all([
+        supabase
+          .from('eq_equipments')
+          .select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description')
+          .eq('environment', currentEnv)
+          .order('name', { ascending: true }),
+        supabase
+          .from('eq_movements')
+          .select('id, equipment_id, movement_type, exit_reason, description, created_at, created_by')
+          .order('created_at', { ascending: false })
+      ])
+
+      if (eqRes.error) throw eqRes.error
+
+      const movementsByEq = new Map<string, MovementRecord[]>()
+      if (movRes.data) {
+        for (const m of movRes.data) {
+          if (!movementsByEq.has(m.equipment_id)) {
+            movementsByEq.set(m.equipment_id, [])
+          }
+          movementsByEq.get(m.equipment_id)!.push(m)
+        }
+      }
+
+      const reconciledEquipments = (eqRes.data || []).map(eq => {
+        const movements = movementsByEq.get(eq.id) || []
+        const lastMov = movements[0]
+        const derivedStatus = locationFromMovements(movements) ?? 'inside'
+        const derivedReason = derivedStatus === 'outside' ? (lastMov?.exit_reason || eq.last_exit_reason) : null
+        const derivedDesc = derivedStatus === 'outside' ? (lastMov?.description || eq.last_exit_description) : null
+
+        return {
+          ...eq,
+          location_status: derivedStatus,
+          last_exit_reason: derivedReason,
+          last_exit_description: derivedDesc
+        }
+      })
+
+      setEquipments(reconciledEquipments)
     } catch (err: any) {
       console.error('Error fetching equipments:', err)
       setError('Não foi possível carregar os equipamentos.')
@@ -94,9 +130,12 @@ function TodosEquipamentosPage() {
     fetchEquipments()
 
     const subscription = supabase
-      .channel('eq_equipments_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, payload => {
-        fetchEquipments() // Refetch to keep simple and consistent
+      .channel('eq_equipments_changes_all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
+        fetchEquipments()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_movements' }, () => {
+        fetchEquipments()
       })
       .subscribe()
 
@@ -174,7 +213,8 @@ function TodosEquipamentosPage() {
           name: newName.trim(),
           plate_tag: newPlate.trim(),
           type: newType.trim() || 'Caminhão Pipa',
-          category: newCategory
+          category: newCategory,
+          location_status: 'inside'
         })
 
       if (insertError) throw insertError
@@ -195,8 +235,11 @@ function TodosEquipamentosPage() {
 
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
-      const isInside = eq.location_status !== 'outside'
-      const eqStatus = isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+      // Fora da obra = existe registro de saída. Sem movimento => dentro.
+      const outside = isOutside(eq)
+      const eqStatus = outside
+        ? (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+        : 'Operando'
 
       if (filterStatus !== 'Todos' && eqStatus !== filterStatus) {
         return false
@@ -218,10 +261,10 @@ function TodosEquipamentosPage() {
     let stopped = 0
 
     equipments.forEach(eq => {
-      const isInside = eq.location_status !== 'outside'
-      if (isInside) operation++
-      else if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') maintenance++
-      else stopped++
+      if (isOutside(eq)) {
+        if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') maintenance++
+        else stopped++
+      } else operation++
     })
 
     return {
@@ -233,16 +276,18 @@ function TodosEquipamentosPage() {
   }, [equipments])
 
   const getStatusBadge = (eq: Equipment) => {
-    const isInside = eq.location_status !== 'outside'
-    const statusText = isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+    const outside = isOutside(eq)
+    const statusText = outside
+      ? (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+      : 'Operando'
 
     return (
       <div className="relative group/tooltip inline-block">
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${ isInside ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' }`}>
-          {isInside ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${ outside ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' }`}>
+          {outside ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
           {statusText}
         </span>
-        {!isInside && eq.last_exit_description && (
+        {outside && eq.last_exit_description && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-white text-black text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
             <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Observação</div>
             {eq.last_exit_description}

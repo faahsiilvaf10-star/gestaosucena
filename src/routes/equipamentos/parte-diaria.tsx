@@ -34,6 +34,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getEquipmentActivities, setEquipmentActivities, EquipmentActivity, getWhatsappSettings } from '@/lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
+import { isUnderMaintenance } from '@/lib/equipamentos/locationStatus'
 
 export const ICON_MAP: Record<string, any> = {
   Waves, Droplet, Sprout, Fuel, CloudRain, Car, MapPin, Truck
@@ -318,8 +319,7 @@ function ParteDiariaPage() {
           }
           if (
             statusLower.includes('manuten') || 
-            (vehicle.location_status === 'outside' && 
-             (vehicle.last_exit_reason === 'corrective_maintenance' || vehicle.last_exit_reason === 'preventive_maintenance'))
+            isUnderMaintenance(vehicle)
           ) {
             countManutencao++
             isManutencao = true
@@ -410,9 +410,14 @@ function ParteDiariaPage() {
       }
 
       // 4. Reseta o status do equipamento para 'Disponível'
+      //    ATENÇÃO: NÃO altera `location_status`. A localização é controlada
+      //    exclusivamente pelo registro de portaria (eq_movements). Gravar
+      //    'outside' aqui marcava o veículo como fora da obra sem existir
+      //    registro de saída — era a causa dos equipamentos "fora da obra"
+      //    fantasma (CP 02/04/05/06).
       await supabase
         .from('eq_equipments')
-        .update({ status: 'Disponível', location_status: 'outside' })
+        .update({ status: 'Disponível' })
         .eq('id', vehicleId)
 
       // 5. Envia comando remoto de reset para o APK do motorista

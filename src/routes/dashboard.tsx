@@ -11,6 +11,7 @@ import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { isOutside, isUnderMaintenance } from '../lib/equipamentos/locationStatus'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
@@ -196,17 +197,22 @@ function DashboardComponent() {
       data?.forEach(eq => {
         totalEquipments++
         const isVehicle = eq.category === 'Leve' || eq.category === 'Equipamento Pesado'
-        
+
+        // "Operando" = dentro da obra (sem registro de saída). Não pode ser o
+        // campo operacional `status`, que muda a cada turno e não tem relação
+        // com portaria.
+        const dentroDaObra = !isOutside(eq)
+
         if (isVehicle) {
           totalVehicles++
-          const isOperando = eq.status === 'Operando'
-          if (isOperando) {
+          if (dentroDaObra) {
             operacaoCount++
             operacaoList.push(eq)
           }
         }
 
-        if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') {
+        // Manutenção só conta se HÁ registro de saída com motivo de manutenção.
+        if (isUnderMaintenance(eq)) {
           manutencaoCount++
           manutencaoList.push(eq)
         }
