@@ -11,7 +11,7 @@ import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { isOutside, isUnderMaintenance } from '../lib/equipamentos/locationStatus'
+import { isOutside, isUnderMaintenance, locationFromMovements, MovementRecord } from '../lib/equipamentos/locationStatus'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
@@ -184,9 +184,31 @@ function DashboardComponent() {
   const { data: eqData } = useQuery({
     queryKey: ['equipments_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('eq_equipments').select('location_status, status, last_exit_reason, name, plate_tag, type, category, updated_at').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-      if (error) throw error
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+
+      const [eqResult, movResult] = await Promise.all([
+        supabase
+          .from('eq_equipments')
+          .select('id, location_status, status, last_exit_reason, last_exit_description, name, plate_tag, type, category, updated_at')
+          .eq('environment', currentEnv),
+        supabase
+          .from('eq_movements')
+          .select('id, equipment_id, movement_type, exit_reason, description, created_at')
+          .order('created_at', { ascending: false })
+      ])
+
+      if (eqResult.error) throw eqResult.error
       
+      const movementsByEq = new Map<string, MovementRecord[]>()
+      if (movResult.data) {
+        for (const m of movResult.data) {
+          if (!movementsByEq.has(m.equipment_id)) {
+            movementsByEq.set(m.equipment_id, [])
+          }
+          movementsByEq.get(m.equipment_id)!.push(m)
+        }
+      }
+
       let operacaoCount = 0
       let manutencaoCount = 0
       let totalVehicles = 0
@@ -194,27 +216,39 @@ function DashboardComponent() {
       let operacaoList: any[] = []
       let manutencaoList: any[] = []
       
-      data?.forEach(eq => {
+      eqResult.data?.forEach(eq => {
         totalEquipments++
-        const isVehicle = eq.category === 'Leve' || eq.category === 'Equipamento Pesado'
+        const isJardinagem = (eq.category || '').toLowerCase().includes('jardinagem')
+        const isVehicle = !isJardinagem // Frota operacional de veículos e equipamentos (Pesados, Leves, Canteiro)
 
-        // "Operando" = dentro da obra (sem registro de saída). Não pode ser o
-        // campo operacional `status`, que muda a cada turno e não tem relação
-        // com portaria.
-        const dentroDaObra = !isOutside(eq)
+        const eqMovements = movementsByEq.get(eq.id) || []
+        // Fonte única e absoluta de verdade: histórico de portaria
+        const derivedStatus = locationFromMovements(eqMovements) ?? (eq.location_status === 'outside' ? 'outside' : 'inside')
+        const dentroDaObra = derivedStatus === 'inside'
+        const foraDaObra = derivedStatus === 'outside'
+
+        const lastMov = eqMovements[0]
+        const currentExitReason = foraDaObra ? (lastMov?.exit_reason || eq.last_exit_reason) : null
 
         if (isVehicle) {
           totalVehicles++
           if (dentroDaObra) {
             operacaoCount++
-            operacaoList.push(eq)
+            operacaoList.push({
+              ...eq,
+              location_status: 'inside'
+            })
           }
         }
 
-        // Manutenção só conta se HÁ registro de saída com motivo de manutenção.
-        if (isUnderMaintenance(eq)) {
+        // Manutenção só conta se estiver fora da obra por motivo de manutenção
+        if (foraDaObra && (currentExitReason === 'preventive_maintenance' || currentExitReason === 'corrective_maintenance')) {
           manutencaoCount++
-          manutencaoList.push(eq)
+          manutencaoList.push({
+            ...eq,
+            last_exit_reason: currentExitReason,
+            updated_at: lastMov?.created_at || eq.updated_at
+          })
         }
       })
       
@@ -222,7 +256,8 @@ function DashboardComponent() {
       manutencaoList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }))
       
       return { operacao: operacaoCount, manutencao: manutencaoCount, operacaoList, manutencaoList, totalVehicles, totalEquipments }
-    }
+    },
+    refetchInterval: 15000
   })
 
   // Calcular aniversariantes do mês
@@ -267,6 +302,22 @@ function DashboardComponent() {
   .sort((a: any, b: any) => a.day - b.day)
 
   const aniversariantesHoje = aniversariantesMes.filter((a: any) => a.day === hojeDay)
+
+  useEffect(() => {
+    const sub = supabase
+      .channel('dashboard_equipments_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['equipments_dashboard'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_movements' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['equipments_dashboard'] })
+      })
+      .subscribe()
+
+    return () => {
+      sub.unsubscribe()
+    }
+  }, [queryClient])
 
   useEffect(() => {
     if (aniversariantesHoje.length > 0) {
@@ -652,21 +703,30 @@ function DashboardComponent() {
           >
             {/* Tooltip Em Operação */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
-            <div className="absolute top-[105%] left-1/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-light mb-2 text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Operação</h4>
+            <div className="absolute top-[105%] left-1/4 -translate-x-1/2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-2 mb-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Na Obra ({eqData?.operacaoList?.length || 0})</h4>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Dentro da Obra</span>
+              </div>
               {eqData?.operacaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.operacaoList.map((eq: any, i: number) => (
-                    <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-1 last:border-0">
+                    <li key={i} className="flex flex-col border-b border-gray-50 dark:border-white/5 pb-1.5 last:border-0">
                       <div className="flex justify-between items-center">
-                        <span className="font-light text-blue-600 dark:text-blue-400 uppercase">{eq.plate_tag || 'S/N'}</span>
-                        <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
+                        <span className="font-mono text-blue-600 dark:text-blue-400 uppercase font-semibold">{eq.plate_tag || 'S/N'}</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium truncate ml-2 text-right">{eq.name || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 mt-0.5">
+                        <span className="capitalize">{eq.category || 'Equipamento'}</span>
+                        <span className={eq.status === 'Operando' ? 'text-blue-500 font-medium' : 'text-emerald-500 font-medium'}>
+                          {eq.status === 'Operando' ? 'Operando' : 'Na Base'}
+                        </span>
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-gray-500">Nenhum equipamento.</p>
+                <p className="text-xs text-gray-500">Nenhum equipamento na obra.</p>
               )}
             </div>
             
