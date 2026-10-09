@@ -68,7 +68,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   
   const { canView } = usePermissions(currentUser.id)
   const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null
-  const contractNumber = currentEnv === 'hydro-civil' ? 'Hydro Civil' : '4600012690'
+  const envDisplayName = currentEnv === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO'
 
   const visibleMenuItems = MENU_ITEMS.filter(item => {
     // Se a página está sob controle de acesso, checamos a permissão
@@ -209,8 +209,8 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
                 style={{ height: 28, width: 'auto', objectFit: 'contain' }}
               />
               <div className="sucena-drawer-contract">
-                <span className="sucena-drawer-contract-label">Contrato</span>
-                <span className="sucena-drawer-contract-number">{contractNumber}</span>
+                <span className="sucena-drawer-contract-label">Ambiente</span>
+                <span className="sucena-drawer-contract-number">{envDisplayName}</span>
               </div>
             </div>
             <button
@@ -318,8 +318,8 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           <div className="nav-contract">
             <div className="contract-top">
               <div className="contract-info">
-                <span className="contract-label">Contrato</span>
-                <strong className="contract-number">{contractNumber}</strong>
+                <span className="contract-label">Ambiente</span>
+                <strong className="contract-number">{envDisplayName}</strong>
               </div>
             </div>
             <div className="nav-avatar-area">
