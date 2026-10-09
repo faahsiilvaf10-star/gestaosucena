@@ -668,14 +668,14 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
         if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.statusAlterado) {
           const currentEq = equipment || JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
           let text = wSettings.messageTemplates.statusAlterado
-          text = text.replace('{hora}', format(now, 'HH:mm'))
-          text = text.replace('{equipamento}', currentEq?.name || currentEq?.type || '-')
-          text = text.replace('{tag}', currentEq?.name || '-')
-          text = text.replace('{placa}', currentEq?.plate_tag || '-')
-          text = text.replace('{status}', eventName)
+          text = text.replaceAll('{hora}', format(now, 'HH:mm'))
+          text = text.replaceAll('{equipamento}', currentEq?.name || currentEq?.type || '-')
+          text = text.replaceAll('{tag}', currentEq?.name || '-')
+          text = text.replaceAll('{placa}', currentEq?.plate_tag || '-')
+          text = text.replaceAll('{status}', eventName)
           const driverData = localStorage.getItem('app_motorista_driver')
           const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-          text = text.replace('{motorista}', driverName)
+          text = text.replaceAll('{motorista}', driverName)
 
           queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro WP Status', e))
         }
@@ -824,13 +824,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
               // Montar mensagem
               let msg = wSettings.messageTemplates?.fimJornadaApp || '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n⛽ *Combustível Final:* {combustivel}%\n\n_Mensagem Automática - G. Sucena_'
               
-              msg = msg.replace('{equipamento}', equipment?.plate_tag || equipment?.type || '-')
-              msg = msg.replace('{motorista}', driverName)
-              msg = msg.replace('{ajudante}', dispatchHelper)
-              msg = msg.replace('{data}', format(new Date(), 'dd/MM/yyyy'))
-              msg = msg.replace('{km}', endKm || '-')
-              msg = msg.replace('{horimetro}', endHorimeter || '-')
-              msg = msg.replace('{combustivel}', endFuel || '-')
+              msg = msg.replaceAll('{equipamento}', equipment?.plate_tag || equipment?.type || '-')
+              msg = msg.replaceAll('{motorista}', driverName)
+              msg = msg.replaceAll('{ajudante}', dispatchHelper)
+              msg = msg.replaceAll('{data}', format(new Date(), 'dd/MM/yyyy'))
+              msg = msg.replaceAll('{km}', endKm || '-')
+              msg = msg.replaceAll('{horimetro}', endHorimeter || '-')
+              msg = msg.replaceAll('{combustivel}', endFuel || '-')
 
               if (debugErr) {
                 msg += `\n\n[DEBUG: Image generation failed: ${debugErr}]`
@@ -1420,13 +1420,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
               const templateKey = 'anomaliaCorrigida'
               if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
                 let text = wSettings.messageTemplates[templateKey]
-                text = text.replace('{hora}', format(now, 'HH:mm'))
-                text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-                text = text.replace('{tag}', equipment?.name || '-')
-                text = text.replace('{placa}', equipment?.plate_tag || '-')
-                text = text.replace('{anomalia}', a.type)
-                text = text.replace('{descricao}', correctionDescription)
-                text = text.replace('{motorista}', driverName)
+                text = text.replaceAll('{hora}', format(now, 'HH:mm'))
+                text = text.replaceAll('{equipamento}', equipment?.name || equipment?.type || '-')
+                text = text.replaceAll('{tag}', equipment?.name || '-')
+                text = text.replaceAll('{placa}', equipment?.plate_tag || '-')
+                text = text.replaceAll('{anomalia}', a.type)
+                text = text.replaceAll('{descricao}', correctionDescription)
+                text = text.replaceAll('{motorista}', driverName)
 
                 queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro ao disparar WP anomalia', e))
               }
@@ -1512,13 +1512,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             const templateKey = anomalyResolved ? 'anomaliaCorrigida' : 'anomaliaRegistrada'
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.[templateKey]) {
               let text = wSettings.messageTemplates[templateKey]
-              text = text.replace('{hora}', format(now, 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', anomalyType)
-              text = text.replace('{descricao}', anomalyDescription)
-              text = text.replace('{motorista}', driverName)
+              text = text.replaceAll('{hora}', format(now, 'HH:mm'))
+              text = text.replaceAll('{equipamento}', equipment?.name || equipment?.type || '-')
+              text = text.replaceAll('{tag}', equipment?.name || '-')
+              text = text.replaceAll('{placa}', equipment?.plate_tag || '-')
+              text = text.replaceAll('{anomalia}', anomalyType)
+              text = text.replaceAll('{descricao}', anomalyDescription)
+              text = text.replaceAll('{motorista}', driverName)
 
               queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro ao disparar WP anomalia', e))
             }

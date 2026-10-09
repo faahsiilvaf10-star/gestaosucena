@@ -50,16 +50,16 @@ export async function sendEntryExitWhatsappNotification(
     const eqPlate = equipment?.plate_tag || 'N/A'
     const eqTag = equipment?.id ? equipment.id.substring(0, 8).toUpperCase() : eqName
 
-    msg = msg.replace('{hora}', hora)
-    msg = msg.replace('{equipamento}', eqName)
-    msg = msg.replace('{placa}', eqPlate)
-    msg = msg.replace('{tag}', eqTag)
-    msg = msg.replace('{motorista}', driverName || 'Não informado')
+    msg = msg.replaceAll('{hora}', hora)
+    msg = msg.replaceAll('{equipamento}', eqName)
+    msg = msg.replaceAll('{placa}', eqPlate)
+    msg = msg.replaceAll('{tag}', eqTag)
+    msg = msg.replaceAll('{motorista}', driverName || 'Não informado')
 
     if (type === 'exit') {
       const reasonLabel = (exitReasonRaw && EXIT_REASONS_MAP[exitReasonRaw]) || exitReasonRaw || 'Não informado'
       const motivoText = exitDescription?.trim() ? `${reasonLabel} - ${exitDescription.trim()}` : reasonLabel
-      msg = msg.replace('{motivo}', motivoText)
+      msg = msg.replaceAll('{motivo}', motivoText)
     }
 
     // Disparar para cada grupo alvo usando a fila offline-first resiliente
@@ -116,13 +116,13 @@ export async function sendPurchaseOrderWhatsappNotification(
     // Função helper para baixar a imagem em base64 e enviar como Media
     const sendMsg = async (phone: string, template: string) => {
       let msg = template
-      msg = msg.replace('{numero_pedido}', numStr)
-      msg = msg.replace('{requisitante}', requesterName)
-      msg = msg.replace('{responsaveis}', responsiblesNames)
-      msg = msg.replace('{data_esperada}', dataEsperada)
-      msg = msg.replace('{prioridade}', order.priority)
-      msg = msg.replace('{observacoes}', order.notes || 'Nenhuma')
-      msg = msg.replace('{itens}', itemsList)
+      msg = msg.replaceAll('{numero_pedido}', numStr)
+      msg = msg.replaceAll('{requisitante}', requesterName)
+      msg = msg.replaceAll('{responsaveis}', responsiblesNames)
+      msg = msg.replaceAll('{data_esperada}', dataEsperada)
+      msg = msg.replaceAll('{prioridade}', order.priority)
+      msg = msg.replaceAll('{observacoes}', order.notes || 'Nenhuma')
+      msg = msg.replaceAll('{itens}', itemsList)
 
       if (imageUrl) {
         try {
