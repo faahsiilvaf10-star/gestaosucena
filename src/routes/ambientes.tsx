@@ -33,9 +33,9 @@ function AmbientesComponent() {
       pinColor: '#c9a84c',
     },
     {
-      id: 'paragominas',
-      name: 'PARAGOMINAS HYDRO',
-      description: 'Ambiente de gestão e operações da unidade Paragominas.',
+      id: 'hydro-civil',
+      name: 'HYDRO CIVIL',
+      description: 'Ambiente de gestão e operações da unidade Hydro Civil.',
       pinColor: '#c9a84c',
     }
   ]

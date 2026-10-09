@@ -329,7 +329,7 @@ function RDOPage() {
       if (dateStr === today) {
         let lat = -1.5061, lon = -48.6258; // Default Barcarena
         const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null;
-        if (env === 'paragominas') { lat = -2.9998; lon = -47.3537; }
+        if (env === 'hydro-civil') { lat = -2.9998; lon = -47.3537; }
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`)
           .then(res => res.json())
           .then(data => {

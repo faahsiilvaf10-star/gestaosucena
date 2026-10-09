@@ -38,7 +38,7 @@ export const EpiReceiptTemplate = forwardRef<HTMLDivElement, ReceiptData>((props
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <img src="/logo-relatorio.png" alt="Logo" style={{ height: '50px', objectFit: 'contain' }} />
-        <div style={{ fontSize: '12px', color: '#666' }}>CONTRATO: 4600012690</div>
+        <div style={{ fontSize: '12px', color: '#666' }}>CONTRATO: {typeof window !== 'undefined' && localStorage.getItem('sucena_environment') === 'hydro-civil' ? 'Hydro Civil' : '4600012690'}</div>
       </div>
       
       <div style={{ borderBottom: '2px solid #ccc', margin: '10px 0 30px 0' }}></div>
