@@ -18,8 +18,8 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
       icon: Factory
     },
     {
-      id: 'paragominas',
-      name: 'PARAGOMINAS',
+      id: 'hydro-civil',
+      name: 'HYDRO CIVIL',
       icon: MapPin
     }
   ]

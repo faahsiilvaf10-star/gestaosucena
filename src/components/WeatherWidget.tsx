@@ -84,8 +84,8 @@ export function WeatherWidget() {
         if (!isResolved) {
           isResolved = true;
           const env = localStorage.getItem('sucena_environment')
-          if (env === 'paragominas') {
-            console.warn("Geolocation fallback timeout, using default (Paragominas).")
+          if (env === 'hydro-civil') {
+            console.warn("Geolocation fallback timeout, using default (Hydro Civil).")
             fetchWeather(-2.9998, -47.3537)
           } else {
             console.warn("Geolocation fallback timeout, using default (Barcarena).")
@@ -107,8 +107,8 @@ export function WeatherWidget() {
             isResolved = true;
             clearTimeout(fallbackTimer);
             const env = localStorage.getItem('sucena_environment')
-            if (env === 'paragominas') {
-              console.warn("Geolocation blocked, using default (Paragominas).")
+            if (env === 'hydro-civil') {
+              console.warn("Geolocation blocked, using default (Hydro Civil).")
               fetchWeather(-2.9998, -47.3537)
             } else {
               console.warn("Geolocation blocked, using default (Barcarena).")
@@ -120,7 +120,7 @@ export function WeatherWidget() {
       )
     } else {
       const env = localStorage.getItem('sucena_environment')
-      if (env === 'paragominas') {
+      if (env === 'hydro-civil') {
         fetchWeather(-2.9998, -47.3537)
       } else {
         fetchWeather(-1.5061, -48.6258)

@@ -71,7 +71,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
       // Estruturar legenda
       const caption = `🎤 **DDS Realizado!**\n**Tema:** ${editableTema || 'Sem tema agendado'}\n**Palestrante:** ${editablePalestrante || 'Livre'}\n**Data:** ${today}\n**Cor Proibida do Mês:** ${colorName}\n\n${notes}`
 
-      const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'paragominas' ? 'PARAGOMINAS' : 'BARCARENA'
+      const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'hydro-civil' ? 'HYDRO CIVIL' : 'BARCARENA'
 
       // 1. Criar post no banco
       const { data: post, error: postError } = await supabase

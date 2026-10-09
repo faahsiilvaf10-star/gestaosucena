@@ -60,7 +60,7 @@ export function MiniWeatherWidget() {
         if (!isResolved) {
           isResolved = true;
           const env = localStorage.getItem('sucena_environment')
-          if (env === 'paragominas') fetchWeather(-2.9998, -47.3537)
+          if (env === 'hydro-civil') fetchWeather(-2.9998, -47.3537)
           else fetchWeather(-1.5061, -48.6258)
         }
       }, 3000);
@@ -78,7 +78,7 @@ export function MiniWeatherWidget() {
             isResolved = true;
             clearTimeout(fallbackTimer);
             const env = localStorage.getItem('sucena_environment')
-            if (env === 'paragominas') fetchWeather(-2.9998, -47.3537)
+            if (env === 'hydro-civil') fetchWeather(-2.9998, -47.3537)
             else fetchWeather(-1.5061, -48.6258)
           }
         },
@@ -86,7 +86,7 @@ export function MiniWeatherWidget() {
       )
     } else {
       const env = localStorage.getItem('sucena_environment')
-      if (env === 'paragominas') fetchWeather(-2.9998, -47.3537)
+      if (env === 'hydro-civil') fetchWeather(-2.9998, -47.3537)
       else fetchWeather(-1.5061, -48.6258)
     }
   }, [])
