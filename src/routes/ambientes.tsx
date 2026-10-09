@@ -27,9 +27,9 @@ function AmbientesComponent() {
   const environments: Environment[] = [
     {
       id: 'barcarena',
-      name: 'BARCARENA HYDRO',
+      name: 'HYDRO REABILITAÇÃO',
       contract: 'Contrato 4600012690',
-      description: 'Ambiente de gestão e operações da unidade Barcarena.',
+      description: 'Ambiente de gestão e operações da unidade Hydro Reabilitação.',
       pinColor: '#c9a84c',
     },
     {
