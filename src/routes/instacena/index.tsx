@@ -513,7 +513,7 @@ function FeedRoute() {
     
     setIsSubmitting(true)
     try {
-      const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'hydro-civil' ? 'HYDRO CIVIL' : 'BARCARENA'
+      const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO'
       
       const { data: post, error: postError } = await supabase
         .from('social_posts')

@@ -14,7 +14,7 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
   const environments = [
     {
       id: 'barcarena',
-      name: 'BARCARENA – ALUNORTE',
+      name: 'HYDRO REABILITAÇÃO',
       icon: Factory
     },
     {
