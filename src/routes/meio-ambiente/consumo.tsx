@@ -69,23 +69,21 @@ function ConsumoAbastecimentoPage() {
 
   const chartData = useMemo(() => {
     const counts: Record<string, number> = {}
-    
-    // Pontos padrão para sempre aparecerem no gráfico
-    counts['Ponto 82'] = 0
-    counts['Ponto 3D'] = 0
-    counts['Ponto 3C'] = 0
-    counts['Ponto 46'] = 0
 
     history.forEach(row => {
-      const pointName = row.new_status.replace('Abastecimento - ', '').trim()
-      if (counts[pointName] === undefined) {
-        counts[pointName] = 0
+      const pipaName = row.eq_equipments?.name || 'Pipa Desconhecida'
+      const label = row.eq_equipments?.plate_tag ? `${pipaName} (${row.eq_equipments.plate_tag})` : pipaName
+      
+      if (counts[label] === undefined) {
+        counts[label] = 0
       }
-      // Adicionando 1 viagem para o gráfico
-      counts[pointName] += 1
+      counts[label] += 1
     })
 
-    return Object.entries(counts).map(([name, viagens]) => ({ name, viagens }))
+    // Ordenar do maior para o menor número de viagens
+    return Object.entries(counts)
+      .map(([name, viagens]) => ({ name, viagens }))
+      .sort((a, b) => b.viagens - a.viagens)
   }, [history])
 
   const generatePDF = async () => {
@@ -201,11 +199,11 @@ function ConsumoAbastecimentoPage() {
                        labelStyle={{ color: isDark ? '#ffffff80' : '#6b7280', marginBottom: '4px' }}
                        formatter={(value: number) => [`${value} viagens`, 'Registros']}
                      />
-                     <Bar dataKey="viagens" radius={[6, 6, 0, 0]} maxBarSize={80}>
+                     <Bar dataKey="viagens" radius={[6, 6, 0, 0]} maxBarSize={80} fill="#eab308">
                         {chartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={index === 2 ? '#eab308' : (isDark ? '#ffffff20' : '#e5e7eb')} 
+                            fill={index === 0 ? '#eab308' : (isDark ? '#ffffff20' : '#e5e7eb')} 
                             className="transition-all duration-300 hover:opacity-80"
                           />
                         ))}
