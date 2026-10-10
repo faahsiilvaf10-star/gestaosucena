@@ -47,8 +47,7 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
       <PieChart style={{ overflow: 'visible' }}>
         <defs>
           <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ffffff" floodOpacity="0.8"/>
-            <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.4"/>
+            {/* Disabled drop shadow for extreme performance optimization */}
           </filter>
         </defs>
         <ChartTooltip
@@ -65,11 +64,7 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
           paddingAngle={0}
           startAngle={90}
           endAngle={-270}
-          isAnimationActive={true}
-          animationBegin={200}
-          animationDuration={1500}
-          animationEasing="ease-out"
-        >
+          isAnimationActive={false}
           {data.map((entry, index) => (
             <Cell 
               key={`cell-${index}`} 
@@ -92,7 +87,6 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) - 4}
                       className="fill-foreground dark:fill-white text-[32px] font-bold"
-                      style={isDark ? { filter: "drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8))" } : {}}
                     >
                       {value}
                     </tspan>
@@ -100,7 +94,6 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
                       x={viewBox.cx}
                       y={(viewBox.cy || 0) + 16}
                       className="fill-muted-foreground dark:fill-white text-[12px]"
-                      style={isDark ? { filter: "drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.6))" } : {}}
                     >
                       de {total}
                     </tspan>
