@@ -65,6 +65,7 @@ export default function Chart02({ value, total, color, trackColor, label }: Char
           startAngle={90}
           endAngle={-270}
           isAnimationActive={false}
+        >
           {data.map((entry, index) => (
             <Cell 
               key={`cell-${index}`} 
