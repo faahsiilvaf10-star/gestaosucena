@@ -4,7 +4,7 @@ import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
@@ -249,55 +249,53 @@ function DashboardComponent() {
   })
 
   // Calcular aniversariantes do mês
-  const aniversariantesMes = (efetivo || []).map((emp: any) => {
-    if (!emp.raw_data) return null
-    
-    // Find key containing 'NASCIMENTO'
-    const nascKey = Object.keys(emp.raw_data).find(k => k.toUpperCase().includes('NASCIMENTO'))
-    if (!nascKey) return null
+  const aniversariantesMes = useMemo(() => {
+    return (efetivo || []).map((emp: any) => {
+      if (!emp.raw_data) return null
+      
+      const nascKey = Object.keys(emp.raw_data).find(k => k.toUpperCase().includes('NASCIMENTO'))
+      if (!nascKey) return null
 
-    let val = emp.raw_data[nascKey]
-    let day = 0
-    let month = 0
-    let valid = false
+      let val = emp.raw_data[nascKey]
+      let day = 0
+      let month = 0
+      let valid = false
 
-    if (typeof val === 'number') {
-      const d = new Date((val - (25567 + 2)) * 86400 * 1000)
-      if (!isNaN(d.getTime())) {
-        day = d.getUTCDate()
-        month = d.getUTCMonth()
-        valid = true
+      if (typeof val === 'number') {
+        const d = new Date((val - (25567 + 2)) * 86400 * 1000)
+        if (!isNaN(d.getTime())) {
+          day = d.getUTCDate()
+          month = d.getUTCMonth()
+          valid = true
+        }
+      } else if (typeof val === 'string' && val.includes('/')) {
+        const parts = val.split('/')
+        if (parts.length === 3) {
+          day = Number(parts[0])
+          month = Number(parts[1]) - 1
+          valid = !isNaN(day) && !isNaN(month)
+        }
       }
-    } else if (typeof val === 'string' && val.includes('/')) {
-      const parts = val.split('/')
-      if (parts.length === 3) {
-        day = Number(parts[0])
-        month = Number(parts[1]) - 1
-        valid = !isNaN(day) && !isNaN(month)
+
+      if (!valid) return null
+
+      return {
+        nome: emp.nome,
+        day,
+        month
       }
-    }
+    })
+    .filter(Boolean)
+    .filter((a: any) => a.month === getMonth(new Date()))
+    .sort((a: any, b: any) => a.day - b.day)
+  }, [efetivo])
 
-    if (!valid) return null
-
-    return {
-      nome: emp.nome,
-      day,
-      month
-    }
-  })
-  .filter(Boolean)
-  .filter((a: any) => a.month === getMonth(new Date()))
-  .sort((a: any, b: any) => a.day - b.day)
-
-  const aniversariantesHoje = aniversariantesMes.filter((a: any) => a.day === hojeDay)
+  const aniversariantesHoje = useMemo(() => aniversariantesMes.filter((a: any) => a.day === hojeDay), [aniversariantesMes, hojeDay])
 
   useEffect(() => {
     const sub = supabase
       .channel('dashboard_equipments_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['equipments_dashboard'] })
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_movements' }, () => {
         queryClient.invalidateQueries({ queryKey: ['equipments_dashboard'] })
       })
       .subscribe()
@@ -318,48 +316,50 @@ function DashboardComponent() {
   }, [aniversariantesHoje.length])
 
   // Calcular ASO vencendo em 10 dias ou menos (ou já vencidos)
-  const asoVencendo = (efetivo || [])
-    .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO')
-    .map((emp: any) => {
-      // Recalcular no frontend para não depender do BD caso o script de migration não tenha sido rodado
-      const dates = [
-        emp.aso_admissional,
-        emp.aso_periodico,
-        emp.retorno_ao_trabalho,
-        emp.mudanca_de_risco
-      ].filter(Boolean);
-      
-      let validadeString = emp.validade_aso_efetiva;
-      if (dates.length > 0) {
-        const latestDate = dates.reduce((a: string, b: string) => (a > b ? a : b));
-        const date = new Date(latestDate + 'T12:00:00'); 
-        date.setFullYear(date.getFullYear() + 1); 
-        validadeString = date.toISOString().split('T')[0];
-      }
-
-      if (!validadeString) return null;
-
-      const parts = validadeString.split('-');
-      if (parts.length !== 3) return null;
-      
-      const validade = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
-      const hoje = new Date()
-      hoje.setHours(0,0,0,0)
-      
-      const diffTime = validade.getTime() - hoje.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      if (diffDays <= 10) {
-        return {
-          nome: emp.nome,
-          diasRestantes: diffDays,
-          validadeFormatada: `${parts[2]}/${parts[1]}/${parts[0]}`
+  const asoVencendo = useMemo(() => {
+    return (efetivo || [])
+      .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO')
+      .map((emp: any) => {
+        // Recalcular no frontend para não depender do BD caso o script de migration não tenha sido rodado
+        const dates = [
+          emp.aso_admissional,
+          emp.aso_periodico,
+          emp.retorno_ao_trabalho,
+          emp.mudanca_de_risco
+        ].filter(Boolean);
+        
+        let validadeString = emp.validade_aso_efetiva;
+        if (dates.length > 0) {
+          const latestDate = dates.reduce((a: string, b: string) => (a > b ? a : b));
+          const date = new Date(latestDate + 'T12:00:00'); 
+          date.setFullYear(date.getFullYear() + 1); 
+          validadeString = date.toISOString().split('T')[0];
         }
-      }
-      return null
-    })
-    .filter(Boolean)
-    .sort((a: any, b: any) => a.diasRestantes - b.diasRestantes)
+
+        if (!validadeString) return null;
+
+        const parts = validadeString.split('-');
+        if (parts.length !== 3) return null;
+        
+        const validade = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+        const hoje = new Date()
+        hoje.setHours(0,0,0,0)
+        
+        const diffTime = validade.getTime() - hoje.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        
+        if (diffDays <= 10) {
+          return {
+            nome: emp.nome,
+            diasRestantes: diffDays,
+            validadeFormatada: `${parts[2]}/${parts[1]}/${parts[0]}`
+          }
+        }
+        return null
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.diasRestantes - b.diasRestantes)
+  }, [efetivo])
 
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
