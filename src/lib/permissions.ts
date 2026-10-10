@@ -27,7 +27,7 @@ export async function getAllPermissions(): Promise<AllUsersPermissions> {
       .from('global_settings')
       .select('value')
       .eq('key', 'user_permissions')
-      .single()
+      .maybeSingle()
 
     if (error || !data) {
       return {}

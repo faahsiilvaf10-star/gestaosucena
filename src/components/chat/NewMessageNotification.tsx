@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useUsersPresence } from '../../hooks/useUsersPresence'
 
 // Toca o som de notificação de nova mensagem
 function playNotificationSound() {
@@ -21,27 +22,17 @@ interface MessageNotif {
 
 export function NewMessageNotification({ currentUserId }: { currentUserId: string }) {
   const [notifications, setNotifications] = useState<MessageNotif[]>([])
-  const usersMapRef = useRef<Record<string, any>>({})
+  const { data: usersMap } = useUsersPresence()
   const initializedRef = useRef(false)
 
   useEffect(() => {
-    if (!currentUserId) return
+    // Evita disparos ao carregar a página
+    const t = setTimeout(() => { initializedRef.current = true }, 2000)
+    return () => clearTimeout(t)
+  }, [])
 
-    const init = async () => {
-      // Carrega todos os usuários
-      const { data: users } = await supabase.rpc('get_users')
-      if (users) {
-        usersMapRef.current = (users as any[]).reduce((acc: any, u: any) => {
-          acc[u.id] = u
-          return acc
-        }, {})
-      }
-
-      // Evita disparos ao carregar a página
-      setTimeout(() => { initializedRef.current = true }, 2000)
-    }
-
-    init()
+  useEffect(() => {
+    if (!currentUserId || !usersMap) return
 
     // Escuta novas mensagens através das atualizações na tabela conversations
     const channel = supabase.channel(`new_msg_notif_${currentUserId}_${Date.now()}`)
@@ -72,7 +63,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
             if (!msg || msg.sender_id === currentUserId) return
 
-            const user = usersMapRef.current[msg.sender_id]
+            const user = usersMap[msg.sender_id]
             const notifId = `${msg.id}_${Date.now()}`
             
             let previewText = msg.text
@@ -141,7 +132,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [currentUserId])
+  }, [currentUserId, usersMap])
 
   if (notifications.length === 0) return null
 

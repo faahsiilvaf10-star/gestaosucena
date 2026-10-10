@@ -75,7 +75,8 @@ function DashboardComponent() {
         }
       })
     },
-    refetchInterval: 60000 // Refaz a query automaticamente a cada 1 minuto
+    refetchInterval: 300000, // Refaz a query automaticamente a cada 5 minutos em vez de 1 min
+    staleTime: 5 * 60 * 1000
   })
 
   // Dados mapeados para os gráficos
@@ -140,7 +141,8 @@ function DashboardComponent() {
         }
       }
     },
-    refetchInterval: 300000 // Refaz a cada 5 min
+    refetchInterval: 300000, // Refaz a cada 5 min
+    staleTime: 5 * 60 * 1000
   })
 
   // Buscar Permissões de Trabalho (PTs) vencendo em até 5 dias ou vencidas
@@ -165,17 +167,19 @@ function DashboardComponent() {
         const diff = differenceInDays(vencDate, today)
         return diff <= 5 // Vencendo em 5 dias ou menos (inclui vencidas)
       })
-    }
+    },
+    staleTime: 5 * 60 * 1000
   })
 
   // Buscar efetivo completo para contagem e aniversariantes/ASO
   const { data: efetivo = [] } = useQuery({
     queryKey: ['efetivo_dashboard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco')
+      const { data, error } = await supabase.from('rh_efetivo').select('nome, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco, aso_admissional_2')
       if (error) throw error
       return data || []
-    }
+    },
+    staleTime: 5 * 60 * 1000
   })
   
   const totalFuncionarios = efetivo.filter((e: any) => e.status !== 'REMOVIDO' && e.status !== 'INATIVO').length || '...'
@@ -186,28 +190,14 @@ function DashboardComponent() {
     queryFn: async () => {
       const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
 
-      const [eqResult, movResult] = await Promise.all([
+      const [eqResult] = await Promise.all([
         supabase
           .from('eq_equipments')
           .select('id, location_status, status, last_exit_reason, last_exit_description, name, plate_tag, type, category, updated_at')
-          .eq('environment', currentEnv),
-        supabase
-          .from('eq_movements')
-          .select('id, equipment_id, movement_type, exit_reason, description, created_at')
-          .order('created_at', { ascending: false })
+          .eq('environment', currentEnv)
       ])
 
       if (eqResult.error) throw eqResult.error
-      
-      const movementsByEq = new Map<string, MovementRecord[]>()
-      if (movResult.data) {
-        for (const m of movResult.data) {
-          if (!movementsByEq.has(m.equipment_id)) {
-            movementsByEq.set(m.equipment_id, [])
-          }
-          movementsByEq.get(m.equipment_id)!.push(m)
-        }
-      }
 
       let operacaoCount = 0
       let manutencaoCount = 0
@@ -221,14 +211,11 @@ function DashboardComponent() {
         const isJardinagem = (eq.category || '').toLowerCase().includes('jardinagem')
         const isVehicle = !isJardinagem // Frota operacional de veículos e equipamentos (Pesados, Leves, Canteiro)
 
-        const eqMovements = movementsByEq.get(eq.id) || []
-        // Fonte única e absoluta de verdade: histórico de portaria
-        const derivedStatus = locationFromMovements(eqMovements) ?? (eq.location_status === 'outside' ? 'outside' : 'inside')
+        const derivedStatus = eq.location_status === 'outside' ? 'outside' : 'inside'
         const dentroDaObra = derivedStatus === 'inside'
         const foraDaObra = derivedStatus === 'outside'
 
-        const lastMov = eqMovements[0]
-        const currentExitReason = foraDaObra ? (lastMov?.exit_reason || eq.last_exit_reason) : null
+        const currentExitReason = foraDaObra ? eq.last_exit_reason : null
 
         if (isVehicle) {
           totalVehicles++
@@ -247,7 +234,7 @@ function DashboardComponent() {
           manutencaoList.push({
             ...eq,
             last_exit_reason: currentExitReason,
-            updated_at: lastMov?.created_at || eq.updated_at
+            updated_at: eq.updated_at
           })
         }
       })
@@ -257,7 +244,8 @@ function DashboardComponent() {
       
       return { operacao: operacaoCount, manutencao: manutencaoCount, operacaoList, manutencaoList, totalVehicles, totalEquipments }
     },
-    refetchInterval: 15000
+    refetchInterval: 30000, // Reduced from 15s to 30s
+    staleTime: 10000
   })
 
   // Calcular aniversariantes do mês

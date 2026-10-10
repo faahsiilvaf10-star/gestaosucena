@@ -247,24 +247,24 @@ function RhEfetivoPage() {
             const status = getVal(['STATUS', 'SITUAÇÃO', 'SITUACAO']) || 'ATIVO'
             const setor = getVal(['SETOR', 'DEPARTAMENTO', 'ÁREA', 'AREA', 'LOCALIDADE', 'LOCALIDADE '])
             
-            // Format admission date if exists
-            let asoAdmissional = getVal(['ASO ADMISSIONAL'])
-            if (typeof asoAdmissional === 'number') {
-              const d = new Date((asoAdmissional - (25567 + 2)) * 86400 * 1000)
-              asoAdmissional = d.toISOString().split('T')[0]
-            } else if (typeof asoAdmissional === 'string' && asoAdmissional.includes('/')) {
-              const parts = asoAdmissional.split('/')
-              if (parts.length === 3) asoAdmissional = `${parts[2]}-${parts[1]}-${parts[0]}`
-            }
+            // Helper for parsing dates
+            const parseDate = (val: any) => {
+              if (!val) return null;
+              if (typeof val === 'number') {
+                const d = new Date((val - (25567 + 2)) * 86400 * 1000);
+                return d.toISOString().split('T')[0];
+              } else if (typeof val === 'string' && val.includes('/')) {
+                const parts = val.split('/');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              }
+              return null;
+            };
 
-            let admissional = getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO'])
-            if (typeof admissional === 'number') {
-              const d = new Date((admissional - (25567 + 2)) * 86400 * 1000)
-              admissional = d.toISOString().split('T')[0]
-            } else if (typeof admissional === 'string' && admissional.includes('/')) {
-              const parts = admissional.split('/')
-              if (parts.length === 3) admissional = `${parts[2]}-${parts[1]}-${parts[0]}`
-            }
+            const asoAdmissional = parseDate(getVal(['ASO ADMISSIONAL']));
+            const admissional = parseDate(getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO', 'ADMISSIONAL']));
+            const asoPeriodico = parseDate(getVal(['PERIÓDICO', 'PERIODICO']));
+            const retornoTrabalho = parseDate(getVal(['RETORNO AO TRABALHO', 'RETORNO']));
+            const mudancaRisco = parseDate(getVal(['MUDANÇA DE RISCO', 'MUDANCA DE RISCO']));
 
             // Force matricula to be null for Auxiliar Administrativo as requested
             let finalMatricula = matricula ? String(matricula) : null
@@ -280,14 +280,17 @@ function RhEfetivoPage() {
               matricula_sucena: matriculaSucena ? String(matriculaSucena) : null,
               status: String(status),
               setor: setor ? String(setor) : null,
-              aso_admissional_2: admissional ? String(admissional) : null,
-              aso_admissional: asoAdmissional ? String(asoAdmissional) : null,
+              aso_admissional_2: admissional,
+              aso_admissional: asoAdmissional,
+              aso_periodico: asoPeriodico,
+              retorno_ao_trabalho: retornoTrabalho,
+              mudanca_de_risco: mudancaRisco,
               raw_data: row
             }
           })
 
-          // Prevent duplicates and retrieve existing matriculas
-          const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena')
+          // Prevent duplicates and retrieve existing fields to preserve them
+          const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena, cargo, setor, aso_admissional, aso_admissional_2, aso_periodico, retorno_ao_trabalho, mudanca_de_risco')
           const existingMap = new Map<string, any>((existingData || []).map((d: any) => [d.nome.toUpperCase(), d]))
 
           const uniqueNewProcessedData: any[] = []
@@ -305,9 +308,19 @@ function RhEfetivoPage() {
               if (existingRec !== 'processed') {
                 // Keep the database matricula so we don't wipe it!
                 d.matricula = existingRec.matricula
-                // Preserve existing matricula_hydro/sucena only if the sheet doesn't have them
+                
+                // For all other fields, preserve existing DB value if the spreadsheet has a blank value.
+                if (!d.cargo) d.cargo = existingRec.cargo
                 if (!d.matricula_hydro) d.matricula_hydro = existingRec.matricula_hydro
                 if (!d.matricula_sucena) d.matricula_sucena = existingRec.matricula_sucena
+                if (!d.setor) d.setor = existingRec.setor
+                
+                if (!d.aso_admissional_2) d.aso_admissional_2 = existingRec.aso_admissional_2
+                if (!d.aso_admissional) d.aso_admissional = existingRec.aso_admissional
+                if (!d.aso_periodico) d.aso_periodico = existingRec.aso_periodico
+                if (!d.retorno_ao_trabalho) d.retorno_ao_trabalho = existingRec.retorno_ao_trabalho
+                if (!d.mudanca_de_risco) d.mudanca_de_risco = existingRec.mudanca_de_risco
+
                 d.id = existingRec.id // Needed for update
                 recordsToUpdate.push(d)
                 
@@ -655,38 +668,18 @@ function RhEfetivoPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                  {filteredItems.map(item => {
-                    let isVencido = false;
-                    const dates = [
-                      item.aso_admissional,
-                      item.aso_periodico,
-                      item.retorno_ao_trabalho,
-                      item.mudanca_de_risco
-                    ].filter(Boolean) as string[];
-                    
-                    if (dates.length > 0) {
-                      const latestDate = dates.reduce((a, b) => (a > b ? a : b));
-                      const validade = new Date(latestDate + 'T12:00:00'); 
-                      validade.setFullYear(validade.getFullYear() + 1); 
-                      
-                      const hoje = new Date();
-                      hoje.setHours(0,0,0,0);
-                      const diffDays = Math.ceil((validade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-                      isVencido = diffDays <= 0;
-                    }
-
-                    return (
+                  {filteredItems.map(item => (
                     <tr 
                       key={item.id} 
                       onClick={() => setSelectedColaborador(item)}
-                      className={`transition-colors cursor-pointer ${isVencido ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                      className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                     >
-                      <td className={`p-4 font-mono text-[13px] w-40 ${isVencido ? 'text-red-500 font-bold' : ''}`}>
+                      <td className="p-4 font-mono text-[13px] w-40">
                         {item.matricula || '-'}
                       </td>
-                      <td className={`p-4 font-bold max-w-xs truncate ${isVencido ? 'text-red-500' : ''}`} title={item.nome}>{item.nome}</td>
-                      <td className={`p-4 max-w-xs truncate ${isVencido ? 'text-red-400' : 'text-gray-600 dark:text-gray-400'}`} title={item.cargo || ''}>{item.cargo || '-'}</td>
-                      <td className={`p-4 ${isVencido ? 'text-red-400 font-bold' : 'text-gray-600 dark:text-gray-400'}`}>
+                      <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
+                      <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
+                      <td className="p-4 text-gray-600 dark:text-gray-400">
                         {item.aso_admissional_2 ? item.aso_admissional_2.split('-').reverse().join('/') : '-'}
                       </td>
                       
@@ -707,7 +700,7 @@ function RhEfetivoPage() {
                         </span>
                       </td>
                     </tr>
-                  )})}
+                  ))}
                 </tbody>
               </table>
             )}
@@ -842,23 +835,6 @@ function RhEfetivoPage() {
                     <p className="font-medium text-[15px]">{selectedColaborador.cargo || '-'}</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
-                  {canEdit ? (
-                    <DateInput
-                      value={selectedColaborador.aso_admissional_2 || ''}
-                      onChange={(value) => {
-                        setSelectedColaborador({...selectedColaborador, aso_admissional_2: value})
-                        if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional_2 || '')) {
-                          handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
-                        }
-                      }}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
-                    />
-                  ) : (
-                    <p className="font-medium text-[15px]">{selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : '-'}</p>
-                  )}
-                </div>
 
                 <div className="col-span-1 sm:col-span-2 pt-4 border-t border-black/10 dark:border-white/10 mt-2">
                   <div className="flex items-center gap-2 mb-4">
@@ -873,7 +849,29 @@ function RhEfetivoPage() {
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
+                    {/* Admissional (Hiring Date) */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admissional</p>
+                      {canEdit ? (
+                        <DateInput
+                          value={selectedColaborador.aso_admissional_2 || ''}
+                          onChange={(value) => {
+                            setSelectedColaborador({...selectedColaborador, aso_admissional_2: value})
+                            if (value !== (items.find(i => i.id === selectedColaborador.id)?.aso_admissional_2 || '')) {
+                              handleUpdateField(selectedColaborador.id, 'aso_admissional_2', value)
+                            }
+                          }}
+                          disabled={!isEditingAso}
+                          className={`w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm ${!isEditingAso ? 'opacity-60 cursor-not-allowed text-gray-500' : ''}`}
+                        />
+                      ) : (
+                        <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
+                          {selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
+                        </div>
+                      )}
+                    </div>
+
                     {/* ASO Admissional (Medical Exam) */}
                     <div>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>

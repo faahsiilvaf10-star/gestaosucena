@@ -1,14 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-
-// Threshold idêntico ao usePresence.ts: 120s sem heartbeat = offline
-const OFFLINE_THRESHOLD_MS = 120_000
-
-function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null } | null): boolean {
-  if (!p || !p.is_online) return false
-  if (!p.last_heartbeat) return false
-  return (Date.now() - new Date(p.last_heartbeat).getTime()) < OFFLINE_THRESHOLD_MS
-}
+import { useUsersPresence } from '../hooks/useUsersPresence'
 
 // Toca o som de notificação de online
 function playOnlineSound() {
@@ -30,97 +22,66 @@ interface OnlineNotif {
 
 export function UserOnlineNotification({ currentUserId }: { currentUserId: string }) {
   const [notifications, setNotifications] = useState<OnlineNotif[]>([])
-  // Guarda snapshot do estado anterior de presença para detectar a transição offline→online
-  const presenceSnapshotRef = useRef<Record<string, boolean>>({})
-  const usersMapRef = useRef<Record<string, any>>({})
+  
+  const { data: usersMap } = useUsersPresence()
+  const previousPresenceRef = useRef<Record<string, boolean>>({})
   const initializedRef = useRef(false)
 
   useEffect(() => {
-    if (!currentUserId) return
+    // Aguarda 2s antes de começar a disparar notificações (evita flood no carregamento inicial)
+    const t = setTimeout(() => { initializedRef.current = true }, 2000)
+    return () => clearTimeout(t)
+  }, [])
 
-    const init = async () => {
-      // Carrega todos os usuários
-      const { data: users } = await supabase.rpc('get_users')
-      if (users) {
-        usersMapRef.current = (users as any[]).reduce((acc: any, u: any) => {
-          acc[u.id] = u
-          return acc
-        }, {})
-      }
+  useEffect(() => {
+    if (!usersMap || !currentUserId) return
 
-      // Carrega estado inicial de presença (snapshot)
-      const { data: presences } = await supabase.from('user_presence').select('*')
-      if (presences) {
-        presences.forEach((p: any) => {
-          presenceSnapshotRef.current[p.user_id] = isReallyOnline(p)
-        })
-      }
+    Object.values(usersMap).forEach(user => {
+      if (user.id === currentUserId) return
+      
+      const wasOnline = previousPresenceRef.current[user.id] ?? false
+      const isNowOnline = user.isOnline
 
-      // Aguarda 2s antes de começar a disparar notificações (evita flood no carregamento inicial)
-      setTimeout(() => { initializedRef.current = true }, 2000)
-    }
+      // Atualiza snapshot
+      previousPresenceRef.current[user.id] = isNowOnline
 
-    init()
-
-    // Escuta mudanças na tabela user_presence em tempo real
-    const channel = supabase.channel(`online_notif_${currentUserId}_${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_presence' }, (payload: any) => {
-        if (!initializedRef.current) return
-        const p = payload.new
-        if (!p || p.user_id === currentUserId) return
-
-        const wasOnline = presenceSnapshotRef.current[p.user_id] ?? false
-        const isNowOnline = isReallyOnline(p)
-
-        // Atualiza snapshot
-        presenceSnapshotRef.current[p.user_id] = isNowOnline
-
-        // Só notifica quando ENTROU (transição offline → online)
-        if (!wasOnline && isNowOnline) {
-          const user = usersMapRef.current[p.user_id]
-          const notifId = `${p.user_id}_${Date.now()}`
-          const newNotif: OnlineNotif = {
-            id: notifId,
-            userId: p.user_id,
-            name: user?.name || 'Usuário',
-            avatarUrl: user?.avatar_url || '',
-            role: user?.role || ''
-          }
-
-          // Toca o som de notificação
-          playOnlineSound()
-
-          setNotifications(prev => [...prev, newNotif])
-
-          // Remove após 10s, mas se estiver em segundo plano, espera o foco primeiro
-          const startRemovalTimer = () => {
-            setTimeout(() => {
-              setNotifications(prev =>
-                prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
-              )
-              setTimeout(() => {
-                setNotifications(prev => prev.filter(n => n.id !== notifId))
-              }, 400)
-            }, 10000)
-          }
-
-          if (document.hasFocus()) {
-            startRemovalTimer()
-          } else {
-            const onFocus = () => {
-              window.removeEventListener('focus', onFocus)
-              startRemovalTimer()
-            }
-            window.addEventListener('focus', onFocus)
-          }
+      // Só notifica quando ENTROU (transição offline → online)
+      if (initializedRef.current && !wasOnline && isNowOnline) {
+        const notifId = `${user.id}_${Date.now()}`
+        const newNotif: OnlineNotif = {
+          id: notifId,
+          userId: user.id,
+          name: user.name || 'Usuário',
+          avatarUrl: user.avatar_url || '',
+          role: user.role || ''
         }
-      })
-      .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [currentUserId])
+        playOnlineSound()
+        setNotifications(prev => [...prev, newNotif])
+
+        const startRemovalTimer = () => {
+          setTimeout(() => {
+            setNotifications(prev =>
+              prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
+            )
+            setTimeout(() => {
+              setNotifications(prev => prev.filter(n => n.id !== notifId))
+            }, 400)
+          }, 10000)
+        }
+
+        if (document.hasFocus()) {
+          startRemovalTimer()
+        } else {
+          const onFocus = () => {
+            window.removeEventListener('focus', onFocus)
+            startRemovalTimer()
+          }
+          window.addEventListener('focus', onFocus)
+        }
+      }
+    })
+  }, [usersMap, currentUserId])
 
   if (notifications.length === 0) return null
 

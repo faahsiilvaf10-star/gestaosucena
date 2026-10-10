@@ -10,6 +10,7 @@ import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { useChat } from '../contexts/ChatContext'
 import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
+import { useGlobalPresenceSync } from '../hooks/useGlobalPresenceSync'
 import { ChatSidebar } from './ChatSidebar'
 import { WindowsNavbar } from './WindowsNavbar'
 import { ChatWindow } from './chat/ChatWindow'
@@ -39,6 +40,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { toggleSidebar, unreadCountGlobally, activeChats, isSidebarOpen } = useChat()
   usePresence(currentUser.id)
   useChatRealtime(currentUser.id)
+  useGlobalPresenceSync(currentUser.id)
   
   const { currentColor } = useMonthlyColors()
 

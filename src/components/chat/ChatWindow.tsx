@@ -13,6 +13,7 @@ import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns'
 import { ChatComposer } from './ChatComposer'
 import { ptBR as localePtBr } from 'date-fns/locale/pt-BR'
 import { VerifiedBadge, isAdmin } from '../ui/VerifiedBadge'
+import { useUsersPresence } from '../../hooks/useUsersPresence'
 
 function formatLastSeen(dateStr?: string | null) {
   if (!dateStr) return 'Offline'
@@ -22,15 +23,6 @@ function formatLastSeen(dateStr?: string | null) {
   } catch(e) {
     return 'Offline'
   }
-}
-
-// Deve ser idêntico ao OFFLINE_THRESHOLD_MS do usePresence.ts
-const OFFLINE_THRESHOLD_MS = 120_000
-
-function isReallyOnline(p: { is_online: boolean; last_heartbeat?: string | null } | null | undefined): boolean {
-  if (!p || !p.is_online) return false
-  if (!p.last_heartbeat) return false
-  return (Date.now() - new Date(p.last_heartbeat).getTime()) < OFFLINE_THRESHOLD_MS
 }
 
 // Toca o som de notificação de mensagem recebida
@@ -80,16 +72,11 @@ function formatMessageDate(dateString: string) {
 export function ChatWindow({ currentUserId, conversationId }: { currentUserId: string, conversationId: string }) {
   const { isDark } = useTheme()
   const { closeChat } = useChat()
+  const { data: usersMap } = useUsersPresence()
   const [messages, setMessages] = useState<Message[]>([])
-  const [contactName, setContactName] = useState('Carregando...')
-  const [contactRole, setContactRole] = useState('')
-  const [contactStatus, setContactStatus] = useState<string>('Offline')
-  const [contactAvatar, setContactAvatar] = useState('')
+  const [otherUserId, setOtherUserId] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
-  // Guarda o raw de presença para recalcular via threshold
-  const contactPresenceRawRef = useRef<{ is_online: boolean; last_heartbeat?: string | null } | null>(null)
-  const recalcIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -103,7 +90,6 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
   // Efeito de carregamento inicial
   useEffect(() => {
     let channel: any
-    let presenceChannel: any
 
     const loadData = async () => {
       // 1. Carrega as mensagens
@@ -119,49 +105,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         .neq('user_id', currentUserId)
       
       if (participations && participations.length > 0) {
-        const otherUserId = participations[0].user_id
-        const { data: users } = await supabase.rpc('get_users')
-        const otherUser = users?.find((u: any) => u.id === otherUserId)
-        if (otherUser) {
-          setContactName(otherUser.name)
-          setContactRole(otherUser.role || '')
-          setContactAvatar(otherUser.avatar_url || '')
-        }
-        
-        // Busca presença inicial
-        const { data: presence } = await supabase
-          .from('user_presence')
-          .select('*')
-          .eq('user_id', otherUserId)
-          .single()
-        
-        if (presence) {
-          contactPresenceRawRef.current = presence
-          setContactStatus(isReallyOnline(presence) ? 'Online' : formatLastSeen(presence?.last_heartbeat))
-        }
-
-        // Intervalo local para recalcular status por threshold (detecta queda sem update no banco)
-        if (recalcIntervalRef.current) clearInterval(recalcIntervalRef.current)
-        recalcIntervalRef.current = setInterval(() => {
-          setContactStatus(isReallyOnline(contactPresenceRawRef.current) ? 'Online' : formatLastSeen(contactPresenceRawRef.current?.last_heartbeat))
-        }, 15_000)
-
-        // Subscription REALTIME na presença do contato
-        // Atualiza IMEDIATAMENTE quando o heartbeat chega ou is_online muda
-        const presChannelName = `chat_presence_${otherUserId}_${conversationId}_${Date.now()}`
-        presenceChannel = supabase.channel(presChannelName)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'user_presence', filter: `user_id=eq.${otherUserId}` },
-            (payload: any) => {
-              const p = payload.new
-              if (p) {
-                contactPresenceRawRef.current = p
-                setContactStatus(isReallyOnline(p) ? 'Online' : formatLastSeen(p?.last_heartbeat))
-              }
-            }
-          )
-          .subscribe()
+        setOtherUserId(participations[0].user_id)
       }
 
       // 3. Inscreve-se no canal de Realtime para ESTA conversa
@@ -206,8 +150,6 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
     
     return () => {
       if (channel) supabase.removeChannel(channel)
-      if (presenceChannel) supabase.removeChannel(presenceChannel)
-      if (recalcIntervalRef.current) clearInterval(recalcIntervalRef.current)
     }
   }, [conversationId, currentUserId])
 
@@ -236,6 +178,12 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
       setShowOptions(false)
     }
   }
+
+  const otherUser = otherUserId && usersMap ? usersMap[otherUserId] : null
+  const contactName = otherUser?.name || 'Carregando...'
+  const contactRole = otherUser?.role || ''
+  const contactStatus = otherUser ? (otherUser.isOnline ? 'Online' : formatLastSeen(otherUser.lastSeen)) : 'Offline'
+  const contactAvatar = otherUser?.avatar_url || ''
 
   if (isMinimized) {
     return (
