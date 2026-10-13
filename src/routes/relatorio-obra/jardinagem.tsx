@@ -44,7 +44,13 @@ export const Route = createFileRoute('/relatorio-obra/jardinagem')({
 })
 
 const faixas = Array.from({length: 4}, (_, i) => i + 2);
-const bermas = Array.from({length: 31}, (_, i) => i + 26);
+const bermas = [
+  ...Array.from({length: 31}, (_, i) => `Berma ${i + 26}`),
+  'MIRANTE',
+  'GABIÃO 1',
+  'GABIÃO 2',
+  'GABIÃO 3'
+];
 
 // Generic Row Component
 function ActivityRow({ 
@@ -118,7 +124,7 @@ function ActivityRow({
                 className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
               >
                 <option value="">Berma</option>
-                {bermas.map(b => <option key={b} value={`Berma ${b}`}>Berma {b}</option>)}
+                {bermas.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
             </div>
@@ -570,7 +576,7 @@ function JardinagemPage() {
                   </div>
                   <div className="relative w-full sm:w-32">
                     <select value={row.berma} onChange={(e) => { const n = [...plantio]; n[idx].berma = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
-                      <option value="">Berma</option>{bermas.map(b => <option key={b} value={`Berma ${b}`}>Berma {b}</option>)}
+                      <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                   </div>
@@ -626,7 +632,7 @@ function JardinagemPage() {
                       {idx === 0 && <label className="text-gray-500 text-xs ml-1">Berma</label>}
                       <div className="relative">
                         <select value={row.berma} onChange={(e) => { const n = [...invasoras]; n[idx].berma = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                          <option value="">Berma</option>{bermas.map(b => <option key={b} value={`Berma ${b}`}>Berma {b}</option>)}
+                          <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                       </div>
@@ -657,7 +663,7 @@ function JardinagemPage() {
                     </div>
                     <div className="relative flex-1 sm:w-32">
                       <select value={outrasBerma} onChange={e => setOutrasBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                        <option value="">Berma</option>{bermas.map(b => <option key={b} value={`Berma ${b}`}>Berma {b}</option>)}
+                        <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                     </div>

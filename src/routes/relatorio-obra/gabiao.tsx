@@ -25,7 +25,14 @@ export const Route = createFileRoute('/relatorio-obra/gabiao')({
 
 const faixas = Array.from({length: 5}, (_, i) => i + 1); // FAIXA 1 a 5
 const fases = ['Nenhuma', 'Fase 1', 'Fase 2', 'Fase 3'];
-const elevados = ['Nenhum', ...Array.from({length: 31}, (_, i) => String(i + 26))];
+const elevados = [
+  'Nenhum',
+  ...Array.from({length: 31}, (_, i) => String(i + 26)),
+  'MIRANTE',
+  'GABIÃO 1',
+  'GABIÃO 2',
+  'GABIÃO 3'
+];
 
 function ActivityItem({
   title,
