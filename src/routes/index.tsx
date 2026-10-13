@@ -8,13 +8,15 @@ import Shield from 'lucide-react/dist/esm/icons/shield.js';
 import UserCircle2 from 'lucide-react/dist/esm/icons/circle-user-round.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Lock from 'lucide-react/dist/esm/icons/lock.js';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
+import { Turnstile } from '@marsidev/react-turnstile'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
 
@@ -31,6 +33,9 @@ function Index() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFVuy_bi0rwvQAtr'
   const [availableRoles, setAvailableRoles] = useState<string[]>([])
   const [registrationOpen, setRegistrationOpen] = useState(true)
 
@@ -142,14 +147,26 @@ function Index() {
       return
     }
     
+    if (!captchaToken) {
+      const msg = 'Aguarde a validação do Cloudflare Turnstile.'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
+
     setIsLoading(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken,
+      }
     })
     setIsLoading(false)
 
     if (error) {
+      turnstileRef.current?.reset()
+      setCaptchaToken(null)
       const translatedError = translateAuthError(error.message)
       toast.error('Erro ao fazer login: ' + translatedError)
       setErrorMessage(translatedError)
@@ -186,11 +203,19 @@ function Index() {
       return
     }
     
+    if (!captchaToken) {
+      const msg = 'Aguarde a validação do Cloudflare Turnstile.'
+      toast.error(msg)
+      setErrorMessage(msg)
+      return
+    }
+
     setIsLoading(true)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        captchaToken,
         data: {
           full_name: nome,
           whatsapp: whatsapp,
@@ -201,6 +226,8 @@ function Index() {
     setIsLoading(false)
 
     if (error) {
+      turnstileRef.current?.reset()
+      setCaptchaToken(null)
       const translatedError = translateAuthError(error.message)
       toast.error('Erro ao cadastrar: ' + translatedError)
       setErrorMessage(translatedError)
@@ -432,8 +459,23 @@ function Index() {
               </div>
             )}
 
-
-
+            <div className="flex justify-center my-4 min-h-[65px]">
+              <Turnstile 
+                ref={turnstileRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={(token) => {
+                  setCaptchaToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => {
+                  setErrorMessage('Erro na verificação do Cloudflare Turnstile.')
+                }}
+                onExpire={() => setCaptchaToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
+            </div>
 
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
@@ -538,6 +580,23 @@ function Index() {
                 {errorMessage}
               </div>
             )}
+
+            <div className="flex justify-center my-4 min-h-[65px]">
+              <Turnstile 
+                siteKey={turnstileSiteKey}
+                onSuccess={(token) => {
+                  setCaptchaToken(token)
+                  setErrorMessage('')
+                }}
+                onError={() => {
+                  setErrorMessage('Erro na verificação do Cloudflare Turnstile.')
+                }}
+                onExpire={() => setCaptchaToken(null)}
+                options={{
+                  theme: isDark ? 'dark' : 'light'
+                }}
+              />
+            </div>
 
 
 
