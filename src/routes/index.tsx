@@ -15,7 +15,6 @@ import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
-import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
 
@@ -32,7 +31,6 @@ function Index() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authorizedUser, setAuthorizedUser] = useState({ name: '', role: '' })
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [availableRoles, setAvailableRoles] = useState<string[]>([])
   const [registrationOpen, setRegistrationOpen] = useState(true)
 
@@ -148,9 +146,6 @@ function Index() {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: captchaToken ? {
-        captchaToken: captchaToken
-      } : undefined
     })
     setIsLoading(false)
 
@@ -191,19 +186,11 @@ function Index() {
       return
     }
     
-    if (!captchaToken) {
-      const msg = 'Por favor, marque a caixa "Sou humano".'
-      toast.error(msg)
-      setErrorMessage(msg)
-      return
-    }
-
     setIsLoading(true)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        captchaToken: captchaToken,
         data: {
           full_name: nome,
           whatsapp: whatsapp,
@@ -446,18 +433,7 @@ function Index() {
             )}
 
 
-            <div className="flex justify-center my-4">
-              <HCaptcha 
-                sitekey="f83e067e-83b0-4d28-a546-cf40c42089ac"
-                onVerify={(token) => {
-                  setCaptchaToken(token)
-                  setErrorMessage('')
-                }}
-                onError={() => setErrorMessage('Erro na verificação do hCaptcha.')}
-                onExpire={() => setCaptchaToken(null)}
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
+
 
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
@@ -564,18 +540,7 @@ function Index() {
             )}
 
 
-            <div className="flex justify-center my-4">
-              <HCaptcha 
-                sitekey="f83e067e-83b0-4d28-a546-cf40c42089ac"
-                onVerify={(token) => {
-                  setCaptchaToken(token)
-                  setErrorMessage('')
-                }}
-                onError={() => setErrorMessage('Erro na verificação do hCaptcha.')}
-                onExpire={() => setCaptchaToken(null)}
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
+
 
             <button type="submit" className={btnClass} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Cadastrar'}
