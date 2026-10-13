@@ -20,6 +20,9 @@ import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/logActivity'
 
 const maskNumber = (val: string, isFloat: boolean) => {
+  if (!isFloat) {
+    val = val.split(',')[0];
+  }
   let raw = val.replace(/\D/g, '');
   if (!raw) return '';
   if (isFloat) {
@@ -68,7 +71,7 @@ function ActivityRow({
   icon?: React.ReactNode;
   containerClassName?: string;
 }) {
-  const addRow = () => setData([...data, {value: isFloat ? '0.00' : '0', faixa: '', berma: ''}]);
+  const addRow = () => setData([...data, {value: '', faixa: '', berma: ''}]);
   
   return (
     <div className={`p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm ${containerClassName}`}>
@@ -383,7 +386,7 @@ function JardinagemPage() {
     outrasDesc.trim() !== '' || canteiroDesc.trim() !== '' || irrigacaoPipas || irrigacaoApoioPipa || irrigacaoCarretel || manutencaoIrrigacao;
 
   const renderRows = (name: string, data: any[], unit: string) => {
-    return data.filter(r => parseFloat(r.value || '0') > 0).map((r, idx) => {
+    return data.filter(r => parseNumber(r.value || '0') > 0).map((r, idx) => {
       let loc = [];
       if (r.faixa) loc.push(r.faixa);
       if (r.berma) loc.push(r.berma);
@@ -530,7 +533,7 @@ function JardinagemPage() {
           </p>
 
           <div className="flex flex-col gap-4 relative z-10">
-            <ActivityRow title="ROÇAGEM (m²)" data={rocagem} setData={setRocagem} isFloat />
+            <ActivityRow title="ROÇAGEM (m²)" data={rocagem} setData={setRocagem} />
             <ActivityRow title="ROÇAGEM ASPERSORES (Unidades)" data={rocagemAsp} setData={setRocagemAsp} />
             <ActivityRow title="PODAGEM (Unidade)" data={podagem} setData={setPodagem} />
             <ActivityRow title="COVA (Unidade)" data={cova} setData={setCova} />
