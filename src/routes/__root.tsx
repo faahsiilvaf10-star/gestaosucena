@@ -21,6 +21,7 @@ import { ReminderAlertNotification } from "../components/ReminderAlertNotificati
 import { GlobalBackground } from "../components/GlobalBackground";
 import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
 import { getGlobalAppearanceSettings } from "../lib/settings";
+import { DailySessionWatcher } from "../components/DailySessionWatcher";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -30,6 +31,7 @@ function RootContent() {
   
   return (
     <div className={`min-h-screen ${isDark ? 'dark text-white' : 'light text-black'}`}>
+      <DailySessionWatcher />
       <GlobalBackground />
       {isAppRoute ? (
         <AppLayout>

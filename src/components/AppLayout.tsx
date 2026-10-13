@@ -25,6 +25,7 @@ import { NewMessageNotification } from './chat/NewMessageNotification'
 import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
+import { clearDailySessionExpiry } from '../lib/sessionManager'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -131,6 +132,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     setShowLogoutConfirm(false)
     setIsLoggingOut(true)
     setTimeout(async () => {
+      clearDailySessionExpiry()
       await supabase.auth.signOut()
       navigate({ to: '/' })
     }, 5000)

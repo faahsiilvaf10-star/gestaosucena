@@ -19,6 +19,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
+import { setDailySessionExpiry } from '../lib/sessionManager'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -178,6 +179,7 @@ function Index() {
         localStorage.removeItem('sucena_saved_email')
         localStorage.removeItem('sucena_saved_password')
       }
+      setDailySessionExpiry()
       toast.success('Login realizado com sucesso!')
       
       const userMeta = data.user?.user_metadata
