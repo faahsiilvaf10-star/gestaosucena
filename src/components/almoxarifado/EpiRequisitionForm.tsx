@@ -236,67 +236,6 @@ function LastRequisitionDate({ employeeId, productId }: { employeeId: string, pr
   return <span className="text-xs text-muted-foreground">{lastDate ? `Última retirada: ${lastDate}` : 'Buscando...'}</span>;
 }
 
-
-// Hook que remapeia eventos de toque para um canvas rotacionado 90° via CSS
-// Sem este hook, as coordenadas do toque ficam erradas no canvas girado
-function useSignatureTouchRemap(
-  overlayRef: React.RefObject<HTMLDivElement>,
-  canvasRef: React.RefObject<SignatureCanvas>,
-  active: boolean
-) {
-  useEffect(() => {
-    if (!active) return
-    const overlay = overlayRef.current
-    if (!overlay) return
-
-    const remapEvent = (e: PointerEvent) => {
-      if ((e as any).__remapped) return
-      e.preventDefault()
-      e.stopPropagation()
-
-      const canvas = canvasRef.current?.getCanvas()
-      if (!canvas) return
-
-      const vw = window.innerWidth
-      const vh = window.innerHeight
-
-      // Para rotação 90° CW: remapeia portrait→landscape
-      // touch em (clientX, clientY) deve desenhar em:
-      //   canvas_x = (vh - clientY) / vh * canvasWidth
-      //   canvas_y = clientX / vw * canvasHeight
-      // Fazemos isso ajustando o clientX/clientY sintético
-      const fakeClientX = (vh - e.clientY) * (vw / vh)
-      const fakeClientY = e.clientX * (vh / vw)
-
-      const synthetic = new PointerEvent(e.type, {
-        bubbles: true,
-        cancelable: true,
-        clientX: fakeClientX,
-        clientY: fakeClientY,
-        pointerId: e.pointerId,
-        pointerType: e.pointerType,
-        pressure: e.pressure || 0.5,
-        isPrimary: e.isPrimary,
-      });
-      (synthetic as any).__remapped = true
-      canvas.dispatchEvent(synthetic)
-    }
-
-    const opts = { passive: false, capture: true } as AddEventListenerOptions
-    overlay.addEventListener('pointerdown', remapEvent, opts)
-    overlay.addEventListener('pointermove', remapEvent, opts)
-    overlay.addEventListener('pointerup', remapEvent, opts)
-    overlay.addEventListener('pointercancel', remapEvent, opts)
-
-    return () => {
-      overlay.removeEventListener('pointerdown', remapEvent, { capture: true } as any)
-      overlay.removeEventListener('pointermove', remapEvent, { capture: true } as any)
-      overlay.removeEventListener('pointerup', remapEvent, { capture: true } as any)
-      overlay.removeEventListener('pointercancel', remapEvent, { capture: true } as any)
-    }
-  }, [active, overlayRef, canvasRef])
-}
-
 export function EpiRequisitionForm() {
   const navigate = useNavigate();
   const createMutation = useCreateEpiRequisition();
@@ -337,15 +276,21 @@ export function EpiRequisitionForm() {
   const [step, setStep] = useState(1);
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
 
-  // Calcula dimensões do canvas para mobile
+  // Detecta dispositivo móvel de forma robusta, independente da orientação atual.
+  // Usa o menor lado da tela (screen.width/height) para não confundir landscape
+  // com desktop: em landscape o window.innerWidth pode ser > 768px, mas o
+  // menor lado da tela física de um celular sempre será < 768px.
+  const isMobileDevice = () =>
+    navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 768;
+
+  // Calcula dimensões do canvas.
+  // No mobile a área de assinatura usa o overlay em tela cheia e o canvas
+  // se ajusta por CSS (.sig-area / .sigCanvas), então aqui só calculamos
+  // o tamanho do layout inline (desktop).
   useEffect(() => {
     const update = () => {
-      if (window.innerWidth < 768) {
-        if (signatureFullscreen) {
-          setCanvasSize({ width: window.innerWidth - 24, height: window.innerHeight - 100 })
-        } else {
-          setCanvasSize({ width: window.innerWidth - 32, height: window.innerHeight - 220 })
-        }
+      if (isMobileDevice()) {
+        setCanvasSize({ width: Math.max(280, window.innerWidth - 32), height: 220 })
       } else {
         setCanvasSize({ width: 340, height: 200 })
       }
@@ -355,34 +300,40 @@ export function EpiRequisitionForm() {
     return () => window.removeEventListener('resize', update)
   }, [signatureFullscreen])
 
-  // Entra em modo overlay ao chegar na etapa de assinatura no mobile
+  // Entra em modo overlay ao chegar na etapa de assinatura no mobile.
+  // Usa isMobileDevice() para detectar o dispositivo corretamente em
+  // qualquer orientação (portrait ou landscape).
+  // Bloqueia a orientação em landscape via Screen Orientation API para que
+  // a área de assinatura seja sempre horizontal, sem rotação CSS que
+  // desalinharia as coordenadas de toque do canvas.
   useEffect(() => {
-    if ((step === 2 || step === 3) && window.innerWidth < 768) {
+    if ((step === 2 || step === 3) && isMobileDevice()) {
       setSignatureFullscreen(true)
       document.body.classList.add('signature-active')
+      // Tenta bloquear a orientação em landscape
+      try {
+        screen.orientation?.lock?.('landscape-primary').catch(() => {
+          // Navegador não suporta ou usuário não permitiu — sem problema,
+          // o overlay CSS cobre o caso de portrait.
+        });
+      } catch (_) { /* não crítico */ }
     } else {
       setSignatureFullscreen(false)
       document.body.classList.remove('signature-active')
+      // Desbloqueia a orientação ao sair do modo assinatura
+      try {
+        screen.orientation?.unlock?.();
+      } catch (_) { /* não crítico */ }
     }
-    return () => document.body.classList.remove('signature-active')
+    return () => {
+      document.body.classList.remove('signature-active')
+      try { screen.orientation?.unlock?.(); } catch (_) {}
+    }
   }, [step])
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
   const employee = employees?.find(e => e.id === employeeId);
-
-  // Bloqueia orientação em paisagem (chamado via gesto do usuário)
-  const lockLandscape = async () => {
-    try {
-      if (window.screen?.orientation?.lock) {
-        await window.screen.orientation.lock('landscape')
-      }
-    } catch (_) {}
-  }
-
-  const unlockOrientation = () => {
-    try { window.screen?.orientation?.unlock?.() } catch (_) {}
-  }
 
   const handleToggleItem = (productId: string, checked: boolean) => {
     if (checked) {
@@ -399,29 +350,6 @@ export function EpiRequisitionForm() {
   const clearSignatures = () => {
     authorizerSigRef.current?.clear();
     employeeSigRef.current?.clear();
-  };
-
-  // Funções para forçar o modo paisagem no celular (requer clique do usuário)
-  const requestLandscape = async () => {
-    if (window.innerWidth >= 768) return;
-    try {
-      if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
-        // Tenta travar a orientação (funciona em PWAs instalados)
-        await window.screen.orientation.lock('landscape');
-      }
-    } catch (e) {
-      console.warn("Orientation lock not supported or requires fullscreen:", e);
-    }
-  };
-
-  const exitLandscape = async () => {
-    try {
-      if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
-        window.screen.orientation.unlock();
-      }
-    } catch (e) {
-      console.warn("Orientation unlock not supported:", e);
-    }
   };
 
   // Handler unificado para salvar
@@ -744,15 +672,15 @@ export function EpiRequisitionForm() {
                     <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { unlockOrientation(); setStep(1) }} className="text-xs px-3">
+                    <Button size="sm" variant="outline" onClick={() => setStep(1)} className="text-xs px-3">
                       ← Voltar
                     </Button>
-                    <Button size="sm" onClick={() => { lockLandscape(); setStep(3) }} className="bg-black text-white text-xs px-3">
+                    <Button size="sm" onClick={() => setStep(3)} className="bg-black text-[#1c1d21] dark:text-white text-xs px-3">
                       Próximo →
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
+                <div className="sig-area">
                   <SignatureCanvas
                     ref={authorizerSigRef}
                     penColor="black"
@@ -761,9 +689,7 @@ export function EpiRequisitionForm() {
                     throttle={0}
                     velocityFilterWeight={0.1}
                     canvasProps={{
-                      width: canvasSize.width,
-                      height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full'
+                      className: 'sigCanvas'
                     }}
                   />
                 </div>
@@ -804,15 +730,15 @@ export function EpiRequisitionForm() {
                     <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
                       <Eraser className="w-5 h-5 text-gray-500" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { lockLandscape(); setStep(2) }} className="text-xs px-3">
+                    <Button size="sm" variant="outline" onClick={() => setStep(2)} className="text-xs px-3">
                       ← Voltar
                     </Button>
-                    <Button size="sm" onClick={() => { unlockOrientation(); handleGenerateAndSubmit() }} disabled={isGenerating} className="bg-black text-white text-xs px-3">
+                    <Button size="sm" onClick={() => handleGenerateAndSubmit()} disabled={isGenerating} className="bg-black text-[#1c1d21] dark:text-white text-xs px-3">
                       {isGenerating ? 'Salvando...' : 'Finalizar ✓'}
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 border-2 border-dashed border-gray-400 mx-3 mb-3 rounded-lg bg-white overflow-hidden touch-none">
+                <div className="sig-area">
                   <SignatureCanvas
                     ref={employeeSigRef}
                     penColor="black"
@@ -821,9 +747,7 @@ export function EpiRequisitionForm() {
                     throttle={0}
                     velocityFilterWeight={0.1}
                     canvasProps={{
-                      width: canvasSize.width,
-                      height: canvasSize.height,
-                      className: 'sigCanvas w-full h-full'
+                      className: 'sigCanvas'
                     }}
                   />
                 </div>
@@ -861,18 +785,12 @@ export function EpiRequisitionForm() {
           <Button type="button" variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
         )}
         {step > 1 && (
-          <Button type="button" variant="outline" onClick={() => {
-            if (step - 1 === 1) unlockOrientation();
-            setStep(step - 1);
-          }}>
+          <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Button>
         )}
         {step < 3 ? (
-          <Button type="button" className="ml-auto" onClick={() => {
-            if (step + 1 >= 2) lockLandscape();
-            setStep(step + 1);
-          }}>
+          <Button type="button" className="ml-auto" onClick={() => setStep(step + 1)}>
             Próximo <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (

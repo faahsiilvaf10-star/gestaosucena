@@ -91,6 +91,9 @@
    DESIGN TOKENS
    ============================================================ */
 
+/* Nomes legados (bg/surface/text-primary...) + tokens shadcn/ui.
+   Ambos apontam para as mesmas variáveis --theme-* para que os
+   componentes antigos e os primitivos novos nunca fiquem dessincronizados. */
 @theme {
   --color-bg: var(--theme-bg);
   --color-surface: var(--theme-surface);
@@ -99,14 +102,38 @@
   --color-stroke: var(--theme-stroke);
   --color-accent: var(--theme-accent);
   --color-accent-foreground: var(--theme-accent-foreground);
-  
+
   --color-popover: var(--theme-popover);
   --color-popover-foreground: var(--theme-popover-foreground);
   --color-card: var(--theme-card);
   --color-card-foreground: var(--theme-card-foreground);
-  
+
   --color-primary: var(--theme-primary);
   --color-primary-foreground: var(--theme-primary-foreground);
+
+  /* shadcn/ui — ausentes antes, deixavam input/dialog/button/select sem estilo */
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
+  --color-secondary: var(--theme-secondary);
+  --color-secondary-foreground: var(--theme-secondary-foreground);
+  --color-muted-foreground: var(--theme-muted-foreground);
+  --color-border: var(--theme-border);
+  --color-input: var(--theme-input);
+  --color-ring: var(--theme-ring);
+  --color-outline: var(--theme-outline);
+  --color-destructive: var(--theme-destructive);
+  --color-destructive-foreground: var(--theme-destructive-foreground);
+
+  /* Sidebar (src/components/ui/sidebar.tsx) */
+  --color-sidebar: var(--theme-sidebar);
+  --color-sidebar-foreground: var(--theme-sidebar-foreground);
+  --color-sidebar-primary: var(--theme-sidebar-primary);
+  --color-sidebar-primary-foreground: var(--theme-sidebar-primary-foreground);
+  --color-sidebar-accent: var(--theme-sidebar-accent);
+  --color-sidebar-accent-foreground: var(--theme-sidebar-accent-foreground);
+  --color-sidebar-border: var(--theme-sidebar-border);
+  --color-sidebar-ring: var(--theme-sidebar-ring);
+
   --font-body: 'Inter', sans-serif;
   --font-display: 'Instrument Serif', serif;
   --font-tarmiles: 'TarmilesAction', sans-serif;
@@ -141,26 +168,56 @@
    ============================================================ */
 
 @layer base {
+  /* ============================================================
+     TEMA CLARO (padrão) — surfaces em bege-gelo, nunca branco puro,
+     para reduzir o contraste dura e dar um tom "suave" ao sistema.
+     ============================================================ */
   :root {
-    --theme-bg: #e5e5f0;
-    --theme-bg-image: 
-      linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px),
-      linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%);
-    --theme-surface: hsl(35 14% 92%);
-    --theme-text-primary: hsl(0 0% 4%);
-    --theme-muted: hsl(0 0% 45%);
-    --theme-stroke: hsl(0 0% 90%);
-    --theme-accent: hsl(0 0% 4%);
-    --theme-accent-foreground: hsl(0 0% 96%);
-    
-    --theme-popover: hsl(0 0% 100%);
-    --theme-popover-foreground: hsl(0 0% 4%);
-    --theme-card: hsl(0 0% 100%);
-    --theme-card-foreground: hsl(0 0% 4%);
-    
-    --theme-primary: hsl(0 0% 4%);
-    --theme-primary-foreground: hsl(0 0% 96%);
+    --theme-bg: #eef0f4;
+    --theme-bg-image:
+      linear-gradient(rgba(120, 130, 160, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 130, 160, 0.07) 1px, transparent 1px),
+      linear-gradient(135deg, #e4e8f1 0%, #eceef4 45%, #f7ece2 100%);
+
+    /* Superfícies */
+    --theme-surface: #f3f1ed;
+    --theme-card: #fbfaf8;
+    --theme-popover: #ffffff;
+
+    /* Texto — preto suave, nunca #000 puro */
+    --theme-text-primary: #1c1d21;
+    --theme-foreground: #1c1d21;
+    --theme-muted: #5f6472;
+    --theme-muted-foreground: #5f6472;
+
+    /* Bordas e inputs */
+    --theme-stroke: #dfe1e8;
+    --theme-border: #dfe1e8;
+    --theme-input: #d5d8e0;
+    --theme-ring: #c9a84c;
+    --theme-outline: #c9a84c;
+
+    /* shadcn */
+    --theme-background: #eef0f4;
+    --theme-secondary: #e7e8ee;
+    --theme-secondary-foreground: #26282f;
+    --theme-destructive: #d03d4c;
+    --theme-destructive-foreground: #ffffff;
+
+    --theme-accent: #26282f;
+    --theme-accent-foreground: #f7f7f5;
+    --theme-primary: #26282f;
+    --theme-primary-foreground: #f7f7f5;
+
+    /* Sidebar */
+    --theme-sidebar: #f3f1ed;
+    --theme-sidebar-foreground: #1c1d21;
+    --theme-sidebar-primary: #26282f;
+    --theme-sidebar-primary-foreground: #f7f7f5;
+    --theme-sidebar-accent: #e7e8ee;
+    --theme-sidebar-accent-foreground: #1c1d21;
+    --theme-sidebar-border: #dfe1e8;
+    --theme-sidebar-ring: #c9a84c;
 
     /* Safe area insets — preenchidos automaticamente pelo browser */
     --sat: env(safe-area-inset-top, 0px);
@@ -182,20 +239,44 @@
 
   .dark {
     --theme-bg: hsl(0 0% 4%);
+    --theme-bg-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(135deg, #0b0b0e 0%, #111114 45%, #15120e 100%);
     --theme-surface: hsl(0 0% 8%);
+    --theme-card: hsl(0 0% 8%);
+    --theme-popover: hsl(0 0% 8%);
+
     --theme-text-primary: hsl(0 0% 96%);
+    --theme-foreground: hsl(0 0% 96%);
     --theme-muted: hsl(0 0% 53%);
+    --theme-muted-foreground: hsl(0 0% 53%);
+
     --theme-stroke: hsl(0 0% 12%);
+    --theme-border: hsl(0 0% 12%);
+    --theme-input: hsl(0 0% 20%);
+    --theme-ring: #c9a84c;
+    --theme-outline: hsl(0 0% 30%);
+
+    --theme-background: hsl(0 0% 4%);
+    --theme-secondary: hsl(0 0% 14%);
+    --theme-secondary-foreground: hsl(0 0% 96%);
+    --theme-destructive: #ff3848;
+    --theme-destructive-foreground: hsl(0 0% 4%);
+
     --theme-accent: hsl(0 0% 96%);
     --theme-accent-foreground: hsl(0 0% 4%);
-    
-    --theme-popover: hsl(0 0% 8%);
-    --theme-popover-foreground: hsl(0 0% 96%);
-    --theme-card: hsl(0 0% 8%);
-    --theme-card-foreground: hsl(0 0% 96%);
-    
     --theme-primary: hsl(0 0% 96%);
     --theme-primary-foreground: hsl(0 0% 4%);
+
+    --theme-sidebar: hsl(0 0% 8%);
+    --theme-sidebar-foreground: hsl(0 0% 96%);
+    --theme-sidebar-primary: hsl(0 0% 96%);
+    --theme-sidebar-primary-foreground: hsl(0 0% 4%);
+    --theme-sidebar-accent: hsl(0 0% 14%);
+    --theme-sidebar-accent-foreground: hsl(0 0% 96%);
+    --theme-sidebar-border: hsl(0 0% 12%);
+    --theme-sidebar-ring: #c9a84c;
   }
 
   /* ============================================================
@@ -307,14 +388,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(30, 35, 50, 0.18);
     border-radius: 10px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(30, 35, 50, 0.3);
   }
 
   .dark ::-webkit-scrollbar-track {
@@ -363,28 +444,50 @@
    ============================================================ */
 
 .bg-glass {
-  background: rgba(10, 10, 12, 0.75);
+  background: rgba(251, 250, 248, 0.78);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(30, 35, 50, 0.07);
 }
 
 .card-glass {
-  background: rgba(20, 20, 22, 0.5);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(30, 35, 50, 0.06);
+}
+
+.dark .bg-glass {
+  background: rgba(10, 10, 12, 0.75);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .card-glass {
+  background: rgba(20, 20, 22, 0.5);
+  border-color: rgba(255, 255, 255, 0.03);
 }
 
 /* Mobile: reduz blur para melhor performance */
 @media (max-width: 767px) {
   .bg-glass {
+    background: rgba(251, 250, 248, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .dark .bg-glass {
     background: rgba(10, 10, 12, 0.88);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
   .card-glass {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .dark .card-glass {
     background: rgba(20, 20, 22, 0.82);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -396,7 +499,14 @@
    ============================================================ */
 
 .text-gradient {
-  background: linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.7) 100%);
+  background: linear-gradient(90deg, #1c1d21 0%, rgba(28, 29, 33, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gradient {
+  background: linear-gradient(90deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -618,7 +728,7 @@
 @media (max-width: 768px) {
   .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-sm {
     backdrop-filter: blur(4px) !important;
-    background-color: rgba(255, 255, 255, 0.85) !important;
+    background-color: rgba(251, 250, 248, 0.85) !important;
   }
   .dark .backdrop-blur-md, .dark .backdrop-blur-lg, .dark .backdrop-blur-xl, .dark .backdrop-blur-sm {
     background-color: rgba(18, 18, 20, 0.85) !important;
@@ -655,7 +765,10 @@ body.signature-active .fixed.bottom-\[40px\] {
   display: none !important;
 }
 
-/* Overlay de assinatura: sempre fullscreen sem rotação (evita bug de coordenadas de toque) */
+/* Overlay de assinatura: tela cheia com a área de assinatura em formato
+   HORIZONTAL (faixa larga), independentemente da orientação do aparelho.
+   Em portrait, giramos o overlay 90° via transform para simular landscape,
+   garantindo uma área de assinatura ampla e confortável. */
 body.signature-active .sig-landscape-overlay {
   position: fixed;
   inset: 0;
@@ -663,6 +776,49 @@ body.signature-active .sig-landscape-overlay {
   background: white;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  width: 100vw;
+}
+
+/* Em portrait: gira o overlay para forçar experiência landscape.
+   O overlay ocupa a largura do viewport rotacionado (= altura da tela)
+   e é centralizado pelo translate. */
+@media (orientation: portrait) {
+  body.signature-active .sig-landscape-overlay {
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(90deg);
+    transform-origin: left top;
+    position: fixed;
+    top: 0;
+    left: 100dvw;
+    overflow: hidden;
+  }
+}
+
+/* Área do canvas: ocupa o espaço restante com proporção deitada. */
+body.signature-active .sig-landscape-overlay .sig-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 12px 12px;
+  border: 2px dashed #9ca3af;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* O canvas preenche a faixa e o navegador ajusta a densidade de pixels. */
+body.signature-active .sig-landscape-overlay .sigCanvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
 }
 
 /* ============================================================
