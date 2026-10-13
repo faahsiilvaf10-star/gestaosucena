@@ -48,6 +48,9 @@ function Index() {
       'Password should be at least 6 characters': 'A senha deve ter no mínimo 6 caracteres.',
       'To security reasons, your request has been blocked': 'Por motivos de segurança, sua requisição foi bloqueada.',
       'Email not confirmed': 'O e-mail ainda não foi confirmado.',
+      'captcha protection': 'Falha na verificação de segurança do Turnstile. Tente novamente.',
+      'invalid-input-secret': 'Chave secreta do Captcha não reconhecida pelo servidor.',
+      'no captcha_token found': 'Aguarde a verificação do Turnstile antes de entrar.',
     }
     
     // Check if the message is in our map exactly, or if it contains a substring
@@ -479,8 +482,8 @@ function Index() {
               />
             </div>
 
-            <button type="submit" className={btnClass} disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
+            <button type="submit" className={btnClass} disabled={isLoading || !captchaToken}>
+              {isLoading ? <Loader2 className="animate-spin" size={20} /> : !captchaToken ? 'Aguardando verificação...' : 'Entrar'}
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
@@ -603,8 +606,8 @@ function Index() {
 
 
 
-            <button type="submit" className={btnClass} disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Cadastrar'}
+            <button type="submit" className={btnClass} disabled={isLoading || !captchaToken}>
+              {isLoading ? <Loader2 className="animate-spin" size={20} /> : !captchaToken ? 'Aguardando verificação...' : 'Cadastrar'}
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
