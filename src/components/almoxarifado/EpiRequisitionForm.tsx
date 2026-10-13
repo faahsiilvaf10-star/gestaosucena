@@ -23,6 +23,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { getWhatsappSettings } from '@/lib/settings';
 import { sendWhatsappMediaOnServer } from '@/lib/whatsapp-api';
+import { SignatureOverlay } from '@/components/almoxarifado/SignatureOverlay';
 
 function generateReceiptPng(
   employee: { nome: string; cargo?: string; matricula?: string },
@@ -277,59 +278,32 @@ export function EpiRequisitionForm() {
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
 
   // Detecta dispositivo móvel de forma robusta, independente da orientação atual.
-  // Usa o menor lado da tela (screen.width/height) para não confundir landscape
-  // com desktop: em landscape o window.innerWidth pode ser > 768px, mas o
-  // menor lado da tela física de um celular sempre será < 768px.
   const isMobileDevice = () =>
     navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 768;
 
-  // Calcula dimensões do canvas.
-  // No mobile a área de assinatura usa o overlay em tela cheia e o canvas
-  // se ajusta por CSS (.sig-area / .sigCanvas), então aqui só calculamos
-  // o tamanho do layout inline (desktop).
+  // Calcula dimensões do canvas apenas para o layout desktop inline.
   useEffect(() => {
     const update = () => {
-      if (isMobileDevice()) {
-        setCanvasSize({ width: Math.max(280, window.innerWidth - 32), height: 220 })
-      } else {
-        setCanvasSize({ width: 340, height: 200 })
-      }
-    }
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [signatureFullscreen])
+      setCanvasSize(
+        isMobileDevice()
+          ? { width: Math.max(280, window.innerWidth - 32), height: 220 }
+          : { width: 340, height: 200 }
+      );
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [signatureFullscreen]);
 
-  // Entra em modo overlay ao chegar na etapa de assinatura no mobile.
-  // Usa isMobileDevice() para detectar o dispositivo corretamente em
-  // qualquer orientação (portrait ou landscape).
-  // Bloqueia a orientação em landscape via Screen Orientation API para que
-  // a área de assinatura seja sempre horizontal, sem rotação CSS que
-  // desalinharia as coordenadas de toque do canvas.
+  // Ativa modo fullscreen de assinatura ao entrar nos steps 2 e 3 no mobile.
   useEffect(() => {
-    if ((step === 2 || step === 3) && isMobileDevice()) {
-      setSignatureFullscreen(true)
-      document.body.classList.add('signature-active')
-      // Tenta bloquear a orientação em landscape
-      try {
-        screen.orientation?.lock?.('landscape-primary').catch(() => {
-          // Navegador não suporta ou usuário não permitiu — sem problema,
-          // o overlay CSS cobre o caso de portrait.
-        });
-      } catch (_) { /* não crítico */ }
+    const mobile = isMobileDevice();
+    if ((step === 2 || step === 3) && mobile) {
+      setSignatureFullscreen(true);
     } else {
-      setSignatureFullscreen(false)
-      document.body.classList.remove('signature-active')
-      // Desbloqueia a orientação ao sair do modo assinatura
-      try {
-        screen.orientation?.unlock?.();
-      } catch (_) { /* não crítico */ }
+      setSignatureFullscreen(false);
     }
-    return () => {
-      document.body.classList.remove('signature-active')
-      try { screen.orientation?.unlock?.(); } catch (_) {}
-    }
-  }, [step])
+  }, [step]);
 
   // Derived data
   const authorizer = employees?.find(e => e.id === authorizerId);
@@ -665,36 +639,14 @@ export function EpiRequisitionForm() {
           {/* ASSINATURA AUTORIZADOR */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
             {signatureFullscreen ? (
-              <div className="sig-landscape-overlay">
-                <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
-                  <Label className="font-bold text-base text-black">ASSINATURA AUTORIZADOR</Label>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()}>
-                      <Eraser className="w-5 h-5 text-gray-500" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setStep(1)} className="text-xs px-3">
-                      ← Voltar
-                    </Button>
-                    <Button size="sm" onClick={() => setStep(3)} className="bg-black text-[#1c1d21] dark:text-white text-xs px-3">
-                      Próximo →
-                    </Button>
-                  </div>
-                </div>
-                <div className="sig-area">
-                  <SignatureCanvas
-                    ref={authorizerSigRef}
-                    penColor="black"
-                    minWidth={1.5}
-                    maxWidth={3}
-                    throttle={0}
-                    velocityFilterWeight={0.1}
-                    canvasProps={{
-                      className: 'sigCanvas'
-                    }}
-                  />
-                </div>
-                <span className="text-center text-sm text-gray-600 pb-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
-              </div>
+              <SignatureOverlay
+                title="ASSINATURA DO AUTORIZADOR"
+                personName={authorizer?.nome || 'Selecione o autorizador'}
+                sigRef={authorizerSigRef}
+                onBack={() => setStep(1)}
+                onNext={() => setStep(3)}
+                nextLabel="Próximo →"
+              />
             ) : (
               <>
                 <div className="w-full flex items-center justify-between mb-2">
@@ -723,36 +675,15 @@ export function EpiRequisitionForm() {
           {/* ASSINATURA FUNCIONÁRIO */}
           <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
             {signatureFullscreen ? (
-              <div className="sig-landscape-overlay">
-                <div className="flex items-center justify-between px-4 pb-2 shrink-0 pt-2">
-                  <Label className="font-bold text-base text-black">ASSINATURA FUNCIONÁRIO</Label>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()}>
-                      <Eraser className="w-5 h-5 text-gray-500" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setStep(2)} className="text-xs px-3">
-                      ← Voltar
-                    </Button>
-                    <Button size="sm" onClick={() => handleGenerateAndSubmit()} disabled={isGenerating} className="bg-black text-[#1c1d21] dark:text-white text-xs px-3">
-                      {isGenerating ? 'Salvando...' : 'Finalizar ✓'}
-                    </Button>
-                  </div>
-                </div>
-                <div className="sig-area">
-                  <SignatureCanvas
-                    ref={employeeSigRef}
-                    penColor="black"
-                    minWidth={1.5}
-                    maxWidth={3}
-                    throttle={0}
-                    velocityFilterWeight={0.1}
-                    canvasProps={{
-                      className: 'sigCanvas'
-                    }}
-                  />
-                </div>
-                <span className="text-center text-sm text-gray-600 pb-2">{employee?.nome || 'Selecione o funcionário'}</span>
-              </div>
+              <SignatureOverlay
+                title="ASSINATURA DO FUNCIONÁRIO"
+                personName={employee?.nome || 'Selecione o funcionário'}
+                sigRef={employeeSigRef}
+                onBack={() => setStep(2)}
+                onNext={handleGenerateAndSubmit}
+                nextLabel={isGenerating ? 'Salvando...' : 'Finalizar ✓'}
+                nextDisabled={isGenerating}
+              />
             ) : (
               <>
                 <div className="w-full flex items-center justify-between mb-2">
