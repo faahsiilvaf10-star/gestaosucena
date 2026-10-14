@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
@@ -8,6 +8,28 @@ const { autoUpdater } = pkg;
 import extract from 'extract-zip';
 import { exec } from 'child_process';
 // __dirname is natively available in CommonJS
+
+/**
+ * Lê o tema salvo pelo app web no perfil do Electron para evitar flash de cor
+ * errada ao abrir a janela do sistema.
+ * O app web persiste 'sucena_theme' = 'light' | 'dark' no localStorage,
+ * que o Electron armazena em: userData/Default/Local Storage/leveldb/
+ * Como ler localStorage raw é complexo, usamos um arquivo de preferência
+ * simples gravado pelo próprio main quando o usuário fecha o app.
+ * Fallback: respeitar o tema do sistema operacional.
+ */
+function resolveAppTheme(): 'light' | 'dark' {
+  try {
+    const prefsPath = path.join(app.getPath('userData'), 'sucena_theme_pref.json');
+    if (fs.existsSync(prefsPath)) {
+      const raw = fs.readFileSync(prefsPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed.theme === 'light' || parsed.theme === 'dark') return parsed.theme;
+    }
+  } catch { /* ignora erro de leitura */ }
+  // Fallback: tema do sistema
+  return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -157,6 +179,9 @@ ipcMain.handle('launch-main-app', () => {
     return { success: true };
   }
 
+  const theme = resolveAppTheme();
+  const isDark = theme === 'dark';
+
   appWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -168,11 +193,13 @@ ipcMain.handle('launch-main-app', () => {
     title: 'Gestão Sucena',
     autoHideMenuBar: true,
     show: true,
-    backgroundColor: '#111111', // Fundo escuro enquanto carrega
+    // Usa a cor de fundo correta para o tema ativo, eliminando o flash de cor errada
+    backgroundColor: isDark ? '#0a0a0a' : '#eef0f4',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#00000000', // Transparente para sumir com a barra cinza
-      symbolColor: '#ffffff', // Cor dos ícones (Minimizar, Maximizar, Fechar)
+      // Transparente para integrar com o header do app web
+      color: '#00000000',
+      symbolColor: isDark ? '#ffffff' : '#1c1d21',
       height: 28
     }
   });
@@ -191,6 +218,38 @@ ipcMain.handle('launch-main-app', () => {
     appWindow = null;
   });
 
+  // Salva o tema atual quando o app é fechado (para usar no próximo lançamento)
+  appWindow.webContents.on('did-finish-load', () => {
+    // Injeta script para capturar o tema e enviar para o main process via IPC
+    appWindow?.webContents.executeJavaScript(`
+      (function() {
+        try {
+          const t = localStorage.getItem('sucena_theme');
+          if (t === 'light' || t === 'dark') {
+            // Disponível apenas via contextBridge, mas aqui salvamos via cookie de sessão como fallback
+            document.cookie = 'sucena_electron_theme=' + t + ';path=/';
+          }
+        } catch(_) {}
+      })()
+    `).catch(() => {});
+  });
+
+  // Intercepta navegação para salvar tema antes de fechar
+  appWindow.on('close', () => {
+    if (appWindow && !appWindow.isDestroyed()) {
+      appWindow.webContents.executeJavaScript(`
+        (function() {
+          try { return localStorage.getItem('sucena_theme') || 'light'; } catch(_) { return 'light'; }
+        })()
+      `).then((theme: string) => {
+        try {
+          const prefsPath = require('path').join(require('electron').app.getPath('userData'), 'sucena_theme_pref.json');
+          require('fs').writeFileSync(prefsPath, JSON.stringify({ theme }), 'utf-8');
+        } catch { /* ignora erro de escrita */ }
+      }).catch(() => {});
+    }
+  });
+
   // Open external links in default browser
   appWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith('https://gestaosucena.vercel.app')) {
@@ -201,6 +260,15 @@ ipcMain.handle('launch-main-app', () => {
   });
 
   return { success: true };
+});
+
+// IPC para salvar preferência de tema explicitamente (chamado pelo app web se necessário)
+ipcMain.on('save-theme-pref', (_event, theme: string) => {
+  if (theme !== 'light' && theme !== 'dark') return;
+  try {
+    const prefsPath = path.join(app.getPath('userData'), 'sucena_theme_pref.json');
+    fs.writeFileSync(prefsPath, JSON.stringify({ theme }), 'utf-8');
+  } catch { /* ignora */ }
 });
 
 // Keep download handler for potential future use (offline installers)
