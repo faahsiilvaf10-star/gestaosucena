@@ -542,7 +542,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[App Motorista] Não foi possível reconciliar o horário de status:', e)
+      }
     }
   }, [statusStartTime, activeStatus, viewState])
 
@@ -1431,7 +1433,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
                 queueWhatsappMessage(wSettings, targetPhone, text).catch(e => console.error('Erro ao disparar WP anomalia', e))
               }
             }
-          } catch (err) {}
+          } catch (err) {
+            console.error('[WhatsApp] Falha ao enviar aviso de anomalia corrigida:', err)
+          }
           // -------------------------
         }
 

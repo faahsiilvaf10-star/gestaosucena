@@ -7,10 +7,49 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
 import { getWhatsappSettings } from '../../lib/settings'
 import { format } from 'date-fns'
 import { saveOfflineFirst, queueWhatsappMessage } from '../../lib/offline-sync'
 import FuelGauge from './FuelGauge'
+
+/**
+ * Resolve os dados do equipamento para montar as mensagens do WhatsApp.
+ * Tenta o Supabase e, se falhar (offline, equipamento recém-criado ou erro
+ * de rede), usa o cache em localStorage gravado pelo DashboardStep.
+ * Sem esse fallback a notificação era descartada silenciosamente e a
+ * mensagem saía com "-" no lugar do nome do equipamento.
+ */
+type EquipmentInfo = { name?: string; type?: string; plate_tag?: string }
+
+async function resolveEquipment(equipmentId: string | null): Promise<EquipmentInfo> {
+  if (!equipmentId) return {}
+
+  const fromCache = (): EquipmentInfo => {
+    try {
+      return JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
+    } catch (_) {
+      return {}
+    }
+  }
+
+  if (!navigator.onLine) return fromCache()
+
+  try {
+    const { data, error } = await supabase
+      .from('eq_equipments')
+      .select('name, type, plate_tag')
+      .eq('id', equipmentId)
+      .maybeSingle()
+
+    if (error) throw error
+    if (data) return data
+  } catch (err) {
+    console.warn('[WhatsApp] Falha ao buscar equipamento no Supabase, usando cache:', err)
+  }
+
+  return fromCache()
+}
 
 export default function WizardStep({ 
   onFinish, 
@@ -240,13 +279,12 @@ export default function WizardStep({
         localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP PNEUS ---
-        // --- DISPARO WHATSAPP PNEUS ---
         try {
           const wSettings = await getWhatsappSettings()
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
             const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-              const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
+              const equipment = await resolveEquipment(equipmentId)
               let text = wSettings.messageTemplates.anomaliaRegistrada
               text = text.replace('{hora}', format(new Date(), 'HH:mm'))
               text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
@@ -261,7 +299,9 @@ export default function WizardStep({
               await queueWhatsappMessage(wSettings, targetPhone, text)
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('[WhatsApp] Falha ao enviar aviso de pneus:', e)
+        }
         // -----------------------------
       }
 
@@ -320,13 +360,12 @@ export default function WizardStep({
         localStorage.setItem('app_motorista_active_anomalies', JSON.stringify(activeAnomalies))
 
         // --- DISPARO WHATSAPP CHECKLIST ---
-        // --- DISPARO WHATSAPP CHECKLIST ---
         try {
           const wSettings = await getWhatsappSettings()
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
             const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
             if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-              const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
+              const equipment = await resolveEquipment(equipmentId)
               let text = wSettings.messageTemplates.anomaliaRegistrada
               text = text.replace('{hora}', format(new Date(), 'HH:mm'))
               text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
@@ -341,7 +380,9 @@ export default function WizardStep({
               await queueWhatsappMessage(wSettings, targetPhone, text)
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error(`[WhatsApp] Falha ao enviar aviso de checklist (${anomalyType}):`, e)
+        }
         // -----------------------------
       }
 
@@ -365,7 +406,7 @@ export default function WizardStep({
         if (wSettings.appMotoristaAlerts?.enabled !== false) {
           const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
           if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.inicioJornadaApp) {
-            const { data: equipment } = await supabase.from('eq_equipments').select('name, type, plate_tag').eq('id', equipmentId).single()
+            const equipment = await resolveEquipment(equipmentId)
             let text = wSettings.messageTemplates.inicioJornadaApp
             text = text.replace('{hora}', format(new Date(), 'HH:mm'))
             text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
@@ -377,9 +418,24 @@ export default function WizardStep({
             text = text.replace('{ajudante}', helperName || 'Não Informado')
 
             await queueWhatsappMessage(wSettings, targetPhone, text)
+          } else {
+            console.warn(
+              '[WhatsApp] Início de jornada não enviado. Configuração incompleta:',
+              {
+                url: !!wSettings.url,
+                token: !!wSettings.token,
+                instanceId: !!wSettings.instanceId,
+                targetPhone: !!targetPhone,
+                template: !!wSettings.messageTemplates?.inicioJornadaApp,
+              }
+            )
           }
+        } else {
+          console.warn('[WhatsApp] Alertas do App Motorista desativados no Admin.')
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('[WhatsApp] Falha ao enviar início de jornada:', e)
+      }
       localStorage.removeItem('app_motorista_wizard_state')
       finish()
     } catch (err) {
