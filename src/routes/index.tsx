@@ -273,11 +273,22 @@ function Index() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-[100] flex flex-col items-center justify-center text-[#1c1d21] dark:text-white overflow-hidden"
-            style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 40%, #050505 100%)' }}
+            className={`absolute inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden transition-colors duration-500 ${
+              isDark ? 'text-white' : 'text-[#1c1d21]'
+            }`}
+            style={{
+              background: isDark
+                ? 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 40%, #050505 100%)'
+                : 'radial-gradient(ellipse at center top, #fffdf7 0%, #f7f3e8 45%, #eceff4 100%)',
+            }}
           >
             {/* Subtle golden glow at top */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] opacity-20" style={{ background: 'radial-gradient(ellipse, #c9a84c 0%, transparent 70%)' }} />
+            <div
+              className={`absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] pointer-events-none transition-opacity duration-500 ${
+                isDark ? 'opacity-20' : 'opacity-30'
+              }`}
+              style={{ background: 'radial-gradient(ellipse, #c9a84c 0%, transparent 70%)' }}
+            />
 
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -290,8 +301,14 @@ function Index() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.5 }}
-                className="w-24 h-24 rounded-full border-[3px] border-[#c9a84c] flex items-center justify-center mb-8"
-                style={{ boxShadow: '0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(201,168,76,0.1)' }}
+                className={`w-24 h-24 rounded-full border-[3px] border-[#c9a84c] flex items-center justify-center mb-8 ${
+                  isDark ? 'bg-transparent' : 'bg-white/80 shadow-md backdrop-blur-sm'
+                }`}
+                style={{
+                  boxShadow: isDark
+                    ? '0 0 30px rgba(201,168,76,0.25), inset 0 0 20px rgba(201,168,76,0.1)'
+                    : '0 12px 30px rgba(201,168,76,0.2), inset 0 0 15px rgba(201,168,76,0.1)',
+                }}
               >
                 <motion.svg
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -315,8 +332,8 @@ function Index() {
                 transition={{ delay: 0.7 }}
                 className="font-extrabold tracking-[0.08em] uppercase mb-4 whitespace-nowrap"
                 style={{ 
-                  color: '#c9a84c',
-                  textShadow: '0 0 40px rgba(201,168,76,0.3)',
+                  color: isDark ? '#c9a84c' : '#b88e28',
+                  textShadow: isDark ? '0 0 40px rgba(201,168,76,0.3)' : '0 2px 20px rgba(201,168,76,0.2)',
                   fontFamily: 'Inter, sans-serif',
                   fontSize: 'clamp(20px, 6vw, 42px)'
                 }}
@@ -329,7 +346,9 @@ function Index() {
                 initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.85 }}
-                className="text-lg text-white/70 font-light mb-3"
+                className={`text-lg font-light mb-3 transition-colors ${
+                  isDark ? 'text-white/70' : 'text-slate-600'
+                }`}
               >
                 Bem-vindo ao sistema
               </motion.p>
@@ -350,8 +369,17 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-[#1c1d21] dark:text-white tracking-tight mb-1" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
-                <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
+                <p
+                  className={`tracking-tight mb-1 font-medium transition-colors ${
+                    isDark ? 'text-white' : 'text-[#1c1d21]'
+                  }`}
+                  style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}
+                >
+                  {authorizedUser.name}
+                </p>
+                <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: isDark ? '#c9a84c' : '#b88e28' }}>
+                  {authorizedUser.role}
+                </p>
               </motion.div>
               
               {/* Three info cards */}
@@ -359,29 +387,64 @@ function Index() {
                 initial={{ y: 25, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.2 }}
-                className="w-full grid grid-cols-3 rounded-2xl overflow-hidden mb-10"
+                className="w-full grid grid-cols-3 rounded-2xl overflow-hidden mb-10 backdrop-blur-md transition-all duration-300"
                 style={{ 
-                  background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(201,168,76,0.15)'
+                  background: isDark
+                    ? 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.72) 100%)',
+                  border: isDark ? '1px solid rgba(201,168,76,0.15)' : '1px solid rgba(201,168,76,0.3)',
+                  boxShadow: isDark
+                    ? 'none'
+                    : '0 10px 30px -5px rgba(201,168,76,0.15), 0 4px 12px rgba(0,0,0,0.04)',
                 }}
               >
                 {/* ACESSO SEGURO */}
-                <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-                  <Shield size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">ACESSO SEGURO</p>
-                  <p className="text-[10px] text-white/40">Seus dados protegidos</p>
+                <div
+                  className="flex flex-col items-center justify-center py-6 px-3"
+                  style={{ borderRight: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(201,168,76,0.15)' }}
+                >
+                  <Shield size={28} className="mb-3" style={{ color: isDark ? '#c9a84c' : '#b88e28' }} />
+                  <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 transition-colors ${
+                    isDark ? 'text-white/90' : 'text-[#1c1d21]'
+                  }`}>
+                    ACESSO SEGURO
+                  </p>
+                  <p className={`text-[10px] transition-colors ${
+                    isDark ? 'text-white/40' : 'text-slate-500'
+                  }`}>
+                    Seus dados protegidos
+                  </p>
                 </div>
                 {/* USUÁRIO VERIFICADO */}
-                <div className="flex flex-col items-center justify-center py-6 px-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-                  <UserCircle2 size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">USUÁRIO VERIFICADO</p>
-                  <p className="text-[10px] text-white/40">Permissões confirmadas</p>
+                <div
+                  className="flex flex-col items-center justify-center py-6 px-3"
+                  style={{ borderRight: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(201,168,76,0.15)' }}
+                >
+                  <UserCircle2 size={28} className="mb-3" style={{ color: isDark ? '#c9a84c' : '#b88e28' }} />
+                  <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 transition-colors ${
+                    isDark ? 'text-white/90' : 'text-[#1c1d21]'
+                  }`}>
+                    USUÁRIO VERIFICADO
+                  </p>
+                  <p className={`text-[10px] transition-colors ${
+                    isDark ? 'text-white/40' : 'text-slate-500'
+                  }`}>
+                    Permissões confirmadas
+                  </p>
                 </div>
                 {/* SESSÃO INICIADA */}
                 <div className="flex flex-col items-center justify-center py-6 px-3">
-                  <Clock size={28} className="mb-3" style={{ color: '#c9a84c' }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/90 mb-1">SESSÃO INICIADA</p>
-                  <p className="text-[10px] text-white/40">Agora mesmo</p>
+                  <Clock size={28} className="mb-3" style={{ color: isDark ? '#c9a84c' : '#b88e28' }} />
+                  <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 transition-colors ${
+                    isDark ? 'text-white/90' : 'text-[#1c1d21]'
+                  }`}>
+                    SESSÃO INICIADA
+                  </p>
+                  <p className={`text-[10px] transition-colors ${
+                    isDark ? 'text-white/40' : 'text-slate-500'
+                  }`}>
+                    Agora mesmo
+                  </p>
                 </div>
               </motion.div>
 
@@ -392,10 +455,14 @@ function Index() {
                 transition={{ delay: 1.5 }}
                 className="flex flex-col items-center gap-2"
               >
-                <p className="text-xs text-white/40">Sua sessão está protegida e monitorada.</p>
+                <p className={`text-xs transition-colors ${
+                  isDark ? 'text-white/40' : 'text-slate-500'
+                }`}>
+                  Sua sessão está protegida e monitorada.
+                </p>
                 <div className="flex items-center gap-1.5">
-                  <Lock size={13} style={{ color: '#c9a84c' }} />
-                  <p className="text-xs font-semibold" style={{ color: '#c9a84c' }}>Ambiente 100% seguro</p>
+                  <Lock size={13} style={{ color: isDark ? '#c9a84c' : '#b88e28' }} />
+                  <p className="text-xs font-semibold" style={{ color: isDark ? '#c9a84c' : '#b88e28' }}>Ambiente 100% seguro</p>
                 </div>
               </motion.div>
 
