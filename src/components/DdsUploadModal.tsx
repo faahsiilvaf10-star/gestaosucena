@@ -162,7 +162,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
                 <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                 <button 
                   onClick={() => { setFile(null); setPreview(null) }}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-[#1c1d21] dark:text-white rounded-full transition-colors"
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
                 >
                   <X size={16} />
                 </button>

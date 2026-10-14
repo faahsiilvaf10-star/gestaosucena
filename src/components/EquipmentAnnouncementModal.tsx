@@ -89,7 +89,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             
             {/* Equipment Name Badge */}
-            <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-[#1c1d21] dark:text-white px-3 py-1.5 rounded-lg font-bold text-sm border border-white/20 shadow-lg">
+            <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-lg font-bold text-sm border border-white/20 shadow-lg">
               {vehicleName}
             </div>
             
