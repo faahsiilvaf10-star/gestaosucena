@@ -41,12 +41,12 @@ function EquipamentosHub() {
         {/* Title */}
         <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
-            className="tracking-tight text-white drop-shadow-md text-center py-1"
+            className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-md text-center py-1"
             style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: 'normal' }}
           >
             Equipamentos
           </h1>
-          <p className="text-white/ text-sm mt-2 font-medium text-center">
+          <p className="text-gray-600 dark:text-white/70 text-sm mt-2 font-medium text-center">
             Controle de frotas, movimentações e vistorias
           </p>
         </div>

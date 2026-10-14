@@ -37,7 +37,7 @@ function SegurancaComponent() {
       <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start mt-2">
         <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1 
-            className="tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
+            className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
             style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
           >
             Segurança

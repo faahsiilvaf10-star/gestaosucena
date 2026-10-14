@@ -2,6 +2,8 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useEffect, useState } from 'react'
 import { getGlobalAppearanceSettings } from '../lib/settings'
 
+const DEFAULT_LIGHT_BG = `linear-gradient(rgba(120, 130, 160, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 130, 160, 0.07) 1px, transparent 1px), linear-gradient(135deg, #e4e8f1 0%, #eceef4 45%, #f7ece2 100%)`
+
 export function GlobalBackground() {
   const { isDark } = useTheme()
   const [bgCss, setBgCss] = useState('')
@@ -24,11 +26,14 @@ export function GlobalBackground() {
     }).catch(console.error)
   }, [])
 
-  const isCustomBg = !!bgCss && bgCss !== `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
+  // O fundo é definido pelo Admin para o tema CLARO. No escuro usamos a
+  // camada procedural para preservar o visual original.
+  const isCustomBg = !!bgCss && bgCss !== DEFAULT_LIGHT_BG
   const isImage = bgCss.includes('url')
-  
+
+  const useCustomBg = isCustomBg && !isDark
   let customStyle = {}
-  if (isCustomBg) {
+  if (useCustomBg) {
     customStyle = {
       backgroundImage: bgCss,
       backgroundSize: isImage && !bgCss.includes('background-size') ? 'cover' : '24px 24px, 24px 24px, 100% 100%',
@@ -40,16 +45,17 @@ export function GlobalBackground() {
   }
 
   return (
-    <div 
-      className={`fixed inset-0 z-[-1] overflow-hidden pointer-events-none transition-colors duration-300 ${!isCustomBg ? (isDark ? 'bg-[#09090b]' : 'bg-[#d4d4d8]') : 'bg-black'}`}
+    <div
+      className={`fixed inset-0 z-[-1] overflow-hidden pointer-events-none transition-colors duration-300 ${!useCustomBg ? (isDark ? 'bg-[#09090b]' : 'bg-[#e4e8f1]') : 'bg-[#f2f3f7]'}`}
     >
-      {isCustomBg ? (
+      {useCustomBg ? (
         <div className="absolute inset-0 transition-opacity duration-300" style={customStyle} />
       ) : (
         <>
           {/* Background Effects */}
-          <div className={`absolute top-[-20%] left-[-10%] w-[70%] h-[70%] blur-[150px] rounded-full transition-colors duration-300 ${isDark ? 'bg-blue-600/20' : 'bg-blue-400/20'}`}></div>
-          <div className={`absolute top-[-20%] right-[-10%] w-[60%] h-[60%] blur-[150px] rounded-full transition-colors duration-300 ${isDark ? 'bg-purple-600/20' : 'bg-purple-400/20'}`}></div>
+          <div className={`absolute top-[-20%] left-[-10%] w-[70%] h-[70%] blur-[150px] rounded-full transition-colors duration-300 ${isDark ? 'bg-blue-600/20' : 'bg-blue-300/30'}`}></div>
+          <div className={`absolute top-[-20%] right-[-10%] w-[60%] h-[60%] blur-[150px] rounded-full transition-colors duration-300 ${isDark ? 'bg-purple-600/20' : 'bg-amber-300/30'}`}></div>
+          <div className={`absolute bottom-[-25%] left-[20%] w-[70%] h-[60%] blur-[150px] rounded-full transition-colors duration-300 ${isDark ? 'bg-indigo-600/15' : 'bg-rose-200/40'}`}></div>
           
           {/* Grid Pattern */}
           <div 

@@ -253,7 +253,7 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
           
           <button 
             onClick={inputText ? handleSendText : startRecording}
-            className={`p-3 shrink-0 rounded-full transition-all ${ inputText ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-white hover:bg-[#008f6f]') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200') }`}
+            className={`p-3 shrink-0 rounded-full transition-all ${ inputText ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-[#1c1d21] dark:text-white hover:bg-[#008f6f]') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200') }`}
           >
             {inputText ? <Send size={20} className="ml-1" /> : <Mic size={22} />}
           </button>

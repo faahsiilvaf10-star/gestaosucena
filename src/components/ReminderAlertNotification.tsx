@@ -188,7 +188,7 @@ export function ReminderAlertNotification() {
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                   </svg>
                 </div>
-                <h3 className="font-bold text-lg sm:text-xl text-white leading-tight">
+                <h3 className="font-bold text-lg sm:text-xl text-[#1c1d21] dark:text-white leading-tight">
                   {notif.title}
                 </h3>
               </div>
@@ -242,7 +242,7 @@ export function ReminderAlertNotification() {
                       {notif.reminder.description && (
                         <div className="pt-3 border-t border-gray-200 dark:border-white/10">
                           <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <AlignLeft size={16} className="text-gray-400 shrink-0 mt-0.5" />
+                            <AlignLeft size={16} className="text-[#5f6472] dark:text-gray-400 shrink-0 mt-0.5" />
                             <p className="font-medium whitespace-pre-wrap leading-relaxed">
                               {notif.reminder.description}
                             </p>

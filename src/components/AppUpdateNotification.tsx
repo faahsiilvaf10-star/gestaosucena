@@ -141,11 +141,11 @@ export function AppUpdateNotification() {
 
               {/* Text */}
               <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm leading-tight">
+                <p className="text-[#1c1d21] dark:text-white font-semibold text-sm leading-tight">
                   🚀 Nova atualização disponível!
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  Atualizando em <span className="text-white font-bold">{countdown}s</span>...
+                  Atualizando em <span className="text-[#1c1d21] dark:text-white font-bold">{countdown}s</span>...
                 </p>
               </div>
 

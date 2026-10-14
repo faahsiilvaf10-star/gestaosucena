@@ -273,7 +273,7 @@ function Index() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-[100] flex flex-col items-center justify-center text-white overflow-hidden"
+            className="absolute inset-0 z-[100] flex flex-col items-center justify-center text-[#1c1d21] dark:text-white overflow-hidden"
             style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 40%, #050505 100%)' }}
           >
             {/* Subtle golden glow at top */}
@@ -350,7 +350,7 @@ function Index() {
                 transition={{ delay: 1 }}
                 className="text-center flex flex-col items-center mb-10"
               >
-                <p className="text-white tracking-tight mb-1" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
+                <p className="text-[#1c1d21] dark:text-white tracking-tight mb-1" style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}>{authorizedUser.name}</p>
                 <p className="text-sm uppercase tracking-[0.25em] font-semibold mt-2" style={{ color: '#c9a84c' }}>{authorizedUser.role}</p>
               </motion.div>
               
@@ -437,7 +437,7 @@ function Index() {
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/ hover:text-white/' : 'text-black/40 hover:text-black/80'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/70 hover:text-white/70' : 'text-black/40 hover:text-black/80'}`}
                 title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 disabled={isLoading}
               >
@@ -453,7 +453,7 @@ function Index() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className={`w-3.5 h-3.5 rounded border-white/10 bg-white/5 accent-[#eab308] focus:ring-0 focus:ring-offset-0 transition-colors cursor-pointer`}
               />
-              <label htmlFor="rememberMe" className={`text-xs select-none cursor-pointer ${isDark ? 'text-white/ hover:text-white/' : 'text-black/60 hover:text-black/80'} transition-colors`}>
+              <label htmlFor="rememberMe" className={`text-xs select-none cursor-pointer ${isDark ? 'text-white/70 hover:text-white/70' : 'text-black/60 hover:text-black/80'} transition-colors`}>
                 Lembrar-me
               </label>
             </div>
@@ -494,7 +494,7 @@ function Index() {
                 Esqueceu a senha?
               </button>
               {registrationOpen ? (
-                <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/' : 'text-black/60'}`}>
+                <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/70' : 'text-black/60'}`}>
                   <span>Não tem uma conta?</span>
                   <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                     setErrorMessage('')
@@ -504,7 +504,7 @@ function Index() {
                   </button>
                 </div>
               ) : (
-                <p className={`text-xs ${isDark ? 'text-white/' : 'text-black/40'}`}>
+                <p className={`text-xs ${isDark ? 'text-white/70' : 'text-black/40'}`}>
                   A criação de novas contas está temporariamente desativada.
                 </p>
               )}
@@ -572,7 +572,7 @@ function Index() {
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/ hover:text-white/' : 'text-black/40 hover:text-black/80'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/70 hover:text-white/70' : 'text-black/40 hover:text-black/80'}`}
                 title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 disabled={isLoading}
               >
@@ -611,7 +611,7 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/' : 'text-black/60'}`}>
+              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/70' : 'text-black/60'}`}>
                 <span>Já tem uma conta?</span>
                 <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                   setErrorMessage('')
@@ -631,10 +631,10 @@ function Index() {
             </div>
             
             <div className="space-y-2">
-              <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h2 className={`text-2xl font-bold ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
                 Cadastro Concluído!
               </h2>
-              <p className={`text-sm px-4 leading-relaxed ${isDark ? 'text-white/' : 'text-gray-600'}`}>
+              <p className={`text-sm px-4 leading-relaxed ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
                 Sua conta foi criada com sucesso. Verifique seu e-mail para confirmação se necessário.
               </p>
             </div>
@@ -651,7 +651,7 @@ function Index() {
         {viewState === 'FORGOT_PASSWORD' && (
           <form className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" onSubmit={handleForgotPassword}>
             <div>
-              <p className={`text-sm mb-4 text-center ${isDark ? 'text-white/' : 'text-gray-600'}`}>
+              <p className={`text-sm mb-4 text-center ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
                 Digite o e-mail associado à sua conta. Enviaremos um link para você redefinir sua senha.
               </p>
               <input 
@@ -675,7 +675,7 @@ function Index() {
             </button>
             
             <div className="flex flex-col items-center gap-4 mt-6">
-              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/' : 'text-black/60'}`}>
+              <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-white/70' : 'text-black/60'}`}>
                 <span>Lembrou sua senha?</span>
                 <button type="button" className={`${linkClass} p-2 font-medium`} onClick={() => {
                   setErrorMessage('')
@@ -691,10 +691,10 @@ function Index() {
         {viewState === 'RESET_PASSWORD' && (
           <form className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" onSubmit={handleResetPassword}>
             <div>
-              <h3 className={`text-lg font-semibold text-center mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-lg font-semibold text-center mb-4 ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
                 Redefinir Senha
               </h3>
-              <p className={`text-sm mb-4 text-center ${isDark ? 'text-white/' : 'text-gray-600'}`}>
+              <p className={`text-sm mb-4 text-center ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
                 Digite a sua nova senha abaixo.
               </p>
               <div className="relative">
@@ -709,7 +709,7 @@ function Index() {
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/ hover:text-white/' : 'text-black/40 hover:text-black/80'}`}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${isDark ? 'text-white/70 hover:text-white/70' : 'text-black/40 hover:text-black/80'}`}
                   title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   disabled={isLoading}
                 >
@@ -736,7 +736,7 @@ function Index() {
       <div className="absolute bottom-0 left-0 w-full p-6 flex justify-between items-center z-10">
         <div className="w-[64px]"></div> {/* Spacer */}
         
-        <p className={`text-[11px] flex-1 text-center font-light transition-colors ${isDark ? 'text-white/' : 'text-black/40'}`}>
+        <p className={`text-[11px] flex-1 text-center font-light transition-colors ${isDark ? 'text-white/70' : 'text-black/40'}`}>
           © 2026 Sucena Empreendimentos. Todos os direitos reservados.
         </p>
 

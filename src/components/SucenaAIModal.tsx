@@ -275,21 +275,21 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[#1c1d21] dark:text-white shadow-lg shadow-purple-500/30">
               <Bot size={20} />
             </div>
             <div>
               <h2 className="font-bold text-lg dark:text-white flex items-center gap-2">Sucena AI <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-500 text-[10px] uppercase tracking-wider">Beta</span></h2>
-              <p className="text-xs text-white/">Treinada com os dados do seu sistema</p>
+              <p className="text-xs text-white/70">Treinada com os dados do seu sistema</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {hasKey && isAdmin && (
-              <button onClick={openSettings} className="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="Configurações da IA">
+              <button onClick={openSettings} className="p-2 text-[#5f6472] dark:text-gray-400 hover:text-blue-500 transition-colors" title="Configurações da IA">
                 <ShieldAlert size={18} />
               </button>
             )}
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full">
+            <button onClick={onClose} className="p-2 text-[#5f6472] dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full">
               <X size={20} />
             </button>
           </div>
@@ -304,7 +304,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                   <KeyRound size={32} />
                 </div>
                 <h3 className="text-xl font-bold dark:text-white mb-2">Conecte a Inteligência Artificial</h3>
-                <p className="text-sm text-white/ mb-6">
+                <p className="text-sm text-white/70 mb-6">
                   Configure as chaves da API globalmente para todos os usuários do sistema.
                 </p>
                 
@@ -318,14 +318,14 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                     placeholder="Cole sua API Key do Google aqui..."
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-[#1c1d21] dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-sm"
                   />
                   <input
                     type="password"
                     placeholder="[Opcional] Cole sua API Key do Groq aqui..."
                     value={groqKey}
                     onChange={e => setGroqKey(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
+                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-[#1c1d21] dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-sm"
                   />
                   <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="block text-xs text-orange-500 hover:text-orange-600 mb-2 mt-1">
                     Não tem a chave Groq? Gere uma aqui de graça
@@ -361,7 +361,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                   <Bot size={32} />
                 </div>
                 <h3 className="text-xl font-bold dark:text-white mb-2">IA Desconectada</h3>
-                <p className="text-sm text-white/">
+                <p className="text-sm text-white/70">
                   A Inteligência Artificial ainda não foi configurada. Por favor, solicite a um Administrador para adicionar as chaves de integração.
                 </p>
               </div>
@@ -371,7 +371,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'ai' && (
-                    <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white mt-1">
+                    <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[#1c1d21] dark:text-white mt-1">
                       <Bot size={14} />
                     </div>
                   )}
@@ -383,7 +383,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                     {msg.text}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-white mt-1 uppercase text-xs font-bold overflow-hidden">
+                    <div className="w-8 h-8 rounded-full shrink-0 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-[#1c1d21] dark:text-white mt-1 uppercase text-xs font-bold overflow-hidden">
                       {userAvatar ? (
                         <img src={userAvatar} alt="Você" className="w-full h-full object-cover" />
                       ) : (
@@ -396,7 +396,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
               
               {(gatheringData || loading) && (
                 <div className="flex gap-4 justify-start animate-in fade-in slide-in-from-bottom-2">
-                  <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white mt-1">
+                  <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[#1c1d21] dark:text-white mt-1">
                     <Bot size={14} />
                   </div>
                   <div className="bg-white dark:bg-[#1a1a1c] text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-white/5 rounded-2xl rounded-bl-none px-5 py-3.5 text-sm flex items-center gap-2">
@@ -424,7 +424,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendMessage()}
                 disabled={loading || gatheringData}
-                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl pl-28 pr-12 py-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl pl-28 pr-12 py-4 text-sm text-[#1c1d21] dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
               <button
                 onClick={sendMessage}

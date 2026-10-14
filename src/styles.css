@@ -1,7 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
 
-@custom-variant dark (&:is(.dark.dark, .dark.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
+
 
 /* ============================================================
    FONTES LOCAIS — com font-display: swap para performance
@@ -183,6 +184,8 @@
     --theme-surface: #f3f1ed;
     --theme-card: #fbfaf8;
     --theme-popover: #ffffff;
+    --theme-card-foreground: #1c1d21;
+    --theme-popover-foreground: #1c1d21;
 
     /* Texto — preto suave, nunca #000 puro */
     --theme-text-primary: #1c1d21;
@@ -235,6 +238,9 @@
     --z-toast: 80;
     --z-modal: 90;
     --z-overlay: 100;
+
+    /* Garante elementos nativos do browser no esquema claro */
+    color-scheme: light;
   }
 
   .dark {
@@ -246,6 +252,8 @@
     --theme-surface: hsl(0 0% 8%);
     --theme-card: hsl(0 0% 8%);
     --theme-popover: hsl(0 0% 8%);
+    --theme-card-foreground: hsl(0 0% 96%);
+    --theme-popover-foreground: hsl(0 0% 96%);
 
     --theme-text-primary: hsl(0 0% 96%);
     --theme-foreground: hsl(0 0% 96%);
@@ -277,6 +285,9 @@
     --theme-sidebar-accent-foreground: hsl(0 0% 96%);
     --theme-sidebar-border: hsl(0 0% 12%);
     --theme-sidebar-ring: #c9a84c;
+
+    /* Elementos nativos do browser no esquema escuro */
+    color-scheme: dark;
   }
 
   /* ============================================================

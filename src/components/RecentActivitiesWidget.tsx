@@ -115,15 +115,15 @@ export function RecentActivitiesWidget() {
   return (
     <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
       <div className="flex items-center gap-2 mb-6 relative z-10">
-        <Clock className="w-5 h-5 text-gray-400" />
-        <h2 className="text-xl font-semibold text-white tracking-tight">Atividades recentes</h2>
+        <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
+        <h2 className="text-xl font-semibold text-[#1c1d21] dark:text-white tracking-tight">Atividades recentes</h2>
       </div>
 
       <div className="flex flex-col gap-4 flex-1 relative z-10">
         {loading ? (
-          <div className="text-white/ text-sm animate-pulse">Carregando atividades...</div>
+          <div className="text-gray-600 dark:text-white/70 text-sm animate-pulse">Carregando atividades...</div>
         ) : activities.length === 0 ? (
-          <div className="text-white/ text-sm">Nenhuma atividade recente.</div>
+          <div className="text-gray-600 dark:text-white/70 text-sm">Nenhuma atividade recente.</div>
         ) : (
           activities.map(act => {
             let dateStr = 'Data inválida'
@@ -139,14 +139,14 @@ export function RecentActivitiesWidget() {
                   {getModuleIcon(act.module)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-[#1c1d21] dark:text-white truncate">
                     {act.action}
                   </p>
-                  <p className="text-xs text-white/ truncate">
+                  <p className="text-xs text-gray-600 dark:text-white/70 truncate">
                     {act.module} {act.user_name && `• ${act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}`}
                   </p>
                 </div>
-                <div className="text-xs font-medium text-white/ whitespace-nowrap pt-1">
+                <div className="text-xs font-medium text-gray-500 dark:text-white/70 whitespace-nowrap pt-1">
                   {dateStr}
                 </div>
               </div>
@@ -155,8 +155,8 @@ export function RecentActivitiesWidget() {
         )}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800/60 relative z-10">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white/ hover:text-gray-900 dark:hover:text-white transition-colors">
+      <div className="mt-6 pt-4 border-t border-amber-200/60 dark:border-slate-800/60 relative z-10">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors">
           As atividades de todo o sistema aparecem aqui em tempo real.
         </div>
       </div>

@@ -376,7 +376,7 @@ function PluviometriaPage() {
                     const daysInMonth = getDaysInMonth(year, mIdx)
                     return (
                       <tr key={monthName} className="border-b border-white/10">
-                        <td className="p-2 border-r border-white/20 text-left bg-black/60 text-white">
+                        <td className="p-2 border-r border-white/20 text-left bg-black/60 text-[#1c1d21] dark:text-white">
                           {monthName}
                         </td>
                         {Array.from({ length: 31 }).map((_, dIdx) => {
@@ -412,13 +412,13 @@ function PluviometriaPage() {
                                 type="text"
                                 value={valStr}
                                 onChange={(e) => handleValueChange(mIdx, day, e.target.value)}
-                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-white outline-none focus:bg-white/20"
+                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-[#1c1d21] dark:text-white outline-none focus:bg-white/20"
                                 style={{ minHeight: '34px' }}
                               />
                             </td>
                           )
                         })}
-                        <td className="p-2 bg-black/60 text-white text-lg font-bold">
+                        <td className="p-2 bg-black/60 text-[#1c1d21] dark:text-white text-lg font-bold">
                           {monthTotals[mIdx]}
                         </td>
                       </tr>
@@ -427,7 +427,7 @@ function PluviometriaPage() {
                 </tbody>
               </table>
               <div className="flex justify-between items-end p-4 bg-black/80 border-t border-white/20">
-                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-white font-medium tracking-wide uppercase">
+                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-[#1c1d21] dark:text-white font-medium tracking-wide uppercase">
                   <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-sm"></div> SEM COLETA</div>
                   <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-sm"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
                 </div>
@@ -446,7 +446,7 @@ function PluviometriaPage() {
              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
                <div className="w-4 h-4 text-green-500">🌧️</div> 
              </div>
-             <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Pluviometria Mensal — {year}</h3>
+             <h3 className={`text-xl font-bold ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>Pluviometria Mensal — {year}</h3>
           </div>
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">

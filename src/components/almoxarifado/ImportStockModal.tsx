@@ -132,7 +132,7 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
         
         {/* Header */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
-          <h2 className="font-bold text-lg text-white">Importar Planilha de Estoque</h2>
+          <h2 className="font-bold text-lg text-[#1c1d21] dark:text-white">Importar Planilha de Estoque</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors">
             <X size={20} />
           </button>

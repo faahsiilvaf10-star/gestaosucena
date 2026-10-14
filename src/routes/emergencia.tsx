@@ -129,11 +129,11 @@ function EmergenciaComponent() {
 
       {/* Ponto de Encontro */}
       <div className="pt-4 pb-8">
-        <div className="bg-[#1a8b44] text-white rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-lg relative overflow-hidden">
+        <div className="bg-[#1a8b44] text-[#1c1d21] dark:text-white rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-lg relative overflow-hidden">
           
           <div className="flex items-center space-x-6 relative z-10 w-full">
             <div className="bg-white/20 p-5 rounded-full flex-shrink-0">
-              <MapPin className="w-10 h-10 text-white" />
+              <MapPin className="w-10 h-10 text-[#1c1d21] dark:text-white" />
             </div>
             <div className="flex-1">
               <h2 className="text-2xl md:text-3xl font-extrabold tracking-wide uppercase">Ponto de Encontro</h2>

@@ -261,7 +261,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
           
           <button 
-            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/ hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
+            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
             title="Sincronizar Atualizações e Limpar Cache"
             onClick={handleHardRefresh}
             style={{ minWidth: 44, minHeight: 44 }}
@@ -272,7 +272,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {isAdmin(currentUser.name, currentUser.role) && (
             <Link 
               to="/admin"
-              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/ hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
+              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
               title="Administração"
               style={{ minWidth: 44, minHeight: 44 }}
             >
@@ -293,7 +293,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {/* Chat Icon with Badge */}
           <button 
             onClick={toggleSidebar}
-            className={`relative transition-colors ${isDark ? 'text-white/ hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            className={`relative transition-colors ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -327,7 +327,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className={`p-6 rounded-2xl w-full max-w-sm border shadow-2xl ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
             <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
-            <p className={`text-sm mb-6 ${isDark ? 'text-white/' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
+            <p className={`text-sm mb-6 ${isDark ? 'text-white/70' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
             
             <div className="flex justify-end gap-3">
               <button 

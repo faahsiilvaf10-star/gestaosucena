@@ -13,7 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";
-import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { ThemeProvider, useTheme, THEME_BOOTSTRAP_SCRIPT } from "../contexts/ThemeContext";
 import { ChatProvider } from "../contexts/ChatContext";
 import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
@@ -30,7 +30,7 @@ function RootContent() {
   const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
-    <div className={`min-h-screen ${isDark ? 'dark text-white' : 'light text-black'}`}>
+    <div className={`min-h-screen ${isDark ? 'text-white' : 'text-[#1c1d21]'}`}>
       <DailySessionWatcher />
       <GlobalBackground />
       {isAppRoute ? (
@@ -120,8 +120,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head><HeadContent /></head>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+        {/* Aplica a classe do tema antes do primeiro paint (evita flash) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );

@@ -648,7 +648,7 @@ function AdminRoute() {
             </h2>
             
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus-within:border-[#D6A72B]'}`}>
-              <Search size={16} className="text-gray-400" />
+              <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
               <input 
                 type="text" 
                 placeholder="Buscar usuário..." 
@@ -697,7 +697,7 @@ function AdminRoute() {
                               {user.avatar_url ? (
                                 <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <UserIcon size={20} className="text-gray-400" />
+                                <UserIcon size={20} className="text-[#5f6472] dark:text-gray-400" />
                               )}
                             </div>
                             <div>
@@ -975,13 +975,13 @@ function AdminRoute() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_0600 ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_0600 ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                       {whatsappSettings.ddsReminders?.enabled_0600 ? 'Ativo' : 'Inativo'}
                     </span>
                     <button 
                       onClick={() => handleTestDds(true)}
                       disabled={!isWhatsappLocked && !whatsappSettings.url}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <Play size={14} /> Testar
                     </button>
@@ -1004,13 +1004,13 @@ function AdminRoute() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_1600 ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_1600 ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                       {whatsappSettings.ddsReminders?.enabled_1600 ? 'Ativo' : 'Inativo'}
                     </span>
                     <button 
                       onClick={() => handleTestDds(false)}
                       disabled={!isWhatsappLocked && !whatsappSettings.url}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <Play size={14} /> Testar
                     </button>
@@ -1070,7 +1070,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Ativar envio de Alertas e Anomalias</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.appMotoristaAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.appMotoristaAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.appMotoristaAlerts?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1116,7 +1116,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Ativar envio de Entrada e Saída</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.equipamentosMovimentacao?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.equipamentosMovimentacao?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.equipamentosMovimentacao?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1166,7 +1166,7 @@ function AdminRoute() {
                       <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Aviso no dia 1º + confirmação ao inspecionar</span>
                     </div>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.cintasInspection?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.cintasInspection?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.cintasInspection?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1253,7 +1253,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Ativar envio automático ao finalizar uma requisição</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.requisitionAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.requisitionAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.requisitionAlerts?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1311,7 +1311,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Ativar envio automático de lembretes no horário agendado</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.reminders?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.reminders?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.reminders?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1360,7 +1360,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Ativar envio automático ao salvar a Lista de Presença</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.attendanceAlerts?.enabled ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.attendanceAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.attendanceAlerts?.enabled ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1408,7 +1408,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Enviar notificações para um Grupo com a foto do pedido</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_group ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_group ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.purchaseOrders?.enabled_group ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1424,7 +1424,7 @@ function AdminRoute() {
                     </button>
                     <span className="font-semibold text-sm">Enviar mensagens individuais (DM) para os responsáveis do pedido</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_individual ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_individual ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
                     {whatsappSettings.purchaseOrders?.enabled_individual ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
@@ -1480,7 +1480,7 @@ function AdminRoute() {
                     <button
                       key={t.key}
                       onClick={() => setSelectedTemplate(t.key as any)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedTemplate === t.key ? 'bg-[#D6A72B] text-white' : isDark ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedTemplate === t.key ? 'bg-[#D6A72B] text-[#1c1d21] dark:text-white' : isDark ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                       {t.label}
                     </button>
@@ -1524,7 +1524,7 @@ function AdminRoute() {
               {isWhatsappLocked ? (
                 <button 
                   onClick={() => setUnlockCodeModal(true)}
-                  className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-gray-500 hover:bg-gray-600 text-[#1c1d21] dark:text-white font-bold rounded-xl transition-colors"
                 >
                   <Unlock size={18} />
                   Editar Configurações
@@ -1589,7 +1589,7 @@ function AdminRoute() {
                           {user.avatar_url ? (
                             <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <UserIcon size={16} className="text-gray-400" />
+                            <UserIcon size={16} className="text-[#5f6472] dark:text-gray-400" />
                           )}
                         </div>
                         <div className="truncate w-32 md:w-48" title={user.name}>{user.name}</div>
@@ -1669,7 +1669,7 @@ function AdminRoute() {
                         opacity: (appearance.opacity ?? 100) / 100
                       }}
                     />
-                    <span className="relative z-10 px-3 py-1 rounded bg-black/50 text-white text-xs font-bold pointer-events-none backdrop-blur-sm">
+                    <span className="relative z-10 px-3 py-1 rounded bg-black/50 text-[#1c1d21] dark:text-white text-xs font-bold pointer-events-none backdrop-blur-sm">
                       Pré-visualização
                     </span>
                   </div>
@@ -1741,7 +1741,7 @@ function AdminRoute() {
                       <div 
                         className={`mock-preview-card dashboard-card ${isDark ? "neon-card neon-yellow" : ""} p-6 w-64 h-32 flex flex-col justify-center items-center text-center shadow-2xl relative z-10`}
                       >
-                        <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-[#07173f]'}`}>Exemplo de Card</span>
+                        <span className={`text-lg font-bold ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-[#07173f]'}`}>Exemplo de Card</span>
                         <span className={`text-xs mt-2 ${isDark ? 'text-gray-300' : 'text-[#53698e]'}`}>Opacidade: {isDark ? (appearance.darkCardOpacity ?? 35) : (appearance.lightCardOpacity ?? 75)}%</span>
                       </div>
                     </div>
@@ -1767,7 +1767,7 @@ function AdminRoute() {
                 <div className="flex flex-col gap-4 justify-center">
                   <button
                     onClick={handleResetBackground}
-                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl border transition-colors font-semibold text-sm ${isDark ? 'border-white/20 hover:bg-white/10 text-white' : 'border-gray-300 hover:bg-gray-100 text-gray-800'}`}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl border transition-colors font-semibold text-sm ${isDark ? 'border-white/20 hover:bg-white/10 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-gray-100 text-gray-800'}`}
                   >
                     <RefreshCw size={18} />
                     Usar Fundo Padrão

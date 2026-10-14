@@ -599,7 +599,7 @@ function FeedRoute() {
             {currentUser?.avatar_url ? (
               <img src={currentUser.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <div className="w-full h-full flex items-center justify-center text-[#5f6472] dark:text-gray-400">
                 <User size={20} />
               </div>
             )}
@@ -619,7 +619,7 @@ function FeedRoute() {
           <div className="relative w-full rounded-lg border border-black/10 dark:border-white/10 overflow-hidden mt-2 animate-in fade-in zoom-in-95">
             <button 
               onClick={handleRemoveMedia}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-[#1c1d21] dark:text-white flex items-center justify-center hover:bg-black/70 transition-colors z-10"
             >
               <X size={16} />
             </button>
@@ -646,7 +646,7 @@ function FeedRoute() {
             
             {/* Cropper Controls Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/60 backdrop-blur-sm flex flex-col gap-3">
-               <div className="flex items-center gap-3 text-white">
+               <div className="flex items-center gap-3 text-[#1c1d21] dark:text-white">
                  <ZoomOut size={18} />
                  <input
                    type="range"
@@ -660,7 +660,7 @@ function FeedRoute() {
                  <ZoomIn size={18} />
                </div>
                <div className="flex justify-between">
-                 <button onClick={handleRemoveMedia} className="text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                 <button onClick={handleRemoveMedia} className="text-[#1c1d21] dark:text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
                    Cancelar
                  </button>
                  <button onClick={handleConfirmCrop} className="bg-[#0866ff] hover:bg-[#0756d6] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors">
@@ -723,13 +723,13 @@ function FeedRoute() {
              {currentUser?.avatar_url ? (
                 <img src={currentUser.avatar_url} alt="User" className={`w-full h-full object-cover transition-transform duration-300 ${isUploadingStory ? 'opacity-50' : 'group-hover:scale-105'}`} />
              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className="w-full h-full flex items-center justify-center text-[#5f6472] dark:text-gray-400">
                   <User size={30} />
                 </div>
              )}
              {isUploadingStory && (
                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                 <Loader2 size={24} className="text-white animate-spin" />
+                 <Loader2 size={24} className="text-[#1c1d21] dark:text-white animate-spin" />
                </div>
              )}
           </div>
@@ -763,7 +763,7 @@ function FeedRoute() {
                 )}
               </div>
               
-              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-white leading-tight z-10 shadow-sm flex items-center">
+              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-[#1c1d21] dark:text-white leading-tight z-10 shadow-sm flex items-center">
                 <span className="truncate">{group.user.display_name || group.user.username || 'Usuário'}</span>
                 {isAdmin(group.user.display_name || group.user.username) && <VerifiedBadge size={12} />}
               </span>
@@ -798,7 +798,7 @@ function FeedRoute() {
                     {post.social_profiles?.avatar_url ? (
                       <img src={post.social_profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <div className="w-full h-full flex items-center justify-center text-[#5f6472] dark:text-gray-400">
                         <User size={20} />
                       </div>
                     )}
@@ -820,7 +820,7 @@ function FeedRoute() {
                 {post.user_id === currentUser?.user_id && (
                   <button 
                     onClick={() => handleDeletePost(post.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                    className="text-[#5f6472] dark:text-gray-400 hover:text-red-500 transition-colors p-2"
                     title="Excluir postagem"
                   >
                     <Trash2 size={18} />
@@ -885,7 +885,7 @@ function FeedRoute() {
                           {comment.social_profiles?.avatar_url ? (
                             <img src={comment.social_profiles.avatar_url} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-[#5f6472] dark:text-gray-400">
                               <User size={14} />
                             </div>
                           )}
@@ -916,9 +916,9 @@ function FeedRoute() {
                           {!editingComment && (comment.user_id === currentUser?.user_id || isAdmin(currentUser?.display_name)) && (
                             <div className="hidden group-hover:flex items-center gap-2 absolute -right-12 top-1/2 -translate-y-1/2 bg-white dark:bg-[#1a1a1b] shadow-sm border border-black/5 dark:border-white/10 rounded-full px-2 py-1 z-10">
                               {comment.user_id === currentUser?.user_id && (
-                                <button onClick={() => setEditingComment({ id: comment.id, text: comment.content })} className="text-gray-400 hover:text-blue-500 transition-colors" title="Editar comentário"><Edit2 size={12}/></button>
+                                <button onClick={() => setEditingComment({ id: comment.id, text: comment.content })} className="text-[#5f6472] dark:text-gray-400 hover:text-blue-500 transition-colors" title="Editar comentário"><Edit2 size={12}/></button>
                               )}
-                              <button onClick={() => handleCommentDelete(post.id, comment.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Excluir comentário"><Trash2 size={12}/></button>
+                              <button onClick={() => handleCommentDelete(post.id, comment.id)} className="text-[#5f6472] dark:text-gray-400 hover:text-red-500 transition-colors" title="Excluir comentário"><Trash2 size={12}/></button>
                             </div>
                           )}
                         </div>
@@ -933,7 +933,7 @@ function FeedRoute() {
                       {currentUser?.avatar_url ? (
                         <img src={currentUser.avatar_url} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-[#5f6472] dark:text-gray-400">
                           <User size={16} />
                         </div>
                       )}

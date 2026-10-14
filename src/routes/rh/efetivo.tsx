@@ -617,7 +617,7 @@ function RhEfetivoPage() {
           {/* Toolbar */}
           <div className="p-4 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 dark:bg-white/5">
             <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5f6472] dark:text-gray-400" size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar por nome, cargo ou matrícula..." 
@@ -626,7 +626,7 @@ function RhEfetivoPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6472] dark:text-gray-400 hover:text-gray-600">
                   <X size={16} />
                 </button>
               )}
@@ -867,7 +867,7 @@ function RhEfetivoPage() {
                         />
                       ) : (
                         <div className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm font-medium min-h-[38px] flex items-center opacity-60 cursor-not-allowed select-none">
-                          {selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : <span className="text-gray-400">-</span>}
+                          {selectedColaborador.aso_admissional_2 ? selectedColaborador.aso_admissional_2.split('-').reverse().join('/') : <span className="text-[#5f6472] dark:text-gray-400">-</span>}
                         </div>
                       )}
                     </div>

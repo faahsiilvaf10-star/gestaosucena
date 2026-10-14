@@ -195,7 +195,7 @@ function CaixaDaguaPage() {
             <div className="w-full">
               <table className="w-full text-sm text-center border-collapse text-black">
                 <thead>
-                  <tr className="bg-[#1a4b6d] text-white">
+                  <tr className="bg-[#1a4b6d] text-[#1c1d21] dark:text-white">
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold text-left w-32">Mês</th>
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold w-1/5">Sem 01</th>
                     <th className="p-3 border-b border-r border-[#1a4b6d] font-bold w-1/5">Sem 02</th>

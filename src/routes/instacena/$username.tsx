@@ -312,7 +312,7 @@ function ProfileRoute() {
               </>
             ) : (
               <>
-                <button className="flex-1 px-6 py-1.5 bg-[#0095f6] hover:bg-[#1877f2] text-white rounded-lg font-semibold text-sm transition-colors">
+                <button className="flex-1 px-6 py-1.5 bg-[#0095f6] hover:bg-[#1877f2] text-[#1c1d21] dark:text-white rounded-lg font-semibold text-sm transition-colors">
                   Seguir
                 </button>
                 <button className="flex-1 px-4 py-1.5 bg-[#efefef] hover:bg-[#dbdbdb] dark:bg-[#363636] dark:hover:bg-[#262626] text-black dark:text-white rounded-lg font-semibold text-sm transition-colors">
@@ -372,17 +372,17 @@ function ProfileRoute() {
                     <img src={firstMedia.media_url} alt="Post" className="w-full h-full object-cover" />
                   )
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 dark:bg-gray-800">Sem imagem</div>
+                  <div className="w-full h-full flex items-center justify-center text-[#5f6472] dark:text-gray-400 bg-gray-100 dark:bg-gray-800">Sem imagem</div>
                 )}
                 
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-[#1c1d21] dark:text-white font-bold">
                   <span className="flex items-center gap-2"><Heart size={20} fill="currentColor" /> {post.likes_count}</span>
                   <span className="flex items-center gap-2"><MessageCircle size={20} fill="currentColor" /> {post.comments_count}</span>
                 </div>
                 
                 {/* Top right icon */}
-                <div className="absolute top-2 right-2 text-white drop-shadow-md">
+                <div className="absolute top-2 right-2 text-[#1c1d21] dark:text-white drop-shadow-md">
                   {isVideo ? <Film size={18} fill="currentColor" /> : (hasMultiple ? <ImageIcon size={18} fill="currentColor" /> : null)}
                 </div>
               </div>
@@ -401,7 +401,7 @@ function ProfileRoute() {
       {selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
           <div className="bg-white dark:bg-[#262626] rounded-xl max-w-4xl w-full max-h-[90vh] min-h-[500px] overflow-hidden flex flex-col md:flex-row relative">
-            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-white bg-black/50 rounded-full p-2 hover:bg-black">
+            <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-[#1c1d21] dark:text-white bg-black/50 rounded-full p-2 hover:bg-black">
               <X size={20} />
             </button>
 
@@ -420,7 +420,7 @@ function ProfileRoute() {
                    <img src={selectedPost.social_post_media[0].media_url} className="w-full h-full object-contain" />
                 )
               ) : (
-                <div className="text-white text-lg">Postagem em texto</div>
+                <div className="text-[#1c1d21] dark:text-white text-lg">Postagem em texto</div>
               )}
             </div>
             

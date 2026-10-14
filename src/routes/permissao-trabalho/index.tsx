@@ -176,7 +176,7 @@ function PermissaoTrabalhoPage() {
         <div className="flex-1" />
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full text-sm transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-[#1c1d21] dark:text-white rounded-full text-sm transition-colors shadow-sm"
         >
           <Plus size={16} /> Nova PT
         </button>
@@ -191,7 +191,7 @@ function PermissaoTrabalhoPage() {
                 <FileText className="text-yellow-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{pts.length}</div>
+                <div className="text-2xl font-bold text-[#1c1d21] dark:text-white">{pts.length}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Total / Pendentes</div>
               </div>
             </div>
@@ -201,7 +201,7 @@ function PermissaoTrabalhoPage() {
                 <Clock className="text-orange-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{aVencerCount}</div>
+                <div className="text-2xl font-bold text-[#1c1d21] dark:text-white">{aVencerCount}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">A vencer</div>
               </div>
             </div>
@@ -211,7 +211,7 @@ function PermissaoTrabalhoPage() {
                 <AlertTriangle className="text-red-500" size={24} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{vencidosCount}</div>
+                <div className="text-2xl font-bold text-[#1c1d21] dark:text-white">{vencidosCount}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Vencidos</div>
               </div>
             </div>
@@ -220,7 +220,7 @@ function PermissaoTrabalhoPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5f6472] dark:text-gray-400" size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar por título ou descrição..." 
@@ -288,7 +288,7 @@ function PermissaoTrabalhoPage() {
                       return (
                         <tr key={pt.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
                           <td className="py-4 pl-4">
-                            <div className="font-bold text-sm text-white">{pt.titulo}</div>
+                            <div className="font-bold text-sm text-[#1c1d21] dark:text-white">{pt.titulo}</div>
                             <div className="text-xs text-gray-500">Numero: {pt.numero}</div>
                           </td>
                           <td className="py-4">
@@ -308,14 +308,14 @@ function PermissaoTrabalhoPage() {
                           <td className="py-4 pr-4">
                             <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                               {pt.arquivo_url && (
-                                <a href={pt.arquivo_url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-yellow-500 transition-colors" title="Ver Anexo">
+                                <a href={pt.arquivo_url} target="_blank" rel="noreferrer" className="text-[#5f6472] dark:text-gray-400 hover:text-yellow-500 transition-colors" title="Ver Anexo">
                                   <FileText size={16} />
                                 </a>
                               )}
-                              <button className="text-gray-400 hover:text-white transition-colors">
+                              <button className="text-[#5f6472] dark:text-gray-400 hover:text-white transition-colors">
                                 <History size={16} />
                               </button>
-                              <button className="text-gray-400 hover:text-white transition-colors">
+                              <button className="text-[#5f6472] dark:text-gray-400 hover:text-white transition-colors">
                                 <Edit size={16} />
                               </button>
                             </div>
@@ -348,8 +348,8 @@ function PermissaoTrabalhoPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5">
-              <h3 className="font-semibold text-lg text-white">Nova Permissão</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
+              <h3 className="font-semibold text-lg text-[#1c1d21] dark:text-white">Nova Permissão</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-[#5f6472] dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -410,7 +410,7 @@ function PermissaoTrabalhoPage() {
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Anexo (PDF ou Imagem)</label>
                 <div className="border-2 border-dashed border-gray-300 dark:border-white/20 rounded-lg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                      onClick={() => document.getElementById('pt-file')?.click()}>
-                  <Upload size={24} className="text-gray-400 mb-2" />
+                  <Upload size={24} className="text-[#5f6472] dark:text-gray-400 mb-2" />
                   <span className="text-xs text-gray-500">{file ? file.name : 'Clique para anexar arquivo'}</span>
                   <input 
                     id="pt-file"
@@ -433,7 +433,7 @@ function PermissaoTrabalhoPage() {
                 <button 
                   type="submit" 
                   disabled={uploading}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-[#1c1d21] dark:text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {uploading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {uploading ? 'Salvando...' : 'Salvar Permissão'}

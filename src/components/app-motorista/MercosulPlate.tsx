@@ -8,7 +8,7 @@ export default function MercosulPlate({ plate }: { plate?: string }) {
   return (
     <div className="inline-flex flex-col border-[3px] border-[#003399] rounded-lg overflow-hidden bg-white shadow-sm select-none" style={{ width: '130px', height: '42px' }}>
       {/* Blue Top Strip */}
-      <div className="bg-[#003399] text-white flex items-center justify-between px-1.5 h-[14px]">
+      <div className="bg-[#003399] text-[#1c1d21] dark:text-white flex items-center justify-between px-1.5 h-[14px]">
         <div className="text-[5px] leading-[1] font-bold opacity-90 mt-0.5">MERCOSUL</div>
         <div className="text-[8px] font-bold tracking-widest mt-0.5">BRASIL</div>
         <div className="text-[7px]">🇧🇷</div>

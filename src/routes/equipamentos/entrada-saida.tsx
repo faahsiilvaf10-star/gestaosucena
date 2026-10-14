@@ -794,7 +794,7 @@ function EntradaSaidaPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-[#1c1d21] dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -808,7 +808,7 @@ function EntradaSaidaPage() {
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
@@ -847,7 +847,7 @@ function EntradaSaidaPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button 
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/ hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                                   title="Histórico"
                                 >
                                   <History size={18} />
@@ -944,7 +944,7 @@ function EntradaSaidaPage() {
       {isEntryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEntryModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-500">
               <LogIn size={28} />
               <h2 className="text-2xl">Registrar Entrada</h2>
@@ -1010,7 +1010,7 @@ function EntradaSaidaPage() {
       {isExitModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsExitModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-500">
               <LogOut size={28} />
               <h2 className="text-2xl">Registrar Saída</h2>
@@ -1110,7 +1110,7 @@ function EntradaSaidaPage() {
       {isHistoryModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
-          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl">Histórico de Movimentação</h2>
@@ -1162,7 +1162,7 @@ function EntradaSaidaPage() {
                                 }}
                                 disabled={deletingMovId === mov.id}
                                 title="Excluir movimentação"
-                                className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors disabled:opacity-50"
+                                className="p-1 text-[#5f6472] dark:text-gray-400 hover:text-red-500 rounded transition-colors disabled:opacity-50"
                               >
                                 {deletingMovId === mov.id ? (
                                   <RefreshCw size={12} className="animate-spin" />
@@ -1197,7 +1197,7 @@ function EntradaSaidaPage() {
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
-          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-2xl mb-2">Relatório PDF</h2>
             <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
             

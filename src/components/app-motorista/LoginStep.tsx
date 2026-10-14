@@ -150,14 +150,14 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
 
   if (selectedDriver) {
     return (
-      <div className="min-h-full flex flex-col bg-[#0A0A0A] text-white p-6 relative">
+      <div className="min-h-full flex flex-col bg-[#0A0A0A] text-[#1c1d21] dark:text-white p-6 relative">
         <button 
           onClick={() => {
             setSelectedDriver(null)
             setPin('')
             setError('')
           }} 
-          className="text-gray-400 active:text-white mb-8 flex items-center gap-2"
+          className="text-[#5f6472] dark:text-gray-400 active:text-white mb-8 flex items-center gap-2"
         >
           <ArrowLeft size={20} /> Voltar
         </button>
@@ -167,7 +167,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
             {selectedDriver.id}
           </div>
           <h2 className="text-xl font-bold text-center mb-1">{selectedDriver.name}</h2>
-          <p className="text-gray-400 mb-8 text-sm">Digite seu código de acesso</p>
+          <p className="text-[#5f6472] dark:text-gray-400 mb-8 text-sm">Digite seu código de acesso</p>
 
           <form onSubmit={handleLogin} className="w-full max-w-xs space-y-6">
             <div className="relative">
@@ -206,10 +206,10 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
   }
 
   return (
-    <div className="min-h-full flex flex-col bg-[#0A0A0A] text-white">
+    <div className="min-h-full flex flex-col bg-[#0A0A0A] text-[#1c1d21] dark:text-white">
       <div className="p-6 pb-4 border-b border-white/5 bg-white/5">
-        <h1 className="text-2xl font-bold text-white mb-1">APP MOTORISTA</h1>
-        <p className="text-gray-400 text-sm font-medium">Selecione o seu usuário para entrar</p>
+        <h1 className="text-2xl font-bold text-[#1c1d21] dark:text-white mb-1">APP MOTORISTA</h1>
+        <p className="text-[#5f6472] dark:text-gray-400 text-sm font-medium">Selecione o seu usuário para entrar</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar">
@@ -219,11 +219,11 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
             onClick={() => setSelectedDriver(driver)}
             className="w-full bg-transparent hover:bg-white/5 p-3 rounded-2xl flex items-center gap-4 transition-colors text-left group"
           >
-            <div className={`w-14 h-14 rounded-full bg-[#4A5568] flex items-center justify-center font-bold text-white shrink-0 group-active:scale-95 transition-transform ${driver.id === 'ADMIN' ? 'text-[10px]' : 'text-lg'}`}>
+            <div className={`w-14 h-14 rounded-full bg-[#4A5568] flex items-center justify-center font-bold text-[#1c1d21] dark:text-white shrink-0 group-active:scale-95 transition-transform ${driver.id === 'ADMIN' ? 'text-[10px]' : 'text-lg'}`}>
               {driver.id}
             </div>
             <div className="flex-1">
-              <span className="text-gray-200 font-bold text-sm leading-tight block">
+              <span className="text-[#5f6472] dark:text-gray-200 font-bold text-sm leading-tight block">
                 {driver.name}
               </span>
             </div>

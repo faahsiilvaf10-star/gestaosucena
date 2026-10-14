@@ -151,7 +151,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
             {!preview ? (
               <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <UploadCloud className="w-10 h-10 mb-3 text-gray-400" />
+                  <UploadCloud className="w-10 h-10 mb-3 text-[#5f6472] dark:text-gray-400" />
                   <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Clique para enviar</span></p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG (Max. 10MB)</p>
                 </div>
@@ -162,7 +162,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
                 <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                 <button 
                   onClick={() => { setFile(null); setPreview(null) }}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-[#1c1d21] dark:text-white rounded-full transition-colors"
                 >
                   <X size={16} />
                 </button>

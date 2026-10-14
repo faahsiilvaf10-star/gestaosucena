@@ -27,8 +27,8 @@ export default function FuelGauge({ value, onChange }: { value: string, onChange
 
   return (
     <div className="bg-[#111] rounded-[32px] p-6 flex flex-col items-center shadow-xl w-full">
-      <div className="flex items-center gap-2 text-gray-300 mb-8">
-        <Fuel size={22} className="text-gray-100" />
+      <div className="flex items-center gap-2 text-[#5f6472] dark:text-gray-300 mb-8">
+        <Fuel size={22} className="text-[#5f6472] dark:text-gray-100" />
         <h3 className="text-lg font-bold">Nível de Combustível</h3>
       </div>
 
@@ -61,7 +61,7 @@ export default function FuelGauge({ value, onChange }: { value: string, onChange
             return (
               <div 
                 key={val}
-                className={`absolute font-black flex items-center justify-center ${isEdge ? 'text-gray-200 text-lg' : 'bg-[#222] text-gray-300 text-xs w-9 h-9 rounded-full'}`}
+                className={`absolute font-black flex items-center justify-center ${isEdge ? 'text-gray-200 text-lg' : 'bg-[#222] text-[#5f6472] dark:text-gray-300 text-xs w-9 h-9 rounded-full'}`}
                 style={{ left: `${xU / 2}%`, top: `${(yU / 120) * 100}%`, transform: 'translate(-50%, -50%)' }}
               >
                 {FUEL_LABELS[val]}
@@ -83,7 +83,7 @@ export default function FuelGauge({ value, onChange }: { value: string, onChange
         <button 
           onClick={handlePrev}
           disabled={currentIndex === 0}
-          className="w-14 h-14 rounded-full bg-[#222] hover:bg-[#333] flex items-center justify-center text-white active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all"
+          className="w-14 h-14 rounded-full bg-[#222] hover:bg-[#333] flex items-center justify-center text-[#1c1d21] dark:text-white active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all"
         >
           <ChevronLeft size={28} />
         </button>
@@ -93,7 +93,7 @@ export default function FuelGauge({ value, onChange }: { value: string, onChange
         <button 
           onClick={handleNext}
           disabled={currentIndex === FUEL_VALUES.length - 1}
-          className="w-14 h-14 rounded-full bg-[#222] hover:bg-[#333] flex items-center justify-center text-white active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all"
+          className="w-14 h-14 rounded-full bg-[#222] hover:bg-[#333] flex items-center justify-center text-[#1c1d21] dark:text-white active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all"
         >
           <ChevronRight size={28} />
         </button>

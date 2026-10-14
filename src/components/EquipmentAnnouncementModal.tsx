@@ -89,7 +89,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             
             {/* Equipment Name Badge */}
-            <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-lg font-bold text-sm border border-white/20 shadow-lg">
+            <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-[#1c1d21] dark:text-white px-3 py-1.5 rounded-lg font-bold text-sm border border-white/20 shadow-lg">
               {vehicleName}
             </div>
             
@@ -110,7 +110,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                 <User size={14} />
                 Registrado por
               </div>
-              <div className={`font-semibold text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <div className={`font-semibold text-sm truncate ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
                 {move?.created_by || 'Sistema'}
               </div>
             </div>
@@ -121,7 +121,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                 <Clock size={14} />
                 Horário
               </div>
-              <div className={`font-semibold text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <div className={`font-semibold text-sm truncate ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
                 {new Date(move?.created_at || new Date()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -134,7 +134,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                     <Info size={14} />
                     Motivo da Saída
                   </div>
-                  <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <div className={`font-semibold text-sm ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
                     {move?.exit_reason || eq?.last_exit_reason || 'Não informado'}
                   </div>
                   {(move?.description || eq?.last_exit_description) && (
@@ -151,7 +151,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                 <div className="p-2 bg-green-500/20 text-green-600 rounded-full">
                   <MapPin size={20} />
                 </div>
-                <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-green-900'}`}>
+                <div className={`font-semibold text-sm ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-green-900'}`}>
                   Equipamento encontra-se agora dentro da obra.
                 </div>
               </div>

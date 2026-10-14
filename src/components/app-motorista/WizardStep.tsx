@@ -442,7 +442,7 @@ export default function WizardStep({
             <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
               <Users size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">IDENTIFICAÇÃO <br/>DA EQUIPE</h2>
+            <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white leading-tight">IDENTIFICAÇÃO <br/>DA EQUIPE</h2>
           </div>
           
           <div className="space-y-6 flex-1">
@@ -458,7 +458,7 @@ export default function WizardStep({
             </div>
           </div>
 
-          <button onClick={handleNext} className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform">
+          <button onClick={handleNext} className="w-full h-14 bg-gray-900 dark:bg-white text-[#1c1d21] dark:text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform">
             AVANÇAR
           </button>
         </div>
@@ -471,7 +471,7 @@ export default function WizardStep({
             <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
               <Gauge size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">DADOS <br/>INICIAIS</h2>
+            <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white leading-tight">DADOS <br/>INICIAIS</h2>
           </div>
 
           <div className="space-y-6 flex-1 overflow-y-auto pb-8 custom-scrollbar">
@@ -487,7 +487,7 @@ export default function WizardStep({
               {(() => {
                 const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
                 const lastKm = data[equipmentId || '']?.lastKm
-                return lastKm ? <p className="text-[10px] text-gray-400 mt-1 ml-1">Último registrado: {lastKm}</p> : null
+                return lastKm ? <p className="text-[10px] text-[#5f6472] dark:text-gray-400 mt-1 ml-1">Último registrado: {lastKm}</p> : null
               })()}
             </div>
 
@@ -503,7 +503,7 @@ export default function WizardStep({
               {(() => {
                 const data = JSON.parse(localStorage.getItem('app_motorista_equipment_data') || '{}')
                 const lastH = data[equipmentId || '']?.lastHorimeter
-                return lastH ? <p className="text-[10px] text-gray-400 mt-1 ml-1">Último registrado: {lastH}</p> : null
+                return lastH ? <p className="text-[10px] text-[#5f6472] dark:text-gray-400 mt-1 ml-1">Último registrado: {lastH}</p> : null
               })()}
             </div>
 
@@ -517,7 +517,7 @@ export default function WizardStep({
             </button>
           </div>
 
-          <button onClick={handleNext} className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform">
+          <button onClick={handleNext} className="w-full h-14 bg-gray-900 dark:bg-white text-[#1c1d21] dark:text-white dark:text-black font-bold text-lg rounded-2xl mt-4 active:scale-[0.98] transition-transform">
             AVANÇAR
           </button>
         </div>
@@ -530,14 +530,14 @@ export default function WizardStep({
             <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
               <ClipboardCheck size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">CHECKLIST <br/>PRÉ-OPERACIONAL</h2>
+            <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white leading-tight">CHECKLIST <br/>PRÉ-OPERACIONAL</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pb-8 custom-scrollbar">
             {checklist.map(item => (
               <div key={item.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-4">
                 <div>
-                  <h4 className="font-bold text-white flex items-center gap-2">
+                  <h4 className="font-bold text-[#1c1d21] dark:text-white flex items-center gap-2">
                     {item.name}
                     {item.critical && <span className="text-[10px] uppercase font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">Crítico</span>}
                   </h4>
@@ -557,7 +557,7 @@ export default function WizardStep({
                   </button>
                   <button 
                     onClick={() => updateChecklist(item.id, 'nao_se_aplica')}
-                    className={`px-4 py-2 text-xl transition-colors ${item.status === 'nao_se_aplica' ? 'bg-gray-500 text-white' : 'text-gray-400 grayscale opacity-40'}`}
+                    className={`px-4 py-2 text-xl transition-colors ${item.status === 'nao_se_aplica' ? 'bg-gray-500 text-[#1c1d21] dark:text-white' : 'text-gray-400 grayscale opacity-40'}`}
                   >
                     ➖
                   </button>
@@ -582,7 +582,7 @@ export default function WizardStep({
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
             
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-[#1c1d21] dark:text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Relatar Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">
@@ -686,7 +686,7 @@ export default function WizardStep({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-[#1c1d21] dark:text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Freios com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com os freios.</p>
@@ -733,7 +733,7 @@ export default function WizardStep({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-2 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-[#1c1d21] dark:text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" /> Buzina com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Descreva o que está acontecendo com a buzina.</p>
@@ -780,7 +780,7 @@ export default function WizardStep({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 pb-4 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <h3 className="text-xl font-black text-[#1c1d21] dark:text-white flex items-center gap-2">
                 <AlertTriangle className="text-yellow-500" /> Faróis com Problema
               </h3>
               <p className="text-sm text-gray-500 mt-1">Toque nas peças que estão com defeito ou queimadas.</p>
@@ -788,7 +788,7 @@ export default function WizardStep({
 
             <div className="p-4 flex-1 overflow-y-auto bg-gray-50 dark:bg-zinc-950/50">
               {/* FRONT */}
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 text-center">Frente do Caminhão</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#5f6472] dark:text-gray-400 mb-2 text-center">Frente do Caminhão</p>
               <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 mb-4">
                 {/* Truck front drawing */}
                 <div className="relative flex justify-center items-end mb-3">
@@ -837,7 +837,7 @@ export default function WizardStep({
               </div>
 
               {/* REAR */}
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 text-center">Traseira do Caminhão</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#5f6472] dark:text-gray-400 mb-2 text-center">Traseira do Caminhão</p>
               <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 mb-4">
                 <div className="relative flex justify-center items-end mb-3">
                   <div className="w-36 h-14 bg-gray-200 dark:bg-zinc-700 rounded-xl flex items-center justify-between px-1">
@@ -912,7 +912,7 @@ export default function WizardStep({
                   }
                   setIsLightsModalOpen(false)
                 }}
-                className="flex-1 py-4 font-bold text-white bg-yellow-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-yellow-500/30"
+                className="flex-1 py-4 font-bold text-[#1c1d21] dark:text-white bg-yellow-500 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-yellow-500/30"
               >
                 Confirmar
               </button>

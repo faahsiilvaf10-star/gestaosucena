@@ -152,7 +152,7 @@ export function NotificacoesMotoristas({ isDark }: { isDark: boolean }) {
           <h3 className="text-lg font-semibold mb-4">1. Selecionar Destinatário</h3>
 
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border mb-4 ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-blue-500' : 'bg-gray-50 border-gray-200 focus-within:border-blue-500'}`}>
-            <Search size={16} className="text-gray-400" />
+            <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
             <input
               type="text"
               placeholder="Buscar motorista por nome..."

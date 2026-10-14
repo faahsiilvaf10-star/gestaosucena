@@ -42,7 +42,7 @@ function AmbientesComponent() {
 
   return (
     <div
-      className="min-h-screen text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans"
+      className="min-h-screen text-[#1c1d21] dark:text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans"
       style={{ background: 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 35%, #050505 100%)' }}
     >
       
@@ -92,7 +92,7 @@ function AmbientesComponent() {
                 <MapPin size={22} style={{ color: env.pinColor }} />
               </div>
               
-              <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">{env.name}</h2>
+              <h2 className="text-2xl font-bold tracking-tight mb-2 text-[#1c1d21] dark:text-white">{env.name}</h2>
               {env.contract && (
                 <div className="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-[#c9a84c] rounded-md w-fit mb-3 border border-[#c9a84c]/30">
                   {env.contract}

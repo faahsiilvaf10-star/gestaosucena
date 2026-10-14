@@ -110,7 +110,7 @@ function CalendarioHydroPage() {
                 
                 {/* Dias da Semana Header */}
                 <div className="grid grid-cols-8 gap-1 mb-2 text-center text-[10px] font-bold text-gray-500">
-                  <div className="text-gray-400 flex items-center justify-center">SEM</div>
+                  <div className="text-[#5f6472] dark:text-gray-400 flex items-center justify-center">SEM</div>
                   {weekDays.map(day => (
                     <div key={day} className="w-full flex items-center justify-center">{day}</div>
                   ))}
@@ -145,7 +145,7 @@ function CalendarioHydroPage() {
                     return (
                       <React.Fragment key={day.toISOString()}>
                         {isFirstDayOfWeek && (
-                          <div className="flex items-center justify-center text-[10px] font-bold text-gray-400 border-r border-gray-100 dark:border-white/5 pr-1 mr-1">
+                          <div className="flex items-center justify-center text-[10px] font-bold text-[#5f6472] dark:text-gray-400 border-r border-gray-100 dark:border-white/5 pr-1 mr-1">
                             {getISOWeek(day)}
                           </div>
                         )}
@@ -182,7 +182,7 @@ function CalendarioHydroPage() {
           })}
         </div>
         
-        <div className="mt-8 text-center text-sm text-gray-400 pb-8 flex items-center justify-center gap-2">
+        <div className="mt-8 text-center text-sm text-[#5f6472] dark:text-gray-400 pb-8 flex items-center justify-center gap-2">
           <Info size={16} />
           Fonte: feriados e compensados - RH informa - Hydro Alunorte
         </div>

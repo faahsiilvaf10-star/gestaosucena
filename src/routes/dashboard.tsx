@@ -704,7 +704,7 @@ function DashboardComponent() {
                         <span className="font-mono text-blue-600 dark:text-blue-400 uppercase font-semibold">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-900 dark:text-gray-100 font-medium truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] text-gray-400 mt-0.5">
+                      <div className="flex justify-between items-center text-[10px] text-[#5f6472] dark:text-gray-400 mt-0.5">
                         <span className="capitalize">{eq.category || 'Equipamento'}</span>
                         <span className={eq.status === 'Operando' ? 'text-blue-500 font-medium' : 'text-emerald-500 font-medium'}>
                           {eq.status === 'Operando' ? 'Operando' : 'Na Base'}
@@ -757,7 +757,7 @@ function DashboardComponent() {
             {/* Tooltip Em Manutenção */}
             <div className="absolute top-0 left-0 w-full h-full z-10 hidden group-hover:block" />
             <div className="absolute top-[105%] left-3/4 -translate-x-1/2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <h4 className="text-sm font-light mb-2 text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
+              <h4 className="text-sm font-light mb-2 text-[#1c1d21] dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">Em Manutenção</h4>
               {eqData?.manutencaoList?.length ? (
                 <ul className="text-xs space-y-2">
                   {eqData.manutencaoList.map((eq: any, i: number) => (
@@ -766,7 +766,7 @@ function DashboardComponent() {
                         <span className="font-light text-orange-600 dark:text-orange-400 uppercase">{eq.plate_tag || 'S/N'}</span>
                         <span className="text-gray-500 dark:text-gray-400 truncate ml-2 text-right">{eq.name || 'N/A'}</span>
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-1">
+                      <div className="text-[10px] text-[#5f6472] dark:text-gray-400 mt-1">
                         Desde: {eq.updated_at ? new Date(eq.updated_at).toLocaleDateString('pt-BR') : 'Data Indisponível'}
                       </div>
                     </li>
@@ -996,7 +996,7 @@ function DashboardComponent() {
         >
           <img src={expandedImage} alt="Expanded DDS" className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl" />
           <button 
-            className="absolute top-20 right-6 sm:right-10 text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
+            className="absolute top-20 right-6 sm:right-10 text-[#1c1d21] dark:text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
             onClick={(e) => {
               e.stopPropagation()
               setExpandedImage(null)
@@ -1012,7 +1012,7 @@ function DashboardComponent() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
           <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
             <button 
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-[#5f6472] dark:text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
               onClick={() => setShowBirthdayModal(false)}
             >
               <X size={24} />
@@ -1022,7 +1022,7 @@ function DashboardComponent() {
               <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500 mb-4 animate-bounce">
                 <Gift size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Tem festa hoje! 🎉</h2>
+              <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white mb-2">Tem festa hoje! 🎉</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Hoje é o aniversário de:
               </p>
@@ -1030,7 +1030,7 @@ function DashboardComponent() {
               <div className="w-full flex flex-col gap-3 mb-8">
                 {aniversariantesHoje.map((aniv: any, i: number) => (
                   <div key={i} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl p-4 flex items-center justify-center">
-                    <span className="font-bold text-lg text-white capitalize">
+                    <span className="font-bold text-lg text-[#1c1d21] dark:text-white capitalize">
                       {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
                     </span>
                   </div>

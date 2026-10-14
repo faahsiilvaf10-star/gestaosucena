@@ -400,7 +400,7 @@ function DDSSchedulePage() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400">Não definido</span>
+                          <span className="text-[#5f6472] dark:text-gray-400">Não definido</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -409,21 +409,21 @@ function DDSSchedulePage() {
                             <span className="line-clamp-2">{entry.tema}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-[#5f6472] dark:text-gray-400">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => openEdit(day)}
-                            className="p-2 text-gray-400 hover:text-black transition-colors"
+                            className="p-2 text-[#5f6472] dark:text-gray-400 hover:text-black transition-colors"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           {entry && (
                             <button 
                               onClick={() => handleDelete(day)}
-                              className="p-2 text-gray-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                              className="p-2 text-[#5f6472] dark:text-gray-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -464,7 +464,7 @@ function DDSSchedulePage() {
                   
                   <div className="grid grid-cols-1 gap-3">
                     <div className="bg-gray-50 rounded-xl p-3 flex flex-col justify-center border border-gray-100">
-                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Palestrante</div>
+                      <div className="text-[11px] font-bold text-[#5f6472] dark:text-gray-400 uppercase tracking-wider mb-1.5">Palestrante</div>
                       {entry?.palestrante ? (
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border border-blue-300 text-blue-700 font-bold overflow-hidden shadow-sm shrink-0">
@@ -480,18 +480,18 @@ function DDSSchedulePage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">Não definido</span>
+                        <span className="text-[#5f6472] dark:text-gray-400 text-sm">Não definido</span>
                       )}
                     </div>
 
                     <div className="bg-gray-50 rounded-xl p-3 flex flex-col justify-center border border-gray-100">
-                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tema</div>
+                      <div className="text-[11px] font-bold text-[#5f6472] dark:text-gray-400 uppercase tracking-wider mb-1.5">Tema</div>
                       {entry?.tema ? (
                         <div className="flex items-center space-x-2 text-gray-800 font-medium text-sm leading-snug">
                           <span>{entry.tema}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">-</span>
+                        <span className="text-[#5f6472] dark:text-gray-400 text-sm">-</span>
                       )}
                     </div>
                   </div>

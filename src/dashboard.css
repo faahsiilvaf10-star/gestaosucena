@@ -13,6 +13,9 @@
 
   --glass-border: #ffd033; /* Golden yellow border matching the image */
 
+  /* Superfícies claras — texto sempre grafite por cima */
+  --surface-soft: rgba(255, 255, 255, 0.7);
+  --surface-border: rgba(20, 40, 80, 0.08);
   --shadow-soft:
     0 10px 30px rgba(31, 73, 125, 0.08),
     0 0 10px rgba(255, 208, 51, 0.15),
@@ -850,6 +853,84 @@ body {
   position: relative;
 }
 
+/* ==========================================================
+   NEON CARD — TEMA CLARO
+   Superfície branca translúcida; a borda mantém a cor neon
+   da categoria, só que com menos intensidade para não vibrar.
+   ========================================================== */
+
+.neon-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 16px;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 20%,
+    color-mix(in srgb, var(--neon-border-color, #1677ff) 55%, transparent) 50%,
+    transparent 80%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 10;
+  animation: borderRotate 30s linear infinite;
+}
+
+.neon-card {
+  --neon-border-color: #1677ff;
+  background: rgba(255, 255, 255, var(--light-card-opacity, 0.75)) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px !important;
+  border: 1px solid rgba(20, 40, 80, 0.08) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft) !important;
+  transition: all 0.3s ease;
+}
+
+.neon-card:hover {
+  box-shadow: var(--shadow-hover) !important;
+  transform: translateY(-2px);
+}
+
+/* Texto sobre a cor da categoria — legível no claro */
+.neon-blue   { --neon-border-color: #0891b2; --neon-text: #0e7490; --neon-soft: rgba(14, 116, 144, 0.10); }
+.neon-green  { --neon-border-color: #059669; --neon-text: #047857; --neon-soft: rgba(5, 150, 105, 0.12); }
+.neon-pink   { --neon-border-color: #db2777; --neon-text: #be185d; --neon-soft: rgba(219, 39, 119, 0.10); }
+.neon-purple { --neon-border-color: #7c3aed; --neon-text: #6d28d9; --neon-soft: rgba(124, 58, 237, 0.10); }
+.neon-orange { --neon-border-color: #ea580c; --neon-text: #c2410c; --neon-soft: rgba(234, 88, 12, 0.10); }
+.neon-yellow { --neon-border-color: #ca8a04; --neon-text: #a16207; --neon-soft: rgba(202, 138, 4, 0.12); }
+.neon-red    { --neon-border-color: #dc2626; --neon-text: #b91c1c; --neon-soft: rgba(220, 38, 38, 0.10); }
+
+.neon-blue .percent-box,
+.neon-green .percent-box,
+.neon-pink .percent-box,
+.neon-purple .percent-box,
+.neon-orange .percent-box,
+.neon-yellow .percent-box,
+.neon-red .percent-box {
+  background: var(--neon-soft);
+  color: var(--neon-text);
+  border: 1px solid color-mix(in srgb, var(--neon-border-color) 25%, transparent);
+}
+
+.neon-blue .icon-box,
+.neon-green .icon-box,
+.neon-pink .icon-box,
+.neon-purple .icon-box,
+.neon-orange .icon-box,
+.neon-yellow .icon-box,
+.neon-red .icon-box {
+  color: var(--neon-text);
+  background: var(--neon-soft);
+  border: 1px solid color-mix(in srgb, var(--neon-border-color) 22%, transparent);
+  box-shadow: none;
+}
+
 .dark .neon-card::before {
   content: "";
   position: absolute;
@@ -891,8 +972,24 @@ body {
   transition: all 0.3s ease;
 }
 
+/* No escuro as cores saturadas da categoria valem (glow neon) */
+.dark .neon-blue   { --neon-border-color: #00d2ff; --neon-text: #00d2ff; --neon-soft: rgba(0, 210, 255, 0.10); }
+.dark .neon-green  { --neon-border-color: #00ff88; --neon-text: #00ff88; --neon-soft: rgba(0, 255, 136, 0.10); }
+.dark .neon-pink   { --neon-border-color: #ff00aa; --neon-text: #ff00aa; --neon-soft: rgba(255, 0, 170, 0.10); }
+.dark .neon-purple { --neon-border-color: #aa00ff; --neon-text: #aa00ff; --neon-soft: rgba(170, 0, 255, 0.10); }
+.dark .neon-orange { --neon-border-color: #ffaa00; --neon-text: #ffaa00; --neon-soft: rgba(255, 170, 0, 0.10); }
+.dark .neon-yellow { --neon-border-color: #ffd700; --neon-text: #ffd700; --neon-soft: rgba(255, 215, 0, 0.10); }
+.dark .neon-red    { --neon-border-color: #ff3333; --neon-text: #ff3333; --neon-soft: rgba(255, 51, 51, 0.10); }
+
 .dark .neon-card::before {
   border-radius: 16px;
+  opacity: 0.9;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 20%,
+    var(--neon-border-color, #ffffff) 50%,
+    transparent 80%
+  );
 }
 
 .dark .neon-card:hover {
@@ -910,7 +1007,7 @@ body {
   gap: 8px;
   font-size: 8px;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(20, 40, 80, 0.45);
   text-transform: uppercase;
   z-index: 2;
 }
@@ -918,6 +1015,14 @@ body {
 .card-footer .footer-line {
   width: 24px;
   height: 1px;
+  background: rgba(20, 40, 80, 0.2);
+}
+
+.dark .card-footer {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dark .card-footer .footer-line {
   background: rgba(255, 255, 255, 0.2);
 }
 

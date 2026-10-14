@@ -114,7 +114,7 @@ function ActivityRow({
                 <option value="">Faixa</option>
                 {faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
             </div>
             <div className="relative flex-1 sm:w-32">
               <select
@@ -129,7 +129,7 @@ function ActivityRow({
                 <option value="">Berma</option>
                 {bermas.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
             </div>
           </div>
         </div>
@@ -563,7 +563,7 @@ function JardinagemPage() {
                       <option value="Quaresmeira">Quaresmeira</option>
                       <option value="Grama">Grama</option>
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
                   <input 
                     type="text" inputMode="numeric" value={row.value}
@@ -575,13 +575,13 @@ function JardinagemPage() {
                     <select value={row.faixa} onChange={(e) => { const n = [...plantio]; n[idx].faixa = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
                       <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
                   <div className="relative w-full sm:w-32">
                     <select value={row.berma} onChange={(e) => { const n = [...plantio]; n[idx].berma = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
                       <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
                 </div>
               ))}
@@ -603,7 +603,7 @@ function JardinagemPage() {
                     <select value={invasoras[0].faixa} onChange={(e) => { const n = [...invasoras]; n[0].faixa = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-2 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                       <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
                   <button onClick={() => setInvasoras([...invasoras, {nome: '', value: '0', berma: '', faixa: invasoras[0].faixa}])} className="flex items-center gap-1 bg-white border border-gray-300 px-3 py-2 rounded-xl text-sm hover:bg-gray-50 transition-colors whitespace-nowrap text-gray-700 font-medium">
                     <Plus size={14} /> Adicionar mais
@@ -624,7 +624,7 @@ function JardinagemPage() {
                           <option value="Juqueri">Juqueri</option>
                           <option value="Leucena">Leucena</option>
                         </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                       </div>
                     </div>
                     <div className="sm:w-32 flex flex-col gap-1">
@@ -637,7 +637,7 @@ function JardinagemPage() {
                         <select value={row.berma} onChange={(e) => { const n = [...invasoras]; n[idx].berma = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                           <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                       </div>
                     </div>
                   </div>
@@ -662,13 +662,13 @@ function JardinagemPage() {
                       <select value={outrasFaixa} onChange={e => setOutrasFaixa(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                         <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                     <div className="relative flex-1 sm:w-32">
                       <select value={outrasBerma} onChange={e => setOutrasBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                         <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                   </div>
                 </div>
@@ -718,7 +718,7 @@ function JardinagemPage() {
                 <div className={`flex flex-col bg-white rounded-xl border transition-colors shadow-sm ${irrigacaoCarretel ? 'border-yellow-400' : 'border-gray-200 hover:border-blue-300'}`}>
                   <label className="flex items-center gap-3 p-4 cursor-pointer">
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${irrigacaoCarretel ? 'border-yellow-400 bg-yellow-400' : 'border-gray-300'}`}>
-                      {irrigacaoCarretel && <span className="text-white text-[10px] font-bold">✓</span>}
+                      {irrigacaoCarretel && <span className="text-[#1c1d21] dark:text-white text-[10px] font-bold">✓</span>}
                     </div>
                     <input type="checkbox" checked={irrigacaoCarretel} onChange={e => setIrrigacaoCarretel(e.target.checked)} className="hidden" />
                     <span className="font-medium text-gray-900">Irrigação com Carretel</span>
@@ -750,7 +750,7 @@ function JardinagemPage() {
                               <button
                                 key={b}
                                 onClick={() => toggleCarretelBerma(irrigacaoCarretelFaixaAtiva, b)}
-                                className={`w-14 h-10 rounded-xl text-sm font-bold transition-all border ${isSelected ? 'bg-yellow-400 text-white border-yellow-400 shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:border-yellow-400 hover:bg-yellow-50'}`}
+                                className={`w-14 h-10 rounded-xl text-sm font-bold transition-all border ${isSelected ? 'bg-yellow-400 text-black border-yellow-400 shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:border-yellow-400 hover:bg-yellow-50'}`}
                               >
                                 {b}
                               </button>
@@ -791,7 +791,7 @@ function JardinagemPage() {
             <div className="font-bold text-yellow-600 mb-1 mt-2">🌱 *Atividades Realizadas:*</div>
             
             {!hasAnyData ? (
-              <span className="text-gray-400">Nenhuma atividade registrada</span>
+              <span className="text-[#5f6472] dark:text-gray-400">Nenhuma atividade registrada</span>
             ) : (
               <div className="flex flex-col gap-1">
                 {renderRows('Roçagem', rocagem, 'm²')}

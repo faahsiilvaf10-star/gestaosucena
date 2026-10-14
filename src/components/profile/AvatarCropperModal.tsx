@@ -34,8 +34,8 @@ export function AvatarCropperModal({ isOpen, onClose, imageSrc, onCropComplete }
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-white font-bold">Ajustar Foto de Perfil</h3>
-          <button onClick={onClose} className="text-white/ hover:text-white transition-colors">
+          <h3 className="text-[#1c1d21] dark:text-white font-bold">Ajustar Foto de Perfil</h3>
+          <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -55,7 +55,7 @@ export function AvatarCropperModal({ isOpen, onClose, imageSrc, onCropComplete }
         </div>
         
         <div className="p-4 flex flex-col gap-4">
-          <div className="flex items-center gap-3 text-white/">
+          <div className="flex items-center gap-3 text-white/70">
             <ZoomOut size={18} />
             <input
               type="range"
@@ -73,7 +73,7 @@ export function AvatarCropperModal({ isOpen, onClose, imageSrc, onCropComplete }
           <div className="flex justify-end gap-3 mt-2">
             <button 
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 text-white transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 text-[#1c1d21] dark:text-white transition-colors"
             >
               Cancelar
             </button>

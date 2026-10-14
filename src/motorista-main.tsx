@@ -294,7 +294,7 @@ function AppMotoristaStandalone() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
+    <div className="min-h-screen bg-[#0A0A0A] text-[#1c1d21] dark:text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
       {/* Indicador offline */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-600 text-white text-xs font-bold text-center py-1 px-3 shadow-md flex items-center justify-center gap-2">
@@ -359,7 +359,7 @@ function AppMotoristaStandalone() {
                 <Bell className="w-6 h-6" />
               </div>
               <div className="flex-1 mt-1">
-                <h2 className="text-xl font-bold text-white leading-tight">
+                <h2 className="text-xl font-bold text-[#1c1d21] dark:text-white leading-tight">
                   {announcements[0].title}
                 </h2>
                 <p className="text-blue-400 text-xs font-semibold mt-1">
@@ -369,7 +369,7 @@ function AppMotoristaStandalone() {
             </div>
             
             <div className="bg-black/20 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+              <p className="text-[#5f6472] dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
                 {announcements[0].body}
               </p>
             </div>

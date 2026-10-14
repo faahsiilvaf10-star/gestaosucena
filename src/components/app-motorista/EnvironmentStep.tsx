@@ -35,7 +35,7 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
       {onBack && (
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 text-gray-400 hover:text-white flex items-center gap-2 text-sm font-semibold transition-colors"
+          className="absolute top-6 left-6 text-[#5f6472] dark:text-gray-400 hover:text-white flex items-center gap-2 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Voltar</span>
@@ -43,7 +43,7 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
       )}
 
       <div className="mt-8 mb-8 text-center">
-        <h1 className="text-2xl font-bold text-white mb-2">SELECIONE O AMBIENTE</h1>
+        <h1 className="text-2xl font-bold text-[#1c1d21] dark:text-white mb-2">SELECIONE O AMBIENTE</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Toque para entrar no ambiente</p>
       </div>
 
@@ -59,7 +59,7 @@ export default function EnvironmentStep({ onSelect, onBack }: { onSelect: (envId
             </div>
             
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-white leading-tight mb-1">
+              <h2 className="text-lg font-bold text-[#1c1d21] dark:text-white leading-tight mb-1">
                 {env.name}
               </h2>
               <span className="text-sm font-medium text-emerald-600 dark:text-emerald-500">

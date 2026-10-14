@@ -31,10 +31,10 @@ function DocumentosIndex() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
-        <h1 className="tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
+        <h1 className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
           Documentações
         </h1>
-        <p className="text-white/ text-sm mt-1 font-medium">Acesse, baixe e envie documentos específicos por cargo.</p>
+        <p className="text-gray-600 dark:text-white/70 text-sm mt-1 font-medium">Acesse, baixe e envie documentos específicos por cargo.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

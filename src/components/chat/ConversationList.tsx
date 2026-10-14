@@ -129,7 +129,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                   ) : (
-                    <User size={20} className="text-gray-400" />
+                    <User size={20} className="text-[#5f6472] dark:text-gray-400" />
                   )}
                 </div>
                 {user.isOnline && (
@@ -141,7 +141,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                   {user.name}
                   {isAdmin(user.name, user.role) && <VerifiedBadge />}
                 </p>
-                <p className={`text-xs truncate ${isDark ? 'text-white/' : 'text-gray-500'}`}>
+                <p className={`text-xs truncate ${isDark ? 'text-white/70' : 'text-gray-500'}`}>
                   {user.isOnline ? 'Online' : formatLastSeen(user._presenceRaw?.last_heartbeat)}
                 </p>
               </div>
@@ -181,7 +181,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                       {otherUser?.avatar_url ? (
                         <img src={otherUser.avatar_url} alt={otherUser?.name || ''} className="w-full h-full object-cover" />
                       ) : (
-                        <User size={24} className="text-gray-400" />
+                        <User size={24} className="text-[#5f6472] dark:text-gray-400" />
                       )}
                     </div>
                     {otherUser?.isOnline && (
@@ -195,15 +195,15 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
                         {otherUser?.name || 'Usuário Desconhecido'}
                         {otherUser && isAdmin(otherUser.name, otherUser.role) && <VerifiedBadge />}
                       </p>
-                      <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-white/' : 'text-gray-500')}`}>{msgTime}</span>
+                      <span className={`text-xs ${unread ? 'text-[#D6A72B] font-bold' : (isDark ? 'text-white/70' : 'text-gray-500')}`}>{msgTime}</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <p className={`text-[13px] truncate pr-2 flex items-center gap-1 ${unread ? (isDark ? 'text-white' : 'text-gray-900 font-medium') : (isDark ? 'text-white/' : 'text-gray-500')}`}>
+                      <p className={`text-[13px] truncate pr-2 flex items-center gap-1 ${unread ? (isDark ? 'text-white' : 'text-gray-900 font-medium') : (isDark ? 'text-white/70' : 'text-gray-500')}`}>
                         {isMe && (
                            lastMsg.status === 'read' ? <CheckCheck size={14} className="text-blue-400" /> :
-                           lastMsg.status === 'delivered' ? <CheckCheck size={14} className="text-gray-400" /> :
-                           <Check size={14} className="text-gray-400" />
+                           lastMsg.status === 'delivered' ? <CheckCheck size={14} className="text-[#5f6472] dark:text-gray-400" /> :
+                           <Check size={14} className="text-[#5f6472] dark:text-gray-400" />
                         )}
                         {lastMsg ? (lastMsg.type === 'text' ? lastMsg.text : 'Mídia') : 'Nenhuma mensagem'}
                       </p>

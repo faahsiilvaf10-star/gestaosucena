@@ -45,7 +45,7 @@ export function ChatSidebar({ currentUserId }: { currentUserId: string }) {
         <div className="px-4 pb-3 shrink-0">
           <div className={`relative flex items-center rounded-lg overflow-hidden ${isDark ? 'bg-[#15161A]' : 'bg-white border shadow-sm'}`}>
             <div className="absolute left-3">
-              <Search size={16} className={isDark ? "text-white/" : "text-gray-400"} />
+              <Search size={16} className={isDark ? "text-white/70" : "text-gray-400"} />
             </div>
             <input 
               type="text"

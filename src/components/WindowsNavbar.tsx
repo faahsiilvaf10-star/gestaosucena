@@ -11,8 +11,6 @@ import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
 import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
-import Sun from 'lucide-react/dist/esm/icons/sun.js';
-import Moon from 'lucide-react/dist/esm/icons/moon.js';
 import Bot from 'lucide-react/dist/esm/icons/bot.js';
 import Video from 'lucide-react/dist/esm/icons/video.js';
 import Menu from 'lucide-react/dist/esm/icons/menu.js';
@@ -22,6 +20,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import './WindowsNavbar.css'
 import { useTheme } from '../contexts/ThemeContext'
+import { ThemeToggle } from './ThemeToggle'
 import { GlobalSearchModal } from './GlobalSearchModal'
 import SucenaAIModal from './SucenaAIModal'
 import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
@@ -61,7 +60,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const navigate = useNavigate()
   const location = useLocation()
   const currentPath = location.pathname
-  const { isDark, toggleTheme } = useTheme()
+  const { isDark } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -295,14 +294,14 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Search size={20} strokeWidth={1.8} />
             </button>
-            <button
-              className="sucena-mobile-action-btn"
+            <button 
+              className="sucena-mobile-action-btn" 
               onClick={() => setIsAiOpen(true)}
               aria-label="IA Sucena"
             >
               <Bot size={20} strokeWidth={1.8} />
             </button>
-            {/* Botão tema mobile removido */}
+            <ThemeToggle variant="ghost" className="sucena-mobile-theme-btn" />
           </div>
         </div>
       </div>
@@ -403,7 +402,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
             >
               <Bot size={16} strokeWidth={1.8} />
             </button>
-            {/* Botão tema desktop removido */}
+            <ThemeToggle />
           </div>
 
           <GlobalSearchModal 

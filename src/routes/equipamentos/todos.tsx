@@ -391,7 +391,7 @@ function TodosEquipamentosPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-[#1c1d21] dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>
@@ -405,7 +405,7 @@ function TodosEquipamentosPage() {
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
                       <tr>
                         <th className="p-4">EQUIPAMENTO</th>
                         <th className="p-4">PLACA / TAG</th>
@@ -426,14 +426,14 @@ function TodosEquipamentosPage() {
                           <td className="p-4 text-right flex items-center justify-end gap-2">
                             <button 
                               onClick={() => handleOpenEdit(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/ hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                               title="Editar"
                             >
                               <Pencil size={18} />
                             </button>
                             <button 
                               onClick={() => handleOpenView(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/ hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                               title="Visualizar"
                             >
                               <Eye size={18} />
@@ -484,7 +484,7 @@ function TodosEquipamentosPage() {
       {isViewModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
-          <div className={`relative w-full rounded-3xl p-5 md:p-8 shadow-2xl overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}
+          <div className={`relative w-full rounded-3xl p-5 md:p-8 shadow-2xl overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}
             style={{ maxHeight: 'calc(100dvh - 24px)', maxWidth: 448 }
           }>
             <h2 className="text-3xl mb-6">Detalhes</h2>
@@ -530,7 +530,7 @@ function TodosEquipamentosPage() {
             
             <button 
               onClick={() => setIsViewModalOpen(false)}
-              className="mt-6 w-full py-3 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
+              className="mt-6 w-full py-3 rounded-xl bg-black dark:bg-white text-[#1c1d21] dark:text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
               style={{ minHeight: 44 }}
             >
               Fechar
@@ -543,7 +543,7 @@ function TodosEquipamentosPage() {
       {isEditModalOpen && selectedEq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-3xl mb-6">Editar Equipamento</h2>
             
             <div className="space-y-4">
@@ -603,7 +603,7 @@ function TodosEquipamentosPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-3xl mb-6">Novo Equipamento</h2>
             
             <div className="space-y-4">

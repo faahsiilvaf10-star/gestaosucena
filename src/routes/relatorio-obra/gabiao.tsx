@@ -57,7 +57,7 @@ function ActivityItem({
     <div className={`p-4 sm:p-5 border rounded-2xl flex flex-col gap-4 shadow-sm transition-colors ${checked ? 'bg-yellow-50/30 border-yellow-200' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
       <div className="flex justify-between items-center cursor-pointer select-none" onClick={onToggle}>
         <div className="flex items-center gap-3">
-          {checked ? <CheckCircle2 className="text-yellow-500" size={24} /> : <Circle className="text-gray-300" size={24} />}
+          {checked ? <CheckCircle2 className="text-yellow-500" size={24} /> : <Circle className="text-[#5f6472] dark:text-gray-300" size={24} />}
           <span className={`font-bold text-sm ${checked ? 'text-gray-900' : 'text-gray-600'}`}>{title}</span>
         </div>
       </div>
@@ -407,7 +407,7 @@ function GabiaoPage() {
                         <option value="">Selecione...</option>
                         {faixas.map(f => <option key={f} value={`FAIXA ${f}`}>FAIXA {f}</option>)}
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -416,7 +416,7 @@ function GabiaoPage() {
                       <select value={localFase} onChange={e => setLocalFase(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none">
                         {fases.map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -425,7 +425,7 @@ function GabiaoPage() {
                       <select value={localElevado} onChange={e => setLocalElevado(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none">
                         {elevados.map(e => <option key={e} value={e}>{e}</option>)}
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                   </div>
                 </div>
@@ -510,7 +510,7 @@ function GabiaoPage() {
               <div className="font-bold text-orange-600 mb-1 mt-2">🔨 *Atividades Realizadas:*</div>
               
               {!hasAnyData ? (
-                <span className="text-gray-400">Nenhuma atividade registrada</span>
+                <span className="text-[#5f6472] dark:text-gray-400">Nenhuma atividade registrada</span>
               ) : (
                 <div className="flex flex-col gap-1">
                   {escavacao && <div>* Escavação manual</div>}

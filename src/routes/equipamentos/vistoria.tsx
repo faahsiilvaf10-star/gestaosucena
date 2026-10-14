@@ -416,7 +416,7 @@ function VistoriaPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center rounded-2xl border bg-white/50 dark:bg-white/5 backdrop-blur-md">
                 <AlertCircle size={48} className="text-red-500 mb-4 opacity-80" />
                 <h3 className="text-xl mb-2">{error}</h3>
-                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full font-medium text-sm">
+                <button onClick={handleRefresh} className="px-6 py-2 bg-black dark:bg-white text-[#1c1d21] dark:text-white dark:text-black rounded-full font-medium text-sm">
                   Tentar novamente
                 </button>
               </div>

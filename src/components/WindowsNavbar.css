@@ -1,5 +1,8 @@
 /* ==========================================================
    SUCENA - NAVBAR WINDOWS 11 / LIQUID GLASS
+
+   As cores abaixo são o TEMA ESCURO (padrão) e servem de fallback.
+   O tema claro é declarado logo depois, em `:root:not(.dark)`.
    ========================================================== */
 
 :root {
@@ -9,14 +12,50 @@
   --nav-border: rgba(255, 255, 255, 0.10);
   --nav-border-soft: rgba(255, 255, 255, 0.06);
 
+  /* Superfícies internas */
+  --nav-surface: rgba(255, 255, 255, 0.035);
+  --nav-surface-strong: rgba(255, 255, 255, 0.08);
+  --nav-btn-bg-a: rgba(45, 38, 22, 0.72);
+  --nav-btn-bg-b: rgba(25, 20, 12, 0.82);
+  --nav-btn-bg-hover-a: rgba(70, 58, 30, 0.78);
+  --nav-btn-bg-hover-b: rgba(35, 28, 14, 0.9);
+
+  /* Gradiente da barra */
+  --nav-grad-a: rgba(10, 10, 10, 0.96);
+  --nav-grad-b: rgba(0, 0, 0, 0.98);
+
+  /* Textos */
   --text-main: #f5f8ff;
   --text-muted: #9eacc3;
   --text-menu: #b7c2d5;
+  --nav-icon: #a8b9d5;
+  --nav-icon-hover: #f3e5ab;
+  --nav-btn-icon: #c3d3ed;
+  --nav-contract-label: #8a98af;
+  --nav-contract-icon: #a9bad4;
 
+  /* Ouro da marca */
   --blue: #f5c400;
   --blue-strong: #d4a800;
   --blue-light: #ffe066;
   --blue-glow: rgba(245, 196, 0, 0.45);
+  --gold-soft: #c9a84c;
+  --gold-deep: #a68434;
+
+  /* Divisórias e linhas */
+  --nav-divider: rgba(255, 255, 255, 0.16);
+  --nav-ring-border: rgba(255, 255, 255, 0.22);
+  --nav-btn-border: rgba(255, 255, 255, 0.08);
+  --nav-avatar-ring: rgba(255, 255, 255, 0.03);
+  --nav-highlight: rgba(255, 255, 255, 0.04);
+  --nav-highlight-inset: rgba(255, 255, 255, 0.06);
+  --nav-ripple: rgba(255, 255, 255, 0.18);
+
+  /* Sombras */
+  --nav-shadow-main: 0 18px 50px rgba(0, 0, 0, 0.70), 0 8px 26px rgba(0, 0, 0, 0.40);
+  --nav-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --nav-shadow-avatar: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --nav-shadow-btn: 0 6px 15px rgba(0, 0, 0, 0.22);
 
   --danger: #ff3848;
   --success: #18df7a;
@@ -27,6 +66,59 @@
   --nav-height: 48px;
 
   --ease-liquid: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================
+   TEMA CLARO — superfícies bege-gelo, texto grafite.
+   ========================================================== */
+
+:root:not(.dark) {
+  --nav-bg: rgba(251, 250, 248, 0.82);
+  --nav-bg-dark: rgba(251, 250, 248, 0.95);
+
+  --nav-border: rgba(40, 45, 60, 0.10);
+  --nav-border-soft: rgba(40, 45, 60, 0.06);
+
+  --nav-surface: rgba(40, 45, 60, 0.045);
+  --nav-surface-strong: rgba(40, 45, 60, 0.075);
+  --nav-btn-bg-a: rgba(255, 255, 255, 0.85);
+  --nav-btn-bg-b: rgba(243, 241, 237, 0.9);
+  --nav-btn-bg-hover-a: rgba(255, 255, 255, 0.95);
+  --nav-btn-bg-hover-b: rgba(233, 231, 225, 0.95);
+
+  --nav-grad-a: rgba(253, 252, 250, 0.92);
+  --nav-grad-b: rgba(246, 245, 242, 0.96);
+
+  /* Textos escuros sobre fundo claro */
+  --text-main: #1c1d21;
+  --text-muted: #5f6472;
+  --text-menu: #4a4f5c;
+  --nav-icon: #6b7280;
+  --nav-icon-hover: #7a6320;
+  --nav-btn-icon: #555b68;
+  --nav-contract-label: #71768a;
+  --nav-contract-icon: #6b7280;
+
+  /* Ouro escurecido para manter contraste no fundo claro */
+  --blue: #b8860b;
+  --blue-strong: #8a6508;
+  --blue-light: #e0b64a;
+  --blue-glow: rgba(184, 134, 11, 0.28);
+  --gold-soft: #a68434;
+  --gold-deep: #7d621f;
+
+  --nav-divider: rgba(40, 45, 60, 0.16);
+  --nav-ring-border: rgba(40, 45, 60, 0.14);
+  --nav-btn-border: rgba(40, 45, 60, 0.12);
+  --nav-avatar-ring: rgba(40, 45, 60, 0.06);
+  --nav-highlight: rgba(255, 255, 255, 0.7);
+  --nav-highlight-inset: rgba(255, 255, 255, 0.8);
+  --nav-ripple: rgba(40, 45, 60, 0.12);
+
+  --nav-shadow-main: 0 18px 50px rgba(40, 50, 70, 0.10), 0 8px 26px rgba(40, 50, 70, 0.06);
+  --nav-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --nav-shadow-avatar: 0 4px 12px rgba(40, 50, 70, 0.16);
+  --nav-shadow-btn: 0 6px 15px rgba(40, 50, 70, 0.10);
 }
 
 /* ==========================================================
@@ -66,12 +158,11 @@
   padding: 0 12px;
 
   border-radius: var(--radius-main);
-
-  background:
+background:
     linear-gradient(
       180deg,
-      rgba(10, 10, 10, 0.96) 0%,
-      rgba(0, 0, 0, 0.98) 100%
+      var(--nav-grad-a) 0%,
+      var(--nav-grad-b) 100%
     );
 
   border: 1px solid var(--nav-border);
@@ -81,9 +172,8 @@
   -webkit-backdrop-filter: blur(28px) saturate(120%);
 
   box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.70),
-    0 8px 26px rgba(0, 0, 0, 0.40),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    var(--nav-shadow-main),
+    var(--nav-shadow-inner);
 
   overflow: hidden;
 
@@ -96,6 +186,7 @@
   content: "";
 
   position: absolute;
+
   inset: 0;
 
   pointer-events: none;
@@ -105,7 +196,7 @@
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.04),
+      var(--nav-highlight),
       rgba(255, 255, 255, 0)
     );
 
@@ -152,7 +243,7 @@
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(255, 255, 255, 0.16),
+    var(--nav-divider),
     transparent
   );
 }
@@ -171,7 +262,7 @@
   display: grid;
   place-items: center;
 
-  color: #a9bad4;
+  color: var(--nav-contract-icon);
 
   flex-shrink: 0;
 }
@@ -184,7 +275,7 @@
 }
 
 .contract-label {
-  color: #8a98af;
+  color: var(--nav-contract-label);
 
   font-size: 8px;
   font-weight: 700;
@@ -197,7 +288,7 @@
 .contract-number {
   margin-top: 2px;
 
-  color: #ffffff;
+  color: var(--text-main);
 
   font-size: 12px;
   font-weight: 750;
@@ -245,11 +336,11 @@
 
   object-fit: cover;
 
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--nav-ring-border);
 
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    0 0 0 2px rgba(255, 255, 255, 0.03);
+    var(--nav-shadow-avatar),
+    0 0 0 2px var(--nav-avatar-ring);
 }
 
 .avatar-online {
@@ -263,9 +354,9 @@
 
   border-radius: 50%;
 
-  background: #18df7a;
+  background: var(--success);
 
-  border: 2px solid #101a2a;
+  border: 2px solid var(--nav-grad-b);
 
   box-shadow: 0 0 8px rgba(24, 223, 122, 0.5);
 }
@@ -370,9 +461,9 @@
 }
 
 .nav-item:hover {
-  color: #ffffff;
+  color: var(--text-main);
 
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--nav-surface);
 
   transform: translateY(-1px);
 }
@@ -382,7 +473,7 @@
 }
 
 .nav-item.active {
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 /* ==========================================================
@@ -400,7 +491,7 @@
   display: grid;
   place-items: center;
 
-  color: #a8b9d5;
+  color: var(--nav-icon);
 
   transition:
     color 200ms ease,
@@ -416,13 +507,13 @@
 }
 
 .nav-item:hover .nav-item-icon {
-  color: #f3e5ab;
+  color: var(--nav-icon-hover);
 
   transform: translateY(-1px);
 }
 
 .nav-item.active .nav-item-icon {
-  color: #ffffff;
+  color: var(--text-main);
 
   transform: translateY(-1px);
 
@@ -777,7 +868,7 @@
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(255, 255, 255, 0.16),
+    var(--nav-divider),
     transparent
   );
 }
@@ -795,22 +886,21 @@
   display: grid;
   place-items: center;
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--nav-btn-border);
 
   border-radius: 50%;
 
-  color: #c3d3ed;
+  color: var(--nav-btn-icon);
 
   background:
     linear-gradient(
       145deg,
-      rgba(45, 38, 22, 0.72),
-      rgba(25, 20, 12, 0.82)
+      var(--nav-btn-bg-a),
+      var(--nav-btn-bg-b)
     );
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 6px 15px rgba(0, 0, 0, 0.22);
+    var(--nav-shadow-btn);
 
   cursor: pointer;
 
@@ -824,15 +914,15 @@
 .nav-action-btn:hover {
   transform: translateY(-2px) scale(1.04);
 
-  color: #ffffff;
+  color: var(--text-main);
 
-  border-color: rgba(201, 168, 76, 0.25);
+  border-color: color-mix(in srgb, var(--blue) 25%, transparent);
 
   background:
     linear-gradient(
       145deg,
-      rgba(70, 58, 30, 0.78),
-      rgba(35, 28, 14, 0.9)
+      var(--nav-btn-bg-hover-a),
+      var(--nav-btn-bg-hover-b)
     );
 }
 
@@ -847,17 +937,17 @@
 .nav-action-btn.primary {
   color: #ffffff;
 
-  border-color: rgba(201, 168, 76, 0.5);
+  border-color: color-mix(in srgb, var(--gold-soft) 50%, transparent);
 
   background:
     linear-gradient(
       145deg,
-      #c9a84c,
-      #a68434
+      var(--gold-soft),
+      var(--gold-deep)
     );
 
   box-shadow:
-    0 0 18px rgba(201, 168, 76, 0.46),
+    0 0 18px var(--blue-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -926,7 +1016,7 @@
 
   pointer-events: none;
 
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--nav-ripple);
 
   animation: navRipple 520ms ease-out;
 }
@@ -1118,14 +1208,14 @@
   padding-top: max(0px, env(safe-area-inset-top, 0px));
 
   background: rgba(8, 16, 30, 0.88);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-soft) 20%, transparent);
   backdrop-filter: blur(10px) saturate(140%);
   -webkit-backdrop-filter: blur(10px) saturate(140%);
 }
 
 /* SOL (light) */
 :root:not(.dark) .sucena-mobile-header {
-  background: rgba(244, 243, 240, 0.94);
+  background: rgba(250, 249, 246, 0.9);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -1139,7 +1229,7 @@
 
   border-radius: 12px;
 
-  color: #c9a84c;
+  color: var(--gold-soft);
 
   background: transparent;
   border: none;
@@ -1149,15 +1239,11 @@
 }
 
 .sucena-mobile-hamburger:hover {
-  background: rgba(201, 168, 76, 0.1);
+  background: color-mix(in srgb, var(--gold-soft) 10%, transparent);
 }
 
 .sucena-mobile-hamburger:active {
   transform: scale(0.93);
-}
-
-:root:not(.dark) .sucena-mobile-hamburger {
-  color: #6b5a2d;
 }
 
 .sucena-mobile-title {
@@ -1169,15 +1255,11 @@
   font-weight: 650;
   letter-spacing: 0.01em;
 
-  color: #f5f8ff;
+  color: var(--text-main);
 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-:root:not(.dark) .sucena-mobile-title {
-  color: #1a1a1a;
 }
 
 .sucena-mobile-actions {
@@ -1197,7 +1279,7 @@
 
   border-radius: 12px;
 
-  color: #9eacc3;
+  color: var(--text-muted);
 
   background: transparent;
   border: none;
@@ -1207,29 +1289,22 @@
 }
 
 .sucena-mobile-action-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  background: var(--nav-surface);
 }
 
 .sucena-mobile-action-btn:active {
   transform: scale(0.93);
 }
 
-:root:not(.dark) .sucena-mobile-action-btn {
-  color: #555;
-}
-
-:root:not(.dark) .sucena-mobile-action-btn:hover {
-  color: #111;
-  background: rgba(0, 0, 0, 0.06);
-}
-
+/* Botão de tema (mesmo look dos demais, com destaque dourado) */
 .sucena-mobile-theme-btn {
-  color: #c9a84c;
+  color: var(--gold-soft);
 }
 
-:root:not(.dark) .sucena-mobile-theme-btn {
-  color: #a68434;
+.sucena-mobile-theme-btn:hover {
+  color: var(--gold-deep);
+  background: color-mix(in srgb, var(--gold-soft) 10%, transparent);
 }
 
 
@@ -1297,21 +1372,21 @@
     rgba(12, 16, 24, 0.98) 0%,
     rgba(8, 12, 18, 0.99) 100%
   );
-  border-right: 1px solid rgba(201, 168, 76, 0.2);
+  border-right: 1px solid color-mix(in srgb, var(--gold-soft) 20%, transparent);
   box-shadow:
     4px 0 40px rgba(0, 0, 0, 0.6),
-    1px 0 0 rgba(201, 168, 76, 0.1);
+    1px 0 0 color-mix(in srgb, var(--gold-soft) 10%, transparent);
 }
 
 /* Light theme drawer */
 .sucena-drawer--light {
   background: linear-gradient(
     180deg,
-    rgba(250, 249, 246, 0.98) 0%,
-    rgba(244, 243, 240, 0.99) 100%
+    rgba(253, 252, 250, 0.98) 0%,
+    rgba(243, 241, 237, 0.99) 100%
   );
   border-right: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 4px 0 30px rgba(40, 50, 70, 0.12);
 }
 
 /* Drawer Header */
@@ -1341,21 +1416,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #8a98af;
-}
-
-.sucena-drawer--light .sucena-drawer-contract-label {
-  color: #8a8a8a;
+  color: var(--nav-contract-label);
 }
 
 .sucena-drawer-contract-number {
   font-size: 11px;
   font-weight: 750;
-  color: #c9a84c;
-}
-
-.sucena-drawer--light .sucena-drawer-contract-number {
-  color: #a68434;
+  color: var(--gold-soft);
 }
 
 .sucena-drawer-close {
@@ -1368,7 +1435,7 @@
 
   border-radius: 12px;
 
-  color: #9eacc3;
+  color: var(--text-muted);
 
   background: transparent;
   border: none;
@@ -1378,17 +1445,8 @@
 }
 
 .sucena-drawer-close:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.sucena-drawer--light .sucena-drawer-close {
-  color: #666;
-}
-
-.sucena-drawer--light .sucena-drawer-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #111;
+  background: var(--nav-surface);
+  color: var(--text-main);
 }
 
 .sucena-drawer-close:active {
@@ -1412,11 +1470,7 @@
 }
 
 .sucena-drawer-user:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.sucena-drawer--light .sucena-drawer-user:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--nav-surface);
 }
 
 .sucena-drawer-avatar {
@@ -1431,19 +1485,19 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid var(--nav-ring-border);
 }
 
 .sucena-drawer-avatar-placeholder {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: rgba(201, 168, 76, 0.15);
-  border: 1.5px solid rgba(201, 168, 76, 0.3);
+  background: color-mix(in srgb, var(--gold-soft) 15%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--gold-soft) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c9a84c;
+  color: var(--gold-soft);
   font-weight: 700;
   font-size: 18px;
 }
@@ -1455,13 +1509,9 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #18df7a;
-  border: 2px solid rgba(10, 14, 22, 0.9);
+  background: var(--success);
+  border: 2px solid var(--nav-grad-b);
   box-shadow: 0 0 6px rgba(24, 223, 122, 0.5);
-}
-
-.sucena-drawer--light .sucena-drawer-avatar-online {
-  border-color: rgba(244, 243, 240, 0.9);
 }
 
 .sucena-drawer-user-info {
@@ -1475,35 +1525,23 @@
 .sucena-drawer-user-name {
   font-size: 14px;
   font-weight: 650;
-  color: #f5f8ff;
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sucena-drawer--light .sucena-drawer-user-name {
-  color: #111;
 }
 
 .sucena-drawer-user-role {
   font-size: 11px;
-  color: #8a98af;
+  color: var(--nav-contract-label);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sucena-drawer--light .sucena-drawer-user-role {
-  color: #777;
-}
-
 .sucena-drawer-user-chevron {
-  color: #4a5568;
+  color: var(--nav-icon);
   flex-shrink: 0;
-}
-
-.sucena-drawer--light .sucena-drawer-user-chevron {
-  color: #aaa;
 }
 
 /* Divider */
@@ -1513,19 +1551,10 @@
   background: linear-gradient(
     to right,
     transparent,
-    rgba(255, 255, 255, 0.1),
+    var(--nav-divider),
     transparent
   );
   flex-shrink: 0;
-}
-
-.sucena-drawer--light .sucena-drawer-divider {
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 0, 0, 0.1),
-    transparent
-  );
 }
 
 /* Nav Menu */
@@ -1561,7 +1590,7 @@
   padding: 10px 14px;
   border-radius: 14px;
 
-  color: #9eacc3;
+  color: var(--text-muted);
 
   background: transparent;
   border: none;
@@ -1579,52 +1608,29 @@
 }
 
 .sucena-drawer-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--nav-surface);
+  color: var(--text-main);
 }
 
 .sucena-drawer-item:active {
   transform: scale(0.98);
 }
 
-.sucena-drawer--light .sucena-drawer-item {
-  color: #555;
-}
-
-.sucena-drawer--light .sucena-drawer-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #111;
-}
-
 /* Item ativo */
 .sucena-drawer-item--active {
-  background: rgba(201, 168, 76, 0.12);
-  color: #e4c771;
+  background: color-mix(in srgb, var(--gold-soft) 14%, transparent);
+  color: var(--blue-light);
   font-weight: 650;
 }
 
 .sucena-drawer-item--active:hover {
-  background: rgba(201, 168, 76, 0.18);
-  color: #ffe08a;
-}
-
-.sucena-drawer--light .sucena-drawer-item--active {
-  background: rgba(166, 132, 52, 0.12);
-  color: #8a6c28;
-}
-
-.sucena-drawer--light .sucena-drawer-item--active:hover {
-  background: rgba(166, 132, 52, 0.18);
-  color: #6b5220;
+  background: color-mix(in srgb, var(--gold-soft) 20%, transparent);
+  color: var(--blue);
 }
 
 /* Item emergência */
 .sucena-drawer-item--emergency {
-  color: #ff5060;
-}
-
-.sucena-drawer--light .sucena-drawer-item--emergency {
-  color: #cc2030;
+  color: var(--danger);
 }
 
 .sucena-drawer-item-icon {
@@ -1648,12 +1654,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c9a84c;
+  background: var(--gold-soft);
   flex-shrink: 0;
-}
-
-.sucena-drawer--light .sucena-drawer-item-active-dot {
-  background: #a68434;
 }
 
 /* Drawer Footer */
@@ -1663,11 +1665,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.sucena-drawer--light .sucena-drawer-footer {
-  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  border-top: 1px solid var(--nav-border-soft);
 }
 
 .sucena-drawer-theme-toggle,
@@ -1695,35 +1693,19 @@
 }
 
 .sucena-drawer-theme-toggle {
-  color: #c9a84c;
+  color: var(--gold-soft);
 }
 
 .sucena-drawer-theme-toggle:hover {
-  background: rgba(201, 168, 76, 0.08);
-}
-
-.sucena-drawer--light .sucena-drawer-theme-toggle {
-  color: #8a6c28;
-}
-
-.sucena-drawer--light .sucena-drawer-theme-toggle:hover {
-  background: rgba(166, 132, 52, 0.06);
+  background: color-mix(in srgb, var(--gold-soft) 8%, transparent);
 }
 
 .sucena-drawer-logout {
-  color: #ff6070;
+  color: var(--danger);
 }
 
 .sucena-drawer-logout:hover {
-  background: rgba(255, 60, 80, 0.08);
-}
-
-.sucena-drawer--light .sucena-drawer-logout {
-  color: #cc2030;
-}
-
-.sucena-drawer--light .sucena-drawer-logout:hover {
-  background: rgba(200, 20, 40, 0.06);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
 }
 
 .sucena-drawer-theme-toggle:active,

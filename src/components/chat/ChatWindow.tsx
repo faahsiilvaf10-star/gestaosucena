@@ -195,7 +195,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         {contactAvatar ? (
           <img src={contactAvatar} alt={contactName} className="w-full h-full object-cover rounded-full" />
         ) : (
-          <User size={24} className="text-gray-400" />
+          <User size={24} className="text-[#5f6472] dark:text-gray-400" />
         )}
         {contactStatus === 'Online' && (
           <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white dark:border-[#111216]" />
@@ -233,7 +233,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-gray-400 relative">
+        <div className="flex items-center gap-1 text-[#5f6472] dark:text-gray-400 relative">
           <button 
             onClick={() => setIsMinimized(true)}
             className={`p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-white/10 text-white/70' : 'hover:bg-black/5 text-gray-600'}`}
@@ -283,7 +283,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         {groupedMessages.map((group, gIdx) => (
           <div key={gIdx} className="space-y-3">
             <div className="flex flex-col items-center sticky top-2 z-10 my-4">
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-white/ border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full shadow-sm ${isDark ? 'bg-[#1A1B20]/90 text-white/70 border border-white/5 backdrop-blur-sm' : 'bg-white/90 text-gray-500 border border-black/5 backdrop-blur-sm'}`}>
                 {group.date}
               </span>
             </div>

@@ -233,7 +233,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
         <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-          <h3 className="text-xl font-black text-white mb-2">{confirmModal.title}</h3>
+          <h3 className="text-xl font-black text-[#1c1d21] dark:text-white mb-2">{confirmModal.title}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">{confirmModal.description}</p>
           <div className="flex gap-3">
             <button 
@@ -244,7 +244,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             </button>
             <button 
               onClick={confirmModal.onConfirm}
-              className={`flex-1 py-4 font-bold text-white ${confirmModal.color} rounded-2xl active:scale-[0.98] transition-all shadow-lg`}
+              className={`flex-1 py-4 font-bold text-[#1c1d21] dark:text-white ${confirmModal.color} rounded-2xl active:scale-[0.98] transition-all shadow-lg`}
             >
               {confirmModal.confirmText}
             </button>
@@ -1113,8 +1113,8 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
       <div className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 pb-6 relative">
         <div className="p-6 pb-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-              <button onClick={() => setViewState('operating')} className="text-gray-400 active:text-white p-2 -ml-2 transition-colors">
+            <h2 className="text-xl font-bold flex items-center gap-2 text-[#1c1d21] dark:text-white">
+              <button onClick={() => setViewState('operating')} className="text-[#5f6472] dark:text-gray-400 active:text-white p-2 -ml-2 transition-colors">
                 <ArrowLeft size={24} />
               </button>
               <History size={22} className="text-emerald-500" />
@@ -1125,13 +1125,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
         <div className="flex-1 overflow-y-auto px-6 space-y-6 custom-scrollbar pb-24">
           {timeline.length === 0 ? (
-             <div className="text-center text-gray-400 mt-10">Nenhum evento registrado.</div>
+             <div className="text-center text-[#5f6472] dark:text-gray-400 mt-10">Nenhum evento registrado.</div>
           ) : (
             <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-3 space-y-6">
               {timeline.slice().reverse().map((event: any, i: number) => (
                 <div key={i} className="relative pl-6">
                   <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white dark:border-zinc-950 ${event.color || 'bg-gray-400'}`}></div>
-                  <div className="text-xs font-bold text-gray-400 mb-0.5">{format(new Date(event.time), 'HH:mm')}</div>
+                  <div className="text-xs font-bold text-[#5f6472] dark:text-gray-400 mb-0.5">{format(new Date(event.time), 'HH:mm')}</div>
                   <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{event.name}</div>
                   <div className="text-xs text-gray-500">{event.type}</div>
                 </div>
@@ -1156,7 +1156,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
               <Square size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">FINALIZAR <br/>OPERAÇÃO</h2>
+            <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white leading-tight">FINALIZAR <br/>OPERAÇÃO</h2>
           </div>
         </div>
 
@@ -1194,7 +1194,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             </div>
           </div>
 
-          <button onClick={handleFinishShift} disabled={loadingFinish} className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-lg rounded-2xl mt-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg">
+          <button onClick={handleFinishShift} disabled={loadingFinish} className="w-full h-14 bg-gray-900 dark:bg-white text-[#1c1d21] dark:text-white dark:text-black font-bold text-lg rounded-2xl mt-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg">
             {loadingFinish ? <Loader2 className="animate-spin" size={24} /> : 'ENCERRAR E ENVIAR'}
           </button>
         </div>
@@ -1225,9 +1225,9 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
   if (viewState === 'loading_water') {
     return (
-      <div className="min-h-full flex flex-col bg-gray-950 text-white pb-20">
+      <div className="min-h-full flex flex-col bg-gray-950 text-[#1c1d21] dark:text-white pb-20">
         <div className="p-6 pb-2">
-          <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
+          <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-[#5f6472] dark:text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
             &larr; Voltar ao Painel
           </button>
           
@@ -1277,7 +1277,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
                 )}
                 
                 <Droplet size={32} className={isActive ? 'text-white' : 'text-blue-100'} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-xl font-bold text-white">
+                <span className="text-xl font-bold text-[#1c1d21] dark:text-white">
                   {point}
                 </span>
                 
@@ -1551,7 +1551,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
             <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
               <ClipboardList size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">CHECK-LIST<br/>(ANOMALIAS)</h2>
+            <h2 className="text-2xl font-bold text-[#1c1d21] dark:text-white leading-tight">CHECK-LIST<br/>(ANOMALIAS)</h2>
           </div>
         </div>
 
@@ -1579,7 +1579,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
                   value={correctionDescription}
                   onChange={e => setCorrectionDescription(e.target.value)}
                   placeholder="Descreva o que foi feito para corrigir..."
-                  className="w-full h-24 p-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-white resize-none"
+                  className="w-full h-24 p-4 bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-[#1c1d21] dark:text-white resize-none"
                 />
               </div>
 
@@ -1595,13 +1595,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
           <div className={pendingAnomalies.length > 0 ? "pt-6 border-t border-gray-200 dark:border-zinc-800" : ""}>
             {pendingAnomalies.length > 0 && (
-              <h3 className="font-bold text-white mb-4">Registrar Nova Anomalia</h3>
+              <h3 className="font-bold text-[#1c1d21] dark:text-white mb-4">Registrar Nova Anomalia</h3>
             )}
             <label className="text-xs font-semibold text-gray-500 block mb-1">Tipo de Anomalia</label>
             <select 
               value={anomalyType}
               onChange={e => setAnomalyType(e.target.value)}
-              className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-white"
+              className="w-full h-14 px-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-[#1c1d21] dark:text-white"
             >
               <option value="Problema mecânico">Problema mecânico</option>
               <option value="Pneu">Pneu</option>
@@ -1622,13 +1622,13 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
               onChange={e => setAnomalyDescription(e.target.value)}
               placeholder="Descreva o que aconteceu..."
               rows={4}
-              className="w-full p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-white resize-none"
+              className="w-full p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-[#1c1d21] dark:text-white resize-none"
             />
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
             <div>
-              <p className="font-semibold text-white">Problema Corrigido?</p>
+              <p className="font-semibold text-[#1c1d21] dark:text-white">Problema Corrigido?</p>
               <p className="text-xs text-gray-500">Marque se o problema já foi solucionado.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -1781,7 +1781,7 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
       {/* QUICK ACTIONS GRID */}
       <div className="px-6 flex-1">
-        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+        <h3 className="font-bold text-[#1c1d21] dark:text-white mb-4 flex items-center gap-2">
           <History size={18} className="text-emerald-500" /> 
           Ações Operacionais
         </h3>

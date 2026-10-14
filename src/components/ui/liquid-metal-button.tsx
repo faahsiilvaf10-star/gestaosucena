@@ -2,6 +2,7 @@ import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
 import { liquidMetalFragmentShader, ShaderMount } from "@paper-design/shaders";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface LiquidMetalButtonProps {
   label?: string;
@@ -16,6 +17,15 @@ export function LiquidMetalButton({
   viewMode = "text",
   icon,
 }: LiquidMetalButtonProps) {
+  const { isDark } = useTheme();
+  // No tema claro a pastilha é clara, então o rótulo precisa ficar escuro.
+  const labelColor = isDark ? "#ffffff" : "#1c1d21";
+  const labelShadow = isDark
+    ? "0px 1px 2px rgba(0, 0, 0, 0.5)"
+    : "0px 1px 2px rgba(255, 255, 255, 0.6)";
+  const pillGradient = isDark
+    ? "linear-gradient(180deg, #202020 0%, #000000 100%)"
+    : "linear-gradient(180deg, #ffffff 0%, #e8e6e1 100%)";
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [ripples, setRipples] = useState<
@@ -196,14 +206,14 @@ export function LiquidMetalButton({
           >
             {viewMode === "icon" && (
               icon ? (
-                <div style={{ color: "#ffffff", filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: labelColor, filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {icon}
                 </div>
               ) : (
                 <Sparkles
                   size={16}
                   style={{
-                    color: "#ffffff", /* Alterado de #666666 para #ffffff para ficar mais visivel no tema escuro/claro com fundo preto */
+                    color: labelColor,
                     filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
                     transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                     transform: "scale(1)",
@@ -215,10 +225,10 @@ export function LiquidMetalButton({
               <span
                 style={{
                   fontSize: "10.5px", /* Ajustado de 14px para encaixar melhor na navbar que usa 8.5px e letras maiusculas */
-                  color: "#ffffff", /* Alterado de #666666 para #ffffff */
+                  color: labelColor,
                   fontWeight: 650,
                   textTransform: "uppercase", /* Adicionado para combinar com a navbar original */
-                  textShadow: "0px 1px 2px rgba(0, 0, 0, 0.5)",
+                  textShadow: labelShadow,
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   transform: "scale(1)",
                   whiteSpace: "nowrap",
@@ -248,7 +258,7 @@ export function LiquidMetalButton({
                 height: `${dimensions.innerHeight}px`,
                 margin: "2px",
                 borderRadius: "100px",
-                background: "linear-gradient(180deg, #202020 0%, #000000 100%)",
+                background: pillGradient,
                 boxShadow: isPressed
                   ? "inset 0px 2px 4px rgba(0, 0, 0, 0.4), inset 0px 1px 2px rgba(0, 0, 0, 0.3)"
                   : "none",

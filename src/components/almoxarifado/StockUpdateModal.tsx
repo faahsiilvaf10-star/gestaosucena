@@ -55,12 +55,12 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
       <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
-          <h2 className="text-xl font-bold font-evantic tracking-wide text-white">
+          <h2 className="text-xl font-bold font-evantic tracking-wide text-[#1c1d21] dark:text-white">
             {type === 'in' ? 'Entrada no Estoque' : 'Saída do Estoque'}
           </h2>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-[#5f6472] dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <X size={24} />
           </button>
@@ -68,7 +68,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
 
         <div className="p-6">
           <div className="mb-6">
-            <h3 className="font-semibold text-white mb-1">{product.name}</h3>
+            <h3 className="font-semibold text-[#1c1d21] dark:text-white mb-1">{product.name}</h3>
             <p className="text-sm text-gray-500">Estoque atual: <span className="font-bold">{product.current_quantity}</span> {product.unit_of_measure}</p>
           </div>
 

@@ -74,7 +74,7 @@ function PesquisaRoute() {
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-[#5f6472] dark:text-gray-400">
                     <User size={24} />
                   </div>
                 )}

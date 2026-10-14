@@ -170,7 +170,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
 
           {/* Texto */}
           <div className="flex-1 overflow-hidden mt-1">
-            <p className="font-semibold text-[13px] text-white leading-tight">
+            <p className="font-semibold text-[13px] text-[#1c1d21] dark:text-white leading-tight">
               {notif.name}
             </p>
             <p className="text-[12px] text-[#53BDEB] font-medium mt-1 break-words">
@@ -188,7 +188,7 @@ export function NewMessageNotification({ currentUserId }: { currentUserId: strin
                 setNotifications(prev => prev.filter(n => n.id !== notif.id))
               }, 400)
             }}
-            className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+            className="shrink-0 text-[#5f6472] dark:text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

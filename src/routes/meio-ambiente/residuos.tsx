@@ -378,7 +378,7 @@ function ResiduosPage() {
                 <div className="w-full overflow-x-auto">
                   <table className="w-full text-sm text-center border-collapse text-black min-w-[1000px]">
                     <thead>
-                      <tr className="bg-[#1a4b6d] text-white">
+                      <tr className="bg-[#1a4b6d] text-[#1c1d21] dark:text-white">
                         <th className="p-3 border-b border-r border-[#1a4b6d] font-bold text-left w-32">Mês</th>
                         {CATEGORIES.map(cat => (
                           <th key={cat.id} className="p-3 border-b border-r border-[#1a4b6d] font-bold w-1/6">{cat.label}</th>
@@ -433,12 +433,12 @@ function ResiduosPage() {
 
             {/* Efluentes Table */}
             <div className="flex flex-col w-full mt-8">
-              <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>EFLUENTES SANITÁRIOS</h3>
+              <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>EFLUENTES SANITÁRIOS</h3>
               <div className="w-full overflow-hidden rounded-md border border-[#1a4b6d] shadow-2xl bg-white font-sans relative z-20">
                 <div className="w-full overflow-x-auto">
                   <table className="w-full text-sm text-center border-collapse text-black min-w-[600px]">
                     <thead>
-                      <tr className="bg-[#1a4b6d] text-white">
+                      <tr className="bg-[#1a4b6d] text-[#1c1d21] dark:text-white">
                         <th className="p-3 border-b border-r border-[#1a4b6d] font-bold text-left w-32">Mês</th>
                         <th className="p-3 border-b border-[#1a4b6d] font-bold">Efluentes Sanitários (m³)</th>
                       </tr>
@@ -477,7 +477,7 @@ function ResiduosPage() {
             <div className="flex flex-col gap-8 w-full mt-12">
               {/* Resíduos Chart */}
               <div className={`flex-1 rounded-md border shadow-xl p-6 ${isDark ? 'bg-[#111] border-white/10' : 'bg-white border-[#1a4b6d]/20'}`}>
-                <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-[#1a4b6d]'}`}>
+                <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-[#1a4b6d]'}`}>
                   Resíduos por Mês (KG)
                 </h3>
                 <div className="h-[300px] w-full">
@@ -501,7 +501,7 @@ function ResiduosPage() {
 
               {/* Efluentes Chart */}
               <div className={`flex-1 rounded-md border shadow-xl p-6 ${isDark ? 'bg-[#111] border-white/10' : 'bg-white border-[#1a4b6d]/20'}`}>
-                <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-[#1a4b6d]'}`}>
+                <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-[#1a4b6d]'}`}>
                   Efluentes Sanitários por Mês (m³)
                 </h3>
                 <div className="h-[300px] w-full">

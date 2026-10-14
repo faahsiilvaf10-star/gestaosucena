@@ -395,7 +395,7 @@ function PedidoDetailsPage() {
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <ZoomIn className="w-6 h-6 text-white drop-shadow-md" />
+                          <ZoomIn className="w-6 h-6 text-[#1c1d21] dark:text-white drop-shadow-md" />
                         </div>
                       </div>
                     ) : (
@@ -488,7 +488,7 @@ function PedidoDetailsPage() {
                 {/* Ações que aparecem no hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
                   <Button 
-                    className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md shadow-xl rounded-full px-6 flex items-center gap-2"
+                    className="bg-white/10 hover:bg-white/20 text-[#1c1d21] dark:text-white border border-white/20 backdrop-blur-md shadow-xl rounded-full px-6 flex items-center gap-2"
                     onClick={() => handleDownloadImage(fullscreenImage)}
                   >
                     <Download className="w-4 h-4" />

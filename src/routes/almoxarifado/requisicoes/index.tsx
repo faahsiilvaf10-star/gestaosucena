@@ -273,15 +273,15 @@ function RequisicoesList() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!reqToDelete} onOpenChange={() => setReqToDelete(null)}>
-        <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:rounded-2xl">
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-[#1c1d21] dark:text-white sm:rounded-2xl">
           <DialogTitle className="text-xl">Excluir Requisição</DialogTitle>
-          <div className="py-4 text-zinc-300">
+          <div className="py-4 text-[#5f6472] dark:text-zinc-300">
             Tem certeza que deseja excluir a requisição de <strong>{reqToDelete?.name}</strong>?
             <br /><br />
             Essa ação removerá o histórico e <strong>retornará todos os itens dessa requisição para o estoque</strong> automaticamente.
           </div>
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button variant="outline" className="text-white border-zinc-700 hover:bg-zinc-800 hover:text-white" onClick={() => setReqToDelete(null)}>Cancelar</Button>
+            <Button variant="outline" className="text-[#1c1d21] dark:text-white border-zinc-700 hover:bg-zinc-800 hover:text-white" onClick={() => setReqToDelete(null)}>Cancelar</Button>
             <Button 
               variant="destructive"
               className="bg-red-600 hover:bg-red-700 text-white"
