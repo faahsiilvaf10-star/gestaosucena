@@ -73,31 +73,32 @@
    ========================================================== */
 
 :root:not(.dark) {
-  --nav-bg: rgba(251, 250, 248, 0.82);
-  --nav-bg-dark: rgba(251, 250, 248, 0.95);
+  --nav-bg: rgba(212, 218, 230, 0.94);
+  --nav-bg-dark: rgba(198, 205, 220, 0.98);
 
-  --nav-border: rgba(40, 45, 60, 0.10);
-  --nav-border-soft: rgba(40, 45, 60, 0.06);
+  --nav-border: rgba(30, 40, 60, 0.16);
+  --nav-border-soft: rgba(30, 40, 60, 0.10);
 
-  --nav-surface: rgba(40, 45, 60, 0.045);
-  --nav-surface-strong: rgba(40, 45, 60, 0.075);
-  --nav-btn-bg-a: rgba(255, 255, 255, 0.85);
-  --nav-btn-bg-b: rgba(243, 241, 237, 0.9);
-  --nav-btn-bg-hover-a: rgba(255, 255, 255, 0.95);
-  --nav-btn-bg-hover-b: rgba(233, 231, 225, 0.95);
+  --nav-surface: rgba(30, 40, 60, 0.06);
+  --nav-surface-strong: rgba(30, 40, 60, 0.10);
+  --nav-btn-bg-a: rgba(255, 255, 255, 0.96);
+  --nav-btn-bg-b: rgba(246, 248, 252, 0.98);
+  --nav-btn-bg-hover-a: #ffffff;
+  --nav-btn-bg-hover-b: rgba(238, 242, 248, 1);
 
-  --nav-grad-a: rgba(253, 252, 250, 0.92);
-  --nav-grad-b: rgba(246, 245, 242, 0.96);
+  /* Gradiente mais encorpado e escuro que o fundo da página (#e4e8f1), criando separação clara */
+  --nav-grad-a: rgba(220, 226, 236, 0.96);
+  --nav-grad-b: rgba(204, 211, 224, 0.98);
 
-  /* Textos escuros sobre fundo claro */
-  --text-main: #1c1d21;
-  --text-muted: #5f6472;
-  --text-menu: #4a4f5c;
-  --nav-icon: #6b7280;
-  --nav-icon-hover: #7a6320;
-  --nav-btn-icon: #555b68;
-  --nav-contract-label: #71768a;
-  --nav-contract-icon: #6b7280;
+  /* Textos escuros com excelente nitidez e legibilidade */
+  --text-main: #111215;
+  --text-muted: #494f5e;
+  --text-menu: #262a34;
+  --nav-icon: #3a4150;
+  --nav-icon-hover: #111215;
+  --nav-btn-icon: #262a34;
+  --nav-contract-label: #4e5566;
+  --nav-contract-icon: #3a4150;
 
   /* Ouro escurecido para manter contraste no fundo claro */
   --blue: #b8860b;
@@ -107,18 +108,18 @@
   --gold-soft: #a68434;
   --gold-deep: #7d621f;
 
-  --nav-divider: rgba(40, 45, 60, 0.16);
-  --nav-ring-border: rgba(40, 45, 60, 0.14);
-  --nav-btn-border: rgba(40, 45, 60, 0.12);
-  --nav-avatar-ring: rgba(40, 45, 60, 0.06);
-  --nav-highlight: rgba(255, 255, 255, 0.7);
-  --nav-highlight-inset: rgba(255, 255, 255, 0.8);
-  --nav-ripple: rgba(40, 45, 60, 0.12);
+  --nav-divider: rgba(30, 40, 60, 0.18);
+  --nav-ring-border: rgba(30, 40, 60, 0.16);
+  --nav-btn-border: rgba(30, 40, 60, 0.14);
+  --nav-avatar-ring: rgba(30, 40, 60, 0.08);
+  --nav-highlight: rgba(255, 255, 255, 0.65);
+  --nav-highlight-inset: rgba(255, 255, 255, 0.75);
+  --nav-ripple: rgba(30, 40, 60, 0.12);
 
-  --nav-shadow-main: 0 18px 50px rgba(40, 50, 70, 0.10), 0 8px 26px rgba(40, 50, 70, 0.06);
-  --nav-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --nav-shadow-avatar: 0 4px 12px rgba(40, 50, 70, 0.16);
-  --nav-shadow-btn: 0 6px 15px rgba(40, 50, 70, 0.10);
+  --nav-shadow-main: 0 16px 36px -4px rgba(18, 26, 45, 0.15), 0 6px 16px -2px rgba(18, 26, 45, 0.08);
+  --nav-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -1px 0 rgba(30, 40, 60, 0.08);
+  --nav-shadow-avatar: 0 4px 12px rgba(30, 40, 60, 0.18);
+  --nav-shadow-btn: 0 3px 10px rgba(18, 26, 45, 0.08);
 }
 
 /* ==========================================================
@@ -166,7 +167,7 @@ background:
     );
 
   border: 1px solid var(--nav-border);
-  border-bottom-color: transparent; /* Funde suavemente sem marcação */
+  border-bottom-color: transparent; /* Funde suavemente sem marcação no dark */
 
   backdrop-filter: blur(28px) saturate(120%);
   -webkit-backdrop-filter: blur(28px) saturate(120%);
@@ -178,6 +179,10 @@ background:
   overflow: hidden;
 
   isolation: isolate;
+}
+
+:root:not(.dark) .sucena-navbar {
+  border-bottom-color: var(--nav-border);
 }
 
 /* brilho superior */
@@ -1215,8 +1220,8 @@ background:
 
 /* SOL (light) */
 :root:not(.dark) .sucena-mobile-header {
-  background: rgba(250, 249, 246, 0.9);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(212, 218, 230, 0.96);
+  border-bottom: 1px solid rgba(30, 40, 60, 0.16);
 }
 
 .sucena-mobile-hamburger {
