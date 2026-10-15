@@ -40,7 +40,7 @@ function generateReceiptPng(
     const W = 800;
     const padX = 40;
     const itemsRows = Math.max(1, items.length);
-    const H = 650 + itemsRows * 30;
+    const H = 680 + itemsRows * 30;
     
     const scale = 2; // Aumenta a resolução para impressão
     const canvas = document.createElement('canvas');
@@ -180,30 +180,131 @@ function generateReceiptPng(
       y += 30;
     }
 
-    y += 80;
+    y += 90;
 
     // Signatures
     const sigW = 250;
     const centerL = padX + (W / 2 - padX) / 2;
     const centerR = W / 2 + (W / 2 - padX) / 2;
 
+    /**
+     * Identifica os limites visíveis reais do traço da assinatura na imagem.
+     * Remove margens vazias/transparentes para que a escala proporcional seja precisa.
+     */
+    const getTrimmedBounds = (img: HTMLImageElement) => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) {
+        return { img, sx: 0, sy: 0, sWidth: w || 240, sHeight: h || 60, width: w || 240, height: h || 60 };
+      }
+
+      try {
+        const temp = document.createElement('canvas');
+        temp.width = w;
+        temp.height = h;
+        const tCtx = temp.getContext('2d');
+        if (!tCtx) {
+          return { img, sx: 0, sy: 0, sWidth: w, sHeight: h, width: w, height: h };
+        }
+
+        tCtx.drawImage(img, 0, 0);
+        const imgData = tCtx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+
+        let minX = w;
+        let minY = h;
+        let maxX = 0;
+        let maxY = 0;
+        let hasInk = false;
+
+        for (let py = 0; py < h; py++) {
+          for (let px = 0; px < w; px++) {
+            const idx = (py * w + px) * 4;
+            const alpha = data[idx + 3];
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            // Considera tinta qualquer pixel não totalmente transparente e que não seja branco puro
+            const isInk = alpha > 25 && (r < 240 || g < 240 || b < 240);
+            if (isInk) {
+              if (px < minX) minX = px;
+              if (px > maxX) maxX = px;
+              if (py < minY) minY = py;
+              if (py > maxY) maxY = py;
+              hasInk = true;
+            }
+          }
+        }
+
+        if (!hasInk || maxX < minX || maxY < minY) {
+          return { img, sx: 0, sy: 0, sWidth: w, sHeight: h, width: w, height: h };
+        }
+
+        // Adiciona margem suave de 4px ao redor do traço
+        const pad = 4;
+        const sx = Math.max(0, minX - pad);
+        const sy = Math.max(0, minY - pad);
+        const sWidth = Math.min(w - sx, (maxX - minX + 1) + pad * 2);
+        const sHeight = Math.min(h - sy, (maxY - minY + 1) + pad * 2);
+
+        return { img, sx, sy, sWidth, sHeight, width: sWidth, height: sHeight };
+      } catch (_) {
+        return { img, sx: 0, sy: 0, sWidth: w, sHeight: h, width: w, height: h };
+      }
+    };
+
+    const drawSignature = (img: HTMLImageElement, centerX: number, lineY: number) => {
+      const bounds = getTrimmedBounds(img);
+      const maxW = 240;
+      const maxH = 65;
+
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+
+      // Escala estritamente mantendo a proporção de aspecto (sem puxar e sem cortar)
+      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, bounds.width < 140 ? 1.1 : 1.0);
+      const drawW = Math.round(bounds.width * scale);
+      const drawH = Math.round(bounds.height * scale);
+
+      const drawX = Math.round(centerX - drawW / 2);
+      const drawY = Math.round(lineY - drawH - 5);
+
+      ctx.drawImage(
+        bounds.img,
+        bounds.sx,
+        bounds.sy,
+        bounds.sWidth,
+        bounds.sHeight,
+        drawX,
+        drawY,
+        drawW,
+        drawH
+      );
+    };
+
     if (authSig) {
       try {
         const img = await loadImage(authSig);
-        ctx.drawImage(img, centerL - sigW / 2, y - 60, sigW, 60);
+        drawSignature(img, centerL, y);
       } catch (e) {}
     }
     drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
-    drawText('ASSINATURA DO AUTORIZADOR', centerL - 100, y + 20, '12px Arial');
 
     if (empSig) {
       try {
         const img2 = await loadImage(empSig);
-        ctx.drawImage(img2, centerR - sigW / 2, y - 60, sigW, 60);
+        drawSignature(img2, centerR, y);
       } catch (e) {}
     }
     drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
-    drawText('ASSINATURA DO FUNCIONÁRIO', centerR - 95, y + 20, '12px Arial');
+
+    // Títulos centralizados abaixo das linhas
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillStyle = '#333';
+    ctx.fillText('ASSINATURA DO AUTORIZADOR', centerL, y + 20);
+    ctx.fillText('ASSINATURA DO FUNCIONÁRIO', centerR, y + 20);
+    ctx.restore();
 
     // Retorna JPEG (resolve o problema de fundo preto/fundo transparente nas APIs de WhatsApp)
     resolve(canvas.toDataURL('image/jpeg', 0.95));
@@ -306,8 +407,8 @@ export function EpiRequisitionForm() {
   }, [step]);
 
   // Derived data
-  const authorizer = employees?.find(e => e.id === authorizerId);
-  const employee = employees?.find(e => e.id === employeeId);
+  const authorizer = employees?.find((e: any) => e.id === authorizerId);
+  const employee = employees?.find((e: any) => e.id === employeeId);
 
   const handleToggleItem = (productId: string, checked: boolean) => {
     if (checked) {
@@ -346,8 +447,23 @@ export function EpiRequisitionForm() {
     const toastId = toast.loading('Gerando recibo e salvando requisição...');
 
     try {
-      const authorizerSigBase64 = authorizerSigRef.current?.getCanvas().toDataURL('image/png') || null;
-      const employeeSigBase64 = employeeSigRef.current?.getCanvas().toDataURL('image/png') || null;
+      const getSigBase64 = (ref: React.RefObject<SignatureCanvas | null>) => {
+        if (!ref.current || ref.current.isEmpty()) return null;
+        try {
+          const trimmed = ref.current.getTrimmedCanvas();
+          if (trimmed && trimmed.width > 0 && trimmed.height > 0) {
+            return trimmed.toDataURL('image/png');
+          }
+        } catch (_) {}
+        try {
+          return ref.current.getCanvas().toDataURL('image/png');
+        } catch (_) {
+          return null;
+        }
+      };
+
+      const authorizerSigBase64 = getSigBase64(authorizerSigRef);
+      const employeeSigBase64 = getSigBase64(employeeSigRef);
       
       const dateStr = format(new Date(), 'dd/MM/yyyy');
       

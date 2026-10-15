@@ -121,7 +121,7 @@ export const EpiReceiptTemplate = forwardRef<HTMLDivElement, ReceiptData>((props
             <img 
               src={props.authorizerSignature} 
               alt="Assinatura do Autorizador" 
-              style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', maxHeight: '80px' }} 
+              style={{ position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)', maxHeight: '65px', maxWidth: '240px', width: 'auto', height: 'auto', objectFit: 'contain' }} 
             />
           )}
           <div style={{ borderTop: '1px solid #333', paddingTop: '10px', fontSize: '12px', position: 'relative', zIndex: 1 }}>
@@ -134,7 +134,7 @@ export const EpiReceiptTemplate = forwardRef<HTMLDivElement, ReceiptData>((props
             <img 
               src={props.employeeSignature} 
               alt="Assinatura do Funcionário" 
-              style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', maxHeight: '80px' }} 
+              style={{ position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)', maxHeight: '65px', maxWidth: '240px', width: 'auto', height: 'auto', objectFit: 'contain' }} 
             />
           )}
           <div style={{ borderTop: '1px solid #333', paddingTop: '10px', fontSize: '12px', position: 'relative', zIndex: 1 }}>
