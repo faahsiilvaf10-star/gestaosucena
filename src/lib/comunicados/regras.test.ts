@@ -406,6 +406,27 @@ describe('trilhaSemImagem', () => {
   })
 })
 
+describe('duracaoParaMs — regressão do timer', () => {
+  it('converte a duração total respeitando minutos + segundos', () => {
+    // Regressão: o modal fechava sempre em 15s mesmo com 1min30s
+    // configurado. A conversão precisa refletir o total real.
+    expect(duracaoParaMs(90)).toBe(90_000)
+    expect(duracaoParaMs(60)).toBe(60_000)
+    expect(duracaoParaMs(15)).toBe(15_000)
+  })
+
+  it('não trunca nem arredonda a duração', () => {
+    expect(duracaoParaMs(45)).toBe(45_000)
+    expect(duracaoParaMs(3600)).toBe(3_600_000)
+  })
+
+  it('valores inválidos viram 0 em vez de NaN', () => {
+    expect(duracaoParaMs(NaN)).toBe(0)
+    expect(duracaoParaMs(Infinity)).toBe(0)
+    expect(duracaoParaMs(-10)).toBe(0)
+  })
+})
+
 describe('totalPermitidas / exibicoesRestantes', () => {
   it('"todo_dia" não tem limite diário', () => {
     expect(totalPermitidas({ periodicidade: 'todo_dia', vezes_por_dia: 1 })).toBe(Number.POSITIVE_INFINITY)

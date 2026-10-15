@@ -37,7 +37,6 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
   const [indice, setIndice] = useState(0)
   const [exibicaoId, setExibicaoId] = useState<string | null>(null)
 
-  const montadoRef = useRef(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Sanidade: a duração precisa ser um número válido e positivo.
@@ -133,18 +132,25 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
     }
   }, [temAudio, audioAtual])
 
-  // Contador regressivo + fechamento automático
+  // Contador regressivo + fechamento automático.
+  //
+  // Usa uma flag LOCAL (e não um ref compartilhado) porque outros
+  // efeitos deste componente também fazem cleanup. Com um ref único,
+  // o cleanup do efeito de áudio marcava `montado = false` e o timer
+  // parava de contar — o modal fechava antes do tempo configurado.
   useEffect(() => {
     const totalMs = duracaoParaMs(duracaoSegundos)
     const inicio = Date.now()
+    let ativo = true
 
     const intervalo = window.setInterval(() => {
-      if (!montadoRef.current) return
+      if (!ativo) return
       const decorrido = Date.now() - inicio
       const faltaMs = totalMs - decorrido
 
       if (faltaMs <= 0) {
         window.clearInterval(intervalo)
+        ativo = false
         fechar('automatico')
         return
       }
@@ -152,7 +158,7 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
     }, 250)
 
     return () => {
-      montadoRef.current = false
+      ativo = false
       window.clearInterval(intervalo)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

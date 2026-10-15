@@ -98,7 +98,7 @@ export function useComunicadosElegiveis(sessionKey: string | null, gatilho = 0) 
         .in('id', ids)
 
       if (errCompletos) {
-        console.error('Erro ao carregar comunicados completos:', errCompletos)
+        console.error('[Comunicados] falha ao ler comunicados completos:', errCompletos)
       }
 
       const porId = new Map(
@@ -503,6 +503,17 @@ export async function registrarExibicao(
   })
 
   if (error) {
+    // 23505 = chave duplicada. Ocorre quando o mesmo comunicado já foi
+    // registrado no dia (ex.: dois StrictMode mounts ou re-renderização
+    // seguida de refresh). Não é um erro: a exibição já existe.
+    if (error.code === '23505') {
+      console.info(
+        '[Comunicados] Exibição já registrada hoje para este comunicado. ' +
+          'Nada a fazer.',
+      )
+      return null
+    }
+
     console.error('Erro ao registrar exibição:', error)
     return null
   }

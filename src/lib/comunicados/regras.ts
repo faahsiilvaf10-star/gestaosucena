@@ -395,5 +395,6 @@ export function formatarDuracao(segundos: number): string {
 
 /** Converte a duração configurada para milissegundos (usado no timer do modal). */
 export function duracaoParaMs(segundos: number): number {
-  return Math.max(0, Math.round(segundos * 1000))
+  if (!Number.isFinite(segundos) || segundos <= 0) return 0
+  return Math.round(segundos * 1000)
 }
