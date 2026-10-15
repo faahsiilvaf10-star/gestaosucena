@@ -1227,14 +1227,14 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
 
   if (viewState === 'loading_water') {
     return (
-      <div className="min-h-full flex flex-col bg-gray-950 text-[#1c1d21] dark:text-white pb-20">
+      <div className="min-h-full flex flex-col bg-white dark:bg-zinc-950 text-[#1c1d21] dark:text-white pb-20">
         <div className="p-6 pb-2">
           <button onClick={() => setViewState('operating')} className="text-sm font-semibold text-[#5f6472] dark:text-gray-400 mb-4 flex items-center gap-1 active:opacity-70">
             &larr; Voltar ao Painel
           </button>
           
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center mb-6 shadow-sm">
-            <span className="text-blue-200 text-sm font-medium">Selecione o ponto de abastecimento para registrar a parada</span>
+          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-center mb-6 shadow-sm">
+            <span className="text-blue-600 dark:text-blue-200 text-sm font-medium">Selecione o ponto de abastecimento para registrar a parada</span>
           </div>
         </div>
 
@@ -1307,19 +1307,19 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
     })
 
     return (
-      <div className="min-h-full flex flex-col bg-[#0A0A0A] text-white pb-6 relative">
+      <div className="min-h-full flex flex-col bg-white dark:bg-[#0A0A0A] text-[#1c1d21] dark:text-white pb-6 relative">
         <div className="p-6 pb-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Wrench size={22} className="text-gray-300" />
+              <Wrench size={22} className="text-[#5f6472] dark:text-gray-300" />
               Selecione o Serviço
             </h2>
-            <button onClick={() => setViewState('operating')} className="text-gray-400 active:text-white p-2">
+            <button onClick={() => setViewState('operating')} className="text-[#5f6472] dark:text-gray-400 active:text-white p-2">
               <X size={24} />
             </button>
           </div>
           
-          <p className="text-gray-400 text-sm mb-6 leading-snug">
+          <p className="text-[#5f6472] dark:text-gray-400 text-sm mb-6 leading-snug">
             O serviço aparecerá na Parte Diária e será enviado ao grupo do WhatsApp.
           </p>
         </div>

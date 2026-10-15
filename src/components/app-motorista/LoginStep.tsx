@@ -3,6 +3,7 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import KeyRound from 'lucide-react/dist/esm/icons/key-round.js';
 import { supabase } from '../../lib/supabase'
+import { ThemeToggle } from '../ThemeToggle'
 
 export const DRIVERS = [
   { id: 'EM', name: 'EDIELSON MARINHO MENDES' },
@@ -150,7 +151,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
 
   if (selectedDriver) {
     return (
-      <div className="min-h-full flex flex-col bg-[#0A0A0A] text-[#1c1d21] dark:text-white p-6 relative">
+      <div className="min-h-full flex flex-col bg-white dark:bg-zinc-950 text-[#1c1d21] dark:text-white p-6 relative">
         <button 
           onClick={() => {
             setSelectedDriver(null)
@@ -206,10 +207,15 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
   }
 
   return (
-    <div className="min-h-full flex flex-col bg-[#0A0A0A] text-[#1c1d21] dark:text-white">
-      <div className="p-6 pb-4 border-b border-white/5 bg-white/5">
-        <h1 className="text-2xl font-bold text-[#1c1d21] dark:text-white mb-1">APP MOTORISTA</h1>
-        <p className="text-[#5f6472] dark:text-gray-400 text-sm font-medium">Selecione o seu usuário para entrar</p>
+    <div className="min-h-full flex flex-col bg-white dark:bg-zinc-950 text-[#1c1d21] dark:text-white">
+      <div className="p-6 pb-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1c1d21] dark:text-white mb-1">APP MOTORISTA</h1>
+            <p className="text-[#5f6472] dark:text-gray-400 text-sm font-medium">Selecione o seu usuário para entrar</p>
+          </div>
+          <ThemeToggle variant="ghost" className="shrink-0 p-2.5 rounded-xl text-[#5f6472] dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-colors" />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar">
@@ -217,7 +223,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
           <button
             key={driver.id}
             onClick={() => setSelectedDriver(driver)}
-            className="w-full bg-transparent hover:bg-white/5 p-3 rounded-2xl flex items-center gap-4 transition-colors text-left group"
+            className="w-full bg-transparent hover:bg-black/5 dark:hover:bg-white/5 p-3 rounded-2xl flex items-center gap-4 transition-colors text-left group"
           >
             <div className={`w-14 h-14 rounded-full bg-[#4A5568] flex items-center justify-center font-bold text-[#1c1d21] dark:text-white shrink-0 group-active:scale-95 transition-transform ${driver.id === 'ADMIN' ? 'text-[10px]' : 'text-lg'}`}>
               {driver.id}

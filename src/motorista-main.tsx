@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
 import { supabase } from './lib/supabase'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Bell from 'lucide-react/dist/esm/icons/bell.js'
 
 // Registra o Service Worker para funcionamento offline
@@ -294,7 +295,7 @@ function AppMotoristaStandalone() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#1c1d21] dark:text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
+    <div className="min-h-screen bg-white dark:bg-[#0A0A0A] text-[#1c1d21] dark:text-white" style={{ height: '100dvh', maxHeight: '100dvh', overflow: 'hidden' }}>
       {/* Indicador offline */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-600 text-white text-xs font-bold text-center py-1 px-3 shadow-md flex items-center justify-center gap-2">
@@ -389,6 +390,8 @@ function AppMotoristaStandalone() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppMotoristaStandalone />
+    <ThemeProvider>
+      <AppMotoristaStandalone />
+    </ThemeProvider>
   </React.StrictMode>
 )
