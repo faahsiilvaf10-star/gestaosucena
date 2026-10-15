@@ -29,6 +29,53 @@ import {
 } from '../../lib/comunicados/regras'
 import { useDiagnosticoComunicados } from '../../lib/comunicados/diagnostico'
 
+/**
+ * Extrai uma mensagem útil de um erro.
+ *
+ * O Supabase não lança `Error`: devolve um objeto plano
+ * `{ message, code, details }`. Por isso `e instanceof Error` nunca
+ * funciona e a falha aparecia como "erro inesperado".
+ *
+ * Também traduz os dois casos conhecidos do módulo de Comunicados.
+ */
+function extrairMensagemErro(e: unknown): string {
+  const bruto = e as { message?: string; code?: string; details?: string } | null
+  const mensagem = bruto?.message ?? (e instanceof Error ? e.message : '') ?? ''
+  const codigo = bruto?.code ?? ''
+
+  // Coluna 'tipo' aceita apenas video/foto/audio: falta aplicar a migration
+  if (
+    /comunicado_midias_tipo_check|violates check constraint/i.test(mensagem) &&
+    /youtube/i.test(mensagem)
+  ) {
+    return (
+      'A tabela de mídias ainda não aceita vídeos do YouTube. ' +
+      'Rode no SQL Editor do Supabase:\n\n' +
+      'ALTER TABLE public.comunicado_midias DROP CONSTRAINT IF EXISTS comunicado_midias_tipo_check;\n' +
+      'ALTER TABLE public.comunicado_midias ADD CONSTRAINT comunicado_midias_tipo_check ' +
+      "CHECK (tipo IN ('video', 'foto', 'audio', 'youtube'));"
+    )
+  }
+
+  if (codigo === '42501' || /row-level security/i.test(mensagem)) {
+    return 'Permissão negada: apenas administradores podem criar comunicados.'
+  }
+
+  if (/bucket not found/i.test(mensagem)) {
+    return 'Bucket de mídia não encontrado. Verifique se o SQL do módulo foi aplicado no Supabase.'
+  }
+
+  if (/Failed to fetch|NetworkError|timeout/i.test(mensagem)) {
+    return 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.'
+  }
+
+  if (codigo === '23505') {
+    return 'Já existe um registro com esses dados. Recarregue a página e tente de novo.'
+  }
+
+  return mensagem || 'Erro inesperado ao salvar o comunicado. Veja o console para detalhes.'
+}
+
 interface MidiaPendente {
   id: string
   tipo: TipoMidia
@@ -228,9 +275,8 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
       }
       abrirNovo()
     } catch (e: unknown) {
-      const mensagem =
-        e instanceof Error ? e.message : 'Erro inesperado ao salvar o comunicado.'
       console.error('[Comunicados] Falha ao salvar:', e)
+      const mensagem = extrairMensagemErro(e)
       setErros([mensagem])
       toast.error(mensagem, { duration: 8000 })
     }

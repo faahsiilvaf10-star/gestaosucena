@@ -370,7 +370,9 @@ export function useSalvarComunicado() {
     },
     onError: (error) => {
       console.error('Erro ao salvar comunicado:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao salvar o comunicado.')
+      // O Supabase devolve { message, code, details } — não é Error.
+      const msg = (error as { message?: string })?.message
+      toast.error(msg || 'Erro ao salvar o comunicado.')
     },
   })
 }
