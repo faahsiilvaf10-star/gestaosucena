@@ -7,7 +7,7 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, rawSupabase } from '../../lib/supabase'
 import { getWhatsappSettings } from '../../lib/settings'
 import { format } from 'date-fns'
 import { saveOfflineFirst, queueWhatsappMessage } from '../../lib/offline-sync'
@@ -15,40 +15,70 @@ import FuelGauge from './FuelGauge'
 
 /**
  * Resolve os dados do equipamento para montar as mensagens do WhatsApp.
- * Tenta o Supabase e, se falhar (offline, equipamento recém-criado ou erro
- * de rede), usa o cache em localStorage gravado pelo DashboardStep.
- * Sem esse fallback a notificação era descartada silenciosamente e a
- * mensagem saía com "-" no lugar do nome do equipamento.
+ * Tenta fallbackEquipment da tela, cache de múltiplos ambientes no localStorage,
+ * e consulta via rawSupabase sem travar por filtro de ambiente.
  */
-type EquipmentInfo = { name?: string; type?: string; plate_tag?: string }
+type EquipmentInfo = { name?: string; type?: string; plate_tag?: string; id?: string }
 
-async function resolveEquipment(equipmentId: string | null): Promise<EquipmentInfo> {
-  if (!equipmentId) return {}
+async function resolveEquipment(equipmentId: string | null, fallbackEquipment?: any): Promise<EquipmentInfo> {
+  if (fallbackEquipment && (fallbackEquipment.name || fallbackEquipment.type || fallbackEquipment.plate_tag)) {
+    return fallbackEquipment
+  }
+  if (!equipmentId) return fallbackEquipment || {}
 
   const fromCache = (): EquipmentInfo => {
     try {
-      return JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
+      const direct = JSON.parse(localStorage.getItem(`app_motorista_eq_${equipmentId}`) || '{}')
+      if (direct?.name || direct?.type || direct?.plate_tag) return direct
+
+      const env = localStorage.getItem('sucena_environment') || 'barcarena'
+      const listStr = localStorage.getItem(`app_motorista_equipments_${env}`)
+      if (listStr) {
+        const list = JSON.parse(listStr)
+        const found = list.find((e: any) => e.id === equipmentId)
+        if (found) return found
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('app_motorista_equipments_')) {
+          try {
+            const list = JSON.parse(localStorage.getItem(key) || '[]')
+            const found = list.find((e: any) => e.id === equipmentId)
+            if (found) return found
+          } catch {}
+        }
+      }
     } catch (_) {
       return {}
     }
+    return {}
   }
 
-  if (!navigator.onLine) return fromCache()
+  const cached = fromCache()
+  if (cached.name || cached.type || cached.plate_tag) return cached
+
+  if (!navigator.onLine) return cached
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await rawSupabase
       .from('eq_equipments')
-      .select('name, type, plate_tag')
+      .select('id, name, type, plate_tag')
       .eq('id', equipmentId)
       .maybeSingle()
 
     if (error) throw error
-    if (data) return data
+    if (data) {
+      try {
+        localStorage.setItem(`app_motorista_eq_${equipmentId}`, JSON.stringify(data))
+      } catch {}
+      return data
+    }
   } catch (err) {
     console.warn('[WhatsApp] Falha ao buscar equipamento no Supabase, usando cache:', err)
   }
 
-  return fromCache()
+  return cached
 }
 
 export default function WizardStep({ 
@@ -282,19 +312,27 @@ export default function WizardStep({
         try {
           const wSettings = await getWhatsappSettings()
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
-            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-              const equipment = await resolveEquipment(equipmentId)
-              let text = wSettings.messageTemplates.anomaliaRegistrada
-              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', 'Pneus')
-              text = text.replace('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
+            const targetPhone = (wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId || '').trim()
+            const template = (wSettings.messageTemplates?.anomaliaRegistrada || '').trim() ||
+              '⚠️ *ANOMALIA REGISTRADA* ⚠️\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n🔧 *Tipo:* {anomalia}\n📝 *Descrição:* {descricao}'
+
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone) {
+              const eq = await resolveEquipment(equipmentId, equipment)
               const driverData = localStorage.getItem('app_motorista_driver')
               const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-              text = text.replace('{motorista}', driverName)
+              const eqDisplay = eq?.name || eq?.plate_tag || equipment?.name || equipment?.plate_tag || '-'
+              const tagDisplay = eq?.name || equipment?.name || '-'
+              const plateDisplay = eq?.plate_tag || equipment?.plate_tag || '-'
+
+              let text = template
+                .replaceAll('{hora}', format(new Date(), 'HH:mm'))
+                .replaceAll('{data}', format(new Date(), 'dd/MM/yyyy'))
+                .replaceAll('{equipamento}', eqDisplay)
+                .replaceAll('{tag}', tagDisplay)
+                .replaceAll('{placa}', plateDisplay)
+                .replaceAll('{anomalia}', 'Pneus')
+                .replaceAll('{descricao}', `Pneus selecionados: ${selectedTires.join(', ')} ${tireObservation ? '- Obs: ' + tireObservation : ''}`)
+                .replaceAll('{motorista}', driverName)
 
               await queueWhatsappMessage(wSettings, targetPhone, text)
             }
@@ -363,19 +401,27 @@ export default function WizardStep({
         try {
           const wSettings = await getWhatsappSettings()
           if (wSettings.appMotoristaAlerts?.enabled !== false) {
-            const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.anomaliaRegistrada) {
-              const equipment = await resolveEquipment(equipmentId)
-              let text = wSettings.messageTemplates.anomaliaRegistrada
-              text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-              text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-              text = text.replace('{tag}', equipment?.name || '-')
-              text = text.replace('{placa}', equipment?.plate_tag || '-')
-              text = text.replace('{anomalia}', anomalyType)
-              text = text.replace('{descricao}', anomalyDesc)
+            const targetPhone = (wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId || '').trim()
+            const template = (wSettings.messageTemplates?.anomaliaRegistrada || '').trim() ||
+              '⚠️ *ANOMALIA REGISTRADA* ⚠️\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n🔧 *Tipo:* {anomalia}\n📝 *Descrição:* {descricao}'
+
+            if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone) {
+              const eq = await resolveEquipment(equipmentId, equipment)
               const driverData = localStorage.getItem('app_motorista_driver')
               const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-              text = text.replace('{motorista}', driverName)
+              const eqDisplay = eq?.name || eq?.plate_tag || equipment?.name || equipment?.plate_tag || '-'
+              const tagDisplay = eq?.name || equipment?.name || '-'
+              const plateDisplay = eq?.plate_tag || equipment?.plate_tag || '-'
+
+              let text = template
+                .replaceAll('{hora}', format(new Date(), 'HH:mm'))
+                .replaceAll('{data}', format(new Date(), 'dd/MM/yyyy'))
+                .replaceAll('{equipamento}', eqDisplay)
+                .replaceAll('{tag}', tagDisplay)
+                .replaceAll('{placa}', plateDisplay)
+                .replaceAll('{anomalia}', anomalyType)
+                .replaceAll('{descricao}', anomalyDesc)
+                .replaceAll('{motorista}', driverName)
 
               await queueWhatsappMessage(wSettings, targetPhone, text)
             }
@@ -404,19 +450,32 @@ export default function WizardStep({
       try {
         const wSettings = await getWhatsappSettings()
         if (wSettings.appMotoristaAlerts?.enabled !== false) {
-          const targetPhone = wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId
-          if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone && wSettings.messageTemplates?.inicioJornadaApp) {
-            const equipment = await resolveEquipment(equipmentId)
-            let text = wSettings.messageTemplates.inicioJornadaApp
-            text = text.replace('{hora}', format(new Date(), 'HH:mm'))
-            text = text.replace('{equipamento}', equipment?.name || equipment?.type || '-')
-            text = text.replace('{tag}', equipment?.name || '-')
-            text = text.replace('{placa}', equipment?.plate_tag || '-')
+          const targetPhone = (wSettings.appMotoristaAlerts?.specificGroupId || wSettings.groupId || '').trim()
+          const template = (wSettings.messageTemplates?.inicioJornadaApp || '').trim() ||
+            '🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}'
+
+          if (wSettings.url && wSettings.token && wSettings.instanceId && targetPhone) {
+            const eq = await resolveEquipment(equipmentId, equipment)
             const driverData = localStorage.getItem('app_motorista_driver')
             const driverName = driverData ? JSON.parse(driverData).name : 'Motorista'
-            text = text.replace('{motorista}', driverName)
-            text = text.replace('{ajudante}', helperName || 'Não Informado')
+            const eqDisplay = eq?.name || eq?.plate_tag || equipment?.name || equipment?.plate_tag || '-'
+            const tagDisplay = eq?.name || equipment?.name || '-'
+            const plateDisplay = eq?.plate_tag || equipment?.plate_tag || '-'
+            const helperDisplay = (helperName || '').trim() || 'Não Informado'
 
+            let text = template
+              .replaceAll('{hora}', format(new Date(), 'HH:mm'))
+              .replaceAll('{data}', format(new Date(), 'dd/MM/yyyy'))
+              .replaceAll('{equipamento}', eqDisplay)
+              .replaceAll('{tag}', tagDisplay)
+              .replaceAll('{placa}', plateDisplay)
+              .replaceAll('{motorista}', driverName)
+              .replaceAll('{ajudante}', helperDisplay)
+              .replaceAll('{km}', km ? String(km) : '-')
+              .replaceAll('{horimetro}', horimeter ? String(horimeter) : '-')
+              .replaceAll('{combustivel}', fuel ? `${fuel}%` : '-')
+
+            console.log('[WhatsApp] Disparando início de jornada:', { targetPhone, text })
             await queueWhatsappMessage(wSettings, targetPhone, text)
           } else {
             console.warn(
@@ -426,7 +485,7 @@ export default function WizardStep({
                 token: !!wSettings.token,
                 instanceId: !!wSettings.instanceId,
                 targetPhone: !!targetPhone,
-                template: !!wSettings.messageTemplates?.inicioJornadaApp,
+                hasTemplate: !!template,
               }
             )
           }

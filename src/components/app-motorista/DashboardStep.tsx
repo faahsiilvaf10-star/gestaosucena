@@ -26,8 +26,8 @@ import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../../lib/supabase'
-import { saveOfflineFirst as realSaveOfflineFirst } from '../../lib/offline-sync'
+import { supabase, rawSupabase } from '../../lib/supabase'
+import { saveOfflineFirst as realSaveOfflineFirst, processSyncQueue } from '../../lib/offline-sync'
 import { format, differenceInSeconds } from 'date-fns'
 import { queueWhatsappMessage as realQueueWhatsappMessage, queueWhatsappMedia as realQueueWhatsappMedia } from '../../lib/offline-sync'
 import * as htmlToImage from 'html-to-image'
@@ -55,9 +55,43 @@ export default function DashboardStep({ onBack, onLogout, isOnline }: { onBack?:
         const found = list.find((e: any) => e.id === equipmentId)
         if (found) return found
       }
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('app_motorista_equipments_')) {
+          try {
+            const list = JSON.parse(localStorage.getItem(key) || '[]')
+            const found = list.find((e: any) => e.id === equipmentId)
+            if (found) return found
+          } catch {}
+        }
+      }
     } catch {}
     return null
   })
+
+  // Sincroniza fila pendente e recupera equipamento se necessário ao montar a tela
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      processSyncQueue().catch(console.error)
+    }
+
+    if (!equipment && equipmentId && typeof navigator !== 'undefined' && navigator.onLine) {
+      rawSupabase
+        .from('eq_equipments')
+        .select('id, name, type, plate_tag')
+        .eq('id', equipmentId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setEquipment(data)
+            try {
+              localStorage.setItem(`app_motorista_eq_${equipmentId}`, JSON.stringify(data))
+            } catch {}
+          }
+        })
+        .catch(console.error)
+    }
+  }, [equipmentId])
   const [dispatch, setDispatch] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('app_motorista_current_dispatch')

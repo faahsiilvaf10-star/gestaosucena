@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-const rawSupabase = createClient(supabaseUrl, supabaseAnonKey)
+export const rawSupabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const tablesWithEnv = [
   'al_epi_requisitions',

@@ -138,6 +138,11 @@ export const processSyncQueue = async () => {
       } else if (task.action === 'UPSERT') {
         result = await supabase.from(task.table).upsert(task.data);
       } else if (task.action === 'WHATSAPP') {
+        const targetPhone = (task.data.phone || '').trim();
+        if (!targetPhone) {
+          console.warn('[OfflineSync] Mensagem de WhatsApp sem telefone de destino, ignorando tarefa');
+          continue;
+        }
         if (task.data.isMedia) {
           try {
             const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
@@ -146,7 +151,7 @@ export const processSyncQueue = async () => {
                 url: task.data.settings.url,
                 token: task.data.settings.token,
                 instanceId: task.data.settings.instanceId,
-                phone: task.data.phone,
+                phone: targetPhone,
                 caption: task.data.message,
                 base64Media: task.data.base64Media,
                 fileName: task.data.fileName
@@ -156,7 +161,7 @@ export const processSyncQueue = async () => {
             if (!res.success) throw new Error('Falha media: ' + ((res as any).error || ''));
           } catch (serverErr) {
             console.warn('Server media fetch failed, fallback to direct fetch', serverErr);
-            await directWhatsappSendMedia(task.data.settings, task.data.phone, task.data.message, task.data.base64Media, task.data.fileName);
+            await directWhatsappSendMedia(task.data.settings, targetPhone, task.data.message, task.data.base64Media, task.data.fileName);
           }
         } else {
           try {
@@ -166,7 +171,7 @@ export const processSyncQueue = async () => {
                 url: task.data.settings.url,
                 token: task.data.settings.token,
                 instanceId: task.data.settings.instanceId,
-                phone: task.data.phone,
+                phone: targetPhone,
                 text: task.data.message
               }
             };
@@ -174,7 +179,7 @@ export const processSyncQueue = async () => {
             if (!res.success) throw new Error('Falha text: ' + ((res as any).error || ''));
           } catch (serverErr) {
             console.warn('Server text fetch failed, fallback to direct fetch', serverErr);
-            await directWhatsappSendText(task.data.settings, task.data.phone, task.data.message);
+            await directWhatsappSendText(task.data.settings, targetPhone, task.data.message);
           }
         }
         result = { error: null };
@@ -245,7 +250,13 @@ export const saveOfflineFirst = async (table: string, action: SyncAction, data: 
 };
 
 export const queueWhatsappMessage = async (settings: any, phone: string, message: string) => {
-  const taskData = { settings, phone, message };
+  const cleanPhone = (phone || '').trim();
+  const taskData = { settings, phone: cleanPhone, message };
+  if (!cleanPhone) {
+    console.warn('[WhatsApp] Telefone ou grupo de destino vazio, mensagem não enviada.');
+    return { success: false, error: 'Telefone vazio' };
+  }
+
   if (navigator.onLine) {
     try {
       const { sendWhatsappTextOnServer } = await import('./whatsapp-api');
@@ -254,7 +265,7 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
           url: settings.url,
           token: settings.token,
           instanceId: settings.instanceId,
-          phone: phone,
+          phone: cleanPhone,
           text: message
         }
       };
@@ -264,11 +275,14 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
     } catch (error) {
       console.warn('Server text fetch failed online, fallback to direct fetch:', error);
       try {
-        await directWhatsappSendText(settings, phone, message);
+        await directWhatsappSendText(settings, cleanPhone, message);
         return { success: true, offline: false };
       } catch (fallbackError) {
         console.warn('Direct fallback also failed, enfileirando:', fallbackError);
         await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+        if (typeof window !== 'undefined' && navigator.onLine) {
+          setTimeout(() => { processSyncQueue().catch(console.error); }, 3000);
+        }
         return { success: true, offline: true };
       }
     }
@@ -279,7 +293,13 @@ export const queueWhatsappMessage = async (settings: any, phone: string, message
 };
 
 export const queueWhatsappMedia = async (settings: any, phone: string, caption: string, base64Media: string, fileName: string) => {
-  const taskData = { settings, phone, message: caption, base64Media, fileName, isMedia: true };
+  const cleanPhone = (phone || '').trim();
+  const taskData = { settings, phone: cleanPhone, message: caption, base64Media, fileName, isMedia: true };
+  if (!cleanPhone) {
+    console.warn('[WhatsApp] Telefone ou grupo de destino vazio, mídia não enviada.');
+    return { success: false, error: 'Telefone vazio' };
+  }
+
   if (navigator.onLine) {
     try {
       const { sendWhatsappMediaOnServer } = await import('./whatsapp-api');
@@ -288,7 +308,7 @@ export const queueWhatsappMedia = async (settings: any, phone: string, caption: 
           url: settings.url,
           token: settings.token,
           instanceId: settings.instanceId,
-          phone: phone,
+          phone: cleanPhone,
           caption: caption,
           base64Media,
           fileName
@@ -300,11 +320,14 @@ export const queueWhatsappMedia = async (settings: any, phone: string, caption: 
     } catch (error) {
       console.warn('Server media fetch failed online, fallback to direct fetch:', error);
       try {
-        await directWhatsappSendMedia(settings, phone, caption, base64Media, fileName);
+        await directWhatsappSendMedia(settings, cleanPhone, caption, base64Media, fileName);
         return { success: true, offline: false };
       } catch (fallbackError) {
         console.warn('Direct media fallback also failed, enfileirando:', fallbackError);
         await addToSyncQueue({ table: 'whatsapp', action: 'WHATSAPP', data: taskData });
+        if (typeof window !== 'undefined' && navigator.onLine) {
+          setTimeout(() => { processSyncQueue().catch(console.error); }, 3000);
+        }
         return { success: true, offline: true };
       }
     }
