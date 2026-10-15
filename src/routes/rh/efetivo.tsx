@@ -496,7 +496,7 @@ function RhEfetivoPage() {
 
       // Add Headers
       const headerRow = sheet.addRow([
-        'Matrícula', 'Nome', 'Cargo', 'Admissional', 'ASO Admissional', 
+        'Matrícula', 'Nome', 'Cargo', 'Admissional', 'ASO', 
         'Periódico', 'Retorno ao Trabalho', 'Mudança de Risco', 'Validade ASO'
       ])
       
@@ -663,7 +663,7 @@ function RhEfetivoPage() {
                     <th className="p-4">Matrícula Hydro</th>
                     <th className="p-4">Nome</th>
                     <th className="p-4">Cargo</th>
-                    <th className="p-4">ASO Admissional</th>
+                    <th className="p-4">ASO</th>
 
                     <th className="p-4">Status</th>
                   </tr>
@@ -877,9 +877,9 @@ function RhEfetivoPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
 
-                    {/* ASO Admissional (Medical Exam) */}
+                    {/* ASO (Medical Exam) */}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO Admissional</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ASO</p>
                       {canEdit ? (
                         <DateInput
                           value={selectedColaborador.aso_admissional || ''}
