@@ -393,6 +393,22 @@ export function formatarDuracao(segundos: number): string {
   return `${min}m ${seg}s`
 }
 
+/**
+ * Remove da lista os comunicados que já foram exibidos nesta sessão.
+ *
+ * Regressão: o polling de 15s devolvia objetos novos a cada consulta.
+ * Como o viewer usava `lista[indice]`, o `key` mudava e o React
+ * remontava o modal — a contagem reiniciava e o fechamento automático
+ * nunca chegava a zero. Filtrar os já exibidos mantém o modal estável.
+ */
+export function filtrarNaoExibidos<T extends { id: string }>(
+  lista: T[],
+  exibidos: string[],
+): T[] {
+  if (exibidos.length === 0) return lista
+  return lista.filter((c) => !exibidos.includes(c.id))
+}
+
 /** Converte a duração configurada para milissegundos (usado no timer do modal). */
 export function duracaoParaMs(segundos: number): number {
   if (!Number.isFinite(segundos) || segundos <= 0) return 0

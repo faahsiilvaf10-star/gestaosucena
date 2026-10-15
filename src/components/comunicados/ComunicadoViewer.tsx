@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { supabase } from '../../lib/supabase'
 import { useComunicadosElegiveis } from '../../lib/comunicados/api'
+import { filtrarNaoExibidos } from '../../lib/comunicados/regras'
 import { ComunicadoModal } from './ComunicadoModal'
 
 /**
@@ -36,9 +37,11 @@ function gerarSessionKey(): string {
 export function ComunicadoViewer() {
   const [userId, setUserId] = useState<string | null>(null)
   const [sessionKey, setSessionKey] = useState<string>('')
-  const [indice, setIndice] = useState(0)
   const [ocultarNestaSessao, setOcultarNestaSessao] = useState(false)
   const [gatilho, setGatilho] = useState(0)
+  // Ids já iniciados nesta sessão. Uma vez que o modal abre, o
+  // comunicado fica "em uso" e o polling não pode mais reiniciá-lo.
+  const [exibidos, setExibidos] = useState<string[]>([])
   const router = useRouter()
   const caminho = router.state.location.pathname
 
@@ -69,7 +72,7 @@ export function ComunicadoViewer() {
         // Novo login: nova sessão de comunicados
         setUserId(sessao.user.id)
         setSessionKey(gerarSessionKey())
-        setIndice(0)
+        setExibidos([])
       } else {
         setUserId(null)
         setSessionKey('')
@@ -86,30 +89,42 @@ export function ComunicadoViewer() {
 
   // Só exibir depois que a sessão estiver resolvida
   const podeConsultar = Boolean(userId && sessionKey)
-  const lista = useMemo(() => elegiveis ?? [], [elegiveis])
 
-  const atual = lista[indice]
+  /**
+   * Filtra a lista removendo o que já foi exibido nesta sessão.
+   *
+   * Isso é o que impede o fechamento prematuro: o `refetchInterval` de
+   * 15s devolve objetos NOVOS a cada consulta. Sem filtrar, o `key`
+   * mudava e o React remontava o modal — zerando a contagem e
+   * reiniciando o timer várias vezes.
+   */
+  const lista = useMemo(
+    () => filtrarNaoExibidos(elegiveis ?? [], exibidos),
+    [elegiveis, exibidos],
+  )
 
-  // Se a lista encolheu (limite diário atingido), reinicia o índice
+  const atual = lista[0]
+
+  // Marca o comunicado como iniciado assim que ele vai para a tela.
+  // Feito em um efeito para não alterar o estado durante o render.
   useEffect(() => {
-    if (indice >= lista.length) setIndice(0)
-  }, [lista.length, indice])
+    if (!atual) return
+    setExibidos((prev) => (prev.includes(atual.id) ? prev : [...prev, atual.id]))
+  }, [atual?.id])
 
-  // Reabre a busca se um novo comunicado for criado enquanto o usuário
+  // Reabre a busca se um comunicado novo surgir enquanto o usuário
   // já está com o sistema aberto (evita travar para a sessão inteira).
   useEffect(() => {
-    if (lista.length > 0) setOcultarNestaSessao(false)
-  }, [lista.length])
+    if ((elegiveis ?? []).length > 0) setOcultarNestaSessao(false)
+  }, [elegiveis?.length])
 
   if (!podeConsultar || ocultarNestaSessao || lista.length === 0 || !atual) return null
 
   const proximo = () => {
-    if (indice + 1 < lista.length) {
-      setIndice(indice + 1)
-    } else {
-      // Todos exibidos nesta sessão
+    // `atual` já está em `exibidos`, então a lista foi recalculada sem ele.
+    // Se sobrou outro, o próximo render mostra; caso contrário, encerra.
+    if (lista.length <= 1) {
       setOcultarNestaSessao(true)
-      setIndice(0)
     }
   }
 

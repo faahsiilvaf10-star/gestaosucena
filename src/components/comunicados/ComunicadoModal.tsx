@@ -22,6 +22,17 @@ interface Props {
 }
 
 /**
+ * Captura o comunicado apenas na montagem.
+ *
+ * O polling do viewer devolve objetos novos a cada consulta; sem esta
+ * trava, qualquer re-render reiniciaria o contador regressivo.
+ */
+function useCongelado<T>(valor: T): T {
+  const ref = useRef(valor)
+  return ref.current
+}
+
+/**
  * Modal de exibição do comunicado.
  *
  * Mídias:
@@ -32,8 +43,13 @@ interface Props {
  *
  * Fecha automaticamente após `duracao_segundos` e também pelo botão "X".
  */
-export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
+export function ComunicadoModal({ comunicado: comunicadoExterno, sessionKey, onClose }: Props) {
   const { isDark } = useTheme()
+
+  // Fixa o comunicado na montagem: o polling revalida a lista a cada
+  // 15s e devolveria outra referência, reiniciando a contagem.
+  const comunicado = useCongelado(comunicadoExterno)
+
   const [indice, setIndice] = useState(0)
   const [exibicaoId, setExibicaoId] = useState<string | null>(null)
 
@@ -138,6 +154,9 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
   // efeitos deste componente também fazem cleanup. Com um ref único,
   // o cleanup do efeito de áudio marcava `montado = false` e o timer
   // parava de contar — o modal fechava antes do tempo configurado.
+  //
+  // O prazo é absoluto (`Date.now()`): se o efeito re-executar, o
+  // prazo já consumido continua valendo e a contagem não reinicia.
   useEffect(() => {
     const totalMs = duracaoParaMs(duracaoSegundos)
     const inicio = Date.now()

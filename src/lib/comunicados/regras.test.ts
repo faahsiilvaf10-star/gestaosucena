@@ -11,6 +11,7 @@ import {
   extrairIdYoutube,
   urlEmbedYoutube,
   ehLinkYoutubeValido,
+  filtrarNaoExibidos,
   formatarDuracao,
   duracaoParaMs,
   minutosDoDia,
@@ -403,6 +404,45 @@ describe('trilhaSemImagem', () => {
 
   it('devolve null sem nenhuma mídia', () => {
     expect(trilhaSemImagem([])).toBeNull()
+  })
+})
+
+describe('filtrarNaoExibidos — regressão do modal reiniciando', () => {
+  const c1 = { id: 'c1' }
+  const c2 = { id: 'c2' }
+  const c3 = { id: 'c3' }
+
+  it('devolve tudo quando nada foi exibido ainda', () => {
+    expect(filtrarNaoExibidos([c1, c2, c3], [])).toEqual([c1, c2, c3])
+  })
+
+  it('remove o comunicado em exibição, mantendo o modal estável', () => {
+    // Regressão: o polling devolvia o mesmo comunicado a cada 15s e o
+    // modal era remontado, reiniciando a contagem regressiva.
+    expect(filtrarNaoExibidos([c1, c2], ['c1'])).toEqual([c2])
+  })
+
+  it('não reexibe comunicados já exibidos mesmo se voltarem na lista', () => {
+    const reconsulta = [c1, c2]
+    expect(filtrarNaoExibidos(reconsulta, ['c1'])).toEqual([c2])
+    expect(filtrarNaoExibidos(reconsulta, ['c1', 'c2'])).toEqual([])
+  })
+
+  it('mantém os que ainda não foram exibidos', () => {
+    expect(filtrarNaoExibidos([c1, c2, c3], ['c2'])).toEqual([c1, c3])
+  })
+
+  it('lista vazia devolve vazio', () => {
+    expect(filtrarNaoExibidos([], ['c1'])).toEqual([])
+    expect(filtrarNaoExibidos([], [])).toEqual([])
+  })
+
+  it('ignora ids que não estão na lista', () => {
+    expect(filtrarNaoExibidos([c1], ['inexistente'])).toEqual([c1])
+  })
+
+  it('preserva a ordem original', () => {
+    expect(filtrarNaoExibidos([c1, c2, c3], ['c2']).map((c) => c.id)).toEqual(['c1', 'c3'])
   })
 })
 
