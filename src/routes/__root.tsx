@@ -22,6 +22,7 @@ import { GlobalBackground } from "../components/GlobalBackground";
 import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
 import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
+import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -47,6 +48,8 @@ function RootContent() {
           <GlobalMeetingAlert />
         </>
       )}
+      {/* Comunicados: exibidos em qualquer rota, inclusive após o login */}
+      <ComunicadoViewer />
       <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
     </div>
   )
