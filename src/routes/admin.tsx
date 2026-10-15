@@ -34,6 +34,7 @@ import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhats
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
 import { NotificacoesMotoristas } from '../components/admin/NotificacoesMotoristas'
+import { ComunicadosAdmin } from '../components/admin/ComunicadosAdmin'
 import '../dashboard.css'
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
@@ -104,7 +105,7 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance' | 'motoristas'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance' | 'motoristas' | 'comunicados'>('users')
 
   const [permissions, setPermissions] = useState<AllUsersPermissions>({})
   const [savingPermissions, setSavingPermissions] = useState(false)
@@ -632,7 +633,19 @@ function AdminRoute() {
             <Smartphone size={18} />
             Motoristas (App)
           </button>
+
+          <button 
+            onClick={() => setActiveTab('comunicados')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'comunicados' ? (isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-700') : (isDark ? 'text-gray-400 hover:text-amber-400 hover:bg-amber-500/10' : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50') }`}
+          >
+            <Megaphone size={18} />
+            Comunicados
+          </button>
         </div>
+
+        {activeTab === 'comunicados' && (
+          <ComunicadosAdmin isDark={isDark} />
+        )}
 
         {activeTab === 'motoristas' && (
           <NotificacoesMotoristas isDark={isDark} />
