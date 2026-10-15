@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { supabase } from '../../lib/supabase'
 import { useComunicadosElegiveis } from '../../lib/comunicados/api'
-import { escolherComunicado } from '../../lib/comunicados/regras'
+import { escolherComunicado, type ComunicadoElegivel } from '../../lib/comunicados/regras'
 import { ComunicadoModal } from './ComunicadoModal'
 
 /**
@@ -91,6 +91,18 @@ export function ComunicadoViewer() {
 
   const { data: elegiveis } = useComunicadosElegiveis(sessionKey || null, gatilho)
 
+  // Cache em memória dos comunicados recebidos. Permite manter o modal
+  // vivo mesmo depois de o servidor consumir o saldo diário.
+  const listaCacheRef = useRef<Map<string, ComunicadoElegivel>>(new Map())
+
+  useEffect(() => {
+    for (const c of elegiveis ?? []) {
+      if (!listaCacheRef.current.has(c.id)) {
+        listaCacheRef.current.set(c.id, c)
+      }
+    }
+  }, [elegiveis])
+
   // Só exibir depois que a sessão estiver resolvida
   const podeConsultar = Boolean(userId && sessionKey)
 
@@ -105,24 +117,43 @@ export function ComunicadoViewer() {
    *
    * Confundir os dois fazia um comunicado recém-criado ser marcado como
    * visto antes de aparecer, e o polling o descartava para sempre.
+   *
+   * `emExibicao` guarda o objeto em memória. Registrar a exibição
+   * consome o saldo diário, então o servidor deixa de devolver o
+   * comunicado no poll seguinte; sem esse cache o modal seria
+   * desmontado aos ~15s.
    */
-  const atual = useMemo(
-    () =>
-      escolherComunicado(
-        elegiveis ?? [],
-        jaExibidos,
-        emExibicaoId,
-        jaExibidosSempre,
-      ),
-    [elegiveis, jaExibidos, emExibicaoId, jaExibidosSempre],
+  const emExibicao = useMemo(
+    () => (emExibicaoId ? listaCacheRef.current.get(emExibicaoId) ?? null : null),
+    [emExibicaoId, elegiveis],
   )
 
-  // Se a lista esvaziar (limite diário atingido), limpa o estado.
+  const atual = useMemo(() => {
+    if (emExibicao) return emExibicao
+
+    return escolherComunicado(
+      elegiveis ?? [],
+      jaExibidos,
+      null,
+      jaExibidosSempre,
+    )
+  }, [emExibicao, elegiveis, jaExibidos, jaExibidosSempre])
+
+  /**
+   * Se o comunicado em exibição desaparecer da lista do servidor,
+   * libera o estado para o próximo.
+   *
+   * ATENÇÃO: registrar a exibição consome o saldo diário, então o
+   * servidor pode devolver a lista vazia logo depois do modal abrir.
+   * Por isso a limpeza só ocorre quando NÃO há nada em exibição — se
+   * removêssemos aqui, o modal seria desmontado no primeiro poll e a
+   * contagem morria em ~15s.
+   */
   useEffect(() => {
-    if ((elegiveis ?? []).length === 0 && emExibicaoId) {
+    if (emExibicaoId && !atual) {
       setEmExibicaoId(null)
     }
-  }, [elegiveis?.length, emExibicaoId])
+  }, [atual?.id, emExibicaoId])
 
   const fechar = useCallback(() => {
     // Marca como visto e libera a tela para o próximo
