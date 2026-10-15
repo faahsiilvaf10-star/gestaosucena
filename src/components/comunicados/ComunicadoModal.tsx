@@ -18,6 +18,8 @@ import {
 interface Props {
   comunicado: ComunicadoElegivel
   sessionKey: string
+  /** Notifica que o comunicado entrou em exibição. */
+  onExibir?: () => void
   onClose: () => void
 }
 
@@ -43,7 +45,12 @@ function useCongelado<T>(valor: T): T {
  *
  * Fecha automaticamente após `duracao_segundos` e também pelo botão "X".
  */
-export function ComunicadoModal({ comunicado: comunicadoExterno, sessionKey, onClose }: Props) {
+export function ComunicadoModal({
+  comunicado: comunicadoExterno,
+  sessionKey,
+  onExibir,
+  onClose,
+}: Props) {
   const { isDark } = useTheme()
 
   // Fixa o comunicado na montagem: o polling revalida a lista a cada
@@ -54,6 +61,14 @@ export function ComunicadoModal({ comunicado: comunicadoExterno, sessionKey, onC
   const [exibicaoId, setExibicaoId] = useState<string | null>(null)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Avisa que entrou em exibição, para o viewer travar este item
+  const avisouExibicao = useRef(false)
+  useEffect(() => {
+    if (avisouExibicao.current) return
+    avisouExibicao.current = true
+    onExibir?.()
+  }, [onExibir])
 
   // Sanidade: a duração precisa ser um número válido e positivo.
   // Se vier undefined/NaN por algum problema na RPC, evita travar em 0.

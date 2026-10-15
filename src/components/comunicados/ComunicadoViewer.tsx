@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { supabase } from '../../lib/supabase'
 import { useComunicadosElegiveis } from '../../lib/comunicados/api'
-import { filtrarNaoExibidos } from '../../lib/comunicados/regras'
+import { escolherComunicado } from '../../lib/comunicados/regras'
 import { ComunicadoModal } from './ComunicadoModal'
 
 /**
@@ -37,11 +37,13 @@ function gerarSessionKey(): string {
 export function ComunicadoViewer() {
   const [userId, setUserId] = useState<string | null>(null)
   const [sessionKey, setSessionKey] = useState<string>('')
-  const [ocultarNestaSessao, setOcultarNestaSessao] = useState(false)
   const [gatilho, setGatilho] = useState(0)
-  // Ids já iniciados nesta sessão. Uma vez que o modal abre, o
-  // comunicado fica "em uso" e o polling não pode mais reiniciá-lo.
-  const [exibidos, setExibidos] = useState<string[]>([])
+  // Comunicado atualmente na tela (o polling não pode interrompê-lo)
+  const [emExibicaoId, setEmExibicaoId] = useState<string | null>(null)
+  // Comunicados já exibidos e encerrados nesta sessão
+  const [jaExibidos, setJaExibidos] = useState<string[]>([])
+  // Comunicados que o servidor insiste em reenviar (modo "todo dia")
+  const [jaExibidosSempre, setJaExibidosSempre] = useState<string[]>([])
   const router = useRouter()
   const caminho = router.state.location.pathname
 
@@ -69,13 +71,15 @@ export function ComunicadoViewer() {
       (_evento: string, sessao: { user: { id: string } | null } | null) => {
       if (!ativo) return
       if (sessao?.user?.id) {
-        // Novo login: nova sessão de comunicados
+        // Novo login: começa uma nova sessão de comunicados
         setUserId(sessao.user.id)
         setSessionKey(gerarSessionKey())
-        setExibidos([])
+        setEmExibicaoId(null)
+        setJaExibidos([])
       } else {
         setUserId(null)
         setSessionKey('')
+        setEmExibicaoId(null)
       }
     })
 
@@ -91,49 +95,54 @@ export function ComunicadoViewer() {
   const podeConsultar = Boolean(userId && sessionKey)
 
   /**
-   * Filtra a lista removendo o que já foi exibido nesta sessão.
+   * Escolhe qual comunicado exibir.
    *
-   * Isso é o que impede o fechamento prematuro: o `refetchInterval` de
-   * 15s devolve objetos NOVOS a cada consulta. Sem filtrar, o `key`
-   * mudava e o React remontava o modal — zerando a contagem e
-   * reiniciando o timer várias vezes.
+   * Dois estados separados são essenciais:
+   *  - `emExibicaoId`: o que está na tela AGORA. O polling não pode
+   *    interrompê-lo, senão o timer reinicia a cada 15s.
+   *  - `jaExibidos`: o que JÁ foi exibido. Só estes são bloqueados para
+   *    o resto da sessão.
+   *
+   * Confundir os dois fazia um comunicado recém-criado ser marcado como
+   * visto antes de aparecer, e o polling o descartava para sempre.
    */
-  const lista = useMemo(
-    () => filtrarNaoExibidos(elegiveis ?? [], exibidos),
-    [elegiveis, exibidos],
+  const atual = useMemo(
+    () =>
+      escolherComunicado(
+        elegiveis ?? [],
+        jaExibidos,
+        emExibicaoId,
+        jaExibidosSempre,
+      ),
+    [elegiveis, jaExibidos, emExibicaoId, jaExibidosSempre],
   )
 
-  const atual = lista[0]
-
-  // Marca o comunicado como iniciado assim que ele vai para a tela.
-  // Feito em um efeito para não alterar o estado durante o render.
+  // Se a lista esvaziar (limite diário atingido), limpa o estado.
   useEffect(() => {
-    if (!atual) return
-    setExibidos((prev) => (prev.includes(atual.id) ? prev : [...prev, atual.id]))
-  }, [atual?.id])
-
-  // Reabre a busca se um comunicado novo surgir enquanto o usuário
-  // já está com o sistema aberto (evita travar para a sessão inteira).
-  useEffect(() => {
-    if ((elegiveis ?? []).length > 0) setOcultarNestaSessao(false)
-  }, [elegiveis?.length])
-
-  if (!podeConsultar || ocultarNestaSessao || lista.length === 0 || !atual) return null
-
-  const proximo = () => {
-    // `atual` já está em `exibidos`, então a lista foi recalculada sem ele.
-    // Se sobrou outro, o próximo render mostra; caso contrário, encerra.
-    if (lista.length <= 1) {
-      setOcultarNestaSessao(true)
+    if ((elegiveis ?? []).length === 0 && emExibicaoId) {
+      setEmExibicaoId(null)
     }
-  }
+  }, [elegiveis?.length, emExibicaoId])
+
+  const fechar = useCallback(() => {
+    // Marca como visto e libera a tela para o próximo
+    if (emExibicaoId) {
+      setJaExibidos((prev) =>
+        prev.includes(emExibicaoId) ? prev : [...prev, emExibicaoId],
+      )
+      setEmExibicaoId(null)
+    }
+  }, [emExibicaoId])
+
+  if (!podeConsultar || !atual) return null
 
   return (
     <ComunicadoModal
       key={atual.id}
       comunicado={atual}
       sessionKey={sessionKey}
-      onClose={proximo}
+      onExibir={() => setEmExibicaoId(atual.id)}
+      onClose={fechar}
     />
   )
 }

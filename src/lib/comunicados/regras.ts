@@ -394,19 +394,46 @@ export function formatarDuracao(segundos: number): string {
 }
 
 /**
- * Remove da lista os comunicados que já foram exibidos nesta sessão.
+ * Escolhe o próximo comunicado a exibir.
  *
- * Regressão: o polling de 15s devolvia objetos novos a cada consulta.
- * Como o viewer usava `lista[indice]`, o `key` mudava e o React
- * remontava o modal — a contagem reiniciava e o fechamento automático
- * nunca chegava a zero. Filtrar os já exibidos mantém o modal estável.
+ * Regressão anterior: a lista era filtrada por "já exibidos", o que
+ * também filtrava o comunicado que estava **em exibição** — e worse,
+ * impedia um comunicado recém-criado de aparecer, porque o filtro o
+ * marcava como visto antes mesmo de ter sido exibido.
+ *
+ * A regra correta:
+ *  - se há um comunicado em exibição, ele sempre continua
+ *  - caso contrário, escolhe o primeiro que ainda não foi exibido
+ *    nesta sessão
+ *  - `jaExibidosSempre`, quando informado, sempre tem precedência
+ *    (modo "todo dia")
  */
-export function filtrarNaoExibidos<T extends { id: string }>(
+export function escolherComunicado<T extends { id: string }>(
   lista: T[],
-  exibidos: string[],
-): T[] {
-  if (exibidos.length === 0) return lista
-  return lista.filter((c) => !exibidos.includes(c.id))
+  jaExibidos: string[],
+  emExibicaoId?: string | null,
+  jaExibidosSempre?: string[],
+): T | null {
+  if (lista.length === 0) return null
+
+  // 1) Um comunicado em exibição não pode ser interrompido pelo polling
+  if (emExibicaoId) {
+    const emExibicao = lista.find((c) => c.id === emExibicaoId)
+    if (emExibicao) return emExibicao
+  }
+
+  // 2) Comunicados que já foram exibidos em sessão anterior e o
+  //    servidor mandou de volta (ex.: modo "todo dia")
+  if (jaExibidosSempre?.length) {
+    for (const id of jaExibidosSempre) {
+      const encontrado = lista.find((c) => c.id === id)
+      if (encontrado) return encontrado
+    }
+  }
+
+  // 3) Primeiro que ainda não foi exibido nesta sessão
+  const restantes = lista.filter((c) => !jaExibidos.includes(c.id))
+  return restantes[0] ?? null
 }
 
 /** Converte a duração configurada para milissegundos (usado no timer do modal). */

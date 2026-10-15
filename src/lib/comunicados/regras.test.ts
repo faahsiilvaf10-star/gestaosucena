@@ -11,7 +11,7 @@ import {
   extrairIdYoutube,
   urlEmbedYoutube,
   ehLinkYoutubeValido,
-  filtrarNaoExibidos,
+  escolherComunicado,
   formatarDuracao,
   duracaoParaMs,
   minutosDoDia,
@@ -407,42 +407,62 @@ describe('trilhaSemImagem', () => {
   })
 })
 
-describe('filtrarNaoExibidos — regressão do modal reiniciando', () => {
+describe('escolherComunicado — regressão do comunicado novo não aparecer', () => {
   const c1 = { id: 'c1' }
   const c2 = { id: 'c2' }
   const c3 = { id: 'c3' }
 
-  it('devolve tudo quando nada foi exibido ainda', () => {
-    expect(filtrarNaoExibidos([c1, c2, c3], [])).toEqual([c1, c2, c3])
+  it('escolhe o primeiro quando nada foi exibido', () => {
+    expect(escolherComunicado([c1, c2], [])).toEqual(c1)
   })
 
-  it('remove o comunicado em exibição, mantendo o modal estável', () => {
-    // Regressão: o polling devolvia o mesmo comunicado a cada 15s e o
-    // modal era remontado, reiniciando a contagem regressiva.
-    expect(filtrarNaoExibidos([c1, c2], ['c1'])).toEqual([c2])
+  it('não devolve o que já foi exibido nesta sessão', () => {
+    expect(escolherComunicado([c1, c2], ['c1'])).toEqual(c2)
   })
 
-  it('não reexibe comunicados já exibidos mesmo se voltarem na lista', () => {
-    const reconsulta = [c1, c2]
-    expect(filtrarNaoExibidos(reconsulta, ['c1'])).toEqual([c2])
-    expect(filtrarNaoExibidos(reconsulta, ['c1', 'c2'])).toEqual([])
+  it('ESCONHE c2 recém-criado mesmo com c1 já exibido', () => {
+    // Regressão: o filtro marcava c2 como visto antes de exibir,
+    // então o polling nunca o mostrava.
+    expect(escolherComunicado([c1, c2], ['c1'])).toEqual(c2)
+    expect(escolherComunicado([c1, c2], ['c1'])).not.toEqual(c1)
   })
 
-  it('mantém os que ainda não foram exibidos', () => {
-    expect(filtrarNaoExibidos([c1, c2, c3], ['c2'])).toEqual([c1, c3])
+  it('mantém o comunicado em exibição apesar do polling', () => {
+    // Regressão do timer: o polling devolvia c1 novamente e o modal era
+    // remontado, reiniciando a contagem.
+    expect(escolherComunicado([c1, c2], [], 'c1')).toEqual(c1)
+    expect(escolherComunicado([c1, c2], [], 'c2')).toEqual(c2)
   })
 
-  it('lista vazia devolve vazio', () => {
-    expect(filtrarNaoExibidos([], ['c1'])).toEqual([])
-    expect(filtrarNaoExibidos([], [])).toEqual([])
+  it('em exibição tem precedência sobre ja exibidos', () => {
+    expect(escolherComunicado([c1, c2], ['c1'], 'c2')).toEqual(c2)
   })
 
-  it('ignora ids que não estão na lista', () => {
-    expect(filtrarNaoExibidos([c1], ['inexistente'])).toEqual([c1])
+  it('ignora emExibicaoId que não está mais na lista', () => {
+    // Se o limite diário zerou, o item sai da lista e outro deve surgir.
+    expect(escolherComunicado([c2], [], 'c1')).toEqual(c2)
   })
 
-  it('preserva a ordem original', () => {
-    expect(filtrarNaoExibidos([c1, c2, c3], ['c2']).map((c) => c.id)).toEqual(['c1', 'c3'])
+  it('prioriza jaExibidosSempre (modo todo dia)', () => {
+    expect(escolherComunicado([c1, c2], ['c1'], null, ['c2'])).toEqual(c2)
+  })
+
+  it('jaExibidosSempre não bloqueia se o id sumiu da lista', () => {
+    expect(escolherComunicado([c1], [], null, ['sumiu'])).toEqual(c1)
+  })
+
+  it('devolve null quando todos já foram exibidos', () => {
+    expect(escolherComunicado([c1, c2], ['c1', 'c2'])).toBeNull()
+  })
+
+  it('devolve null para lista vazia', () => {
+    expect(escolherComunicado([], [])).toBeNull()
+    expect(escolherComunicado([], [], 'c1')).toBeNull()
+  })
+
+  it('preserva a ordem da lista ao ignorar os já exibidos', () => {
+    // [c3, c1, c2] com c1 já exibido -> o primeiro restante é c3
+    expect(escolherComunicado([c3, c1, c2], ['c1'])?.id).toBe('c3')
   })
 })
 
