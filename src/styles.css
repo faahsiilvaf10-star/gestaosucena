@@ -509,6 +509,44 @@
    TIPOGRAFIA
    ============================================================ */
 
+/* Botão de tema genérico — usado fora da navbar (ex.: App Motorista) */
+.theme-toggle-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 44px;
+  min-height: 44px;
+
+  color: #5f6472;
+
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+}
+
+.theme-toggle-ghost:hover {
+  color: #1c1d21;
+  background: rgba(28, 29, 33, 0.06);
+}
+
+.theme-toggle-ghost:active {
+  transform: scale(0.93);
+}
+
+.dark .theme-toggle-ghost {
+  color: #9eacc3;
+}
+
+.dark .theme-toggle-ghost:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .text-gradient {
   background: linear-gradient(90deg, #1c1d21 0%, rgba(28, 29, 33, 0.7) 100%);
   -webkit-background-clip: text;

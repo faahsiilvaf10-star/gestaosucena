@@ -10,8 +10,23 @@
   <title>App Motorista - Gestão Sucena</title>
   <meta name="description" content="App de gestão operacional para motoristas da frota Sucena" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <!-- Aplica o tema salvo antes do primeiro paint (evita flash ao trocar para o claro) -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('sucena_theme');
+        if (t !== 'light' && t !== 'dark') { t = 'dark'; }
+        var dark = t === 'dark';
+        var el = document.documentElement;
+        el.classList.toggle('dark', dark);
+        el.classList.toggle('light', !dark);
+        el.style.colorScheme = t;
+        el.style.backgroundColor = dark ? '#0a0a0a' : '#ffffff';
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body class="dark bg-[#0a0a0a] text-white select-none overflow-hidden m-0 p-0">
+<body class="bg-white dark:bg-[#0a0a0a] text-[#1c1d21] dark:text-white select-none overflow-hidden m-0 p-0">
   <div id="root"></div>
   <script type="module" src="/src/motorista-main.tsx"></script>
 </body>
