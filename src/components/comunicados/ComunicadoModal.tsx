@@ -36,10 +36,18 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
   const { isDark } = useTheme()
   const [indice, setIndice] = useState(0)
   const [exibicaoId, setExibicaoId] = useState<string | null>(null)
-  const [restante, setRestante] = useState(comunicado.duracao_segundos)
 
   const montadoRef = useRef(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Sanidade: a duração precisa ser um número válido e positivo.
+  // Se vier undefined/NaN por algum problema na RPC, evita travar em 0.
+  const duracaoSegundos =
+    Number.isFinite(comunicado.duracao_segundos) && comunicado.duracao_segundos > 0
+      ? comunicado.duracao_segundos
+      : 15
+
+  const [restante, setRestante] = useState(duracaoSegundos)
 
   const midias = comunicado.midias ?? []
 
@@ -127,7 +135,7 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
 
   // Contador regressivo + fechamento automático
   useEffect(() => {
-    const totalMs = duracaoParaMs(comunicado.duracao_segundos)
+    const totalMs = duracaoParaMs(duracaoSegundos)
     const inicio = Date.now()
 
     const intervalo = window.setInterval(() => {
@@ -148,7 +156,7 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
       window.clearInterval(intervalo)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comunicado.duracao_segundos])
+  }, [duracaoSegundos])
 
   // Fecha com ESC (acessibilidade)
   useEffect(() => {
@@ -166,8 +174,8 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
     }
   }, [indice, sequencia.length])
 
-  const progresso = comunicado.duracao_segundos > 0
-    ? Math.max(0, Math.min(100, (restante / comunicado.duracao_segundos) * 100))
+  const progresso = duracaoSegundos > 0
+    ? Math.max(0, Math.min(100, (restante / duracaoSegundos) * 100))
     : 0
 
   return (
@@ -297,7 +305,7 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
             aria-label="Tempo restante para fechar automaticamente"
             aria-valuenow={restante}
             aria-valuemin={0}
-            aria-valuemax={comunicado.duracao_segundos}
+            aria-valuemax={duracaoSegundos}
             style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }}
           >
             <div

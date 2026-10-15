@@ -90,6 +90,21 @@ export function useComunicadosElegiveis(sessionKey: string | null, gatilho = 0) 
       const ids = (data ?? []).map((c: { id: string }) => c.id)
       if (ids.length === 0) return []
 
+      // Busca o registro completo para garantir que todos os campos
+      // (inclusive duracao_segundos) reflitam o valor real gravado.
+      const { data: completos, error: errCompletos } = await supabase
+        .from('comunicados')
+        .select('id, descricao, destino_usuario_id, periodicidade, vezes_por_dia, duracao_segundos, data_inicio, hora_inicio, data_fim, ativo')
+        .in('id', ids)
+
+      if (errCompletos) {
+        console.error('Erro ao carregar comunicados completos:', errCompletos)
+      }
+
+      const porId = new Map(
+        ((completos ?? []) as Array<Record<string, unknown>>).map((c) => [c.id as string, c]),
+      )
+
       const { data: midias, error: errMidias } = await supabase
         .from('comunicado_midias')
         .select('*')
@@ -105,22 +120,27 @@ export function useComunicadosElegiveis(sessionKey: string | null, gatilho = 0) 
         midiasPorComunicado.set(m.comunicado_id, lista)
       }
 
-      return (data ?? []).map((row: Record<string, unknown>) => ({
-        id: row.id as string,
-        descricao: row.descricao as string,
-        destino_usuario_id: (row.destino_usuario_id as string) ?? null,
-        periodicidade: row.periodicidade as Periodicidade,
-        vezes_por_dia: Number(row.vezes_por_dia ?? 1),
-        duracao_segundos: Number(row.duracao_segundos ?? 15),
-        data_inicio: row.data_inicio as string,
-        hora_inicio: row.hora_inicio as string,
-        data_fim: (row.data_fim as string) ?? null,
-        ativo: true,
-        midias: midiasPorComunicado.get(row.id as string) ?? [],
-        jaExibidas: Number(row.ja_exibidas ?? 0),
-        totalPermitidas: Number(row.total_permitidas ?? 1),
-        jaExibidoNaSessao: Boolean(row.ja_exibido_na_sessao),
-      }))
+      return (data ?? []).map((row: Record<string, unknown>) => {
+        // Preferir o registro completo; cair para a linha da RPC.
+        const cheio = porId.get(row.id as string) ?? row
+
+        return {
+          id: cheio.id as string,
+          descricao: cheio.descricao as string,
+          destino_usuario_id: (cheio.destino_usuario_id as string) ?? null,
+          periodicidade: cheio.periodicidade as Periodicidade,
+          vezes_por_dia: Number(cheio.vezes_por_dia ?? 1),
+          duracao_segundos: Number(cheio.duracao_segundos ?? 15),
+          data_inicio: cheio.data_inicio as string,
+          hora_inicio: cheio.hora_inicio as string,
+          data_fim: (cheio.data_fim as string) ?? null,
+          ativo: cheio.ativo !== false,
+          midias: midiasPorComunicado.get(cheio.id as string) ?? [],
+          jaExibidas: Number(row.ja_exibidas ?? 0),
+          totalPermitidas: Number(row.total_permitidas ?? 1),
+          jaExibidoNaSessao: Boolean(row.ja_exibido_na_sessao),
+        }
+      })
     },
   })
 }

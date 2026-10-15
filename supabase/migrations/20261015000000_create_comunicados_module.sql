@@ -269,17 +269,17 @@ BEGIN
     GROUP BY c.id
   )
   SELECT
-    c.id,
-    c.descricao,
-    c.periodicidade,
-    CASE WHEN c.periodicidade = 'todo_dia' THEN 999 ELSE c.vezes_por_dia END AS vezes_por_dia,
-    c.duracao_segundos,
-    c.data_inicio,
-    c.hora_inicio,
-    c.data_fim,
-    c.destino_usuario_id,
-    x.total_exibidas,
-    CASE WHEN c.periodicidade = 'todo_dia' THEN 999 ELSE c.vezes_por_dia END AS total_permitidas,
+    c.id AS id,
+    c.descricao AS descricao,
+    c.periodicidade AS periodicidade,
+    (CASE WHEN c.periodicidade = 'todo_dia' THEN 999 ELSE c.vezes_por_dia END)::integer AS vezes_por_dia,
+    c.duracao_segundos::integer AS duracao_segundos,
+    c.data_inicio AS data_inicio,
+    c.hora_inicio AS hora_inicio,
+    c.data_fim AS data_fim,
+    c.destino_usuario_id AS destino_usuario_id,
+    x.total_exibidas::integer AS ja_exibidas,
+    (CASE WHEN c.periodicidade = 'todo_dia' THEN 999 ELSE c.vezes_por_dia END)::integer AS total_permitidas,
     COALESCE(x.na_sessao, false) AS ja_exibido_na_sessao
   FROM public.comunicados c
   JOIN exibicoes x ON x.comunicado_id = c.id
