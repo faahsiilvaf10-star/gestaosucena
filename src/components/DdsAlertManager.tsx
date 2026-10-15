@@ -96,6 +96,20 @@ export function DdsAlertManager() {
       const ambiente =
         localStorage.getItem('sucena_environment') || 'barcarena'
 
+      // Evita duplicidade se o cron do servidor já disparou
+      const { data: jaEnviadoServidor } = await supabase
+        .from('dds_notification_log')
+        .select('id')
+        .eq('notification_date', format(agora, 'yyyy-MM-dd'))
+        .eq('tipo', tipo)
+        .maybeSingle()
+
+      if (jaEnviadoServidor) {
+        localStorage.setItem(chave, 'true')
+        console.info(`[DDS] Aviso (${tipo}) já enviado automaticamente pelo servidor.`)
+        return
+      }
+
       // maybeSingle() em vez de single(): se houver mais de um registro
       // para a mesma data, o single() lançava e nada era enviado.
       const { data: agenda, error: erroAgenda } = await supabase
@@ -116,7 +130,7 @@ export function DdsAlertManager() {
       }
 
       let palestranteNome = 'Não informado'
-if (agenda.palestrante_id) {
+      if (agenda.palestrante_id) {
         palestranteNome = await nomeDoPalestrante(agenda.palestrante_id)
       }
 
@@ -180,6 +194,15 @@ if (agenda.palestrante_id) {
         // Só marca como enviado depois do sucesso
         localStorage.setItem(chave, 'true')
         console.log(`[DDS] Aviso (${tipo}) enviado com sucesso. Palestrante: ${palestranteNome}`)
+
+        void supabase.from('dds_notification_log').insert({
+          notification_date: format(agora, 'yyyy-MM-dd'),
+          target_date: alvoStr,
+          tipo,
+          group_id: number,
+          message: msg,
+          speaker_name: palestranteNome,
+        })
       } else {
         const corpo = await res.text().catch(() => '')
         console.error(
