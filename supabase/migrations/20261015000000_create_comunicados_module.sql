@@ -48,15 +48,18 @@ CREATE INDEX IF NOT EXISTS idx_comunicados_destino
 
 -- ============================================================
 -- 2. MÍDIAS DO COMUNICADO
---    video | foto | audio
+--    video | foto | audio | youtube
 --    'audio' sempre vem acompanhado de uma imagem de capa.
+--    'youtube' guarda apenas o ID do vídeo em storage_path
+--    (não há upload: o vídeo é reproduzido via embed).
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.comunicado_midias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comunicado_id UUID NOT NULL REFERENCES public.comunicados(id) ON DELETE CASCADE,
-  tipo TEXT NOT NULL CHECK (tipo IN ('video', 'foto', 'audio')),
-  -- Caminho dentro do bucket (não a URL pública)
+  tipo TEXT NOT NULL CHECK (tipo IN ('video', 'foto', 'audio', 'youtube')),
+  -- Caminho dentro do bucket (não a URL pública).
+  -- Para 'youtube': o ID de 11 caracteres do vídeo.
   storage_path TEXT NOT NULL,
   mime_type TEXT,
   -- Para tipo 'audio': imagem de capa exibida junto ao player

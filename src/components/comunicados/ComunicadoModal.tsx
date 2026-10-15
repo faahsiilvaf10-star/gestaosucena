@@ -5,6 +5,7 @@ import {
   duracaoParaMs,
   montarSequencia,
   trilhaSemImagem,
+  urlEmbedYoutube,
   type ComunicadoElegivel,
   type MidiaExibicao,
 } from '../../lib/comunicados/regras'
@@ -229,7 +230,7 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
           </button>
         </div>
 
-        {/* Mídia visual (fotos, vídeos e capas de áudio) */}
+        {/* Mídia visual (fotos, vídeos e vídeos do YouTube) */}
         {atual && (
           <div className="w-full shrink-0 bg-black/90 flex items-center justify-center overflow-hidden">
             {atual.tipo === 'video' && (
@@ -244,6 +245,23 @@ export function ComunicadoModal({ comunicado, sessionKey, onClose }: Props) {
               >
                 Seu navegador não suporta vídeo.
               </video>
+            )}
+
+            {atual.tipo === 'youtube' && (
+              <div
+                key={atual.midiaId}
+                className="w-full aspect-video bg-black"
+                style={{ maxHeight: '45vh' }}
+              >
+                <iframe
+                  src={urlEmbedYoutube(atual.url)}
+                  title="Vídeo do comunicado"
+                  className="w-full h-full border-0"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  style={{ display: 'block' }}
+                />
+              </div>
             )}
 
             {atual.tipo === 'foto' && (

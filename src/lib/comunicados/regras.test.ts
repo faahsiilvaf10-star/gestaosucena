@@ -8,6 +8,9 @@ import {
   detectarTipoMidia,
   montarSequencia,
   trilhaSemImagem,
+  extrairIdYoutube,
+  urlEmbedYoutube,
+  ehLinkYoutubeValido,
   formatarDuracao,
   duracaoParaMs,
   minutosDoDia,
@@ -189,6 +192,90 @@ describe('podeExibir — exibição imediata', () => {
   it('sem imediato, continua respeitando a janela', () => {
     const c = comunicadoBase({ data_inicio: '2026-12-01' })
     expect(podeExibir(c, { dia: HOJE, jaExibidas: 0, jaExibidoNaSessao: false })).toBe(false)
+  })
+})
+
+describe('extrairIdYoutube', () => {
+  const ID = 'dQw4w9WgXcQ'
+
+  it('extrai de watch?v=', () => {
+    expect(extrairIdYoutube(`https://www.youtube.com/watch?v=${ID}`)).toBe(ID)
+  })
+
+  it('extrai de youtu.be', () => {
+    expect(extrairIdYoutube(`https://youtu.be/${ID}`)).toBe(ID)
+  })
+
+  it('extrai de /embed/', () => {
+    expect(extrairIdYoutube(`https://www.youtube.com/embed/${ID}`)).toBe(ID)
+  })
+
+  it('extrai de /shorts/', () => {
+    expect(extrairIdYoutube(`https://www.youtube.com/shorts/${ID}`)).toBe(ID)
+  })
+
+  it('extrai de /live/', () => {
+    expect(extrairIdYoutube(`https://www.youtube.com/live/${ID}`)).toBe(ID)
+  })
+
+  it('aceita m.youtube.com', () => {
+    expect(extrairIdYoutube(`https://m.youtube.com/watch?v=${ID}`)).toBe(ID)
+  })
+
+  it('aceita parâmetros extras (list, t, index)', () => {
+    expect(extrairIdYoutube(`https://www.youtube.com/watch?v=${ID}&list=PL123&t=30s`)).toBe(ID)
+  })
+
+  it('tolera espaços em volta', () => {
+    expect(extrairIdYoutube(`  https://youtu.be/${ID}  `)).toBe(ID)
+  })
+
+  it('devolve null para link de outro site', () => {
+    expect(extrairIdYoutube('https://vimeo.com/12345')).toBeNull()
+    expect(extrairIdYoutube('https://facebook.com/video/123')).toBeNull()
+  })
+
+  it('devolve null para YouTube sem ID de vídeo', () => {
+    expect(extrairIdYoutube('https://www.youtube.com/@canal')).toBeNull()
+    expect(extrairIdYoutube('https://www.youtube.com/')).toBeNull()
+  })
+
+  it('devolve null para texto solto', () => {
+    expect(extrairIdYoutube('meu video favorito')).toBeNull()
+    expect(extrairIdYoutube('')).toBeNull()
+  })
+
+  it('devolve null para ID com tamanho inválido', () => {
+    expect(extrairIdYoutube('https://www.youtube.com/watch?v=curto')).toBeNull()
+  })
+
+  it('devolve null para URL sem protocolo', () => {
+    expect(extrairIdYoutube(`www.youtube.com/watch?v=${ID}`)).toBeNull()
+  })
+})
+
+describe('urlEmbedYoutube / ehLinkYoutubeValido', () => {
+  const ID = 'dQw4w9WgXcQ'
+
+  it('gera URL de embed com autoplay', () => {
+    expect(urlEmbedYoutube(ID)).toContain(`/embed/${ID}`)
+    expect(urlEmbedYoutube(ID)).toContain('autoplay=1')
+  })
+
+  it('remove controles e branding', () => {
+    const url = urlEmbedYoutube(ID)
+    expect(url).toContain('controls=0')
+    expect(url).toContain('modestbranding=1')
+    expect(url).toContain('showinfo=0')
+  })
+
+  it('usa o domínio nocookie', () => {
+    expect(urlEmbedYoutube(ID)).toContain('youtube-nocookie.com')
+  })
+
+  it('valida links corretamente', () => {
+    expect(ehLinkYoutubeValido(`https://youtu.be/${ID}`)).toBe(true)
+    expect(ehLinkYoutubeValido('https://vimeo.com/1')).toBe(false)
   })
 })
 

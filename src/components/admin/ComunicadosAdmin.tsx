@@ -22,6 +22,8 @@ import {
 import {
   detectarTipoMidia,
   validarComunicado,
+  ehLinkYoutubeValido,
+  extrairIdYoutube,
   type Periodicidade,
   type TipoMidia,
 } from '../../lib/comunicados/regras'
@@ -72,6 +74,7 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
   const [erros, setErros] = useState<string[]>([])
   const [duracaoMinutos, setDuracaoMinutos] = useState(0)
   const [duracaoSegundos, setDuracaoSegundos] = useState(15)
+  const [linkYoutube, setLinkYoutube] = useState('')
 
   // Mantém os dois campos de duração sincronizados
   useEffect(() => {
@@ -105,6 +108,7 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
     setEnviarParaTodos(true)
     setDuracaoMinutos(0)
     setDuracaoSegundos(15)
+    setLinkYoutube('')
     midias.forEach((m) => URL.revokeObjectURL(m.previewUrl))
     setMidias([])
     setErros([])
@@ -125,6 +129,9 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
       imediato: comunicado.imediato ?? false,
     })
     setEnviarParaTodos(comunicado.destino_usuario_id === null)
+    // Recupera o link do YouTube, se houver
+    const midiaYoutube = comunicado.midias?.find((m) => m.tipo === 'youtube')
+    setLinkYoutube(midiaYoutube?.storage_path ? `https://www.youtube.com/watch?v=${midiaYoutube.storage_path}` : '')
     midias.forEach((m) => URL.revokeObjectURL(m.previewUrl))
     setMidias([])
     setErros([])
@@ -161,6 +168,7 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
       horaInicio: formulario.horaInicio,
       dataFim: formulario.dataFim,
       midias: midias.map((m) => ({ tipo: m.tipo, size: m.arquivo.size, mimeType: m.arquivo.type })),
+      linkYoutube,
     })
 
     if (!validacao.valido) {
@@ -182,6 +190,15 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
         tipo: resultado.tipo,
         capaPath: resultado.capaPath,
         mimeType: midia.arquivo.type,
+      })
+    }
+
+    // O link do YouTube vira uma mídia do tipo 'youtube' com o ID no
+    // storage_path. Não há upload: apenas guardamos o identificador.
+    if (linkYoutube.trim() && ehLinkYoutubeValido(linkYoutube)) {
+      uploaded.push({
+        path: extrairIdYoutube(linkYoutube)!,
+        tipo: 'youtube',
       })
     }
 
@@ -383,6 +400,37 @@ export function ComunicadosAdmin({ isDark }: { isDark: boolean }) {
                   </p>
                 )}
               </>
+            )}
+          </div>
+
+          {/* Vídeo do YouTube */}
+          <div>
+            <label
+              htmlFor="comunicado-youtube"
+              className={`block text-sm font-semibold mb-2 ${corRotulo}`}
+            >
+              Vídeo do YouTube{' '}
+              <span className={`text-xs font-normal ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                (opcional — cole apenas o link)
+              </span>
+            </label>
+            <input
+              id="comunicado-youtube"
+              type="url"
+              value={linkYoutube}
+              onChange={(e) => setLinkYoutube(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className={`w-full px-4 py-3 rounded-xl border outline-none focus:border-[#D6A72B] transition-colors ${corInput}`}
+            />
+            {linkYoutube.trim() && !ehLinkYoutubeValido(linkYoutube) && (
+              <p className={`mt-1.5 text-xs ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+                Link inválido. Use um link de watch, youtu.be, embed, shorts ou live.
+              </p>
+            )}
+            {linkYoutube.trim() && ehLinkYoutubeValido(linkYoutube) && (
+              <p className={`mt-1.5 text-xs ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                Vídeo será reproduzido automaticamente, sem exibir a identidade do YouTube.
+              </p>
             )}
           </div>
 

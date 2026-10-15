@@ -7,7 +7,7 @@
  */
 
 export type Periodicidade = 'unica' | 'diaria' | 'todo_dia'
-export type TipoMidia = 'video' | 'foto' | 'audio'
+export type TipoMidia = 'video' | 'foto' | 'audio' | 'youtube'
 export type ModoFechamento = 'manual' | 'automatico'
 
 export interface ComunicadoMidia {
@@ -143,6 +143,79 @@ export function proximaExibicao(
   return maior + 1
 }
 
+/**
+ * Extrai o ID do vídeo de uma URL do YouTube.
+ *
+ * Aceita os formatos mais comuns:
+ *   https://www.youtube.com/watch?v=ID
+ *   https://youtu.be/ID
+ *   https://www.youtube.com/embed/ID
+ *   https://www.youtube.com/shorts/ID
+ *   https://www.youtube.com/live/ID
+ *   https://m.youtube.com/watch?v=ID
+ *
+ * Retorna `null` quando o link não é do YouTube ou está malformado.
+ */
+export function extrairIdYoutube(url: string): string | null {
+  if (!url) return null
+
+  const trimmed = url.trim()
+  if (!/^https?:\/\//i.test(trimmed)) return null
+
+  let host = ''
+  let caminho = ''
+  let query = ''
+
+  try {
+    const u = new URL(trimmed)
+    host = u.hostname.replace(/^www\./i, '').toLowerCase()
+    caminho = u.pathname
+    query = u.searchParams.get('v') || ''
+  } catch {
+    return null
+  }
+
+  const ehYouTube =
+    host === 'youtube.com' ||
+    host === 'm.youtube.com' ||
+    host === 'music.youtube.com' ||
+    host === 'youtu.be' ||
+    host.endsWith('.youtube.com')
+
+  if (!ehYouTube) return null
+
+  // youtu.be/ID
+  if (host === 'youtu.be') {
+    const id = caminho.replace(/^\//, '').split('/')[0]
+    return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null
+  }
+
+  // ?v=ID
+  if (query && /^[A-Za-z0-9_-]{11}$/.test(query)) return query
+
+  // /embed/ID, /shorts/ID, /live/ID, /v/ID
+  const segmentos = caminho.split('/').filter(Boolean)
+  if (segmentos.length >= 2) {
+    const [tipo, id] = segmentos
+    if (['embed', 'shorts', 'live', 'v'].includes(tipo) && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+      return id
+    }
+  }
+
+  return null
+}
+
+/** URL de incorporação do YouTube, sem barra de progresso de branding. */
+export function urlEmbedYoutube(id: string): string {
+  // nocookiedomains remove cookies de rastreamento e o logo do YouTube
+  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&showinfo=0&fs=0&iv_load_policy=3`
+}
+
+/** Indica se a URL informada é um link válido de vídeo do YouTube. */
+export function ehLinkYoutubeValido(url: string): boolean {
+  return extrairIdYoutube(url) !== null
+}
+
 export interface MidiaExibicao {
   /** Caminho da mídia visual (foto ou vídeo). */
   url: string
@@ -172,7 +245,9 @@ export interface MidiaExibicao {
 export function montarSequencia(midias: ComunicadoMidia[]): MidiaExibicao[] {
   const ordenadas = [...midias].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
 
-  const visuais = ordenadas.filter((m) => m.tipo === 'foto' || m.tipo === 'video')
+  const visuais = ordenadas.filter(
+    (m) => m.tipo === 'foto' || m.tipo === 'video' || m.tipo === 'youtube',
+  )
   const audios = ordenadas.filter((m) => m.tipo === 'audio')
 
   if (visuais.length === 0) {
@@ -195,7 +270,9 @@ export function montarSequencia(midias: ComunicadoMidia[]): MidiaExibicao[] {
  */
 export function trilhaSemImagem(midias: ComunicadoMidia[]): string | null {
   const ordenadas = [...midias].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-  const temVisual = ordenadas.some((m) => m.tipo === 'foto' || m.tipo === 'video')
+  const temVisual = ordenadas.some(
+    (m) => m.tipo === 'foto' || m.tipo === 'video' || m.tipo === 'youtube',
+  )
   if (temVisual) return null
   const audio = ordenadas.find((m) => m.tipo === 'audio')
   return audio ? audio.storage_path : null
@@ -222,6 +299,8 @@ export function validarComunicado(dados: {
   horaInicio: string
   dataFim: string | null
   midias: Array<{ tipo: TipoMidia; size: number; mimeType: string }>
+  /** Link de YouTube informado (opcional). */
+  linkYoutube?: string
 }): ResultadoValidacao {
   const erros: string[] = []
 
@@ -266,6 +345,7 @@ export function validarComunicado(dados: {
     video: ['video/mp4', 'video/webm', 'video/quicktime'],
     foto: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     audio: ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg', 'audio/x-m4a'],
+    youtube: [],
   }
   const TAMANHO_MAXIMO = 100 * 1024 * 1024
 
@@ -278,6 +358,13 @@ export function validarComunicado(dados: {
       erros.push(`Mídia ${indice + 1}: o arquivo excede o limite de 100 MB.`)
     }
   })
+
+  // Validação do link do YouTube (opcional)
+  if (dados.linkYoutube && dados.linkYoutube.trim()) {
+    if (!ehLinkYoutubeValido(dados.linkYoutube)) {
+      erros.push('Link do YouTube inválido. Use um link de watch, youtu.be, embed, shorts ou live.')
+    }
+  }
 
   return { valido: erros.length === 0, erros }
 }
