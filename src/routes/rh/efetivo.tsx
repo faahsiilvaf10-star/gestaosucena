@@ -1008,10 +1008,12 @@ function RhEfetivoPage() {
                 </div>
                 
                 {selectedColaborador.raw_data && Object.entries(selectedColaborador.raw_data).map(([key, value]) => {
-                  // Skip existing/duplicated fields
+                  // Skip existing/duplicated fields or raw spreadsheet calculation columns
                   const ignoreList = [
                     'nome', 'cargo', 'matricula', 'data de admissão', 'status', 'setor',
-                    'qtd', '45 dias', '90 dias', 'função', 'admissão', 'localidade', 'colaborador', 'habilidades'
+                    'qtd', '45 dias', '90 dias', 'função', 'admissão', 'localidade', 'colaborador', 'habilidades',
+                    'farol', 'validade', 'admissional', 'item', 'mat.', 'mat', 'aso', 'periódico', 'periodico',
+                    'retorno ao trabalho', 'retorno', 'mudança de risco', 'mudanca de risco', 'validade aso'
                   ];
                   if (ignoreList.includes(key.toLowerCase().trim())) return null;
                   if (value === null || value === undefined || value === '') return null;
