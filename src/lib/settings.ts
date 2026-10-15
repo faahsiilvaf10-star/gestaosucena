@@ -271,14 +271,18 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
     }
 
     const loaded = data.value as any
+    const loadedTemplates = loaded.messageTemplates || {}
+    const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates }
+    for (const key of Object.keys(defaultWhatsappSettings.messageTemplates) as (keyof typeof defaultWhatsappSettings.messageTemplates)[]) {
+      if (loadedTemplates[key] && typeof loadedTemplates[key] === 'string' && loadedTemplates[key].trim().length > 0) {
+        mergedTemplates[key] = loadedTemplates[key]
+      }
+    }
+
     return {
       ...defaultWhatsappSettings,
       ...loaded,
-      // Deep merge messageTemplates so new keys always fall back to defaults
-      messageTemplates: {
-        ...defaultWhatsappSettings.messageTemplates,
-        ...(loaded.messageTemplates || {})
-      }
+      messageTemplates: mergedTemplates
     }
   } catch (err) {
     console.error('Erro ao buscar configs do whatsapp:', err)

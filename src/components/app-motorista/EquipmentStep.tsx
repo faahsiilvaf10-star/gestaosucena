@@ -71,7 +71,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
                   const driverInfo = DRIVERS.find(d => d.id === latestDispatch.driver_id)
                   const dName = driverInfo ? driverInfo.name : latestDispatch.driver_id
                   return { ...eq, status: 'Operando', active_driver_id: latestDispatch.driver_id, active_driver_name: dName }
-                } else if (latestDispatch.status === 'Finalizada') {
+                } else if (latestDispatch.status === 'Concluído' || latestDispatch.status === 'Finalizada' || latestDispatch.status === 'Finalizado') {
                   return { ...eq, status: 'Finalizado' }
                 }
               }
