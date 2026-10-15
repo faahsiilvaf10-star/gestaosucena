@@ -260,8 +260,8 @@ function RhEfetivoPage() {
               return null;
             };
 
-            const asoAdmissional = parseDate(getVal(['ASO ADMISSIONAL']));
-            const admissional = parseDate(getVal(['DATA DE ADMISSÃO', 'ADMISSÃO', 'ADMISSAO', 'DATA ADMISSAO', 'ADMISSIONAL']));
+            const asoAdmissional = parseDate(getVal(['ASO ADMISSIONAL', 'ASO ADMISSAO', 'ADMISSIONAL']));
+            const admissional = parseDate(getVal(['DATA DE ADMISSÃO', 'DATA DE ADMISSAO', 'DATA ADMISSÃO', 'DATA ADMISSAO', 'ADMISSÃO', 'ADMISSAO']));
             const asoPeriodico = parseDate(getVal(['PERIÓDICO', 'PERIODICO']));
             const retornoTrabalho = parseDate(getVal(['RETORNO AO TRABALHO', 'RETORNO']));
             const mudancaRisco = parseDate(getVal(['MUDANÇA DE RISCO', 'MUDANCA DE RISCO']));
@@ -662,7 +662,7 @@ function RhEfetivoPage() {
                     <th className="p-4">Matrícula Hydro</th>
                     <th className="p-4">Nome</th>
                     <th className="p-4">Cargo</th>
-                    <th className="p-4">Admissional</th>
+                    <th className="p-4">ASO Admissional</th>
 
                     <th className="p-4">Status</th>
                   </tr>
@@ -680,7 +680,7 @@ function RhEfetivoPage() {
                       <td className="p-4 font-bold max-w-xs truncate" title={item.nome}>{item.nome}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={item.cargo || ''}>{item.cargo || '-'}</td>
                       <td className="p-4 text-gray-600 dark:text-gray-400">
-                        {item.aso_admissional_2 ? item.aso_admissional_2.split('-').reverse().join('/') : '-'}
+                        {item.aso_admissional ? item.aso_admissional.split('-').reverse().join('/') : (item.aso_admissional_2 ? item.aso_admissional_2.split('-').reverse().join('/') : '-')}
                       </td>
                       
 
