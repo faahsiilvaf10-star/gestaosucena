@@ -253,6 +253,87 @@ function generateReceiptPng(
       }
     };
 
+    /**
+     * Normaliza a espessura do traço da assinatura para que ambas fiquem
+     * uniformes com traço fino e nítido (caneta de espessura constante),
+     * eliminando discrepâncias causadas por velocidade do toque, DPR ou resolução.
+     */
+    const normalizeSignatureCanvas = (
+      img: HTMLImageElement,
+      sx: number,
+      sy: number,
+      sWidth: number,
+      sHeight: number,
+      targetW: number,
+      targetH: number
+    ): HTMLCanvasElement => {
+      const c = document.createElement('canvas');
+      c.width = targetW;
+      c.height = targetH;
+      const cCtx = c.getContext('2d');
+      if (!cCtx) return c;
+
+      cCtx.imageSmoothingEnabled = true;
+      cCtx.imageSmoothingQuality = 'high';
+      cCtx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
+
+      try {
+        const imgData = cCtx.getImageData(0, 0, targetW, targetH);
+        const data = imgData.data;
+
+        // Estima espessura média do traço: 2 * (Área / Perímetro)
+        let ink = 0;
+        let boundary = 0;
+        for (let py = 0; py < targetH; py++) {
+          for (let px = 0; px < targetW; px++) {
+            const a = data[(py * targetW + px) * 4 + 3];
+            if (a > 50) {
+              ink++;
+              const top = py > 0 ? data[((py - 1) * targetW + px) * 4 + 3] : 0;
+              const bot = py < targetH - 1 ? data[((py + 1) * targetW + px) * 4 + 3] : 0;
+              const left = px > 0 ? data[(py * targetW + (px - 1)) * 4 + 3] : 0;
+              const right = px < targetW - 1 ? data[(py * targetW + (px + 1)) * 4 + 3] : 0;
+              if (top < 50 || bot < 50 || left < 50 || right < 50) {
+                boundary++;
+              }
+            }
+          }
+        }
+
+        const estimatedThickness = boundary > 0 ? (2 * ink) / boundary : 1;
+        // Se a espessura for superior a 1.8px (traço grosso), aplicamos erosão anti-aliasing
+        const passes = estimatedThickness > 3.2 ? 2 : estimatedThickness > 1.8 ? 1 : 0;
+
+        if (passes > 0) {
+          let current = new Uint8ClampedArray(data);
+          for (let p = 0; p < passes; p++) {
+            const next = new Uint8ClampedArray(current);
+            for (let py = 1; py < targetH - 1; py++) {
+              for (let px = 1; px < targetW - 1; px++) {
+                const idx = (py * targetW + px) * 4;
+                const a = current[idx + 3];
+                if (a > 40) {
+                  const top = current[((py - 1) * targetW + px) * 4 + 3];
+                  const bot = current[((py + 1) * targetW + px) * 4 + 3];
+                  const left = current[(py * targetW + (px - 1)) * 4 + 3];
+                  const right = current[(py * targetW + (px + 1)) * 4 + 3];
+                  if (top < 40 || bot < 40 || left < 40 || right < 40) {
+                    // Suaviza e afina a borda externa
+                    next[idx + 3] = Math.max(0, a - 170);
+                  }
+                }
+              }
+            }
+            current = next;
+          }
+          for (let i = 0; i < data.length; i++) data[i] = current[i];
+          cCtx.putImageData(imgData, 0, 0);
+        }
+      } catch (_) {}
+
+      return c;
+    };
+
     const drawSignature = (img: HTMLImageElement, centerX: number, lineY: number) => {
       const bounds = getTrimmedBounds(img);
       const maxW = 240;
@@ -261,24 +342,24 @@ function generateReceiptPng(
       if (bounds.width <= 0 || bounds.height <= 0) return;
 
       // Escala estritamente mantendo a proporção de aspecto (sem puxar e sem cortar)
-      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, bounds.width < 140 ? 1.1 : 1.0);
+      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, 1.0);
       const drawW = Math.round(bounds.width * scale);
       const drawH = Math.round(bounds.height * scale);
 
       const drawX = Math.round(centerX - drawW / 2);
       const drawY = Math.round(lineY - drawH - 5);
 
-      ctx.drawImage(
+      const normalizedCanvas = normalizeSignatureCanvas(
         bounds.img,
         bounds.sx,
         bounds.sy,
         bounds.sWidth,
         bounds.sHeight,
-        drawX,
-        drawY,
         drawW,
         drawH
       );
+
+      ctx.drawImage(normalizedCanvas, drawX, drawY);
     };
 
     if (authSig) {
@@ -779,7 +860,11 @@ export function EpiRequisitionForm() {
                 >
                   <SignatureCanvas
                     ref={authorizerSigRef}
-                    penColor="black"
+                    penColor="#111827"
+                    minWidth={0.5}
+                    maxWidth={1.1}
+                    dotSize={0.8}
+                    velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />
                 </div>
@@ -815,7 +900,11 @@ export function EpiRequisitionForm() {
                 >
                   <SignatureCanvas
                     ref={employeeSigRef}
-                    penColor="black"
+                    penColor="#111827"
+                    minWidth={0.5}
+                    maxWidth={1.1}
+                    dotSize={0.8}
+                    velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />
                 </div>
