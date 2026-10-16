@@ -23,6 +23,9 @@ import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
 import Package from 'lucide-react/dist/esm/icons/package.js';
 import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import CheckCheck from 'lucide-react/dist/esm/icons/check-check.js';
+import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
@@ -33,6 +36,7 @@ import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings, GlobalAppearanceSettings, getGlobalAppearanceSettings, saveGlobalAppearanceSettings } from '../lib/settings'
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
+import { AVAILABLE_ENVIRONMENTS, getUserEnvironmentAccess, saveUserEnvironmentAccess, UserEnvironmentAccessMap } from '../lib/environmentAccess'
 import { NotificacoesMotoristas } from '../components/admin/NotificacoesMotoristas'
 import { ComunicadosAdmin } from '../components/admin/ComunicadosAdmin'
 import '../dashboard.css'
@@ -105,7 +109,14 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance' | 'motoristas' | 'comunicados'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'ambientes' | 'permissions' | 'appearance' | 'motoristas' | 'comunicados'>('users')
+
+  // Environment Access
+  const [envAccessMap, setEnvAccessMap] = useState<UserEnvironmentAccessMap>({})
+  const [savingEnvAccess, setSavingEnvAccess] = useState(false)
+  const [selectedEnvForManagement, setSelectedEnvForManagement] = useState<string>('barcarena')
+  const [envSearchTerm, setEnvSearchTerm] = useState('')
+  const [editUserEnvAccess, setEditUserEnvAccess] = useState<string[]>([])
 
   const [permissions, setPermissions] = useState<AllUsersPermissions>({})
   const [savingPermissions, setSavingPermissions] = useState(false)
@@ -253,6 +264,67 @@ function AdminRoute() {
     } catch (e) {
       console.error("Erro ao carregar aparência", e)
     }
+
+    try {
+      const envMap = await getUserEnvironmentAccess()
+      setEnvAccessMap(envMap)
+    } catch (e) {
+      console.error("Erro ao carregar acessos de ambiente", e)
+    }
+  }
+
+  const handleToggleUserEnvAccess = (userId: string, envId: string) => {
+    setEnvAccessMap(prev => {
+      const currentList = prev[userId] !== undefined ? prev[userId] : ['barcarena']
+      const hasAccess = currentList.includes(envId)
+      const newList = hasAccess 
+        ? currentList.filter(id => id !== envId) 
+        : [...currentList, envId]
+      return {
+        ...prev,
+        [userId]: newList
+      }
+    })
+  }
+
+  const handleSelectAllForEnv = (envId: string) => {
+    setEnvAccessMap(prev => {
+      const updated = { ...prev }
+      users.forEach(u => {
+        const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
+        if (!currentList.includes(envId)) {
+          updated[u.id] = [...currentList, envId]
+        }
+      })
+      return updated
+    })
+  }
+
+  const handleDeselectAllForEnv = (envId: string) => {
+    setEnvAccessMap(prev => {
+      const updated = { ...prev }
+      users.forEach(u => {
+        const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
+        updated[u.id] = currentList.filter(id => id !== envId)
+      })
+      return updated
+    })
+  }
+
+  const handleSaveAllEnvAccess = async () => {
+    setSavingEnvAccess(true)
+    try {
+      const success = await saveUserEnvironmentAccess(envAccessMap)
+      if (success) {
+        toast.success('Permissões de acesso aos ambientes salvas com sucesso!')
+      } else {
+        toast.error('Erro ao salvar permissões de ambiente.')
+      }
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Falha ao salvar'))
+    } finally {
+      setSavingEnvAccess(false)
+    }
   }
 
   const executeToggleBlock = async () => {
@@ -319,6 +391,14 @@ function AdminRoute() {
         if (pwdError) throw pwdError
       }
       
+      // 3. Atualizar permissões de ambiente deste usuário
+      const updatedEnvMap = {
+        ...envAccessMap,
+        [editingUser.id]: editUserEnvAccess
+      }
+      setEnvAccessMap(updatedEnvMap)
+      await saveUserEnvironmentAccess(updatedEnvMap)
+
       toast.success('Usuário editado com sucesso.')
       setEditingUser(null)
       loadUsers()
@@ -601,6 +681,14 @@ function AdminRoute() {
             <Users size={18} />
             Usuários e Acessos
           </button>
+
+          <button 
+            onClick={() => setActiveTab('ambientes')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'ambientes' ? (isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-700') : (isDark ? 'text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50') }`}
+          >
+            <MapPin size={18} />
+            Acesso a Ambientes
+          </button>
           
           <button 
             onClick={() => setActiveTab('whatsapp')}
@@ -679,6 +767,7 @@ function AdminRoute() {
                   <th className="px-6 py-4 font-medium">Usuário</th>
                   <th className="px-6 py-4 font-medium">Contato</th>
                   <th className="px-6 py-4 font-medium">Cargo / Role</th>
+                  <th className="px-6 py-4 font-medium">Ambientes</th>
                   <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium text-right">Ações</th>
                 </tr>
@@ -686,13 +775,13 @@ function AdminRoute() {
               <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       Carregando usuários...
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       Nenhum usuário encontrado.
                     </td>
                   </tr>
@@ -701,6 +790,10 @@ function AdminRoute() {
                     const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                     const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
                     const displayId = String(seqIndex).padStart(4, '0');
+                    const isUserAdmin = isAdmin(user.name, user.role);
+                    const userEnvs = envAccessMap[user.id] !== undefined
+                      ? envAccessMap[user.id]
+                      : ['barcarena'];
 
                     return (
                       <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
@@ -731,6 +824,35 @@ function AdminRoute() {
                             {user.role || 'Usuário'}
                           </span>
                         </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1 max-w-[220px]">
+                            {isUserAdmin ? (
+                              <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-yellow-500/15 text-[#D6A72B] border border-yellow-500/30">
+                                Todos (Admin)
+                              </span>
+                            ) : userEnvs.length === 0 ? (
+                              <span className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-1">
+                                <Lock size={10} /> Nenhum
+                              </span>
+                            ) : (
+                              userEnvs.map(envId => {
+                                const isReab = envId === 'barcarena'
+                                return (
+                                  <span 
+                                    key={envId} 
+                                    className={`px-2 py-0.5 text-[11px] font-semibold rounded-md border ${
+                                      isReab
+                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                                    }`}
+                                  >
+                                    {isReab ? 'Reabilitação' : 'Civil'}
+                                  </span>
+                                )
+                              })
+                            )}
+                          </div>
+                        </td>
                       <td className="px-6 py-4">
                         {user.banned_until ? (
                           <div className="flex items-center gap-1.5 text-red-500 font-medium">
@@ -750,6 +872,10 @@ function AdminRoute() {
                               setEditName(user.name)
                               setEditRole(user.role)
                               setEditPassword('')
+                              const currentAccess = envAccessMap[user.id] !== undefined
+                                ? envAccessMap[user.id]
+                                : ['barcarena']
+                              setEditUserEnvAccess(currentAccess)
                             }}
                             className="p-2 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
                             title="Editar"
@@ -1566,6 +1692,263 @@ function AdminRoute() {
         </div>
       )}
 
+      {activeTab === 'ambientes' && (
+        <div className={`rounded-2xl p-6 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200 dark:border-white/5">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
+                  <MapPin size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Controle de Acesso por Ambiente</h2>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Defina quem pode acessar cada unidade. Ambientes não autorizados ficam bloqueados com cadeado para o usuário.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveAllEnvAccess}
+              disabled={savingEnvAccess}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-emerald-600/20 disabled:opacity-50"
+            >
+              <Save size={18} />
+              {savingEnvAccess ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </div>
+
+          {/* Cards de Seleção do Ambiente */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            {AVAILABLE_ENVIRONMENTS.map(env => {
+              const isSelected = selectedEnvForManagement === env.id
+              const allowedUsersCount = users.filter(u => {
+                if (isAdmin(u.name, u.role)) return true
+                const userEnvs = envAccessMap[u.id] !== undefined ? envAccessMap[u.id] : ['barcarena']
+                return userEnvs.includes(env.id)
+              }).length
+
+              return (
+                <button
+                  key={env.id}
+                  onClick={() => setSelectedEnvForManagement(env.id)}
+                  className={`relative p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? isDark
+                        ? 'bg-emerald-500/10 border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50'
+                        : 'bg-emerald-50/80 border-emerald-400 shadow-sm ring-1 ring-emerald-400'
+                      : isDark
+                        ? 'bg-white/5 border-white/5 hover:border-white/20'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isSelected 
+                          ? 'bg-emerald-500 text-white' 
+                          : isDark ? 'bg-white/10 text-gray-300' : 'bg-gray-200 text-gray-700'
+                      }`}>
+                        <Building2 size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base flex items-center gap-2">
+                          {env.name}
+                          {isSelected && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">
+                              Ativo
+                            </span>
+                          )}
+                        </h3>
+                        {env.contract && (
+                          <span className={`text-xs ${isDark ? 'text-amber-400' : 'text-amber-700'} font-medium`}>
+                            {env.contract}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                      isSelected
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : isDark ? 'bg-white/5 text-gray-400 border-white/10' : 'bg-gray-200 text-gray-600 border-gray-300'
+                    }`}>
+                      {allowedUsersCount} de {users.length} usuários
+                    </span>
+                  </div>
+
+                  <p className={`text-xs mt-3 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {env.description}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Subheader & Controls for Selected Environment */}
+          {(() => {
+            const currentEnvObj = AVAILABLE_ENVIRONMENTS.find(e => e.id === selectedEnvForManagement) || AVAILABLE_ENVIRONMENTS[0]
+            
+            const filteredEnvUsers = users.filter(u => {
+              if (!envSearchTerm.trim()) return true
+              const term = envSearchTerm.toLowerCase()
+              return u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term) || u.role.toLowerCase().includes(term)
+            })
+
+            return (
+              <div className="mt-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold flex items-center gap-2">
+                      <span>Gerenciar permissões para:</span>
+                      <span className="text-emerald-500 underline decoration-emerald-500/50 underline-offset-4">
+                        {currentEnvObj.name}
+                      </span>
+                    </h3>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Alterne os botões para conceder ou revogar o acesso imediato de cada colaborador a esta unidade.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleSelectAllForEnv(selectedEnvForManagement)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+                        isDark ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <CheckCheck size={14} className="text-emerald-500" />
+                      Liberar Todos
+                    </button>
+                    <button
+                      onClick={() => handleDeselectAllForEnv(selectedEnvForManagement)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+                        isDark ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <X size={14} className="text-red-500" />
+                      Bloquear Todos
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filtro de Usuários */}
+                <div className="mb-4">
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border max-w-md ${
+                    isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-emerald-500' : 'bg-gray-50 border-gray-200 focus-within:border-emerald-500'
+                  }`}>
+                    <Search size={16} className="text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar por nome, email ou cargo..."
+                      value={envSearchTerm}
+                      onChange={e => setEnvSearchTerm(e.target.value)}
+                      className="bg-transparent outline-none text-sm w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Tabela de Usuários com switches modernos */}
+                <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-white/5' : 'border-black/5'}`}>
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <tr>
+                        <th className="px-6 py-3.5 font-medium">Usuário</th>
+                        <th className="px-6 py-3.5 font-medium">Contato</th>
+                        <th className="px-6 py-3.5 font-medium">Cargo</th>
+                        <th className="px-6 py-3.5 font-medium text-center">Acesso ao Ambiente</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-white/5">
+                      {filteredEnvUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                            Nenhum usuário encontrado no filtro.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredEnvUsers.map(user => {
+                          const isUserAdmin = isAdmin(user.name, user.role)
+                          const userEnvs = envAccessMap[user.id] !== undefined
+                            ? envAccessMap[user.id]
+                            : ['barcarena']
+                          const hasAccess = isUserAdmin || userEnvs.includes(selectedEnvForManagement)
+
+                          return (
+                            <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
+                              <td className="px-6 py-3.5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                                    {user.avatar_url ? (
+                                      <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <UserIcon size={18} className="text-[#5f6472] dark:text-gray-400" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-sm">{user.name}</div>
+                                    <div className="text-xs text-gray-400 truncate max-w-[200px]" title={user.id}>
+                                      ID: {user.id.slice(0, 8)}...
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="px-6 py-3.5 text-gray-600 dark:text-gray-300 text-xs">
+                                {user.email}
+                              </td>
+
+                              <td className="px-6 py-3.5">
+                                <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${
+                                  isUserAdmin ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'
+                                }`}>
+                                  {user.role || 'Membro'}
+                                </span>
+                              </td>
+
+                              <td className="px-6 py-3.5 text-center">
+                                {isUserAdmin ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/15 text-amber-500 border border-yellow-500/25">
+                                    <Shield size={13} />
+                                    Acesso Total (Admin)
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleUserEnvAccess(user.id, selectedEnvForManagement)}
+                                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                      hasAccess
+                                        ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/25'
+                                        : 'bg-red-500/10 text-red-500 border-red-500/25 hover:bg-red-500/20'
+                                    }`}
+                                  >
+                                    {hasAccess ? (
+                                      <>
+                                        <CheckCircle2 size={15} />
+                                        Liberado
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Lock size={15} />
+                                        Bloqueado
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {activeTab === 'permissions' && (
         <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
           <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -1891,6 +2274,56 @@ function AdminRoute() {
                 </select>
                 <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   Selecione "Administrador" ou "Diretor" para promover o usuário e conceder acesso total ao sistema.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Ambientes com Acesso Permitido
+                </label>
+                <div className="space-y-2">
+                  {AVAILABLE_ENVIRONMENTS.map((env) => {
+                    const isAllowed = editUserEnvAccess.includes(env.id);
+                    return (
+                      <label
+                        key={env.id}
+                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          isAllowed
+                            ? isDark
+                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                              : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                            : isDark
+                              ? 'bg-white/5 border-white/10 text-gray-400'
+                              : 'bg-gray-50 border-gray-200 text-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isAllowed}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditUserEnvAccess([...editUserEnvAccess, env.id]);
+                            } else {
+                              setEditUserEnvAccess(editUserEnvAccess.filter((id) => id !== env.id));
+                            }
+                          }}
+                          className="mt-0.5 w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="font-semibold text-sm flex items-center gap-1.5">
+                            {env.name}
+                            {env.contract && (
+                              <span className="text-[10px] opacity-75 font-normal">({env.contract})</span>
+                            )}
+                          </div>
+                          <p className="text-xs opacity-75 mt-0.5">{env.description}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Ambientes não selecionados ficarão bloqueados com um cadeado para este usuário.
                 </p>
               </div>
               
