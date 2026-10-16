@@ -5,6 +5,11 @@ const config: CapacitorConfig = {
   appName: 'App Motorista',
   webDir: 'dist-motorista',
   // SEM server.url — assets carregados localmente do APK (funciona offline!)
+  plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
   android: {
     allowMixedContent: true,
     captureInput: true,

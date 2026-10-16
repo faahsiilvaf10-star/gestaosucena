@@ -1,74 +1,87 @@
-import { supabase } from './supabase'
+import { supabase } from "./supabase";
 
 export async function isRegistrationOpen(): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('global_settings')
-      .select('value')
-      .eq('key', 'registration_open')
-      .single()
+      .from("global_settings")
+      .select("value")
+      .eq("key", "registration_open")
+      .single();
 
     if (error || !data) {
-      if (error && error.code === 'PGRST116') {
-        await setRegistrationOpen(true)
-        return true
+      if (error && error.code === "PGRST116") {
+        await setRegistrationOpen(true);
+        return true;
       }
-      return true
+      return true;
     }
 
-    return data.value === true || data.value === 'true'
+    return data.value === true || data.value === "true";
   } catch (err) {
-    console.error('Erro ao buscar status do cadastro:', err)
-    return true
+    console.error("Erro ao buscar status do cadastro:", err);
+    return true;
   }
 }
 
 export async function setRegistrationOpen(isOpen: boolean): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('global_settings')
-      .upsert({
-        key: 'registration_open',
+    const { error } = await supabase.from("global_settings").upsert(
+      {
+        key: "registration_open",
         value: isOpen,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' })
-      
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
     if (error) {
-      console.error('Erro ao salvar status do cadastro:', error)
-      return false
+      console.error("Erro ao salvar status do cadastro:", error);
+      return false;
     }
-    return true
+    return true;
   } catch (err) {
-    console.error('Erro ao salvar status do cadastro:', err)
-    return false
+    console.error("Erro ao salvar status do cadastro:", err);
+    return false;
   }
 }
 
-export async function getAITokens(): Promise<{ geminiKey: string, groqKey: string }> {
+export async function getAITokens(): Promise<{ geminiKey: string; groqKey: string }> {
   try {
     const { data, error } = await supabase
-      .from('global_settings')
-      .select('key, value')
-      .in('key', ['ai_gemini_api_key', 'ai_groq_api_key'])
-    
-    if (error || !data) return { geminiKey: '', groqKey: '' }
-    
-    const geminiKey = data.find(r => r.key === 'ai_gemini_api_key')?.value || ''
-    const groqKey = data.find(r => r.key === 'ai_groq_api_key')?.value || ''
-    
-    return { geminiKey, groqKey }
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["ai_gemini_api_key", "ai_groq_api_key"]);
+
+    if (error || !data) return { geminiKey: "", groqKey: "" };
+
+    const geminiKey = data.find((r) => r.key === "ai_gemini_api_key")?.value || "";
+    const groqKey = data.find((r) => r.key === "ai_groq_api_key")?.value || "";
+
+    return { geminiKey, groqKey };
   } catch (err) {
-    return { geminiKey: '', groqKey: '' }
+    return { geminiKey: "", groqKey: "" };
   }
 }
 
 export async function setAITokens(geminiKey: string, groqKey: string): Promise<boolean> {
   try {
-    if (geminiKey) await supabase.from('global_settings').upsert({ key: 'ai_gemini_api_key', value: geminiKey, updated_at: new Date().toISOString() }, { onConflict: 'key' })
-    if (groqKey || groqKey === '') await supabase.from('global_settings').upsert({ key: 'ai_groq_api_key', value: groqKey, updated_at: new Date().toISOString() }, { onConflict: 'key' })
-    return true
+    if (geminiKey)
+      await supabase
+        .from("global_settings")
+        .upsert(
+          { key: "ai_gemini_api_key", value: geminiKey, updated_at: new Date().toISOString() },
+          { onConflict: "key" },
+        );
+    if (groqKey || groqKey === "")
+      await supabase
+        .from("global_settings")
+        .upsert(
+          { key: "ai_groq_api_key", value: groqKey, updated_at: new Date().toISOString() },
+          { onConflict: "key" },
+        );
+    return true;
   } catch (err) {
-    return false
+    return false;
   }
 }
 
@@ -77,60 +90,67 @@ export type GlobalAppearanceSettings = {
   opacity?: number;
   darkCardOpacity?: number;
   lightCardOpacity?: number;
-}
+};
 
 export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSettings> {
   try {
     const { data, error } = await supabase
-      .from('global_settings')
-      .select('value')
-      .eq('key', 'global_appearance')
-      .single()
-      
+      .from("global_settings")
+      .select("value")
+      .eq("key", "global_appearance")
+      .single();
+
     if (error || !data) {
-      return { 
+      return {
         backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
         opacity: 100,
         darkCardOpacity: 35,
-        lightCardOpacity: 75
-      }
+        lightCardOpacity: 75,
+      };
     }
-    
-    let parsed = data.value
-    if (typeof parsed === 'string') {
-      try { parsed = JSON.parse(parsed) } catch(e) {}
+
+    let parsed = data.value;
+    if (typeof parsed === "string") {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch (e) {}
     }
-    
+
     return {
-      backgroundCss: parsed?.backgroundCss || `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
+      backgroundCss:
+        parsed?.backgroundCss ||
+        `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
       opacity: parsed?.opacity !== undefined ? parsed.opacity : 100,
       darkCardOpacity: parsed?.darkCardOpacity !== undefined ? parsed.darkCardOpacity : 35,
-      lightCardOpacity: parsed?.lightCardOpacity !== undefined ? parsed.lightCardOpacity : 75
-    }
+      lightCardOpacity: parsed?.lightCardOpacity !== undefined ? parsed.lightCardOpacity : 75,
+    };
   } catch (err) {
-    return { 
+    return {
       backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
       opacity: 100,
       darkCardOpacity: 35,
-      lightCardOpacity: 75
-    }
+      lightCardOpacity: 75,
+    };
   }
 }
 
-export async function saveGlobalAppearanceSettings(settings: GlobalAppearanceSettings): Promise<boolean> {
+export async function saveGlobalAppearanceSettings(
+  settings: GlobalAppearanceSettings,
+): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('global_settings')
-      .upsert({
-        key: 'global_appearance',
+    const { error } = await supabase.from("global_settings").upsert(
+      {
+        key: "global_appearance",
         value: settings,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' })
-      
-    return !error
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
+    return !error;
   } catch (err) {
-    console.error('Erro ao salvar aparência:', err)
-    return false
+    console.error("Erro ao salvar aparência:", err);
+    return false;
   }
 }
 
@@ -194,120 +214,179 @@ export type WhatsappSettings = {
     pedidoCompraGrupo: string;
     pedidoCompraIndividual: string;
   };
-}
+};
 
 const defaultWhatsappSettings: WhatsappSettings = {
-  url: '',
-  instanceId: '',
-  token: '',
-  groupId: '',
+  url: "",
+  instanceId: "",
+  token: "",
+  groupId: "",
   interval: 30,
-  adminPhone: '',
+  adminPhone: "",
   ddsReminders: {
     enabled_0600: false,
     enabled_1600: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   requisitionAlerts: {
     enabled: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   reminders: {
     enabled: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   attendanceAlerts: {
     enabled: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   appMotoristaAlerts: {
     enabled: true,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   equipamentosMovimentacao: {
     enabled: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   cintasInspection: {
     enabled: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   purchaseOrders: {
     enabled_group: false,
     enabled_individual: false,
-    specificGroupId: ''
+    specificGroupId: "",
   },
   messageTemplates: {
-    ddsHoje: '🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
-    ddsAmanha: '🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_',
-    lembreteHoje: '🔔 *Lembrete Automático*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
-    lembreteAmanha: '⏳ *Aviso Antecipado de Lembrete*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}',
-    listaPresenca: '📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}',
-    requisicaoEpi: '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}',
-    anomaliaRegistrada: '🚨 *NOVA ANOMALIA REPORTADA* 🚨\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Anomalia:* {anomalia}\n📝 *Descrição:* {descricao}\n👤 *Motorista:* {motorista}',
-    anomaliaCorrigida: '🟢 *ANOMALIA CORRIGIDA* 🟢\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n✅ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}',
-    statusAlterado: '🔄 *MUDANÇA DE STATUS* 🔄\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n📌 *Novo Status:* {status}\n👤 *Motorista:* {motorista}',
-    cintasAvisoMensal: '⚠️ *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n🔍 As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_',
-    fimJornadaApp: '🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_',
-    cintasInspecionada: '✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_',
-    equipamentoEntrada: '🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_',
-    equipamentoSaida: '🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_',
-    pedidoCompraGrupo: '📦 *NOVO PEDIDO DE COMPRA #{numero_pedido}*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_',
-    pedidoCompraIndividual: '📦 *NOVO PEDIDO DE COMPRA #{numero_pedido} ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._',
-    inicioJornadaApp: '🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}'
-  }
-}
+    ddsHoje:
+      "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
+    ddsAmanha:
+      "🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
+    lembreteHoje:
+      "🔔 *Lembrete Automático*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}",
+    lembreteAmanha:
+      "⏳ *Aviso Antecipado de Lembrete*\n\n📌 *{titulo}*\n_{descricao}_\n\n📅 Data: {data}\n⏰ Horário: {hora}",
+    listaPresenca:
+      "📅 Data: {data}\n\n✳️  {area}  ✳️\n\n{lista_nomes}\n───────────────────────────\n{resumo}",
+    requisicaoEpi:
+      "🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}",
+    anomaliaRegistrada:
+      "🚨 *NOVA ANOMALIA REPORTADA* 🚨\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🚙 *Placa:* {placa}\n\n⚠️ *Anomalia:* {anomalia}\n📝 *Descrição:* {descricao}\n👤 *Motorista:* {motorista}",
+    anomaliaCorrigida:
+      "🟢 *ANOMALIA CORRIGIDA* 🟢\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n✅ *Resolvido:* {anomalia}\n👤 *Motorista:* {motorista}",
+    statusAlterado:
+      "🔄 *MUDANÇA DE STATUS* 🔄\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n📌 *Novo Status:* {status}\n👤 *Motorista:* {motorista}",
+    cintasAvisoMensal:
+      "⚠️ *AVISO DE INSPEÇÃO MENSAL DE CINTAS*\n\n📅 *Mês:* {mes}\n🎨 *Cor do mês:* {cor}\n\n🔍 As seguintes cintas precisam ser inspecionadas:\n{lista_cintas}\n\n_Por favor, realize a inspeção e registre no sistema._\n\n_Mensagem automática - Sucena_",
+    fimJornadaApp:
+      "🏁 *JORNADA FINALIZADA - APP MOTORISTA*\n\n🚜 *Equipamento:* {equipamento}\n👤 *Operador/Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}\n📅 *Data:* {data}\n🛣️ *KM Final:* {km}\n⏱️ *Horímetro Final:* {horimetro}\n\n_Mensagem Automática - G. Sucena_",
+    cintasInspecionada:
+      "✅ *INSPEÇÃO DE CINTA REGISTRADA*\n\n🔗 *Tag:* {tag}\n📋 *Descrição:* {descricao}\n🎨 *Cor:* {cor}\n📅 *Data:* {data}\n👤 *Responsável:* {responsavel}\n\n_Mensagem automática - Sucena_",
+    equipamentoEntrada:
+      "🚜 *ENTRADA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n_Mensagem automática - Sucena_",
+    equipamentoSaida:
+      "🚜 *SAÍDA DE EQUIPAMENTO*\n\n⏰ *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🚙 *Placa:* {placa}\n\n⚠️ *Motivo:* {motivo}\n\n_Mensagem automática - Sucena_",
+    pedidoCompraGrupo:
+      "📦 *NOVO PEDIDO DE COMPRA #{numero_pedido}*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_",
+    pedidoCompraIndividual:
+      "📦 *NOVO PEDIDO DE COMPRA #{numero_pedido} ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._",
+    inicioJornadaApp:
+      "🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}",
+  },
+};
+
+const WHATSAPP_SETTINGS_CACHE_KEY = "sucena_whatsapp_settings_cache";
 
 export async function getWhatsappSettings(): Promise<WhatsappSettings> {
   try {
     const { data, error } = await supabase
-      .from('global_settings')
-      .select('value')
-      .eq('key', 'whatsapp_settings')
-      .single()
+      .from("global_settings")
+      .select("value")
+      .eq("key", "whatsapp_settings")
+      .single();
 
-    if (error || !data) {
-      return defaultWhatsappSettings
-    }
-
-    const loaded = data.value as any
-    const loadedTemplates = loaded.messageTemplates || {}
-    const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates }
-    for (const key of Object.keys(defaultWhatsappSettings.messageTemplates) as (keyof typeof defaultWhatsappSettings.messageTemplates)[]) {
-      if (loadedTemplates[key] && typeof loadedTemplates[key] === 'string' && loadedTemplates[key].trim().length > 0) {
-        mergedTemplates[key] = loadedTemplates[key]
+    if (!error && data && data.value) {
+      const loaded = typeof data.value === "string" ? JSON.parse(data.value) : (data.value as any);
+      const loadedTemplates = loaded.messageTemplates || {};
+      const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates };
+      for (const key of Object.keys(
+        defaultWhatsappSettings.messageTemplates,
+      ) as (keyof typeof defaultWhatsappSettings.messageTemplates)[]) {
+        if (
+          loadedTemplates[key] &&
+          typeof loadedTemplates[key] === "string" &&
+          loadedTemplates[key].trim().length > 0
+        ) {
+          mergedTemplates[key] = loadedTemplates[key];
+        }
       }
-    }
 
-    return {
-      ...defaultWhatsappSettings,
-      ...loaded,
-      messageTemplates: mergedTemplates
+      const mergedSettings: WhatsappSettings = {
+        ...defaultWhatsappSettings,
+        ...loaded,
+        messageTemplates: mergedTemplates,
+      };
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(WHATSAPP_SETTINGS_CACHE_KEY, JSON.stringify(mergedSettings));
+        } catch (_) {}
+      }
+
+      return mergedSettings;
     }
   } catch (err) {
-    console.error('Erro ao buscar configs do whatsapp:', err)
-    return defaultWhatsappSettings
+    console.warn("Erro ao buscar configs do whatsapp no Supabase, tentando cache local:", err);
   }
+
+  // Fallback para cache local no localStorage (essencial no APK e em conexões oscilantes)
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem(WHATSAPP_SETTINGS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return {
+          ...defaultWhatsappSettings,
+          ...parsed,
+          messageTemplates: {
+            ...defaultWhatsappSettings.messageTemplates,
+            ...(parsed.messageTemplates || {}),
+          },
+        };
+      }
+    } catch (_) {}
+  }
+
+  return defaultWhatsappSettings;
 }
 
-export async function saveWhatsappSettings(settings: WhatsappSettings): Promise<{success: boolean, error?: string}> {
+export async function saveWhatsappSettings(
+  settings: WhatsappSettings,
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('global_settings')
-      .upsert({
-        key: 'whatsapp_settings',
-        value: settings,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' })
-      
-    if (error) {
-      console.error('Erro ao salvar configs do whatsapp:', error)
-      return { success: false, error: error.message }
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(WHATSAPP_SETTINGS_CACHE_KEY, JSON.stringify(settings));
+      } catch (_) {}
     }
-    return { success: true }
+
+    const { error } = await supabase.from("global_settings").upsert(
+      {
+        key: "whatsapp_settings",
+        value: settings,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
+    if (error) {
+      console.error("Erro ao salvar configs do whatsapp:", error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
   } catch (err: any) {
-    console.error('Erro ao salvar configs do whatsapp:', err)
-    return { success: false, error: err.message }
+    console.error("Erro ao salvar configs do whatsapp:", err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -322,49 +401,106 @@ export type EquipmentActivity = {
 export async function getEquipmentActivities(): Promise<EquipmentActivity[]> {
   try {
     const { data, error } = await supabase
-      .from('global_settings')
-      .select('value')
-      .eq('key', 'equipment_activities')
-      .single()
+      .from("global_settings")
+      .select("value")
+      .eq("key", "equipment_activities")
+      .single();
 
     if (error || !data) {
       return [
-        { id: '1', name: 'Lavagem Mirante', icon: 'Waves', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
-        { id: '2', name: 'Irrigação Carretel', icon: 'Droplet', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
-        { id: '3', name: 'Irrigação Faixa 3', icon: 'Sprout', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
-        { id: '4', name: 'Irrigação Faixa 4', icon: 'Sprout', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
-        { id: '5', name: 'Irrigação Faixa 5', icon: 'Sprout', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
-        { id: '6', name: 'Abastecimento do Tanque de Irrigação', icon: 'Fuel', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
-        { id: '7', name: 'Lavagem Vertedouro', icon: 'Waves', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
-        { id: '8', name: 'Umectação de Vias', icon: 'CloudRain', color: 'bg-white border border-gray-200 text-gray-900', categories: [] },
-        { id: '9', name: 'Lavagem de Carro', icon: 'Car', color: 'bg-zinc-900 border border-zinc-800 text-white', categories: [] },
-      ]
+        {
+          id: "1",
+          name: "Lavagem Mirante",
+          icon: "Waves",
+          color: "bg-zinc-900 border border-zinc-800 text-white",
+          categories: [],
+        },
+        {
+          id: "2",
+          name: "Irrigação Carretel",
+          icon: "Droplet",
+          color: "bg-white border border-gray-200 text-gray-900",
+          categories: [],
+        },
+        {
+          id: "3",
+          name: "Irrigação Faixa 3",
+          icon: "Sprout",
+          color: "bg-zinc-900 border border-zinc-800 text-white",
+          categories: [],
+        },
+        {
+          id: "4",
+          name: "Irrigação Faixa 4",
+          icon: "Sprout",
+          color: "bg-white border border-gray-200 text-gray-900",
+          categories: [],
+        },
+        {
+          id: "5",
+          name: "Irrigação Faixa 5",
+          icon: "Sprout",
+          color: "bg-zinc-900 border border-zinc-800 text-white",
+          categories: [],
+        },
+        {
+          id: "6",
+          name: "Abastecimento do Tanque de Irrigação",
+          icon: "Fuel",
+          color: "bg-white border border-gray-200 text-gray-900",
+          categories: [],
+        },
+        {
+          id: "7",
+          name: "Lavagem Vertedouro",
+          icon: "Waves",
+          color: "bg-zinc-900 border border-zinc-800 text-white",
+          categories: [],
+        },
+        {
+          id: "8",
+          name: "Umectação de Vias",
+          icon: "CloudRain",
+          color: "bg-white border border-gray-200 text-gray-900",
+          categories: [],
+        },
+        {
+          id: "9",
+          name: "Lavagem de Carro",
+          icon: "Car",
+          color: "bg-zinc-900 border border-zinc-800 text-white",
+          categories: [],
+        },
+      ];
     }
 
-    return data.value as EquipmentActivity[]
+    return data.value as EquipmentActivity[];
   } catch (err) {
-    console.error('Erro ao buscar atividades:', err)
-    return []
+    console.error("Erro ao buscar atividades:", err);
+    return [];
   }
 }
 
-export async function setEquipmentActivities(activities: EquipmentActivity[]): Promise<{success: boolean, error?: string}> {
+export async function setEquipmentActivities(
+  activities: EquipmentActivity[],
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('global_settings')
-      .upsert({
-        key: 'equipment_activities',
+    const { error } = await supabase.from("global_settings").upsert(
+      {
+        key: "equipment_activities",
         value: activities,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' })
-      
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
     if (error) {
-      console.error('Erro ao salvar atividades:', error)
-      return { success: false, error: error.message }
+      console.error("Erro ao salvar atividades:", error);
+      return { success: false, error: error.message };
     }
-    return { success: true }
+    return { success: true };
   } catch (err: any) {
-    console.error('Erro ao salvar atividades:', err)
-    return { success: false, error: err.message }
+    console.error("Erro ao salvar atividades:", err);
+    return { success: false, error: err.message };
   }
 }
