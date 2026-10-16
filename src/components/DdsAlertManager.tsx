@@ -1,23 +1,23 @@
-import { useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
-import { format } from 'date-fns'
-import { getWhatsappSettings } from '../lib/settings'
+import { useEffect, useRef } from "react";
+import { supabase } from "../lib/supabase";
+import { format } from "date-fns";
+import { getWhatsappSettings } from "../lib/settings";
 import {
   chaveDds,
   dataAlvoDds,
   dataDisparo,
   tipoDdsParaAgora,
   type TipoDds,
-} from '../lib/dds/regras'
+} from "../lib/dds/regras";
 
-const INTERVALO_MS = 60_000
-const TOLERANCIA_MINUTOS = 10
+const INTERVALO_MS = 60_000;
+const TOLERANCIA_MINUTOS = 10;
 
 const FALLBACK_HOJE =
-  '🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_'
+  "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_";
 
 const FALLBACK_AMANHA =
-  '🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_'
+  "🎤 *Aviso Prévio DDS - Amanhã*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (amanhã)\n📋 {tema}\n\n_Mensagem automática - Sucena_";
 
 /**
  * Resolve o nome do palestrante.
@@ -30,15 +30,15 @@ const FALLBACK_AMANHA =
  * A RPC usa a coluna `nome` (não `name`), por isso ambos são verificados.
  */
 async function nomeDoPalestrante(palestranteId: string): Promise<string> {
-  const { data, error } = await supabase.rpc('get_system_users')
+  const { data, error } = await supabase.rpc("get_system_users");
   if (error) {
-    console.error('[DDS] Erro ao buscar usuários do sistema:', error)
-    return 'Não informado'
+    console.error("[DDS] Erro ao buscar usuários do sistema:", error);
+    return "Não informado";
   }
 
-  const usuarios = (data ?? []) as Array<{ id: string; nome?: string | null }>
-  const encontrado = usuarios.find((u) => u.id === palestranteId)
-  return encontrado?.nome || 'Não informado'
+  const usuarios = (data ?? []) as Array<{ id: string; nome?: string | null }>;
+  const encontrado = usuarios.find((u) => u.id === palestranteId);
+  return encontrado?.nome || "Não informado";
 }
 
 /**
@@ -49,171 +49,163 @@ async function nomeDoPalestrante(palestranteId: string): Promise<string> {
  * falha silenciosa marcava o dia como concluído e o aviso nunca saía.
  */
 export function DdsAlertManager() {
-  const executando = useRef<Set<string>>(new Set())
+  const executando = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const verificar = () => {
-      const agora = new Date()
-      const tipo = tipoDdsParaAgora(
-        agora.getHours(),
-        agora.getMinutes(),
-        TOLERANCIA_MINUTOS,
-      )
-      if (!tipo) return
+      const agora = new Date();
+      const tipo = tipoDdsParaAgora(agora.getHours(), agora.getMinutes(), TOLERANCIA_MINUTOS);
+      if (!tipo) return;
 
-      const chave = chaveDds(tipo, dataDisparo(tipo, agora))
-      if (executando.current.has(chave)) return
-      if (localStorage.getItem(chave)) return
+      const chave = chaveDds(tipo, dataDisparo(tipo, agora));
+      if (executando.current.has(chave)) return;
+      if (localStorage.getItem(chave)) return;
 
-      executando.current.add(chave)
+      executando.current.add(chave);
       void enviar(tipo, agora, chave).finally(() => {
-        executando.current.delete(chave)
-      })
-    }
+        executando.current.delete(chave);
+      });
+    };
 
     // Verifica imediatamente ao montar (cobre recarregar perto do horário)
-    verificar()
-    const intervalo = setInterval(verificar, INTERVALO_MS)
-    return () => clearInterval(intervalo)
-  }, [])
+    verificar();
+    const intervalo = setInterval(verificar, INTERVALO_MS);
+    return () => clearInterval(intervalo);
+  }, []);
 
   const enviar = async (tipo: TipoDds, agora: Date, chave: string) => {
     try {
-      const settings = await getWhatsappSettings()
+      const settings = await getWhatsappSettings();
 
       const enabled =
-        tipo === 'hoje'
+        tipo === "hoje"
           ? settings?.ddsReminders?.enabled_0600
-          : settings?.ddsReminders?.enabled_1600
+          : settings?.ddsReminders?.enabled_1600;
 
       if (!enabled) {
-        console.info(`[DDS] Lembrete das ${tipo === 'hoje' ? '06' : '16'}h desativado no Admin.`)
-        return
+        console.info(`[DDS] Lembrete das ${tipo === "hoje" ? "06" : "16"}h desativado no Admin.`);
+        return;
       }
 
-      const alvo = dataAlvoDds(tipo, agora)
-      const alvoStr = format(alvo, 'yyyy-MM-dd')
-      const ambiente =
-        localStorage.getItem('sucena_environment') || 'barcarena'
+      const alvo = dataAlvoDds(tipo, agora);
+      const alvoStr = format(alvo, "yyyy-MM-dd");
+      const ambiente = localStorage.getItem("sucena_environment") || "barcarena";
 
       // Evita duplicidade se o cron do servidor já disparou
       const { data: jaEnviadoServidor } = await supabase
-        .from('dds_notification_log')
-        .select('id')
-        .eq('notification_date', format(agora, 'yyyy-MM-dd'))
-        .eq('tipo', tipo)
-        .maybeSingle()
+        .from("dds_notification_log")
+        .select("id")
+        .eq("notification_date", format(agora, "yyyy-MM-dd"))
+        .eq("tipo", tipo)
+        .maybeSingle();
 
       if (jaEnviadoServidor) {
-        localStorage.setItem(chave, 'true')
-        console.info(`[DDS] Aviso (${tipo}) já enviado automaticamente pelo servidor.`)
-        return
+        localStorage.setItem(chave, "true");
+        console.info(`[DDS] Aviso (${tipo}) já enviado automaticamente pelo servidor.`);
+        return;
       }
 
       // maybeSingle() em vez de single(): se houver mais de um registro
       // para a mesma data, o single() lançava e nada era enviado.
       const { data: agenda, error: erroAgenda } = await supabase
-        .from('seguranca_dds')
-        .select('id, tema, palestrante_id, environment')
-        .eq('date', alvoStr)
-        .eq('environment', ambiente)
-        .maybeSingle()
+        .from("seguranca_dds")
+        .select("id, tema, palestrante_id, environment")
+        .eq("date", alvoStr)
+        .eq("environment", ambiente)
+        .maybeSingle();
 
       if (erroAgenda) {
-        console.error('[DDS] Erro ao buscar agendamento:', erroAgenda)
-        return
+        console.error("[DDS] Erro ao buscar agendamento:", erroAgenda);
+        return;
       }
 
       if (!agenda) {
-        console.info(`[DDS] Nenhum DDS cadastrado para ${alvoStr} em ${ambiente}.`)
-        return
+        console.info(`[DDS] Nenhum DDS cadastrado para ${alvoStr} em ${ambiente}.`);
+        return;
       }
 
-      let palestranteNome = 'Não informado'
+      let palestranteNome = "Não informado";
       if (agenda.palestrante_id) {
-        palestranteNome = await nomeDoPalestrante(agenda.palestrante_id)
+        palestranteNome = await nomeDoPalestrante(agenda.palestrante_id);
       }
 
       let msg =
-        tipo === 'hoje'
+        tipo === "hoje"
           ? settings?.messageTemplates?.ddsHoje || FALLBACK_HOJE
-          : settings?.messageTemplates?.ddsAmanha || FALLBACK_AMANHA
+          : settings?.messageTemplates?.ddsAmanha || FALLBACK_AMANHA;
 
       msg = msg
         .replace(/\{palestrante\}/g, palestranteNome)
-        .replace(/\{data\}/g, format(alvo, 'dd/MM/yyyy'))
-        .replace(/\{tema\}/g, agenda.tema || 'TEMA A DEFINIR')
+        .replace(/\{data\}/g, format(alvo, "dd/MM/yyyy"))
+        .replace(/\{tema\}/g, agenda.tema || "TEMA A DEFINIR");
 
-      let baseUrl = (settings?.url || '').trim()
+      let baseUrl = (settings?.url || "").trim();
       if (!baseUrl || !settings?.token || !settings?.instanceId) {
-        console.error('[DDS] Configuração do WhatsApp incompleta (url/token/instanceId).')
-        return
+        console.error("[DDS] Configuração do WhatsApp incompleta (url/token/instanceId).");
+        return;
       }
 
-      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-      if (baseUrl.includes('painel.w-api.app')) baseUrl = 'https://api.w-api.app/v1'
-      else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) {
-        baseUrl = baseUrl + '/v1'
+      if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+      if (baseUrl.includes("painel.w-api.app")) baseUrl = "https://api.w-api.app/v1";
+      else if (baseUrl.includes("api.w-api.app") && !baseUrl.includes("/v1")) {
+        baseUrl = baseUrl + "/v1";
       }
 
-      const endpoint = `${baseUrl}/messages/send-text?instanceId=${settings.instanceId}`
-      const number = settings?.ddsReminders?.specificGroupId || settings?.groupId
+      const endpoint = `${baseUrl}/message/send-text?instanceId=${settings.instanceId}`;
+      const number = settings?.ddsReminders?.specificGroupId || settings?.groupId;
       if (!number) {
-        console.error('[DDS] Nenhum grupo de destino configurado.')
-        return
+        console.error("[DDS] Nenhum grupo de destino configurado.");
+        return;
       }
 
-      const payload = { number, phone: number, text: msg, message: msg }
+      const payload = { number, phone: number, text: msg, message: msg };
 
       let res = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${settings!.token}`,
           apikey: settings!.token,
         },
         body: JSON.stringify(payload),
-      })
+      });
 
       if (res.status === 404) {
-        const fallback = endpoint.includes('/message/')
-          ? endpoint.replace('/message/', '/messages/')
-          : endpoint.replace('/messages/', '/message/')
+        const fallback = endpoint.includes("/messages/")
+          ? endpoint.replace("/messages/", "/message/")
+          : endpoint.replace("/message/", "/messages/");
         res = await fetch(fallback, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${settings!.token}`,
             apikey: settings!.token,
           },
           body: JSON.stringify(payload),
-        })
+        });
       }
 
       if (res.ok) {
         // Só marca como enviado depois do sucesso
-        localStorage.setItem(chave, 'true')
-        console.log(`[DDS] Aviso (${tipo}) enviado com sucesso. Palestrante: ${palestranteNome}`)
+        localStorage.setItem(chave, "true");
+        console.log(`[DDS] Aviso (${tipo}) enviado com sucesso. Palestrante: ${palestranteNome}`);
 
-        void supabase.from('dds_notification_log').insert({
-          notification_date: format(agora, 'yyyy-MM-dd'),
+        void supabase.from("dds_notification_log").insert({
+          notification_date: format(agora, "yyyy-MM-dd"),
           target_date: alvoStr,
           tipo,
           group_id: number,
           message: msg,
           speaker_name: palestranteNome,
-        })
+        });
       } else {
-        const corpo = await res.text().catch(() => '')
-        console.error(
-          `[DDS] Falha ao enviar (${tipo}). HTTP ${res.status}`,
-          corpo.slice(0, 200),
-        )
+        const corpo = await res.text().catch(() => "");
+        console.error(`[DDS] Falha ao enviar (${tipo}). HTTP ${res.status}`, corpo.slice(0, 200));
       }
     } catch (err) {
-      console.error(`[DDS] Erro inesperado no envio (${tipo}):`, err)
+      console.error(`[DDS] Erro inesperado no envio (${tipo}):`, err);
     }
-  }
+  };
 
-  return null
+  return null;
 }

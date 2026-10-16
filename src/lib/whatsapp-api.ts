@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
+function getAlternativeEndpoint(ep: string): string {
+  if (ep.includes("/messages/")) {
+    return ep.replace("/messages/", "/message/");
+  }
+  if (ep.includes("/message/")) {
+    return ep.replace("/message/", "/messages/");
+  }
+  return ep;
+}
+
 export async function executeWhatsappHttp(
   endpoint: string,
   headers: Record<string, string>,
@@ -16,14 +26,14 @@ export async function executeWhatsappHttp(
       });
 
       if (res.status === 404) {
-        const fallbackEndpoint = endpoint.includes("/message/")
-          ? endpoint.replace("/message/", "/messages/")
-          : endpoint.replace("/messages/", "/message/");
-        res = await CapacitorHttp.post({
-          url: fallbackEndpoint,
-          headers,
-          data: payload,
-        });
+        const fallbackEndpoint = getAlternativeEndpoint(endpoint);
+        if (fallbackEndpoint !== endpoint) {
+          res = await CapacitorHttp.post({
+            url: fallbackEndpoint,
+            headers,
+            data: payload,
+          });
+        }
       }
 
       const text = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
@@ -45,15 +55,14 @@ export async function executeWhatsappHttp(
 
   // Fallback se 404
   if (res.status === 404) {
-    const fallbackEndpoint = endpoint.includes("/message/")
-      ? endpoint.replace("/message/", "/messages/")
-      : endpoint.replace("/messages/", "/message/");
-
-    res = await fetch(fallbackEndpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
+    const fallbackEndpoint = getAlternativeEndpoint(endpoint);
+    if (fallbackEndpoint !== endpoint) {
+      res = await fetch(fallbackEndpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+    }
   }
 
   const resultText = await res.text();
@@ -79,9 +88,9 @@ export const sendWhatsappTextOnServer = createServerFn({ method: "POST" })
       // Default Evolution API endpoint
       let endpoint = `${baseUrl}/message/sendText/${data.instanceId}`;
 
-      // If it's w-api.app, use their specific query param structure
+      // If it's w-api.app, use their specific query param structure (/message/send-text)
       if (baseUrl.includes("api.w-api.app")) {
-        endpoint = `${baseUrl}/messages/send-text?instanceId=${data.instanceId}`;
+        endpoint = `${baseUrl}/message/send-text?instanceId=${data.instanceId}`;
       }
 
       const payload = {

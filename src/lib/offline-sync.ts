@@ -20,7 +20,7 @@ const directWhatsappSendText = async (settings: any, phone: string, text: string
 
   let endpoint = `${baseUrl}/message/sendText/${settings.instanceId}`;
   if (baseUrl.includes("api.w-api.app"))
-    endpoint = `${baseUrl}/messages/send-text?instanceId=${settings.instanceId}`;
+    endpoint = `${baseUrl}/message/send-text?instanceId=${settings.instanceId}`;
 
   const payload = { number: phone, phone: phone, text, message: text };
   const headers = {

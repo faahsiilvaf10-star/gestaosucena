@@ -1,484 +1,509 @@
-import Shield from 'lucide-react/dist/esm/icons/shield.js';
-import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
-import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
-import Ban from 'lucide-react/dist/esm/icons/ban.js';
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
-import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
-import UserIcon from 'lucide-react/dist/esm/icons/user.js';
-import Search from 'lucide-react/dist/esm/icons/search.js';
-import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
-import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
-import Users from 'lucide-react/dist/esm/icons/users.js';
-import Lock from 'lucide-react/dist/esm/icons/lock.js';
-import Unlock from 'lucide-react/dist/esm/icons/lock-open.js';
-import Plus from 'lucide-react/dist/esm/icons/plus.js';
-import X from 'lucide-react/dist/esm/icons/x.js';
-import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
-import Save from 'lucide-react/dist/esm/icons/save.js';
-import Bell from 'lucide-react/dist/esm/icons/bell.js';
-import Play from 'lucide-react/dist/esm/icons/play.js';
-import Megaphone from 'lucide-react/dist/esm/icons/megaphone.js';
-import Send from 'lucide-react/dist/esm/icons/send.js';
-import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
-import Package from 'lucide-react/dist/esm/icons/package.js';
-import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
-import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
-import { useState, useEffect } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { supabase } from '../lib/supabase'
-import { toast } from 'sonner'
-import { isAdmin } from '../components/ui/VerifiedBadge'
-import { useTheme } from '../contexts/ThemeContext'
-import { getAvailableRoles, saveAvailableRoles } from '../lib/roles'
-import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhatsappSettings, WhatsappSettings, GlobalAppearanceSettings, getGlobalAppearanceSettings, saveGlobalAppearanceSettings } from '../lib/settings'
-import { createServerFn } from '@tanstack/react-start'
-import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
-import { NotificacoesMotoristas } from '../components/admin/NotificacoesMotoristas'
-import { ComunicadosAdmin } from '../components/admin/ComunicadosAdmin'
-import '../dashboard.css'
+import Shield from "lucide-react/dist/esm/icons/shield.js";
+import ShieldAlert from "lucide-react/dist/esm/icons/shield-alert.js";
+import Edit2 from "lucide-react/dist/esm/icons/pen.js";
+import Ban from "lucide-react/dist/esm/icons/ban.js";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
+import CheckCircle2 from "lucide-react/dist/esm/icons/circle-check.js";
+import UserIcon from "lucide-react/dist/esm/icons/user.js";
+import Search from "lucide-react/dist/esm/icons/search.js";
+import AlertTriangle from "lucide-react/dist/esm/icons/triangle-alert.js";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
+import Users from "lucide-react/dist/esm/icons/users.js";
+import Lock from "lucide-react/dist/esm/icons/lock.js";
+import Unlock from "lucide-react/dist/esm/icons/lock-open.js";
+import Plus from "lucide-react/dist/esm/icons/plus.js";
+import X from "lucide-react/dist/esm/icons/x.js";
+import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
+import Save from "lucide-react/dist/esm/icons/save.js";
+import Bell from "lucide-react/dist/esm/icons/bell.js";
+import Play from "lucide-react/dist/esm/icons/play.js";
+import Megaphone from "lucide-react/dist/esm/icons/megaphone.js";
+import Send from "lucide-react/dist/esm/icons/send.js";
+import Smartphone from "lucide-react/dist/esm/icons/smartphone.js";
+import Package from "lucide-react/dist/esm/icons/package.js";
+import UploadCloud from "lucide-react/dist/esm/icons/cloud-upload.js";
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
+import { useState, useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
+import { isAdmin } from "../components/ui/VerifiedBadge";
+import { useTheme } from "../contexts/ThemeContext";
+import { getAvailableRoles, saveAvailableRoles } from "../lib/roles";
+import {
+  isRegistrationOpen,
+  setRegistrationOpen,
+  getWhatsappSettings,
+  saveWhatsappSettings,
+  WhatsappSettings,
+  GlobalAppearanceSettings,
+  getGlobalAppearanceSettings,
+  saveGlobalAppearanceSettings,
+} from "../lib/settings";
+import { createServerFn } from "@tanstack/react-start";
+import {
+  getAllPermissions,
+  saveAllPermissions,
+  AllUsersPermissions,
+  MODULES,
+  AccessLevel,
+} from "../lib/permissions";
+import { NotificacoesMotoristas } from "../components/admin/NotificacoesMotoristas";
+import { ComunicadosAdmin } from "../components/admin/ComunicadosAdmin";
+import "../dashboard.css";
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
-export const testWhatsappOnServer = createServerFn({ method: 'POST' })
-  .validator((data: { endpoint: string, token: string, number: string, text: string }) => data)
+export const testWhatsappOnServer = createServerFn({ method: "POST" })
+  .validator((data: { endpoint: string; token: string; number: string; text: string }) => data)
   .handler(async ({ data }) => {
     // Payload amplo para cobrir possíveis padrões da W-API
     const payload = {
       number: data.number,
       phone: data.number,
       text: data.text,
-      message: data.text
-    }
+      message: data.text,
+    };
 
     // Tenta primeiro o endpoint exato que foi passado
     let response = await fetch(data.endpoint, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${data.token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${data.token}`,
       },
-      body: JSON.stringify(payload)
-    })
+      body: JSON.stringify(payload),
+    });
 
     // Se der 404 Cannot POST, pode ser que a API use 'messages' (plural) ou o usuário esqueceu o /v1
     if (response.status === 404) {
-      const fallbackEndpoint = data.endpoint.includes('/message/') 
-        ? data.endpoint.replace('/message/', '/messages/') 
-        : data.endpoint.replace('/messages/', '/message/')
-        
+      const fallbackEndpoint = data.endpoint.includes("/message/")
+        ? data.endpoint.replace("/message/", "/messages/")
+        : data.endpoint.replace("/messages/", "/message/");
+
       response = await fetch(fallbackEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${data.token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.token}`,
         },
-        body: JSON.stringify(payload)
-      })
+        body: JSON.stringify(payload),
+      });
     }
 
     if (!response.ok) {
-      const errBody = await response.text().catch(() => 'Erro desconhecido')
-      throw new Error(`A API retornou um erro HTTP ${response.status}: ${errBody}`)
+      const errBody = await response.text().catch(() => "Erro desconhecido");
+      throw new Error(`A API retornou um erro HTTP ${response.status}: ${errBody}`);
     }
 
-    return await response.json()
-  })
+    return await response.json();
+  });
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute("/admin")({
   component: AdminRoute,
-})
+});
 
 type AdminUser = {
-  id: string
-  email: string
-  name: string
-  role: string
-  avatar_url: string
-  created_at: string
-  last_sign_in_at: string
-  banned_until: string | null
-}
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  avatar_url: string;
+  created_at: string;
+  last_sign_in_at: string;
+  banned_until: string | null;
+};
 
 function AdminRoute() {
-  const { isDark } = useTheme()
-  const navigate = useNavigate()
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'permissions' | 'appearance' | 'motoristas' | 'comunicados'>('users')
+  const { isDark } = useTheme();
+  const navigate = useNavigate();
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<
+    "users" | "whatsapp" | "permissions" | "appearance" | "motoristas" | "comunicados"
+  >("users");
 
-  const [permissions, setPermissions] = useState<AllUsersPermissions>({})
-  const [savingPermissions, setSavingPermissions] = useState(false)
+  const [permissions, setPermissions] = useState<AllUsersPermissions>({});
+  const [savingPermissions, setSavingPermissions] = useState(false);
 
   // Appearance Settings
-  const [appearance, setAppearance] = useState<GlobalAppearanceSettings>({ backgroundCss: '' })
-  const [savingAppearance, setSavingAppearance] = useState(false)
+  const [appearance, setAppearance] = useState<GlobalAppearanceSettings>({ backgroundCss: "" });
+  const [savingAppearance, setSavingAppearance] = useState(false);
 
   // WhatsApp Settings
   const [whatsappSettings, setWhatsappSettings] = useState<WhatsappSettings>({
-    url: '',
-    instanceId: '',
-    token: '',
-    groupId: '',
+    url: "",
+    instanceId: "",
+    token: "",
+    groupId: "",
     interval: 30,
     ddsReminders: {
       enabled_0600: false,
       enabled_1600: false,
-      specificGroupId: ''
+      specificGroupId: "",
     },
     requisitionAlerts: {
       enabled: false,
-      specificGroupId: ''
+      specificGroupId: "",
     },
     purchaseOrders: {
       enabled_group: false,
       enabled_individual: false,
-      specificGroupId: ''
-    }
-  })
-  const [savingWhatsapp, setSavingWhatsapp] = useState(false)
-  const [isWhatsappLocked, setIsWhatsappLocked] = useState(true)
-  const [unlockCodeModal, setUnlockCodeModal] = useState(false)
-  const [unlockCodeInput, setUnlockCodeInput] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState<keyof NonNullable<WhatsappSettings['messageTemplates']>>('ddsHoje')
+      specificGroupId: "",
+    },
+  });
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [isWhatsappLocked, setIsWhatsappLocked] = useState(true);
+  const [unlockCodeModal, setUnlockCodeModal] = useState(false);
+  const [unlockCodeInput, setUnlockCodeInput] = useState("");
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<keyof NonNullable<WhatsappSettings["messageTemplates"]>>("ddsHoje");
 
   // Test API Modal
-  const [testApiModal, setTestApiModal] = useState(false)
-  const [testNumber, setTestNumber] = useState('')
-  const [isTestingApi, setIsTestingApi] = useState(false)
+  const [testApiModal, setTestApiModal] = useState(false);
+  const [testNumber, setTestNumber] = useState("");
+  const [isTestingApi, setIsTestingApi] = useState(false);
 
   // Edit Modal
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editRole, setEditRole] = useState('')
-  const [editPassword, setEditPassword] = useState('')
-  const [savingEdit, setSavingEdit] = useState(false)
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Roles Management
-  const [availableRoles, setAvailableRoles] = useState<string[]>([])
-  const [newRole, setNewRole] = useState('')
-  const [savingRoles, setSavingRoles] = useState(false)
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [newRole, setNewRole] = useState("");
+  const [savingRoles, setSavingRoles] = useState(false);
 
   // Registration Settings
-  const [registrationOpen, setRegistrationOpenState] = useState(true)
-  const [savingRegistration, setSavingRegistration] = useState(false)
+  const [registrationOpen, setRegistrationOpenState] = useState(true);
+  const [savingRegistration, setSavingRegistration] = useState(false);
 
   // Modals for Confirmation
-  const [removeRoleModal, setRemoveRoleModal] = useState<string | null>(null)
-  const [blockUserModal, setBlockUserModal] = useState<AdminUser | null>(null)
-  const [deleteUserModal, setDeleteUserModal] = useState<AdminUser | null>(null)
-  const [deleteEmailInput, setDeleteEmailInput] = useState('')
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [removeRoleModal, setRemoveRoleModal] = useState<string | null>(null);
+  const [blockUserModal, setBlockUserModal] = useState<AdminUser | null>(null);
+  const [deleteUserModal, setDeleteUserModal] = useState<AdminUser | null>(null);
+  const [deleteEmailInput, setDeleteEmailInput] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAdminAndLoad()
-  }, [])
+    checkAdminAndLoad();
+  }, []);
 
   async function checkAdminAndLoad() {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        navigate({ to: '/' })
-        return
+        navigate({ to: "/" });
+        return;
       }
 
-      setCurrentUserId(user.id)
+      setCurrentUserId(user.id);
 
-      const role = user.user_metadata?.role || ''
-      const name = user.user_metadata?.full_name || ''
-      
+      const role = user.user_metadata?.role || "";
+      const name = user.user_metadata?.full_name || "";
+
       if (!isAdmin(name, role)) {
-        navigate({ to: '/' })
-        return
+        navigate({ to: "/" });
+        return;
       }
 
-      loadUsers()
+      loadUsers();
     } catch (err) {
-      console.error(err)
-      navigate({ to: '/' })
+      console.error(err);
+      navigate({ to: "/" });
     }
   }
 
   async function loadUsers() {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
     try {
-      const { data, error: rpcError } = await supabase.rpc('admin_list_users')
-      if (rpcError) throw rpcError
-      
-      setUsers(data || [])
+      const { data, error: rpcError } = await supabase.rpc("admin_list_users");
+      if (rpcError) throw rpcError;
+
+      setUsers(data || []);
     } catch (err: any) {
-      console.error(err)
-      setError(err.message || 'Erro ao carregar usuários. Verifique se você rodou o script SQL no Supabase.')
+      console.error(err);
+      setError(
+        err.message ||
+          "Erro ao carregar usuários. Verifique se você rodou o script SQL no Supabase.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
 
     try {
-      const isOpen = await isRegistrationOpen()
-      setRegistrationOpenState(isOpen)
+      const isOpen = await isRegistrationOpen();
+      setRegistrationOpenState(isOpen);
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
 
     try {
-      const roles = await getAvailableRoles()
-      setAvailableRoles(roles)
+      const roles = await getAvailableRoles();
+      setAvailableRoles(roles);
     } catch (e) {
-      console.error("Erro ao carregar cargos", e)
+      console.error("Erro ao carregar cargos", e);
     }
 
     try {
-      const waSettings = await getWhatsappSettings()
-      setWhatsappSettings(waSettings)
+      const waSettings = await getWhatsappSettings();
+      setWhatsappSettings(waSettings);
       if (!waSettings.url && !waSettings.instanceId) {
-        setIsWhatsappLocked(false)
+        setIsWhatsappLocked(false);
       } else {
-        setIsWhatsappLocked(true)
+        setIsWhatsappLocked(true);
       }
     } catch (e) {
-      console.error("Erro ao carregar configurações do whatsapp", e)
+      console.error("Erro ao carregar configurações do whatsapp", e);
     }
 
     try {
-      const perms = await getAllPermissions()
-      setPermissions(perms)
+      const perms = await getAllPermissions();
+      setPermissions(perms);
     } catch (e) {
-      console.error("Erro ao carregar permissoes", e)
+      console.error("Erro ao carregar permissoes", e);
     }
 
     try {
-      const appSets = await getGlobalAppearanceSettings()
-      setAppearance(appSets)
+      const appSets = await getGlobalAppearanceSettings();
+      setAppearance(appSets);
     } catch (e) {
-      console.error("Erro ao carregar aparência", e)
+      console.error("Erro ao carregar aparência", e);
     }
   }
 
   const executeToggleBlock = async () => {
-    if (!blockUserModal) return
-    const isBlocked = !!blockUserModal.banned_until
-    
+    if (!blockUserModal) return;
+    const isBlocked = !!blockUserModal.banned_until;
+
     try {
-      const { error: rpcError } = await supabase.rpc('admin_toggle_block_user', {
+      const { error: rpcError } = await supabase.rpc("admin_toggle_block_user", {
         target_user_id: blockUserModal.id,
-        should_block: !isBlocked
-      })
-      if (rpcError) throw rpcError
-      
-      toast.success(isBlocked ? 'Usuário desbloqueado!' : 'Usuário bloqueado!')
-      loadUsers()
+        should_block: !isBlocked,
+      });
+      if (rpcError) throw rpcError;
+
+      toast.success(isBlocked ? "Usuário desbloqueado!" : "Usuário bloqueado!");
+      loadUsers();
     } catch (err: any) {
-      toast.error('Erro ao alterar status: ' + err.message)
+      toast.error("Erro ao alterar status: " + err.message);
     } finally {
-      setBlockUserModal(null)
+      setBlockUserModal(null);
     }
-  }
+  };
 
   const executeDelete = async () => {
-    if (!deleteUserModal) return
+    if (!deleteUserModal) return;
     if (deleteEmailInput !== deleteUserModal.email) {
-      toast.error('Email incorreto. Exclusão cancelada.')
-      return
+      toast.error("Email incorreto. Exclusão cancelada.");
+      return;
     }
 
     try {
-      const { error: rpcError } = await supabase.rpc('admin_delete_user', {
-        target_user_id: deleteUserModal.id
-      })
-      if (rpcError) throw rpcError
-      
-      toast.success('Usuário excluído permanentemente.')
-      loadUsers()
+      const { error: rpcError } = await supabase.rpc("admin_delete_user", {
+        target_user_id: deleteUserModal.id,
+      });
+      if (rpcError) throw rpcError;
+
+      toast.success("Usuário excluído permanentemente.");
+      loadUsers();
     } catch (err: any) {
-      toast.error('Erro ao excluir: ' + err.message)
+      toast.error("Erro ao excluir: " + err.message);
     } finally {
-      setDeleteUserModal(null)
-      setDeleteEmailInput('')
+      setDeleteUserModal(null);
+      setDeleteEmailInput("");
     }
-  }
+  };
 
   const handleSaveEdit = async () => {
-    if (!editingUser) return
-    setSavingEdit(true)
+    if (!editingUser) return;
+    setSavingEdit(true);
     try {
       // 1. Atualizar Nome e Cargo
-      const { error: rpcError } = await supabase.rpc('admin_edit_user', {
+      const { error: rpcError } = await supabase.rpc("admin_edit_user", {
         target_user_id: editingUser.id,
         new_name: editName,
-        new_role: editRole
-      })
-      if (rpcError) throw rpcError
-      
+        new_role: editRole,
+      });
+      if (rpcError) throw rpcError;
+
       // 2. Se informou nova senha, atualizar
       if (editPassword.trim()) {
-        const { error: pwdError } = await supabase.rpc('admin_change_user_password', {
+        const { error: pwdError } = await supabase.rpc("admin_change_user_password", {
           target_user_id: editingUser.id,
-          new_password: editPassword.trim()
-        })
-        if (pwdError) throw pwdError
+          new_password: editPassword.trim(),
+        });
+        if (pwdError) throw pwdError;
       }
-      
-      toast.success('Usuário editado com sucesso.')
-      setEditingUser(null)
-      loadUsers()
-    } catch (err: any) {
-      toast.error('Erro ao salvar: ' + err.message)
-    } finally {
-      setSavingEdit(false)
-    }
-  }
 
-  const filteredUsers = users.filter(u => 
-    u.id !== currentUserId && (
-      u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  )
+      toast.success("Usuário editado com sucesso.");
+      setEditingUser(null);
+      loadUsers();
+    } catch (err: any) {
+      toast.error("Erro ao salvar: " + err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.id !== currentUserId &&
+      (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase())),
+  );
 
   const handleAddRole = async () => {
-    const trimmed = newRole.trim()
-    if (!trimmed) return
+    const trimmed = newRole.trim();
+    if (!trimmed) return;
     if (availableRoles.includes(trimmed)) {
-      toast.error("Este cargo já existe.")
-      return
+      toast.error("Este cargo já existe.");
+      return;
     }
 
-    setSavingRoles(true)
-    const newRoles = [...availableRoles, trimmed]
-    const success = await saveAvailableRoles(newRoles)
+    setSavingRoles(true);
+    const newRoles = [...availableRoles, trimmed];
+    const success = await saveAvailableRoles(newRoles);
     if (success) {
-      setAvailableRoles(newRoles)
-      setNewRole('')
-      toast.success("Cargo adicionado.")
+      setAvailableRoles(newRoles);
+      setNewRole("");
+      toast.success("Cargo adicionado.");
     } else {
-      toast.error("Erro ao salvar o cargo.")
+      toast.error("Erro ao salvar o cargo.");
     }
-    setSavingRoles(false)
-  }
+    setSavingRoles(false);
+  };
 
   const executeRemoveRole = async () => {
-    if (!removeRoleModal) return
-    
-    setSavingRoles(true)
-    const newRoles = availableRoles.filter(r => r !== removeRoleModal)
-    const success = await saveAvailableRoles(newRoles)
+    if (!removeRoleModal) return;
+
+    setSavingRoles(true);
+    const newRoles = availableRoles.filter((r) => r !== removeRoleModal);
+    const success = await saveAvailableRoles(newRoles);
     if (success) {
-      setAvailableRoles(newRoles)
-      toast.success("Cargo removido.")
+      setAvailableRoles(newRoles);
+      toast.success("Cargo removido.");
     } else {
-      toast.error("Erro ao remover o cargo.")
+      toast.error("Erro ao remover o cargo.");
     }
-    setSavingRoles(false)
-    setRemoveRoleModal(null)
-  }
+    setSavingRoles(false);
+    setRemoveRoleModal(null);
+  };
 
   const handleToggleRegistration = async () => {
-    setSavingRegistration(true)
-    const newStatus = !registrationOpen
-    const success = await setRegistrationOpen(newStatus)
+    setSavingRegistration(true);
+    const newStatus = !registrationOpen;
+    const success = await setRegistrationOpen(newStatus);
     if (success) {
-      setRegistrationOpenState(newStatus)
-      toast.success(newStatus ? 'Formulário de cadastro liberado.' : 'Formulário de cadastro bloqueado.')
+      setRegistrationOpenState(newStatus);
+      toast.success(
+        newStatus ? "Formulário de cadastro liberado." : "Formulário de cadastro bloqueado.",
+      );
     } else {
-      toast.error('Erro ao alterar status do cadastro.')
+      toast.error("Erro ao alterar status do cadastro.");
     }
-    setSavingRegistration(false)
-  }
+    setSavingRegistration(false);
+  };
 
   const handleSaveWhatsapp = async () => {
-    setSavingWhatsapp(true)
-    const result = await saveWhatsappSettings(whatsappSettings)
+    setSavingWhatsapp(true);
+    const result = await saveWhatsappSettings(whatsappSettings);
     if (result.success) {
-      toast.success('Configurações do WhatsApp salvas com sucesso!')
-      setIsWhatsappLocked(true)
+      toast.success("Configurações do WhatsApp salvas com sucesso!");
+      setIsWhatsappLocked(true);
     } else {
-      toast.error('Erro ao salvar as configurações: ' + (result.error || 'Desconhecido'))
+      toast.error("Erro ao salvar as configurações: " + (result.error || "Desconhecido"));
     }
-    setSavingWhatsapp(false)
-  }
+    setSavingWhatsapp(false);
+  };
 
   const handleSaveAppearance = async () => {
-    setSavingAppearance(true)
-    const success = await saveGlobalAppearanceSettings(appearance)
+    setSavingAppearance(true);
+    const success = await saveGlobalAppearanceSettings(appearance);
     if (success) {
-      toast.success('Aparência salva com sucesso! Atualize a página para ver o resultado caso já tenha sido aplicado globalmente.')
+      toast.success(
+        "Aparência salva com sucesso! Atualize a página para ver o resultado caso já tenha sido aplicado globalmente.",
+      );
     } else {
-      toast.error('Erro ao salvar as configurações de aparência.')
+      toast.error("Erro ao salvar as configurações de aparência.");
     }
-    setSavingAppearance(false)
-  }
+    setSavingAppearance(false);
+  };
 
   const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const toastId = toast.loading('Enviando imagem...')
+    const toastId = toast.loading("Enviando imagem...");
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `bg_${Date.now()}.${fileExt}`
-      
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file)
-        
-      if (uploadError) throw uploadError
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName)
-        
-      const cssString = `url('${publicUrl}')`
-      setAppearance({ ...appearance, backgroundCss: cssString })
-      toast.success('Imagem carregada! Não esqueça de clicar em Salvar Fundo.', { id: toastId })
+      const fileExt = file.name.split(".").pop();
+      const fileName = `bg_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(fileName);
+
+      const cssString = `url('${publicUrl}')`;
+      setAppearance({ ...appearance, backgroundCss: cssString });
+      toast.success("Imagem carregada! Não esqueça de clicar em Salvar Fundo.", { id: toastId });
     } catch (err: any) {
-      console.error(err)
-      toast.error('Erro ao enviar imagem: ' + err.message, { id: toastId })
+      console.error(err);
+      toast.error("Erro ao enviar imagem: " + err.message, { id: toastId });
     }
-  }
+  };
 
   const handleResetBackground = () => {
-    const defaultCss = `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`
-    setAppearance({ ...appearance, backgroundCss: defaultCss })
-    toast.success('Fundo resetado para o padrão. Clique em Salvar Fundo para confirmar.')
-  }
+    const defaultCss = `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`;
+    setAppearance({ ...appearance, backgroundCss: defaultCss });
+    toast.success("Fundo resetado para o padrão. Clique em Salvar Fundo para confirmar.");
+  };
 
   const handleUnlockWhatsapp = () => {
-    if (unlockCodeInput === '966639') {
-      setIsWhatsappLocked(false)
-      setUnlockCodeModal(false)
-      setUnlockCodeInput('')
-      toast.success('Configurações liberadas para edição.')
+    if (unlockCodeInput === "966639") {
+      setIsWhatsappLocked(false);
+      setUnlockCodeModal(false);
+      setUnlockCodeInput("");
+      toast.success("Configurações liberadas para edição.");
     } else {
-      toast.error('Código incorreto.')
+      toast.error("Código incorreto.");
     }
-  }
+  };
 
   const handleTestDds = async (isToday: boolean) => {
     // Valida se o grupo está configurado (específico ou padrão)
-    const targetGroup = whatsappSettings.ddsReminders?.specificGroupId || whatsappSettings.groupId
+    const targetGroup = whatsappSettings.ddsReminders?.specificGroupId || whatsappSettings.groupId;
     if (!targetGroup) {
-      toast.error('Você precisa configurar o ID do Grupo (específico ou padrão) antes de testar.')
-      return
+      toast.error("Você precisa configurar o ID do Grupo (específico ou padrão) antes de testar.");
+      return;
     }
 
-    const toastId = toast.loading('Enviando lembrete de teste...')
-    
+    const toastId = toast.loading("Enviando lembrete de teste...");
+
     // Tenta montar a URL de forma segura.
-    let baseUrl = whatsappSettings.url.trim()
-    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-    
-    if (baseUrl.includes('painel.w-api.app')) {
-      baseUrl = 'https://api.w-api.app/v1'
-    } else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) {
-      baseUrl = baseUrl + '/v1'
+    let baseUrl = whatsappSettings.url.trim();
+    if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+
+    if (baseUrl.includes("painel.w-api.app")) {
+      baseUrl = "https://api.w-api.app/v1";
+    } else if (baseUrl.includes("api.w-api.app") && !baseUrl.includes("/v1")) {
+      baseUrl = baseUrl + "/v1";
     }
 
-    const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
-    
-    const message = isToday 
+    const endpoint = `${baseUrl}/message/send-text?instanceId=${whatsappSettings.instanceId}`;
+
+    const message = isToday
       ? `🟢 *Gestão Sucena - Lembrete Automático*\n\nBom dia! Passando para lembrar que *hoje é o seu dia* de ministrar o DDS.\nTema: *Teste de Lembrete Automático*`
-      : `🟢 *Gestão Sucena - Aviso Prévio*\n\nBoa tarde! Passando para lembrar que *amanhã* é você quem irá ministrar o DDS.\nTema: *Teste de Aviso Prévio*`
+      : `🟢 *Gestão Sucena - Aviso Prévio*\n\nBoa tarde! Passando para lembrar que *amanhã* é você quem irá ministrar o DDS.\nTema: *Teste de Aviso Prévio*`;
 
     try {
       await testWhatsappOnServer({
@@ -486,96 +511,94 @@ function AdminRoute() {
           endpoint,
           token: whatsappSettings.token,
           number: targetGroup, // Mandando para o grupo configurado
-          text: message
-        }
-      })
-      
-      toast.success('Lembrete de teste enviado com sucesso ao grupo!', { id: toastId })
+          text: message,
+        },
+      });
+
+      toast.success("Lembrete de teste enviado com sucesso ao grupo!", { id: toastId });
     } catch (err: any) {
-      console.error("Erro da API no teste DDS:", err)
-      toast.error(err.message || 'Erro de conexão no teste do DDS.', { id: toastId })
+      console.error("Erro da API no teste DDS:", err);
+      toast.error(err.message || "Erro de conexão no teste do DDS.", { id: toastId });
     }
-  }
+  };
 
   // Handle general API test
   const handleTestApi = async () => {
     if (!testNumber.trim()) {
-      toast.error('Digite um número de WhatsApp válido.')
-      return
+      toast.error("Digite um número de WhatsApp válido.");
+      return;
     }
 
-    setIsTestingApi(true)
-    
+    setIsTestingApi(true);
+
     // Tenta montar a URL de forma segura.
-    let baseUrl = whatsappSettings.url.trim()
-    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1)
-    
+    let baseUrl = whatsappSettings.url.trim();
+    if (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+
     // Se o usuário colou a URL do painel (https://painel.w-api.app...), convertemos para a API real
-    if (baseUrl.includes('painel.w-api.app')) {
-      baseUrl = 'https://api.w-api.app/v1'
-    } else if (baseUrl.includes('api.w-api.app') && !baseUrl.includes('/v1')) {
+    if (baseUrl.includes("painel.w-api.app")) {
+      baseUrl = "https://api.w-api.app/v1";
+    } else if (baseUrl.includes("api.w-api.app") && !baseUrl.includes("/v1")) {
       // Se ele trocou manualmente para api.w-api mas esqueceu o /v1
-      baseUrl = baseUrl + '/v1'
+      baseUrl = baseUrl + "/v1";
     }
 
     // Pela documentação da W-API:
-    const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
-    
+    const endpoint = `${baseUrl}/message/send-text?instanceId=${whatsappSettings.instanceId}`;
+
     try {
       // Usa proxy pelo servidor para não dar erro de CORS no navegador
       const data = await testWhatsappOnServer({
         data: {
           endpoint,
           token: whatsappSettings.token,
-          number: testNumber.replace(/\D/g, ''),
-          text: "🟢 *Gestão Sucena* - Teste de integração do WhatsApp concluído com sucesso!"
-        }
-      })
-      
-      toast.success('Mensagem enviada com sucesso! Verifique o celular.')
-      setTestApiModal(false)
-      setTestNumber('')
+          number: testNumber.replace(/\D/g, ""),
+          text: "🟢 *Gestão Sucena* - Teste de integração do WhatsApp concluído com sucesso!",
+        },
+      });
+
+      toast.success("Mensagem enviada com sucesso! Verifique o celular.");
+      setTestApiModal(false);
+      setTestNumber("");
     } catch (err: any) {
-      console.error("Erro da API:", err)
-      toast.error(err.message || 'Erro de conexão. Verifique a URL e se a API está rodando.')
+      console.error("Erro da API:", err);
+      toast.error(err.message || "Erro de conexão. Verifique a URL e se a API está rodando.");
     } finally {
-      setIsTestingApi(false)
+      setIsTestingApi(false);
     }
-  }
+  };
 
   const handleSavePermissions = async () => {
-    setSavingPermissions(true)
-    const success = await saveAllPermissions(permissions)
+    setSavingPermissions(true);
+    const success = await saveAllPermissions(permissions);
     if (success) {
-      toast.success('Permissões salvas com sucesso!')
+      toast.success("Permissões salvas com sucesso!");
     } else {
-      toast.error('Erro ao salvar permissões.')
+      toast.error("Erro ao salvar permissões.");
     }
-    setSavingPermissions(false)
-  }
+    setSavingPermissions(false);
+  };
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#090A0C] text-white' : 'bg-[#faf9f6] text-gray-900'} p-4 md:p-8 pb-32`}>
-      
+    <div
+      className={`min-h-screen ${isDark ? "bg-[#090A0C] text-white" : "bg-[#faf9f6] text-gray-900"} p-4 md:p-8 pb-32`}
+    >
       <div className="max-w-6xl mx-auto space-y-6">
-        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 text-[#D6A72B] mb-2">
               <Shield size={32} />
-              <h1 className="text-3xl md:text-4xl tracking-tight">
-                Administração
-              </h1>
+              <h1 className="text-3xl md:text-4xl tracking-tight">Administração</h1>
             </div>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
               Gerencie os usuários do sistema, permissões e acessos.
             </p>
           </div>
-          
-          <button 
-            onClick={() => navigate({ to: '/dashboard' })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'}`}
+
+          <button
+            onClick={() => navigate({ to: "/dashboard" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-black/5 hover:bg-black/10 text-black"}`}
           >
             <ArrowLeft size={18} />
             Voltar
@@ -593,315 +616,352 @@ function AdminRoute() {
         )}
 
         {/* Tabs Navigation */}
-        <div className={`flex items-center gap-2 border-b ${isDark ? 'border-white/10' : 'border-black/10'} pb-4`}>
-          <button 
-            onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'users' ? (isDark ? 'bg-white/10 text-white' : 'bg-black text-white') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-black hover:bg-black/5') }`}
+        <div
+          className={`flex items-center gap-2 border-b ${isDark ? "border-white/10" : "border-black/10"} pb-4`}
+        >
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "users" ? (isDark ? "bg-white/10 text-white" : "bg-black text-white") : isDark ? "text-gray-400 hover:text-white hover:bg-white/5" : "text-gray-600 hover:text-black hover:bg-black/5"}`}
           >
             <Users size={18} />
             Usuários e Acessos
           </button>
-          
-          <button 
-            onClick={() => setActiveTab('whatsapp')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'whatsapp' ? 'bg-[#25D366]/20 text-[#25D366]' : (isDark ? 'text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10' : 'text-gray-600 hover:text-[#25D366] hover:bg-[#25D366]/10') }`}
+
+          <button
+            onClick={() => setActiveTab("whatsapp")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "whatsapp" ? "bg-[#25D366]/20 text-[#25D366]" : isDark ? "text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10" : "text-gray-600 hover:text-[#25D366] hover:bg-[#25D366]/10"}`}
           >
             <MessageCircle size={18} />
             WhatsApp API
           </button>
-          
-          <button 
-            onClick={() => setActiveTab('permissions')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'permissions' ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50') }`}
+
+          <button
+            onClick={() => setActiveTab("permissions")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "permissions" ? (isDark ? "bg-indigo-500/20 text-indigo-400" : "bg-indigo-50 text-indigo-600") : isDark ? "text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10" : "text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"}`}
           >
             <Lock size={18} />
             Permissões de Páginas
           </button>
 
-          <button 
-            onClick={() => setActiveTab('appearance')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'appearance' ? (isDark ? 'bg-pink-500/20 text-pink-400' : 'bg-pink-50 text-pink-600') : (isDark ? 'text-gray-400 hover:text-pink-400 hover:bg-pink-500/10' : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50') }`}
+          <button
+            onClick={() => setActiveTab("appearance")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "appearance" ? (isDark ? "bg-pink-500/20 text-pink-400" : "bg-pink-50 text-pink-600") : isDark ? "text-gray-400 hover:text-pink-400 hover:bg-pink-500/10" : "text-gray-600 hover:text-pink-600 hover:bg-pink-50"}`}
           >
             <Megaphone size={18} />
             Aparência Global
           </button>
-          
-          <button 
-            onClick={() => setActiveTab('motoristas')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'motoristas' ? (isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50') }`}
+
+          <button
+            onClick={() => setActiveTab("motoristas")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "motoristas" ? (isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-50 text-blue-600") : isDark ? "text-gray-400 hover:text-blue-400 hover:bg-blue-500/10" : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"}`}
           >
             <Smartphone size={18} />
             Motoristas (App)
           </button>
 
-          <button 
-            onClick={() => setActiveTab('comunicados')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'comunicados' ? (isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-700') : (isDark ? 'text-gray-400 hover:text-amber-400 hover:bg-amber-500/10' : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50') }`}
+          <button
+            onClick={() => setActiveTab("comunicados")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "comunicados" ? (isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-50 text-amber-700") : isDark ? "text-gray-400 hover:text-amber-400 hover:bg-amber-500/10" : "text-gray-600 hover:text-amber-700 hover:bg-amber-50"}`}
           >
             <Megaphone size={18} />
             Comunicados
           </button>
         </div>
 
-        {activeTab === 'comunicados' && (
-          <ComunicadosAdmin isDark={isDark} />
-        )}
+        {activeTab === "comunicados" && <ComunicadosAdmin isDark={isDark} />}
 
-        {activeTab === 'motoristas' && (
-          <NotificacoesMotoristas isDark={isDark} />
-        )}
+        {activeTab === "motoristas" && <NotificacoesMotoristas isDark={isDark} />}
 
-        {activeTab === 'users' && (
-          <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
-          
-          <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <UserIcon className="text-[#D6A72B]" size={20} />
-              Usuários Cadastrados ({users.length})
-            </h2>
-            
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus-within:border-[#D6A72B]'}`}>
-              <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Buscar usuário..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="bg-transparent outline-none text-sm w-full md:w-64"
-              />
+        {activeTab === "users" && (
+          <div
+            className={`rounded-2xl p-1 shadow-sm border ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
+          >
+            <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <UserIcon className="text-[#D6A72B]" size={20} />
+                Usuários Cadastrados ({users.length})
+              </h2>
+
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? "bg-[#0a0a0c] border-white/10 focus-within:border-[#D6A72B]" : "bg-gray-50 border-gray-200 focus-within:border-[#D6A72B]"}`}
+              >
+                <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar usuário..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-transparent outline-none text-sm w-full md:w-64"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                <tr>
-                  <th className="px-6 py-4 font-medium">Usuário</th>
-                  <th className="px-6 py-4 font-medium">Contato</th>
-                  <th className="px-6 py-4 font-medium">Cargo / Role</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-white/5">
-                {loading ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead
+                  className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                >
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                      Carregando usuários...
-                    </td>
+                    <th className="px-6 py-4 font-medium">Usuário</th>
+                    <th className="px-6 py-4 font-medium">Contato</th>
+                    <th className="px-6 py-4 font-medium">Cargo / Role</th>
+                    <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium text-right">Ações</th>
                   </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                      Nenhum usuário encontrado.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map(user => {
-                    const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                    const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
-                    const displayId = String(seqIndex).padStart(4, '0');
-
-                    return (
-                      <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
-                              {user.avatar_url ? (
-                                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <UserIcon size={20} className="text-[#5f6472] dark:text-gray-400" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium flex items-center gap-1">
-                                {user.name}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate w-32 md:w-auto" title={user.id}>
-                                ID: {displayId}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-gray-600 dark:text-gray-300">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes('admin') || user.role?.toLowerCase().includes('diretor') ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}`}>
-                            {user.role || 'Usuário'}
-                          </span>
-                        </td>
-                      <td className="px-6 py-4">
-                        {user.banned_until ? (
-                          <div className="flex items-center gap-1.5 text-red-500 font-medium">
-                            <Ban size={14} /> Bloqueado
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-green-500 font-medium">
-                            <CheckCircle2 size={14} /> Ativo
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={() => {
-                              setEditingUser(user)
-                              setEditName(user.name)
-                              setEditRole(user.role)
-                              setEditPassword('')
-                            }}
-                            className="p-2 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          
-                          <button 
-                            onClick={() => setBlockUserModal(user)}
-                            className={`p-2 rounded-lg transition-colors ${user.banned_until ? 'text-green-500 hover:bg-green-500/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
-                            title={user.banned_until ? "Desbloquear" : "Bloquear"}
-                          >
-                            {user.banned_until ? <ShieldAlert size={18} /> : <Ban size={18} />}
-                          </button>
-                          
-                          <button 
-                            onClick={() => {
-                              setDeleteUserModal(user)
-                              setDeleteEmailInput('')
-                            }}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-white/5">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        Carregando usuários...
                       </td>
                     </tr>
-                  );
-                })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        )}
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        Nenhum usuário encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((user) => {
+                      const sortedAllUsers = [...users].sort(
+                        (a, b) =>
+                          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+                      );
+                      const seqIndex = sortedAllUsers.findIndex((u) => u.id === user.id) + 1;
+                      const displayId = String(seqIndex).padStart(4, "0");
 
+                      return (
+                        <tr
+                          key={user.id}
+                          className={`${isDark ? "hover:bg-white/5" : "hover:bg-black/5"} transition-colors`}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                                {user.avatar_url ? (
+                                  <img
+                                    src={user.avatar_url}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <UserIcon
+                                    size={20}
+                                    className="text-[#5f6472] dark:text-gray-400"
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium flex items-center gap-1">
+                                  {user.name}
+                                </div>
+                                <div
+                                  className="text-xs text-gray-500 truncate w-32 md:w-auto"
+                                  title={user.id}
+                                >
+                                  ID: {displayId}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-gray-600 dark:text-gray-300">{user.email}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes("admin") || user.role?.toLowerCase().includes("diretor") ? "bg-yellow-500/20 text-[#D6A72B]" : "bg-blue-500/10 text-blue-500 dark:text-blue-400"}`}
+                            >
+                              {user.role || "Usuário"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {user.banned_until ? (
+                              <div className="flex items-center gap-1.5 text-red-500 font-medium">
+                                <Ban size={14} /> Bloqueado
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-green-500 font-medium">
+                                <CheckCircle2 size={14} /> Ativo
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingUser(user);
+                                  setEditName(user.name);
+                                  setEditRole(user.role);
+                                  setEditPassword("");
+                                }}
+                                className="p-2 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+
+                              <button
+                                onClick={() => setBlockUserModal(user)}
+                                className={`p-2 rounded-lg transition-colors ${user.banned_until ? "text-green-500 hover:bg-green-500/10" : "text-orange-500 hover:bg-orange-500/10"}`}
+                                title={user.banned_until ? "Desbloquear" : "Bloquear"}
+                              >
+                                {user.banned_until ? <ShieldAlert size={18} /> : <Ban size={18} />}
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setDeleteUserModal(user);
+                                  setDeleteEmailInput("");
+                                }}
+                                className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                                title="Excluir"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
-      {activeTab === 'users' && (
+      {activeTab === "users" && (
         <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          
           {/* Registration Toggle */}
-        <div className={`rounded-2xl p-6 shadow-sm border flex flex-col justify-between ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
-          <div>
-            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-              {registrationOpen ? (
-                <Unlock className="text-green-500" size={20} />
-              ) : (
-                <Lock className="text-red-500" size={20} />
-              )}
-              Status do Cadastro
-            </h2>
-            <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Determine se a opção de <strong>Criar Nova Conta</strong> deve aparecer na tela de login inicial. Ideal para bloquear cadastros quando não forem necessários.
-            </p>
-          </div>
-          
-          <button 
-            onClick={handleToggleRegistration}
-            disabled={savingRegistration}
-            className={`w-full py-3 px-4 font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${registrationOpen ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-green-500 text-white hover:bg-green-600' }`}
+          <div
+            className={`rounded-2xl p-6 shadow-sm border flex flex-col justify-between ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
           >
-            {registrationOpen ? 'Desativar Cadastros' : 'Ativar Cadastros'}
-          </button>
-        </div>
+            <div>
+              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                {registrationOpen ? (
+                  <Unlock className="text-green-500" size={20} />
+                ) : (
+                  <Lock className="text-red-500" size={20} />
+                )}
+                Status do Cadastro
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Determine se a opção de <strong>Criar Nova Conta</strong> deve aparecer na tela de
+                login inicial. Ideal para bloquear cadastros quando não forem necessários.
+              </p>
+            </div>
 
-        {/* Roles Manager */}
-        <div className={`rounded-2xl p-6 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <Shield className="text-[#D6A72B]" size={20} />
-            Gerenciar Cargos Disponíveis
-          </h2>
-          <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            Esses cargos aparecerão como opções na tela de cadastro e na edição de perfil.
-          </p>
-
-          <div className="flex flex-wrap gap-2 mb-6">
-            {availableRoles.map(role => (
-              <div key={role} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border ${isDark ? 'bg-white/5 border-white/10 text-gray-200' : 'bg-black/5 border-black/10 text-gray-700'}`}>
-                {role}
-                <button 
-                  onClick={() => setRemoveRoleModal(role)}
-                  disabled={savingRoles}
-                  className="p-0.5 rounded-full hover:bg-red-500/20 hover:text-red-500 transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input 
-              type="text" 
-              value={newRole}
-              onChange={e => setNewRole(e.target.value)}
-              placeholder="Digite um novo cargo..."
-              className={`px-4 py-2 rounded-xl text-sm border outline-none transition-colors w-64 ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
-              onKeyDown={e => e.key === 'Enter' && handleAddRole()}
-            />
-            <button 
-              onClick={handleAddRole}
-              disabled={savingRoles || !newRole.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-[#D6A72B] hover:bg-[#E2BB57] text-black font-semibold rounded-xl text-sm transition-colors disabled:opacity-50"
+            <button
+              onClick={handleToggleRegistration}
+              disabled={savingRegistration}
+              className={`w-full py-3 px-4 font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${registrationOpen ? "bg-red-500/10 text-red-500 hover:bg-red-500/20" : "bg-green-500 text-white hover:bg-green-600"}`}
             >
-              <Plus size={16} />
-              Adicionar
+              {registrationOpen ? "Desativar Cadastros" : "Ativar Cadastros"}
             </button>
           </div>
+
+          {/* Roles Manager */}
+          <div
+            className={`rounded-2xl p-6 shadow-sm border ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
+          >
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+              <Shield className="text-[#D6A72B]" size={20} />
+              Gerenciar Cargos Disponíveis
+            </h2>
+            <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Esses cargos aparecerão como opções na tela de cadastro e na edição de perfil.
+            </p>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {availableRoles.map((role) => (
+                <div
+                  key={role}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border ${isDark ? "bg-white/5 border-white/10 text-gray-200" : "bg-black/5 border-black/10 text-gray-700"}`}
+                >
+                  {role}
+                  <button
+                    onClick={() => setRemoveRoleModal(role)}
+                    disabled={savingRoles}
+                    className="p-0.5 rounded-full hover:bg-red-500/20 hover:text-red-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                placeholder="Digite um novo cargo..."
+                className={`px-4 py-2 rounded-xl text-sm border outline-none transition-colors w-64 ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-gray-50 border-gray-200 focus:border-[#D6A72B]"}`}
+                onKeyDown={(e) => e.key === "Enter" && handleAddRole()}
+              />
+              <button
+                onClick={handleAddRole}
+                disabled={savingRoles || !newRole.trim()}
+                className="flex items-center gap-2 px-4 py-2 bg-[#D6A72B] hover:bg-[#E2BB57] text-black font-semibold rounded-xl text-sm transition-colors disabled:opacity-50"
+              >
+                <Plus size={16} />
+                Adicionar
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
       )}
 
-      {activeTab === 'whatsapp' && (
+      {activeTab === "whatsapp" && (
         /* WhatsApp API Tab */
-        <div className={`max-w-6xl mx-auto mt-8 rounded-2xl p-6 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+        <div
+          className={`max-w-6xl mx-auto mt-8 rounded-2xl p-6 shadow-sm border ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
+        >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-[#25D366]/20 flex items-center justify-center text-[#25D366]">
               <MessageCircle size={24} />
             </div>
             <div>
               <h2 className="text-xl font-bold">WhatsApp API (W-API)</h2>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Configure a instância e envie mensagens automáticas</p>
+              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                Configure a instância e envie mensagens automáticas
+              </p>
             </div>
           </div>
 
           <div className="mt-8 space-y-6">
             <h3 className="text-lg font-bold">Configuração da Instância</h3>
-            <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Informe a URL base da instância W-API, o ID da instância e o Token de autenticação.</p>
-            
+            <p className={`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Informe a URL base da instância W-API, o ID da instância e o Token de autenticação.
+            </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-2">URL da Instância</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={whatsappSettings.url}
-                  onChange={e => setWhatsappSettings({...whatsappSettings, url: e.target.value})}
+                  onChange={(e) =>
+                    setWhatsappSettings({ ...whatsappSettings, url: e.target.value })
+                  }
                   disabled={isWhatsappLocked}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                   placeholder="Ex: https://painel.w-api.app/app/instances"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold mb-2">Instance ID</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={whatsappSettings.instanceId}
-                  onChange={e => setWhatsappSettings({...whatsappSettings, instanceId: e.target.value})}
+                  onChange={(e) =>
+                    setWhatsappSettings({ ...whatsappSettings, instanceId: e.target.value })
+                  }
                   disabled={isWhatsappLocked}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                   placeholder="Ex: LITE-GU764..."
                 />
               </div>
@@ -909,55 +969,83 @@ function AdminRoute() {
 
             <div>
               <label className="block text-sm font-semibold mb-2">Token</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={whatsappSettings.token}
-                onChange={e => setWhatsappSettings({...whatsappSettings, token: e.target.value})}
+                onChange={(e) =>
+                  setWhatsappSettings({ ...whatsappSettings, token: e.target.value })
+                }
                 disabled={isWhatsappLocked}
-                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                 placeholder="••••••••••••••••••••••"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold mb-2">ID do Grupo (opcional)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={whatsappSettings.groupId}
-                onChange={e => setWhatsappSettings({...whatsappSettings, groupId: e.target.value})}
+                onChange={(e) =>
+                  setWhatsappSettings({ ...whatsappSettings, groupId: e.target.value })
+                }
                 disabled={isWhatsappLocked}
-                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                 placeholder="Ex: 120363374999567363@g.us"
               />
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Informe o ID do grupo do WhatsApp (formato: ...@g.us). Será usado quando a opção "Enviar para grupo" estiver ativa.</p>
+              <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                Informe o ID do grupo do WhatsApp (formato: ...@g.us). Será usado quando a opção
+                "Enviar para grupo" estiver ativa.
+              </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">📱 Telefone do Administrador (privado)</label>
-              <input 
-                type="text" 
-                value={whatsappSettings.adminPhone || ''}
-                onChange={e => setWhatsappSettings({...whatsappSettings, adminPhone: e.target.value})}
+              <label className="block text-sm font-semibold mb-2">
+                📱 Telefone do Administrador (privado)
+              </label>
+              <input
+                type="text"
+                value={whatsappSettings.adminPhone || ""}
+                onChange={(e) =>
+                  setWhatsappSettings({ ...whatsappSettings, adminPhone: e.target.value })
+                }
                 disabled={isWhatsappLocked}
-                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                 placeholder="Ex: 5591999999999"
               />
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Telefone do admin para receber lembretes privados (somente para você). Formato: DDI+DDD+Número, sem espaços. Ex: <strong>5591999998888</strong></p>
+              <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                Telefone do admin para receber lembretes privados (somente para você). Formato:
+                DDI+DDD+Número, sem espaços. Ex: <strong>5591999998888</strong>
+              </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">Intervalo entre envios (segundos)</label>
-              <input 
-                type="number" 
+              <label className="block text-sm font-semibold mb-2">
+                Intervalo entre envios (segundos)
+              </label>
+              <input
+                type="number"
                 value={whatsappSettings.interval}
-                onChange={e => setWhatsappSettings({...whatsappSettings, interval: parseInt(e.target.value) || 30})}
+                onChange={(e) =>
+                  setWhatsappSettings({
+                    ...whatsappSettings,
+                    interval: parseInt(e.target.value) || 30,
+                  })
+                }
                 min="5"
                 disabled={isWhatsappLocked}
-                className={`w-full max-w-[200px] px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full max-w-[200px] px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
               />
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'} leading-relaxed`}>
-                Aguarda esse tempo entre cada mensagem para evitar bloqueio/banimento do número no WhatsApp. Recomendado: 5–15s.<br/>
-                <span className="text-[#25D366]">✧ Todas as mensagens automáticas entram em uma fila global e respeitam este intervalo — mesmo quando disparadas no mesmo horário.</span>
+              <p
+                className={`text-xs mt-2 ${isDark ? "text-gray-400" : "text-gray-500"} leading-relaxed`}
+              >
+                Aguarda esse tempo entre cada mensagem para evitar bloqueio/banimento do número no
+                WhatsApp. Recomendado: 5–15s.
+                <br />
+                <span className="text-[#25D366]">
+                  ✧ Todas as mensagens automáticas entram em uma fila global e respeitam este
+                  intervalo — mesmo quando disparadas no mesmo horário.
+                </span>
               </p>
             </div>
 
@@ -967,34 +1055,56 @@ function AdminRoute() {
                 <Bell size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Lembrete Automático do DDS
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Envia mensagens automáticas no WhatsApp do palestrante agendado, com base no horário do Pará.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Envia mensagens automáticas no WhatsApp do palestrante agendado, com base no horário
+                do Pará.
               </p>
 
               <div className="space-y-4">
                 {/* Lembrete 06h */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, enabled_0600: !prev.ddsReminders?.enabled_0600 } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          ddsReminders: {
+                            ...prev.ddsReminders!,
+                            enabled_0600: !prev.ddsReminders?.enabled_0600,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_0600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_0600 ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_0600 ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_0600 ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
                     <div>
-                      <span className="font-semibold text-sm block">Lembrete às 06:00h do dia do DDS (hoje é o seu dia)</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia somente no grupo do DDS</span>
+                      <span className="font-semibold text-sm block">
+                        Lembrete às 06:00h do dia do DDS (hoje é o seu dia)
+                      </span>
+                      <span
+                        className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                      >
+                        ↳ Envia somente no grupo do DDS
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_0600 ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                      {whatsappSettings.ddsReminders?.enabled_0600 ? 'Ativo' : 'Inativo'}
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_0600 ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                    >
+                      {whatsappSettings.ddsReminders?.enabled_0600 ? "Ativo" : "Inativo"}
                     </span>
-                    <button 
+                    <button
                       onClick={() => handleTestDds(true)}
                       disabled={!isWhatsappLocked && !whatsappSettings.url}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? "border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white" : "border-gray-300 hover:bg-black/5 text-black"} ${!isWhatsappLocked && !whatsappSettings.url ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <Play size={14} /> Testar
                     </button>
@@ -1002,28 +1112,49 @@ function AdminRoute() {
                 </div>
 
                 {/* Aviso 16h */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, enabled_1600: !prev.ddsReminders?.enabled_1600 } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          ddsReminders: {
+                            ...prev.ddsReminders!,
+                            enabled_1600: !prev.ddsReminders?.enabled_1600,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_1600 ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.ddsReminders?.enabled_1600 ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_1600 ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.ddsReminders?.enabled_1600 ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
                     <div>
-                      <span className="font-semibold text-sm block">Aviso 1 dia antes às 16:00h (você palestra amanhã)</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia somente no WhatsApp privado do palestrante</span>
+                      <span className="font-semibold text-sm block">
+                        Aviso 1 dia antes às 16:00h (você palestra amanhã)
+                      </span>
+                      <span
+                        className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                      >
+                        ↳ Envia somente no WhatsApp privado do palestrante
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_1600 ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                      {whatsappSettings.ddsReminders?.enabled_1600 ? 'Ativo' : 'Inativo'}
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.ddsReminders?.enabled_1600 ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                    >
+                      {whatsappSettings.ddsReminders?.enabled_1600 ? "Ativo" : "Inativo"}
                     </span>
-                    <button 
+                    <button
                       onClick={() => handleTestDds(false)}
                       disabled={!isWhatsappLocked && !whatsappSettings.url}
-                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? 'border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-black/5 text-black'} ${(!isWhatsappLocked && !whatsappSettings.url) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${isDark ? "border-white/20 hover:bg-white/5 text-[#1c1d21] dark:text-white" : "border-gray-300 hover:bg-black/5 text-black"} ${!isWhatsappLocked && !whatsappSettings.url ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <Play size={14} /> Testar
                     </button>
@@ -1031,32 +1162,50 @@ function AdminRoute() {
                 </div>
 
                 {/* ID do grupo específico */}
-                <div className={`p-6 rounded-xl border mt-6 ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border mt-6 ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <h4 className="flex items-center gap-2 font-bold mb-3 text-sm">
                     <Megaphone size={16} className="text-[#D6A72B]" />
                     ID do grupo para mensagens do DDS
                   </h4>
-                  <p className={`text-sm mb-4 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Este grupo receberá <strong>todas as mensagens automáticas relacionadas ao DDS</strong>: lembretes do palestrante, aviso 1 dia antes e a <strong>foto da Lista de Presença</strong> postada no dia. Se deixar em branco, será usado o grupo padrão configurado acima.
+                  <p
+                    className={`text-sm mb-4 leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                  >
+                    Este grupo receberá{" "}
+                    <strong>todas as mensagens automáticas relacionadas ao DDS</strong>: lembretes
+                    do palestrante, aviso 1 dia antes e a <strong>foto da Lista de Presença</strong>{" "}
+                    postada no dia. Se deixar em branco, será usado o grupo padrão configurado
+                    acima.
                   </p>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.ddsReminders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.ddsReminders?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          ddsReminders: { ...prev.ddsReminders!, specificGroupId: e.target.value },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363408136247156@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez
+                      do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
-                
-                <p className={`text-xs mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Requisitos: integração W-API habilitada, palestrante com usuário interno cadastrado e número de WhatsApp preenchido no perfil. Lembre-se de salvar a configuração após alterar estes botões.
+
+                <p className={`text-xs mt-4 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                  Requisitos: integração W-API habilitada, palestrante com usuário interno
+                  cadastrado e número de WhatsApp preenchido no perfil. Lembre-se de salvar a
+                  configuração após alterar estes botões.
                 </p>
               </div>
             </div>
@@ -1067,40 +1216,71 @@ function AdminRoute() {
                 <Smartphone size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Notificações do App Motorista
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Envia mensagens automáticas quando houver registro/correção de anomalias ou alterações de status da operação.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Envia mensagens automáticas quando houver registro/correção de anomalias ou
+                alterações de status da operação.
               </p>
 
               <div className="space-y-6">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, enabled: !prev.appMotoristaAlerts?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          appMotoristaAlerts: {
+                            ...prev.appMotoristaAlerts!,
+                            enabled: !prev.appMotoristaAlerts?.enabled,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.appMotoristaAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.appMotoristaAlerts?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.appMotoristaAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.appMotoristaAlerts?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Ativar envio de Alertas e Anomalias</span>
+                    <span className="font-semibold text-sm">
+                      Ativar envio de Alertas e Anomalias
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.appMotoristaAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.appMotoristaAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.appMotoristaAlerts?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.appMotoristaAlerts?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.appMotoristaAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.appMotoristaAlerts?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          appMotoristaAlerts: {
+                            ...prev.appMotoristaAlerts!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363406691114696@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas e anomalias serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, os alertas e anomalias serão enviados para este grupo
+                      específico em vez do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
@@ -1113,40 +1293,69 @@ function AdminRoute() {
                 <span className="text-xl">🚜</span>
                 Notificações de Movimentação de Equipamentos
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Envia mensagens automáticas quando houver registro de entrada ou saída de equipamentos da obra.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Envia mensagens automáticas quando houver registro de entrada ou saída de
+                equipamentos da obra.
               </p>
 
               <div className="space-y-6">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, equipamentosMovimentacao: { ...prev.equipamentosMovimentacao!, enabled: !prev.equipamentosMovimentacao?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          equipamentosMovimentacao: {
+                            ...prev.equipamentosMovimentacao!,
+                            enabled: !prev.equipamentosMovimentacao?.enabled,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.equipamentosMovimentacao?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.equipamentosMovimentacao?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.equipamentosMovimentacao?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.equipamentosMovimentacao?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
                     <span className="font-semibold text-sm">Ativar envio de Entrada e Saída</span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.equipamentosMovimentacao?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.equipamentosMovimentacao?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.equipamentosMovimentacao?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.equipamentosMovimentacao?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.equipamentosMovimentacao?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, equipamentosMovimentacao: { ...prev.equipamentosMovimentacao!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.equipamentosMovimentacao?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          equipamentosMovimentacao: {
+                            ...prev.equipamentosMovimentacao!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363406691114696@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas de entrada e saída serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, os alertas de entrada e saída serão enviados para este
+                      grupo específico em vez do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
@@ -1159,87 +1368,156 @@ function AdminRoute() {
                 <span className="text-xl">🔗</span>
                 Notificações de Inspeção de Cintas
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Envia aviso todo dia 1º do mês para o grupo com a lista de cintas a inspecionar. Também notifica quando uma cinta é marcada como inspecionada no sistema.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Envia aviso todo dia 1º do mês para o grupo com a lista de cintas a inspecionar.
+                Também notifica quando uma cinta é marcada como inspecionada no sistema.
               </p>
 
               <div className="space-y-6">
                 {/* Toggle ativo/inativo */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, cintasInspection: { ...prev.cintasInspection!, enabled: !prev.cintasInspection?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          cintasInspection: {
+                            ...prev.cintasInspection!,
+                            enabled: !prev.cintasInspection?.enabled,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.cintasInspection?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.cintasInspection?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.cintasInspection?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.cintasInspection?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
                     <div>
-                      <span className="font-semibold text-sm block">Ativar notificações de Inspeção de Cintas</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Aviso no dia 1º + confirmação ao inspecionar</span>
+                      <span className="font-semibold text-sm block">
+                        Ativar notificações de Inspeção de Cintas
+                      </span>
+                      <span
+                        className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                      >
+                        ↳ Aviso no dia 1º + confirmação ao inspecionar
+                      </span>
                     </div>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.cintasInspection?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.cintasInspection?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.cintasInspection?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.cintasInspection?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
                 {/* ID do grupo */}
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <h4 className="flex items-center gap-2 font-bold mb-3 text-sm">
                     <Megaphone size={16} className="text-[#D6A72B]" />
                     ID do grupo para mensagens de Cintas
                   </h4>
-                  <p className={`text-sm mb-4 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Este grupo receberá o <strong>aviso mensal (dia 1º)</strong> com a lista de cintas pendentes e a <strong>confirmação de cada inspeção registrada</strong>. Se deixar em branco, será usado o grupo padrão configurado acima.
+                  <p
+                    className={`text-sm mb-4 leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                  >
+                    Este grupo receberá o <strong>aviso mensal (dia 1º)</strong> com a lista de
+                    cintas pendentes e a <strong>confirmação de cada inspeção registrada</strong>.
+                    Se deixar em branco, será usado o grupo padrão configurado acima.
                   </p>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para Cintas</label>
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para Cintas
+                    </label>
                     <input
                       type="text"
-                      value={whatsappSettings.cintasInspection?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, cintasInspection: { ...prev.cintasInspection!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.cintasInspection?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          cintasInspection: {
+                            ...prev.cintasInspection!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363408136247156@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, as notificações de cintas serão enviadas para este grupo específico.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, as notificações de cintas serão enviadas para este grupo
+                      específico.
                     </p>
                   </div>
                 </div>
 
                 {/* Templates editáveis */}
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'} space-y-5`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"} space-y-5`}
+                >
                   <h4 className="font-bold text-sm mb-2">Modelos de mensagem</h4>
 
                   <div>
-                    <label className="block text-xs font-semibold mb-1">🗓️ Aviso mensal (dia 1º do mês)</label>
-                    <p className={`text-[11px] mb-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Variáveis: <code>{'{mes}'}</code>, <code>{'{cor}'}</code>, <code>{'{lista_cintas}'}</code></p>
+                    <label className="block text-xs font-semibold mb-1">
+                      🗓️ Aviso mensal (dia 1º do mês)
+                    </label>
+                    <p className={`text-[11px] mb-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                      Variáveis: <code>{"{mes}"}</code>, <code>{"{cor}"}</code>,{" "}
+                      <code>{"{lista_cintas}"}</code>
+                    </p>
                     <textarea
-                      value={whatsappSettings.messageTemplates?.cintasAvisoMensal || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates!, cintasAvisoMensal: e.target.value } }))}
+                      value={whatsappSettings.messageTemplates?.cintasAvisoMensal || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          messageTemplates: {
+                            ...prev.messageTemplates!,
+                            cintasAvisoMensal: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
                       rows={6}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm font-mono ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm font-mono ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold mb-1">✅ Confirmação de cinta inspecionada</label>
-                    <p className={`text-[11px] mb-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Variáveis: <code>{'{tag}'}</code>, <code>{'{descricao}'}</code>, <code>{'{cor}'}</code>, <code>{'{data}'}</code>, <code>{'{responsavel}'}</code></p>
+                    <label className="block text-xs font-semibold mb-1">
+                      ✅ Confirmação de cinta inspecionada
+                    </label>
+                    <p className={`text-[11px] mb-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                      Variáveis: <code>{"{tag}"}</code>, <code>{"{descricao}"}</code>,{" "}
+                      <code>{"{cor}"}</code>, <code>{"{data}"}</code>,{" "}
+                      <code>{"{responsavel}"}</code>
+                    </p>
                     <textarea
-                      value={whatsappSettings.messageTemplates?.cintasInspecionada || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates!, cintasInspecionada: e.target.value } }))}
+                      value={whatsappSettings.messageTemplates?.cintasInspecionada || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          messageTemplates: {
+                            ...prev.messageTemplates!,
+                            cintasInspecionada: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
                       rows={6}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm font-mono ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm font-mono ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                     />
                   </div>
                 </div>
 
-                <p className={`text-xs mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Requisitos: integração W-API habilitada e grupo de WhatsApp configurado. Lembre-se de salvar após alterar estas configurações.
+                <p className={`text-xs mt-4 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                  Requisitos: integração W-API habilitada e grupo de WhatsApp configurado. Lembre-se
+                  de salvar após alterar estas configurações.
                 </p>
               </div>
             </div>
@@ -1250,46 +1528,80 @@ function AdminRoute() {
                 <Send size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Envio Automático de Requisições
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Quando habilitado, ao finalizar uma requisição (EPI ou Material) o sistema envia automaticamente para o <strong>grupo configurado</strong> uma mensagem com os detalhes dos itens e a <strong>imagem da requisição</strong>, respeitando o intervalo de segurança configurado.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Quando habilitado, ao finalizar uma requisição (EPI ou Material) o sistema envia
+                automaticamente para o <strong>grupo configurado</strong> uma mensagem com os
+                detalhes dos itens e a <strong>imagem da requisição</strong>, respeitando o
+                intervalo de segurança configurado.
               </p>
 
               <div className="space-y-6">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, enabled: !prev.requisitionAlerts?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          requisitionAlerts: {
+                            ...prev.requisitionAlerts!,
+                            enabled: !prev.requisitionAlerts?.enabled,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.requisitionAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.requisitionAlerts?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.requisitionAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.requisitionAlerts?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Ativar envio automático ao finalizar uma requisição</span>
+                    <span className="font-semibold text-sm">
+                      Ativar envio automático ao finalizar uma requisição
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.requisitionAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.requisitionAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.requisitionAlerts?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.requisitionAlerts?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.requisitionAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.requisitionAlerts?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          requisitionAlerts: {
+                            ...prev.requisitionAlerts!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363406691114696@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez
+                      do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
-                
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Requisitos: integração W-API habilitada e ID do grupo preenchido. Lembre-se de salvar a configuração após alterar este botão.
+
+                <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                  Requisitos: integração W-API habilitada e ID do grupo preenchido. Lembre-se de
+                  salvar a configuração após alterar este botão.
                 </p>
               </div>
             </div>
@@ -1300,54 +1612,99 @@ function AdminRoute() {
                 <Bell size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Envio Automático de Lembretes
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Quando habilitado, o sistema envia automaticamente os lembretes respeitando o agendamento:
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Quando habilitado, o sistema envia automaticamente os lembretes respeitando o
+                agendamento:
                 <ul className="list-disc ml-5 mt-2 space-y-1">
-                  <li>Lembretes <strong>com horário definido</strong> são enviados no horário escolhido (Pará UTC-4).</li>
-                  <li>Lembretes <strong>sem horário</strong> são enviados às 06:00h da manhã.</li>
-                  <li>Se houver aviso antecipado (ex: 1 dia antes), o envio antecipado é realizado às <strong>16:00h</strong> daquele dia.</li>
-                  <li>Lembretes <strong>recorrentes</strong> (dias da semana) são enviados no horário configurado.</li>
-                  <li>Se mencionar <strong>todos</strong> → vai para o <strong>grupo configurado</strong>; senão → vai no <strong>privado</strong> do criador e dos usuários mencionados.</li>
-                  <li>Se o criador adiar o lembrete para outro dia, o envio do WhatsApp também é <strong>adiado automaticamente</strong> para a nova data.</li>
+                  <li>
+                    Lembretes <strong>com horário definido</strong> são enviados no horário
+                    escolhido (Pará UTC-4).
+                  </li>
+                  <li>
+                    Lembretes <strong>sem horário</strong> são enviados às 06:00h da manhã.
+                  </li>
+                  <li>
+                    Se houver aviso antecipado (ex: 1 dia antes), o envio antecipado é realizado às{" "}
+                    <strong>16:00h</strong> daquele dia.
+                  </li>
+                  <li>
+                    Lembretes <strong>recorrentes</strong> (dias da semana) são enviados no horário
+                    configurado.
+                  </li>
+                  <li>
+                    Se mencionar <strong>todos</strong> → vai para o{" "}
+                    <strong>grupo configurado</strong>; senão → vai no <strong>privado</strong> do
+                    criador e dos usuários mencionados.
+                  </li>
+                  <li>
+                    Se o criador adiar o lembrete para outro dia, o envio do WhatsApp também é{" "}
+                    <strong>adiado automaticamente</strong> para a nova data.
+                  </li>
                 </ul>
               </p>
 
               <div className="space-y-6">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, reminders: { ...prev.reminders!, enabled: !prev.reminders?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          reminders: { ...prev.reminders!, enabled: !prev.reminders?.enabled },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.reminders?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.reminders?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.reminders?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.reminders?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Ativar envio automático de lembretes no horário agendado</span>
+                    <span className="font-semibold text-sm">
+                      Ativar envio automático de lembretes no horário agendado
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.reminders?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.reminders?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.reminders?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.reminders?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.reminders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, reminders: { ...prev.reminders!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.reminders?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          reminders: { ...prev.reminders!, specificGroupId: e.target.value },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363408136247156@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez
+                      do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
-                
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Requisitos: integração W-API habilitada, ID do grupo preenchido (para lembretes de "todos") e usuários com WhatsApp cadastrado (para envios privados). Lembre-se de salvar a configuração após alterar este botão.
+
+                <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                  Requisitos: integração W-API habilitada, ID do grupo preenchido (para lembretes de
+                  "todos") e usuários com WhatsApp cadastrado (para envios privados). Lembre-se de
+                  salvar a configuração após alterar este botão.
                 </p>
               </div>
             </div>
@@ -1357,104 +1714,181 @@ function AdminRoute() {
                 <Send size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Envio Automático da Lista de Presença
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Quando habilitado, ao <strong>salvar a Lista de Presença diária</strong> (Gabião, Jardinagem, ADM, Transporte ou nova area criada) o sistema envia automaticamente para o <strong>grupo configurado</strong> o <strong>texto formatado</strong> com presentes, ausentes e total da área, respeitando o intervalo de segurança configurado.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Quando habilitado, ao <strong>salvar a Lista de Presença diária</strong> (Gabião,
+                Jardinagem, ADM, Transporte ou nova area criada) o sistema envia automaticamente
+                para o <strong>grupo configurado</strong> o <strong>texto formatado</strong> com
+                presentes, ausentes e total da área, respeitando o intervalo de segurança
+                configurado.
               </p>
 
               <div className="space-y-6">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, enabled: !prev.attendanceAlerts?.enabled } }))}
+                      onClick={() =>
+                        !isWhatsappLocked &&
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          attendanceAlerts: {
+                            ...prev.attendanceAlerts!,
+                            enabled: !prev.attendanceAlerts?.enabled,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.attendanceAlerts?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.attendanceAlerts?.enabled ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.attendanceAlerts?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.attendanceAlerts?.enabled ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Ativar envio automático ao salvar a Lista de Presença</span>
+                    <span className="font-semibold text-sm">
+                      Ativar envio automático ao salvar a Lista de Presença
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.attendanceAlerts?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.attendanceAlerts?.enabled ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.attendanceAlerts?.enabled ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.attendanceAlerts?.enabled ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para este alerta (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.attendanceAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.attendanceAlerts?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          attendanceAlerts: {
+                            ...prev.attendanceAlerts!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363408136247156@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Quando preenchido, este alerta será enviado para este grupo específico em vez
+                      do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
-                
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Requisitos: integração W-API habilitada e <strong>ID do grupo</strong> preenchido (use o campo acima para enviar para um grupo diferente do padrão). Lembre-se de salvar a configuração após alterar este botão.
+
+                <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                  Requisitos: integração W-API habilitada e <strong>ID do grupo</strong> preenchido
+                  (use o campo acima para enviar para um grupo diferente do padrão). Lembre-se de
+                  salvar a configuração após alterar este botão.
                 </p>
               </div>
-              </div>
+            </div>
             <div className="mt-8 pt-8 border-t border-white/10">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
                 <Package size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Alertas de Pedidos de Compra
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Configure o envio automático de mensagens e fotos de novos Pedidos de Compra.
               </p>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-6 rounded-xl border border-white/5 bg-black/5 dark:bg-white/5 transition-all">
                   <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, enabled_group: !prev.purchaseOrders?.enabled_group } }))}
+                    <button
+                      onClick={() =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          purchaseOrders: {
+                            ...prev.purchaseOrders!,
+                            enabled_group: !prev.purchaseOrders?.enabled_group,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_group ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_group ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_group ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_group ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Enviar notificações para um Grupo com a foto do pedido</span>
+                    <span className="font-semibold text-sm">
+                      Enviar notificações para um Grupo com a foto do pedido
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_group ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.purchaseOrders?.enabled_group ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_group ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.purchaseOrders?.enabled_group ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-6 rounded-xl border border-white/5 bg-black/5 dark:bg-white/5 transition-all">
                   <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, enabled_individual: !prev.purchaseOrders?.enabled_individual } }))}
+                    <button
+                      onClick={() =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          purchaseOrders: {
+                            ...prev.purchaseOrders!,
+                            enabled_individual: !prev.purchaseOrders?.enabled_individual,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_individual ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.purchaseOrders?.enabled_individual ? "bg-[#D6A72B]" : isDark ? "bg-white/20" : "bg-gray-300"} ${isWhatsappLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_individual ? 'translate-x-6' : 'translate-x-0'}`} />
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.purchaseOrders?.enabled_individual ? "translate-x-6" : "translate-x-0"}`}
+                      />
                     </button>
-                    <span className="font-semibold text-sm">Enviar mensagens individuais (DM) para os responsáveis do pedido</span>
+                    <span className="font-semibold text-sm">
+                      Enviar mensagens individuais (DM) para os responsáveis do pedido
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_individual ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {whatsappSettings.purchaseOrders?.enabled_individual ? 'Ativo' : 'Inativo'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.purchaseOrders?.enabled_individual ? (isDark ? "bg-white/10 text-[#1c1d21] dark:text-white" : "bg-black/5 text-black") : isDark ? "bg-white/5 text-gray-500" : "bg-black/5 text-gray-400"}`}
+                  >
+                    {whatsappSettings.purchaseOrders?.enabled_individual ? "Ativo" : "Inativo"}
                   </span>
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para Pedidos de Compra (opcional)</label>
-                    <input 
+                    <label className="block text-xs font-semibold mb-2">
+                      ID do grupo específico para Pedidos de Compra (opcional)
+                    </label>
+                    <input
                       type="text"
-                      value={whatsappSettings.purchaseOrders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, specificGroupId: e.target.value } }))}
+                      value={whatsappSettings.purchaseOrders?.specificGroupId || ""}
+                      onChange={(e) =>
+                        setWhatsappSettings((prev) => ({
+                          ...prev,
+                          purchaseOrders: {
+                            ...prev.purchaseOrders!,
+                            specificGroupId: e.target.value,
+                          },
+                        }))
+                      }
                       disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                       placeholder="Ex: 120363408136247156@g.us"
                     />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Se não preenchido, será enviado para o grupo padrão configurado na seção principal.
+                    <p className={`text-xs mt-2 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                      Se não preenchido, será enviado para o grupo padrão configurado na seção
+                      principal.
                     </p>
                   </div>
                 </div>
@@ -1467,67 +1901,84 @@ function AdminRoute() {
                 <MessageCircle size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Modelos de Mensagens (Templates)
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Personalize os textos que serão enviados automaticamente pelo sistema para o WhatsApp.
+              <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Personalize os textos que serão enviados automaticamente pelo sistema para o
+                WhatsApp.
               </p>
 
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { key: 'ddsHoje', label: 'DDS Hoje' },
-                    { key: 'ddsAmanha', label: 'DDS Amanhã' },
-                    { key: 'lembreteHoje', label: 'Lembrete' },
-                    { key: 'lembreteAmanha', label: 'Aviso Prévio (Lembrete)' },
-                    { key: 'listaPresenca', label: 'Lista de Presença' },
-                    { key: 'requisicaoEpi', label: 'Requisição Almoxarifado' },
-                    { key: 'anomaliaRegistrada', label: 'Alerta de Anomalia' },
-                    { key: 'anomaliaCorrigida', label: 'Anomalia Corrigida' },
-                    { key: 'statusAlterado', label: 'Status Alterado (Equipamentos)' },
-                    { key: 'fimJornadaApp', label: 'Fim de Jornada (App)' },
-                    { key: 'inicioJornadaApp', label: 'Início de Jornada (App)' },
-                    { key: 'equipamentoEntrada', label: 'Entrada de Equipamento' },
-                    { key: 'equipamentoSaida', label: 'Saída de Equipamento' },
-                    { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
-                    { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' }
-                  ].map(t => (
+                    { key: "ddsHoje", label: "DDS Hoje" },
+                    { key: "ddsAmanha", label: "DDS Amanhã" },
+                    { key: "lembreteHoje", label: "Lembrete" },
+                    { key: "lembreteAmanha", label: "Aviso Prévio (Lembrete)" },
+                    { key: "listaPresenca", label: "Lista de Presença" },
+                    { key: "requisicaoEpi", label: "Requisição Almoxarifado" },
+                    { key: "anomaliaRegistrada", label: "Alerta de Anomalia" },
+                    { key: "anomaliaCorrigida", label: "Anomalia Corrigida" },
+                    { key: "statusAlterado", label: "Status Alterado (Equipamentos)" },
+                    { key: "fimJornadaApp", label: "Fim de Jornada (App)" },
+                    { key: "inicioJornadaApp", label: "Início de Jornada (App)" },
+                    { key: "equipamentoEntrada", label: "Entrada de Equipamento" },
+                    { key: "equipamentoSaida", label: "Saída de Equipamento" },
+                    { key: "pedidoCompraGrupo", label: "Pedido de Compra (Grupo)" },
+                    { key: "pedidoCompraIndividual", label: "Pedido de Compra (Individual)" },
+                  ].map((t) => (
                     <button
                       key={t.key}
                       onClick={() => setSelectedTemplate(t.key as any)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedTemplate === t.key ? 'bg-[#D6A72B] text-[#1c1d21] dark:text-white' : isDark ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedTemplate === t.key ? "bg-[#D6A72B] text-[#1c1d21] dark:text-white" : isDark ? "bg-white/5 text-gray-300 hover:bg-white/10" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                     >
                       {t.label}
                     </button>
                   ))}
                 </div>
 
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                <div
+                  className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+                >
                   <textarea
-                    value={whatsappSettings.messageTemplates?.[selectedTemplate] || ''}
-                    onChange={e => setWhatsappSettings(prev => ({
-                      ...prev,
-                      messageTemplates: {
-                        ...prev.messageTemplates!,
-                        [selectedTemplate]: e.target.value
-                      }
-                    }))}
+                    value={whatsappSettings.messageTemplates?.[selectedTemplate] || ""}
+                    onChange={(e) =>
+                      setWhatsappSettings((prev) => ({
+                        ...prev,
+                        messageTemplates: {
+                          ...prev.messageTemplates!,
+                          [selectedTemplate]: e.target.value,
+                        },
+                      }))
+                    }
                     disabled={isWhatsappLocked}
-                    className={`w-full h-48 px-4 py-3 rounded-lg border outline-none transition-colors text-sm resize-y ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`w-full h-48 px-4 py-3 rounded-lg border outline-none transition-colors text-sm resize-y ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-white border-gray-300 focus:border-[#D6A72B]"} ${isWhatsappLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                     placeholder="Digite o modelo da mensagem..."
                   />
-                  <div className={`mt-4 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <strong>Variáveis disponíveis:</strong><br />
-                    {selectedTemplate.startsWith('dds') && '{palestrante}, {data}, {tema}'}
-                    {selectedTemplate.startsWith('lembrete') && '{titulo}, {descricao}, {data}, {hora}'}
-                    {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}, {lista_nomes}, {resumo}'}
-                    {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
-                    {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
-                    {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
-                    {selectedTemplate === 'statusAlterado' && '{hora}, {equipamento}, {tag}, {placa}, {status}, {motorista}'}
-                    {selectedTemplate === 'fimJornadaApp' && '{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}'}
-                    {selectedTemplate === 'inicioJornadaApp' && '{hora}, {data}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}, {km}, {horimetro}, {combustivel}'}
-                    {selectedTemplate === 'equipamentoEntrada' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}'}
-                    {selectedTemplate === 'equipamentoSaida' && '{hora}, {equipamento}, {tag}, {placa}, {motivo}, {motorista}'}
-                    {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
+                  <div className={`mt-4 text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                    <strong>Variáveis disponíveis:</strong>
+                    <br />
+                    {selectedTemplate.startsWith("dds") && "{palestrante}, {data}, {tema}"}
+                    {selectedTemplate.startsWith("lembrete") &&
+                      "{titulo}, {descricao}, {data}, {hora}"}
+                    {selectedTemplate === "listaPresenca" &&
+                      "{data}, {area}, {presentes}, {ausentes}, {total}, {lista_nomes}, {resumo}"}
+                    {selectedTemplate === "requisicaoEpi" &&
+                      "{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}"}
+                    {selectedTemplate === "anomaliaRegistrada" &&
+                      "{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}"}
+                    {selectedTemplate === "anomaliaCorrigida" &&
+                      "{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}"}
+                    {selectedTemplate === "statusAlterado" &&
+                      "{hora}, {equipamento}, {tag}, {placa}, {status}, {motorista}"}
+                    {selectedTemplate === "fimJornadaApp" &&
+                      "{equipamento}, {motorista}, {ajudante}, {data}, {km}, {horimetro}"}
+                    {selectedTemplate === "inicioJornadaApp" &&
+                      "{hora}, {data}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}, {km}, {horimetro}, {combustivel}"}
+                    {selectedTemplate === "equipamentoEntrada" &&
+                      "{hora}, {equipamento}, {tag}, {placa}, {motorista}"}
+                    {selectedTemplate === "equipamentoSaida" &&
+                      "{hora}, {equipamento}, {tag}, {placa}, {motivo}, {motorista}"}
+                    {selectedTemplate.startsWith("pedidoCompra") &&
+                      "{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}"}
                   </div>
                 </div>
               </div>
@@ -1535,7 +1986,7 @@ function AdminRoute() {
 
             <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row gap-3">
               {isWhatsappLocked ? (
-                <button 
+                <button
                   onClick={() => setUnlockCodeModal(true)}
                   className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-gray-500 hover:bg-gray-600 text-[#1c1d21] dark:text-white font-bold rounded-xl transition-colors"
                 >
@@ -1543,19 +1994,19 @@ function AdminRoute() {
                   Editar Configurações
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleSaveWhatsapp}
                   disabled={savingWhatsapp}
                   className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
                   <Save size={18} />
-                  {savingWhatsapp ? 'Salvando...' : 'Salvar Configurações'}
+                  {savingWhatsapp ? "Salvando..." : "Salvar Configurações"}
                 </button>
               )}
-              
-              <button 
+
+              <button
                 onClick={() => setTestApiModal(true)}
-                className={`flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors ${!isWhatsappLocked && !whatsappSettings.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors ${!isWhatsappLocked && !whatsappSettings.url ? "opacity-50 cursor-not-allowed" : ""}`}
                 disabled={!isWhatsappLocked && !whatsappSettings.url}
               >
                 <MessageCircle size={18} />
@@ -1566,8 +2017,10 @@ function AdminRoute() {
         </div>
       )}
 
-      {activeTab === 'permissions' && (
-        <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+      {activeTab === "permissions" && (
+        <div
+          className={`rounded-2xl p-1 shadow-sm border ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
+        >
           <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between items-center">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Lock className="text-indigo-500" size={20} />
@@ -1579,58 +2032,75 @@ function AdminRoute() {
               className="flex items-center justify-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
             >
               <Save size={18} />
-              {savingPermissions ? 'Salvando...' : 'Salvar Alterações'}
+              {savingPermissions ? "Salvando..." : "Salvar Alterações"}
             </button>
           </div>
-          
+
           <div className="p-4 overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap min-w-max border-collapse">
-              <thead className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <thead
+                className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              >
                 <tr>
-                  <th className="px-4 py-4 font-medium sticky left-0 z-10 bg-inherit shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]">Usuário</th>
-                  {MODULES.map(mod => (
-                    <th key={mod.id} className="px-4 py-4 font-medium text-center">{mod.label}</th>
+                  <th className="px-4 py-4 font-medium sticky left-0 z-10 bg-inherit shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]">
+                    Usuário
+                  </th>
+                  {MODULES.map((mod) => (
+                    <th key={mod.id} className="px-4 py-4 font-medium text-center">
+                      {mod.label}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-white/5">
-                {users.map(user => (
-                  <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
-                    <td className={`px-4 py-4 sticky left-0 z-10 border-r ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-gray-100'}`}>
+                {users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className={`${isDark ? "hover:bg-white/5" : "hover:bg-black/5"} transition-colors`}
+                  >
+                    <td
+                      className={`px-4 py-4 sticky left-0 z-10 border-r ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-gray-100"}`}
+                    >
                       <div className="font-medium flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
                           {user.avatar_url ? (
-                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={user.avatar_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <UserIcon size={16} className="text-[#5f6472] dark:text-gray-400" />
                           )}
                         </div>
-                        <div className="truncate w-32 md:w-48" title={user.name}>{user.name}</div>
+                        <div className="truncate w-32 md:w-48" title={user.name}>
+                          {user.name}
+                        </div>
                       </div>
                     </td>
-                    {MODULES.map(mod => {
-                      const level = permissions[user.id]?.[mod.id] || 'full';
+                    {MODULES.map((mod) => {
+                      const level = permissions[user.id]?.[mod.id] || "full";
                       return (
                         <td key={mod.id} className="px-4 py-2 text-center">
                           <select
                             value={level}
                             onChange={(e) => {
-                              setPermissions(prev => ({
+                              setPermissions((prev) => ({
                                 ...prev,
                                 [user.id]: {
                                   ...(prev[user.id] || {}),
-                                  [mod.id]: e.target.value as AccessLevel
-                                }
-                              }))
+                                  [mod.id]: e.target.value as AccessLevel,
+                                },
+                              }));
                             }}
-                            className={`px-2 py-1.5 rounded-lg border outline-none text-xs font-semibold ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'} ${level === 'full' ? 'text-green-600 dark:text-green-400' : level === 'view_only' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}
+                            className={`px-2 py-1.5 rounded-lg border outline-none text-xs font-semibold ${isDark ? "bg-[#0a0a0c] border-white/10" : "bg-gray-50 border-gray-200"} ${level === "full" ? "text-green-600 dark:text-green-400" : level === "view_only" ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}
                           >
                             <option value="full">Total</option>
                             <option value="view_only">Somente Ver</option>
                             <option value="hidden">Oculto</option>
                           </select>
                         </td>
-                      )
+                      );
                     })}
                   </tr>
                 ))}
@@ -1640,46 +2110,57 @@ function AdminRoute() {
         </div>
       )}
 
-      {activeTab === 'appearance' && (
-        <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
+      {activeTab === "appearance" && (
+        <div
+          className={`rounded-2xl p-1 shadow-sm border ${isDark ? "bg-[#15161A] border-white/5" : "bg-white border-black/5"}`}
+        >
           <div className="p-6">
             <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
               <Megaphone className="text-pink-500" size={24} />
               Personalização Global (CSS Background)
             </h2>
-            <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Aqui você pode definir o estilo de fundo global usando código CSS. Pode ser uma cor sólida, um gradiente, ou uma URL de imagem.
+            <p className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Aqui você pode definir o estilo de fundo global usando código CSS. Pode ser uma cor
+              sólida, um gradiente, ou uma URL de imagem.
             </p>
 
-            <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-              
-              {appearance.backgroundCss && appearance.backgroundCss.includes('url(') && (
+            <div
+              className={`p-6 rounded-xl border ${isDark ? "border-white/10 bg-black/20" : "border-gray-200 bg-gray-50"}`}
+            >
+              {appearance.backgroundCss && appearance.backgroundCss.includes("url(") && (
                 <div className="mb-6">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                     <label className="text-sm font-semibold">Fundo Atualizado (Miniatura)</label>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Opacidade:</span>
-                      <input 
-                        type="range" 
-                        min="0" max="100" 
-                        value={appearance.opacity ?? 100} 
-                        onChange={(e) => setAppearance(prev => ({ ...prev, opacity: Number(e.target.value) }))}
+                      <span className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                        Opacidade:
+                      </span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={appearance.opacity ?? 100}
+                        onChange={(e) =>
+                          setAppearance((prev) => ({ ...prev, opacity: Number(e.target.value) }))
+                        }
                         className="w-32 accent-pink-500 cursor-pointer"
                       />
-                      <span className="text-xs font-bold w-8 text-right">{appearance.opacity ?? 100}%</span>
+                      <span className="text-xs font-bold w-8 text-right">
+                        {appearance.opacity ?? 100}%
+                      </span>
                     </div>
                   </div>
-                  <div 
+                  <div
                     className="w-full h-40 md:h-64 rounded-xl border-2 border-dashed relative overflow-hidden shadow-inner flex items-center justify-center bg-black"
-                    style={{ 
-                      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                    style={{
+                      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
                     }}
                   >
-                    <div 
+                    <div
                       className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-200"
-                      style={{ 
+                      style={{
                         backgroundImage: appearance.backgroundCss,
-                        opacity: (appearance.opacity ?? 100) / 100
+                        opacity: (appearance.opacity ?? 100) / 100,
                       }}
                     />
                     <span className="relative z-10 px-3 py-1 rounded bg-black/50 text-[#1c1d21] dark:text-white text-xs font-bold pointer-events-none backdrop-blur-sm">
@@ -1694,34 +2175,51 @@ function AdminRoute() {
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   Opacidade dos Cards do Dashboard
                 </h3>
-                <p className={`text-xs mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Ajuste a transparência dos cards principais do dashboard (exceto os que possuem cores fixas como "Em Operação").
+                <p className={`text-xs mb-6 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  Ajuste a transparência dos cards principais do dashboard (exceto os que possuem
+                  cores fixas como "Em Operação").
                 </p>
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <label className="text-sm font-semibold">Opacidade - Tema Escuro (Neon)</label>
                     <div className="flex items-center gap-3">
-                      <input 
-                        type="range" 
-                        min="0" max="100" 
-                        value={appearance.darkCardOpacity ?? 35} 
-                        onChange={(e) => setAppearance(prev => ({ ...prev, darkCardOpacity: Number(e.target.value) }))}
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={appearance.darkCardOpacity ?? 35}
+                        onChange={(e) =>
+                          setAppearance((prev) => ({
+                            ...prev,
+                            darkCardOpacity: Number(e.target.value),
+                          }))
+                        }
                         className="w-32 accent-pink-500 cursor-pointer"
                       />
-                      <span className="text-xs font-bold w-8 text-right">{appearance.darkCardOpacity ?? 35}%</span>
+                      <span className="text-xs font-bold w-8 text-right">
+                        {appearance.darkCardOpacity ?? 35}%
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <label className="text-sm font-semibold">Opacidade - Tema Claro (Glass)</label>
                     <div className="flex items-center gap-3">
-                      <input 
-                        type="range" 
-                        min="0" max="100" 
-                        value={appearance.lightCardOpacity ?? 75} 
-                        onChange={(e) => setAppearance(prev => ({ ...prev, lightCardOpacity: Number(e.target.value) }))}
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={appearance.lightCardOpacity ?? 75}
+                        onChange={(e) =>
+                          setAppearance((prev) => ({
+                            ...prev,
+                            lightCardOpacity: Number(e.target.value),
+                          }))
+                        }
                         className="w-32 accent-pink-500 cursor-pointer"
                       />
-                      <span className="text-xs font-bold w-8 text-right">{appearance.lightCardOpacity ?? 75}%</span>
+                      <span className="text-xs font-bold w-8 text-right">
+                        {appearance.lightCardOpacity ?? 75}%
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1729,33 +2227,47 @@ function AdminRoute() {
                 {/* PREVIEW DA OPACIDADE */}
                 {appearance.backgroundCss && (
                   <div className="mt-6">
-                    <label className="text-sm font-semibold block mb-2">Pré-visualização do Card no {isDark ? 'Tema Escuro' : 'Tema Claro'}</label>
-                    <div 
+                    <label className="text-sm font-semibold block mb-2">
+                      Pré-visualização do Card no {isDark ? "Tema Escuro" : "Tema Claro"}
+                    </label>
+                    <div
                       className="w-full h-40 md:h-64 rounded-xl border-2 border-dashed relative overflow-hidden shadow-inner flex items-center justify-center bg-black"
-                      style={{ 
-                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                      style={{
+                        borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
                       }}
                     >
-                      <div 
+                      <div
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-200"
-                        style={{ 
+                        style={{
                           backgroundImage: appearance.backgroundCss,
-                          opacity: (appearance.opacity ?? 100) / 100
+                          opacity: (appearance.opacity ?? 100) / 100,
                         }}
                       />
-                      
+
                       <style>{`
                         .mock-preview-card {
                           background: ${isDark ? `rgba(0, 0, 0, ${(appearance.darkCardOpacity ?? 35) / 100})` : `rgba(255, 255, 255, ${(appearance.lightCardOpacity ?? 75) / 100})`} !important;
                         }
                       `}</style>
-                      
+
                       {/* Renderiza o card mock com a classe correspondente ao tema */}
-                      <div 
+                      <div
                         className={`mock-preview-card dashboard-card ${isDark ? "neon-card neon-yellow" : ""} p-6 w-64 h-32 flex flex-col justify-center items-center text-center shadow-2xl relative z-10`}
                       >
-                        <span className={`text-lg font-bold ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-[#07173f]'}`}>Exemplo de Card</span>
-                        <span className={`text-xs mt-2 ${isDark ? 'text-gray-300' : 'text-[#53698e]'}`}>Opacidade: {isDark ? (appearance.darkCardOpacity ?? 35) : (appearance.lightCardOpacity ?? 75)}%</span>
+                        <span
+                          className={`text-lg font-bold ${isDark ? "text-[#1c1d21] dark:text-white" : "text-[#07173f]"}`}
+                        >
+                          Exemplo de Card
+                        </span>
+                        <span
+                          className={`text-xs mt-2 ${isDark ? "text-gray-300" : "text-[#53698e]"}`}
+                        >
+                          Opacidade:{" "}
+                          {isDark
+                            ? (appearance.darkCardOpacity ?? 35)
+                            : (appearance.lightCardOpacity ?? 75)}
+                          %
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1764,10 +2276,14 @@ function AdminRoute() {
 
               <div className="flex flex-col md:flex-row gap-4 mb-4">
                 <label className="relative flex-1 cursor-pointer">
-                  <div className={`flex flex-col items-center justify-center h-32 px-4 py-3 rounded-xl border-2 border-dashed transition-colors ${isDark ? 'border-white/20 hover:border-pink-500 bg-[#0a0a0c]' : 'border-gray-300 hover:border-pink-500 bg-white'}`}>
+                  <div
+                    className={`flex flex-col items-center justify-center h-32 px-4 py-3 rounded-xl border-2 border-dashed transition-colors ${isDark ? "border-white/20 hover:border-pink-500 bg-[#0a0a0c]" : "border-gray-300 hover:border-pink-500 bg-white"}`}
+                  >
                     <UploadCloud size={32} className={isDark ? "text-gray-400" : "text-gray-500"} />
                     <span className="mt-2 text-sm font-semibold">Fazer upload de nova imagem</span>
-                    <span className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>PNG, JPG ou WEBP</span>
+                    <span className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                      PNG, JPG ou WEBP
+                    </span>
                   </div>
                   <input
                     type="file"
@@ -1780,7 +2296,7 @@ function AdminRoute() {
                 <div className="flex flex-col gap-4 justify-center">
                   <button
                     onClick={handleResetBackground}
-                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl border transition-colors font-semibold text-sm ${isDark ? 'border-white/20 hover:bg-white/10 text-[#1c1d21] dark:text-white' : 'border-gray-300 hover:bg-gray-100 text-gray-800'}`}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl border transition-colors font-semibold text-sm ${isDark ? "border-white/20 hover:bg-white/10 text-[#1c1d21] dark:text-white" : "border-gray-300 hover:bg-gray-100 text-gray-800"}`}
                   >
                     <RefreshCw size={18} />
                     Usar Fundo Padrão
@@ -1795,7 +2311,7 @@ function AdminRoute() {
                   className="flex items-center justify-center gap-2 w-full md:w-auto px-10 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
                   <Save size={18} />
-                  {savingAppearance ? 'Salvando...' : 'Salvar Alterações'}
+                  {savingAppearance ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </div>
@@ -1806,37 +2322,39 @@ function AdminRoute() {
       {/* Unlock WhatsApp Modal */}
       {unlockCodeModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div
+            className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
                 <Lock className="text-blue-500" size={32} />
               </div>
               <h2 className="text-xl font-bold mb-2">Desbloquear Edição</h2>
-              <p className={`mb-6 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`mb-6 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Digite o código de autorização do administrador para editar as chaves da API.
               </p>
-              
+
               <input
                 type="password"
                 placeholder="Código de 6 dígitos..."
                 maxLength={6}
                 value={unlockCodeInput}
-                onChange={e => setUnlockCodeInput(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border outline-none text-center tracking-[0.5em] text-lg mb-6 transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-blue-500' : 'bg-gray-50 border-gray-200 focus:border-blue-500'}`}
-                onKeyDown={e => e.key === 'Enter' && handleUnlockWhatsapp()}
+                onChange={(e) => setUnlockCodeInput(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl border outline-none text-center tracking-[0.5em] text-lg mb-6 transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-blue-500" : "bg-gray-50 border-gray-200 focus:border-blue-500"}`}
+                onKeyDown={(e) => e.key === "Enter" && handleUnlockWhatsapp()}
               />
 
               <div className="flex gap-3 justify-center w-full">
-                <button 
+                <button
                   onClick={() => {
-                    setUnlockCodeModal(false)
-                    setUnlockCodeInput('')
+                    setUnlockCodeModal(false);
+                    setUnlockCodeInput("");
                   }}
                   className="px-4 py-2 font-medium rounded-lg flex-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleUnlockWhatsapp}
                   disabled={unlockCodeInput.length !== 6}
                   className="px-6 py-2 font-bold text-white bg-blue-500 hover:bg-blue-600 flex-1 rounded-lg transition-colors disabled:opacity-50"
@@ -1852,77 +2370,95 @@ function AdminRoute() {
       {/* Edit Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
-            <div className={`px-6 py-4 border-b ${isDark ? 'border-white/10' : 'border-gray-100'} flex items-center gap-3`}>
+          <div
+            className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
+            <div
+              className={`px-6 py-4 border-b ${isDark ? "border-white/10" : "border-gray-100"} flex items-center gap-3`}
+            >
               <Edit2 className="text-[#D6A72B]" size={24} />
               <h2 className="text-xl font-semibold">Editar Usuário</h2>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nome Completo</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
                   value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-gray-50 border-gray-200 focus:border-[#D6A72B]"}`}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cargo / Permissão</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Cargo / Permissão
+                </label>
                 <select
                   value={editRole}
-                  onChange={e => setEditRole(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors appearance-none ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors appearance-none ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-gray-50 border-gray-200 focus:border-[#D6A72B]"}`}
                 >
-                  <option value="" disabled hidden>Selecione um Cargo</option>
-                  
+                  <option value="" disabled hidden>
+                    Selecione um Cargo
+                  </option>
+
                   <optgroup label="Acesso Administrativo">
                     <option value="Administrador">Administrador</option>
                     <option value="Diretor">Diretor</option>
                   </optgroup>
-                  
+
                   <optgroup label="Cargos Comuns (Membro)">
-                    {availableRoles.map(r => (
-                      <option key={r} value={r}>{r}</option>
+                    {availableRoles.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
                   </optgroup>
                 </select>
-                <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Selecione "Administrador" ou "Diretor" para promover o usuário e conceder acesso total ao sistema.
+                <p className={`text-xs mt-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  Selecione "Administrador" ou "Diretor" para promover o usuário e conceder acesso
+                  total ao sistema.
                 </p>
               </div>
-              
+
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Redefinir Senha (Opcional)</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Redefinir Senha (Opcional)
+                </label>
+                <input
+                  type="text"
                   value={editPassword}
-                  onChange={e => setEditPassword(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]" : "bg-gray-50 border-gray-200 focus:border-[#D6A72B]"}`}
                   placeholder="Deixe em branco para não alterar"
                 />
-                <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Mínimo de 6 caracteres. A senha original do usuário não pode ser exibida por motivos de segurança.
+                <p className={`text-xs mt-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  Mínimo de 6 caracteres. A senha original do usuário não pode ser exibida por
+                  motivos de segurança.
                 </p>
               </div>
             </div>
 
-            <div className={`px-6 py-4 border-t flex justify-end gap-3 ${isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
-              <button 
+            <div
+              className={`px-6 py-4 border-t flex justify-end gap-3 ${isDark ? "bg-black/20 border-white/10" : "bg-gray-50 border-gray-100"}`}
+            >
+              <button
                 onClick={() => setEditingUser(null)}
                 disabled={savingEdit}
                 className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={handleSaveEdit}
                 disabled={savingEdit}
                 className="px-6 py-2 font-bold text-black bg-[#D6A72B] hover:bg-[#E2BB57] rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+                {savingEdit ? "Salvando..." : "Salvar Alterações"}
               </button>
             </div>
           </div>
@@ -1932,20 +2468,22 @@ function AdminRoute() {
       {/* Modals de Confirmação */}
       {removeRoleModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div
+            className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
             <AlertTriangle className="text-orange-500 mx-auto mb-4" size={40} />
             <h2 className="text-xl font-bold mb-2">Remover Cargo</h2>
-            <p className={`mb-6 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`mb-6 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
               Deseja realmente remover o cargo <strong>"{removeRoleModal}"</strong> das opções?
             </p>
             <div className="flex gap-3 justify-center">
-              <button 
+              <button
                 onClick={() => setRemoveRoleModal(null)}
                 className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={executeRemoveRole}
                 disabled={savingRoles}
                 className="px-6 py-2 font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50"
@@ -1959,28 +2497,31 @@ function AdminRoute() {
 
       {blockUserModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div
+            className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
             {blockUserModal.banned_until ? (
               <CheckCircle2 className="text-green-500 mx-auto mb-4" size={40} />
             ) : (
               <Ban className="text-orange-500 mx-auto mb-4" size={40} />
             )}
             <h2 className="text-xl font-bold mb-2">
-              {blockUserModal.banned_until ? 'Desbloquear Usuário' : 'Bloquear Usuário'}
+              {blockUserModal.banned_until ? "Desbloquear Usuário" : "Bloquear Usuário"}
             </h2>
-            <p className={`mb-6 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-              Tem certeza que deseja {blockUserModal.banned_until ? 'desbloquear' : 'bloquear'} o usuário <strong>{blockUserModal.name}</strong>?
+            <p className={`mb-6 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+              Tem certeza que deseja {blockUserModal.banned_until ? "desbloquear" : "bloquear"} o
+              usuário <strong>{blockUserModal.name}</strong>?
             </p>
             <div className="flex gap-3 justify-center">
-              <button 
+              <button
                 onClick={() => setBlockUserModal(null)}
                 className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={executeToggleBlock}
-                className={`px-6 py-2 font-bold text-white rounded-lg transition-colors ${blockUserModal.banned_until ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600'}`}
+                className={`px-6 py-2 font-bold text-white rounded-lg transition-colors ${blockUserModal.banned_until ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 Confirmar
               </button>
@@ -1991,17 +2532,22 @@ function AdminRoute() {
 
       {deleteUserModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div
+            className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
                 <Trash2 className="text-red-500" size={32} />
               </div>
               <h2 className="text-xl font-bold mb-2 text-red-500">Atenção: Ação Irreversível</h2>
-              <p className={`mb-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                Todas as referências a este usuário podem ser afetadas.<br/><br/>
-                Para excluir permanentemente o usuário <strong>{deleteUserModal.name}</strong>, digite o email dele abaixo:
+              <p className={`mb-4 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                Todas as referências a este usuário podem ser afetadas.
+                <br />
+                <br />
+                Para excluir permanentemente o usuário <strong>{deleteUserModal.name}</strong>,
+                digite o email dele abaixo:
               </p>
-              
+
               <div className="font-mono text-sm bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded mb-4 select-all">
                 {deleteUserModal.email}
               </div>
@@ -2010,21 +2556,21 @@ function AdminRoute() {
                 type="text"
                 placeholder="Digite o email exato..."
                 value={deleteEmailInput}
-                onChange={e => setDeleteEmailInput(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border outline-none text-center mb-6 transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-red-500' : 'bg-gray-50 border-gray-200 focus:border-red-500'}`}
+                onChange={(e) => setDeleteEmailInput(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl border outline-none text-center mb-6 transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-red-500" : "bg-gray-50 border-gray-200 focus:border-red-500"}`}
               />
 
               <div className="flex gap-3 justify-center w-full">
-                <button 
+                <button
                   onClick={() => {
-                    setDeleteUserModal(null)
-                    setDeleteEmailInput('')
+                    setDeleteUserModal(null);
+                    setDeleteEmailInput("");
                   }}
                   className="px-4 py-2 font-medium rounded-lg flex-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={executeDelete}
                   disabled={deleteEmailInput !== deleteUserModal.email}
                   className="px-6 py-2 font-bold text-white bg-red-500 hover:bg-red-600 flex-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2040,48 +2586,49 @@ function AdminRoute() {
       {/* Test API Modal */}
       {testApiModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div
+            className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? "bg-[#15161A] border border-white/10" : "bg-white"}`}
+          >
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center mb-4">
                 <MessageCircle className="text-[#25D366]" size={32} />
               </div>
               <h2 className="text-xl font-bold mb-2">Testar Conexão WhatsApp</h2>
-              <p className={`mb-6 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`mb-6 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Digite um número de WhatsApp (com DDI e DDD) para receber uma mensagem de teste.
               </p>
-              
+
               <input
                 type="text"
                 placeholder="Ex: 5511999999999"
                 value={testNumber}
-                onChange={e => setTestNumber(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border outline-none text-center text-lg mb-6 transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'}`}
-                onKeyDown={e => e.key === 'Enter' && handleTestApi()}
+                onChange={(e) => setTestNumber(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl border outline-none text-center text-lg mb-6 transition-colors ${isDark ? "bg-[#0a0a0c] border-white/10 focus:border-[#25D366]" : "bg-gray-50 border-gray-200 focus:border-[#25D366]"}`}
+                onKeyDown={(e) => e.key === "Enter" && handleTestApi()}
               />
 
               <div className="flex gap-3 justify-center w-full">
-                <button 
+                <button
                   onClick={() => {
-                    setTestApiModal(false)
-                    setTestNumber('')
+                    setTestApiModal(false);
+                    setTestNumber("");
                   }}
                   className="px-4 py-2 font-medium rounded-lg flex-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleTestApi}
                   disabled={!testNumber.trim() || isTestingApi}
                   className="px-6 py-2 font-bold text-white bg-[#25D366] hover:bg-[#1DA851] flex-1 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isTestingApi ? 'Enviando...' : 'Enviar Teste'}
+                  {isTestingApi ? "Enviando..." : "Enviar Teste"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
-  )
+  );
 }
