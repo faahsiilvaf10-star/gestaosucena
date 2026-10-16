@@ -21,8 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
-import { getWhatsappSettings } from '@/lib/settings';
-import { sendWhatsappMediaOnServer } from '@/lib/whatsapp-api';
+import { sendEpiRequisitionWhatsappNotification } from '@/lib/whatsappHelpers';
 import { SignatureOverlay } from '@/components/almoxarifado/SignatureOverlay';
 
 function generateReceiptPng(
@@ -562,7 +561,7 @@ export function EpiRequisitionForm() {
       );
 
       // Salva no Supabase
-      await createMutation.mutateAsync({
+      const createdRequisition = await createMutation.mutateAsync({
         authorizer_id: authorizerId,
         employee_id: employeeId,
         destination_area: destinationArea,
@@ -580,39 +579,34 @@ export function EpiRequisitionForm() {
 
       // Dispara envio automático no WhatsApp se estiver habilitado
       try {
-        const settings = await getWhatsappSettings();
-        if (settings.requisitionAlerts?.enabled && settings.url && settings.token) {
-          const groupId = settings.requisitionAlerts.specificGroupId || settings.groupId;
-          if (groupId) {
-             const itemsList = validItems.map(it => {
-               const prod = epiProducts?.find(p => p.id === it.productId);
-               return `  - ${prod?.name || 'Desconhecido'} (${it.quantity})`;
-             }).join('\n');
-             const dataStr = format(new Date(), 'dd/MM/yyyy');
-             let caption = settings.messageTemplates?.requisicaoEpi || '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}';
-             caption = caption.replace('{data}', dataStr)
-                              .replace('{nome}', employee?.nome || '')
-                              .replace('{cargo}', employee?.cargo || '-')
-                              .replace('{matricula}', employee?.matricula || '-')
-                              .replace('{motivo}', reason || '.')
-                              .replace('{autorizador}', authorizer?.nome || '')
-                              .replace('{matricula_autorizador}', authorizer?.matricula || '-')
-                              .replace('{itens}', itemsList);
-             await sendWhatsappMediaOnServer({
-               data: {
-                 url: settings.url,
-                 token: settings.token,
-                 instanceId: settings.instanceId,
-                 phone: groupId,
-                 caption,
-                 base64Media: receiptBase64,
-                 fileName: 'recibo-epi.jpg'
-               }
-             });
+        const wpRes = await sendEpiRequisitionWhatsappNotification({
+          authorizerName: authorizer?.nome || '',
+          authorizerMatricula: authorizer?.matricula || '',
+          employeeName: employee?.nome || '',
+          employeeCargo: employee?.cargo || '',
+          employeeMatricula: employee?.matricula || '',
+          destinationArea,
+          reason,
+          items: validItems.map(it => {
+            const prod = epiProducts?.find(p => p.id === it.productId);
+            return { name: prod?.name || 'Desconhecido', quantity: it.quantity };
+          }),
+          dateStr,
+          receiptBase64,
+          receiptImageUrl: (createdRequisition as any)?.receipt_image_url
+        });
+
+        if (wpRes.success) {
+          if (wpRes.queued) {
+            toast.info('Requisição salva! A notificação do WhatsApp foi enfileirada e será enviada assim que o WhatsApp responder.', { duration: 5000 });
+          } else {
+            toast.success('Requisição salva e notificação enviada ao WhatsApp!', { duration: 4000 });
           }
+        } else if (wpRes.error && !wpRes.error.includes('desativado')) {
+          toast.warning(`Requisição salva! Aviso WhatsApp: ${wpRes.error}. Você pode reenviar a qualquer momento na lista de requisições.`, { duration: 6000 });
         }
-      } catch (err) {
-        console.error("Erro ao enviar whatsapp automático", err);
+      } catch (wpErr) {
+        console.error("Erro ao enviar whatsapp automático:", wpErr);
       }
 
       toast.success('Recibo gerado e salvo com sucesso!', { id: toastId });

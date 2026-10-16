@@ -37,11 +37,35 @@ export async function executeWhatsappHttp(
   }
 
   // Fallback para fetch padrão (Node.js no servidor SSR ou navegador web)
-  let res = await fetch(endpoint, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(12000),
+    });
+  } catch (fetchErr: any) {
+    // Se falhar o primeiro endpoint por erro de rede/timeout, tenta o fallback com troca de /message/ e /messages/
+    const fallbackEndpoint = endpoint.includes("/message/")
+      ? endpoint.replace("/message/", "/messages/")
+      : endpoint.replace("/messages/", "/message/");
+
+    if (fallbackEndpoint !== endpoint) {
+      try {
+        res = await fetch(fallbackEndpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(12000),
+        });
+      } catch (fallbackErr: any) {
+        throw new Error(fetchErr?.message || "Falha de conexão com a API do WhatsApp (timeout/indisponível)");
+      }
+    } else {
+      throw new Error(fetchErr?.message || "Falha de conexão com a API do WhatsApp (timeout/indisponível)");
+    }
+  }
 
   // Fallback se 404
   if (res.status === 404) {
@@ -49,11 +73,14 @@ export async function executeWhatsappHttp(
       ? endpoint.replace("/message/", "/messages/")
       : endpoint.replace("/messages/", "/message/");
 
-    res = await fetch(fallbackEndpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
+    try {
+      res = await fetch(fallbackEndpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(12000),
+      });
+    } catch (_) {}
   }
 
   const resultText = await res.text();
@@ -119,6 +146,7 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: "POST" })
       caption: string;
       base64Media: string;
       fileName?: string;
+      imageUrl?: string;
     }) => data,
   )
   .handler(async ({ data }) => {
@@ -140,7 +168,7 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: "POST" })
       // If it's w-api.app
       if (baseUrl.includes("api.w-api.app")) {
         isWApiApp = true;
-        endpoint = `${baseUrl}/message/send-image?instanceId=${data.instanceId}`;
+        endpoint = `${baseUrl}/messages/send-image?instanceId=${data.instanceId}`;
       }
 
       // Base64 gerado pelo canvas vem como "data:image/png;base64,iVBORw0KGgo..."
@@ -155,12 +183,15 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: "POST" })
       }
 
       // Format payload depending on API
-      // W-API requires "image" with full data URL, Evolution expects pureBase64 in "media"
+      // W-API accepts image, imageUrl or mediaUrl
       const payload = isWApiApp
         ? {
             phone: data.phone,
             number: data.phone,
             image: data.base64Media, // full base64 data URI
+            media: data.base64Media,
+            imageUrl: data.imageUrl || undefined,
+            mediaUrl: data.imageUrl || undefined,
             caption: data.caption,
           }
         : {

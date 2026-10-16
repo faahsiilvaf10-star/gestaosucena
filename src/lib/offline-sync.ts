@@ -51,7 +51,7 @@ const directWhatsappSendMedia = async (
   let isWApiApp = false;
   if (baseUrl.includes("api.w-api.app")) {
     isWApiApp = true;
-    endpoint = `${baseUrl}/message/send-image?instanceId=${settings.instanceId}`;
+    endpoint = `${baseUrl}/messages/send-image?instanceId=${settings.instanceId}`;
   }
 
   let pureBase64 = base64Media;
@@ -69,6 +69,7 @@ const directWhatsappSendMedia = async (
         phone,
         number: phone,
         image: base64Media,
+        media: base64Media,
         caption,
       }
     : {

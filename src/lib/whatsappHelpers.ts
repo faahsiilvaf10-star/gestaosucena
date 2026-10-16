@@ -192,3 +192,132 @@ export async function sendPurchaseOrderWhatsappNotification(
     console.error('Error sending Purchase Order WhatsApp Notification:', error)
   }
 }
+
+export async function sendEpiRequisitionWhatsappNotification(params: {
+  authorizerName: string;
+  authorizerMatricula?: string;
+  employeeName: string;
+  employeeCargo?: string;
+  employeeMatricula?: string;
+  destinationArea?: string;
+  reason?: string;
+  items: Array<{ name: string; quantity: number | string }>;
+  dateStr?: string;
+  receiptBase64?: string;
+  receiptImageUrl?: string | null;
+}): Promise<{ success: boolean; error?: string; queued?: boolean; mode?: 'media' | 'text' | 'queued' }> {
+  try {
+    const settings = await getWhatsappSettings();
+    if (!settings.url || !settings.token) {
+      return { success: false, error: 'Configurações do WhatsApp não estão preenchidas (URL ou Token ausentes no Admin).' };
+    }
+
+    if (!settings.requisitionAlerts?.enabled) {
+      return { success: false, error: 'O envio automático de requisições de EPI está desativado na aba WhatsApp do painel Admin.' };
+    }
+
+    const groupId = (settings.requisitionAlerts.specificGroupId || settings.groupId || '').trim();
+    if (!groupId) {
+      return { success: false, error: 'Nenhum ID de grupo do WhatsApp configurado para receber alertas de requisição.' };
+    }
+
+    const { format } = await import('date-fns');
+    const dateStr = params.dateStr || format(new Date(), 'dd/MM/yyyy');
+    const itemsList = params.items.length > 0
+      ? params.items.map(it => `  - ${it.name || 'Desconhecido'} (${it.quantity})`).join('\n')
+      : '  - 1 item';
+
+    let caption = settings.messageTemplates?.requisicaoEpi ||
+      '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}';
+
+    caption = caption
+      .replaceAll('{data}', dateStr)
+      .replaceAll('{nome}', params.employeeName || 'Não informado')
+      .replaceAll('{cargo}', params.employeeCargo || '-')
+      .replaceAll('{matricula}', params.employeeMatricula || '-')
+      .replaceAll('{motivo}', params.reason || 'Substituição / Entrega periódica')
+      .replaceAll('{autorizador}', params.authorizerName || 'Almoxarifado')
+      .replaceAll('{matricula_autorizador}', params.authorizerMatricula || '-')
+      .replaceAll('{area}', params.destinationArea || 'Almoxarifado')
+      .replaceAll('{itens}', itemsList);
+
+    // Se houver recibo como imagem (base64 ou URL pública), tenta enviar com imagem
+    let base64ToSend = params.receiptBase64;
+
+    // Se não tiver base64 mas tiver URL pública do comprovante, tenta obter o base64
+    if (!base64ToSend && params.receiptImageUrl) {
+      try {
+        const imgRes = await fetch(params.receiptImageUrl, { signal: AbortSignal.timeout(6000) });
+        if (imgRes.ok) {
+          const blob = await imgRes.blob();
+          base64ToSend = await new Promise<string>((res, rej) => {
+            const reader = new FileReader();
+            reader.onloadend = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (imgFetchErr) {
+        console.warn('Não foi possível carregar imagem do comprovante via URL:', imgFetchErr);
+      }
+    }
+
+    // 1. Tenta envio com imagem/mídia
+    if (base64ToSend) {
+      try {
+        const res = await sendWhatsappMediaOnServer({
+          data: {
+            url: settings.url,
+            token: settings.token,
+            instanceId: settings.instanceId,
+            phone: groupId,
+            caption,
+            base64Media: base64ToSend,
+            imageUrl: params.receiptImageUrl || undefined,
+            fileName: 'recibo-epi.jpg'
+          }
+        });
+        if (res.success) {
+          return { success: true, mode: 'media' };
+        }
+      } catch (mediaErr: any) {
+        console.warn('Falha no envio de mídia via WhatsApp API, tentando fallback em texto:', mediaErr?.message || mediaErr);
+      }
+    }
+
+    // 2. Fallback: envio em formato de texto estruturado
+    let textToSend = caption;
+    if (params.receiptImageUrl) {
+      textToSend += `\n\n📄 *Comprovante:* ${params.receiptImageUrl}`;
+    }
+
+    try {
+      const textRes = await sendWhatsappTextOnServer({
+        data: {
+          url: settings.url,
+          token: settings.token,
+          instanceId: settings.instanceId,
+          phone: groupId,
+          text: textToSend
+        }
+      });
+      if (textRes.success) {
+        return { success: true, mode: 'text' };
+      }
+    } catch (textErr: any) {
+      console.warn('Envio direto de texto falhou, colocando na fila offline:', textErr?.message || textErr);
+    }
+
+    // 3. Fallback resiliente: enfileirar na fila offline-first do sistema
+    try {
+      await queueWhatsappMessage(settings, groupId, textToSend);
+      return { success: true, queued: true, mode: 'queued' };
+    } catch (queueErr: any) {
+      return { success: false, error: queueErr?.message || 'Falha geral ao despachar WhatsApp' };
+    }
+  } catch (err: any) {
+    console.error('Erro em sendEpiRequisitionWhatsappNotification:', err);
+    return { success: false, error: err?.message || 'Erro inesperado ao enviar WhatsApp' };
+  }
+}
+
