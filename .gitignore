@@ -39,3 +39,4 @@ release/
 launcher/dist-final/
 electron-wrapper/dist-release/
 dist-motorista/
+*.apk

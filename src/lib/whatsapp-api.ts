@@ -1,6 +1,34 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
+// Cria um fetch com SSL bypassado para w-api.app (necessário pois o servidor deles tem
+// problema de SNI que causa ERR_SSL_TLSV1_UNRECOGNIZED_NAME no Node.js)
+async function fetchWithSslBypass(url: string, options: RequestInit): Promise<Response> {
+  // Só aplica o bypass no Node.js (server-side), não no browser
+  if (typeof window === 'undefined' && url.includes('w-api.app')) {
+    try {
+      // Usa undici (embutido no Node.js 18+) com rejectUnauthorized: false
+      const { Agent } = await import('undici' as any);
+      const agent = new Agent({ connect: { rejectUnauthorized: false } });
+      return fetch(url, { ...options, dispatcher: agent } as any);
+    } catch {
+      // undici não disponível como módulo separado, tenta variável de ambiente
+      const prevTLS = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+      try {
+        return await fetch(url, options);
+      } finally {
+        if (prevTLS === undefined) {
+          delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+        } else {
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED = prevTLS;
+        }
+      }
+    }
+  }
+  return fetch(url, options);
+}
+
 export async function executeWhatsappHttp(
   endpoint: string,
   headers: Record<string, string>,
@@ -39,7 +67,7 @@ export async function executeWhatsappHttp(
   // Fallback para fetch padrão (Node.js no servidor SSR ou navegador web)
   let res: Response;
   try {
-    res = await fetch(endpoint, {
+    res = await fetchWithSslBypass(endpoint, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
@@ -53,7 +81,7 @@ export async function executeWhatsappHttp(
 
     if (fallbackEndpoint !== endpoint) {
       try {
-        res = await fetch(fallbackEndpoint, {
+        res = await fetchWithSslBypass(fallbackEndpoint, {
           method: "POST",
           headers,
           body: JSON.stringify(payload),
@@ -74,7 +102,7 @@ export async function executeWhatsappHttp(
       : endpoint.replace("/messages/", "/message/");
 
     try {
-      res = await fetch(fallbackEndpoint, {
+      res = await fetchWithSslBypass(fallbackEndpoint, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
