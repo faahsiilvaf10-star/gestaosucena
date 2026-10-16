@@ -540,17 +540,14 @@ body {
 
 .employee-decoration {
   position: absolute;
-
   right: 32px;
   bottom: 26px;
-
-  opacity: 0.10;
-
+  opacity: 0.85;
   transform: scale(2.2);
-
-  color: #0f62d8;
-
+  color: #ffffff;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.45));
   pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 /* DDS */
@@ -1075,9 +1072,9 @@ body {
 .dark .neon-red .icon-box { color: #ff3333; filter: drop-shadow(0 0 5px rgba(255,51,51,0.5)); }
 
 .dark .employee-decoration {
-  opacity: 0.15 !important;
-  color: #00d2ff !important;
-  filter: drop-shadow(0 0 15px rgba(0,210,255,0.8));
+  opacity: 0.85 !important;
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.45)) !important;
 }
 
 .dark .birthday-item {
