@@ -14,6 +14,8 @@ import Camera from 'lucide-react/dist/esm/icons/camera.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Briefcase from 'lucide-react/dist/esm/icons/briefcase.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -84,6 +86,7 @@ function DDSSchedulePage() {
   const [tema, setTema] = useState('')
   const [palestranteId, setPalestranteId] = useState('')
   const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [speakerFilterMode, setSpeakerFilterMode] = useState<'system' | 'rh'>('system')
   const [confirmAction, setConfirmAction] = useState<{isOpen: boolean, title: string, message: string, action: () => void}>({ isOpen: false, title: '', message: '', action: () => {} })
 
   // Estados para Modal de Upload do DDS e Foto Expandida
@@ -97,8 +100,8 @@ function DDSSchedulePage() {
   const todayDate = useMemo(() => new Date(), [])
   const todayDateStr = useMemo(() => format(todayDate, 'yyyy-MM-dd'), [todayDate])
 
-  // Fetch employees from system users (via RPC)
-  const { data: employees = [] } = useQuery({
+  // Buscar usuários cadastrados no sistema (via RPC)
+  const { data: systemUsers = [] } = useQuery({
     queryKey: ['system_users'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_system_users')
@@ -109,6 +112,83 @@ function DDSSchedulePage() {
       return data || []
     }
   })
+
+  // Buscar todo o efetivo do RH
+  const { data: rhEfetivo = [] } = useQuery({
+    queryKey: ['rh_efetivo_dds'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rh_efetivo')
+        .select('id, nome, cargo, status')
+        .eq('status', 'ATIVO')
+        .order('nome', { ascending: true })
+      if (error) {
+        console.error("Erro ao buscar efetivo do RH:", error)
+        throw error
+      }
+      return data || []
+    }
+  })
+
+  // Para compatibilidade com outras referências existentes
+  const employees = systemUsers
+
+  // Lista consolidada de palestrantes para resolver qualquer ID (usuário do sistema ou efetivo do RH)
+  const allSpeakers = useMemo(() => {
+    const list: Array<{ id: string; nome: string; cargo?: string; avatar_url?: string; source: 'system' | 'rh' }> = []
+    const ids = new Set<string>()
+
+    systemUsers.forEach((u: any) => {
+      ids.add(u.id)
+      list.push({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo || 'Usuário do Sistema',
+        avatar_url: u.avatar_url,
+        source: 'system'
+      })
+    })
+
+    rhEfetivo.forEach((emp: any) => {
+      if (!ids.has(emp.id)) {
+        list.push({
+          id: emp.id,
+          nome: emp.nome,
+          cargo: emp.cargo || 'Colaborador',
+          avatar_url: undefined,
+          source: 'rh'
+        })
+      }
+    })
+
+    return list
+  }, [systemUsers, rhEfetivo])
+
+  const allSpeakersMap = useMemo(() => {
+    const map = new Map<string, { id: string; nome: string; cargo?: string; avatar_url?: string; source: 'system' | 'rh' }>()
+    allSpeakers.forEach(s => map.set(s.id, s))
+    return map
+  }, [allSpeakers])
+
+  // Colaboradores filtrados para exibir no seletor manual (apenas usuários ou todo efetivo)
+  const displayedSpeakers = useMemo(() => {
+    if (speakerFilterMode === 'system') {
+      return systemUsers.map((u: any) => ({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo || 'Usuário do Sistema',
+        avatar_url: u.avatar_url,
+        source: 'system' as const
+      }))
+    }
+    return rhEfetivo.map((e: any) => ({
+      id: e.id,
+      nome: e.nome,
+      cargo: e.cargo || 'Colaborador',
+      avatar_url: undefined,
+      source: 'rh' as const
+    }))
+  }, [speakerFilterMode, systemUsers, rhEfetivo])
 
   // Buscar DDS de hoje especificamente (permanece visível mesmo mudando de mês)
   const { data: todayDdsData } = useQuery({
@@ -163,8 +243,8 @@ function DDSSchedulePage() {
   // Palestrante de hoje
   const todayPalestrante = useMemo(() => {
     if (!todayDdsData?.palestrante_id) return null
-    return employees.find((e: any) => e.id === todayDdsData.palestrante_id) || null
-  }, [todayDdsData, employees])
+    return allSpeakersMap.get(todayDdsData.palestrante_id) || null
+  }, [todayDdsData, allSpeakersMap])
 
   const handleOpenDdsUpload = (targetTema?: string, targetPalestrante?: string) => {
     const t = targetTema !== undefined && targetTema !== '' ? targetTema : (todayDdsData?.tema || 'A DEFINIR')
@@ -319,6 +399,22 @@ function DDSSchedulePage() {
     setSelectedDate(date)
     setTema(entry?.tema || '')
     setPalestranteId(entry?.palestrante_id || '')
+
+    // Identificar a qual lista o palestrante atual pertence
+    if (entry?.palestrante_id) {
+      const isSystem = systemUsers.some((u: any) => u.id === entry.palestrante_id)
+      if (isSystem) {
+        setSpeakerFilterMode('system')
+      } else {
+        const isRh = rhEfetivo.some((e: any) => e.id === entry.palestrante_id)
+        if (isRh) {
+          setSpeakerFilterMode('rh')
+        }
+      }
+    } else {
+      setSpeakerFilterMode('system')
+    }
+
     setEditDialogOpen(true)
   }
 
@@ -365,14 +461,14 @@ function DDSSchedulePage() {
   const scheduleMap = useMemo(() => {
     const map = new Map()
     schedule.forEach((s: any) => {
-      const emp = employees.find((e: any) => e.id === s.palestrante_id)
+      const emp = allSpeakersMap.get(s.palestrante_id)
       map.set(s.date, {
         ...s,
         palestrante: emp ? { id: emp.id, nome: emp.nome, cargo: emp.cargo, avatar_url: emp.avatar_url } : null
       })
     })
     return map
-  }, [schedule, employees])
+  }, [schedule, allSpeakersMap])
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-[#f8f9fa] text-black">
@@ -704,45 +800,114 @@ function DDSSchedulePage() {
           </DialogHeader>
           <div className="grid gap-6 py-4">
             
-            <div className="space-y-2 flex flex-col">
-              <Label className="text-gray-700">Palestrante</Label>
+            <div className="space-y-3 flex flex-col">
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-700 font-semibold text-sm">Palestrante</Label>
+                {palestranteId && (
+                  <button
+                    type="button"
+                    onClick={() => setPalestranteId('')}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                  >
+                    Limpar seleção
+                  </button>
+                )}
+              </div>
+
+              {/* Seletor de Origem: Usuários Cadastrados ou Todo Efetivo do RH */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                  Origem do colaborador:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerFilterMode('system')}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-semibold rounded-lg transition-all",
+                      speakerFilterMode === 'system'
+                        ? "bg-white text-blue-700 shadow-sm border border-gray-200"
+                        : "text-gray-600 hover:text-black hover:bg-white/60"
+                    )}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="truncate">Usuários ({systemUsers.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerFilterMode('rh')}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-semibold rounded-lg transition-all",
+                      speakerFilterMode === 'rh'
+                        ? "bg-white text-emerald-700 shadow-sm border border-gray-200"
+                        : "text-gray-600 hover:text-black hover:bg-white/60"
+                    )}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span className="truncate">Efetivo RH ({rhEfetivo.length})</span>
+                  </button>
+                </div>
+              </div>
+
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={comboboxOpen}
-                    className="w-full justify-between bg-white border-gray-300 hover:bg-gray-50 text-black"
+                    className="w-full justify-between bg-white border-gray-300 hover:bg-gray-50 text-black text-left font-normal h-11"
                   >
-                    {palestranteId
-                      ? employees.find((e) => e.id === palestranteId)?.nome
-                      : "Selecione o palestrante..."}
+                    <span className="truncate">
+                      {palestranteId
+                        ? allSpeakersMap.get(palestranteId)?.nome || "Colaborador selecionado"
+                        : speakerFilterMode === 'system' ? "Selecione um usuário cadastrado..." : "Selecione um colaborador do RH..."}
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[380px] p-0 bg-white border-gray-200 text-black shadow-lg rounded-xl">
+                <PopoverContent className="w-[380px] p-0 bg-white border-gray-200 text-black shadow-xl rounded-xl">
                   <Command className="bg-transparent">
-                    <CommandInput placeholder="Buscar colaborador..." className="text-black" />
-                    <CommandList>
-                      <CommandEmpty className="py-4 text-center text-sm text-gray-500">Nenhum colaborador encontrado.</CommandEmpty>
-                      <CommandGroup>
-                        {employees.map((emp) => (
+                    <CommandInput 
+                      placeholder={speakerFilterMode === 'system' ? "Buscar usuário cadastrado..." : "Buscar no efetivo do RH..."} 
+                      className="text-black" 
+                    />
+                    <CommandList className="max-h-[260px] overflow-y-auto">
+                      <CommandEmpty className="py-4 text-center text-sm text-gray-500">
+                        Nenhum colaborador encontrado.
+                      </CommandEmpty>
+                      <CommandGroup heading={speakerFilterMode === 'system' ? "Usuários Cadastrados" : "Efetivo do RH"}>
+                        {displayedSpeakers.map((emp) => (
                           <CommandItem
                             key={emp.id}
-                            value={emp.nome}
+                            value={`${emp.nome} ${emp.cargo || ''}`}
                             onSelect={() => {
                               setPalestranteId(emp.id)
                               setComboboxOpen(false)
                             }}
-                            className="text-black hover:bg-gray-100 cursor-pointer"
+                            className="text-black hover:bg-gray-100 cursor-pointer flex items-center justify-between py-2"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                palestranteId === emp.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {emp.nome} - <span className="text-gray-500 text-xs ml-1">{emp.cargo}</span>
+                            <div className="flex items-center min-w-0 mr-2">
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0 text-blue-600",
+                                  palestranteId === emp.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="truncate">
+                                <span className="font-medium text-sm text-gray-900">{emp.nome}</span>
+                                {emp.cargo && (
+                                  <span className="text-gray-500 text-xs ml-1.5 block sm:inline truncate">
+                                    • {emp.cargo}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className={cn(
+                              "text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded shrink-0",
+                              emp.source === 'system' ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            )}>
+                              {emp.source === 'system' ? 'Sistema' : 'RH'}
+                            </span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -750,6 +915,23 @@ function DDSSchedulePage() {
                   </Command>
                 </PopoverContent>
               </Popover>
+
+              {palestranteId && allSpeakersMap.get(palestranteId) && (
+                <div className="flex items-center justify-between text-xs text-gray-600 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <span className="truncate">
+                    Selecionado: <strong className="text-gray-900">{allSpeakersMap.get(palestranteId)?.nome}</strong>
+                    {allSpeakersMap.get(palestranteId)?.cargo && (
+                      <span className="text-gray-500"> ({allSpeakersMap.get(palestranteId)?.cargo})</span>
+                    )}
+                  </span>
+                  <span className={cn(
+                    "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ml-2 shrink-0",
+                    allSpeakersMap.get(palestranteId)?.source === 'system' ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"
+                  )}>
+                    {allSpeakersMap.get(palestranteId)?.source === 'system' ? 'Usuário' : 'RH'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

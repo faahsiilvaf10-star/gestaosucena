@@ -33,12 +33,21 @@ async function nomeDoPalestrante(palestranteId: string): Promise<string> {
   const { data, error } = await supabase.rpc('get_system_users')
   if (error) {
     console.error('[DDS] Erro ao buscar usuários do sistema:', error)
-    return 'Não informado'
   }
 
   const usuarios = (data ?? []) as Array<{ id: string; nome?: string | null }>
   const encontrado = usuarios.find((u) => u.id === palestranteId)
-  return encontrado?.nome || 'Não informado'
+  if (encontrado?.nome) return encontrado.nome
+
+  // Buscar em rh_efetivo caso seja colaborador do efetivo
+  const { data: rhEmp } = await supabase
+    .from('rh_efetivo')
+    .select('nome')
+    .eq('id', palestranteId)
+    .maybeSingle()
+  if (rhEmp?.nome) return rhEmp.nome
+
+  return 'Não informado'
 }
 
 /**

@@ -114,11 +114,15 @@ function DashboardComponent() {
         .in('date', [today, tomorrow])
         
       const { data: users } = await supabase.rpc('get_system_users')
+      const { data: rhList } = await supabase.from('rh_efetivo').select('id, nome')
       
       const getPalestranteInfo = (id: string) => {
         if (!id) return { id: null, nome: 'Livre', avatar: null }
         const user = (users || []).find((u: any) => u.id === id)
-        return user ? { id: user.id, nome: user.nome, avatar: user.avatar_url || null } : { id: null, nome: 'Desconhecido', avatar: null }
+        if (user) return { id: user.id, nome: user.nome, avatar: user.avatar_url || null }
+        const rh = (rhList || []).find((r: any) => r.id === id)
+        if (rh) return { id: rh.id, nome: rh.nome, avatar: null }
+        return { id: null, nome: 'Desconhecido', avatar: null }
       }
 
       const todayDds = schedule?.find(s => s.date === today)
