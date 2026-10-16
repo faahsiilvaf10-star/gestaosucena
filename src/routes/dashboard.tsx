@@ -17,6 +17,8 @@ import '../dashboard.css'
 import { DdsUploadModal } from '../components/DdsUploadModal'
 import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
 import Chart02 from '../components/ui/chart-02'
+import { toast } from 'sonner'
+import { getUserEnvironmentAccess, hasEnvironmentAccess } from '../lib/environmentAccess'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
@@ -43,8 +45,20 @@ function DashboardComponent() {
   }, [])
   
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setCurrentUser(data?.user || null)
+    supabase.auth.getUser().then(async ({ data }) => {
+      const user = data?.user || null
+      setCurrentUser(user)
+      if (user) {
+        const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+        const accessMap = await getUserEnvironmentAccess()
+        const hasAccess = hasEnvironmentAccess(user.id, currentEnv, accessMap, user.user_metadata?.full_name, user.user_metadata?.role)
+        if (!hasAccess) {
+          toast.error('Você não possui acesso ao ambiente selecionado.', {
+            description: 'Redirecionando para a seleção de unidades permitidas.'
+          })
+          navigate({ to: '/ambientes' })
+        }
+      }
     })
   }, [])
   

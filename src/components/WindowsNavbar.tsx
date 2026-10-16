@@ -316,7 +316,11 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           {/* CONTRATO */}
           <div className="nav-contract">
             <div className="contract-top">
-              <div className="contract-info">
+              <div 
+                className="contract-info cursor-pointer hover:opacity-80 transition-opacity" 
+                onClick={() => navigate({ to: '/ambientes' as any })}
+                title="Clique para trocar de ambiente"
+              >
                 <span className="contract-label">Ambiente</span>
                 <strong className="contract-number">{envDisplayName}</strong>
               </div>
