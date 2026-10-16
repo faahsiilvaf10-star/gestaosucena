@@ -998,10 +998,11 @@ function DashboardComponent() {
       </div>
       
       <DdsUploadModal
+        key={`dds-modal-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
         isOpen={isDdsModalOpen}
         onClose={() => setIsDdsModalOpen(false)}
         tema={ddsData?.hoje?.tema || 'Sem tema agendado'}
-        palestrante={ddsData?.hoje?.palestrante?.nome || 'Livre'}
+        palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
         }}

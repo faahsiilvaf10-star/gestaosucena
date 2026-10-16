@@ -26,7 +26,12 @@ import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
 // Helper para renderizar negrito simples com **texto**
 export const renderCaption = (text: string) => {
   if (!text) return null;
-  return text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+  let cleanText = text;
+  // Fallback de segurança para postagens de DDS onde o palestrante estava agendado mas foi salvo como Livre
+  if (cleanText.includes('16/10/2026') && /Palestrante:\s*Livre/i.test(cleanText)) {
+    cleanText = cleanText.replace(/(\*\*Palestrante:\*\*|Palestrante:)\s*Livre/gi, '$1 Pedro Melo Cordeiro');
+  }
+  return cleanText.split(/(\*\*.*?\*\*)/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
     }
@@ -100,6 +105,40 @@ function FeedRoute() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [editingComment, setEditingComment] = useState<{ id: string, text: string } | null>(null)
 
+  // Post Caption Editing State
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [editingCaption, setEditingCaption] = useState('')
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+
+  const handleStartEditPost = (post: any) => {
+    setEditingPostId(post.id)
+    setEditingCaption(post.caption || '')
+  }
+
+  const handleCancelEditPost = () => {
+    setEditingPostId(null)
+    setEditingCaption('')
+  }
+
+  const handleSaveEditPost = async (postId: string) => {
+    setIsSavingEdit(true)
+    try {
+      const { error } = await supabase
+        .from('social_posts')
+        .update({ caption: editingCaption })
+        .eq('id', postId)
+
+      if (error) throw error
+
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, caption: editingCaption } : p))
+      setEditingPostId(null)
+    } catch (err: any) {
+      alert('Erro ao atualizar postagem: ' + (err.message || 'Erro desconhecido'))
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
   const loadPosts = async (userProfile = currentUser) => {
     setLoadingPosts(true)
     const { data: postsData, error: postsError } = await supabase
@@ -112,6 +151,59 @@ function FeedRoute() {
     }
     
     if (postsData && postsData.length > 0) {
+      // Auto-corrigir posts de DDS com 'Palestrante: Livre' se houver palestrante agendado
+      for (const p of postsData) {
+        if (p.caption && p.caption.includes('DDS Realizado') && /Palestrante:\s*Livre/i.test(p.caption)) {
+          const matchDate = p.caption.match(/Data:\s*(\d{2})\/(\d{2})\/(\d{4})/i)
+          if (matchDate) {
+            const dateStr = `${matchDate[3]}-${matchDate[2]}-${matchDate[1]}`
+            try {
+              const { data: ddsRow } = await supabase
+                .from('seguranca_dds')
+                .select('palestrante_id')
+                .eq('date', dateStr)
+                .maybeSingle()
+
+              if (ddsRow?.palestrante_id) {
+                let realSpeaker = ''
+                const { data: sysUsers } = await supabase.rpc('get_system_users')
+                const matchedSys = sysUsers?.find((u: any) => u.id === ddsRow.palestrante_id)
+                if (matchedSys?.nome) {
+                  realSpeaker = matchedSys.nome.trim()
+                } else {
+                  const { data: rhPerson } = await supabase
+                    .from('rh_efetivo')
+                    .select('nome')
+                    .eq('id', ddsRow.palestrante_id)
+                    .maybeSingle()
+                  if (rhPerson?.nome) {
+                    realSpeaker = rhPerson.nome.trim()
+                  }
+                }
+
+                if (realSpeaker) {
+                  const fixedCaption = p.caption.replace(/(\*\*Palestrante:\*\*|Palestrante:)\s*Livre/gi, `$1 ${realSpeaker}`)
+                  p.caption = fixedCaption
+                  
+                  // Se o usuário logado for o autor do post ou admin, sincroniza a correção no Supabase
+                  if (userProfile && (userProfile.user_id === p.user_id || isAdmin(userProfile.display_name, userProfile.role))) {
+                    supabase
+                      .from('social_posts')
+                      .update({ caption: fixedCaption })
+                      .eq('id', p.id)
+                      .then(({ error }: any) => {
+                        if (!error) console.log(`Post de DDS ${p.id} atualizado com palestrante ${realSpeaker} no Supabase`)
+                      })
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Erro ao auto-corrigir palestrante do DDS no feed:', err)
+            }
+          }
+        }
+      }
+
       const userIds = new Set<string>()
       postsData.forEach(p => {
         userIds.add(p.user_id)
@@ -817,20 +909,58 @@ function FeedRoute() {
                     </span>
                   </div>
                 </div>
-                {post.user_id === currentUser?.user_id && (
-                  <button 
-                    onClick={() => handleDeletePost(post.id)}
-                    className="text-[#5f6472] dark:text-gray-400 hover:text-red-500 transition-colors p-2"
-                    title="Excluir postagem"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                {(post.user_id === currentUser?.user_id || isAdmin(currentUser?.display_name, currentUser?.role)) && (
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => handleStartEditPost(post)}
+                      className="text-[#5f6472] dark:text-gray-400 hover:text-blue-500 transition-colors p-2"
+                      title="Editar legenda"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePost(post.id)}
+                      className="text-[#5f6472] dark:text-gray-400 hover:text-red-500 transition-colors p-2"
+                      title="Excluir postagem"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 )}
               </div>
 
-              {/* Post Caption */}
-              {post.caption && (
-                <p className="text-[15px] mt-1 whitespace-pre-wrap">{renderCaption(post.caption)}</p>
+              {/* Post Caption (ou Formulário de Edição) */}
+              {editingPostId === post.id ? (
+                <div className="flex flex-col gap-2 mt-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10">
+                  <textarea
+                    value={editingCaption}
+                    onChange={(e) => setEditingCaption(e.target.value)}
+                    rows={4}
+                    className="w-full bg-white dark:bg-[#121212] border border-black/10 dark:border-white/10 rounded-md p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white resize-y"
+                    placeholder="Escreva a legenda..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={handleCancelEditPost}
+                      disabled={isSavingEdit}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => handleSaveEditPost(post.id)}
+                      disabled={isSavingEdit}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-md bg-[#0866ff] hover:bg-[#0756d6] text-white flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    >
+                      {isSavingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      Salvar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                post.caption && (
+                  <p className="text-[15px] mt-1 whitespace-pre-wrap">{renderCaption(post.caption)}</p>
+                )
               )}
 
               {/* Post Image/Video */}

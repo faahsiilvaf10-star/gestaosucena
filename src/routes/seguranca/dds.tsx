@@ -248,7 +248,7 @@ function DDSSchedulePage() {
 
   const handleOpenDdsUpload = (targetTema?: string, targetPalestrante?: string) => {
     const t = targetTema !== undefined && targetTema !== '' ? targetTema : (todayDdsData?.tema || 'A DEFINIR')
-    const p = targetPalestrante !== undefined && targetPalestrante !== '' ? targetPalestrante : (todayPalestrante?.nome || 'Livre')
+    const p = targetPalestrante !== undefined && targetPalestrante !== '' ? targetPalestrante.trim() : (todayPalestrante?.nome?.trim() || '')
     setUploadTarget({
       tema: t,
       palestrante: p
