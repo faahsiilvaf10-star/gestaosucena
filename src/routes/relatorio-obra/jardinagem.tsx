@@ -11,13 +11,24 @@ import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
 import Droplets from 'lucide-react/dist/esm/icons/droplets.js';
 import Phone from 'lucide-react/dist/esm/icons/phone.js';
 import Lock from 'lucide-react/dist/esm/icons/lock.js';
+import Layers from 'lucide-react/dist/esm/icons/layers.js';
+import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/logActivity'
+import {
+  RocagemEntry,
+  calculatePeriodRocagemTotal,
+  getAllRocagemRecords,
+  formatM2,
+  getRocagemCycleForDate
+} from '../../lib/jardinagemRocagem'
+import { HistoricoRocagemTab } from '../../components/jardinagem/HistoricoRocagemTab'
 
 const maskNumber = (val: string, isFloat: boolean) => {
   if (!isFloat) {
@@ -62,7 +73,9 @@ function ActivityRow({
   setData, 
   isFloat = false,
   icon,
-  containerClassName = ''
+  containerClassName = '',
+  extraHeader,
+  extraFooter
 }: { 
   title: string; 
   data: any[]; 
@@ -70,6 +83,8 @@ function ActivityRow({
   isFloat?: boolean;
   icon?: React.ReactNode;
   containerClassName?: string;
+  extraHeader?: React.ReactNode;
+  extraFooter?: React.ReactNode;
 }) {
   const addRow = () => setData([...data, {value: '', faixa: '', berma: ''}]);
   
@@ -84,6 +99,7 @@ function ActivityRow({
           <Plus size={18} />
         </button>
       </div>
+      {extraHeader}
       {data.map((row, idx) => (
         <div key={idx} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="flex-1 w-full relative">
@@ -134,6 +150,7 @@ function ActivityRow({
           </div>
         </div>
       ))}
+      {extraFooter}
     </div>
   )
 }
@@ -176,10 +193,31 @@ function JardinagemPage() {
     return `${y}-${m}-${d}`;
   });
 
+  const [activeMainTab, setActiveMainTab] = useState<'diario' | 'historico_rocagem'>('diario');
+  const [allRocagemRecords, setAllRocagemRecords] = useState<RocagemEntry[]>([]);
+  const [loadingRocagem, setLoadingRocagem] = useState<boolean>(true);
+
   const [showHistory, setShowHistory] = useState(false);
   const [savedDates, setSavedDates] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const refreshRocagemRecords = async () => {
+    setLoadingRocagem(true);
+    try {
+      const records = await getAllRocagemRecords();
+      setAllRocagemRecords(records);
+    } catch (err) {
+      console.error('Erro ao buscar histórico de roçagem:', err);
+    } finally {
+      setLoadingRocagem(false);
+    }
+  };
+
+  // Cálculo em tempo real da soma do ciclo de roçagem (16 a 15)
+  const rocagemPeriodInfo = useMemo(() => {
+    return calculatePeriodRocagemTotal(selectedDate, allRocagemRecords, rocagem);
+  }, [selectedDate, allRocagemRecords, rocagem]);
 
   const updateSavedDates = async () => {
     const localKeys = Object.keys(localStorage).filter(k => k.startsWith('jardinagem_rdo_'));
@@ -196,7 +234,7 @@ function JardinagemPage() {
     try {
       const { data } = await supabase.from('global_settings').select('key, value').like('key', 'jardinagem_rdo_%');
       if (data) {
-        remoteDates = data.filter(r => r.value?.isLocked !== false).map(r => r.key.replace('jardinagem_rdo_', ''));
+        remoteDates = data.filter((r: any) => r.value?.isLocked !== false).map((r: any) => r.key.replace('jardinagem_rdo_', ''));
       }
     } catch (e) {}
 
@@ -228,6 +266,7 @@ function JardinagemPage() {
   useEffect(() => {
     updateSavedDates();
     loadDate(selectedDate);
+    refreshRocagemRecords();
   }, []);
 
   const handleSave = async () => {
@@ -239,7 +278,11 @@ function JardinagemPage() {
     };
     localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(dataToSave));
     setIsLocked(true);
-    toast.success('Relatório salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
+
+    const cycleTotal = rocagemPeriodInfo.totalM2;
+    toast.success(
+      `Relatório salvo para ${formatDateDisplay(selectedDate)}! Total de roçagem no ciclo (${rocagemPeriodInfo.cycle.startDate.slice(8)} a ${rocagemPeriodInfo.cycle.endDate.slice(8)}): ${formatM2(cycleTotal)} m²`
+    );
     
     try {
       await supabase.from('global_settings').upsert({
@@ -250,11 +293,12 @@ function JardinagemPage() {
       
       await logActivity({
         module: 'RDO',
-        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)}`
+        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Roçagem ciclo: ${formatM2(cycleTotal)} m²)`
       });
     } catch (e) {}
     
     updateSavedDates();
+    refreshRocagemRecords();
   }
 
   const loadDate = async (dateStr: string) => {
@@ -514,9 +558,55 @@ function JardinagemPage() {
             <Copy size={16} className="text-gray-500" /> Copiar
           </button>
         </div>
+
+        {/* Abas de Navegação */}
+        <div className="flex items-center gap-2 mt-5 p-1.5 bg-white/90 backdrop-blur-sm rounded-2xl w-fit max-w-full overflow-x-auto shadow-sm border border-gray-200">
+          <button
+            onClick={() => setActiveMainTab('diario')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
+              activeMainTab === 'diario'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Leaf size={16} className={activeMainTab === 'diario' ? 'text-white' : 'text-emerald-600'} />
+            <span>Registro Diário (RDO)</span>
+          </button>
+          <button
+            onClick={() => setActiveMainTab('historico_rocagem')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
+              activeMainTab === 'historico_rocagem'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Layers size={16} className={activeMainTab === 'historico_rocagem' ? 'text-white' : 'text-emerald-600'} />
+            <span>Histórico de Roçagem (Ciclos 16-15)</span>
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition-colors ${
+              activeMainTab === 'historico_rocagem'
+                ? 'bg-white/20 text-white'
+                : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {formatM2(rocagemPeriodInfo.totalM2)} m²
+            </span>
+          </button>
+        </div>
       </div>
 
-      <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
+      {activeMainTab === 'historico_rocagem' ? (
+        <div className="px-4 sm:px-8 mt-2">
+          <HistoricoRocagemTab
+            records={allRocagemRecords}
+            loading={loadingRocagem}
+            onSelectDate={(date) => {
+              loadDate(date);
+              setActiveMainTab('diario');
+            }}
+            onRefresh={refreshRocagemRecords}
+          />
+        </div>
+      ) : (
+        <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
         
         {/* Left Column - Form */}
         <fieldset disabled={isLocked} className="min-w-0 p-0 m-0 border-none group">
@@ -533,7 +623,49 @@ function JardinagemPage() {
           </p>
 
           <div className="flex flex-col gap-4 relative z-10">
-            <ActivityRow title="ROÇAGEM (m²)" data={rocagem} setData={setRocagem} />
+            <ActivityRow 
+              title="ROÇAGEM (m²)" 
+              data={rocagem} 
+              setData={setRocagem}
+              extraHeader={
+                <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border border-emerald-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-xs mt-0.5 sm:mt-0 shrink-0">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold tracking-wider uppercase text-emerald-900 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                          Período Contratual: {rocagemPeriodInfo.cycle.label}
+                        </span>
+                        <span className="text-xs text-emerald-700 font-medium">
+                          (dia 16 ao dia 15)
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                        <span className="text-xs text-gray-600">Total acumulado no período:</span>
+                        <span className="text-lg font-black text-emerald-950 tracking-tight">
+                          {formatM2(rocagemPeriodInfo.totalM2)} m²
+                        </span>
+                        {rocagemPeriodInfo.currentDayM2 > 0 && (
+                          <span className="text-xs text-emerald-800 font-bold bg-white/90 px-2 py-0.5 rounded-md border border-emerald-300 shadow-2xs">
+                            +{formatM2(rocagemPeriodInfo.currentDayM2)} m² hoje
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMainTab('historico_rocagem')}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-100/70 px-3 py-2 rounded-lg border border-emerald-300 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Ver Histórico por Faixa/Berma</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              }
+            />
             <ActivityRow title="ROÇAGEM ASPERSORES (Unidades)" data={rocagemAsp} setData={setRocagemAsp} />
             <ActivityRow title="PODAGEM (Unidade)" data={podagem} setData={setPodagem} />
             <ActivityRow title="COVA (Unidade)" data={cova} setData={setCova} />
@@ -795,6 +927,12 @@ function JardinagemPage() {
             ) : (
               <div className="flex flex-col gap-1">
                 {renderRows('Roçagem', rocagem, 'm²')}
+                {rocagemPeriodInfo.totalM2 > 0 && (
+                  <div className="text-emerald-800 bg-emerald-50/90 px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center justify-between my-1">
+                    <span>📐 Roçagem no Período ({rocagemPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {rocagemPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
+                    <span className="font-bold text-emerald-950">{formatM2(rocagemPeriodInfo.totalM2)} m²</span>
+                  </div>
+                )}
                 {renderRows('Roçagem Aspersores', rocagemAsp, 'unid')}
                 {renderRows('Podagem', podagem, 'unid')}
                 {renderRows('Cova', cova, 'unid')}
@@ -844,6 +982,7 @@ function JardinagemPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* History Modal */}
       {showHistory && (
