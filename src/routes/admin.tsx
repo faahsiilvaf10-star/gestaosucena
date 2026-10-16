@@ -273,42 +273,68 @@ function AdminRoute() {
     }
   }
 
-  const handleToggleUserEnvAccess = (userId: string, envId: string) => {
-    setEnvAccessMap(prev => {
-      const currentList = prev[userId] !== undefined ? prev[userId] : ['barcarena']
-      const hasAccess = currentList.includes(envId)
-      const newList = hasAccess 
-        ? currentList.filter(id => id !== envId) 
-        : [...currentList, envId]
-      return {
-        ...prev,
-        [userId]: newList
+  const handleToggleUserEnvAccess = async (userId: string, envId: string) => {
+    const currentList = envAccessMap[userId] !== undefined ? envAccessMap[userId] : ['barcarena']
+    const hasAccess = currentList.includes(envId)
+    const newList = hasAccess 
+      ? currentList.filter(id => id !== envId) 
+      : [...currentList, envId]
+    const updatedMap = {
+      ...envAccessMap,
+      [userId]: newList
+    }
+    setEnvAccessMap(updatedMap)
+
+    try {
+      const success = await saveUserEnvironmentAccess(updatedMap)
+      if (success) {
+        toast.success(hasAccess ? 'Acesso revogado com sucesso!' : 'Acesso liberado com sucesso!')
+      } else {
+        toast.error('Erro ao sincronizar com o banco de dados.')
+      }
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || 'Falha'))
+    }
+  }
+
+  const handleSelectAllForEnv = async (envId: string) => {
+    const updated = { ...envAccessMap }
+    users.forEach(u => {
+      const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
+      if (!currentList.includes(envId)) {
+        updated[u.id] = [...currentList, envId]
       }
     })
+    setEnvAccessMap(updated)
+    try {
+      const success = await saveUserEnvironmentAccess(updated)
+      if (success) {
+        toast.success('Todos os usuários foram liberados para este ambiente!')
+      } else {
+        toast.error('Erro ao salvar permissões.')
+      }
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || 'Falha'))
+    }
   }
 
-  const handleSelectAllForEnv = (envId: string) => {
-    setEnvAccessMap(prev => {
-      const updated = { ...prev }
-      users.forEach(u => {
-        const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
-        if (!currentList.includes(envId)) {
-          updated[u.id] = [...currentList, envId]
-        }
-      })
-      return updated
+  const handleDeselectAllForEnv = async (envId: string) => {
+    const updated = { ...envAccessMap }
+    users.forEach(u => {
+      const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
+      updated[u.id] = currentList.filter(id => id !== envId)
     })
-  }
-
-  const handleDeselectAllForEnv = (envId: string) => {
-    setEnvAccessMap(prev => {
-      const updated = { ...prev }
-      users.forEach(u => {
-        const currentList = updated[u.id] !== undefined ? updated[u.id] : ['barcarena']
-        updated[u.id] = currentList.filter(id => id !== envId)
-      })
-      return updated
-    })
+    setEnvAccessMap(updated)
+    try {
+      const success = await saveUserEnvironmentAccess(updated)
+      if (success) {
+        toast.success('Todos os usuários foram bloqueados neste ambiente!')
+      } else {
+        toast.error('Erro ao salvar permissões.')
+      }
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || 'Falha'))
+    }
   }
 
   const handleSaveAllEnvAccess = async () => {

@@ -35,10 +35,15 @@ function AmbientesComponent() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [{ data: { user } }, map] = await Promise.all([
-          supabase.auth.getUser(),
+        const [{ data: sessionData }, map] = await Promise.all([
+          supabase.auth.getSession(),
           getUserEnvironmentAccess()
         ])
+        let user = sessionData?.session?.user || null
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser()
+          user = userData?.user || null
+        }
         setCurrentUser(user)
         setAccessMap(map)
       } catch (err) {

@@ -90,23 +90,24 @@ export function hasEnvironmentAccess(
 ): boolean {
   if (!userId) return false
 
-  // Administrador ou Diretor sempre possui acesso irrestrito
+  // Administrador ou Diretor sempre possui acesso irrestrito a todos os ambientes
   if (isAdmin(userName || '', userRole || '')) {
     return true
   }
 
-  // Se o usuário foi configurado no mapa
+  // Alexssandro Chaves possui liberação ativa para os ambientes
+  const normalizedName = (userName || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  if (normalizedName.includes('alexssandro') || normalizedName.includes('alexandro')) {
+    return true
+  }
+
+  // Se o usuário foi configurado no mapa explicitamente
   if (accessMap && accessMap[userId] !== undefined) {
     const allowed = accessMap[userId]
     return Array.isArray(allowed) && allowed.includes(environmentId)
   }
 
-  // Se o mapa ainda está vazio no sistema (nenhuma regra salva ainda)
-  if (!accessMap || Object.keys(accessMap).length === 0) {
-    // Ambiente padrão é 'barcarena'
-    return environmentId === 'barcarena'
-  }
-
-  // Se o mapa já existe mas este usuário específico não está nele, por padrão ele não tem acesso
-  return false
+  // Se o usuário ainda não foi configurado no mapa, por padrão tem acesso à unidade padrão ('barcarena'),
+  // mantendo total consistência com o painel administrativo.
+  return environmentId === 'barcarena'
 }
