@@ -806,6 +806,38 @@
   animation: slideUpNotif 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Instacena Notification Popup Animation (Slide Down from Top-Right) */
+@keyframes slideDownNotif {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.94);
+  }
+  65% {
+    transform: translateY(3px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-down-notif {
+  animation: slideDownNotif 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes notifProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-notif-progress {
+  animation: notifProgress 6.5s linear forwards;
+}
+
 /* Esconde barras de navegação quando em modo assinatura */
 body.signature-active header,
 body.signature-active footer,

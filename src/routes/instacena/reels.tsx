@@ -11,6 +11,7 @@ import Film from 'lucide-react/dist/esm/icons/film.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { broadcastInstacenaActivity } from '../../lib/instacenaEvents'
 
 export const Route = createFileRoute('/instacena/reels')({
   component: ReelsRoute,
@@ -111,6 +112,12 @@ function ReelsRoute() {
       await supabase.from('social_post_likes').delete().match({ post_id: post.id, user_id: currentUserId });
     } else {
       await supabase.from('social_post_likes').insert({ post_id: post.id, user_id: currentUserId });
+      broadcastInstacenaActivity({
+        type: 'like',
+        actorId: currentUserId,
+        targetPostId: post.id,
+        mediaUrl: post.social_post_media?.[0]?.media_url || ''
+      });
     }
   }
 
@@ -140,6 +147,16 @@ function ReelsRoute() {
     
     if (!error && data) {
        const { data: profile } = await supabase.from('social_profiles').select('*').eq('user_id', currentUserId).single();
+       broadcastInstacenaActivity({
+         type: 'comment',
+         actorId: currentUserId,
+         actorName: profile?.display_name || profile?.username,
+         actorAvatar: profile?.avatar_url,
+         actorUsername: profile?.username,
+         content: newComment.trim(),
+         targetPostId: commentingPost.id,
+         mediaUrl: commentingPost.social_post_media?.[0]?.media_url || ''
+       });
        const stitchedComment = {
          ...data,
          social_profiles: profile

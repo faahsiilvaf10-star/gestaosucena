@@ -22,6 +22,7 @@ import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
+import { InstacenaNotificationPopup } from './instacena/InstacenaNotificationPopup'
 import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
@@ -189,6 +190,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <>
           <UserOnlineNotification currentUserId={currentUser.id} />
           <NewMessageNotification currentUserId={currentUser.id} />
+          <InstacenaNotificationPopup currentUserId={currentUser.id} />
         </>
       )}
 

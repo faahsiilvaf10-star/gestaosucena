@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { useTheme } from '../contexts/ThemeContext'
+import { broadcastInstacenaActivity } from '../lib/instacenaEvents'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -240,6 +241,16 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
         })
         
       if (mediaError) throw mediaError
+
+      broadcastInstacenaActivity({
+        type: 'post',
+        actorId: user.id,
+        actorName: user.user_metadata?.full_name || user.user_metadata?.name || 'Segurança do Trabalho',
+        actorAvatar: user.user_metadata?.avatar_url,
+        content: `DDS Realizado • ${editableTema?.trim() || 'Foto do Dia'}`,
+        mediaUrl: publicUrl,
+        targetPostId: post.id
+      })
 
       alert('DDS postado no Instacena com sucesso!')
       onSuccess?.()

@@ -22,6 +22,7 @@ import { Area, Point } from 'react-easy-crop'
 import { getCroppedImg } from '../../lib/cropImage'
 import { StoryViewer } from '../../components/instacena/StoryViewer'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
+import { broadcastInstacenaActivity } from '../../lib/instacenaEvents'
 
 // Helper para renderizar negrito simples com **texto**
 export const renderCaption = (text: string) => {
@@ -370,6 +371,17 @@ function FeedRoute() {
       await supabase.from('social_post_likes').delete().eq('post_id', postId).eq('user_id', currentUser.user_id)
     } else {
       await supabase.from('social_post_likes').insert({ post_id: postId, user_id: currentUser.user_id })
+      
+      const targetPost = posts.find(p => p.id === postId)
+      broadcastInstacenaActivity({
+        type: 'like',
+        actorId: currentUser.user_id,
+        actorName: currentUser.display_name || currentUser.username,
+        actorAvatar: currentUser.avatar_url,
+        actorUsername: currentUser.username,
+        targetPostId: postId,
+        mediaUrl: targetPost?.social_post_media?.[0]?.media_url || ''
+      })
     }
   }
 
@@ -399,6 +411,18 @@ function FeedRoute() {
     }))
     
     setCommentInputs(prev => ({ ...prev, [postId]: '' }))
+
+    const targetPost = posts.find(p => p.id === postId)
+    broadcastInstacenaActivity({
+      type: 'comment',
+      actorId: currentUser.user_id,
+      actorName: currentUser.display_name || currentUser.username,
+      actorAvatar: currentUser.avatar_url,
+      actorUsername: currentUser.username,
+      content: text.trim(),
+      targetPostId: postId,
+      mediaUrl: targetPost?.social_post_media?.[0]?.media_url || ''
+    })
 
     await supabase.from('social_comments').insert({
       post_id: postId,
@@ -558,6 +582,15 @@ function FeedRoute() {
         
       if (insertError) throw insertError
       
+      broadcastInstacenaActivity({
+        type: 'story',
+        actorId: currentUser.user_id,
+        actorName: currentUser.display_name || currentUser.username,
+        actorAvatar: currentUser.avatar_url,
+        actorUsername: currentUser.username,
+        mediaUrl: mediaType === 'image' ? urlData.publicUrl : ''
+      })
+
       // Update local state without reloading
       setStories(prev => {
          const existingGroupIndex = prev.findIndex(g => g.user.user_id === currentUser.user_id)
@@ -620,6 +653,7 @@ function FeedRoute() {
 
       if (postError) throw postError
 
+      let uploadedMediaUrl = ''
       if (selectedFile && post) {
         const fileExt = selectedFile.name.split('.').pop()
         const fileName = `${post.id}-${Math.random()}.${fileExt}`
@@ -637,6 +671,7 @@ function FeedRoute() {
             .from('posts')
             .getPublicUrl(filePath)
             
+          uploadedMediaUrl = publicUrl
           const isVideo = selectedFile.type.startsWith('video/')
           const { error: mediaError } = await supabase
             .from('social_post_media')
@@ -652,6 +687,17 @@ function FeedRoute() {
           }
         }
       }
+
+      broadcastInstacenaActivity({
+        type: 'post',
+        actorId: currentUser.user_id,
+        actorName: currentUser.display_name || currentUser.username,
+        actorAvatar: currentUser.avatar_url,
+        actorUsername: currentUser.username,
+        content: caption || '',
+        mediaUrl: uploadedMediaUrl,
+        targetPostId: post.id
+      })
 
       // Reset state and reload
       setCaption('')
