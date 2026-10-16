@@ -30,6 +30,7 @@ import { getWhatsappSettings } from '../../lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { sendEntryExitWhatsappNotification } from '@/lib/whatsappHelpers'
 import { isOutside, locationFromMovements, MovementRecord, EXIT_REASONS as LOCATION_EXIT_REASONS } from '@/lib/equipamentos/locationStatus'
+import { getAuthenticatedUserName } from '@/lib/authHelpers'
 
 // EXIT_REASONS passou a ter fonte única em @/lib/equipamentos/locationStatus.
 const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
@@ -305,9 +306,7 @@ function EntradaSaidaPage() {
   }
 
   const getUserName = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return 'Usuário Logado'
-    return user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário Logado'
+    return await getAuthenticatedUserName()
   }
 
   const handleConfirmEntry = async () => {

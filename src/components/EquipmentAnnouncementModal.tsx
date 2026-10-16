@@ -6,6 +6,7 @@ import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Info from 'lucide-react/dist/esm/icons/info.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import React, { useEffect, useState } from 'react';
+import { getEquipmentImage } from '../lib/equipamentos/equipmentImage';
 
 interface EquipmentAnnouncementModalProps {
   announcement: {
@@ -39,10 +40,13 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
   };
 
   const vehicleName = (eq?.name || '').toUpperCase();
-  const hideImage = eq?.category === 'Leve' || eq?.category === 'Canteiro' || eq?.category === 'Jardinagem';
-  const isMunck = vehicleName.startsWith('CM');
-  const isOnibus = vehicleName.startsWith('OB');
-  const truckImage = isMunck ? '/logomunk.png?v=1' : (isOnibus ? '/logoonibus.png?v=1' : '/logopipa.png?v=2');
+  const truckImage = getEquipmentImage(eq?.name, eq?.type, eq?.category);
+  const hideImage = !truckImage;
+
+  const rawAuthor = move?.created_by?.trim();
+  const displayAuthor = (!rawAuthor || rawAuthor === 'Usuário Logado' || rawAuthor === 'Sistema' || rawAuthor === 'Usuário')
+    ? (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || 'Portaria / Operador' : 'Portaria / Operador')
+    : rawAuthor;
 
   const title = type === 'exit' ? 'SAÍDA DE EQUIPAMENTO' : 'ENTRADA DE EQUIPAMENTO';
   const Icon = type === 'exit' ? ArrowRightCircle : ArrowLeftCircle;
@@ -110,8 +114,8 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
                 <User size={14} />
                 Registrado por
               </div>
-              <div className={`font-semibold text-sm truncate ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`}>
-                {move?.created_by || 'Sistema'}
+              <div className={`font-semibold text-sm truncate ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-gray-900'}`} title={displayAuthor}>
+                {displayAuthor}
               </div>
             </div>
 

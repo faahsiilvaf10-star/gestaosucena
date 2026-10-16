@@ -56,9 +56,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         const role = data.user.user_metadata?.role || ''
+        const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
+        if (userName && userName !== 'Usuário') {
+          try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
+        }
         setCurrentUser({
           id: data.user.id || '',
-          name: data.user.user_metadata?.full_name || data.user.email || 'Usuário',
+          name: userName,
           role: role || 'Usuário',
           avatarUrl: data.user.user_metadata?.avatar_url || ''
         })
@@ -68,9 +72,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         const role = session.user.user_metadata?.role || ''
+        const userName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
+        if (userName && userName !== 'Usuário') {
+          try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
+        }
         setCurrentUser({
           id: session.user.id || '',
-          name: session.user.user_metadata?.full_name || session.user.email || 'Usuário',
+          name: userName,
           role: role || 'Usuário',
           avatarUrl: session.user.user_metadata?.avatar_url || ''
         })

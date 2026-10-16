@@ -186,6 +186,10 @@ function Index() {
       toast.success('Login realizado com sucesso!')
       
       const userMeta = data.user?.user_metadata
+      const resolvedUserName = userMeta?.full_name || userMeta?.name || userMeta?.nome || email.split('@')[0]
+      if (resolvedUserName) {
+        localStorage.setItem('sucena_user_name', resolvedUserName)
+      }
       setAuthorizedUser({ 
         name: userMeta?.full_name || email, 
         role: userMeta?.role || 'Usuário' 
