@@ -792,12 +792,21 @@ body {
 }
 
 .dark .percent-box {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dark .percent-box strong {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.75) !important;
 }
 
 .dark .percent-box span {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 
 .dark .big-number {
@@ -1036,7 +1045,7 @@ body {
 
 .dark .donut-number {
   color: #fff !important;
-  text-shadow: 0 0 10px rgba(255,255,255,0.3);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4) !important;
 }
 
 .dark .donut::after {
@@ -1052,6 +1061,7 @@ body {
 }
 
 /* Percent boxes */
+.dark .neon-yellow .percent-box { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.22) !important; box-shadow: 0 0 15px rgba(255, 255, 255, 0.08) !important; }
 .dark .neon-green .percent-box { background: rgba(0, 255, 136, 0.1) !important; color: #00ff88 !important; border: 1px solid rgba(0,255,136,0.2); }
 .dark .neon-pink .percent-box { background: rgba(255, 0, 170, 0.1) !important; color: #ff00aa !important; border: 1px solid rgba(255,0,170,0.2); }
 .dark .neon-blue .percent-box { background: rgba(0, 210, 255, 0.1) !important; color: #00d2ff !important; border: 1px solid rgba(0,210,255,0.2); }
