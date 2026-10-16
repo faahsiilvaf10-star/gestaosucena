@@ -16,6 +16,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -489,18 +490,7 @@ function DDSSchedulePage() {
         <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm transition-all hover:shadow-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-center gap-4 min-w-0">
-              {todayPostData?.mediaUrl ? (
-                <div 
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 shadow-md border-2 border-blue-500/40 cursor-pointer hover:opacity-90 transition-opacity relative group"
-                  onClick={() => setExpandedImage(todayPostData.mediaUrl)}
-                  title="Clique para ver a foto do DDS ampliada"
-                >
-                  <img src={todayPostData.mediaUrl} alt="Foto do DDS de Hoje" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                    <ImageIcon className="w-5 h-5" />
-                  </div>
-                </div>
-              ) : todayPalestrante?.avatar_url ? (
+              {todayPalestrante?.avatar_url ? (
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 shadow-sm border border-gray-200">
                   <img src={todayPalestrante.avatar_url} alt={todayPalestrante.nome} className="w-full h-full object-cover" />
                 </div>
@@ -540,6 +530,27 @@ function DDSSchedulePage() {
               </Button>
             </div>
           </div>
+
+          {/* Foto do DDS em Tamanho Real na Página (Abaixo do nome do Palestrante) */}
+          {todayPostData?.mediaUrl && (
+            <div 
+              className="mt-5 w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative group bg-black/5 cursor-pointer"
+              onClick={() => setExpandedImage(todayPostData.mediaUrl)}
+              title="Clique para ver a foto do DDS ampliada em tela cheia"
+            >
+              <img 
+                src={todayPostData.mediaUrl} 
+                alt="Foto do DDS de Hoje" 
+                className="w-full h-auto max-h-[520px] object-cover sm:object-contain rounded-2xl transition-transform duration-300 group-hover:scale-[1.005]" 
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
+                <span className="bg-black/70 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg">
+                  <ZoomIn className="w-4 h-4" />
+                  Clique para ver em tela cheia
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs and Nav */}
