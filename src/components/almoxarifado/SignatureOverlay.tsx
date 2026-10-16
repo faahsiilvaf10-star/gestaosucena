@@ -241,10 +241,11 @@ export function SignatureOverlay({
         <SignatureCanvas
           ref={sigRef}
           penColor="#111827"
-          minWidth={1.5}
-          maxWidth={3.5}
+          minWidth={0.5}
+          maxWidth={1.1}
+          dotSize={0.8}
           throttle={16}
-          velocityFilterWeight={0.1}
+          velocityFilterWeight={0.7}
           canvasProps={{
             style: {
               display: 'block',

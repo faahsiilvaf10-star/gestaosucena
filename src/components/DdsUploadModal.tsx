@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { useTheme } from '../contexts/ThemeContext'
+import { broadcastInstacenaActivity } from '../lib/instacenaEvents'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -31,14 +32,104 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
   const [editableTema, setEditableTema] = useState(tema || '')
   const [editablePalestrante, setEditablePalestrante] = useState(palestrante || '')
   const [palestranteType, setPalestranteType] = useState<'interno' | 'externo'>('interno')
-  const [users, setUsers] = useState<any[]>([])
+  const [colaboradores, setColaboradores] = useState<Array<{ id: string; nome: string; cargo?: string; source: 'system' | 'rh' }>>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Carregar todos os colaboradores (usuários do sistema e efetivo do RH)
   useEffect(() => {
-    supabase.rpc('get_system_users').then(({ data }) => {
-      setUsers(data || [])
+    Promise.all([
+      supabase.rpc('get_system_users'),
+      supabase.from('rh_efetivo').select('id, nome, cargo').eq('status', 'ATIVO')
+    ]).then(([sysRes, rhRes]) => {
+      const list: Array<{ id: string; nome: string; cargo?: string; source: 'system' | 'rh' }> = []
+      const ids = new Set<string>()
+
+      ;(sysRes.data || []).forEach((u: any) => {
+        if (u.id && u.nome) {
+          ids.add(u.id)
+          list.push({
+            id: u.id,
+            nome: u.nome.trim(),
+            cargo: u.cargo || 'Usuário do Sistema',
+            source: 'system'
+          })
+        }
+      })
+
+      ;(rhRes.data || []).forEach((e: any) => {
+        if (e.id && e.nome && !ids.has(e.id)) {
+          list.push({
+            id: e.id,
+            nome: e.nome.trim(),
+            cargo: e.cargo || 'Efetivo RH',
+            source: 'rh'
+          })
+        }
+      })
+
+      list.sort((a, b) => a.nome.localeCompare(b.nome))
+      setColaboradores(list)
+    }).catch(err => {
+      console.error('Erro ao buscar colaboradores no modal de DDS:', err)
     })
   }, [])
+
+  // Sincronizar dados e buscar agendamento do banco se palestrante for 'Livre' ou vazio
+  useEffect(() => {
+    if (!isOpen) return
+
+    setFile(null)
+    setPreview(null)
+    setNotes('')
+
+    const resolveTodayDds = async () => {
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+      let initialTema = tema && tema !== 'Sem tema agendado' ? tema.trim() : ''
+      let initialPalestrante = palestrante && palestrante !== 'Livre' && palestrante !== 'Desconhecido' ? palestrante.trim() : ''
+
+      // Se palestrante for 'Livre' ou vazio, busca direto no agendamento de hoje
+      if (!initialPalestrante || initialPalestrante.toLowerCase() === 'livre' || !initialTema || initialTema === 'A DEFINIR') {
+        try {
+          const { data: ddsRow } = await supabase
+            .from('seguranca_dds')
+            .select('tema, palestrante_id')
+            .eq('date', todayStr)
+            .maybeSingle()
+
+          if (ddsRow) {
+            if (ddsRow.tema && (!initialTema || initialTema === 'Sem tema agendado')) {
+              initialTema = ddsRow.tema.trim()
+            }
+            if (ddsRow.palestrante_id && (!initialPalestrante || initialPalestrante.toLowerCase() === 'livre')) {
+              const { data: users } = await supabase.rpc('get_system_users')
+              const matchedUser = users?.find((u: any) => u.id === ddsRow.palestrante_id)
+              if (matchedUser?.nome) {
+                initialPalestrante = matchedUser.nome.trim()
+              } else {
+                const { data: rhEmp } = await supabase
+                  .from('rh_efetivo')
+                  .select('nome')
+                  .eq('id', ddsRow.palestrante_id)
+                  .maybeSingle()
+                if (rhEmp?.nome) {
+                  initialPalestrante = rhEmp.nome.trim()
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao resolver DDS do dia no modal:', err)
+        }
+      }
+
+      setEditableTema(initialTema || tema || '')
+      setEditablePalestrante(initialPalestrante || (palestrante && palestrante !== 'Livre' ? palestrante.trim() : '') || '')
+    }
+
+    resolveTodayDds()
+  }, [isOpen, tema, palestrante])
 
   if (!isOpen) return null
 
@@ -68,8 +159,46 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
       
       const today = new Date().toLocaleDateString('pt-BR')
 
+      // Garantir que não envie 'Livre' se houver palestrante selecionado ou agendado
+      let speaker = editablePalestrante?.trim()
+      if (!speaker || speaker.toLowerCase() === 'livre') {
+        speaker = palestrante && palestrante !== 'Livre' ? palestrante.trim() : ''
+      }
+
+      // Se ainda for vazio/Livre, tenta uma última consulta no banco para a data de hoje
+      if (!speaker || speaker.toLowerCase() === 'livre') {
+        const todayDdsDate = new Date()
+        const todayStr = `${todayDdsDate.getFullYear()}-${String(todayDdsDate.getMonth() + 1).padStart(2, '0')}-${String(todayDdsDate.getDate()).padStart(2, '0')}`
+        const { data: lastCheck } = await supabase
+          .from('seguranca_dds')
+          .select('palestrante_id')
+          .eq('date', todayStr)
+          .maybeSingle()
+        if (lastCheck?.palestrante_id) {
+          const matched = colaboradores.find(c => c.id === lastCheck.palestrante_id)
+          if (matched?.nome) {
+            speaker = matched.nome.trim()
+          } else {
+            const { data: rhPerson } = await supabase
+              .from('rh_efetivo')
+              .select('nome')
+              .eq('id', lastCheck.palestrante_id)
+              .maybeSingle()
+            if (rhPerson?.nome) {
+              speaker = rhPerson.nome.trim()
+            } else {
+              const { data: sysUsers } = await supabase.rpc('get_system_users')
+              const sysUser = sysUsers?.find((u: any) => u.id === lastCheck.palestrante_id)
+              if (sysUser?.nome) {
+                speaker = sysUser.nome.trim()
+              }
+            }
+          }
+        }
+      }
+
       // Estruturar legenda
-      const caption = `🎤 **DDS Realizado!**\n**Tema:** ${editableTema || 'Sem tema agendado'}\n**Palestrante:** ${editablePalestrante || 'Livre'}\n**Data:** ${today}\n**Cor Proibida do Mês:** ${colorName}\n\n${notes}`
+      const caption = `🎤 **DDS Realizado!**\n**Tema:** ${editableTema?.trim() || 'Sem tema agendado'}\n**Palestrante:** ${speaker || 'Livre'}\n**Data:** ${today}\n**Cor Proibida do Mês:** ${colorName}\n\n${notes}`
 
       const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO'
 
@@ -112,6 +241,16 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
         })
         
       if (mediaError) throw mediaError
+
+      broadcastInstacenaActivity({
+        type: 'post',
+        actorId: user.id,
+        actorName: user.user_metadata?.full_name || user.user_metadata?.name || 'Segurança do Trabalho',
+        actorAvatar: user.user_metadata?.avatar_url,
+        content: `DDS Realizado • ${editableTema?.trim() || 'Foto do Dia'}`,
+        mediaUrl: publicUrl,
+        targetPostId: post.id
+      })
 
       alert('DDS postado no Instacena com sucesso!')
       onSuccess?.()
@@ -176,7 +315,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
               <label className="block text-sm font-semibold mb-1 text-gray-900 dark:text-gray-200">Tema do DDS</label>
               <input 
                 type="text"
-                className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200'}`}
+                className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10 text-white' : 'bg-white border-gray-200 text-black'}`}
                 value={editableTema}
                 onChange={e => setEditableTema(e.target.value)}
                 placeholder="Ex: Prevenção de acidentes..."
@@ -206,23 +345,34 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
 
               {palestranteType === 'interno' ? (
                 <select
-                  className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200'}`}
+                  className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10 text-white' : 'bg-white border-gray-200 text-black'}`}
                   value={editablePalestrante}
                   onChange={e => setEditablePalestrante(e.target.value)}
                 >
                   <option value="" disabled>Selecione um colaborador...</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.nome}>{u.nome}</option>
-                  ))}
-                  {/* Fallback caso o nome atual não esteja na lista, ex: 'Livre' */}
-                  {editablePalestrante && !users.find(u => u.nome === editablePalestrante) && (
-                    <option value={editablePalestrante} className="hidden">{editablePalestrante}</option>
+                  <optgroup label="Usuários do Sistema">
+                    {colaboradores.filter(c => c.source === 'system').map(c => (
+                      <option key={c.id} value={c.nome}>
+                        {c.nome} {c.cargo ? `• ${c.cargo}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Efetivo do RH">
+                    {colaboradores.filter(c => c.source === 'rh').map(c => (
+                      <option key={c.id} value={c.nome}>
+                        {c.nome} {c.cargo ? `• ${c.cargo}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                  {/* Fallback caso o nome atual não esteja na lista */}
+                  {editablePalestrante && !colaboradores.some(c => c.nome.toLowerCase() === editablePalestrante.toLowerCase()) && (
+                    <option value={editablePalestrante}>{editablePalestrante}</option>
                   )}
                 </select>
               ) : (
                 <input 
                   type="text"
-                  className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200'}`}
+                  className={`w-full p-2 text-sm rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${isDark ? 'bg-black/20 border-white/10 text-white' : 'bg-white border-gray-200 text-black'}`}
                   value={editablePalestrante}
                   onChange={e => setEditablePalestrante(e.target.value)}
                   placeholder="Ex: João Silva"
@@ -235,7 +385,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
           <div>
             <label className="block text-sm font-semibold mb-2">Anotações Adicionais</label>
             <textarea
-              className={`w-full p-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none h-28 ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200'}`}
+              className={`w-full p-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none h-28 ${isDark ? 'bg-black/20 border-white/10 text-white' : 'bg-white border-gray-200 text-black'}`}
               placeholder="Adicione observações ou comentários sobre o que foi discutido..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

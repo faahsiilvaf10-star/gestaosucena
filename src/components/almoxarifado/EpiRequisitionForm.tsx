@@ -21,8 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
-import { getWhatsappSettings } from '@/lib/settings';
-import { sendWhatsappMediaOnServer } from '@/lib/whatsapp-api';
+import { sendEpiRequisitionWhatsappNotification } from '@/lib/whatsappHelpers';
 import { SignatureOverlay } from '@/components/almoxarifado/SignatureOverlay';
 
 function generateReceiptPng(
@@ -253,6 +252,87 @@ function generateReceiptPng(
       }
     };
 
+    /**
+     * Normaliza a espessura do traço da assinatura para que ambas fiquem
+     * uniformes com traço fino e nítido (caneta de espessura constante),
+     * eliminando discrepâncias causadas por velocidade do toque, DPR ou resolução.
+     */
+    const normalizeSignatureCanvas = (
+      img: HTMLImageElement,
+      sx: number,
+      sy: number,
+      sWidth: number,
+      sHeight: number,
+      targetW: number,
+      targetH: number
+    ): HTMLCanvasElement => {
+      const c = document.createElement('canvas');
+      c.width = targetW;
+      c.height = targetH;
+      const cCtx = c.getContext('2d');
+      if (!cCtx) return c;
+
+      cCtx.imageSmoothingEnabled = true;
+      cCtx.imageSmoothingQuality = 'high';
+      cCtx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
+
+      try {
+        const imgData = cCtx.getImageData(0, 0, targetW, targetH);
+        const data = imgData.data;
+
+        // Estima espessura média do traço: 2 * (Área / Perímetro)
+        let ink = 0;
+        let boundary = 0;
+        for (let py = 0; py < targetH; py++) {
+          for (let px = 0; px < targetW; px++) {
+            const a = data[(py * targetW + px) * 4 + 3];
+            if (a > 50) {
+              ink++;
+              const top = py > 0 ? data[((py - 1) * targetW + px) * 4 + 3] : 0;
+              const bot = py < targetH - 1 ? data[((py + 1) * targetW + px) * 4 + 3] : 0;
+              const left = px > 0 ? data[(py * targetW + (px - 1)) * 4 + 3] : 0;
+              const right = px < targetW - 1 ? data[(py * targetW + (px + 1)) * 4 + 3] : 0;
+              if (top < 50 || bot < 50 || left < 50 || right < 50) {
+                boundary++;
+              }
+            }
+          }
+        }
+
+        const estimatedThickness = boundary > 0 ? (2 * ink) / boundary : 1;
+        // Se a espessura for superior a 1.8px (traço grosso), aplicamos erosão anti-aliasing
+        const passes = estimatedThickness > 3.2 ? 2 : estimatedThickness > 1.8 ? 1 : 0;
+
+        if (passes > 0) {
+          let current = new Uint8ClampedArray(data);
+          for (let p = 0; p < passes; p++) {
+            const next = new Uint8ClampedArray(current);
+            for (let py = 1; py < targetH - 1; py++) {
+              for (let px = 1; px < targetW - 1; px++) {
+                const idx = (py * targetW + px) * 4;
+                const a = current[idx + 3];
+                if (a > 40) {
+                  const top = current[((py - 1) * targetW + px) * 4 + 3];
+                  const bot = current[((py + 1) * targetW + px) * 4 + 3];
+                  const left = current[(py * targetW + (px - 1)) * 4 + 3];
+                  const right = current[(py * targetW + (px + 1)) * 4 + 3];
+                  if (top < 40 || bot < 40 || left < 40 || right < 40) {
+                    // Suaviza e afina a borda externa
+                    next[idx + 3] = Math.max(0, a - 170);
+                  }
+                }
+              }
+            }
+            current = next;
+          }
+          for (let i = 0; i < data.length; i++) data[i] = current[i];
+          cCtx.putImageData(imgData, 0, 0);
+        }
+      } catch (_) {}
+
+      return c;
+    };
+
     const drawSignature = (img: HTMLImageElement, centerX: number, lineY: number) => {
       const bounds = getTrimmedBounds(img);
       const maxW = 240;
@@ -261,24 +341,24 @@ function generateReceiptPng(
       if (bounds.width <= 0 || bounds.height <= 0) return;
 
       // Escala estritamente mantendo a proporção de aspecto (sem puxar e sem cortar)
-      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, bounds.width < 140 ? 1.1 : 1.0);
+      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, 1.0);
       const drawW = Math.round(bounds.width * scale);
       const drawH = Math.round(bounds.height * scale);
 
       const drawX = Math.round(centerX - drawW / 2);
       const drawY = Math.round(lineY - drawH - 5);
 
-      ctx.drawImage(
+      const normalizedCanvas = normalizeSignatureCanvas(
         bounds.img,
         bounds.sx,
         bounds.sy,
         bounds.sWidth,
         bounds.sHeight,
-        drawX,
-        drawY,
         drawW,
         drawH
       );
+
+      ctx.drawImage(normalizedCanvas, drawX, drawY);
     };
 
     if (authSig) {
@@ -481,7 +561,7 @@ export function EpiRequisitionForm() {
       );
 
       // Salva no Supabase
-      await createMutation.mutateAsync({
+      const createdRequisition = await createMutation.mutateAsync({
         authorizer_id: authorizerId,
         employee_id: employeeId,
         destination_area: destinationArea,
@@ -499,39 +579,34 @@ export function EpiRequisitionForm() {
 
       // Dispara envio automático no WhatsApp se estiver habilitado
       try {
-        const settings = await getWhatsappSettings();
-        if (settings.requisitionAlerts?.enabled && settings.url && settings.token) {
-          const groupId = settings.requisitionAlerts.specificGroupId || settings.groupId;
-          if (groupId) {
-             const itemsList = validItems.map(it => {
-               const prod = epiProducts?.find(p => p.id === it.productId);
-               return `  - ${prod?.name || 'Desconhecido'} (${it.quantity})`;
-             }).join('\n');
-             const dataStr = format(new Date(), 'dd/MM/yyyy');
-             let caption = settings.messageTemplates?.requisicaoEpi || '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}';
-             caption = caption.replace('{data}', dataStr)
-                              .replace('{nome}', employee?.nome || '')
-                              .replace('{cargo}', employee?.cargo || '-')
-                              .replace('{matricula}', employee?.matricula || '-')
-                              .replace('{motivo}', reason || '.')
-                              .replace('{autorizador}', authorizer?.nome || '')
-                              .replace('{matricula_autorizador}', authorizer?.matricula || '-')
-                              .replace('{itens}', itemsList);
-             await sendWhatsappMediaOnServer({
-               data: {
-                 url: settings.url,
-                 token: settings.token,
-                 instanceId: settings.instanceId,
-                 phone: groupId,
-                 caption,
-                 base64Media: receiptBase64,
-                 fileName: 'recibo-epi.jpg'
-               }
-             });
+        const wpRes = await sendEpiRequisitionWhatsappNotification({
+          authorizerName: authorizer?.nome || '',
+          authorizerMatricula: authorizer?.matricula || '',
+          employeeName: employee?.nome || '',
+          employeeCargo: employee?.cargo || '',
+          employeeMatricula: employee?.matricula || '',
+          destinationArea,
+          reason,
+          items: validItems.map(it => {
+            const prod = epiProducts?.find(p => p.id === it.productId);
+            return { name: prod?.name || 'Desconhecido', quantity: it.quantity };
+          }),
+          dateStr,
+          receiptBase64,
+          receiptImageUrl: (createdRequisition as any)?.receipt_image_url
+        });
+
+        if (wpRes.success) {
+          if (wpRes.queued) {
+            toast.info('Requisição salva! A notificação do WhatsApp foi enfileirada e será enviada assim que o WhatsApp responder.', { duration: 5000 });
+          } else {
+            toast.success('Requisição salva e notificação enviada ao WhatsApp!', { duration: 4000 });
           }
+        } else if (wpRes.error && !wpRes.error.includes('desativado')) {
+          toast.warning(`Requisição salva! Aviso WhatsApp: ${wpRes.error}. Você pode reenviar a qualquer momento na lista de requisições.`, { duration: 6000 });
         }
-      } catch (err) {
-        console.error("Erro ao enviar whatsapp automático", err);
+      } catch (wpErr) {
+        console.error("Erro ao enviar whatsapp automático:", wpErr);
       }
 
       toast.success('Recibo gerado e salvo com sucesso!', { id: toastId });
@@ -779,7 +854,11 @@ export function EpiRequisitionForm() {
                 >
                   <SignatureCanvas
                     ref={authorizerSigRef}
-                    penColor="black"
+                    penColor="#111827"
+                    minWidth={0.5}
+                    maxWidth={1.1}
+                    dotSize={0.8}
+                    velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />
                 </div>
@@ -815,7 +894,11 @@ export function EpiRequisitionForm() {
                 >
                   <SignatureCanvas
                     ref={employeeSigRef}
-                    penColor="black"
+                    penColor="#111827"
+                    minWidth={0.5}
+                    maxWidth={1.1}
+                    dotSize={0.8}
+                    velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />
                 </div>

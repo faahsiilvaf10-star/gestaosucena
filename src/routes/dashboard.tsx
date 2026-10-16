@@ -3,6 +3,7 @@ import Gift from 'lucide-react/dist/esm/icons/gift.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
@@ -114,11 +115,15 @@ function DashboardComponent() {
         .in('date', [today, tomorrow])
         
       const { data: users } = await supabase.rpc('get_system_users')
+      const { data: rhList } = await supabase.from('rh_efetivo').select('id, nome')
       
       const getPalestranteInfo = (id: string) => {
         if (!id) return { id: null, nome: 'Livre', avatar: null }
         const user = (users || []).find((u: any) => u.id === id)
-        return user ? { id: user.id, nome: user.nome, avatar: user.avatar_url || null } : { id: null, nome: 'Desconhecido', avatar: null }
+        if (user) return { id: user.id, nome: user.nome, avatar: user.avatar_url || null }
+        const rh = (rhList || []).find((r: any) => r.id === id)
+        if (rh) return { id: rh.id, nome: rh.nome, avatar: null }
+        return { id: null, nome: 'Desconhecido', avatar: null }
       }
 
       const todayDds = schedule?.find(s => s.date === today)
@@ -890,63 +895,82 @@ function DashboardComponent() {
                  </div>
                  <div className="flex flex-col">
                    <span className="font-light text-white text-sm">Prepare-se!</span>
-                   <span className="text-slate-400 text-sm">Revise o tema com antecedência</span>
-                 </div>
-               </div>
-            </div>
+                    <span className="text-slate-400 text-sm">Revise o tema com antecedência</span>
+                  </div>
+                </div>
+             </div>
           )}
 
           {/* DDS HOJE */}
           <div 
-            className="dashboard-card relative cursor-pointer hover:shadow-md transition-shadow col-span-1 md:col-span-6"
+            className="dashboard-card relative cursor-pointer hover:shadow-md transition-shadow col-span-1 md:col-span-6 flex flex-col justify-between"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
-            <div className="dds-card-content w-full">
-              <div className="dds-main w-full pr-12">
-                {ddsData?.hoje?.postedMedia ? (
-                  <div 
-                    className="w-24 sm:w-32 rounded-xl overflow-hidden shrink-0 shadow-sm border border-gray-100/50 cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={(e) => { e.stopPropagation(); setExpandedImage(ddsData.hoje.postedMedia); }}
-                  >
-                    <img src={ddsData.hoje.postedMedia} alt="DDS Realizado" className="w-full h-auto object-contain" />
-                  </div>
-                ) : ddsData?.hoje?.palestrante?.avatar ? (
-                  <div className="icon-box p-0 overflow-hidden shrink-0 shadow-sm border border-gray-100/50">
-                    <img src={ddsData.hoje.palestrante.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="icon-box icon-blue shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                  </div>
-                )}
-                <div className="flex-1 w-full">
-                  <div className="flex justify-between items-start gap-4 w-full">
-                    <div>
-                      <div className="dds-label text-blue-600">DDS Hoje</div>
-                      <div className="dds-status capitalize">{ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'livre'}</div>
-                      <div className="dds-theme">Tema: {ddsData?.hoje?.tema || 'Sem tema agendado'}</div>
+            <div className="flex flex-col w-full h-full justify-between">
+              <div className="flex items-start justify-between gap-4 w-full">
+                <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                  {ddsData?.hoje?.palestrante?.avatar ? (
+                    <div className="icon-box p-0 overflow-hidden shrink-0 shadow-sm border border-gray-100/50 mt-0.5">
+                      <img src={ddsData.hoje.palestrante.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
-                      className="hidden sm:flex text-xs items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-1.5 rounded-lg font-light transition-colors border border-blue-500/20 shrink-0"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                      Postar DDS
-                    </button>
+                  ) : (
+                    <div className="icon-box icon-blue shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="dds-label text-blue-600 mb-0">DDS Hoje</div>
+                      {ddsData?.hoje?.postedMedia && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          Foto postada
+                        </span>
+                      )}
+                    </div>
+                    <div className="dds-status capitalize truncate mt-0.5 text-xl sm:text-2xl font-bold">
+                      {ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'livre'}
+                    </div>
+                    <div className="dds-theme text-xs sm:text-sm mt-0.5 text-gray-500 dark:text-gray-400 truncate">
+                      Tema: <span className="font-semibold text-gray-800 dark:text-gray-200">{ddsData?.hoje?.tema || 'Sem tema agendado'}</span>
+                    </div>
                   </div>
-                  {/* Botão Mobile */}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setIsDdsModalOpen(true); }}
-                    className="sm:hidden mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-2 rounded-lg font-light transition-colors border border-blue-500/20"
+                    className="flex text-xs items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-blue-500/20 shrink-0"
+                    title={ddsData?.hoje?.postedMedia ? "Alterar foto do DDS" : "Postar foto do DDS"}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    Postar DDS
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                    <span>{ddsData?.hoje?.postedMedia ? "Alterar Foto" : "Postar DDS"}</span>
                   </button>
+                  <div className="dds-arrow text-gray-400 dark:text-gray-500 p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
                 </div>
               </div>
-              <div className="dds-arrow absolute right-6 top-1/2 -translate-y-1/2 hidden sm:block">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
+
+              {/* Foto do DDS em Tamanho Real na Página (Abaixo do nome do Palestrante) */}
+              {ddsData?.hoje?.postedMedia && (
+                <div 
+                  className="mt-4 w-full rounded-xl overflow-hidden border border-black/10 dark:border-white/10 shadow-sm relative group bg-black/5 dark:bg-black/30 cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); setExpandedImage(ddsData.hoje.postedMedia); }}
+                  title="Clique para ver a foto em tela cheia"
+                >
+                  <img 
+                    src={ddsData.hoje.postedMedia} 
+                    alt="Foto do DDS de Hoje" 
+                    className="w-full h-auto max-h-[380px] sm:max-h-[460px] object-cover sm:object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.01]" 
+                  />
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
+                    <span className="bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-lg">
+                      <ZoomIn size={14} />
+                      Clique para ampliar
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -994,10 +1018,11 @@ function DashboardComponent() {
       </div>
       
       <DdsUploadModal
+        key={`dds-modal-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
         isOpen={isDdsModalOpen}
         onClose={() => setIsDdsModalOpen(false)}
         tema={ddsData?.hoje?.tema || 'Sem tema agendado'}
-        palestrante={ddsData?.hoje?.palestrante?.nome || 'Livre'}
+        palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
         }}

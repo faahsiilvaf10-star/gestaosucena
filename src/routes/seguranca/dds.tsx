@@ -9,6 +9,14 @@ import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
 import ChevronsUpDown from 'lucide-react/dist/esm/icons/chevrons-up-down.js';
+import Upload from 'lucide-react/dist/esm/icons/upload.js';
+import Camera from 'lucide-react/dist/esm/icons/camera.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import Briefcase from 'lucide-react/dist/esm/icons/briefcase.js';
+import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -23,6 +31,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useTheme } from '@/contexts/ThemeContext'
+import { DdsUploadModal } from '@/components/DdsUploadModal'
 
 // Helper para feriados móveis e fixos no Brasil
 function getEaster(year: number) {
@@ -68,6 +78,7 @@ export const Route = createFileRoute('/seguranca/dds')({
 
 function DDSSchedulePage() {
   const queryClient = useQueryClient()
+  const { isDark } = useTheme()
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
   
   // Dialog state
@@ -76,10 +87,22 @@ function DDSSchedulePage() {
   const [tema, setTema] = useState('')
   const [palestranteId, setPalestranteId] = useState('')
   const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [speakerFilterMode, setSpeakerFilterMode] = useState<'system' | 'rh'>('system')
   const [confirmAction, setConfirmAction] = useState<{isOpen: boolean, title: string, message: string, action: () => void}>({ isOpen: false, title: '', message: '', action: () => {} })
 
-  // Fetch employees from system users (via RPC)
-  const { data: employees = [] } = useQuery({
+  // Estados para Modal de Upload do DDS e Foto Expandida
+  const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [uploadTarget, setUploadTarget] = useState<{ tema: string; palestrante: string }>({
+    tema: '',
+    palestrante: ''
+  })
+
+  const todayDate = useMemo(() => new Date(), [])
+  const todayDateStr = useMemo(() => format(todayDate, 'yyyy-MM-dd'), [todayDate])
+
+  // Buscar usuários cadastrados no sistema (via RPC)
+  const { data: systemUsers = [] } = useQuery({
     queryKey: ['system_users'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_system_users')
@@ -90,6 +113,149 @@ function DDSSchedulePage() {
       return data || []
     }
   })
+
+  // Buscar todo o efetivo do RH
+  const { data: rhEfetivo = [] } = useQuery({
+    queryKey: ['rh_efetivo_dds'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rh_efetivo')
+        .select('id, nome, cargo, status')
+        .eq('status', 'ATIVO')
+        .order('nome', { ascending: true })
+      if (error) {
+        console.error("Erro ao buscar efetivo do RH:", error)
+        throw error
+      }
+      return data || []
+    }
+  })
+
+  // Para compatibilidade com outras referências existentes
+  const employees = systemUsers
+
+  // Lista consolidada de palestrantes para resolver qualquer ID (usuário do sistema ou efetivo do RH)
+  const allSpeakers = useMemo(() => {
+    const list: Array<{ id: string; nome: string; cargo?: string; avatar_url?: string; source: 'system' | 'rh' }> = []
+    const ids = new Set<string>()
+
+    systemUsers.forEach((u: any) => {
+      ids.add(u.id)
+      list.push({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo || 'Usuário do Sistema',
+        avatar_url: u.avatar_url,
+        source: 'system'
+      })
+    })
+
+    rhEfetivo.forEach((emp: any) => {
+      if (!ids.has(emp.id)) {
+        list.push({
+          id: emp.id,
+          nome: emp.nome,
+          cargo: emp.cargo || 'Colaborador',
+          avatar_url: undefined,
+          source: 'rh'
+        })
+      }
+    })
+
+    return list
+  }, [systemUsers, rhEfetivo])
+
+  const allSpeakersMap = useMemo(() => {
+    const map = new Map<string, { id: string; nome: string; cargo?: string; avatar_url?: string; source: 'system' | 'rh' }>()
+    allSpeakers.forEach(s => map.set(s.id, s))
+    return map
+  }, [allSpeakers])
+
+  // Colaboradores filtrados para exibir no seletor manual (apenas usuários ou todo efetivo)
+  const displayedSpeakers = useMemo(() => {
+    if (speakerFilterMode === 'system') {
+      return systemUsers.map((u: any) => ({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo || 'Usuário do Sistema',
+        avatar_url: u.avatar_url,
+        source: 'system' as const
+      }))
+    }
+    return rhEfetivo.map((e: any) => ({
+      id: e.id,
+      nome: e.nome,
+      cargo: e.cargo || 'Colaborador',
+      avatar_url: undefined,
+      source: 'rh' as const
+    }))
+  }, [speakerFilterMode, systemUsers, rhEfetivo])
+
+  // Buscar DDS de hoje especificamente (permanece visível mesmo mudando de mês)
+  const { data: todayDdsData } = useQuery({
+    queryKey: ['seguranca_dds_today', todayDateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('seguranca_dds')
+        .select('id, date, tema, palestrante_id')
+        .eq('date', todayDateStr)
+        .maybeSingle()
+      if (error) {
+        console.error("Erro ao buscar DDS de hoje:", error)
+        return null
+      }
+      return data || null
+    }
+  })
+
+  // Buscar foto do DDS de hoje já postada no Instacena (social_posts)
+  const { data: todayPostData, refetch: refetchTodayPost } = useQuery({
+    queryKey: ['dds_post_today', todayDateStr],
+    queryFn: async () => {
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+
+      const { data, error } = await supabase
+        .from('social_posts')
+        .select(`
+          id,
+          caption,
+          created_at,
+          social_post_media (
+            media_url
+          )
+        `)
+        .like('caption', '%DDS Realizado!%')
+        .gte('created_at', startOfToday.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (error) {
+        console.error("Erro ao buscar foto do DDS de hoje:", error)
+        return null
+      }
+      const mediaUrl = data?.[0]?.social_post_media?.[0]?.media_url || null
+      return { post: data?.[0] || null, mediaUrl }
+    },
+    refetchInterval: 30000,
+    staleTime: 10000
+  })
+
+  // Palestrante de hoje
+  const todayPalestrante = useMemo(() => {
+    if (!todayDdsData?.palestrante_id) return null
+    return allSpeakersMap.get(todayDdsData.palestrante_id) || null
+  }, [todayDdsData, allSpeakersMap])
+
+  const handleOpenDdsUpload = (targetTema?: string, targetPalestrante?: string) => {
+    const t = targetTema !== undefined && targetTema !== '' ? targetTema : (todayDdsData?.tema || 'A DEFINIR')
+    const p = targetPalestrante !== undefined && targetPalestrante !== '' ? targetPalestrante.trim() : (todayPalestrante?.nome?.trim() || '')
+    setUploadTarget({
+      tema: t,
+      palestrante: p
+    })
+    setIsDdsModalOpen(true)
+  }
 
   // Fetch month schedule
   const monthStart = startOfMonth(currentMonth)
@@ -135,6 +301,7 @@ function DDSSchedulePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
+      queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
       setEditDialogOpen(false)
       toast.success("Salvo com sucesso!")
     },
@@ -153,6 +320,7 @@ function DDSSchedulePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
+      queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
     }
   })
 
@@ -199,6 +367,7 @@ function DDSSchedulePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
+      queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
       toast.success("Dias preenchidos com sucesso!")
     },
     onError: (err: any) => {
@@ -217,6 +386,7 @@ function DDSSchedulePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
+      queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
     }
   })
 
@@ -230,6 +400,22 @@ function DDSSchedulePage() {
     setSelectedDate(date)
     setTema(entry?.tema || '')
     setPalestranteId(entry?.palestrante_id || '')
+
+    // Identificar a qual lista o palestrante atual pertence
+    if (entry?.palestrante_id) {
+      const isSystem = systemUsers.some((u: any) => u.id === entry.palestrante_id)
+      if (isSystem) {
+        setSpeakerFilterMode('system')
+      } else {
+        const isRh = rhEfetivo.some((e: any) => e.id === entry.palestrante_id)
+        if (isRh) {
+          setSpeakerFilterMode('rh')
+        }
+      }
+    } else {
+      setSpeakerFilterMode('system')
+    }
+
     setEditDialogOpen(true)
   }
 
@@ -276,14 +462,14 @@ function DDSSchedulePage() {
   const scheduleMap = useMemo(() => {
     const map = new Map()
     schedule.forEach((s: any) => {
-      const emp = employees.find((e: any) => e.id === s.palestrante_id)
+      const emp = allSpeakersMap.get(s.palestrante_id)
       map.set(s.date, {
         ...s,
         palestrante: emp ? { id: emp.id, nome: emp.nome, cargo: emp.cargo, avatar_url: emp.avatar_url } : null
       })
     })
     return map
-  }, [schedule, employees])
+  }, [schedule, allSpeakersMap])
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-[#f8f9fa] text-black">
@@ -292,12 +478,79 @@ function DDSSchedulePage() {
         
         <div className="space-y-2">
           <div className="flex items-center space-x-3 text-black">
-            <Sun className="w-8 h-8" />
+            <Sun className="w-8 h-8 text-amber-500" />
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">
               DDS - Diálogo de Segurança
             </h1>
           </div>
           <p className="text-gray-500">Gerencie escalas e consulte os temas programados</p>
+        </div>
+
+        {/* Card DDS HOJE - Postagem e Consulta da Foto do Dia */}
+        <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm transition-all hover:shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-center gap-4 min-w-0">
+              {todayPalestrante?.avatar_url ? (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 shadow-sm border border-gray-200">
+                  <img src={todayPalestrante.avatar_url} alt={todayPalestrante.nome} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 border border-blue-500/20">
+                  <FileText className="w-6 h-6" />
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-blue-600 tracking-wider uppercase">
+                    DDS HOJE
+                  </span>
+                  {todayPostData?.mediaUrl && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Foto postada
+                    </span>
+                  )}
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold tracking-tight text-black capitalize truncate mt-0.5">
+                  {todayPalestrante?.nome?.toLowerCase() || 'Livre / Não agendado'}
+                </div>
+                <div className="text-sm text-gray-500 mt-0.5 truncate">
+                  Tema: <span className="font-semibold text-gray-800">{todayDdsData?.tema || 'A DEFINIR'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+              <Button
+                onClick={() => handleOpenDdsUpload()}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/30 px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{todayPostData?.mediaUrl ? 'Alterar Foto do DDS' : 'Postar DDS'}</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Foto do DDS em Tamanho Real na Página (Abaixo do nome do Palestrante) */}
+          {todayPostData?.mediaUrl && (
+            <div 
+              className="mt-5 w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative group bg-black/5 cursor-pointer"
+              onClick={() => setExpandedImage(todayPostData.mediaUrl)}
+              title="Clique para ver a foto do DDS ampliada em tela cheia"
+            >
+              <img 
+                src={todayPostData.mediaUrl} 
+                alt="Foto do DDS de Hoje" 
+                className="w-full h-auto max-h-[520px] object-cover sm:object-contain rounded-2xl transition-transform duration-300 group-hover:scale-[1.005]" 
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
+                <span className="bg-black/70 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg">
+                  <ZoomIn className="w-4 h-4" />
+                  Clique para ver em tela cheia
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs and Nav */}
@@ -327,6 +580,13 @@ function DDSSchedulePage() {
           <h2 className="text-xl font-bold mb-2">Ações Rápidas</h2>
           <p className="text-gray-500 text-sm mb-6">Gerencie a escala do mês</p>
           <div className="flex flex-wrap gap-4">
+            <Button 
+              onClick={() => handleOpenDdsUpload()} 
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium border-0 shadow-sm"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Postar Foto do DDS
+            </Button>
             <Button 
               onClick={handleRandomize} 
               disabled={generateRandomMutation.isPending}
@@ -375,11 +635,25 @@ function DDSSchedulePage() {
                 {workDays.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd')
                   const entry = scheduleMap.get(dateStr)
+                  const isCurrentDay = dateStr === todayDateStr
                   
                   return (
-                    <tr key={dateStr} className="hover:bg-gray-50/80 transition-colors group">
+                    <tr 
+                      key={dateStr} 
+                      className={cn(
+                        "hover:bg-gray-50/80 transition-colors group",
+                        isCurrentDay && "bg-blue-50/40"
+                      )}
+                    >
                       <td className="px-6 py-4 font-bold text-black whitespace-nowrap">
-                        {format(day, 'dd/MM')}
+                        <div className="flex items-center gap-2">
+                          <span>{format(day, 'dd/MM')}</span>
+                          {isCurrentDay && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-100 text-blue-700">
+                              HOJE
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500 capitalize whitespace-nowrap">
                         {format(day, 'EEE', { locale: ptBR }).replace('.', '')}
@@ -414,6 +688,15 @@ function DDSSchedulePage() {
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {isCurrentDay && (
+                            <button 
+                              onClick={() => handleOpenDdsUpload(entry?.tema, entry?.palestrante?.nome)}
+                              title="Postar Foto do DDS de Hoje"
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                            >
+                              <Camera className="w-4 h-4" />
+                            </button>
+                          )}
                           <button 
                             onClick={() => openEdit(day)}
                             className="p-2 text-[#5f6472] dark:text-gray-400 hover:text-black transition-colors"
@@ -442,15 +725,30 @@ function DDSSchedulePage() {
             {workDays.map(day => {
               const dateStr = format(day, 'yyyy-MM-dd')
               const entry = scheduleMap.get(dateStr)
+              const isCurrentDay = dateStr === todayDateStr
               
               return (
-                <div key={dateStr} className="p-4 flex flex-col gap-4">
+                <div key={dateStr} className={cn("p-4 flex flex-col gap-4", isCurrentDay && "bg-blue-50/40")}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-black text-xl">{format(day, 'dd/MM')}</span>
+                      {isCurrentDay && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-100 text-blue-700">
+                          HOJE
+                        </span>
+                      )}
                       <span className="text-gray-500 capitalize text-sm">{format(day, 'EEEE', { locale: ptBR })}</span>
                     </div>
                     <div className="flex gap-2">
+                      {isCurrentDay && (
+                        <button 
+                          onClick={() => handleOpenDdsUpload(entry?.tema, entry?.palestrante?.nome)} 
+                          title="Postar foto do DDS" 
+                          className="p-2.5 text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-200 rounded-xl transition-colors"
+                        >
+                          <Camera className="w-4 h-4" />
+                        </button>
+                      )}
                       <button onClick={() => openEdit(day)} className="p-2.5 text-gray-500 hover:text-black bg-gray-50 border border-gray-200 rounded-xl transition-colors">
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -513,45 +811,114 @@ function DDSSchedulePage() {
           </DialogHeader>
           <div className="grid gap-6 py-4">
             
-            <div className="space-y-2 flex flex-col">
-              <Label className="text-gray-700">Palestrante</Label>
+            <div className="space-y-3 flex flex-col">
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-700 font-semibold text-sm">Palestrante</Label>
+                {palestranteId && (
+                  <button
+                    type="button"
+                    onClick={() => setPalestranteId('')}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                  >
+                    Limpar seleção
+                  </button>
+                )}
+              </div>
+
+              {/* Seletor de Origem: Usuários Cadastrados ou Todo Efetivo do RH */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                  Origem do colaborador:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerFilterMode('system')}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-semibold rounded-lg transition-all",
+                      speakerFilterMode === 'system'
+                        ? "bg-white text-blue-700 shadow-sm border border-gray-200"
+                        : "text-gray-600 hover:text-black hover:bg-white/60"
+                    )}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="truncate">Usuários ({systemUsers.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerFilterMode('rh')}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-semibold rounded-lg transition-all",
+                      speakerFilterMode === 'rh'
+                        ? "bg-white text-emerald-700 shadow-sm border border-gray-200"
+                        : "text-gray-600 hover:text-black hover:bg-white/60"
+                    )}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span className="truncate">Efetivo RH ({rhEfetivo.length})</span>
+                  </button>
+                </div>
+              </div>
+
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={comboboxOpen}
-                    className="w-full justify-between bg-white border-gray-300 hover:bg-gray-50 text-black"
+                    className="w-full justify-between bg-white border-gray-300 hover:bg-gray-50 text-black text-left font-normal h-11"
                   >
-                    {palestranteId
-                      ? employees.find((e) => e.id === palestranteId)?.nome
-                      : "Selecione o palestrante..."}
+                    <span className="truncate">
+                      {palestranteId
+                        ? allSpeakersMap.get(palestranteId)?.nome || "Colaborador selecionado"
+                        : speakerFilterMode === 'system' ? "Selecione um usuário cadastrado..." : "Selecione um colaborador do RH..."}
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[380px] p-0 bg-white border-gray-200 text-black shadow-lg rounded-xl">
+                <PopoverContent className="w-[380px] p-0 bg-white border-gray-200 text-black shadow-xl rounded-xl">
                   <Command className="bg-transparent">
-                    <CommandInput placeholder="Buscar colaborador..." className="text-black" />
-                    <CommandList>
-                      <CommandEmpty className="py-4 text-center text-sm text-gray-500">Nenhum colaborador encontrado.</CommandEmpty>
-                      <CommandGroup>
-                        {employees.map((emp) => (
+                    <CommandInput 
+                      placeholder={speakerFilterMode === 'system' ? "Buscar usuário cadastrado..." : "Buscar no efetivo do RH..."} 
+                      className="text-black" 
+                    />
+                    <CommandList className="max-h-[260px] overflow-y-auto">
+                      <CommandEmpty className="py-4 text-center text-sm text-gray-500">
+                        Nenhum colaborador encontrado.
+                      </CommandEmpty>
+                      <CommandGroup heading={speakerFilterMode === 'system' ? "Usuários Cadastrados" : "Efetivo do RH"}>
+                        {displayedSpeakers.map((emp) => (
                           <CommandItem
                             key={emp.id}
-                            value={emp.nome}
+                            value={`${emp.nome} ${emp.cargo || ''}`}
                             onSelect={() => {
                               setPalestranteId(emp.id)
                               setComboboxOpen(false)
                             }}
-                            className="text-black hover:bg-gray-100 cursor-pointer"
+                            className="text-black hover:bg-gray-100 cursor-pointer flex items-center justify-between py-2"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                palestranteId === emp.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {emp.nome} - <span className="text-gray-500 text-xs ml-1">{emp.cargo}</span>
+                            <div className="flex items-center min-w-0 mr-2">
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0 text-blue-600",
+                                  palestranteId === emp.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="truncate">
+                                <span className="font-medium text-sm text-gray-900">{emp.nome}</span>
+                                {emp.cargo && (
+                                  <span className="text-gray-500 text-xs ml-1.5 block sm:inline truncate">
+                                    • {emp.cargo}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className={cn(
+                              "text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded shrink-0",
+                              emp.source === 'system' ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            )}>
+                              {emp.source === 'system' ? 'Sistema' : 'RH'}
+                            </span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -559,6 +926,23 @@ function DDSSchedulePage() {
                   </Command>
                 </PopoverContent>
               </Popover>
+
+              {palestranteId && allSpeakersMap.get(palestranteId) && (
+                <div className="flex items-center justify-between text-xs text-gray-600 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <span className="truncate">
+                    Selecionado: <strong className="text-gray-900">{allSpeakersMap.get(palestranteId)?.nome}</strong>
+                    {allSpeakersMap.get(palestranteId)?.cargo && (
+                      <span className="text-gray-500"> ({allSpeakersMap.get(palestranteId)?.cargo})</span>
+                    )}
+                  </span>
+                  <span className={cn(
+                    "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ml-2 shrink-0",
+                    allSpeakersMap.get(palestranteId)?.source === 'system' ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"
+                  )}>
+                    {allSpeakersMap.get(palestranteId)?.source === 'system' ? 'Usuário' : 'RH'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -615,6 +999,40 @@ function DDSSchedulePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Upload DDS Photo Modal */}
+      <DdsUploadModal
+        key={`dds-upload-modal-${uploadTarget.tema}-${uploadTarget.palestrante}-${isDdsModalOpen}`}
+        isOpen={isDdsModalOpen}
+        onClose={() => setIsDdsModalOpen(false)}
+        tema={uploadTarget.tema || 'A DEFINIR'}
+        palestrante={uploadTarget.palestrante || 'Livre'}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['dds_post_today'] })
+          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
+          refetchTodayPost()
+          toast.success("Foto do DDS postada com sucesso!")
+        }}
+      />
+
+      {/* Expanded Image Modal */}
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[99999] p-4 cursor-zoom-out"
+          onClick={() => setExpandedImage(null)}
+        >
+          <img src={expandedImage} alt="Foto do DDS Expandida" className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl" />
+          <button 
+            className="absolute top-6 right-6 text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpandedImage(null)
+            }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

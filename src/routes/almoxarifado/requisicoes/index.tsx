@@ -8,6 +8,7 @@ import User from 'lucide-react/dist/esm/icons/user.js';
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useDeleteEpiRequisition } from '@/hooks/useEpiRequisitions'
+import { sendEpiRequisitionWhatsappNotification } from '@/lib/whatsappHelpers'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/almoxarifado/requisicoes/')(
   { component: RequisicoesList }
@@ -30,6 +33,49 @@ function RequisicoesList() {
   const [endDate, setEndDate] = useState(todayStr)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [reqToDelete, setReqToDelete] = useState<{id: string, name: string} | null>(null)
+  const [sendingWhatsappId, setSendingWhatsappId] = useState<string | null>(null)
+
+  const handleSendWhatsapp = async (req: any) => {
+    setSendingWhatsappId(req.id)
+    const toastId = toast.loading(`Enviando requisição de ${req.employee?.nome || 'EPI'} para o WhatsApp...`)
+    try {
+      const items = (req.items || []).map((it: any) => ({
+        name: it.product?.name || 'Item',
+        quantity: it.quantity
+      }))
+
+      const dateFormatted = req.requisition_date
+        ? format(new Date(req.requisition_date + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+        : format(new Date(), 'dd/MM/yyyy')
+
+      const res = await sendEpiRequisitionWhatsappNotification({
+        authorizerName: req.authorizer?.nome || '',
+        authorizerMatricula: req.authorizer?.matricula || '',
+        employeeName: req.employee?.nome || '',
+        employeeCargo: req.employee?.cargo || '',
+        employeeMatricula: req.employee?.matricula || '',
+        destinationArea: req.destination_area || '',
+        reason: req.reason || '',
+        items,
+        dateStr: dateFormatted,
+        receiptImageUrl: req.receipt_image_url
+      })
+
+      if (res.success) {
+        if (res.queued) {
+          toast.info('Requisição enfileirada no sistema! O envio será realizado assim que a API responder.', { id: toastId, duration: 5000 })
+        } else {
+          toast.success(res.mode === 'media' ? 'Recibo e detalhes enviados com sucesso ao grupo do WhatsApp!' : 'Detalhes da requisição enviados com sucesso ao grupo do WhatsApp!', { id: toastId })
+        }
+      } else {
+        toast.error(`Não foi possível enviar ao WhatsApp: ${res.error || 'Falha no envio'}`, { id: toastId, duration: 6000 })
+      }
+    } catch (err: any) {
+      toast.error('Erro ao despachar WhatsApp: ' + (err.message || 'Falha inesperada'), { id: toastId })
+    } finally {
+      setSendingWhatsappId(null)
+    }
+  }
 
   const deleteMutation = useDeleteEpiRequisition()
 
@@ -216,7 +262,18 @@ function RequisicoesList() {
                   </div>
 
                   {/* Right: actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-500/30 transition-all font-medium"
+                      onClick={() => handleSendWhatsapp(req)}
+                      disabled={sendingWhatsappId === req.id}
+                      title="Enviar ou reenviar esta requisição no grupo do WhatsApp"
+                    >
+                      <MessageCircle size={15} />
+                      {sendingWhatsappId === req.id ? 'Enviando...' : 'WhatsApp'}
+                    </Button>
                     {req.receipt_image_url && (
                       <Button
                         variant="outline"

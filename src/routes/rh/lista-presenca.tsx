@@ -349,101 +349,137 @@ function RhListaPresencaPage() {
 
   const fetchPresencas = async (currentColaboradores: Colaborador[]) => {
     try {
-      const { data, error } = await supabase
+      const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
+      const defaultAreas = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
+
+      const normalizeArea = (areaName?: string | null) => {
+        if (!areaName || areaName.toUpperCase().includes('BARCARENA')) return 'Área Gabião'
+        return areaName
+      }
+
+      // 1. Buscar registros salvos para a data selecionada
+      const { data: todayData, error: todayError } = await supabase
         .from('rh_presencas')
         .select('*')
         .eq('data', attendanceDate)
-        
-      if (error) throw error
-      
-      let nextColaboradores: Colaborador[] = []
-      let draftLoaded = false
-      const defaultAreas = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
-      
-      let newLockedAreas: string[] = []
-      const draftStr = localStorage.getItem(`rh_draft_${attendanceDate}`)
 
-      if (draftStr !== null) {
-        try {
-          nextColaboradores = JSON.parse(draftStr)
-          draftLoaded = true
-        } catch (e) {
-          console.error("Erro ao ler rascunho:", e)
+      if (todayError) throw todayError
+
+      // Agrupa por área o que já está salvo no banco para a data atual
+      const savedTodayByArea = new Map<string, any[]>()
+      todayData?.forEach(d => {
+        if (d.status !== 'REMOVIDO') {
+          const normArea = normalizeArea(d.area)
+          if (!savedTodayByArea.has(normArea)) {
+            savedTodayByArea.set(normArea, [])
+          }
+          savedTodayByArea.get(normArea)!.push(d)
         }
+      })
+
+      // 2. Buscar presenças anteriores a esta data para herdar os mesmos funcionários do dia anterior
+      const { data: pastData, error: pastError } = await supabase
+        .from('rh_presencas')
+        .select('*')
+        .lt('data', attendanceDate)
+        .order('data', { ascending: false })
+        .limit(500)
+
+      if (pastError) {
+        console.error('Erro ao buscar presenças anteriores:', pastError)
       }
 
-      if (!draftLoaded) {
-        if (data && data.length > 0) {
-          // Lista já salva para esta data no banco — mostrar SOMENTE os funcionários salvos
-          const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
-          
-          nextColaboradores = data
-            .filter(d => d.status !== 'REMOVIDO')
-            .map(d => {
-              const emp = efetivoMap.get(d.funcionario_id)
-              let finalArea = d.area
-              if (!finalArea || finalArea.toUpperCase().includes('BARCARENA')) finalArea = 'Área Gabião'
-              return {
-                id: d.funcionario_id,
-                nome: emp ? emp.nome : 'Desconhecido',
-                cargo: emp ? emp.cargo : null,
-                setor: finalArea,
-                status: d.status
-              }
+      // Para cada área, identifica qual foi a data mais recente salva
+      const latestDateByArea = new Map<string, string>()
+      pastData?.forEach(d => {
+        const normArea = normalizeArea(d.area)
+        if (!latestDateByArea.has(normArea)) {
+          latestDateByArea.set(normArea, d.data)
+        }
+      })
+
+      // Para cada área, coleta os funcionários da data mais recente
+      const previousEmployeesByArea = new Map<string, any[]>()
+      pastData?.forEach(d => {
+        const normArea = normalizeArea(d.area)
+        if (d.data === latestDateByArea.get(normArea) && d.status !== 'REMOVIDO') {
+          if (!previousEmployeesByArea.has(normArea)) {
+            previousEmployeesByArea.set(normArea, [])
+          }
+          previousEmployeesByArea.get(normArea)!.push(d)
+        }
+      })
+
+      // Rascunho do localStorage (se houver modificações ativas não salvas)
+      let draftColaboradores: Colaborador[] = []
+      const draftStr = localStorage.getItem(`rh_draft_${attendanceDate}`)
+      if (draftStr) {
+        try {
+          const parsed = JSON.parse(draftStr)
+          if (Array.isArray(parsed)) draftColaboradores = parsed
+        } catch (_) {}
+      }
+
+      // Todas as áreas conhecidas
+      const allKnownAreas = Array.from(new Set([
+        ...defaultAreas,
+        ...customAreas,
+        ...Array.from(savedTodayByArea.keys()),
+        ...Array.from(latestDateByArea.keys()),
+        ...draftColaboradores.map(c => c.setor).filter(Boolean) as string[]
+      ]))
+
+      let nextColaboradores: Colaborador[] = []
+      let newLockedAreas: string[] = []
+
+      // Montar a lista área por área
+      for (const area of allKnownAreas) {
+        if (savedTodayByArea.has(area)) {
+          // ÁREA JÁ SALVA NO BANCO PARA A DATA ATUAL:
+          const rows = savedTodayByArea.get(area) || []
+          rows.forEach(d => {
+            const emp = efetivoMap.get(d.funcionario_id)
+            nextColaboradores.push({
+              id: d.funcionario_id,
+              nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
+              cargo: emp ? emp.cargo : null,
+              setor: area,
+              status: d.status
             })
+          })
+
+          // Bloqueia a área caso não tenha sido explicitamente desbloqueada pelo usuário
+          if (localStorage.getItem(`rh_unlocked_${attendanceDate}_${area}`) !== 'true') {
+            newLockedAreas.push(area)
+          }
         } else {
-          // Nenhuma lista para hoje — tentar carregar do último dia salvo
-          const { data: lastData, error: lastError } = await supabase
-            .from('rh_presencas')
-            .select('data')
-            .lt('data', attendanceDate)
-            .order('data', { ascending: false })
-            .limit(1)
+          // ÁREA NÃO SALVA AINDA PARA A DATA ATUAL:
+          const isCleared = sessionStorage.getItem(`rh_cleared_${attendanceDate}_${area}`) === 'true'
+          const draftForArea = draftColaboradores.filter(c => (c.setor || 'Sem Área') === area)
 
-          if (!lastError && lastData && lastData.length > 0) {
-            const lastDate = lastData[0].data
-            // Buscar todas as presenças desse último dia
-            const { data: fullLastData, error: fullLastError } = await supabase
-              .from('rh_presencas')
-              .select('*')
-              .eq('data', lastDate)
-
-            if (!fullLastError && fullLastData && fullLastData.length > 0) {
-              const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
-              nextColaboradores = fullLastData
-                .filter(d => d.status !== 'REMOVIDO')
-                .map(d => {
-                  const emp = efetivoMap.get(d.funcionario_id)
-                  let finalArea = d.area
-                  if (!finalArea || finalArea.toUpperCase().includes('BARCARENA')) finalArea = 'Área Gabião'
-                  return {
-                    id: d.funcionario_id,
-                    nome: emp ? emp.nome : 'Desconhecido',
-                    cargo: emp ? emp.cargo : null,
-                    setor: finalArea,
-                    status: 'PRESENTE' // Herdar tudo como presente por padrão
-                  }
-                })
-            } else {
-              nextColaboradores = []
-            }
-          } else {
-            nextColaboradores = []
+          if (!isCleared && draftForArea.length > 0) {
+            draftForArea.forEach(c => nextColaboradores.push(c))
+          } else if (!isCleared) {
+            // HERDA DO DIA ANTERIOR SALVO:
+            const prevRows = previousEmployeesByArea.get(area) || []
+            prevRows.forEach(d => {
+              const emp = efetivoMap.get(d.funcionario_id)
+              nextColaboradores.push({
+                id: d.funcionario_id,
+                nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
+                cargo: emp ? emp.cargo : null,
+                setor: area,
+                status: 'PRESENTE' // Já pré-definidos como presentes para o novo dia
+              })
+            })
           }
         }
       }
 
-      // Bloqueia as áreas que vieram do banco (exceto as que o usuário desbloqueou manualmente no cache)
-      if (data && data.length > 0) {
-        const dbAreas = Array.from(new Set(data.map(d => d.area || 'Sem Área')))
-        newLockedAreas = dbAreas.filter(area => localStorage.getItem(`rh_unlocked_${attendanceDate}_${area}`) !== 'true')
-      }
-
       setLockedAreas(newLockedAreas)
-
       setColaboradores(nextColaboradores)
 
-      // Auto-select first tab that has employees
+      // Atualiza tabs disponíveis
       const areasFromColabs = Array.from(new Set(nextColaboradores.map(c => c.setor).filter(Boolean) as string[]))
       const allAreasSet = new Set([...defaultAreas, ...areasFromColabs, ...customAreas])
       deletedAreas.forEach(a => {
@@ -454,13 +490,13 @@ function RhListaPresencaPage() {
       const availableAreas = Array.from(allAreasSet)
       
       const firstAreaWithEmployees = availableAreas.find(a => nextColaboradores.some(c => (c.setor || 'Sem Área') === a))
-      setActiveTab(firstAreaWithEmployees || availableAreas[0] || 'Sem Área')
+      
+      // Mantém a aba ativa se ela ainda for válida, senão seleciona a primeira com funcionários
+      setActiveTab(prev => (prev && availableAreas.includes(prev)) ? prev : (firstAreaWithEmployees || availableAreas[0] || 'Sem Área'))
 
-      // Mark initial load as done so draft saving can begin
       initialLoadDone.current = true
-
     } catch (err) {
-      console.error(err)
+      console.error('Erro ao carregar presenças:', err)
     }
   }
 
@@ -548,6 +584,7 @@ function RhListaPresencaPage() {
       
       setLockedAreas(prev => [...prev, activeTab])
       localStorage.removeItem(`rh_unlocked_${attendanceDate}_${activeTab}`)
+      sessionStorage.removeItem(`rh_cleared_${attendanceDate}_${activeTab}`)
       
       const { logActivity } = await import('../../lib/logActivity');
       const dateObj = new Date(attendanceDate + 'T12:00:00');
@@ -919,10 +956,14 @@ function RhListaPresencaPage() {
                   </button>
                   <button 
                     onClick={() => {
-                      if (window.confirm('Deseja limpar a lista atual? Isso removerá todos os colaboradores não salvos.')) {
-                        localStorage.removeItem(`rh_draft_${attendanceDate}`);
-                        setColaboradores([]);
-                        toast.success('Lista limpa com sucesso!');
+                      if (window.confirm(`Deseja limpar os colaboradores de ${activeTab}?`)) {
+                        sessionStorage.setItem(`rh_cleared_${attendanceDate}_${activeTab}`, 'true');
+                        setColaboradores(prev => {
+                          const updated = prev.filter(c => (c.setor || 'Sem Área') !== activeTab);
+                          localStorage.setItem(`rh_draft_${attendanceDate}`, JSON.stringify(updated));
+                          return updated;
+                        });
+                        toast.success(`Lista de ${activeTab} limpa com sucesso!`);
                       }
                     }} 
                     disabled={lockedAreas.includes(activeTab) || colaboradores.filter(c => (c.setor || 'Sem Área') === activeTab).length === 0} 
