@@ -21,7 +21,7 @@ import Check from 'lucide-react/dist/esm/icons/check.js';
 interface SignatureOverlayProps {
   title: string;
   personName: string;
-  sigRef: React.RefObject<SignatureCanvas>;
+  sigRef: React.RefObject<SignatureCanvas | null>;
   onBack: () => void;
   onNext: () => void;
   nextLabel?: string;
@@ -241,9 +241,9 @@ export function SignatureOverlay({
         <SignatureCanvas
           ref={sigRef}
           penColor="#111827"
-          minWidth={0.5}
-          maxWidth={1.1}
-          dotSize={0.8}
+          minWidth={0.6}
+          maxWidth={0.9}
+          dotSize={0.7}
           throttle={16}
           velocityFilterWeight={0.7}
           canvasProps={{
