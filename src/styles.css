@@ -252,13 +252,13 @@
     --theme-surface: hsl(0 0% 8%);
     --theme-card: hsl(0 0% 8%);
     --theme-popover: hsl(0 0% 8%);
-    --theme-card-foreground: hsl(0 0% 96%);
-    --theme-popover-foreground: hsl(0 0% 96%);
+    --theme-card-foreground: #ffffff;
+    --theme-popover-foreground: #ffffff;
 
-    --theme-text-primary: hsl(0 0% 96%);
-    --theme-foreground: hsl(0 0% 96%);
-    --theme-muted: hsl(0 0% 53%);
-    --theme-muted-foreground: hsl(0 0% 53%);
+    --theme-text-primary: #ffffff;
+    --theme-foreground: #ffffff;
+    --theme-muted: hsl(0 0% 65%);
+    --theme-muted-foreground: hsl(0 0% 65%);
 
     --theme-stroke: hsl(0 0% 12%);
     --theme-border: hsl(0 0% 12%);
@@ -268,7 +268,7 @@
 
     --theme-background: hsl(0 0% 4%);
     --theme-secondary: hsl(0 0% 14%);
-    --theme-secondary-foreground: hsl(0 0% 96%);
+    --theme-secondary-foreground: #ffffff;
     --theme-destructive: #ff3848;
     --theme-destructive-foreground: hsl(0 0% 4%);
 
@@ -278,16 +278,43 @@
     --theme-primary-foreground: hsl(0 0% 4%);
 
     --theme-sidebar: hsl(0 0% 8%);
-    --theme-sidebar-foreground: hsl(0 0% 96%);
+    --theme-sidebar-foreground: #ffffff;
     --theme-sidebar-primary: hsl(0 0% 96%);
     --theme-sidebar-primary-foreground: hsl(0 0% 4%);
     --theme-sidebar-accent: hsl(0 0% 14%);
-    --theme-sidebar-accent-foreground: hsl(0 0% 96%);
+    --theme-sidebar-accent-foreground: #ffffff;
     --theme-sidebar-border: hsl(0 0% 12%);
     --theme-sidebar-ring: #c9a84c;
 
     /* Elementos nativos do browser no esquema escuro */
     color-scheme: dark;
+  }
+
+  .dark body {
+    color: #ffffff !important;
+  }
+
+  /* ============================================================
+     TEMA ESCURO — FONTES BRANCAS
+     Garante que todas as fontes em tom azul fiquem brancas no tema escuro.
+     ============================================================ */
+  .dark [class*="text-blue-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
+  .dark [class*="text-sky-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
+  .dark [class*="text-cyan-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
+  .dark [class*="text-[#07173f]"],
+  .dark [class*="text-[#123c82]"],
+  .dark [class*="text-[#31517e]"],
+  .dark [class*="text-[#23385c]"],
+  .dark [class*="text-[#53698e]"] {
+    color: #ffffff !important;
+  }
+
+  /* Diálogos, títulos e modais no tema escuro sempre com cor branca */
+  .dark dialog,
+  .dark [role="dialog"],
+  .dark [data-radix-popper-content-wrapper],
+  .dark .dialog-content {
+    color: #ffffff !important;
   }
 
   /* ============================================================

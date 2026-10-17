@@ -253,8 +253,41 @@ function generateReceiptPng(
     };
 
     /**
+     * Mede a espessura média do traço: 2 * (Área / Perímetro)
+     */
+    const measureThickness = (canvas: HTMLCanvasElement): number => {
+      const cCtx = canvas.getContext('2d');
+      if (!cCtx) return 1.0;
+      try {
+        const imgData = cCtx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        let ink = 0;
+        let boundary = 0;
+        const w = canvas.width;
+        const h = canvas.height;
+        for (let py = 0; py < h; py++) {
+          for (let px = 0; px < w; px++) {
+            if (data[(py * w + px) * 4 + 3] > 40) {
+              ink++;
+              const top = py > 0 ? data[((py - 1) * w + px) * 4 + 3] : 0;
+              const bot = py < h - 1 ? data[((py + 1) * w + px) * 4 + 3] : 0;
+              const left = px > 0 ? data[(py * w + (px - 1)) * 4 + 3] : 0;
+              const right = px < w - 1 ? data[(py * w + (px + 1)) * 4 + 3] : 0;
+              if (top <= 40 || bot <= 40 || left <= 40 || right <= 40) {
+                boundary++;
+              }
+            }
+          }
+        }
+        return boundary > 0 ? (2 * ink) / boundary : 1.0;
+      } catch (_) {
+        return 1.0;
+      }
+    };
+
+    /**
      * Normaliza a espessura do traço da assinatura para que ambas fiquem
-     * uniformes com traço fino e nítido (caneta de espessura constante),
+     * uniformes com a mesma espessura fina e nítida (caneta de espessura constante),
      * eliminando discrepâncias causadas por velocidade do toque, DPR ou resolução.
      */
     const normalizeSignatureCanvas = (
@@ -264,7 +297,8 @@ function generateReceiptPng(
       sWidth: number,
       sHeight: number,
       targetW: number,
-      targetH: number
+      targetH: number,
+      targetThickness = 1.0
     ): HTMLCanvasElement => {
       const c = document.createElement('canvas');
       c.width = targetW;
@@ -277,55 +311,65 @@ function generateReceiptPng(
       cCtx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
 
       try {
-        const imgData = cCtx.getImageData(0, 0, targetW, targetH);
-        const data = imgData.data;
+        const w = targetW;
+        const h = targetH;
+        const curT = measureThickness(c);
 
-        // Estima espessura média do traço: 2 * (Área / Perímetro)
-        let ink = 0;
-        let boundary = 0;
-        for (let py = 0; py < targetH; py++) {
-          for (let px = 0; px < targetW; px++) {
-            const a = data[(py * targetW + px) * 4 + 3];
-            if (a > 50) {
-              ink++;
-              const top = py > 0 ? data[((py - 1) * targetW + px) * 4 + 3] : 0;
-              const bot = py < targetH - 1 ? data[((py + 1) * targetW + px) * 4 + 3] : 0;
-              const left = px > 0 ? data[(py * targetW + (px - 1)) * 4 + 3] : 0;
-              const right = px < targetW - 1 ? data[(py * targetW + (px + 1)) * 4 + 3] : 0;
-              if (top < 50 || bot < 50 || left < 50 || right < 50) {
-                boundary++;
+        // Se a assinatura estiver mais grossa que o alvo, afinamos via distance transform
+        if (curT > targetThickness + 0.15) {
+          const imgData = cCtx.getImageData(0, 0, w, h);
+          const data = imgData.data;
+          const dist = new Float32Array(w * h);
+          const INF = 9999;
+
+          // Chamfer distance transform (Passo 1: Top-Left -> Bottom-Right)
+          for (let py = 0; py < h; py++) {
+            for (let px = 0; px < w; px++) {
+              const idx = py * w + px;
+              if (data[idx * 4 + 3] <= 40) {
+                dist[idx] = 0;
+              } else {
+                let d = INF;
+                if (px > 0) d = Math.min(d, dist[idx - 1] + 1);
+                if (py > 0) d = Math.min(d, dist[idx - w] + 1);
+                if (px > 0 && py > 0) d = Math.min(d, dist[idx - w - 1] + 1.414);
+                if (px < w - 1 && py > 0) d = Math.min(d, dist[idx - w + 1] + 1.414);
+                dist[idx] = d;
               }
             }
           }
-        }
 
-        const estimatedThickness = boundary > 0 ? (2 * ink) / boundary : 1;
-        // Se a espessura for superior a 1.8px (traço grosso), aplicamos erosão anti-aliasing
-        const passes = estimatedThickness > 3.2 ? 2 : estimatedThickness > 1.8 ? 1 : 0;
+          // Passo 2: Bottom-Right -> Top-Left
+          for (let py = h - 1; py >= 0; py--) {
+            for (let px = w - 1; px >= 0; px--) {
+              const idx = py * w + px;
+              let d = dist[idx];
+              if (d > 0) {
+                if (px < w - 1) d = Math.min(d, dist[idx + 1] + 1);
+                if (py < h - 1) d = Math.min(d, dist[idx + w] + 1);
+                if (px < w - 1 && py < h - 1) d = Math.min(d, dist[idx + w + 1] + 1.414);
+                if (px > 0 && py < h - 1) d = Math.min(d, dist[idx + w - 1] + 1.414);
+                dist[idx] = d;
+              }
+            }
+          }
 
-        if (passes > 0) {
-          let current = new Uint8ClampedArray(data);
-          for (let p = 0; p < passes; p++) {
-            const next = new Uint8ClampedArray(current);
-            for (let py = 1; py < targetH - 1; py++) {
-              for (let px = 1; px < targetW - 1; px++) {
-                const idx = (py * targetW + px) * 4;
-                const a = current[idx + 3];
-                if (a > 40) {
-                  const top = current[((py - 1) * targetW + px) * 4 + 3];
-                  const bot = current[((py + 1) * targetW + px) * 4 + 3];
-                  const left = current[(py * targetW + (px - 1)) * 4 + 3];
-                  const right = current[(py * targetW + (px + 1)) * 4 + 3];
-                  if (top < 40 || bot < 40 || left < 40 || right < 40) {
-                    // Suaviza e afina a borda externa
-                    next[idx + 3] = Math.max(0, a - 170);
-                  }
+          const delta = (curT - targetThickness) * 0.55;
+          for (let py = 0; py < h; py++) {
+            for (let px = 0; px < w; px++) {
+              const idx = py * w + px;
+              const a = data[idx * 4 + 3];
+              if (a > 40) {
+                const d = dist[idx];
+                if (d <= delta - 0.4) {
+                  data[idx * 4 + 3] = 0;
+                } else if (d < delta + 0.6) {
+                  const factor = (d - (delta - 0.4)) / 1.0;
+                  data[idx * 4 + 3] = Math.round(a * Math.max(0, Math.min(1, factor)));
                 }
               }
             }
-            current = next;
           }
-          for (let i = 0; i < data.length; i++) data[i] = current[i];
           cCtx.putImageData(imgData, 0, 0);
         }
       } catch (_) {}
@@ -333,47 +377,86 @@ function generateReceiptPng(
       return c;
     };
 
-    const drawSignature = (img: HTMLImageElement, centerX: number, lineY: number) => {
-      const bounds = getTrimmedBounds(img);
-      const maxW = 240;
-      const maxH = 65;
+    const maxW = 240;
+    const maxH = 65;
 
-      if (bounds.width <= 0 || bounds.height <= 0) return;
-
-      // Escala estritamente mantendo a proporção de aspecto (sem puxar e sem cortar)
-      const scale = Math.min(maxW / bounds.width, maxH / bounds.height, 1.0);
-      const drawW = Math.round(bounds.width * scale);
-      const drawH = Math.round(bounds.height * scale);
-
-      const drawX = Math.round(centerX - drawW / 2);
-      const drawY = Math.round(lineY - drawH - 5);
-
-      const normalizedCanvas = normalizeSignatureCanvas(
-        bounds.img,
-        bounds.sx,
-        bounds.sy,
-        bounds.sWidth,
-        bounds.sHeight,
-        drawW,
-        drawH
-      );
-
-      ctx.drawImage(normalizedCanvas, drawX, drawY);
-    };
+    let authImg: HTMLImageElement | null = null;
+    let empImg: HTMLImageElement | null = null;
 
     if (authSig) {
       try {
-        const img = await loadImage(authSig);
-        drawSignature(img, centerL, y);
+        authImg = await loadImage(authSig);
       } catch (e) {}
     }
-    drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
 
     if (empSig) {
       try {
-        const img2 = await loadImage(empSig);
-        drawSignature(img2, centerR, y);
+        empImg = await loadImage(empSig);
       } catch (e) {}
+    }
+
+    const authBounds = authImg ? getTrimmedBounds(authImg) : null;
+    const empBounds = empImg ? getTrimmedBounds(empImg) : null;
+
+    // Harmoniza a escala de desenho para não hiper-inflar assinaturas curtas
+    const scaleAuth = authBounds && authBounds.width > 0 && authBounds.height > 0
+      ? Math.min(maxW / authBounds.width, maxH / authBounds.height, 1.0)
+      : 1.0;
+
+    let scaleEmp = empBounds && empBounds.width > 0 && empBounds.height > 0
+      ? Math.min(maxW / empBounds.width, maxH / empBounds.height, 1.0)
+      : 1.0;
+
+    if (authBounds && empBounds) {
+      // Impede que a assinatura do recebedor seja desenhada com escala muito maior que a do autorizador
+      scaleEmp = Math.min(scaleEmp, Math.max(scaleAuth * 1.15, 0.45));
+    }
+
+    let measuredAuthThickness = 1.0;
+
+    if (authBounds) {
+      const drawW = Math.max(10, Math.round(authBounds.width * scaleAuth));
+      const drawH = Math.max(10, Math.round(authBounds.height * scaleAuth));
+      const drawX = Math.round(centerL - drawW / 2);
+      const drawY = Math.round(y - drawH - 5);
+
+      const authCanvas = normalizeSignatureCanvas(
+        authBounds.img,
+        authBounds.sx,
+        authBounds.sy,
+        authBounds.sWidth,
+        authBounds.sHeight,
+        drawW,
+        drawH,
+        1.0
+      );
+
+      ctx.drawImage(authCanvas, drawX, drawY);
+      measuredAuthThickness = measureThickness(authCanvas);
+    }
+    drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
+
+    if (empBounds) {
+      const drawW = Math.max(10, Math.round(empBounds.width * scaleEmp));
+      const drawH = Math.max(10, Math.round(empBounds.height * scaleEmp));
+      const drawX = Math.round(centerR - drawW / 2);
+      const drawY = Math.round(y - drawH - 5);
+
+      // A espessura alvo da assinatura do recebedor será exatamente igual à medida do autorizador
+      const targetThickness = Math.max(0.7, Math.min(measuredAuthThickness, 1.15));
+
+      const empCanvas = normalizeSignatureCanvas(
+        empBounds.img,
+        empBounds.sx,
+        empBounds.sy,
+        empBounds.sWidth,
+        empBounds.sHeight,
+        drawW,
+        drawH,
+        targetThickness
+      );
+
+      ctx.drawImage(empCanvas, drawX, drawY);
     }
     drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
 
@@ -855,9 +938,9 @@ export function EpiRequisitionForm() {
                   <SignatureCanvas
                     ref={authorizerSigRef}
                     penColor="#111827"
-                    minWidth={0.5}
-                    maxWidth={1.1}
-                    dotSize={0.8}
+                    minWidth={0.6}
+                    maxWidth={0.9}
+                    dotSize={0.7}
                     velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />
@@ -895,9 +978,9 @@ export function EpiRequisitionForm() {
                   <SignatureCanvas
                     ref={employeeSigRef}
                     penColor="#111827"
-                    minWidth={0.5}
-                    maxWidth={1.1}
-                    dotSize={0.8}
+                    minWidth={0.6}
+                    maxWidth={0.9}
+                    dotSize={0.7}
                     velocityFilterWeight={0.7}
                     canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
                   />

@@ -278,7 +278,7 @@ function RequisicoesList() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1.5"
+                        className="gap-1.5 dark:text-white dark:border-zinc-700 hover:dark:bg-zinc-800"
                         onClick={() => setSelectedImage(req.receipt_image_url)}
                       >
                         <Eye size={16} />
@@ -303,8 +303,8 @@ function RequisicoesList() {
 
       {/* Image Dialog */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
-          <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto dark:bg-zinc-950 dark:border-zinc-800 dark:text-white">
+          <DialogTitle className="flex items-center gap-2 text-foreground dark:text-white">
             <ImageIcon size={20} />
             Recibo da Requisição
           </DialogTitle>
@@ -313,11 +313,11 @@ function RequisicoesList() {
               <img
                 src={selectedImage}
                 alt="Recibo da Requisição"
-                className="w-full rounded-lg border"
+                className="w-full rounded-lg border dark:border-zinc-800"
               />
               <div className="mt-4 flex justify-end">
                 <a href={selectedImage} target="_blank" rel="noopener noreferrer" download>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2 dark:text-white dark:border-zinc-700 hover:dark:bg-zinc-800">
                     <ImageIcon size={16} />
                     Baixar PNG
                   </Button>
