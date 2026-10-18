@@ -457,7 +457,8 @@ function RDOPage() {
       const valid = data.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
         const b = formatBerma(row.berma);
-        lines.push(`* ${title}: ${row.value} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}`);
+        const cleanVal = String(row.value).replace(/,00$/, '');
+        lines.push(`* ${title}: ${cleanVal} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}`);
       });
     }
 

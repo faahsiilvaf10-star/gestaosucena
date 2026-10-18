@@ -335,7 +335,11 @@ function JardinagemPage() {
     }
     
     if (parsed) {
-      const normRows = (rows: any[]) => (rows || []).map(r => ({ ...r, berma: normalizeBermaElevado(r.berma) }));
+      const normRows = (rows: any[]) => (rows || []).map(r => ({ 
+        ...r, 
+        value: r.value ? maskNumber(r.value, false) : '',
+        berma: normalizeBermaElevado(r.berma) 
+      }));
       setRocagem(normRows(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]));
       setRocagemAsp(normRows(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]));
       setPodagem(normRows(parsed.podagem || [{ faixa: '', berma: '', value: '' }]));
@@ -449,7 +453,8 @@ function JardinagemPage() {
       if (r.faixa) loc.push(r.faixa);
       if (r.berma) loc.push(r.berma);
       const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
-      return <div key={`${name}-${idx}`}>- {name}: {r.value} {unit}{locStr}</div>
+      const cleanVal = String(r.value || '').replace(/,00$/, '');
+      return <div key={`${name}-${idx}`}>- {name}: {cleanVal} {unit}{locStr}</div>
     });
   }
 
@@ -733,8 +738,8 @@ function JardinagemPage() {
               ))}
             </div>
 
-            <ActivityRow title="LIMPEZA MANUAL (m²)" data={limpezaManual} setData={setLimpezaManual} isFloat />
-            <ActivityRow title="LIMPEZA COM SOPRADOR (m²)" data={limpezaSoprador} setData={setLimpezaSoprador} isFloat />
+            <ActivityRow title="LIMPEZA MANUAL (m²)" data={limpezaManual} setData={setLimpezaManual} />
+            <ActivityRow title="LIMPEZA COM SOPRADOR (m²)" data={limpezaSoprador} setData={setLimpezaSoprador} />
 
             {/* CONTROLE DE INVASORAS */}
             <div className="p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm">
@@ -792,7 +797,7 @@ function JardinagemPage() {
             </div>
 
             <ActivityRow title="RETIRADA DE MUDAS - ÁRVORES (Unidade)" data={retiradaMudas} setData={setRetiradaMudas} icon={<TreePine className="text-green-600" size={16} />} />
-            <ActivityRow title="PLANTIO DE GRAMA (m²)" data={plantioGrama} setData={setPlantioGrama} isFloat icon={<Leaf className="text-green-600" size={16} />} containerClassName="border-green-200 bg-green-50/30" />
+            <ActivityRow title="PLANTIO DE GRAMA (m²)" data={plantioGrama} setData={setPlantioGrama} icon={<Leaf className="text-green-600" size={16} />} containerClassName="border-green-200 bg-green-50/30" />
 
             {/* OUTRAS ATIVIDADES */}
             <div className="p-4 sm:p-5 bg-white border border-yellow-200 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-sm">

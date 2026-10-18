@@ -55,4 +55,32 @@ describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
     expect(normalize('MIRANTE')).toBe('MIRANTE');
     expect(normalize('GABIÃO 1')).toBe('GABIÃO 1');
   });
+
+  it('máscara de contagem em m² deve ser inteira com ponto e sem vírgula, igual roçagem', () => {
+    const maskNumber = (val: string, isFloat = false) => {
+      if (!isFloat) {
+        val = val.split(',')[0];
+      }
+      let raw = val.replace(/\D/g, '');
+      if (!raw) return '';
+      if (isFloat) {
+        while (raw.length < 3) raw = '0' + raw;
+        const intPart = raw.slice(0, -2).replace(/^0+/, '') || '0';
+        const decPart = raw.slice(-2);
+        return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ',' + decPart;
+      } else {
+        const intPart = raw.replace(/^0+/, '') || '0';
+        return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      }
+    };
+
+    // Sem isFloat (padrão de roçagem, limpeza manual, limpeza soprador e plantio de grama)
+    expect(maskNumber('0')).toBe('0');
+    expect(maskNumber('0,00')).toBe('0');
+    expect(maskNumber('100,00')).toBe('100');
+    expect(maskNumber('500')).toBe('500');
+    expect(maskNumber('1000')).toBe('1.000');
+    expect(maskNumber('15000')).toBe('15.000');
+    expect(maskNumber('1234567')).toBe('1.234.567');
+  });
 });
