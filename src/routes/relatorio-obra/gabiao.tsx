@@ -27,12 +27,25 @@ const faixas = Array.from({length: 5}, (_, i) => i + 1); // FAIXA 1 a 5
 const fases = ['Nenhuma', 'Fase 1', 'Fase 2', 'Fase 3'];
 const elevados = [
   'Nenhum',
-  ...Array.from({length: 31}, (_, i) => String(i + 26)),
+  ...Array.from({length: 32}, (_, i) => {
+    const num = i + 26;
+    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
+  }),
   'MIRANTE',
   'GABIÃO 1',
   'GABIÃO 2',
   'GABIÃO 3'
 ];
+
+const normalizeGabiaoElevado = (val: string) => {
+  if (!val || val === 'Nenhum') return 'Nenhum';
+  const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
+  }
+  return val;
+};
 
 function ActivityItem({
   title,
@@ -215,7 +228,7 @@ function GabiaoPage() {
     if (parsed) {
       setLocalFaixa(parsed.localFaixa || '');
       setLocalFase(parsed.localFase || 'Nenhuma');
-      setLocalElevado(parsed.localElevado || 'Nenhum');
+      setLocalElevado(normalizeGabiaoElevado(parsed.localElevado || 'Nenhum'));
       setEscavacao(parsed.escavacao || false);
       setManta(parsed.manta || { checked: false, value: '' });
       setSilte(parsed.silte || { checked: false, value: '' });
@@ -503,7 +516,7 @@ function GabiaoPage() {
                 <div className="font-bold text-orange-600 mb-2">
                   📍 Local: {localFaixa}
                   {localFase && localFase !== 'Nenhuma' ? ` - ${localFase}` : ''}
-                  {localElevado && localElevado !== 'Nenhum' ? ` - Elevado: ${localElevado}` : ''}
+                  {localElevado && localElevado !== 'Nenhum' ? ` - ${normalizeGabiaoElevado(localElevado)}` : ''}
                 </div>
               )}
 

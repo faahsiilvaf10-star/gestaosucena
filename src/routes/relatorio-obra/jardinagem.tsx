@@ -59,12 +59,25 @@ export const Route = createFileRoute('/relatorio-obra/jardinagem')({
 
 const faixas = Array.from({length: 4}, (_, i) => i + 2);
 const bermas = [
-  ...Array.from({length: 31}, (_, i) => `Berma ${i + 26}`),
+  ...Array.from({length: 32}, (_, i) => {
+    const num = i + 26;
+    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
+  }),
   'MIRANTE',
   'GABIÃO 1',
   'GABIÃO 2',
   'GABIÃO 3'
 ];
+
+const normalizeBermaElevado = (val: string) => {
+  if (!val) return val;
+  const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
+  }
+  return val;
+};
 
 // Generic Row Component
 function ActivityRow({ 
@@ -142,7 +155,7 @@ function ActivityRow({
                 }}
                 className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
               >
-                <option value="">Berma</option>
+                <option value="">Elevado/Berma</option>
                 {bermas.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
@@ -322,20 +335,21 @@ function JardinagemPage() {
     }
     
     if (parsed) {
-      setRocagem(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]);
-      setRocagemAsp(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]);
-      setPodagem(parsed.podagem || [{ faixa: '', berma: '', value: '' }]);
-      setCova(parsed.cova || [{ faixa: '', berma: '', value: '' }]);
-      setCoroamento(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]);
-      setAdubagem(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]);
-      setPlantio(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]);
-      setLimpezaManual(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]);
-      setLimpezaSoprador(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]);
-      setInvasoras(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]);
-      setRetiradaMudas(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]);
-      setPlantioGrama(parsed.plantioGrama || [{ faixa: '', berma: '', value: '' }]);
+      const normRows = (rows: any[]) => (rows || []).map(r => ({ ...r, berma: normalizeBermaElevado(r.berma) }));
+      setRocagem(normRows(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]));
+      setRocagemAsp(normRows(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]));
+      setPodagem(normRows(parsed.podagem || [{ faixa: '', berma: '', value: '' }]));
+      setCova(normRows(parsed.cova || [{ faixa: '', berma: '', value: '' }]));
+      setCoroamento(normRows(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]));
+      setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]));
+      setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]));
+      setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]));
+      setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]));
+      setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]));
+      setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]));
+      setPlantioGrama(normRows(parsed.plantioGrama || [{ faixa: '', berma: '', value: '' }]));
       setOutrasFaixa(parsed.outrasFaixa !== undefined ? parsed.outrasFaixa : '');
-      setOutrasBerma(parsed.outrasBerma !== undefined ? parsed.outrasBerma : '');
+      setOutrasBerma(normalizeBermaElevado(parsed.outrasBerma !== undefined ? parsed.outrasBerma : ''));
       setOutrasDesc(parsed.outrasDesc !== undefined ? parsed.outrasDesc : '');
       setCanteiroDesc(parsed.canteiroDesc !== undefined ? parsed.canteiroDesc : '');
       setIrrigacaoPipas(parsed.irrigacaoPipas || false);
@@ -709,9 +723,9 @@ function JardinagemPage() {
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
-                  <div className="relative w-full sm:w-32">
+                  <div className="relative w-full sm:w-36">
                     <select value={row.berma} onChange={(e) => { const n = [...plantio]; n[idx].berma = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
-                      <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
+                      <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
@@ -764,10 +778,10 @@ function JardinagemPage() {
                       <input type="text" inputMode="numeric" value={row.value} onChange={(e) => { const n = [...invasoras]; n[idx].value = maskNumber(e.target.value, false); setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500" placeholder="0" />
                     </div>
                     <div className="sm:w-40 flex flex-col gap-1">
-                      {idx === 0 && <label className="text-gray-500 text-xs ml-1">Berma</label>}
+                      {idx === 0 && <label className="text-gray-500 text-xs ml-1">Elevado/Berma</label>}
                       <div className="relative">
                         <select value={row.berma} onChange={(e) => { const n = [...invasoras]; n[idx].berma = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                          <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
+                          <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                       </div>
@@ -796,9 +810,9 @@ function JardinagemPage() {
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
-                    <div className="relative flex-1 sm:w-32">
+                    <div className="relative flex-1 sm:w-36">
                       <select value={outrasBerma} onChange={e => setOutrasBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                        <option value="">Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
+                        <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>

@@ -442,11 +442,22 @@ function RDOPage() {
     
     const d = jardinagemData;
     
+    const formatBerma = (b?: string) => {
+      if (!b) return '';
+      const match = b.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
+      }
+      return b;
+    };
+    
     const addRows = (title: string, data: any[], unit: string) => {
       if (!data) return;
       const valid = data.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        lines.push(`* ${title}: ${row.value} ${unit} - ${row.faixa} ${row.berma}`);
+        const b = formatBerma(row.berma);
+        lines.push(`* ${title}: ${row.value} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}`);
       });
     }
 
@@ -460,7 +471,8 @@ function RDOPage() {
     if (d.plantio) {
       const valid = d.plantio.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        lines.push(`* Plantio (${row.especie}): ${row.value} unid - ${row.faixa} ${row.berma}`);
+        const b = formatBerma(row.berma);
+        lines.push(`* Plantio (${row.especie}): ${row.value} unid - ${row.faixa}${b ? ` ${b}` : ''}`);
       });
     }
     
@@ -470,7 +482,8 @@ function RDOPage() {
     if (d.invasoras) {
       const valid = d.invasoras.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        lines.push(`* Retirada de Invasoras (${row.nome}): ${row.value} m² - ${row.faixa} ${row.berma}`);
+        const b = formatBerma(row.berma);
+        lines.push(`* Retirada de Invasoras (${row.nome}): ${row.value} m² - ${row.faixa}${b ? ` ${b}` : ''}`);
       });
     }
     
@@ -478,7 +491,8 @@ function RDOPage() {
     addRows('Plantio de Grama', d.plantioGrama, 'm²');
     
     if (d.outrasDesc && d.outrasDesc.trim() !== '') {
-      lines.push(`* ${d.outrasDesc.trim()} - ${d.outrasFaixa} ${d.outrasBerma}`);
+      const b = formatBerma(d.outrasBerma);
+      lines.push(`* ${d.outrasDesc.trim()} - ${d.outrasFaixa}${b ? ` ${b}` : ''}`);
     }
     
     if (d.canteiroDesc && d.canteiroDesc.trim() !== '') {
@@ -523,7 +537,17 @@ function RDOPage() {
     const d = gabiaoData;
     
     if (d.localFaixa) {
-      lines.push(`📍 Local: ${d.localFaixa}${d.localFase && d.localFase !== 'Nenhuma' ? ` - ${d.localFase}` : ''}${d.localElevado && d.localElevado !== 'Nenhum' ? ` - Elevado/Berma: ${d.localElevado}` : ''}`);
+      const formatElevado = (val?: string) => {
+        if (!val || val === 'Nenhum') return '';
+        const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
+        }
+        return val;
+      };
+      const elStr = formatElevado(d.localElevado);
+      lines.push(`📍 Local: ${d.localFaixa}${d.localFase && d.localFase !== 'Nenhuma' ? ` - ${d.localFase}` : ''}${elStr ? ` - ${elStr}` : ''}`);
       lines.push('');
     }
     
