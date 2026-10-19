@@ -306,17 +306,23 @@ function generateReceiptPng(
       const cCtx = c.getContext('2d');
       if (!cCtx) return c;
 
-      cCtx.imageSmoothingEnabled = true;
-      cCtx.imageSmoothingQuality = 'high';
+      // Desabilita suavização para manter bordas nítidas
+      cCtx.imageSmoothingEnabled = false;
       cCtx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
+
+      // Se targetThickness >= 2.0, a assinatura está boa - não precisa de processamento
+      if (targetThickness >= 2.0) {
+        return c;
+      }
 
       try {
         const w = targetW;
         const h = targetH;
         const curT = measureThickness(c);
 
-        // Se a assinatura estiver mais grossa que o alvo, afinamos via distance transform
-        if (curT > targetThickness + 0.15) {
+        // Só afina se estiver MUITO mais grossa que o alvo (evita apagar assinaturas finas)
+        // threshold mínimo de 3.0 para considerar que precisa de ajuste
+        if (curT > Math.max(targetThickness + 1.5, 3.0)) {
           const imgData = cCtx.getImageData(0, 0, w, h);
           const data = imgData.data;
           const dist = new Float32Array(w * h);
@@ -354,17 +360,19 @@ function generateReceiptPng(
             }
           }
 
-          const delta = (curT - targetThickness) * 0.55;
+          // Usa um delta muito menor para preservar mais da assinatura original
+          const delta = Math.min((curT - targetThickness) * 0.25, 1.5);
           for (let py = 0; py < h; py++) {
             for (let px = 0; px < w; px++) {
               const idx = py * w + px;
               const a = data[idx * 4 + 3];
               if (a > 40) {
                 const d = dist[idx];
-                if (d <= delta - 0.4) {
+                if (d <= delta - 0.5) {
+                  // Só remove se estiver muito perto da borda
                   data[idx * 4 + 3] = 0;
-                } else if (d < delta + 0.6) {
-                  const factor = (d - (delta - 0.4)) / 1.0;
+                } else if (d < delta + 0.5) {
+                  const factor = (d - (delta - 0.5)) / 1.0;
                   data[idx * 4 + 3] = Math.round(a * Math.max(0, Math.min(1, factor)));
                 }
               }
@@ -377,8 +385,9 @@ function generateReceiptPng(
       return c;
     };
 
-    const maxW = 240;
-    const maxH = 65;
+    // Dimensões maiores para assinaturas mais nítidas e legíveis
+    const maxW = 280;
+    const maxH = 80;
 
     let authImg: HTMLImageElement | null = null;
     let empImg: HTMLImageElement | null = null;
@@ -398,18 +407,18 @@ function generateReceiptPng(
     const authBounds = authImg ? getTrimmedBounds(authImg) : null;
     const empBounds = empImg ? getTrimmedBounds(empImg) : null;
 
-    // Harmoniza a escala de desenho para não hiper-inflar assinaturas curtas
+    // Harmoniza a escala de desenho - permite assinaturas maiores para melhor legibilidade
     const scaleAuth = authBounds && authBounds.width > 0 && authBounds.height > 0
-      ? Math.min(maxW / authBounds.width, maxH / authBounds.height, 1.0)
+      ? Math.min(maxW / authBounds.width, maxH / authBounds.height, 1.5)
       : 1.0;
 
     let scaleEmp = empBounds && empBounds.width > 0 && empBounds.height > 0
-      ? Math.min(maxW / empBounds.width, maxH / empBounds.height, 1.0)
+      ? Math.min(maxW / empBounds.width, maxH / empBounds.height, 1.5)
       : 1.0;
 
     if (authBounds && empBounds) {
-      // Impede que a assinatura do recebedor seja desenhada com escala muito maior que a do autorizador
-      scaleEmp = Math.min(scaleEmp, Math.max(scaleAuth * 1.15, 0.45));
+      // Permite que a assinatura do recebedor seja proporcional ao autorizador
+      scaleEmp = Math.min(scaleEmp, Math.max(scaleAuth * 1.2, 0.6));
     }
 
     let measuredAuthThickness = 1.0;
@@ -420,6 +429,7 @@ function generateReceiptPng(
       const drawX = Math.round(centerL - drawW / 2);
       const drawY = Math.round(y - drawH - 5);
 
+      // Espessura alvo de 2.5 para manter assinaturas mais visíveis e nítidas
       const authCanvas = normalizeSignatureCanvas(
         authBounds.img,
         authBounds.sx,
@@ -428,7 +438,7 @@ function generateReceiptPng(
         authBounds.sHeight,
         drawW,
         drawH,
-        1.0
+        2.5
       );
 
       ctx.drawImage(authCanvas, drawX, drawY);
@@ -442,8 +452,8 @@ function generateReceiptPng(
       const drawX = Math.round(centerR - drawW / 2);
       const drawY = Math.round(y - drawH - 5);
 
-      // A espessura alvo da assinatura do recebedor será exatamente igual à medida do autorizador
-      const targetThickness = Math.max(0.7, Math.min(measuredAuthThickness, 1.15));
+      // Espessura alvo mínima de 2.0 para manter assinaturas visíveis e nítidas
+      const targetThickness = Math.max(2.0, Math.min(measuredAuthThickness + 0.5, 3.0));
 
       const empCanvas = normalizeSignatureCanvas(
         empBounds.img,
@@ -541,9 +551,13 @@ export function EpiRequisitionForm() {
   const [step, setStep] = useState(1);
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
 
-  // Detecta dispositivo móvel de forma robusta, independente da orientação atual.
-  const isMobileDevice = () =>
-    navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 768;
+  // Detecta dispositivo móvel de forma robusta
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    const hasTouch = navigator.maxTouchPoints > 0;
+    const isSmallScreen = Math.min(window.innerWidth, window.innerHeight) < 768;
+    return hasTouch || isSmallScreen;
+  };
 
   // Calcula dimensões do canvas apenas para o layout desktop inline.
   useEffect(() => {
@@ -610,19 +624,24 @@ export function EpiRequisitionForm() {
     const toastId = toast.loading('Gerando recibo e salvando requisição...');
 
     try {
+      // Captura a assinatura diretamente do canvas, preservando a qualidade máxima
       const getSigBase64 = (ref: React.RefObject<SignatureCanvas | null>) => {
         if (!ref.current || ref.current.isEmpty()) return null;
+        try {
+          // Usa o canvas completo em alta resolução para máxima nitidez
+          const canvas = ref.current.getCanvas();
+          if (canvas && canvas.width > 0 && canvas.height > 0) {
+            return canvas.toDataURL('image/png');
+          }
+        } catch (_) {}
+        // Fallback: tenta o trimmed canvas apenas se o normal funcionar
         try {
           const trimmed = ref.current.getTrimmedCanvas();
           if (trimmed && trimmed.width > 0 && trimmed.height > 0) {
             return trimmed.toDataURL('image/png');
           }
         } catch (_) {}
-        try {
-          return ref.current.getCanvas().toDataURL('image/png');
-        } catch (_) {
-          return null;
-        }
+        return null;
       };
 
       const authorizerSigBase64 = getSigBase64(authorizerSigRef);
@@ -902,8 +921,23 @@ export function EpiRequisitionForm() {
         </div>
       </div>
 
-      {/* Signatures */}
-      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step === 1 && "hidden md:block")}>
+      {/* Overlay de Assinatura Mobile em Tela Cheia (Steps 2 e 3) */}
+      {signatureFullscreen && (step === 2 || step === 3) && (
+        <SignatureOverlay
+          step={step}
+          authorizerName={authorizer?.nome || 'Selecione o autorizador'}
+          employeeName={employee?.nome || 'Selecione o funcionário'}
+          authorizerSigRef={authorizerSigRef}
+          employeeSigRef={employeeSigRef}
+          onBack={() => setStep(step === 2 ? 1 : 2)}
+          onNextStep={() => setStep(3)}
+          onFinish={handleGenerateAndSubmit}
+          isGenerating={isGenerating}
+        />
+      )}
+
+      {/* Signatures (Desktop) */}
+      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", (step === 1 || signatureFullscreen) && "hidden md:block")}>
         <div className="flex justify-between items-center border-b pb-4">
           <h3 className="text-xl font-bold">Assinaturas</h3>
           <Button type="button" variant="ghost" size="sm" onClick={clearSignatures}>Limpar Assinaturas</Button>
@@ -911,103 +945,64 @@ export function EpiRequisitionForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ASSINATURA AUTORIZADOR */}
-          <div className={cn("space-y-2 flex flex-col items-center", !signatureFullscreen && step !== 2 && "hidden md:flex")}>
-            {signatureFullscreen ? (
-              <SignatureOverlay
-                title="ASSINATURA DO AUTORIZADOR"
-                personName={authorizer?.nome || 'Selecione o autorizador'}
-                sigRef={authorizerSigRef}
-                onBack={() => setStep(1)}
-                onNext={() => {
-                  // Valida que há uma assinatura antes de avançar
-                  if (authorizerSigRef.current?.isEmpty()) {
-                    toast.error('A assinatura do autorizador é obrigatória.');
-                    return;
-                  }
-                  setStep(3);
-                }}
-                nextLabel="Próximo →"
+          <div className="space-y-2 flex flex-col items-center">
+            <div className="w-full flex items-center justify-between mb-2">
+              <div className="w-10"></div>
+              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
+              <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
+                <Eraser className="w-6 h-6 text-gray-500" />
+              </Button>
+            </div>
+            <div
+              ref={sigContainerRef}
+              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+              style={{ height: canvasSize.height }}
+            >
+              <SignatureCanvas
+                ref={authorizerSigRef}
+                penColor="#111827"
+                minWidth={0.6}
+                maxWidth={0.9}
+                dotSize={0.7}
+                velocityFilterWeight={0.7}
+                clearOnResize={false}
+                canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
               />
-            ) : (
-              <>
-                <div className="w-full flex items-center justify-between mb-2">
-                  <div className="w-10"></div>
-                  <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
-                  <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
-                    <Eraser className="w-6 h-6 text-gray-500" />
-                  </Button>
-                </div>
-                <div
-                  ref={sigContainerRef}
-                  className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-                  style={{ height: canvasSize.height }}
-                >
-                  <SignatureCanvas
-                    ref={authorizerSigRef}
-                    penColor="#111827"
-                    minWidth={0.6}
-                    maxWidth={0.9}
-                    dotSize={0.7}
-                    velocityFilterWeight={0.7}
-                    canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
-              </>
-            )}
+            </div>
+            <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
           </div>
 
           {/* ASSINATURA FUNCIONÁRIO */}
-          <div className={cn("space-y-2 flex flex-col items-center", !signatureFullscreen && step !== 3 && "hidden md:flex")}>
-            {signatureFullscreen ? (
-              <SignatureOverlay
-                title="ASSINATURA DO FUNCIONÁRIO"
-                personName={employee?.nome || 'Selecione o funcionário'}
-                sigRef={employeeSigRef}
-                onBack={() => setStep(2)}
-                onNext={() => {
-                  // Valida que há uma assinatura antes de finalizar
-                  if (employeeSigRef.current?.isEmpty()) {
-                    toast.error('A assinatura do funcionário é obrigatória.');
-                    return;
-                  }
-                  handleGenerateAndSubmit();
-                }}
-                nextLabel={isGenerating ? 'Salvando...' : 'Finalizar ✓'}
-                nextDisabled={isGenerating}
+          <div className="space-y-2 flex flex-col items-center">
+            <div className="w-full flex items-center justify-between mb-2">
+              <div className="w-10"></div>
+              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
+              <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
+                <Eraser className="w-6 h-6 text-gray-500" />
+              </Button>
+            </div>
+            <div
+              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
+              style={{ height: canvasSize.height }}
+            >
+              <SignatureCanvas
+                ref={employeeSigRef}
+                penColor="#111827"
+                minWidth={0.6}
+                maxWidth={0.9}
+                dotSize={0.7}
+                velocityFilterWeight={0.7}
+                clearOnResize={false}
+                canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
               />
-            ) : (
-              <>
-                <div className="w-full flex items-center justify-between mb-2">
-                  <div className="w-10"></div>
-                  <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
-                  <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
-                    <Eraser className="w-6 h-6 text-gray-500" />
-                  </Button>
-                </div>
-                <div
-                  className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-                  style={{ height: canvasSize.height }}
-                >
-                  <SignatureCanvas
-                    ref={employeeSigRef}
-                    penColor="#111827"
-                    minWidth={0.6}
-                    maxWidth={0.9}
-                    dotSize={0.7}
-                    velocityFilterWeight={0.7}
-                    canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
-              </>
-            )}
+            </div>
+            <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
           </div>
         </div>
       </div>
 
       {/* Mobile Steps Controls */}
-      <div className="flex md:hidden justify-between mt-6">
+      <div className={cn("flex md:hidden justify-between mt-6", signatureFullscreen && "hidden")}>
         {step === 1 && (
           <Button type="button" variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
         )}
@@ -1017,7 +1012,24 @@ export function EpiRequisitionForm() {
           </Button>
         )}
         {step < 3 ? (
-          <Button type="button" className="ml-auto" onClick={() => setStep(step + 1)}>
+          <Button
+            type="button"
+            className="ml-auto"
+            onClick={() => {
+              if (step === 1) {
+                if (!authorizerId || !employeeId) {
+                  toast.error('Selecione o autorizador e o funcionário.');
+                  return;
+                }
+                const validItems = items.filter(i => i.productId);
+                if (validItems.length === 0) {
+                  toast.error('Selecione pelo menos um EPI.');
+                  return;
+                }
+              }
+              setStep(step + 1);
+            }}
+          >
             Próximo <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (

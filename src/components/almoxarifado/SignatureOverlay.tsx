@@ -1,44 +1,71 @@
 /**
  * SignatureOverlay
  * ----------------
- * Componente dedicado para captura de assinatura em dispositivos móveis.
- *
- * Comportamento:
- *  - Solicita tela cheia real via Fullscreen API
- *  - Bloqueia orientação em landscape-primary via Screen Orientation API
- *  - Usa ResizeObserver para dimensionar o canvas dinamicamente,
- *    preenchendo 100% da área disponível sem corte ou distorção
- *  - Ao sair (Voltar ou Finalizar), restaura a orientação e o fullscreen
+ * Componente unificado para captura de assinatura em dispositivos móveis.
+ * Gerencia a transição contínua entre Step 2 (Autorizador) e Step 3 (Funcionário)
+ * sem recarregar ou sair da tela cheia / orientação landscape.
  */
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Button } from '@/components/ui/button';
 import Eraser from 'lucide-react/dist/esm/icons/eraser.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
+import { toast } from 'sonner';
 
 interface SignatureOverlayProps {
-  title: string;
-  personName: string;
-  sigRef: React.RefObject<SignatureCanvas | null>;
+  step: number; // 2 para autorizador, 3 para funcionário
+  authorizerName: string;
+  employeeName: string;
+  authorizerSigRef: React.RefObject<SignatureCanvas | null>;
+  employeeSigRef: React.RefObject<SignatureCanvas | null>;
   onBack: () => void;
-  onNext: () => void;
-  nextLabel?: string;
-  nextDisabled?: boolean;
+  onNextStep: () => void;
+  onFinish: () => void;
+  isGenerating?: boolean;
+}
+
+// Utilitário para verificar se o canvas está vazio
+function isSigEmpty(sig: SignatureCanvas | null): boolean {
+  if (!sig) return true;
+  if (sig.isEmpty()) return true;
+  try {
+    const canvas = sig.getCanvas();
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return true;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return true;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 20) {
+        return false;
+      }
+    }
+    return true;
+  } catch (_) {
+    return sig.isEmpty();
+  }
 }
 
 export function SignatureOverlay({
-  title,
-  personName,
-  sigRef,
+  step,
+  authorizerName,
+  employeeName,
+  authorizerSigRef,
+  employeeSigRef,
   onBack,
-  onNext,
-  nextLabel = 'Próximo',
-  nextDisabled = false,
+  onNextStep,
+  onFinish,
+  isGenerating = false,
 }: SignatureOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const canvasAreaRef = useRef<HTMLDivElement>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [authorizerDrawn, setAuthorizerDrawn] = useState(false);
+  const [employeeDrawn, setEmployeeDrawn] = useState(false);
 
   // ── Fullscreen + Orientation lock ────────────────────────────────────────
   useEffect(() => {
@@ -53,8 +80,7 @@ export function SignatureOverlay({
           await (el as any).webkitRequestFullscreen();
         }
       } catch (_) {
-        // Fullscreen não disponível (ex: iOS Safari < 16.4) — degradamos
-        // graciosamente: o overlay fixed cobre toda a tela mesmo assim.
+        // Fallback gracioso: o overlay fixed cobre a tela mesmo sem a API
       }
     };
 
@@ -62,85 +88,96 @@ export function SignatureOverlay({
       try {
         await screen.orientation?.lock?.('landscape-primary');
       } catch (_) {
-        // Sem suporte — o overlay já preenche toda a tela.
+        // Sem suporte ou bloqueado pela plataforma
       }
     };
 
     enterFullscreen().then(lockLandscape);
 
     return () => {
-      // Sai do fullscreen e desbloqueia orientação ao desmontar
       try {
-        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-        else if ((document as any).webkitFullscreenElement)
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else if ((document as any).webkitFullscreenElement) {
           (document as any).webkitExitFullscreen?.();
+        }
       } catch (_) {}
-      try { screen.orientation?.unlock?.(); } catch (_) {}
+      try {
+        screen.orientation?.unlock?.();
+      } catch (_) {}
     };
   }, []);
 
-  // ── ResizeObserver: redimensiona o canvas ao container mudar ─────────────
+  // ── Redimensiona o canvas ativo garantindo proporção e nitidez ────────────
   const resizeCanvas = useCallback(() => {
     const area = canvasAreaRef.current;
-    const sig = sigRef.current;
-    if (!area || !sig) return;
+    if (!area) return false;
 
     const rect = area.getBoundingClientRect();
     const w = Math.floor(rect.width);
     const h = Math.floor(rect.height);
-    
-    // Se dimensões forem zero, agenda nova tentativa (elemento pode estar oculto temporariamente)
-    if (w === 0 || h === 0) {
-      return false;
-    }
+    if (w <= 0 || h <= 0) return false;
 
-    const hadData = !sig.isEmpty();
-    const dataURL = hadData ? sig.toDataURL() : null;
-
-    const canvas = sig.getCanvas();
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
+    const targetW = w * dpr;
+    const targetH = h * dpr;
 
-    const ctx = canvas.getContext('2d');
-    if (ctx) ctx.scale(dpr, dpr);
+    const resizeSingle = (sig: SignatureCanvas | null) => {
+      if (!sig) return;
+      const canvas = sig.getCanvas();
+      if (!canvas) return;
 
-    if (dataURL) {
-      const img = new Image();
-      img.onload = () => {
-        const c = sig.getCanvas();
-        c.getContext('2d')?.drawImage(img, 0, 0, w, h);
-      };
-      img.src = dataURL;
+      // Não reseta se já estiver dimensionado exatamente
+      if (canvas.width === targetW && canvas.height === targetH) {
+        return;
+      }
+
+      const hadData = !sig.isEmpty();
+      const dataURL = hadData ? sig.toDataURL() : null;
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.scale(dpr, dpr);
+
+      if (dataURL) {
+        sig.fromDataURL(dataURL, { width: w, height: h });
+      }
+    };
+
+    if (step === 2) {
+      resizeSingle(authorizerSigRef.current);
+    } else {
+      resizeSingle(employeeSigRef.current);
     }
     return true;
-  }, [sigRef]);
+  }, [step, authorizerSigRef, employeeSigRef]);
 
-  // Redimensiona o canvas de forma robusta quando o overlay se torna visível
+  // Redimensiona ao montar e ao alternar de step
   useEffect(() => {
     let cancelled = false;
     let rafId: number;
-    
-    const tryResize = (attempts: number = 0) => {
+
+    const tryResize = (attempts = 0) => {
       if (cancelled) return;
-      
-      const success = resizeCanvas();
-      if (!success && attempts < 10) {
+      const ok = resizeCanvas();
+      if (!ok && attempts < 10) {
         rafId = requestAnimationFrame(() => tryResize(attempts + 1));
       }
     };
-    
-    // Espera um frame para o DOM se estabilizar após a renderização
+
     rafId = requestAnimationFrame(() => tryResize());
-    
+
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [resizeCanvas]);
+  }, [step, resizeCanvas]);
 
+  // Observer de redimensionamento de janela
   useEffect(() => {
     const area = canvasAreaRef.current;
     if (!area) return;
@@ -150,19 +187,54 @@ export function SignatureOverlay({
     });
     ro.observe(area);
 
-    // Fallback: tenta redimensionar em vários momentos
-    const timeouts = [
-      setTimeout(resizeCanvas, 100),
-      setTimeout(resizeCanvas, 300),
-      setTimeout(resizeCanvas, 600),
-      setTimeout(resizeCanvas, 1000),
-    ];
+    const t1 = setTimeout(resizeCanvas, 150);
+    const t2 = setTimeout(resizeCanvas, 500);
 
     return () => {
       ro.disconnect();
-      timeouts.forEach(clearTimeout);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, [resizeCanvas]);
+
+  // Limpa o canvas ativo
+  const handleClear = () => {
+    if (step === 2) {
+      authorizerSigRef.current?.clear();
+      setAuthorizerDrawn(false);
+    } else {
+      employeeSigRef.current?.clear();
+      setEmployeeDrawn(false);
+    }
+    setErrorMsg(null);
+  };
+
+  // Clique em avançar (Próximo ou Finalizar)
+  const handleNextAction = () => {
+    if (step === 2) {
+      const empty = isSigEmpty(authorizerSigRef.current) && !authorizerDrawn;
+      if (empty) {
+        setErrorMsg('A assinatura do autorizador é obrigatória.');
+        toast.error('A assinatura do autorizador é obrigatória.');
+        return;
+      }
+      setErrorMsg(null);
+      onNextStep();
+    } else {
+      const empty = isSigEmpty(employeeSigRef.current) && !employeeDrawn;
+      if (empty) {
+        setErrorMsg('A assinatura do funcionário é obrigatória.');
+        toast.error('A assinatura do funcionário é obrigatória.');
+        return;
+      }
+      setErrorMsg(null);
+      onFinish();
+    }
+  };
+
+  const isStep2 = step === 2;
+  const currentTitle = isStep2 ? 'ASSINATURA DO AUTORIZADOR' : 'ASSINATURA DO FUNCIONÁRIO';
+  const currentPerson = isStep2 ? authorizerName : employeeName;
 
   return (
     <div
@@ -190,9 +262,13 @@ export function SignatureOverlay({
         }}
       >
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={onBack}
+          onClick={() => {
+            setErrorMsg(null);
+            onBack();
+          }}
           style={{ gap: 6, fontWeight: 600, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
         >
           <ArrowLeft style={{ width: 16, height: 16 }} />
@@ -201,27 +277,30 @@ export function SignatureOverlay({
 
         <div style={{ textAlign: 'center', flex: 1, padding: '0 8px' }}>
           <div style={{ fontWeight: 700, fontSize: 13, color: '#111827', letterSpacing: 0.5 }}>
-            {title}
+            {currentTitle}
           </div>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>{personName}</div>
+          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>{currentPerson}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
-            onClick={() => sigRef.current?.clear()}
+            onClick={handleClear}
             title="Limpar assinatura"
             style={{ touchAction: 'manipulation' }}
           >
             <Eraser style={{ width: 18, height: 18, color: '#9ca3af' }} />
           </Button>
+
           <Button
+            type="button"
             size="sm"
-            onClick={onNext}
-            disabled={nextDisabled}
+            onClick={handleNextAction}
+            disabled={isGenerating}
             style={{
-              background: '#111827',
+              background: isStep2 ? '#111827' : '#16a34a',
               color: '#ffffff',
               fontWeight: 700,
               fontSize: 13,
@@ -232,15 +311,47 @@ export function SignatureOverlay({
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            {nextLabel.includes('Finalizar') ? (
-              <Check style={{ width: 15, height: 15 }} />
+            {isGenerating ? (
+              <>
+                <Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />
+                Salvando...
+              </>
+            ) : isStep2 ? (
+              <>
+                Próximo
+                <ArrowRight style={{ width: 15, height: 15 }} />
+              </>
             ) : (
-              <ArrowRight style={{ width: 15, height: 15 }} />
+              <>
+                <Check style={{ width: 15, height: 15 }} />
+                Finalizar ✓
+              </>
             )}
-            {nextLabel}
           </Button>
         </div>
       </div>
+
+      {/* Alerta visual de validação */}
+      {errorMsg && (
+        <div
+          style={{
+            background: '#fef2f2',
+            color: '#b91c1c',
+            borderBottom: '1px solid #fecaca',
+            padding: '8px 16px',
+            fontSize: 12,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            animation: 'fadeIn 0.2s ease-in-out',
+          }}
+        >
+          <AlertTriangle style={{ width: 15, height: 15, flexShrink: 0 }} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Área de assinatura */}
       <div
@@ -249,7 +360,7 @@ export function SignatureOverlay({
           flex: '1 1 auto',
           minHeight: 0,
           margin: '12px 16px 16px',
-          border: '2px dashed #9ca3af',
+          border: errorMsg ? '2px dashed #ef4444' : '2px dashed #9ca3af',
           borderRadius: 12,
           background: '#fff',
           overflow: 'hidden',
@@ -269,30 +380,83 @@ export function SignatureOverlay({
             justifyContent: 'center',
             pointerEvents: 'none',
             userSelect: 'none',
+            zIndex: 1,
           }}
         >
           <span style={{ fontSize: 14, color: '#d1d5db', fontStyle: 'italic', letterSpacing: 1 }}>
-            Assine aqui
+            Assine aqui ({isStep2 ? 'Autorizador' : 'Funcionário'})
           </span>
         </div>
 
-        <SignatureCanvas
-          ref={sigRef}
-          penColor="#111827"
-          minWidth={0.6}
-          maxWidth={0.9}
-          dotSize={0.7}
-          throttle={16}
-          velocityFilterWeight={0.7}
-          canvasProps={{
-            style: {
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              touchAction: 'none',
-            },
+        {/* Canvas Autorizador (Step 2) */}
+        <div
+          style={{
+            display: isStep2 ? 'block' : 'none',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            inset: 0,
+            zIndex: 2,
           }}
-        />
+        >
+          <SignatureCanvas
+            ref={authorizerSigRef}
+            penColor="#111827"
+            minWidth={0.6}
+            maxWidth={0.9}
+            dotSize={0.7}
+            throttle={16}
+            velocityFilterWeight={0.7}
+            clearOnResize={false}
+            onBegin={() => {
+              setAuthorizerDrawn(true);
+              setErrorMsg(null);
+            }}
+            canvasProps={{
+              style: {
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                touchAction: 'none',
+              },
+            }}
+          />
+        </div>
+
+        {/* Canvas Funcionário (Step 3) */}
+        <div
+          style={{
+            display: !isStep2 ? 'block' : 'none',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            inset: 0,
+            zIndex: 2,
+          }}
+        >
+          <SignatureCanvas
+            ref={employeeSigRef}
+            penColor="#111827"
+            minWidth={0.6}
+            maxWidth={0.9}
+            dotSize={0.7}
+            throttle={16}
+            velocityFilterWeight={0.7}
+            clearOnResize={false}
+            onBegin={() => {
+              setEmployeeDrawn(true);
+              setErrorMsg(null);
+            }}
+            canvasProps={{
+              style: {
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                touchAction: 'none',
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   );
