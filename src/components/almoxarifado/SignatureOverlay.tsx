@@ -550,7 +550,7 @@ export function SignatureOverlay({
         </div>
       </div>
 
-      {/* ── Barra de Rodapé Acessível ── */}
+      {/* ── Barra de Rodapé ── */}
       <div
         style={{
           display: 'flex',
@@ -563,16 +563,7 @@ export function SignatureOverlay({
           borderTop: '1px solid #e5e7eb',
         }}
       >
-        <button
-          type="button"
-          onClick={handleClear}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg border border-gray-300 flex items-center gap-2"
-          style={{ touchAction: 'manipulation' }}
-        >
-          <Eraser style={{ width: 17, height: 17 }} />
-          Limpar
-        </button>
-
+        {/* Botão Próximo à ESQUERDA */}
         <button
           type="button"
           onClick={triggerNextAction}
@@ -592,8 +583,8 @@ export function SignatureOverlay({
             </>
           ) : isStep2 ? (
             <>
-              <span>Proximo</span>
               <ArrowRight style={{ width: 18, height: 18 }} />
+              <span>Proximo</span>
             </>
           ) : (
             <>
@@ -601,6 +592,17 @@ export function SignatureOverlay({
               <span>Finalizar</span>
             </>
           )}
+        </button>
+
+        {/* Botão Limpar à DIREITA */}
+        <button
+          type="button"
+          onClick={handleClear}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg border border-gray-300 flex items-center gap-2"
+          style={{ touchAction: 'manipulation' }}
+        >
+          <Eraser style={{ width: 17, height: 17 }} />
+          <span>Limpar</span>
         </button>
       </div>
     </div>
