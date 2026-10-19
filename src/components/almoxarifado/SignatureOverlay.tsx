@@ -198,6 +198,16 @@ export function SignatureOverlay({
     };
   }, [resizeCanvas]);
 
+  // Força redimensionamento quando o step muda
+  useEffect(() => {
+    const t1 = setTimeout(resizeCanvas, 100);
+    const t2 = setTimeout(resizeCanvas, 300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [step, resizeCanvas]);
+
   // Limpa o canvas ativo
   const handleClear = (e?: React.SyntheticEvent) => {
     if (e) {
@@ -215,24 +225,22 @@ export function SignatureOverlay({
   };
 
   // Disparo do avanço (com debounce e haptics)
-  const triggerNextAction = (e?: React.SyntheticEvent) => {
+  const triggerNextAction = useCallback((e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    const now = Date.now();
-    if (now - lastActionTimeRef.current < 450) return;
-    lastActionTimeRef.current = now;
 
+    // Sem debounce para garantir que o botão sempre funciona
     try {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(35);
+        navigator.vibrate(30);
       }
     } catch (_) {}
 
     if (step === 2) {
-      const empty = !authorizerDrawn && isSigEmpty(authorizerSigRef.current);
-      if (empty) {
+      // Sempre verifica se o canvas está vazio
+      if (isSigEmpty(authorizerSigRef.current)) {
         setErrorMsg('A assinatura do autorizador é obrigatória.');
         toast.error('A assinatura do autorizador é obrigatória.');
         return;
@@ -240,8 +248,8 @@ export function SignatureOverlay({
       setErrorMsg(null);
       onNextStep();
     } else {
-      const empty = !employeeDrawn && isSigEmpty(employeeSigRef.current);
-      if (empty) {
+      // Sempre verifica se o canvas está vazio
+      if (isSigEmpty(employeeSigRef.current)) {
         setErrorMsg('A assinatura do funcionário é obrigatória.');
         toast.error('A assinatura do funcionário é obrigatória.');
         return;
@@ -249,7 +257,7 @@ export function SignatureOverlay({
       setErrorMsg(null);
       onFinish();
     }
-  };
+  }, [step, authorizerSigRef, employeeSigRef, onNextStep, onFinish]);
 
   const isStep2 = step === 2;
   const currentTitle = isStep2 ? 'ASSINATURA DO AUTORIZADOR' : 'ASSINATURA DO FUNCIONÁRIO';
