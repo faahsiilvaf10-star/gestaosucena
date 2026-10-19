@@ -545,11 +545,10 @@ export function EpiRequisitionForm() {
   
   const authorizerSigRef = useRef<SignatureCanvas>(null);
   const employeeSigRef = useRef<SignatureCanvas>(null);
-  const sigContainerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 340, height: 200 });
+  const [authorizerSigData, setAuthorizerSigData] = useState<string | null>(null);
+  const [employeeSigData, setEmployeeSigData] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
-  const [signatureFullscreen, setSignatureFullscreen] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -564,38 +563,6 @@ export function EpiRequisitionForm() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  // Detecta dispositivo móvel de forma robusta
-  const isMobileDevice = () => {
-    if (typeof window === 'undefined') return false;
-    const hasTouch = navigator.maxTouchPoints > 0;
-    const isSmallScreen = Math.min(window.innerWidth, window.innerHeight) < 768;
-    return hasTouch || isSmallScreen;
-  };
-
-  // Calcula dimensões do canvas apenas para o layout desktop inline.
-  useEffect(() => {
-    const update = () => {
-      setCanvasSize(
-        isMobileDevice()
-          ? { width: Math.max(280, window.innerWidth - 32), height: 220 }
-          : { width: 340, height: 200 }
-      );
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, [signatureFullscreen]);
-
-  // Ativa modo fullscreen de assinatura ao entrar nos steps 2 e 3 no mobile.
-  useEffect(() => {
-    const mobile = isMobileDevice();
-    if ((step === 2 || step === 3) && mobile) {
-      setSignatureFullscreen(true);
-    } else {
-      setSignatureFullscreen(false);
-    }
-  }, [step]);
 
   // Derived data
   const authorizer = employees?.find((e: any) => e.id === authorizerId);
@@ -636,21 +603,45 @@ export function EpiRequisitionForm() {
   const clearSignatures = () => {
     authorizerSigRef.current?.clear();
     employeeSigRef.current?.clear();
+    setAuthorizerSigData(null);
+    setEmployeeSigData(null);
   };
 
   // Handler unificado para salvar
-  const handleGenerateAndSubmit = async () => {
+  const handleGenerateAndSubmit = async (authBase64Param?: string, empBase64Param?: string) => {
     if (!authorizerId || !employeeId) {
-      toast.error('Selecione o autorizador e o funcionário.');
+      toast.error('Selecione o autorizador e o recebedor.');
       return;
     }
     const validItems = items.filter(i => i.productId);
     if (validItems.length === 0) {
-      toast.error('Selecione pelo menos um EPI.');
+      toast.error('Selecione pelo menos um EPI ou uniforme.');
       return;
     }
-    if (authorizerSigRef.current?.isEmpty() || employeeSigRef.current?.isEmpty()) {
-      toast.error('Ambas as assinaturas são obrigatórias.');
+
+    // Captura a assinatura diretamente do canvas se disponível
+    const getSigBase64 = (ref: React.RefObject<SignatureCanvas | null>) => {
+      if (!ref.current || ref.current.isEmpty()) return null;
+      try {
+        const canvas = ref.current.getCanvas();
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          return canvas.toDataURL('image/png');
+        }
+      } catch (_) {}
+      try {
+        const trimmed = ref.current.getTrimmedCanvas();
+        if (trimmed && trimmed.width > 0 && trimmed.height > 0) {
+          return trimmed.toDataURL('image/png');
+        }
+      } catch (_) {}
+      return null;
+    };
+
+    const authorizerSigBase64 = authBase64Param || authorizerSigData || getSigBase64(authorizerSigRef);
+    const employeeSigBase64 = empBase64Param || employeeSigData || getSigBase64(employeeSigRef);
+
+    if (!authorizerSigBase64 || !employeeSigBase64) {
+      toast.error('Ambas as assinaturas (Autorizador e Recebedor) são obrigatórias.');
       return;
     }
 
@@ -658,28 +649,6 @@ export function EpiRequisitionForm() {
     const toastId = toast.loading('Gerando recibo e salvando requisição...');
 
     try {
-      // Captura a assinatura diretamente do canvas, preservando a qualidade máxima
-      const getSigBase64 = (ref: React.RefObject<SignatureCanvas | null>) => {
-        if (!ref.current || ref.current.isEmpty()) return null;
-        try {
-          // Usa o canvas completo em alta resolução para máxima nitidez
-          const canvas = ref.current.getCanvas();
-          if (canvas && canvas.width > 0 && canvas.height > 0) {
-            return canvas.toDataURL('image/png');
-          }
-        } catch (_) {}
-        // Fallback: tenta o trimmed canvas apenas se o normal funcionar
-        try {
-          const trimmed = ref.current.getTrimmedCanvas();
-          if (trimmed && trimmed.width > 0 && trimmed.height > 0) {
-            return trimmed.toDataURL('image/png');
-          }
-        } catch (_) {}
-        return null;
-      };
-
-      const authorizerSigBase64 = getSigBase64(authorizerSigRef);
-      const employeeSigBase64 = getSigBase64(employeeSigRef);
       
       const dateStr = format(new Date(), 'dd/MM/yyyy');
       
@@ -1037,135 +1006,70 @@ export function EpiRequisitionForm() {
         </div>
       </div>
 
-      {/* Overlay de Assinatura Mobile em Tela Cheia (Steps 2 e 3) */}
-      {signatureFullscreen && (step === 2 || step === 3) && (
+      {/* Rodapé do Formulário: Botão para Avançar para Assinaturas */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 mt-8 mb-8 border-t">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <AlertCircle className="w-4 h-4 mr-2 shrink-0 text-amber-500" />
+          <span>Ao avançar, o autorizador e o recebedor assinarão sequencialmente em tela cheia.</span>
+        </div>
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate({ to: '/almoxarifado' })}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 shadow-md flex items-center gap-2"
+            onClick={() => {
+              if (!authorizerId || !employeeId) {
+                toast.error('Selecione o autorizador e o recebedor.');
+                return;
+              }
+              const validItems = items.filter(i => i.productId);
+              if (validItems.length === 0) {
+                toast.error('Selecione pelo menos um EPI ou uniforme.');
+                return;
+              }
+              setStep(2);
+            }}
+          >
+            <span>Avançar para Assinaturas</span>
+            <ArrowRight className="w-5 h-5 ml-1" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Overlay de Assinatura em Tela Cheia Sequencial (Passo 1: Autorizador, Passo 2: Recebedor) */}
+      {(step === 2 || step === 3) && (
         <SignatureOverlay
           step={step}
-          authorizerName={authorizer?.nome || 'Selecione o autorizador'}
-          employeeName={employee?.nome || 'Selecione o funcionário'}
+          authorizerName={authorizer?.nome || 'Autorizador'}
+          employeeName={employee?.nome || 'Recebedor'}
           authorizerSigRef={authorizerSigRef}
           employeeSigRef={employeeSigRef}
-          onBack={() => setStep(step === 2 ? 1 : 2)}
-          onNextStep={() => setStep(3)}
-          onFinish={handleGenerateAndSubmit}
+          onBack={() => {
+            if (step === 3) {
+              setStep(2);
+            } else {
+              setStep(1);
+            }
+          }}
+          onNextStep={(authBase64) => {
+            if (authBase64) setAuthorizerSigData(authBase64);
+            setStep(3);
+          }}
+          onFinish={(authBase64, empBase64) => {
+            if (authBase64) setAuthorizerSigData(authBase64);
+            if (empBase64) setEmployeeSigData(empBase64);
+            handleGenerateAndSubmit(authBase64, empBase64);
+          }}
           isGenerating={isGenerating}
         />
       )}
-
-      {/* Signatures (Desktop) */}
-      <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", (step === 1 || signatureFullscreen) && "hidden md:block")}>
-        <div className="flex justify-between items-center border-b pb-4">
-          <h3 className="text-xl font-bold">Assinaturas</h3>
-          <Button type="button" variant="ghost" size="sm" onClick={clearSignatures}>Limpar Assinaturas</Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* ASSINATURA AUTORIZADOR */}
-          <div className="space-y-2 flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div>
-              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO AUTORIZADOR</Label>
-              <Button variant="ghost" size="icon" onClick={() => authorizerSigRef.current?.clear()} title="Limpar Assinatura">
-                <Eraser className="w-6 h-6 text-gray-500" />
-              </Button>
-            </div>
-            <div
-              ref={sigContainerRef}
-              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-              style={{ height: canvasSize.height }}
-            >
-              <SignatureCanvas
-                ref={authorizerSigRef}
-                penColor="#111827"
-                minWidth={0.6}
-                maxWidth={0.9}
-                dotSize={0.7}
-                velocityFilterWeight={0.7}
-                clearOnResize={false}
-                canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
-              />
-            </div>
-            <span className="text-sm text-gray-600 font-medium text-center mt-2">{authorizer?.nome || 'Selecione o autorizador'}</span>
-          </div>
-
-          {/* ASSINATURA FUNCIONÁRIO */}
-          <div className="space-y-2 flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-2">
-              <div className="w-10"></div>
-              <Label className="text-center font-bold text-lg md:text-sm text-black flex-1">ASSINATURA DO FUNCIONÁRIO</Label>
-              <Button variant="ghost" size="icon" onClick={() => employeeSigRef.current?.clear()} title="Limpar Assinatura">
-                <Eraser className="w-6 h-6 text-gray-500" />
-              </Button>
-            </div>
-            <div
-              className="border-2 border-dashed border-gray-400 rounded-lg bg-white w-full overflow-hidden touch-none"
-              style={{ height: canvasSize.height }}
-            >
-              <SignatureCanvas
-                ref={employeeSigRef}
-                penColor="#111827"
-                minWidth={0.6}
-                maxWidth={0.9}
-                dotSize={0.7}
-                velocityFilterWeight={0.7}
-                clearOnResize={false}
-                canvasProps={{ width: canvasSize.width, height: canvasSize.height, className: 'sigCanvas w-full h-full' }}
-              />
-            </div>
-            <span className="text-sm text-gray-600 font-medium text-center mt-2">{employee?.nome || 'Selecione o funcionário'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Steps Controls */}
-      <div className={cn("flex md:hidden justify-between mt-6", signatureFullscreen && "hidden")}>
-        {step === 1 && (
-          <Button type="button" variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
-        )}
-        {step > 1 && (
-          <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
-          </Button>
-        )}
-        {step < 3 ? (
-          <Button
-            type="button"
-            className="ml-auto"
-            onClick={() => {
-              if (step === 1) {
-                if (!authorizerId || !employeeId) {
-                  toast.error('Selecione o autorizador e o funcionário.');
-                  return;
-                }
-                const validItems = items.filter(i => i.productId);
-                if (validItems.length === 0) {
-                  toast.error('Selecione pelo menos um EPI.');
-                  return;
-                }
-              }
-              setStep(step + 1);
-            }}
-          >
-            Próximo <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        ) : (
-          <Button onClick={handleGenerateAndSubmit} disabled={isGenerating} className="ml-auto bg-green-600 hover:bg-green-700">
-            {isGenerating ? 'Salvando...' : 'Salvar'}
-          </Button>
-        )}
-      </div>
-
-      {/* Footer Actions (Desktop) */}
-      <div className="hidden md:flex justify-end gap-4 pt-4 mt-8 mb-8 border-t">
-         <div className="flex items-center text-sm text-muted-foreground mr-auto">
-           <AlertCircle className="w-4 h-4 mr-2" />
-           Isso irá abater do estoque e gerar um comprovante PNG inalterável.
-         </div>
-         <Button variant="outline" onClick={() => navigate({ to: '/almoxarifado' })}>Cancelar</Button>
-         <Button onClick={handleGenerateAndSubmit} disabled={isGenerating} className="min-w-[200px]">
-           {isGenerating ? 'Gerando e Salvando...' : <><Save className="w-4 h-4 mr-2" /> Salvar e Registrar</>}
-         </Button>
-      </div>
 
     </div>
   );

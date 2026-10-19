@@ -1,13 +1,15 @@
 /**
  * SignatureOverlay
  * ----------------
- * Componente unificado e ultra-acessível para captura de assinatura em dispositivos móveis.
+ * Componente unificado e em tela cheia para captura sequencial de assinaturas:
+ *  - Passo 1 de 2: Assinatura do Autorizador
+ *  - Passo 2 de 2: Assinatura do Recebedor (Funcionário)
  *
  * Características:
- *  - Suporte completo a safe-area-insets (afasta botões de entalhes, câmeras e bordas da tela).
- *  - Botões duplos de avanço (no topo rebaixado e na barra de rodapé com alvo de toque de 50px).
- *  - Suporte a toque direto (onTouchEnd + onPointerDown + onClick com debounce e haptic feedback).
- *  - Transição contínua entre Step 2 (Autorizador) e Step 3 (Funcionário) sem sair do fullscreen.
+ *  - Safe-area-insets para dispositivos móveis e suporte completo a telas desktop/touch.
+ *  - Montagem de canvas com key única por etapa para coordenadas perfeitas e nitidez máxima.
+ *  - Captura direta em PNG de alta resolução.
+ *  - Botões duplos de avanço (superior e rodapé com alvos de toque aumentados).
  */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
@@ -22,26 +24,25 @@ import RotateCcw from 'lucide-react/dist/esm/icons/rotate-ccw.js';
 import { toast } from 'sonner';
 
 interface SignatureOverlayProps {
-  step: number; // 2 para autorizador, 3 para funcionário
+  step: number; // 2 para autorizador, 3 para recebedor
   authorizerName: string;
   employeeName: string;
   authorizerSigRef: React.RefObject<SignatureCanvas | null>;
   employeeSigRef: React.RefObject<SignatureCanvas | null>;
   onBack: () => void;
-  onNextStep: () => void;
-  onFinish: () => void;
+  onNextStep: (authorizerBase64?: string) => void;
+  onFinish: (authorizerBase64?: string, employeeBase64?: string) => void;
   isGenerating?: boolean;
 }
 
-// Verifica se o canvas de assinatura está vazio
+// Verifica se o canvas de assinatura está vazio inspecionando diretamente os pixels
 function isSigEmpty(sig: SignatureCanvas | null): boolean {
   if (!sig) return true;
-  if (sig.isEmpty()) return true;
   try {
     const canvas = sig.getCanvas();
     if (!canvas || canvas.width === 0 || canvas.height === 0) return true;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return true;
+    if (!ctx) return sig.isEmpty();
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
     for (let i = 3; i < data.length; i += 4) {
@@ -71,7 +72,11 @@ export function SignatureOverlay({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [authorizerDrawn, setAuthorizerDrawn] = useState(false);
   const [employeeDrawn, setEmployeeDrawn] = useState(false);
-  const lastActionTimeRef = useRef<number>(0);
+  const [savedAuthorizerBase64, setSavedAuthorizerBase64] = useState<string | null>(null);
+
+  const isStep2 = step === 2;
+  const currentTitle = isStep2 ? 'ASSINATURA DO AUTORIZADOR' : 'ASSINATURA DO RECEBEDOR';
+  const currentPerson = isStep2 ? authorizerName : employeeName;
 
   // ── Fullscreen + Trava de Orientação em Paisagem ────────────────────────
   useEffect(() => {
@@ -124,38 +129,32 @@ export function SignatureOverlay({
     const targetW = w * dpr;
     const targetH = h * dpr;
 
-    const resizeSingle = (sig: SignatureCanvas | null) => {
-      if (!sig) return;
-      const canvas = sig.getCanvas();
-      if (!canvas) return;
+    const currentSig = isStep2 ? authorizerSigRef.current : employeeSigRef.current;
+    if (!currentSig) return false;
 
-      if (canvas.width === targetW && canvas.height === targetH) {
-        return;
-      }
+    const canvas = currentSig.getCanvas();
+    if (!canvas) return false;
 
-      const hadData = !sig.isEmpty();
-      const dataURL = hadData ? sig.toDataURL() : null;
+    if (canvas.width === targetW && canvas.height === targetH) {
+      return true;
+    }
 
-      canvas.width = targetW;
-      canvas.height = targetH;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
+    const hadData = !isSigEmpty(currentSig);
+    const dataURL = hadData ? currentSig.toDataURL() : (isStep2 ? savedAuthorizerBase64 : null);
 
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.scale(dpr, dpr);
+    canvas.width = targetW;
+    canvas.height = targetH;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
 
-      if (dataURL) {
-        sig.fromDataURL(dataURL, { width: w, height: h });
-      }
-    };
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.scale(dpr, dpr);
 
-    if (step === 2) {
-      resizeSingle(authorizerSigRef.current);
-    } else {
-      resizeSingle(employeeSigRef.current);
+    if (dataURL) {
+      currentSig.fromDataURL(dataURL, { width: w, height: h });
     }
     return true;
-  }, [step, authorizerSigRef, employeeSigRef]);
+  }, [isStep2, authorizerSigRef, employeeSigRef, savedAuthorizerBase64]);
 
   // Redimensiona ao montar e ao alternar de etapa
   useEffect(() => {
@@ -198,15 +197,15 @@ export function SignatureOverlay({
     };
   }, [resizeCanvas]);
 
-  // Força redimensionamento quando o step muda
+  // Se voltar para o passo 2 e já tínhamos a assinatura salva, recarrega
   useEffect(() => {
-    const t1 = setTimeout(resizeCanvas, 100);
-    const t2 = setTimeout(resizeCanvas, 300);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [step, resizeCanvas]);
+    if (isStep2 && savedAuthorizerBase64 && authorizerSigRef.current) {
+      try {
+        authorizerSigRef.current.fromDataURL(savedAuthorizerBase64);
+        setAuthorizerDrawn(true);
+      } catch (_) {}
+    }
+  }, [isStep2, savedAuthorizerBase64, authorizerSigRef]);
 
   // Limpa o canvas ativo
   const handleClear = (e?: React.SyntheticEvent) => {
@@ -214,8 +213,9 @@ export function SignatureOverlay({
       e.preventDefault();
       e.stopPropagation();
     }
-    if (step === 2) {
+    if (isStep2) {
       authorizerSigRef.current?.clear();
+      setSavedAuthorizerBase64(null);
       setAuthorizerDrawn(false);
     } else {
       employeeSigRef.current?.clear();
@@ -224,52 +224,50 @@ export function SignatureOverlay({
     setErrorMsg(null);
   };
 
-  // Disparo do avanço (sem debounce)
+  // Disparo do avanço
   const triggerNextAction = useCallback((e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
 
-    console.log('[SignatureOverlay] triggerNextAction chamado, step:', step);
-
-    // Feedback haptic
+    // Feedback haptico em dispositivos com suporte
     try {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(50);
       }
     } catch (_) {}
 
-    if (step === 2) {
-      console.log('[SignatureOverlay] Verificando assinatura autorizador');
+    if (isStep2) {
       const sigEmpty = isSigEmpty(authorizerSigRef.current);
-      console.log('[SignatureOverlay] Assinatura vazia:', sigEmpty);
       if (sigEmpty) {
-        setErrorMsg('A assinatura do autorizador e obrigatoria.');
-        toast.error('A assinatura do autorizador e obrigatoria.');
+        setErrorMsg('A assinatura do autorizador é obrigatória.');
+        toast.error('A assinatura do autorizador é obrigatória.');
         return;
       }
       setErrorMsg(null);
-      console.log('[SignatureOverlay] Chamando onNextStep');
-      onNextStep();
-    } else {
-      console.log('[SignatureOverlay] Verificando assinatura funcionario');
-      const sigEmpty = isSigEmpty(employeeSigRef.current);
-      console.log('[SignatureOverlay] Assinatura vazia:', sigEmpty);
-      if (sigEmpty) {
-        setErrorMsg('A assinatura do funcionario e obrigatoria.');
-        toast.error('A assinatura do funcionario e obrigatoria.');
-        return;
-      }
-      setErrorMsg(null);
-      console.log('[SignatureOverlay] Chamando onFinish');
-      onFinish();
-    }
-  }, [step, authorizerSigRef, employeeSigRef, onNextStep, onFinish]);
 
-  const isStep2 = step === 2;
-  const currentTitle = isStep2 ? 'ASSINATURA DO AUTORIZADOR' : 'ASSINATURA DO FUNCIONÁRIO';
-  const currentPerson = isStep2 ? authorizerName : employeeName;
+      const authCanvas = authorizerSigRef.current?.getCanvas();
+      const authBase64 = authCanvas && authCanvas.width > 0 ? authCanvas.toDataURL('image/png') : null;
+      const finalAuth = authBase64 || savedAuthorizerBase64;
+      if (finalAuth) {
+        setSavedAuthorizerBase64(finalAuth);
+      }
+      onNextStep(finalAuth || undefined);
+    } else {
+      const sigEmpty = isSigEmpty(employeeSigRef.current);
+      if (sigEmpty) {
+        setErrorMsg('A assinatura do recebedor é obrigatória.');
+        toast.error('A assinatura do recebedor é obrigatória.');
+        return;
+      }
+      setErrorMsg(null);
+
+      const empCanvas = employeeSigRef.current?.getCanvas();
+      const empBase64 = empCanvas && empCanvas.width > 0 ? empCanvas.toDataURL('image/png') : null;
+      onFinish(savedAuthorizerBase64 || undefined, empBase64 || undefined);
+    }
+  }, [isStep2, authorizerSigRef, employeeSigRef, onNextStep, onFinish, savedAuthorizerBase64]);
 
   return (
     <div
@@ -285,7 +283,7 @@ export function SignatureOverlay({
         touchAction: 'manipulation',
       }}
     >
-      {/* ── Top Header (rebaixado e afastado das bordas / entalhes) ──────── */}
+      {/* ── Top Header (afastado das bordas / entalhes) ──────── */}
       <div
         style={{
           display: 'flex',
@@ -331,39 +329,39 @@ export function SignatureOverlay({
               display: 'inline-block',
               background: isStep2 ? '#e0e7ff' : '#dcfce7',
               color: isStep2 ? '#3730a3' : '#166534',
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 800,
               letterSpacing: 0.5,
               textTransform: 'uppercase',
-              padding: '2px 8px',
+              padding: '3px 10px',
               borderRadius: 12,
-              marginBottom: 2,
+              marginBottom: 3,
             }}
           >
-            {isStep2 ? 'Passo 1 de 2 • Autorizador' : 'Passo 2 de 2 • Funcionário'}
+            {isStep2 ? 'Passo 1 de 2 • Autorizador' : 'Passo 2 de 2 • Recebedor'}
           </div>
-          <div style={{ fontWeight: 800, fontSize: 13, color: '#0f172a', letterSpacing: 0.5 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: '#0f172a', letterSpacing: 0.5 }}>
             {currentTitle}
           </div>
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 1, fontWeight: 500 }}>
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 1, fontWeight: 600 }}>
             {currentPerson}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', pointerEvents: 'auto', position: 'relative', zIndex: 100 }}>
-          {/* Botão Superior com alvos de toque aumentados */}
+          {/* Botão Superior */}
           <button
             type="button"
             onClick={triggerNextAction}
             disabled={isGenerating}
             style={{
               height: 42,
-              minWidth: 120,
-              padding: '0 16px',
+              minWidth: 140,
+              padding: '0 18px',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
+              gap: 8,
               background: isStep2 ? '#0f172a' : '#16a34a',
               color: '#ffffff',
               fontWeight: 700,
@@ -388,13 +386,13 @@ export function SignatureOverlay({
               </>
             ) : isStep2 ? (
               <>
-                <ArrowRight style={{ width: 15, height: 15 }} />
+                <ArrowRight style={{ width: 16, height: 16 }} />
                 <span>Próximo</span>
               </>
             ) : (
               <>
-                <Check style={{ width: 15, height: 15 }} />
-                <span>Finalizar</span>
+                <Check style={{ width: 16, height: 16 }} />
+                <span>Finalizar e Salvar</span>
               </>
             )}
           </button>
@@ -427,7 +425,7 @@ export function SignatureOverlay({
             background: '#fef2f2',
             color: '#b91c1c',
             borderBottom: '1px solid #fecaca',
-            padding: '8px 24px',
+            padding: '10px 24px',
             fontSize: 13,
             fontWeight: 700,
             display: 'flex',
@@ -474,15 +472,14 @@ export function SignatureOverlay({
             zIndex: 1,
           }}
         >
-          <span style={{ fontSize: 15, color: '#cbd5e1', fontStyle: 'italic', letterSpacing: 1, fontWeight: 500 }}>
-            ✍️ Assine aqui ({isStep2 ? 'Autorizador' : 'Funcionário'})
+          <span style={{ fontSize: 16, color: '#cbd5e1', fontStyle: 'italic', letterSpacing: 1, fontWeight: 500 }}>
+            ✍️ Assine aqui ({isStep2 ? 'Autorizador' : 'Recebedor'})
           </span>
         </div>
 
-        {/* Canvas Autorizador (Step 2) */}
+        {/* Canvas de assinatura com montagem única por etapa */}
         <div
           style={{
-            display: isStep2 ? 'block' : 'none',
             width: '100%',
             height: '100%',
             position: 'absolute',
@@ -491,7 +488,8 @@ export function SignatureOverlay({
           }}
         >
           <SignatureCanvas
-            ref={authorizerSigRef}
+            key={isStep2 ? 'canvas-authorizer' : 'canvas-employee'}
+            ref={isStep2 ? authorizerSigRef : employeeSigRef}
             penColor="#0f172a"
             minWidth={0.8}
             maxWidth={1.2}
@@ -500,42 +498,8 @@ export function SignatureOverlay({
             velocityFilterWeight={0.7}
             clearOnResize={false}
             onBegin={() => {
-              setAuthorizerDrawn(true);
-              setErrorMsg(null);
-            }}
-            canvasProps={{
-              style: {
-                display: 'block',
-                width: '100%',
-                height: '100%',
-                touchAction: 'none',
-              },
-            }}
-          />
-        </div>
-
-        {/* Canvas Funcionário (Step 3) */}
-        <div
-          style={{
-            display: !isStep2 ? 'block' : 'none',
-            width: '100%',
-            height: '100%',
-            position: 'absolute',
-            inset: 0,
-            zIndex: 2,
-          }}
-        >
-          <SignatureCanvas
-            ref={employeeSigRef}
-            penColor="#0f172a"
-            minWidth={0.8}
-            maxWidth={1.2}
-            dotSize={0.8}
-            throttle={16}
-            velocityFilterWeight={0.7}
-            clearOnResize={false}
-            onBegin={() => {
-              setEmployeeDrawn(true);
+              if (isStep2) setAuthorizerDrawn(true);
+              else setEmployeeDrawn(true);
               setErrorMsg(null);
             }}
             canvasProps={{
@@ -558,19 +522,21 @@ export function SignatureOverlay({
           justifyContent: 'space-between',
           padding: '12px 24px',
           paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+          paddingLeft: 'max(24px, env(safe-area-inset-left, 24px))',
+          paddingRight: 'max(24px, env(safe-area-inset-right, 24px))',
           flexShrink: 0,
           background: '#ffffff',
           borderTop: '1px solid #e5e7eb',
         }}
       >
-        {/* Botão Próximo à ESQUERDA */}
+        {/* Botão de Avanço à ESQUERDA */}
         <button
           type="button"
           onClick={triggerNextAction}
           disabled={isGenerating}
           className={isStep2 ? "bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2" : "bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2"}
           style={{ 
-            minWidth: 160,
+            minWidth: 170,
             opacity: isGenerating ? 0.7 : 1,
             cursor: isGenerating ? 'not-allowed' : 'pointer',
             touchAction: 'manipulation'
@@ -584,12 +550,12 @@ export function SignatureOverlay({
           ) : isStep2 ? (
             <>
               <ArrowRight style={{ width: 18, height: 18 }} />
-              <span>Proximo</span>
+              <span>Próximo</span>
             </>
           ) : (
             <>
               <Check style={{ width: 18, height: 18 }} />
-              <span>Finalizar</span>
+              <span>Finalizar e Salvar</span>
             </>
           )}
         </button>
@@ -598,7 +564,7 @@ export function SignatureOverlay({
         <button
           type="button"
           onClick={handleClear}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg border border-gray-300 flex items-center gap-2"
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-lg border border-gray-300 flex items-center gap-2"
           style={{ touchAction: 'manipulation' }}
         >
           <Eraser style={{ width: 17, height: 17 }} />
