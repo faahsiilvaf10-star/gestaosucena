@@ -911,14 +911,21 @@ export function EpiRequisitionForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ASSINATURA AUTORIZADOR */}
-          <div className={cn("space-y-2 flex flex-col items-center", step !== 2 && "hidden md:flex")}>
+          <div className={cn("space-y-2 flex flex-col items-center", !signatureFullscreen && step !== 2 && "hidden md:flex")}>
             {signatureFullscreen ? (
               <SignatureOverlay
                 title="ASSINATURA DO AUTORIZADOR"
                 personName={authorizer?.nome || 'Selecione o autorizador'}
                 sigRef={authorizerSigRef}
                 onBack={() => setStep(1)}
-                onNext={() => setStep(3)}
+                onNext={() => {
+                  // Valida que há uma assinatura antes de avançar
+                  if (authorizerSigRef.current?.isEmpty()) {
+                    toast.error('A assinatura do autorizador é obrigatória.');
+                    return;
+                  }
+                  setStep(3);
+                }}
                 nextLabel="Próximo →"
               />
             ) : (
@@ -951,14 +958,21 @@ export function EpiRequisitionForm() {
           </div>
 
           {/* ASSINATURA FUNCIONÁRIO */}
-          <div className={cn("space-y-2 flex flex-col items-center", step !== 3 && "hidden md:flex")}>
+          <div className={cn("space-y-2 flex flex-col items-center", !signatureFullscreen && step !== 3 && "hidden md:flex")}>
             {signatureFullscreen ? (
               <SignatureOverlay
                 title="ASSINATURA DO FUNCIONÁRIO"
                 personName={employee?.nome || 'Selecione o funcionário'}
                 sigRef={employeeSigRef}
                 onBack={() => setStep(2)}
-                onNext={handleGenerateAndSubmit}
+                onNext={() => {
+                  // Valida que há uma assinatura antes de finalizar
+                  if (employeeSigRef.current?.isEmpty()) {
+                    toast.error('A assinatura do funcionário é obrigatória.');
+                    return;
+                  }
+                  handleGenerateAndSubmit();
+                }}
                 nextLabel={isGenerating ? 'Salvando...' : 'Finalizar ✓'}
                 nextDisabled={isGenerating}
               />

@@ -88,7 +88,11 @@ export function SignatureOverlay({
     const rect = area.getBoundingClientRect();
     const w = Math.floor(rect.width);
     const h = Math.floor(rect.height);
-    if (w === 0 || h === 0) return;
+    
+    // Se dimensões forem zero, agenda nova tentativa (elemento pode estar oculto temporariamente)
+    if (w === 0 || h === 0) {
+      return false;
+    }
 
     const hadData = !sig.isEmpty();
     const dataURL = hadData ? sig.toDataURL() : null;
@@ -111,22 +115,52 @@ export function SignatureOverlay({
       };
       img.src = dataURL;
     }
+    return true;
   }, [sigRef]);
+
+  // Redimensiona o canvas de forma robusta quando o overlay se torna visível
+  useEffect(() => {
+    let cancelled = false;
+    let rafId: number;
+    
+    const tryResize = (attempts: number = 0) => {
+      if (cancelled) return;
+      
+      const success = resizeCanvas();
+      if (!success && attempts < 10) {
+        rafId = requestAnimationFrame(() => tryResize(attempts + 1));
+      }
+    };
+    
+    // Espera um frame para o DOM se estabilizar após a renderização
+    rafId = requestAnimationFrame(() => tryResize());
+    
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [resizeCanvas]);
 
   useEffect(() => {
     const area = canvasAreaRef.current;
     if (!area) return;
 
-    const ro = new ResizeObserver(() => resizeCanvas());
+    const ro = new ResizeObserver(() => {
+      resizeCanvas();
+    });
     ro.observe(area);
 
-    const t1 = setTimeout(resizeCanvas, 50);
-    const t2 = setTimeout(resizeCanvas, 350);
+    // Fallback: tenta redimensionar em vários momentos
+    const timeouts = [
+      setTimeout(resizeCanvas, 100),
+      setTimeout(resizeCanvas, 300),
+      setTimeout(resizeCanvas, 600),
+      setTimeout(resizeCanvas, 1000),
+    ];
 
     return () => {
       ro.disconnect();
-      clearTimeout(t1);
-      clearTimeout(t2);
+      timeouts.forEach(clearTimeout);
     };
   }, [resizeCanvas]);
 
@@ -152,13 +186,14 @@ export function SignatureOverlay({
           borderBottom: '1px solid #e5e7eb',
           flexShrink: 0,
           background: '#f9fafb',
+          touchAction: 'manipulation',
         }}
       >
         <Button
           variant="ghost"
           size="sm"
           onClick={onBack}
-          style={{ gap: 6, fontWeight: 600 }}
+          style={{ gap: 6, fontWeight: 600, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
         >
           <ArrowLeft style={{ width: 16, height: 16 }} />
           Voltar
@@ -177,6 +212,7 @@ export function SignatureOverlay({
             size="icon"
             onClick={() => sigRef.current?.clear()}
             title="Limpar assinatura"
+            style={{ touchAction: 'manipulation' }}
           >
             <Eraser style={{ width: 18, height: 18, color: '#9ca3af' }} />
           </Button>
@@ -192,6 +228,8 @@ export function SignatureOverlay({
               paddingLeft: 14,
               paddingRight: 14,
               gap: 6,
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
             {nextLabel.includes('Finalizar') ? (

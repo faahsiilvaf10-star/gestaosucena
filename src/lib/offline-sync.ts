@@ -35,6 +35,62 @@ const directWhatsappSendText = async (settings: any, phone: string, text: string
   return true;
 };
 
+// Proxy via API do servidor para evitar CORS no APK
+const proxyWhatsappSendText = async (settings: any, phone: string, text: string) => {
+  try {
+    const response = await fetch("/api/whatsapp-proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone,
+        text,
+        mediaType: "text",
+      }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || "Proxy error");
+    return true;
+  } catch (err) {
+    console.warn("[WhatsApp Proxy] Erro ao enviar via proxy:", err);
+    throw err;
+  }
+};
+
+// Proxy via API do servidor para mídia
+const proxyWhatsappSendMedia = async (
+  settings: any,
+  phone: string,
+  caption: string,
+  base64Media: string,
+  fileName: string,
+) => {
+  try {
+    const response = await fetch("/api/whatsapp-proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone,
+        caption,
+        base64Media,
+        fileName,
+        mediaType: "image",
+      }),
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || "Proxy error");
+    return true;
+  } catch (err) {
+    console.warn("[WhatsApp Proxy] Erro ao enviar mídia via proxy:", err);
+    throw err;
+  }
+};
+
 const directWhatsappSendMedia = async (
   settings: any,
   phone: string,
