@@ -12,10 +12,11 @@ import path from "path";
 const appVersion = Math.random().toString(36).substring(2, 10);
 const timestamp = new Date().toISOString();
 
-// Plugin para gerar version.json automaticamente a cada build
+// Plugin para gerar version.json automaticamente apenas no build de produção
 const generateVersionPlugin = () => {
   return {
     name: 'generate-version-json',
+    apply: 'build' as const,
     buildStart() {
       const content = JSON.stringify({ version: appVersion, updatedAt: timestamp });
       const publicDir = path.resolve(process.cwd(), 'public');

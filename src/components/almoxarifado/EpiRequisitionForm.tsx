@@ -550,6 +550,20 @@ export function EpiRequisitionForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(1);
   const [signatureFullscreen, setSignatureFullscreen] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Monitora se o usuário está autenticado
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAuthenticated(!!data.session);
+      setSessionChecked(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Detecta dispositivo móvel de forma robusta
   const isMobileDevice = () => {
@@ -586,6 +600,26 @@ export function EpiRequisitionForm() {
   // Derived data
   const authorizer = employees?.find((e: any) => e.id === authorizerId);
   const employee = employees?.find((e: any) => e.id === employeeId);
+
+  // Helper para identificar se um item é uniforme
+  const isUniform = (name: string, catName?: string, subCat?: string) => {
+    const n = (name || '').toLowerCase();
+    const c = (catName || '').toLowerCase();
+    const s = (subCat || '').toLowerCase();
+    return n.includes('camisa') || n.includes('calça') || n.includes('calca') || c.includes('uniforme') || s.includes('uniforme');
+  };
+
+  const filteredProducts = (epiProducts || []).filter(p => {
+    const term = searchEpiTerm.toLowerCase().trim();
+    if (!term) return true;
+    const pName = p.name?.toLowerCase() || '';
+    const catName = p.category?.name?.toLowerCase() || '';
+    const subCat = p.subcategory?.toLowerCase() || '';
+    return pName.includes(term) || catName.includes(term) || subCat.includes(term);
+  });
+
+  const epiList = filteredProducts.filter(p => !isUniform(p.name, p.category?.name, p.subcategory));
+  const uniformList = filteredProducts.filter(p => isUniform(p.name, p.category?.name, p.subcategory));
 
   const handleToggleItem = (productId: string, checked: boolean) => {
     if (checked) {
@@ -724,6 +758,30 @@ export function EpiRequisitionForm() {
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
+      {/* Alerta de Sessão Não Autenticada */}
+      {sessionChecked && !isAuthenticated && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-900 dark:text-amber-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 bg-amber-500/20 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+              <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="font-bold text-base">Você não está autenticado no sistema</p>
+              <p className="text-xs opacity-90 mt-0.5">
+                O estoque de EPIs e Uniformes requer autenticação ativa. Faça login para carregar os produtos e registrar requisições.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={() => navigate({ to: '/' })}
+            className="w-full sm:w-auto bg-[#c9a84c] hover:bg-[#b88e28] text-black font-bold text-xs shrink-0 px-5 h-10 rounded-xl shadow transition-transform active:scale-95"
+          >
+            Fazer Login Agora
+          </Button>
+        </div>
+      )}
+
       {/* Employee Info */}
       <div className={cn("bg-card border rounded-xl p-6 shadow-sm space-y-6", step !== 1 && "hidden md:block")}>
         <h3 className="text-xl font-bold border-b pb-4">Dados da Requisição</h3>
@@ -824,100 +882,158 @@ export function EpiRequisitionForm() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && !p.name.toLowerCase().includes('camisa') && !p.name.toLowerCase().includes('calça') && !p.category?.name?.toLowerCase().includes('uniforme')).map(p => {
-            const isSelected = items.some(i => i.productId === p.id);
-            const item = items.find(i => i.productId === p.id);
-            return (
-              <div key={p.id} className="flex flex-col space-y-2">
-                <div className="flex items-start space-x-3">
-                  <Checkbox 
-                    id={`epi-${p.id}`} 
-                    checked={isSelected} 
-                    onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
-                    disabled={p.current_quantity <= 0}
-                    className="rounded-full shrink-0 mt-0.5"
-                    style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
-                  />
-                  <Label 
-                    htmlFor={`epi-${p.id}`} 
-                    className={`text-base font-medium cursor-pointer ${p.current_quantity <= 0 ? 'text-muted-foreground line-through' : ''}`}
-                  >
-                    {p.name}
-                  </Label>
+          {loadingEpi ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-3 p-3 rounded-lg border border-border/40 bg-muted/20 animate-pulse">
+                <div className="w-6 h-6 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-2.5 bg-muted rounded w-1/3" />
                 </div>
-                
-                {isSelected && (
-                  <div className="pl-9 flex flex-wrap items-center gap-3 animate-in fade-in zoom-in duration-200">
-                    <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md">
-                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
-                      <Input 
-                        type="number" 
-                        className="w-16 h-8 text-sm" 
-                        min="1" 
-                        max={p.current_quantity}
-                        value={item?.quantity || 1} 
-                        onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
-                      {employeeId && <LastRequisitionDate employeeId={employeeId} productId={p.id} />}
-                    </div>
-                  </div>
-                )}
               </div>
-            );
-          })}
+            ))
+          ) : (
+            epiList.map(p => {
+              const isSelected = items.some(i => i.productId === p.id);
+              const item = items.find(i => i.productId === p.id);
+              return (
+                <div key={p.id} className="flex flex-col space-y-2">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox 
+                      id={`epi-${p.id}`} 
+                      checked={isSelected} 
+                      onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
+                      disabled={p.current_quantity <= 0}
+                      className="rounded-full shrink-0 mt-0.5"
+                      style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
+                    />
+                    <Label 
+                      htmlFor={`epi-${p.id}`} 
+                      className={`text-base font-medium cursor-pointer ${p.current_quantity <= 0 ? 'text-muted-foreground line-through' : ''}`}
+                    >
+                      {p.name}
+                    </Label>
+                  </div>
+                  
+                  {isSelected && (
+                    <div className="pl-9 flex flex-wrap items-center gap-3 animate-in fade-in zoom-in duration-200">
+                      <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
+                        <Input 
+                          type="number" 
+                          className="w-16 h-8 text-sm" 
+                          min="1" 
+                          max={p.current_quantity}
+                          value={item?.quantity || 1} 
+                          onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
+                        {employeeId && <LastRequisitionDate employeeId={employeeId} productId={p.id} />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
+
+        {!loadingEpi && epiList.length === 0 && (
+          <div className="text-center py-6 px-4 border border-dashed rounded-xl bg-muted/10 space-y-2">
+            <p className="text-sm text-muted-foreground font-medium">
+              {!isAuthenticated && sessionChecked
+                ? 'Você não está autenticado. Faça login no sistema para carregar os EPIs disponíveis no estoque.'
+                : 'Nenhum EPI encontrado no estoque para esta busca.'}
+            </p>
+            {!isAuthenticated && sessionChecked && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate({ to: '/' })}
+                className="text-xs mt-1"
+              >
+                Ir para o Login
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="border-b pb-4 mt-8">
           <h3 className="text-xl font-bold">Uniforme</h3>
         </div>
         
         <div className="space-y-6">
-           {/* Renderiza uniformes que não foram renderizados no bloco anterior */}
-           {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && (p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme'))).map(p => {
-            const isSelected = items.some(i => i.productId === p.id);
-            const item = items.find(i => i.productId === p.id);
-            return (
-              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pb-4 sm:pb-0 border-b sm:border-b-0 border-border">
-                <div className="sm:w-48">
-                  <Label className="font-semibold text-base sm:text-sm">{p.name}:</Label>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 flex-1">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`unif-${p.id}`} 
-                      checked={isSelected} 
-                      onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
-                      disabled={p.current_quantity <= 0}
-                      className="rounded-full shrink-0"
-                      style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
-                    />
-                    <Label htmlFor={`unif-${p.id}`} className="text-sm cursor-pointer whitespace-nowrap">Selecionar</Label>
-                  </div>
-                  
-                  {isSelected && (
-                    <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
-                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
-                      <Input 
-                        type="number" 
-                        className="w-16 h-8 text-sm" 
-                        min="1" 
-                        max={p.current_quantity}
-                        value={item?.quantity || 1} 
-                        onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
-                      />
-                      <span className="text-xs font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
-                    </div>
-                  )}
-                </div>
+          {loadingEpi ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-3 rounded-lg border border-border/40 bg-muted/20 animate-pulse">
+                <div className="h-4 bg-muted rounded w-36" />
+                <div className="w-6 h-6 rounded-full bg-muted shrink-0" />
               </div>
-            );
-           })}
-           {epiProducts?.filter(p => (p.name.toLowerCase().includes(searchEpiTerm.toLowerCase()) || p.category?.name?.toLowerCase().includes(searchEpiTerm.toLowerCase())) && (p.name.toLowerCase().includes('camisa') || p.name.toLowerCase().includes('calça') || p.category?.name?.toLowerCase().includes('uniforme'))).length === 0 && (
-             <p className="text-sm text-muted-foreground">Nenhum uniforme encontrado no estoque.</p>
-           )}
+            ))
+          ) : (
+            uniformList.map(p => {
+              const isSelected = items.some(i => i.productId === p.id);
+              const item = items.find(i => i.productId === p.id);
+              return (
+                <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pb-4 sm:pb-0 border-b sm:border-b-0 border-border">
+                  <div className="sm:w-48">
+                    <Label className="font-semibold text-base sm:text-sm">{p.name}:</Label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 flex-1">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`unif-${p.id}`} 
+                        checked={isSelected} 
+                        onCheckedChange={(c) => handleToggleItem(p.id, !!c)}
+                        disabled={p.current_quantity <= 0}
+                        className="rounded-full shrink-0"
+                        style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
+                      />
+                      <Label htmlFor={`unif-${p.id}`} className="text-sm cursor-pointer whitespace-nowrap">Selecionar</Label>
+                    </div>
+                    
+                    {isSelected && (
+                      <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Qtd:</Label>
+                        <Input 
+                          type="number" 
+                          className="w-16 h-8 text-sm" 
+                          min="1" 
+                          max={p.current_quantity}
+                          value={item?.quantity || 1} 
+                          onChange={(e) => updateItemQuantity(p.id, parseInt(e.target.value) || 1)} 
+                        />
+                        <span className="text-xs font-medium text-destructive whitespace-nowrap">Estoque: {p.current_quantity}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+          {!loadingEpi && uniformList.length === 0 && (
+            <div className="text-center py-6 px-4 border border-dashed rounded-xl bg-muted/10 space-y-2">
+              <p className="text-sm text-muted-foreground font-medium">
+                {!isAuthenticated && sessionChecked
+                  ? 'Você não está autenticado. Faça login no sistema para carregar os uniformes disponíveis no estoque.'
+                  : 'Nenhum uniforme encontrado no estoque.'}
+              </p>
+              {!isAuthenticated && sessionChecked && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate({ to: '/' })}
+                  className="text-xs mt-1"
+                >
+                  Ir para o Login
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

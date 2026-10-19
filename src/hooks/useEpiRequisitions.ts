@@ -127,14 +127,24 @@ export function useEpiProducts() {
         .from('al_products')
         .select('*, category:al_categories(name)')
         .eq('status', 'Ativo')
-        // Ideally we would filter by category name "EPI" or "Uniforme" but we'll fetch them and filter
       
-      if (error) throw error
+      if (error) {
+        console.error("Erro ao buscar produtos EPI/Uniforme:", error)
+        throw error
+      }
       
       // Filter the ones belonging to EPI or Uniforme
       return (data || []).filter(p => {
          const catName = p.category?.name?.toLowerCase() || ''
-         return catName.includes('epi') || catName.includes('uniforme') || p.subcategory?.toLowerCase().includes('uniforme') || p.subcategory?.toLowerCase().includes('epi')
+         const subCat = p.subcategory?.toLowerCase() || ''
+         const pName = p.name?.toLowerCase() || ''
+         return catName.includes('epi') || catName.includes('uniforme') || 
+                subCat.includes('uniforme') || subCat.includes('epi') ||
+                pName.includes('camisa') || pName.includes('calça') || pName.includes('uniforme') ||
+                pName.includes('bota') || pName.includes('luva') || pName.includes('capacete') ||
+                pName.includes('óculos') || pName.includes('oculos') || pName.includes('protetor') ||
+                pName.includes('abafador') || pName.includes('máscara') || pName.includes('mascara') ||
+                pName.includes('perneira') || pName.includes('avental') || pName.includes('colete')
       })
     }
   })

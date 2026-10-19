@@ -13,6 +13,22 @@ declare const __APP_VERSION__: string | undefined;
 const CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
 
 export function AppUpdateNotification() {
+  // Desativa completamente verificações de atualização em ambiente local/desenvolvimento
+  const isDevEnvironment =
+    import.meta.env.DEV ||
+    (typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.startsWith('192.168.') ||
+        window.location.hostname.startsWith('10.') ||
+        window.location.port === '8080' ||
+        window.location.port === '5173' ||
+        window.location.port === '3000'));
+
+  if (isDevEnvironment) {
+    return null;
+  }
+
   const [hasUpdate, setHasUpdate] = useState(false)
   const [countdown, setCountdown] = useState(AUTO_RELOAD_SECONDS)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -44,12 +60,12 @@ export function AppUpdateNotification() {
       }
     } catch {}
 
-    // Limpa localStorage (mantém apenas sessão crítica)
+    // Limpa localStorage (mantém sessão crítica e a versão reconhecida)
     try {
-      const keysToKeep = ['sucena_environment', 'user_session', 'supabase-auth']
+      const keysToKeep = ['sucena', 'user_session', 'sb-', 'auth', 'session', STORAGE_KEY, `${STORAGE_KEY}_pending`]
       const allKeys = Object.keys(localStorage)
       allKeys.forEach(key => {
-        if (!keysToKeep.some(k => key.includes(k))) {
+        if (!keysToKeep.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
           try {
             localStorage.removeItem(key)
           } catch {}
