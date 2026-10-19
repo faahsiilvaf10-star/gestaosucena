@@ -224,37 +224,45 @@ export function SignatureOverlay({
     setErrorMsg(null);
   };
 
-  // Disparo do avanço (com debounce e haptics)
+  // Disparo do avanço (sem debounce)
   const triggerNextAction = useCallback((e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
 
-    // Sem debounce para garantir que o botão sempre funciona
+    console.log('[SignatureOverlay] triggerNextAction chamado, step:', step);
+
+    // Feedback haptic
     try {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(30);
+        navigator.vibrate(50);
       }
     } catch (_) {}
 
     if (step === 2) {
-      // Sempre verifica se o canvas está vazio
-      if (isSigEmpty(authorizerSigRef.current)) {
-        setErrorMsg('A assinatura do autorizador é obrigatória.');
-        toast.error('A assinatura do autorizador é obrigatória.');
+      console.log('[SignatureOverlay] Verificando assinatura autorizador');
+      const sigEmpty = isSigEmpty(authorizerSigRef.current);
+      console.log('[SignatureOverlay] Assinatura vazia:', sigEmpty);
+      if (sigEmpty) {
+        setErrorMsg('A assinatura do autorizador e obrigatoria.');
+        toast.error('A assinatura do autorizador e obrigatoria.');
         return;
       }
       setErrorMsg(null);
+      console.log('[SignatureOverlay] Chamando onNextStep');
       onNextStep();
     } else {
-      // Sempre verifica se o canvas está vazio
-      if (isSigEmpty(employeeSigRef.current)) {
-        setErrorMsg('A assinatura do funcionário é obrigatória.');
-        toast.error('A assinatura do funcionário é obrigatória.');
+      console.log('[SignatureOverlay] Verificando assinatura funcionario');
+      const sigEmpty = isSigEmpty(employeeSigRef.current);
+      console.log('[SignatureOverlay] Assinatura vazia:', sigEmpty);
+      if (sigEmpty) {
+        setErrorMsg('A assinatura do funcionario e obrigatoria.');
+        toast.error('A assinatura do funcionario e obrigatoria.');
         return;
       }
       setErrorMsg(null);
+      console.log('[SignatureOverlay] Chamando onFinish');
       onFinish();
     }
   }, [step, authorizerSigRef, employeeSigRef, onNextStep, onFinish]);
@@ -342,12 +350,11 @@ export function SignatureOverlay({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', pointerEvents: 'auto', position: 'relative', zIndex: 100 }}>
           {/* Botão Superior com alvos de toque aumentados */}
           <button
             type="button"
             onClick={triggerNextAction}
-            onPointerUp={triggerNextAction}
             disabled={isGenerating}
             style={{
               height: 42,
@@ -369,6 +376,9 @@ export function SignatureOverlay({
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
               transition: 'transform 0.1s ease',
+              pointerEvents: 'auto',
+              position: 'relative',
+              zIndex: 101,
             }}
           >
             {isGenerating ? (
@@ -554,6 +564,8 @@ export function SignatureOverlay({
           background: '#ffffff',
           borderTop: '1px solid #f1f5f9',
           gap: 16,
+          position: 'relative',
+          zIndex: 100,
         }}
       >
         <button
@@ -574,6 +586,9 @@ export function SignatureOverlay({
             cursor: 'pointer',
             touchAction: 'manipulation',
             WebkitTapHighlightColor: 'transparent',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 101,
           }}
         >
           <Eraser style={{ width: 17, height: 17 }} />
@@ -584,7 +599,6 @@ export function SignatureOverlay({
         <button
           type="button"
           onClick={triggerNextAction}
-          onPointerUp={triggerNextAction}
           disabled={isGenerating}
           style={{
             height: 48,
@@ -608,22 +622,25 @@ export function SignatureOverlay({
             touchAction: 'manipulation',
             WebkitTapHighlightColor: 'transparent',
             transition: 'all 0.15s ease',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 101,
           }}
         >
           {isGenerating ? (
             <>
               <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} />
-              <span>Salvando requisição...</span>
+              <span>Salvando requisicao...</span>
             </>
           ) : isStep2 ? (
             <>
-              <span>Avançar para Funcionário</span>
+              <span>Avancar para Funcionario</span>
               <ArrowRight style={{ width: 18, height: 18 }} />
             </>
           ) : (
             <>
               <Check style={{ width: 18, height: 18 }} />
-              <span>Finalizar e Salvar ✓</span>
+              <span>Finalizar e Salvar</span>
             </>
           )}
         </button>
