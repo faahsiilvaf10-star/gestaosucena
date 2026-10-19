@@ -46,6 +46,51 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   const { currentColor } = useMonthlyColors()
 
+  // Verifica atualização imediatamente ao carregar
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" })
+        if (!res.ok) return
+        const data = await res.json()
+        const serverVersion = data.version
+        if (!serverVersion) return
+
+        const CURRENT_VERSION = (window as any).__APP_VERSION__
+        const STORAGE_KEY = 'app_acknowledged_version'
+        const acknowledgedVersion = localStorage.getItem(STORAGE_KEY)
+
+        // Se há nova versão, limpa cache e recarrega
+        if (serverVersion && acknowledgedVersion && serverVersion !== acknowledgedVersion && CURRENT_VERSION && serverVersion !== CURRENT_VERSION) {
+          console.log('[AppLayout] Nova versao detectada, limpando cache...')
+
+          // Limpa todos os caches
+          if ("caches" in window) {
+            const names = await caches.keys()
+            await Promise.all(names.map(n => caches.delete(n)))
+          }
+
+          // Desregistra service workers
+          if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations()
+            await Promise.all(regs.map(r => r.unregister()))
+          }
+
+          // Atualiza versão reconhecida
+          localStorage.setItem(STORAGE_KEY, serverVersion)
+
+          // Recarrega
+          window.location.href = window.location.pathname + '?t=' + Date.now()
+        }
+      } catch (e) {
+        console.warn('[AppLayout] Erro ao verificar update:', e)
+      }
+    }
+
+    // Executa imediatamente
+    checkUpdate()
+  }, [])
+
   const colorStyles = {
     red: { dot: 'bg-red-500', ping: 'bg-red-400' },
     blue: { dot: 'bg-blue-500', ping: 'bg-blue-400' },

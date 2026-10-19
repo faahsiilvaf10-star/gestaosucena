@@ -3,8 +3,8 @@ import ArrowUpCircle from 'lucide-react/dist/esm/icons/circle-arrow-up.js';
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-const CHECK_INTERVAL_MS = 2 * 60 * 1000 // 2 minutos
-const AUTO_RELOAD_SECONDS = 10
+const CHECK_INTERVAL_MS = 10 * 1000 // 10 segundos (verificação mais frequente)
+const AUTO_RELOAD_SECONDS = 5 // Auto-reload mais rápido
 const STORAGE_KEY = 'app_acknowledged_version'
 
 declare const __APP_VERSION__: string | undefined;
@@ -16,6 +16,7 @@ export function AppUpdateNotification() {
   const [hasUpdate, setHasUpdate] = useState(false)
   const [countdown, setCountdown] = useState(AUTO_RELOAD_SECONDS)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [updateVersion, setUpdateVersion] = useState<string>('')
 
   const doReload = async () => {
     // Salva a versão que estamos atualizando para não mostrar de novo após reload
@@ -27,19 +28,37 @@ export function AppUpdateNotification() {
       }
     } catch {}
 
-    if ("caches" in window) {
-      try {
+    // Limpa TODOS os caches de forma agressiva
+    try {
+      if ("caches" in window) {
         const names = await caches.keys()
         await Promise.all(names.map(n => caches.delete(n)))
-      } catch {}
-    }
-    if ("serviceWorker" in navigator) {
-      try {
+      }
+    } catch {}
+
+    // Limpa Service Worker
+    try {
+      if ("serviceWorker" in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations()
         await Promise.all(regs.map(r => r.unregister()))
-      } catch {}
-    }
-    window.location.href = window.location.pathname + '?t=' + Date.now()
+      }
+    } catch {}
+
+    // Limpa localStorage (mantém apenas sessão crítica)
+    try {
+      const keysToKeep = ['sucena_environment', 'user_session', 'supabase-auth']
+      const allKeys = Object.keys(localStorage)
+      allKeys.forEach(key => {
+        if (!keysToKeep.some(k => key.includes(k))) {
+          try {
+            localStorage.removeItem(key)
+          } catch {}
+        }
+      })
+    } catch {}
+
+    // Adiciona timestamp para evitar cache do navegador
+    window.location.href = window.location.pathname + '?t=' + Date.now() + '&v=' + updateVersion
   }
 
   useEffect(() => {
@@ -71,13 +90,16 @@ export function AppUpdateNotification() {
 
         // Nova versão detectada! Salva como pendente e mostra notificação
         localStorage.setItem(STORAGE_KEY + '_pending', serverVersion)
+        setUpdateVersion(serverVersion)
         setHasUpdate(true)
       } catch {
         // silencioso
       }
     }
 
+    // Verifica imediatamente ao carregar
     fetchVersion()
+
     const interval = setInterval(fetchVersion, CHECK_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [])
@@ -142,7 +164,7 @@ export function AppUpdateNotification() {
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <p className="text-[#1c1d21] dark:text-white font-semibold text-sm leading-tight">
-                  🚀 Nova atualização disponível!
+                  Nova atualizacao disponivel!
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
                   Atualizando em <span className="text-[#1c1d21] dark:text-white font-bold">{countdown}s</span>...
