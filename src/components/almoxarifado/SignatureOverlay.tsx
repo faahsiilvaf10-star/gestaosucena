@@ -343,25 +343,6 @@ export function SignatureOverlay({
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-            title="Limpar assinatura"
-            style={{
-              height: 42,
-              paddingLeft: 10,
-              paddingRight: 12,
-              gap: 6,
-              color: '#64748b',
-              touchAction: 'manipulation',
-            }}
-          >
-            <RotateCcw style={{ width: 16, height: 16 }} />
-            <span style={{ fontSize: 12, fontWeight: 600 }}>Limpar</span>
-          </Button>
-
           {/* Botão Superior com alvos de toque aumentados */}
           <button
             type="button"
@@ -397,16 +378,35 @@ export function SignatureOverlay({
               </>
             ) : isStep2 ? (
               <>
-                <span>Próximo</span>
                 <ArrowRight style={{ width: 15, height: 15 }} />
+                <span>Próximo</span>
               </>
             ) : (
               <>
                 <Check style={{ width: 15, height: 15 }} />
-                <span>Finalizar ✓</span>
+                <span>Finalizar</span>
               </>
             )}
           </button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            title="Limpar assinatura"
+            style={{
+              height: 42,
+              paddingLeft: 10,
+              paddingRight: 12,
+              gap: 6,
+              color: '#64748b',
+              touchAction: 'manipulation',
+            }}
+          >
+            <RotateCcw style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 12, fontWeight: 600 }}>Limpar</span>
+          </Button>
         </div>
       </div>
 
