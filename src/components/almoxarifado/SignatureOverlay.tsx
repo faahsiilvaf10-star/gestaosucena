@@ -550,97 +550,55 @@ export function SignatureOverlay({
         </div>
       </div>
 
-      {/* ── Barra de Rodapé Acessível (Alvo de toque grande e longe da borda) ── */}
+      {/* ── Barra de Rodapé Acessível ── */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: '6px',
-          paddingRight: 'max(24px, env(safe-area-inset-right, 24px))',
-          paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
-          paddingLeft: 'max(24px, env(safe-area-inset-left, 24px))',
+          padding: '12px 24px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
           flexShrink: 0,
           background: '#ffffff',
-          borderTop: '1px solid #f1f5f9',
-          gap: 16,
-          position: 'relative',
-          zIndex: 100,
+          borderTop: '1px solid #e5e7eb',
         }}
       >
         <button
           type="button"
           onClick={handleClear}
-          style={{
-            height: 48,
-            padding: '0 18px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: '#f1f5f9',
-            color: '#475569',
-            border: '1px solid #e2e8f0',
-            borderRadius: 10,
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: 'pointer',
-            touchAction: 'manipulation',
-            WebkitTapHighlightColor: 'transparent',
-            pointerEvents: 'auto',
-            position: 'relative',
-            zIndex: 101,
-          }}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg border border-gray-300 flex items-center gap-2"
+          style={{ touchAction: 'manipulation' }}
         >
           <Eraser style={{ width: 17, height: 17 }} />
-          Limpar Quadro
+          Limpar
         </button>
 
-        {/* Botão de Rodapé Primário - Grande, Impossível de Errar */}
         <button
           type="button"
           onClick={triggerNextAction}
           disabled={isGenerating}
-          style={{
-            height: 48,
-            minWidth: 200,
-            padding: '0 24px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            background: isStep2 ? '#0f172a' : '#16a34a',
-            color: '#ffffff',
-            fontWeight: 800,
-            fontSize: 15,
-            borderRadius: 10,
-            border: 'none',
-            cursor: isGenerating ? 'not-allowed' : 'pointer',
+          className={isStep2 ? "bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2" : "bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2"}
+          style={{ 
+            minWidth: 160,
             opacity: isGenerating ? 0.7 : 1,
-            boxShadow: isStep2
-              ? '0 4px 14px rgba(15, 23, 42, 0.25)'
-              : '0 4px 14px rgba(22, 163, 74, 0.3)',
-            touchAction: 'manipulation',
-            WebkitTapHighlightColor: 'transparent',
-            transition: 'all 0.15s ease',
-            pointerEvents: 'auto',
-            position: 'relative',
-            zIndex: 101,
+            cursor: isGenerating ? 'not-allowed' : 'pointer',
+            touchAction: 'manipulation'
           }}
         >
           {isGenerating ? (
             <>
               <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} />
-              <span>Salvando requisicao...</span>
+              <span>Salvando...</span>
             </>
           ) : isStep2 ? (
             <>
-              <span>Avancar para Funcionario</span>
+              <span>Proximo</span>
               <ArrowRight style={{ width: 18, height: 18 }} />
             </>
           ) : (
             <>
               <Check style={{ width: 18, height: 18 }} />
-              <span>Finalizar e Salvar</span>
+              <span>Finalizar</span>
             </>
           )}
         </button>
