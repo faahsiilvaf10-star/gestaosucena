@@ -562,9 +562,10 @@ function RhEfetivoPage() {
     }
   }
   const filteredItems = items.filter(item => {
-    // Filter by status
-    if (statusFilter === 'ATIVO' && item.status !== 'ATIVO') return false
-    if (statusFilter === 'INATIVO' && item.status !== 'INATIVO') return false
+    // Filter by status (case-insensitive)
+    const itemStatus = item.status?.toUpperCase() || ''
+    if (statusFilter === 'ATIVO' && itemStatus !== 'ATIVO' && itemStatus !== 'EFETIVADO') return false
+    if (statusFilter === 'INATIVO' && itemStatus !== 'INATIVO') return false
     // 'TODOS' shows everything
 
     if (!searchQuery) return true
