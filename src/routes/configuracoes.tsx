@@ -4,7 +4,7 @@ import Save from 'lucide-react/dist/esm/icons/save.js';
 import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import { useState, useEffect, useRef } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 import { supabase } from '../lib/supabase'
 import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
@@ -17,6 +17,8 @@ export const Route = createFileRoute('/configuracoes')({
 })
 
 function ConfiguracoesRoute() {
+  const navigate = useNavigate()
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -35,18 +37,58 @@ function ConfiguracoesRoute() {
   const [isCropperOpen, setIsCropperOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const getValidUser = async () => {
+    try {
+      // 1. Sessão ativa (executa refresh automático no cliente se o token estiver expirado)
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData?.session?.user
+
+      // 2. Se não encontrou, tenta getUser()
+      if (!user) {
+        const userRes = await supabase.auth.getUser()
+        user = userRes.data?.user
+      }
+
+      // 3. Força renovação de token se necessário
+      if (!user) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        user = refreshData?.user || refreshData?.session?.user
+      }
+
+      // 4. Fallback para o usuário já mantido em memória no componente
+      if (!user && currentUser) {
+        user = currentUser
+      }
+
+      return user || null
+    } catch (e) {
+      console.warn('Erro ao obter usuário válido:', e)
+      return currentUser || null
+    }
+  }
+
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setName(user.user_metadata?.full_name || '')
-        setEmail(user.email || '')
-        setOriginalEmail(user.email || '')
-        setWhatsapp(user.user_metadata?.whatsapp || '')
-        setAvatarUrl(user.user_metadata?.avatar_url || '')
-        setRole(user.user_metadata?.role || '')
+      try {
+        const user = await getValidUser()
+        if (user) {
+          setCurrentUser(user)
+          setName(user.user_metadata?.full_name || '')
+          setEmail(user.email || '')
+          setOriginalEmail(user.email || '')
+          setWhatsapp(user.user_metadata?.whatsapp || '')
+          setAvatarUrl(user.user_metadata?.avatar_url || '')
+          setRole(user.user_metadata?.role || '')
+        } else {
+          // Se não há sessão válida, redireciona para login
+          navigate({ to: '/' })
+          return
+        }
+      } catch (err) {
+        console.error('Erro ao carregar perfil:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     loadProfile()
   }, [])
@@ -74,17 +116,20 @@ function ConfiguracoesRoute() {
       const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels)
       if (!croppedImageBlob) throw new Error('Falha ao processar imagem')
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Não autenticado')
+      const user = await getValidUser()
+      if (!user) throw new Error('Sua sessão expirou. Por favor, recarregue a página ou faça login novamente.')
 
       const fileExt = 'jpeg'
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
       const filePath = `${fileName}`
 
       // Upload to supabase storage (avatars bucket)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, croppedImageBlob, { upsert: true })
+        .upload(filePath, croppedImageBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        })
 
       if (uploadError) throw uploadError
 
@@ -100,11 +145,26 @@ function ConfiguracoesRoute() {
 
       if (updateError) throw updateError
 
+      // Sincronizar também no social_profiles se existir
+      try {
+        await supabase
+          .from('social_profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('user_id', user.id)
+      } catch (_) {}
+
       setAvatarUrl(publicUrl)
+      setCurrentUser((prev: any) => ({
+        ...prev,
+        user_metadata: {
+          ...(prev?.user_metadata || {}),
+          avatar_url: publicUrl
+        }
+      }))
       setMessage({ type: 'success', text: 'Foto de perfil atualizada com sucesso!' })
     } catch (error: any) {
       console.error(error)
-      setMessage({ type: 'error', text: 'Erro ao atualizar foto: ' + error.message })
+      setMessage({ type: 'error', text: 'Erro ao atualizar foto: ' + (error.message || 'Erro desconhecido') })
     } finally {
       setSaving(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -117,6 +177,9 @@ function ConfiguracoesRoute() {
     setMessage(null)
     
     try {
+      const user = await getValidUser()
+      if (!user) throw new Error('Sua sessão expirou. Por favor, recarregue a página ou faça login novamente.')
+
       // Auto-format WhatsApp number (remove non-digits and ensure 55 prefix)
       let formattedWhatsapp = whatsapp.replace(/\D/g, '')
       if (formattedWhatsapp && !formattedWhatsapp.startsWith('55')) {
@@ -142,12 +205,20 @@ function ConfiguracoesRoute() {
       const { error } = await supabase.auth.updateUser(updatePayload)
       if (error) throw error
 
+      // Sincronizar nome no social_profiles
+      try {
+        await supabase
+          .from('social_profiles')
+          .update({ display_name: name })
+          .eq('user_id', user.id)
+      } catch (_) {}
+
       setOriginalEmail(email) // update original email reference
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' })
       setPassword('') // Clear password field after success
     } catch (error: any) {
       console.error(error)
-      setMessage({ type: 'error', text: 'Erro ao atualizar: ' + error.message })
+      setMessage({ type: 'error', text: 'Erro ao atualizar: ' + (error.message || 'Erro desconhecido') })
     } finally {
       setSaving(false)
     }
