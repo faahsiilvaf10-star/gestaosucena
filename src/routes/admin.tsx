@@ -799,24 +799,6 @@ function AdminRoute() {
 
         {activeTab === 'users' && (
           <div className={`rounded-2xl p-1 shadow-sm border ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
-          
-          <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <UserIcon className="text-[#D6A72B]" size={20} />
-              Usuários Cadastrados ({users.length})
-            </h2>
-            
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus-within:border-[#D6A72B]'}`}>
-              <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Buscar usuário..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="bg-transparent outline-none text-sm w-full md:w-64"
-              />
-            </div>
-          </div>
 
           <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -953,8 +935,8 @@ function AdminRoute() {
 
       </div>
 
-      {activeTab === 'users' && (
-        <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Status do Cadastro e Cargos */}
+      <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Registration Toggle */}
         <div className={`rounded-2xl p-6 shadow-sm border flex flex-col justify-between ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
@@ -1026,7 +1008,6 @@ function AdminRoute() {
           </div>
         </div>
       </div>
-      )}
 
       {activeTab === 'whatsapp' && (
         /* WhatsApp API Tab */
