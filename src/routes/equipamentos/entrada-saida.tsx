@@ -166,7 +166,7 @@ function EntradaSaidaPage() {
 
       setEquipments(reconciledEquipments)
     } catch (err: any) {
-      console.error('Error fetching equipments:', err)
+      console.error('Erro ao buscar equipamentos:', err)
       setError('Não foi possível carregar os equipamentos.')
     } finally {
       setLoading(false)
@@ -237,7 +237,7 @@ function EntradaSaidaPage() {
       if (error) throw error
       setEqHistory(data || [])
     } catch (err) {
-      console.error('Error fetching history:', err)
+      console.error('Erro ao buscar histórico:', err)
       toast.error('Erro ao carregar histórico')
     } finally {
       setLoadingHistory(false)

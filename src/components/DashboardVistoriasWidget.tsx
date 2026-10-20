@@ -66,7 +66,7 @@ export function DashboardVistoriasWidget() {
         setEquipments(data)
       }
     } catch (err) {
-      console.error('Error fetching vistorias for dashboard:', err)
+      console.error('Erro ao buscar vistorias para o dashboard:', err)
     } finally {
       setLoading(false)
     }

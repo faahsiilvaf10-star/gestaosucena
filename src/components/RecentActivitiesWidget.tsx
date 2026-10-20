@@ -7,6 +7,7 @@ import Package from 'lucide-react/dist/esm/icons/package.js';
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import Activity from 'lucide-react/dist/esm/icons/activity.js';
+import Filter from 'lucide-react/dist/esm/icons/filter.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from '@tanstack/react-router'
@@ -16,6 +17,10 @@ import { ptBR } from 'date-fns/locale'
 export function RecentActivitiesWidget() {
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [moduleFilter, setModuleFilter] = useState<string>('TODAS')
+  const [allActivities, setAllActivities] = useState<any[]>([])
+
+  const modules = ['TODAS', 'RDO', 'RH', 'Equipamentos', 'Almoxarifado', 'Segurança', 'Meio Ambiente']
 
   const fetchActivities = async () => {
     try {
@@ -26,15 +31,15 @@ export function RecentActivitiesWidget() {
       const { data, error } = await supabase
         .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', environment)
         .order('created_at', { ascending: false })
-        .limit(12)
+        .limit(50)
 
       const { data: movements, error: movementsError } = await supabase
         .from('eq_movements')
-        .select('id, movement_type, created_by, created_at, eq_equipments!inner(name, plate_tag, environment)')
+        .select('id, movement_type, created_by, created_at, eq_equipments!inner(Name, plate_tag, environment)')
         .eq('eq_equipments.environment', environment)
         .order('created_at', { ascending: false })
-        .limit(6)
-      
+        .limit(20)
+
       if (error) throw error
       if (movementsError) throw movementsError
 
@@ -59,13 +64,12 @@ export function RecentActivitiesWidget() {
         return !/^(Entrada|Saída):/.test(activity.action || '')
       })
 
-      setActivities(
-        [...loggedActivities, ...movementActivities]
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 6)
-      )
+      const combined = [...loggedActivities, ...movementActivities]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setAllActivities(combined)
     } catch (err) {
-      console.error('Error fetching system activities:', err)
+      console.error('Erro ao buscar atividades do sistema:', err)
     } finally {
       setLoading(false)
     }
@@ -87,6 +91,10 @@ export function RecentActivitiesWidget() {
       supabase.removeChannel(channel)
     }
   }, [])
+
+  const filteredActivities = moduleFilter === 'TODAS'
+    ? allActivities.slice(0, 12)
+    : allActivities.filter(a => a.module === moduleFilter).slice(0, 12)
 
   const getModuleIcon = (module: string) => {
     switch (module) {
@@ -114,18 +122,31 @@ export function RecentActivitiesWidget() {
 
   return (
     <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
-      <div className="flex items-center gap-2 mb-6 relative z-10">
-        <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
-        <h2 className="text-xl font-semibold text-[#1c1d21] dark:text-white tracking-tight">Atividades recentes</h2>
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
+          <h2 className="text-xl font-semibold text-[#1c1d21] dark:text-white tracking-tight">Atividades recentes</h2>
+        </div>
+        <select
+          value={moduleFilter}
+          onChange={(e) => setModuleFilter(e.target.value)}
+          className="bg-white dark:bg-[#2a2a2b] border border-[#e5e7eb] dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-[#0866ff]"
+        >
+          {modules.map(mod => (
+            <option key={mod} value={mod}>
+              {mod === 'TODAS' ? 'Exibir todas' : mod}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="flex flex-col gap-4 flex-1 relative z-10">
         {loading ? (
           <div className="text-gray-600 dark:text-white/70 text-sm animate-pulse">Carregando atividades...</div>
-        ) : activities.length === 0 ? (
-          <div className="text-gray-600 dark:text-white/70 text-sm">Nenhuma atividade recente.</div>
+        ) : filteredActivities.length === 0 ? (
+          <div className="text-gray-600 dark:text-white/70 text-sm">Nenhuma atividade encontrada.</div>
         ) : (
-          activities.map(act => {
+          filteredActivities.map(act => {
             let dateStr = 'Data inválida'
             try {
               if (act.created_at) {

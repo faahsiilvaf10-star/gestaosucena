@@ -65,7 +65,7 @@ export function GlobalEquipmentAlert() {
           setQueue(unDismissed)
         }
       } catch (err) {
-        console.error('Error fetching today movements:', err)
+        console.error('Erro ao buscar movimentos de hoje:', err)
       }
     }
 

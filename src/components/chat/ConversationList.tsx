@@ -104,7 +104,7 @@ export function ConversationList({ currentUserId }: { currentUserId: string }) {
       openChat(convId)
       if (window.innerWidth < 768) setIsSidebarOpen(false)
     } catch (err: any) {
-      console.error('Error starting chat:', err)
+      console.error('Erro ao iniciar chat:', err)
       alert('Erro ao abrir chat: ' + err.message)
     }
   }

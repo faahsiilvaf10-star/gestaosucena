@@ -810,7 +810,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           .order('created_at', { ascending: true })
         setLocalHistory(data || [])
       } catch (e) {
-        console.error('Error fetching local history', e)
+        console.error('Erro ao buscar histórico local', e)
       } finally {
         setIsFetchingHistory(false)
       }

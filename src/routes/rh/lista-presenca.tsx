@@ -341,7 +341,7 @@ function RhListaPresencaPage() {
       await fetchPresencas(mappedData)
       
     } catch (err) {
-      console.error('Error fetching efetivo:', err)
+      console.error('Erro ao buscar efetivo:', err)
       toast.error('Erro ao buscar colaboradores')
     } finally {
       setLoading(false)

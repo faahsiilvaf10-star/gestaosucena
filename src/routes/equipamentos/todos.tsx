@@ -118,7 +118,7 @@ function TodosEquipamentosPage() {
 
       setEquipments(reconciledEquipments)
     } catch (err: any) {
-      console.error('Error fetching equipments:', err)
+      console.error('Erro ao buscar equipamentos:', err)
       setError('Não foi possível carregar os equipamentos.')
     } finally {
       setLoading(false)

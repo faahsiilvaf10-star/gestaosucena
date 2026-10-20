@@ -80,7 +80,7 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
             })
           }
         } catch (e) {
-          console.error('Error fetching active dispatches', e)
+          console.error('Erro ao buscar viagens ativas', e)
         }
       }
 

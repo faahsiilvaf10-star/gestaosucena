@@ -103,7 +103,7 @@ export default function LoginStep({ onLogin }: { onLogin: (step?: string) => voi
               targetStep = 'dashboard'
             }
           } catch (e) {
-            console.error('Error checking active shift', e)
+            console.error('Erro ao verificar turno ativo', e)
           }
         }
         localStorage.setItem('app_motorista_current_step', targetStep)

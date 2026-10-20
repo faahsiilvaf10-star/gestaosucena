@@ -148,7 +148,7 @@ function FeedRoute() {
       .order('created_at', { ascending: false })
       
     if (postsError) {
-      console.error('Error fetching posts:', postsError)
+      console.error('Erro ao buscar posts:', postsError)
     }
     
     if (postsData && postsData.length > 0) {

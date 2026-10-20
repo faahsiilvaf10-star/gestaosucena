@@ -129,7 +129,7 @@ function VistoriaPage() {
       if (sbError) throw sbError
       setEquipments(data || [])
     } catch (err: any) {
-      console.error('Error fetching equipments:', err)
+      console.error('Erro ao buscar equipamentos:', err)
       setError('Não foi possível carregar os equipamentos.')
     } finally {
       setLoading(false)
@@ -217,7 +217,7 @@ function VistoriaPage() {
       cancelEditing(eq.id)
       fetchEquipments() // Refetch to get updated IDs if it was an insert
     } catch (err) {
-      console.error('Error saving inspections:', err)
+      console.error('Erro ao salvar vistorias:', err)
       toast.error(`Não foi possível salvar as alterações de ${eq.name}.`)
     } finally {
       setSavingEqs(prev => ({ ...prev, [eq.id]: false }))

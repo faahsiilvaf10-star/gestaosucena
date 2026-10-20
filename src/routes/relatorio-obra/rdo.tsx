@@ -110,7 +110,7 @@ function RDOPage() {
       });
       setPresencas(mapped);
     } catch(e) {
-      console.error('Error fetching presencas:', e);
+      console.error('Erro ao buscar presenças:', e);
     }
   }
 

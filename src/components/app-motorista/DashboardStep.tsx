@@ -219,7 +219,7 @@ export default function DashboardStep({
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfPageHeight);
       pdf.save(`${fileName}.pdf`);
     } catch (error) {
-      console.error("Error generating report:", error);
+      console.error("Erro ao gerar relatório:", error);
       alert("Houve um erro ao gerar o relatório PNG/PDF. O turno foi encerrado normalmente.");
     }
   };

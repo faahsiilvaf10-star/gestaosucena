@@ -109,7 +109,7 @@ function RhEfetivoPage() {
       
       setItems(data || [])
     } catch (err) {
-      console.error('Error fetching efetivo:', err)
+      console.error('Erro ao buscar efetivo:', err)
       toast.error('Erro ao buscar lista de efetivo')
     } finally {
       setLoading(false)
