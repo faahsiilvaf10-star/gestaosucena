@@ -6,6 +6,7 @@ import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import Phone from 'lucide-react/dist/esm/icons/phone.js';
 import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import Sun from 'lucide-react/dist/esm/icons/sun.js';
+import * as Icons from 'lucide-react';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { Calendar } from '@/components/ui/calendar'
@@ -13,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useMonthlyColors } from '../../hooks/useMonthlyColors'
+import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
+import type { RdoAtividade } from '@/components/rdo/ActivityCard'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -81,6 +84,10 @@ function RDOPage() {
   const [equipamentos, setEquipamentos] = useState<any[]>([]);
   const [presencas, setPresencas] = useState<any[]>([]);
   const [ddsText, setDdsText] = useState('A definir');
+
+  // Custom activities state for RDO integration
+  const [customAtividades, setCustomAtividades] = useState<RdoAtividade[]>([]);
+  const [showActivitiesPanel, setShowActivitiesPanel] = useState(false);
 
   const fetchPresencasForDate = async (dateStr: string) => {
     try {
@@ -238,6 +245,10 @@ function RDOPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rh_presencas', filter: `data=eq.${selectedDate}` }, () => {
         fetchPresencasForDate(selectedDate);
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rdo_atividades' }, () => {
+        // Refresh custom activities when they change
+        fetchCustomAtividades(selectedDate);
+      })
       .subscribe();
 
     return () => {
@@ -245,10 +256,30 @@ function RDOPage() {
     };
   }, [selectedDate]);
 
+  // Fetch custom activities from database
+  const fetchCustomAtividades = async (dateStr: string) => {
+    try {
+      const environment = localStorage.getItem('sucena_environment') || 'barcarena';
+      const { data, error } = await supabase
+        .from('rdo_atividades')
+        .select('*')
+        .eq('data', dateStr)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const filteredData = (data || []).filter(a => !a.obra_id || a.obra_id === environment);
+      setCustomAtividades(filteredData);
+    } catch (error) {
+      console.error('Erro ao buscar atividades customizadas:', error);
+    }
+  };
+
   const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
     fetchEquipamentos(dateStr);
     fetchPresencasForDate(dateStr);
+    fetchCustomAtividades(dateStr);
     
     // Buscar DDS
     try {
@@ -738,6 +769,15 @@ function RDOPage() {
                 <Save size={16} /> Salvar
               </button>
             )}
+            <button
+              onClick={() => setShowActivitiesPanel(!showActivitiesPanel)}
+              className={`flex items-center gap-2 border px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm
+                ${showActivitiesPanel ? 'bg-yellow-100 border-yellow-400 text-yellow-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              title="Atividades Customizadas"
+            >
+              <Icons.Activity size={16} className={showActivitiesPanel ? 'text-yellow-600' : ''} />
+              Atividades
+            </button>
           </div>
         </div>
 
@@ -767,7 +807,20 @@ function RDOPage() {
           </div>
         )}
 
-        <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6 items-start mt-4">
+          {/* Atividades Customizadas Panel */}
+          {showActivitiesPanel && (
+            <div className="px-4 sm:px-8">
+              <ActivitiesPanel
+                dataAtual={selectedDate}
+                onIntegrateWithRDO={(atividades) => {
+                  setCustomAtividades(atividades);
+                  toast.success(`${atividades.length} atividades integradas ao RDO!`);
+                }}
+              />
+            </div>
+          )}
+
+          <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6 items-start mt-4">
           
           {/* Left Column - Form */}
           <fieldset disabled={isLocked} className="min-w-0 p-0 m-0 border-none flex flex-col gap-6">
@@ -910,6 +963,24 @@ function RDOPage() {
                   );
                 });
               })()}
+
+              {/* Custom Activities Section */}
+              {customAtividades.length > 0 && (
+                <div className="mt-6 font-bold text-purple-700">
+                  <div>📋 OUTRAS ATIVIDADES 📋</div>
+                  {customAtividades.map((a, idx) => {
+                    const IconComp = (Icons as any)[a.icon] || Icons.Activity;
+                    return (
+                      <div key={a.id || idx} className={`mt-2 text-gray-700 ${a.concluido ? 'line-through opacity-70' : ''}`}>
+                        {a.concluido ? '✅' : '○'} <strong>{a.titulo}</strong>
+                        {a.quantidade !== undefined && a.quantidade !== null && ` - Qtd: ${a.quantidade}`}
+                        {a.metragem !== undefined && a.metragem !== null && ` - ${a.metragem} ${a.unidade || 'm²'}`}
+                        {a.area && ` (${a.area})`}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="mt-8 font-bold text-blue-700">
                 {renderEquipamentosGeraisText().split('\n').map((line, i) => (
