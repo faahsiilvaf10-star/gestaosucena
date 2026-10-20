@@ -26,6 +26,8 @@ import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import CheckCheck from 'lucide-react/dist/esm/icons/check-check.js';
 import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
+import Mail from 'lucide-react/dist/esm/icons/mail.js';
+import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
@@ -175,6 +177,10 @@ function AdminRoute() {
   const [editRole, setEditRole] = useState('')
   const [editPassword, setEditPassword] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [sendingResetEmail, setSendingResetEmail] = useState(false)
+  const [generatedTempPassword, setGeneratedTempPassword] = useState<string | null>(null)
+  const [copiedTempPassword, setCopiedTempPassword] = useState(false)
 
   // Roles Management
   const [availableRoles, setAvailableRoles] = useState<string[]>([])
@@ -895,6 +901,8 @@ function AdminRoute() {
                             setEditName(user.name)
                             setEditRole(user.role)
                             setEditPassword('')
+                            setGeneratedTempPassword(null)
+                            setCopiedTempPassword(false)
                             const currentAccess = envAccessMap[user.id] !== undefined ? envAccessMap[user.id] : ['barcarena']
                             setEditUserEnvAccess(currentAccess)
                           }}
@@ -2521,34 +2529,103 @@ function AdminRoute() {
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
                   <RefreshCw size={14} className="inline mr-1" />
-                  Resetar Senha
+                  Redefinição de Senha
                 </label>
-                <button
-                  onClick={async () => {
-                    if (!editingUser) return
-                    try {
-                      const { data, error } = await supabase.rpc('admin_reset_user_password', {
-                        target_user_id: editingUser.id
-                      })
-                      if (error) throw error
-                      const tempPwd = data as string
-                      if (tempPwd) {
-                        toast.success(`Senha temporária gerada: ${tempPwd}`)
+
+                {generatedTempPassword ? (
+                  <div className={`p-4 rounded-xl border ${isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'} space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        Senha Temporária Gerada:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText(generatedTempPassword)
+                            setCopiedTempPassword(true)
+                            toast.success('Senha copiada!')
+                            setTimeout(() => setCopiedTempPassword(false), 2000)
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
+                      >
+                        {copiedTempPassword ? <CheckCheck size={14} /> : <Copy size={14} />}
+                        {copiedTempPassword ? 'Copiado!' : 'Copiar'}
+                      </button>
+                    </div>
+                    <div className="font-mono text-base font-bold tracking-wider text-emerald-700 dark:text-emerald-300 bg-white/60 dark:bg-black/30 px-3 py-2 rounded-lg select-all border border-emerald-500/20">
+                      {generatedTempPassword}
+                    </div>
+                    <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">
+                      Envie esta senha ao usuário. Ela já está ativa para login imediato.
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={resettingPassword}
+                    onClick={async () => {
+                      if (!editingUser) return
+                      setResettingPassword(true)
+                      try {
+                        const { data, error } = await supabase.rpc('admin_reset_user_password', {
+                          target_user_id: editingUser.id
+                        })
+                        if (error) throw error
+                        const tempPwd = data as string
+                        if (tempPwd) {
+                          setGeneratedTempPassword(tempPwd)
+                          if (navigator.clipboard) {
+                            await navigator.clipboard.writeText(tempPwd)
+                            setCopiedTempPassword(true)
+                            setTimeout(() => setCopiedTempPassword(false), 2500)
+                          }
+                          toast.success(`Senha temporária gerada: ${tempPwd} (copiada!)`, { duration: 6000 })
+                        }
+                      } catch (err: any) {
+                        toast.error('Erro ao resetar senha: ' + err.message)
+                      } finally {
+                        setResettingPassword(false)
                       }
-                    } catch (err: any) {
-                      toast.error('Erro ao resetar senha: ' + err.message)
-                    }
-                  }}
-                  className="w-full px-4 py-3 rounded-xl border border-dashed border-orange-400 dark:border-orange-600 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Gerar Senha Temporária
-                </button>
-                <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  O usuário receberá a senha temporária para redefinir no próximo login. A senha atual será invalidada.
+                    }}
+                    className="px-3 py-2.5 rounded-xl border border-dashed border-orange-400 dark:border-orange-600 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={resettingPassword ? 'animate-spin' : ''} />
+                    {resettingPassword ? 'Gerando...' : 'Gerar Senha Temp.'}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={sendingResetEmail}
+                    onClick={async () => {
+                      if (!editingUser?.email) return
+                      setSendingResetEmail(true)
+                      try {
+                        const { error } = await supabase.auth.resetPasswordForEmail(editingUser.email)
+                        if (error) throw error
+                        toast.success(`Link de redefinição enviado para ${editingUser.email}!`)
+                      } catch (err: any) {
+                        toast.error('Erro ao enviar link de redefinição: ' + err.message)
+                      } finally {
+                        setSendingResetEmail(false)
+                      }
+                    }}
+                    className="px-3 py-2.5 rounded-xl border border-dashed border-blue-400 dark:border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Mail size={14} className={sendingResetEmail ? 'animate-spin' : ''} />
+                    {sendingResetEmail ? 'Enviando...' : 'Enviar Link por E-mail'}
+                  </button>
+                </div>
+
+                <p className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  • <b>Senha Temp.:</b> Cria uma nova senha instantânea pronta para uso.<br />
+                  • <b>Link por E-mail:</b> Envia link oficial do Supabase para o e-mail do usuário.
                 </p>
               </div>
             </div>
