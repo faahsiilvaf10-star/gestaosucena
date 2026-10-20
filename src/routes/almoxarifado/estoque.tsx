@@ -26,6 +26,9 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { NewItemModal } from '../../components/almoxarifado/NewItemModal'
 import { ImportStockModal } from '../../components/almoxarifado/ImportStockModal'
 import { StockUpdateModal } from '../../components/almoxarifado/StockUpdateModal'
+import { EditItemModal } from '../../components/almoxarifado/EditItemModal'
+import { StockAlertBanner } from '../../components/almoxarifado/StockAlertBanner'
+import { canEditAlmoxarifado } from '../../components/ui/VerifiedBadge'
 
 export const Route = createFileRoute('/almoxarifado/estoque')({
   component: AlmoxarifadoRoute,
@@ -38,11 +41,15 @@ function AlmoxarifadoRoute() {
   const [activeTab, setActiveTab] = useState<TabType>('visao-geral')
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  
+
+  // User info for editing permissions and notifications
+  const [userName, setUserName] = useState('')
+  const [userRole, setUserRole] = useState('')
+
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'low_stock' | 'out_of_stock'>('all')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
-  
+
   // Dashboard Metrics
   const [metrics, setMetrics] = useState({
     totalItems: 0,
@@ -62,9 +69,14 @@ function AlmoxarifadoRoute() {
   const [showNewItemModal, setShowNewItemModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [updateModalConfig, setUpdateModalConfig] = useState<{product: any, type: 'in' | 'out'} | null>(null)
+  const [editModalProduct, setEditModalProduct] = useState<any>(null)
+
+  // Check if current user can edit
+  const canEdit = canEditAlmoxarifado(userName, userRole)
 
   useEffect(() => {
     fetchData()
+    fetchUserInfo()
   }, [])
 
   const fetchData = async () => {
@@ -76,29 +88,29 @@ function AlmoxarifadoRoute() {
           *,
           al_categories(name)
         `)
-      
+
       if (error) {
         console.error("Erro ao buscar produtos. Tabela provavelmente ainda não existe.", error.message)
       }
 
       const items = productsData || []
       setProducts(items)
-      
+
       // Calculate Metrics
       let inStock = 0
       let estimatedVal = 0
       let belowMin = 0
       let outStock = 0
-      
+
       items.forEach(item => {
         const qty = Number(item.current_quantity) || 0
         const min = Number(item.min_stock) || 0
         const val = Number(item.unit_value) || 0
-        
+
         if (qty > 0) inStock += qty
         if (qty === 0) outStock++
         else if (qty <= min) belowMin++
-        
+
         estimatedVal += (qty * val)
       })
 
@@ -115,11 +127,23 @@ function AlmoxarifadoRoute() {
         exitsMonth: 0, // TBA
         estimatedValue: estimatedVal
       })
-      
+
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchUserInfo = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserName(user.user_metadata?.full_name || user.user_metadata?.name || '')
+        setUserRole(user.user_metadata?.role || '')
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -132,20 +156,20 @@ function AlmoxarifadoRoute() {
 
   return (
     <div className="flex flex-col gap-6 py-6 w-full max-w-7xl mx-auto">
-      {/* Header */}
+        {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="tracking-tight" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>Almoxarifado</h1>
           <p className="text-sm text-gray-500">Gestão completa de estoque, EPIs, ferramentas e materiais.</p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setShowImportModal(true)}
             className="bg-white hover:bg-gray-100 dark:bg-[#1a1a1b] dark:hover:bg-[#2a2a2c] text-gray-700 dark:text-gray-300 border border-black/10 dark:border-white/10 px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm text-sm"
           >
             <ArrowDownToLine size={18} /> Importar
           </button>
-          <button 
+          <button
             onClick={() => setShowNewItemModal(true)}
             className="bg-[#0866ff] hover:bg-[#0756d6] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm text-sm"
           >
@@ -153,6 +177,9 @@ function AlmoxarifadoRoute() {
           </button>
         </div>
       </div>
+
+      {/* Low Stock Alert Banner */}
+      <StockAlertBanner />
 
       {/* Tabs */}
       <div className="flex overflow-x-auto hide-scrollbar border-b border-black/10 dark:border-white/10 shrink-0">
@@ -309,19 +336,28 @@ function AlmoxarifadoRoute() {
                               <td className="p-3 font-bold">{product.current_quantity} <span className="text-xs text-gray-500 font-normal">{product.unit_of_measure}</span></td>
                               <td className="p-3">{renderStatus(product.current_quantity, product.min_stock)}</td>
                               <td className="p-3 flex items-center justify-end gap-2">
+                                {canEdit && (
+                                  <button
+                                    onClick={() => setEditModalProduct(product)}
+                                    className="p-1.5 text-gray-500 hover:text-[#0866ff] bg-gray-100 dark:bg-white/5 rounded-md transition-colors"
+                                    title="Editar Item"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                )}
                                 <button className="p-1.5 text-gray-500 hover:text-[#0866ff] bg-gray-100 dark:bg-white/5 rounded-md transition-colors" title="Ver Detalhes">
                                   <Eye size={16} />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => setUpdateModalConfig({ product, type: 'in' })}
-                                  className="p-1.5 text-gray-500 hover:text-green-500 bg-gray-100 dark:bg-white/5 rounded-md transition-colors" 
+                                  className="p-1.5 text-gray-500 hover:text-green-500 bg-gray-100 dark:bg-white/5 rounded-md transition-colors"
                                   title="Dar Entrada"
                                 >
                                   <ArrowDownToLine size={16} />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => setUpdateModalConfig({ product, type: 'out' })}
-                                  className="p-1.5 text-gray-500 hover:text-red-500 bg-gray-100 dark:bg-white/5 rounded-md transition-colors" 
+                                  className="p-1.5 text-gray-500 hover:text-red-500 bg-gray-100 dark:bg-white/5 rounded-md transition-colors"
                                   title="Dar Saída"
                                 >
                                   <ArrowUpFromLine size={16} />
@@ -359,6 +395,19 @@ function AlmoxarifadoRoute() {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             setShowImportModal(false)
+            fetchData()
+          }}
+        />
+      )}
+
+      {/* Edit Item Modal */}
+      {editModalProduct && (
+        <EditItemModal
+          product={editModalProduct}
+          userName={userName}
+          onClose={() => setEditModalProduct(null)}
+          onSuccess={() => {
+            setEditModalProduct(null)
             fetchData()
           }}
         />

@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
+import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { useTheme } from '../contexts/ThemeContext'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -1014,7 +1015,8 @@ function DashboardComponent() {
 
         {/* BOTTOM WIDGETS */}
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mt-6">
-          <div className="lg:col-span-6 h-full">
+          <div className="lg:col-span-6 h-full flex flex-col gap-6">
+            <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
           </div>
           <div className="lg:col-span-6 h-full min-h-[400px]">

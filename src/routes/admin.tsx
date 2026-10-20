@@ -156,6 +156,14 @@ function AdminRoute() {
       enabled: false,
       specificGroupId: '',
       horaEnvio: '08:00'
+    },
+    estoqueMinimo: {
+      enabled: false,
+      specificGroupId: ''
+    },
+    estoqueAlteracao: {
+      enabled: false,
+      specificGroupId: ''
     }
   })
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
@@ -1757,6 +1765,104 @@ function AdminRoute() {
               </div>
             </div>
 
+            {/* Nova Seção: Alertas de Estoque Mínimo */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Package size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Alertas de Estoque Mínimo
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Quando a quantidade de qualquer item atingir ou ficar abaixo do nível de estoque mínimo configurado, o sistema dispara um alerta visível na interface e uma mensagem no grupo do WhatsApp.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, estoqueMinimo: { ...prev.estoqueMinimo!, enabled: !prev.estoqueMinimo?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.estoqueMinimo?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.estoqueMinimo?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Ativar alertas de estoque mínimo</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia para o grupo configurado quando o estoque atingir o mínimo</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.estoqueMinimo?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.estoqueMinimo?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para alertas de estoque mínimo</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.estoqueMinimo?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, estoqueMinimo: { ...prev.estoqueMinimo!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Grupo que receberá os alertas quando o estoque atingir o mínimo. Se deixar em branco, será usado o grupo padrão.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações de Alteração de Estoque */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <RefreshCw size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Alteração de Quantidade
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia uma mensagem automática ao grupo do WhatsApp sempre que a quantidade de um item for alterada (entrada ou saída), contendo: nome do usuário, nome do item, quantidade anterior e nova quantidade.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, estoqueAlteracao: { ...prev.estoqueAlteracao!, enabled: !prev.estoqueAlteracao?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.estoqueAlteracao?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.estoqueAlteracao?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Ativar notificações de alteração de quantidade</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Notifica cada alteração de estoque no WhatsApp</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.estoqueAlteracao?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.estoqueAlteracao?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para notificações de alteração</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.estoqueAlteracao?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({ ...prev, estoqueAlteracao: { ...prev.estoqueAlteracao!, specificGroupId: e.target.value } }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Grupo que receberá as notificações de alteração de estoque. Se deixar em branco, será usado o grupo padrão.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Nova Seção: Modelos de Mensagens (Templates) */}
             <div className="mt-12 pt-8 border-t border-white/10">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
@@ -1786,7 +1892,9 @@ function AdminRoute() {
                     { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
                     { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' },
                     { key: 'asoVencendo', label: 'ASO Vencendo' },
-                    { key: 'relatorioDiarioEquipamentos', label: 'Relatório Equipamentos' }
+                    { key: 'relatorioDiarioEquipamentos', label: 'Relatório Equipamentos' },
+                    { key: 'estoqueMinimo', label: 'Estoque Mínimo' },
+                    { key: 'estoqueAlteracao', label: 'Alteração de Estoque' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -1828,6 +1936,8 @@ function AdminRoute() {
                     {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
                     {selectedTemplate === 'asoVencendo' && '{data_aviso}, {dias_vencendo}, {nome}, {cargo}, {matricula}, {tipo_aso}, {data_validade}'}
                     {selectedTemplate === 'relatorioDiarioEquipamentos' && '{data}, {hora}, {quantidade_operando}, {quantidade_manutencao}, {lista_manutencao}'}
+                    {selectedTemplate === 'estoqueMinimo' && '{produto}, {codigo}, {localizacao}, {quantidade_atual}, {estoque_minimo}, {unidade}'}
+                    {selectedTemplate === 'estoqueAlteracao' && '{responsavel}, {produto}, {codigo}, {quantidade_anterior}, {nova_quantidade}, {unidade}, {diferenca}'}
                   </div>
                 </div>
               </div>

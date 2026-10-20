@@ -205,6 +205,16 @@ export type WhatsappSettings = {
     specificGroupId: string;
     horaEnvio: string;
   };
+  // Novo: Alertas de estoque mínimo
+  estoqueMinimo?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
+  // Novo: Notificações de alteração de quantidade
+  estoqueAlteracao?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     ddsHoje: string;
     ddsAmanha: string;
@@ -225,6 +235,9 @@ export type WhatsappSettings = {
     pedidoCompraIndividual: string;
     asoVencendo: string;
     relatorioDiarioEquipamentos: string;
+    // Novos templates de estoque
+    estoqueMinimo: string;
+    estoqueAlteracao: string;
   };
 };
 
@@ -279,6 +292,16 @@ const defaultWhatsappSettings: WhatsappSettings = {
     specificGroupId: "",
     horaEnvio: "08:00",
   },
+  // Alertas de estoque mínimo
+  estoqueMinimo: {
+    enabled: false,
+    specificGroupId: "",
+  },
+  // Notificações de alteração de quantidade
+  estoqueAlteracao: {
+    enabled: false,
+    specificGroupId: "",
+  },
   messageTemplates: {
     ddsHoje:
       "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
@@ -318,6 +341,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO com antecedência._\n\n_Mensagem automática - Sucena_",
     relatorioDiarioEquipamentos:
       "📊 *RELATÓRIO DIÁRIO DE EQUIPAMENTOS*\n\n📅 *Data:* {data}\n🕐 *Hora:* {hora}\n\n✅ *Em operação:* {quantidade_operando}\n🔧 *Em manutenção:* {quantidade_manutencao}\n\n{lista_manutencao}\n\n_Mensagem automática - Sucena_",
+    // Templates de estoque
+    estoqueMinimo:
+      "⚠️ *ALERTA: ESTOQUE MÍNIMO* ⚠️\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📍 *Localização:* {localizacao}\n\n🔴 *Quantidade atual:* {quantidade_atual} {unidade}\n📉 *Estoque mínimo:* {estoque_minimo} {unidade}\n\n_Reponha o estoque o mais rápido possível._\n\n_Mensagem automática - Sucena_",
+    estoqueAlteracao:
+      "📝 *ALTERAÇÃO DE ESTOQUE*\n\n👤 *Responsável:* {responsavel}\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n\n🔄 *Quantidade anterior:* {quantidade_anterior} {unidade}\n➡️ *Nova quantidade:* {nova_quantidade} {unidade}\n📝 *Diferença:* {diferenca} {unidade}\n\n_Mensagem automática - Sucena_",
   },
 };
 

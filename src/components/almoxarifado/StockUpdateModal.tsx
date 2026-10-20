@@ -3,48 +3,84 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { toast } from 'sonner'
+import { sendStockQuantityChangeWhatsappNotification } from '../../lib/whatsappHelpers'
+import { checkAndTriggerMinStockAlerts } from './StockAlertBanner'
 
 interface Product {
   id: string
   name: string
   current_quantity: number
   unit_of_measure: string
+  internal_code?: string | null
 }
 
 interface StockUpdateModalProps {
   product: Product
   type: 'in' | 'out'
+  userName?: string
   onClose: () => void
   onSuccess: () => void
 }
 
-export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpdateModalProps) {
+export function StockUpdateModal({ product, type, userName = 'Almoxarifado', onClose, onSuccess }: StockUpdateModalProps) {
   const [loading, setLoading] = useState(false)
   const [quantity, setQuantity] = useState<number | ''>('')
   const [reason, setReason] = useState('')
+  const [sendingNotification, setSendingNotification] = useState(false)
+
+  const originalQuantity = Number(product.current_quantity) || 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!quantity || quantity <= 0) return
 
     setLoading(true)
-    
+
     try {
       const delta = type === 'in' ? Number(quantity) : -Number(quantity)
-      const newQuantity = Math.max(0, Number(product.current_quantity) + delta)
+      const newQuantity = Math.max(0, originalQuantity + delta)
 
       // Update product quantity
       const { error } = await supabase
         .from('al_products')
-        .update({ current_quantity: newQuantity })
+        .update({ current_quantity: newQuantity, updated_at: new Date().toISOString() })
         .eq('id', product.id)
 
       if (error) throw error
-      
+
+      // Send WhatsApp notification for quantity change
+      setSendingNotification(true)
+      try {
+        const notifResult = await sendStockQuantityChangeWhatsappNotification({
+          responsibleName: userName,
+          productName: product.name,
+          productCode: product.internal_code || undefined,
+          previousQuantity: originalQuantity,
+          newQuantity: newQuantity,
+          unitOfMeasure: product.unit_of_measure
+        })
+
+        if (!notifResult.success) {
+          console.warn('WhatsApp notification for quantity change failed:', notifResult.error)
+        }
+      } catch (notifErr) {
+        console.warn('Failed to send WhatsApp notification for quantity change:', notifErr)
+      } finally {
+        setSendingNotification(false)
+      }
+
+      // Check if item is now below minimum stock and trigger alert
+      try {
+        await checkAndTriggerMinStockAlerts(product.id)
+      } catch (alertErr) {
+        console.warn('Failed to check min stock alerts:', alertErr)
+      }
+
       onSuccess()
     } catch (error) {
       console.error('Error updating stock:', error)
-      alert('Erro ao atualizar estoque.')
+      toast.error('Erro ao atualizar estoque.')
     } finally {
       setLoading(false)
     }
@@ -53,12 +89,12 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
+
         <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
           <h2 className="text-xl font-bold font-evantic tracking-wide text-[#1c1d21] dark:text-white">
             {type === 'in' ? 'Entrada no Estoque' : 'Saída do Estoque'}
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-[#5f6472] dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
@@ -69,7 +105,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
         <div className="p-6">
           <div className="mb-6">
             <h3 className="font-semibold text-[#1c1d21] dark:text-white mb-1">{product.name}</h3>
-            <p className="text-sm text-gray-500">Estoque atual: <span className="font-bold">{product.current_quantity}</span> {product.unit_of_measure}</p>
+            <p className="text-sm text-gray-500">Estoque atual: <span className="font-bold">{originalQuantity}</span> {product.unit_of_measure}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -86,7 +122,7 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
                 placeholder="Ex: 5"
               />
             </div>
-            
+
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Motivo / Observação (Opcional)</label>
               <input
@@ -98,20 +134,30 @@ export function StockUpdateModal({ product, type, onClose, onSuccess }: StockUpd
               />
             </div>
 
+            {/* Preview of new quantity */}
+            {quantity && Number(quantity) > 0 && (
+              <div className={`p-3 rounded-lg text-sm ${type === 'in' ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400'}`}>
+                Nova quantidade: <span className="font-bold">
+                  {type === 'in' ? originalQuantity + Number(quantity) : Math.max(0, originalQuantity - Number(quantity))}
+                </span> {product.unit_of_measure}
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 mt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors"
+                disabled={loading || sendingNotification}
+                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className={`px-4 py-2 text-sm font-bold text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm ${type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                disabled={loading || sendingNotification}
+                className={`px-4 py-2 text-sm font-bold text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm ${type === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} ${loading || sendingNotification ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                {(loading || sendingNotification) ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Confirmar
               </button>
             </div>

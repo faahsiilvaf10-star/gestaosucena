@@ -321,3 +321,137 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
   }
 }
 
+/**
+ * Envia notificação de alteração de quantidade de estoque no WhatsApp
+ */
+export async function sendStockQuantityChangeWhatsappNotification(params: {
+  responsibleName: string;
+  productName: string;
+  productCode?: string;
+  previousQuantity: number;
+  newQuantity: number;
+  unitOfMeasure: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const settings = await getWhatsappSettings();
+    if (!settings?.url || !settings?.token) {
+      return { success: false, error: 'Configurações do WhatsApp não estão preenchidas.' };
+    }
+
+    if (!settings.estoqueAlteracao?.enabled) {
+      return { success: false, error: 'O envio de notificações de alteração de estoque está desativado.' };
+    }
+
+    const groupId = (settings.estoqueAlteracao.specificGroupId || settings.groupId || '').trim();
+    if (!groupId) {
+      return { success: false, error: 'Nenhum ID de grupo do WhatsApp configurado.' };
+    }
+
+    const diff = params.newQuantity - params.previousQuantity;
+    const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
+
+    let msg = settings.messageTemplates?.estoqueAlteracao ||
+      '📝 *ALTERAÇÃO DE ESTOQUE*\n\n👤 *Responsável:* {responsavel}\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n\n🔄 *Quantidade anterior:* {quantidade_anterior} {unidade}\n➡️ *Nova quantidade:* {nova_quantidade} {unidade}\n📝 *Diferença:* {diferenca} {unidade}\n\n_Mensagem automática - Sucena_';
+
+    msg = msg
+      .replaceAll('{responsavel}', params.responsibleName || 'Não identificado')
+      .replaceAll('{produto}', params.productName)
+      .replaceAll('{codigo}', params.productCode || '-')
+      .replaceAll('{quantidade_anterior}', String(params.previousQuantity))
+      .replaceAll('{nova_quantidade}', String(params.newQuantity))
+      .replaceAll('{unidade}', params.unitOfMeasure)
+      .replaceAll('{diferenca}', diffStr);
+
+    try {
+      await sendWhatsappTextOnServer({
+        data: {
+          url: settings.url,
+          token: settings.token,
+          instanceId: settings.instanceId,
+          phone: groupId,
+          text: msg
+        }
+      });
+      return { success: true };
+    } catch (sendErr: any) {
+      console.warn('Falha no envio direto, tentando fila offline:', sendErr?.message || sendErr);
+    }
+
+    // Fallback: enfileirar na fila offline-first
+    try {
+      await queueWhatsappMessage(settings, groupId, msg);
+      return { success: true };
+    } catch (queueErr: any) {
+      return { success: false, error: queueErr?.message || 'Falha ao enfileirar mensagem' };
+    }
+  } catch (err: any) {
+    console.error('Erro em sendStockQuantityChangeWhatsappNotification:', err);
+    return { success: false, error: err?.message || 'Erro inesperado' };
+  }
+}
+
+/**
+ * Envia alerta de estoque mínimo no WhatsApp
+ */
+export async function sendStockMinAlertWhatsappNotification(params: {
+  productName: string;
+  productCode?: string;
+  location?: string;
+  currentQuantity: number;
+  minStock: number;
+  unitOfMeasure: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const settings = await getWhatsappSettings();
+    if (!settings?.url || !settings?.token) {
+      return { success: false, error: 'Configurações do WhatsApp não estão preenchidas.' };
+    }
+
+    if (!settings.estoqueMinimo?.enabled) {
+      return { success: false, error: 'O envio de alertas de estoque mínimo está desativado.' };
+    }
+
+    const groupId = (settings.estoqueMinimo.specificGroupId || settings.groupId || '').trim();
+    if (!groupId) {
+      return { success: false, error: 'Nenhum ID de grupo do WhatsApp configurado.' };
+    }
+
+    let msg = settings.messageTemplates?.estoqueMinimo ||
+      '⚠️ *ALERTA: ESTOQUE MÍNIMO* ⚠️\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📍 *Localização:* {localizacao}\n\n🔴 *Quantidade atual:* {quantidade_atual} {unidade}\n📉 *Estoque mínimo:* {estoque_minimo} {unidade}\n\n_Reponha o estoque o mais rápido possível._\n\n_Mensagem automática - Sucena_';
+
+    msg = msg
+      .replaceAll('{produto}', params.productName)
+      .replaceAll('{codigo}', params.productCode || '-')
+      .replaceAll('{localizacao}', params.location || '-')
+      .replaceAll('{quantidade_atual}', String(params.currentQuantity))
+      .replaceAll('{estoque_minimo}', String(params.minStock))
+      .replaceAll('{unidade}', params.unitOfMeasure);
+
+    try {
+      await sendWhatsappTextOnServer({
+        data: {
+          url: settings.url,
+          token: settings.token,
+          instanceId: settings.instanceId,
+          phone: groupId,
+          text: msg
+        }
+      });
+      return { success: true };
+    } catch (sendErr: any) {
+      console.warn('Falha no envio direto, tentando fila offline:', sendErr?.message || sendErr);
+    }
+
+    // Fallback: enfileirar na fila offline-first
+    try {
+      await queueWhatsappMessage(settings, groupId, msg);
+      return { success: true };
+    } catch (queueErr: any) {
+      return { success: false, error: queueErr?.message || 'Falha ao enfileirar mensagem' };
+    }
+  } catch (err: any) {
+    console.error('Erro em sendStockMinAlertWhatsappNotification:', err);
+    return { success: false, error: err?.message || 'Erro inesperado' };
+  }
+}
+
