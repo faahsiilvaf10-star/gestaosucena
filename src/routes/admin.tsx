@@ -818,164 +818,135 @@ function AdminRoute() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className={`text-xs uppercase bg-black/5 dark:bg-white/5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                <tr>
-                  <th className="px-6 py-4 font-medium">Usuário</th>
-                  <th className="px-6 py-4 font-medium">Contato</th>
-                  <th className="px-6 py-4 font-medium">Cargo / Role</th>
-                  <th className="px-6 py-4 font-medium">Ambientes</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-white/5">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      Carregando usuários...
-                    </td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      Nenhum usuário encontrado.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map(user => {
-                    const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                    const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
-                    const displayId = String(seqIndex).padStart(4, '0');
-                    const isUserAdmin = isAdmin(user.name, user.role);
-                    const userEnvs = envAccessMap[user.id] !== undefined
-                      ? envAccessMap[user.id]
-                      : ['barcarena'];
+          <div className="p-4 border-b border-gray-200 dark:border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <UserIcon className="text-[#D6A72B]" size={20} />
+              Usuários Cadastrados ({users.length})
+            </h2>
 
-                    return (
-                      <tr key={user.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
-                              {user.avatar_url ? (
-                                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <UserIcon size={20} className="text-[#5f6472] dark:text-gray-400" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium flex items-center gap-1">
-                                {user.name}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate w-32 md:w-auto" title={user.id}>
-                                ID: {displayId}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-gray-600 dark:text-gray-300">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes('admin') || user.role?.toLowerCase().includes('diretor') ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}`}>
-                            {user.role || 'Usuário'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1 max-w-[220px]">
-                            {isUserAdmin ? (
-                              <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-yellow-500/15 text-[#D6A72B] border border-yellow-500/30">
-                                Todos (Admin)
-                              </span>
-                            ) : userEnvs.length === 0 ? (
-                              <span className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-1">
-                                <Lock size={10} /> Nenhum
-                              </span>
-                            ) : (
-                              userEnvs.map(envId => {
-                                const isReab = envId === 'barcarena'
-                                return (
-                                  <span 
-                                    key={envId} 
-                                    className={`px-2 py-0.5 text-[11px] font-semibold rounded-md border ${
-                                      isReab
-                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                                    }`}
-                                  >
-                                    {isReab ? 'Reabilitação' : 'Civil'}
-                                  </span>
-                                )
-                              })
-                            )}
-                          </div>
-                        </td>
-                      <td className="px-6 py-4">
-                        {user.banned_until ? (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1.5 text-red-500 font-medium">
-                              <Ban size={14} /> Bloqueado
-                            </div>
-                            {user.banned_until && (
-                              <span className="text-[10px] text-gray-500">
-                                {user.banned_until === '2099-12-31' || user.banned_until.includes('2099')
-                                  ? 'Permanente'
-                                  : `Até ${new Date(user.banned_until).toLocaleDateString('pt-BR')}`}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-green-500 font-medium">
-                            <CheckCircle2 size={14} /> Ativo
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={() => {
-                              setEditingUser(user)
-                              setEditName(user.name)
-                              setEditRole(user.role)
-                              setEditPassword('')
-                              const currentAccess = envAccessMap[user.id] !== undefined
-                                ? envAccessMap[user.id]
-                                : ['barcarena']
-                              setEditUserEnvAccess(currentAccess)
-                            }}
-                            className="p-2 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          
-                          <button 
-                            onClick={() => setBlockUserModal(user)}
-                            className={`p-2 rounded-lg transition-colors ${user.banned_until ? 'text-green-500 hover:bg-green-500/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
-                            title={user.banned_until ? "Desbloquear" : "Bloquear"}
-                          >
-                            {user.banned_until ? <ShieldAlert size={18} /> : <Ban size={18} />}
-                          </button>
-                          
-                          <button 
-                            onClick={() => {
-                              setDeleteUserModal(user)
-                              setDeleteEmailInput('')
-                            }}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-[#0a0a0c] border-white/10 focus-within:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus-within:border-[#D6A72B]'}`}>
+              <Search size={16} className="text-[#5f6472] dark:text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar usuário..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="bg-transparent outline-none text-sm w-full sm:w-48 md:w-64"
+              />
+            </div>
+          </div>
+
+          <div className="p-4">
+            {loading ? (
+              <div className="text-center py-12 text-gray-500">
+                Carregando usuários...
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                Nenhum usuário encontrado.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredUsers.map(user => {
+                  const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                  const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
+                  const displayId = String(seqIndex).padStart(4, '0');
+                  const isUserAdmin = isAdmin(user.name, user.role);
+                  const userEnvs = envAccessMap[user.id] !== undefined
+                    ? envAccessMap[user.id]
+                    : ['barcarena'];
+
+                  return (
+                    <div key={user.id} className={`rounded-xl border p-4 ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                      {/* Header do Card */}
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <UserIcon size={24} className="text-[#5f6472] dark:text-gray-400" />
+                          )}
                         </div>
-                      </td>
-                    </tr>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold truncate">{user.name}</div>
+                          <div className="text-xs text-gray-500">ID: {displayId}</div>
+                          <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                        </div>
+                        {/* Status Badge */}
+                        {user.banned_until ? (
+                          <span className="px-2 py-1 text-[10px] font-bold rounded-full bg-red-500/20 text-red-500 whitespace-nowrap">
+                            Bloqueado
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-[10px] font-bold rounded-full bg-green-500/20 text-green-500 whitespace-nowrap">
+                            Ativo
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Info Row */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${user.role?.toLowerCase().includes('admin') || user.role?.toLowerCase().includes('diretor') ? 'bg-yellow-500/20 text-[#D6A72B]' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}`}>
+                          {user.role || 'Usuário'}
+                        </span>
+                        {isUserAdmin ? (
+                          <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-yellow-500/15 text-[#D6A72B] border border-yellow-500/30">
+                            Admin
+                          </span>
+                        ) : userEnvs.map(envId => {
+                          const isReab = envId === 'barcarena'
+                          return (
+                            <span key={envId} className={`px-2 py-0.5 text-[11px] font-semibold rounded-md border ${isReab ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'}`}>
+                              {isReab ? 'Reab.' : 'Civil'}
+                            </span>
+                          )
+                        })}
+                      </div>
+
+                      {/* Ações */}
+                      <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-white/10">
+                        <button
+                          onClick={() => {
+                            setEditingUser(user)
+                            setEditName(user.name)
+                            setEditRole(user.role)
+                            setEditPassword('')
+                            const currentAccess = envAccessMap[user.id] !== undefined ? envAccessMap[user.id] : ['barcarena']
+                            setEditUserEnvAccess(currentAccess)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors text-sm font-medium"
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
+                          <span className="hidden sm:inline">Editar</span>
+                        </button>
+
+                        <button
+                          onClick={() => setBlockUserModal(user)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${user.banned_until ? 'text-green-500 hover:bg-green-500/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
+                          title={user.banned_until ? "Desbloquear" : "Bloquear"}
+                        >
+                          {user.banned_until ? <ShieldAlert size={16} /> : <Ban size={16} />}
+                          <span className="hidden sm:inline">{user.banned_until ? 'Desbloq.' : 'Bloq.'}</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setDeleteUserModal(user)
+                            setDeleteEmailInput('')
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors text-sm font-medium"
+                          title="Excluir"
+                        >
+                          <Trash2 size={16} />
+                          <span className="hidden sm:inline">Excluir</span>
+                        </button>
+                      </div>
+                    </div>
                   );
-                })
-                )}
-              </tbody>
-            </table>
+                })}
+              </div>
+            )}
           </div>
         </div>
         )}
