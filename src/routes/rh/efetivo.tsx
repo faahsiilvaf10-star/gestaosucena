@@ -9,8 +9,6 @@ import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import Filter from 'lucide-react/dist/esm/icons/funnel.js';
 import Pencil from 'lucide-react/dist/esm/icons/pencil.js';
-import Eye from 'lucide-react/dist/esm/icons/eye.js';
-import EyeOff from 'lucide-react/dist/esm/icons/eye-off.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -61,7 +59,7 @@ function RhEfetivoPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditingAso, setIsEditingAso] = useState(false)
-  const [showOnlyActive, setShowOnlyActive] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<'ATIVO' | 'INATIVO' | 'TODOS'>('ATIVO')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -564,8 +562,10 @@ function RhEfetivoPage() {
     }
   }
   const filteredItems = items.filter(item => {
-    // Filter by status if showOnlyActive is enabled
-    if (showOnlyActive && item.status !== 'ATIVO') return false
+    // Filter by status
+    if (statusFilter === 'ATIVO' && item.status !== 'ATIVO') return false
+    if (statusFilter === 'INATIVO' && item.status !== 'INATIVO') return false
+    // 'TODOS' shows everything
 
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -647,18 +647,15 @@ function RhEfetivoPage() {
                 {filteredItems.length} de {items.length} Colaboradores
               </div>
               {canEdit && (
-                <button
-                  onClick={() => setShowOnlyActive(!showOnlyActive)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    showOnlyActive
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  }`}
-                  title={showOnlyActive ? 'Mostrando apenas ativos' : 'Mostrando ativos e inativos'}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'ATIVO' | 'INATIVO' | 'TODOS')}
+                  className="bg-white dark:bg-[#2a2a2b] border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-medium outline-none focus:border-[#0866ff]"
                 >
-                  {showOnlyActive ? <Eye size={14} /> : <EyeOff size={14} />}
-                  {showOnlyActive ? 'Apenas Ativos' : 'Ver Inativos'}
-                </button>
+                  <option value="ATIVO">Apenas Ativos</option>
+                  <option value="INATIVO">Apenas Inativos</option>
+                  <option value="TODOS">Todos</option>
+                </select>
               )}
             </div>
           </div>
