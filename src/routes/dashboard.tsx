@@ -367,7 +367,7 @@ function DashboardComponent() {
         const diffTime = validade.getTime() - hoje.getTime()
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
         
-        if (diffDays <= 10) {
+        if (diffDays <= 20) {
           return {
             nome: emp.nome,
             diasRestantes: diffDays,

@@ -44,7 +44,7 @@ BEGIN
     RETURN;
   END IF;
 
-  dias_antec := COALESCE((settings_json->'asoVencendo'->>'diasAntecipacao')::INTEGER, 15);
+  dias_antec := COALESCE((settings_json->'asoVencendo'->>'diasAntecipacao')::INTEGER, 20);
   group_id := COALESCE(settings_json->'asoVencendo'->>'specificGroupId', settings_json->>'groupId', '');
 
   IF group_id = '' THEN
@@ -57,7 +57,7 @@ BEGIN
   instance_id := settings_json->>'instanceId';
   template_text := COALESCE(
     settings_json->'messageTemplates'->>'asoVencendo',
-    '⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO._\n\n_Mensagem automática - Sucena_'
+    '⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO com antecedência._\n\n_Mensagem automática - Sucena_'
   );
 
   IF api_url = '' OR api_token = '' OR instance_id = '' THEN

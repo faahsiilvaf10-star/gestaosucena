@@ -149,7 +149,7 @@ function AdminRoute() {
     asoVencendo: {
       enabled: false,
       specificGroupId: '',
-      diasAntecipacao: 15
+      diasAntecipacao: 20
     },
     relatorioDiarioEquipamentos: {
       enabled: false,
@@ -1645,7 +1645,7 @@ function AdminRoute() {
                     </button>
                     <div>
                       <span className="font-semibold text-sm block">Ativar alertas de ASO vencendo</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia quando faltam {whatsappSettings.asoVencendo?.diasAntecipacao || 15} dias para o vencimento</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia quando faltam {whatsappSettings.asoVencendo?.diasAntecipacao || 20} dias para o vencimento</span>
                     </div>
                   </div>
                   <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.asoVencendo?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>

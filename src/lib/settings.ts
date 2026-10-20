@@ -272,7 +272,7 @@ const defaultWhatsappSettings: WhatsappSettings = {
   asoVencendo: {
     enabled: false,
     specificGroupId: "",
-    diasAntecipacao: 15,
+    diasAntecipacao: 20,
   },
   relatorioDiarioEquipamentos: {
     enabled: false,
@@ -315,7 +315,7 @@ const defaultWhatsappSettings: WhatsappSettings = {
     inicioJornadaApp:
       "🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}",
     asoVencendo:
-      "⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO._\n\n_Mensagem automática - Sucena_",
+      "⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO com antecedência._\n\n_Mensagem automática - Sucena_",
     relatorioDiarioEquipamentos:
       "📊 *RELATÓRIO DIÁRIO DE EQUIPAMENTOS*\n\n📅 *Data:* {data}\n🕐 *Hora:* {hora}\n\n✅ *Em operação:* {quantidade_operando}\n🔧 *Em manutenção:* {quantidade_manutencao}\n\n{lista_manutencao}\n\n_Mensagem automática - Sucena_",
   },
@@ -337,7 +337,7 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
       const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates! };
       for (const key of Object.keys(
         defaultWhatsappSettings.messageTemplates!,
-      ) as (keyof NonNullable<typeof defaultWhatsappSettings.messageTemplates>>)[]) {
+      ) as (keyof NonNullable<typeof defaultWhatsappSettings.messageTemplates>)[]) {
         if (
           loadedTemplates[key] &&
           typeof loadedTemplates[key] === "string" &&

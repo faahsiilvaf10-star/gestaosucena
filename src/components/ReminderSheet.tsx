@@ -26,6 +26,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const { isDark } = useTheme()
   const queryClient = useQueryClient()
   const isEditing = !!reminder
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const canEdit = !isEditing || reminder?.creator_id === currentUserId
 
   const [title, setTitle] = useState('')
@@ -34,7 +35,6 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [mentions, setMentions] = useState<string[]>([])
   const [dueDate, setDueDate] = useState('')
   const [dueTime, setDueTime] = useState('')
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   const [advanceNotice, setAdvanceNotice] = useState<number>(0)
