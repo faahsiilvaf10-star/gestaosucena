@@ -66,6 +66,7 @@ import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado
 import { Route as AlmoxarifadoPedidosNovoRouteImport } from './routes/almoxarifado/pedidos/novo'
 import { Route as AlmoxarifadoRequisicoesIndexRouteImport } from './routes/almoxarifado/requisicoes/index'
 import { Route as AlmoxarifadoRequisicoesNovaRouteImport } from './routes/almoxarifado/requisicoes/nova'
+import { Route as RelatorioObraModuloIdRouteImport } from './routes/relatorio-obra/modulo/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -359,6 +360,11 @@ const AlmoxarifadoRequisicoesNovaRoute =
     path: '/requisicoes/nova',
     getParentRoute: () => AlmoxarifadoRoute,
   } as any)
+const RelatorioObraModuloIdRoute = RelatorioObraModuloIdRouteImport.update({
+  id: '/relatorio-obra/modulo/$id',
+  path: '/relatorio-obra/modulo/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -416,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
+  '/relatorio-obra/modulo/$id': typeof RelatorioObraModuloIdRoute
   '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
   '/almoxarifado/requisicoes/': typeof AlmoxarifadoRequisicoesIndexRoute
 }
@@ -469,6 +476,7 @@ export interface FileRoutesByTo {
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
+  '/relatorio-obra/modulo/$id': typeof RelatorioObraModuloIdRoute
   '/almoxarifado/pedidos': typeof AlmoxarifadoPedidosIndexRoute
   '/almoxarifado/requisicoes': typeof AlmoxarifadoRequisicoesIndexRoute
 }
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/almoxarifado/pedidos/$id': typeof AlmoxarifadoPedidosIdRoute
   '/almoxarifado/pedidos/novo': typeof AlmoxarifadoPedidosNovoRoute
   '/almoxarifado/requisicoes/nova': typeof AlmoxarifadoRequisicoesNovaRoute
+  '/relatorio-obra/modulo/$id': typeof RelatorioObraModuloIdRoute
   '/almoxarifado/pedidos/': typeof AlmoxarifadoPedidosIndexRoute
   '/almoxarifado/requisicoes/': typeof AlmoxarifadoRequisicoesIndexRoute
 }
@@ -590,6 +599,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
+    | '/relatorio-obra/modulo/$id'
     | '/almoxarifado/pedidos/'
     | '/almoxarifado/requisicoes/'
   fileRoutesByTo: FileRoutesByTo
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
+    | '/relatorio-obra/modulo/$id'
     | '/almoxarifado/pedidos'
     | '/almoxarifado/requisicoes'
   id:
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/pedidos/$id'
     | '/almoxarifado/pedidos/novo'
     | '/almoxarifado/requisicoes/nova'
+    | '/relatorio-obra/modulo/$id'
     | '/almoxarifado/pedidos/'
     | '/almoxarifado/requisicoes/'
   fileRoutesById: FileRoutesById
@@ -727,6 +739,7 @@ export interface RootRouteChildren {
   DocumentosIndexRoute: typeof DocumentosIndexRoute
   PermissaoTrabalhoIndexRoute: typeof PermissaoTrabalhoIndexRoute
   RelatorioObraIndexRoute: typeof RelatorioObraIndexRoute
+  RelatorioObraModuloIdRoute: typeof RelatorioObraModuloIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1130,6 +1143,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlmoxarifadoRequisicoesNovaRouteImport
       parentRoute: typeof AlmoxarifadoRoute
     }
+    '/relatorio-obra/modulo/$id': {
+      id: '/relatorio-obra/modulo/$id'
+      path: '/relatorio-obra/modulo/$id'
+      fullPath: '/relatorio-obra/modulo/$id'
+      preLoaderRoute: typeof RelatorioObraModuloIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1286,6 +1306,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentosIndexRoute: DocumentosIndexRoute,
   PermissaoTrabalhoIndexRoute: PermissaoTrabalhoIndexRoute,
   RelatorioObraIndexRoute: RelatorioObraIndexRoute,
+  RelatorioObraModuloIdRoute: RelatorioObraModuloIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

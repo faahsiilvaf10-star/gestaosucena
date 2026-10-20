@@ -14,8 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useMonthlyColors } from '../../hooks/useMonthlyColors'
-import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
 import { type RdoAtividade, getSubItens } from '@/components/rdo/ActivityCard'
+import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -88,6 +88,7 @@ function RDOPage() {
   // Custom activities state for RDO integration
   const [customAtividades, setCustomAtividades] = useState<RdoAtividade[]>([]);
   const [showActivitiesPanel, setShowActivitiesPanel] = useState(false);
+  const [customModulosDaily, setCustomModulosDaily] = useState<CustomRdoDailyData[]>([]);
 
   const fetchPresencasForDate = async (dateStr: string) => {
     try {
@@ -241,6 +242,9 @@ function RDOPage() {
               }
             });
         }
+        if (key.startsWith('custom_rdo_') && key.endsWith(`_${selectedDate}`)) {
+          fetchCustomModulosForDate(selectedDate);
+        }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rh_presencas', filter: `data=eq.${selectedDate}` }, () => {
         fetchPresencasForDate(selectedDate);
@@ -275,11 +279,47 @@ function RDOPage() {
     }
   };
 
+  const fetchCustomModulosForDate = async (dateStr: string) => {
+    try {
+      const { data: list } = await supabase
+        .from('global_settings')
+        .select('key, value')
+        .like('key', `custom_rdo_%_${dateStr}`);
+
+      const map = new Map<string, CustomRdoDailyData>();
+      if (list) {
+        list.forEach((item: any) => {
+          if (item.value) {
+            map.set(item.key, item.value as CustomRdoDailyData);
+            localStorage.setItem(item.key, JSON.stringify(item.value));
+          }
+        });
+      }
+
+      // Fallback ao localStorage
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('custom_rdo_') && k.endsWith(`_${dateStr}`) && !map.has(k)) {
+            try {
+              const val = JSON.parse(localStorage.getItem(k) || '');
+              if (val) map.set(k, val);
+            } catch (e) {}
+          }
+        });
+      }
+
+      setCustomModulosDaily(Array.from(map.values()));
+    } catch (err) {
+      console.error('Erro ao buscar dados de módulos customizados:', err);
+    }
+  };
+
   const loadDate = async (dateStr: string) => {
     setSelectedDate(dateStr);
     fetchEquipamentos(dateStr);
     fetchPresencasForDate(dateStr);
     fetchCustomAtividades(dateStr);
+    fetchCustomModulosForDate(dateStr);
     
     // Buscar DDS
     try {
@@ -620,6 +660,46 @@ function RDOPage() {
     }
     
     return text;
+  }
+
+  const renderCustomModuleText = (d: CustomRdoDailyData) => {
+    if (!d) return '';
+    const lines: string[] = [];
+
+    const locParts: string[] = [];
+    if (d.localFaixa) locParts.push(`Faixa: ${d.localFaixa}`);
+    if (d.localElevado) locParts.push(`Local: ${d.localElevado}`);
+    if (locParts.length > 0) {
+      lines.push(`📍 Localização: ${locParts.join(' | ')}`);
+    }
+
+    const marked = (d.itens || []).filter(i => i.marcado);
+    marked.forEach(it => {
+      let itemLine = `* ${it.nome}`;
+      if (it.tipo === 'medicao' && it.valor) {
+        itemLine += `: ${it.valor} ${it.unidade || 'm²'}`;
+      }
+      const loc: string[] = [];
+      if (it.faixa) loc.push(it.faixa);
+      if (it.berma) loc.push(it.berma);
+      if (loc.length > 0) itemLine += ` (${loc.join(' - ')})`;
+      if (it.detalhe) itemLine += ` - ${it.detalhe}`;
+      lines.push(itemLine);
+    });
+
+    if (d.observacoes && d.observacoes.trim()) {
+      lines.push('');
+      lines.push(`📝 *Observações:*`);
+      lines.push(d.observacoes.trim());
+    }
+
+    const modTitle = d.moduloName || (d as any).moduloNome || 'Atividade';
+    const efetivo = renderEfetivoPorArea(modTitle);
+
+    if (lines.length > 0) {
+      return lines.join('\n') + (efetivo ? `\n\n${efetivo}` : '');
+    }
+    return `Nenhuma atividade preenchida para ${modTitle}.\n\n${efetivo}`;
   }
 
 
@@ -1004,6 +1084,19 @@ function RDOPage() {
                   })}
                 </div>
               )}
+
+              {/* Módulos Customizados de Atividades Criados pelos Encarregados */}
+              {customModulosDaily.map((modData) => {
+                const title = modData.moduloName || (modData as any).moduloNome || 'Atividade';
+                return (
+                  <div key={modData.moduloId || title} className="mt-6">
+                    <div className="font-bold text-amber-700">⭐ {title.toUpperCase()} ⭐</div>
+                    <div className="mt-2 text-gray-700 whitespace-pre-wrap">
+                      {renderCustomModuleText(modData)}
+                    </div>
+                  </div>
+                );
+              })}
 
               <div className="mt-8 font-bold text-blue-700">
                 {renderEquipamentosGeraisText().split('\n').map((line, i) => (
