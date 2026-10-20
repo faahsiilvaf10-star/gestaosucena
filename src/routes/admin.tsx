@@ -1469,7 +1469,7 @@ function AdminRoute() {
                 <Bell size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
                 Envio Automático de Lembretes
               </h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Quando habilitado, o sistema envia automaticamente os lembretes respeitando o agendamento:
                 <ul className="list-disc ml-5 mt-2 space-y-1">
                   <li>Lembretes <strong>com horário definido</strong> são enviados no horário escolhido (Pará UTC-4).</li>
@@ -1479,7 +1479,7 @@ function AdminRoute() {
                   <li>Se mencionar <strong>todos</strong> → vai para o <strong>grupo configurado</strong>; senão → vai no <strong>privado</strong> do criador e dos usuários mencionados.</li>
                   <li>Se o criador adiar o lembrete para outro dia, o envio do WhatsApp também é <strong>adiado automaticamente</strong> para a nova data.</li>
                 </ul>
-              </p>
+              </div>
 
               <div className="space-y-6">
                 <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
