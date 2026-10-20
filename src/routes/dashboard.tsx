@@ -334,10 +334,13 @@ function DashboardComponent() {
     }
   }, [aniversariantesHoje.length])
 
-  // Calcular ASO vencendo em 10 dias ou menos (ou já vencidos)
+  // Calcular ASO vencendo em 20 dias ou menos (ou já vencidos) - apenas ativos
   const asoVencendo = useMemo(() => {
     return (efetivo || [])
-      .filter((emp: any) => emp.status !== 'REMOVIDO' && emp.status !== 'INATIVO')
+      .filter((emp: any) => {
+        const status = (emp.status || '').toUpperCase()
+        return status !== 'REMOVIDO' && status !== 'INATIVO'
+      })
       .map((emp: any) => {
         // Recalcular no frontend para não depender do BD caso o script de migration não tenha sido rodado
         const dates = [
