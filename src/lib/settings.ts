@@ -195,6 +195,16 @@ export type WhatsappSettings = {
     enabled_individual: boolean;
     specificGroupId: string;
   };
+  asoVencendo?: {
+    enabled: boolean;
+    specificGroupId: string;
+    diasAntecipacao: number;
+  };
+  relatorioDiarioEquipamentos?: {
+    enabled: boolean;
+    specificGroupId: string;
+    horaEnvio: string;
+  };
   messageTemplates?: {
     ddsHoje: string;
     ddsAmanha: string;
@@ -213,6 +223,8 @@ export type WhatsappSettings = {
     equipamentoSaida: string;
     pedidoCompraGrupo: string;
     pedidoCompraIndividual: string;
+    asoVencendo: string;
+    relatorioDiarioEquipamentos: string;
   };
 };
 
@@ -257,6 +269,16 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled_individual: false,
     specificGroupId: "",
   },
+  asoVencendo: {
+    enabled: false,
+    specificGroupId: "",
+    diasAntecipacao: 15,
+  },
+  relatorioDiarioEquipamentos: {
+    enabled: false,
+    specificGroupId: "",
+    horaEnvio: "08:00",
+  },
   messageTemplates: {
     ddsHoje:
       "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
@@ -292,6 +314,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "📦 *NOVO PEDIDO DE COMPRA #{numero_pedido} ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._",
     inicioJornadaApp:
       "🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}",
+    asoVencendo:
+      "⚠️ *AVISO: ASO VENCENDO* ⚠️\n\n📅 *Data do aviso:* {data_aviso}\n⏰ *Vencimento em:* {dias_vencendo} dia(s)\n\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📋 *Tipo de ASO:* {tipo_aso}\n📆 *Data de validade:* {data_validade}\n\n_Por favor, providencie a renovação do ASO._\n\n_Mensagem automática - Sucena_",
+    relatorioDiarioEquipamentos:
+      "📊 *RELATÓRIO DIÁRIO DE EQUIPAMENTOS*\n\n📅 *Data:* {data}\n🕐 *Hora:* {hora}\n\n✅ *Em operação:* {quantidade_operando}\n🔧 *Em manutenção:* {quantidade_manutencao}\n\n{lista_manutencao}\n\n_Mensagem automática - Sucena_",
   },
 };
 
@@ -308,10 +334,10 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
     if (!error && data && data.value) {
       const loaded = typeof data.value === "string" ? JSON.parse(data.value) : (data.value as any);
       const loadedTemplates = loaded.messageTemplates || {};
-      const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates };
+      const mergedTemplates: any = { ...defaultWhatsappSettings.messageTemplates! };
       for (const key of Object.keys(
-        defaultWhatsappSettings.messageTemplates,
-      ) as (keyof typeof defaultWhatsappSettings.messageTemplates)[]) {
+        defaultWhatsappSettings.messageTemplates!,
+      ) as (keyof NonNullable<typeof defaultWhatsappSettings.messageTemplates>>)[]) {
         if (
           loadedTemplates[key] &&
           typeof loadedTemplates[key] === "string" &&
