@@ -7,18 +7,22 @@ import Package from 'lucide-react/dist/esm/icons/package.js';
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import Activity from 'lucide-react/dist/esm/icons/activity.js';
-import Filter from 'lucide-react/dist/esm/icons/filter.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
-import { Link } from '@tanstack/react-router'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export function RecentActivitiesWidget() {
-  const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [moduleFilter, setModuleFilter] = useState<string>('TODAS')
   const [allActivities, setAllActivities] = useState<any[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalSearch, setModalSearch] = useState('')
+  const [modalModuleFilter, setModalModuleFilter] = useState('TODAS')
 
   const modules = ['TODAS', 'RDO', 'RH', 'Equipamentos', 'Almoxarifado', 'Segurança', 'Meio Ambiente']
 
@@ -36,13 +40,13 @@ export function RecentActivitiesWidget() {
           .neq('module', 'System')
           .not('action', 'ilike', 'CRASH:%')
           .order('created_at', { ascending: false })
-          .limit(50),
+          .limit(200),
         supabase
           .from('eq_movements')
           .select('id, movement_type, created_by, created_at, eq_equipments!inner(name, plate_tag, environment)')
           .eq('eq_equipments.environment', environment)
           .order('created_at', { ascending: false })
-          .limit(20)
+          .limit(100)
       ])
 
       if (activitiesRes.error) {
@@ -102,9 +106,32 @@ export function RecentActivitiesWidget() {
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
+
+  // Exibir exatamente 10 atividades no card do widget
   const filteredActivities = moduleFilter === 'TODAS'
-    ? allActivities.slice(0, 12)
-    : allActivities.filter(a => a.module === moduleFilter).slice(0, 12)
+    ? allActivities.slice(0, 10)
+    : allActivities.filter(a => a.module === moduleFilter).slice(0, 10)
+
+  // Filtragem da janela modal
+  const modalActivities = allActivities.filter((act) => {
+    const matchesModule = modalModuleFilter === 'TODAS' || act.module === modalModuleFilter
+    if (!matchesModule) return false
+    if (!modalSearch.trim()) return true
+    const term = modalSearch.toLowerCase()
+    const actionMatch = act.action?.toLowerCase().includes(term)
+    const userMatch = act.user_name?.toLowerCase().includes(term)
+    const moduleMatch = act.module?.toLowerCase().includes(term)
+    return actionMatch || userMatch || moduleMatch
+  })
 
   const getModuleIcon = (module: string) => {
     switch (module) {
@@ -130,67 +157,240 @@ export function RecentActivitiesWidget() {
     }
   }
 
+  const openModalWithModule = (module: string) => {
+    setModalModuleFilter(module)
+    setModalSearch('')
+    setIsModalOpen(true)
+  }
+
   return (
-    <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
-      <div className="flex items-center justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
-          <h2 className="text-xl font-semibold text-[#1c1d21] dark:text-white tracking-tight">Atividades recentes</h2>
+    <>
+      <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
+        <div className="flex items-center justify-between mb-4 relative z-10 gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
+            <h2 className="text-xl font-semibold text-[#1c1d21] dark:text-white tracking-tight">Atividades recentes</h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <select
+              value={moduleFilter}
+              onChange={(e) => setModuleFilter(e.target.value)}
+              className="bg-white dark:bg-[#2a2a2b] border border-[#e5e7eb] dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-[#0866ff] text-[#1c1d21] dark:text-gray-200"
+            >
+              {modules.map(mod => (
+                <option key={mod} value={mod}>
+                  {mod === 'TODAS' ? 'Exibir todas' : mod}
+                </option>
+              ))}
+            </select>
+
+            {/* Botão Ver mais com ícone */}
+            <button
+              type="button"
+              onClick={() => openModalWithModule(moduleFilter)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#2a2a2b] hover:bg-amber-100/70 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 rounded-lg text-sm font-semibold transition-all shadow-xs cursor-pointer"
+              title="Abrir janela com todas as atividades"
+            >
+              <Eye size={16} className="text-amber-700 dark:text-amber-400" />
+              <span className="hidden sm:inline">Ver mais</span>
+            </button>
+          </div>
         </div>
-        <select
-          value={moduleFilter}
-          onChange={(e) => setModuleFilter(e.target.value)}
-          className="bg-white dark:bg-[#2a2a2b] border border-[#e5e7eb] dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-[#0866ff]"
-        >
-          {modules.map(mod => (
-            <option key={mod} value={mod}>
-              {mod === 'TODAS' ? 'Exibir todas' : mod}
-            </option>
-          ))}
-        </select>
+
+        <div className="flex flex-col gap-4 flex-1 relative z-10">
+          {loading ? (
+            <div className="text-gray-600 dark:text-white/70 text-sm animate-pulse">Carregando atividades...</div>
+          ) : filteredActivities.length === 0 ? (
+            <div className="text-gray-600 dark:text-white/70 text-sm">Nenhuma atividade encontrada.</div>
+          ) : (
+            filteredActivities.map(act => {
+              let dateStr = 'Data inválida'
+              try {
+                if (act.created_at) {
+                  dateStr = formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })
+                }
+              } catch (e) {}
+
+              return (
+                <div key={act.id} className="flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${getModuleBg(act.module)}`}>
+                    {getModuleIcon(act.module)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#1c1d21] dark:text-white truncate">
+                      {act.action}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-white/70 truncate">
+                      {act.module} {act.user_name && `• ${act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}`}
+                    </p>
+                  </div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-white/70 whitespace-nowrap pt-1">
+                    {dateStr}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-amber-200/60 dark:border-slate-800/60 relative z-10 flex items-center justify-between gap-3">
+          <div className="text-xs text-gray-500 dark:text-white/60">
+            Mostrando 10 atividades mais recentes
+          </div>
+          <button
+            type="button"
+            onClick={() => openModalWithModule(moduleFilter)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-100 hover:underline cursor-pointer group"
+          >
+            <span>Ver todas ({allActivities.length})</span>
+            <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4 flex-1 relative z-10">
-        {loading ? (
-          <div className="text-gray-600 dark:text-white/70 text-sm animate-pulse">Carregando atividades...</div>
-        ) : filteredActivities.length === 0 ? (
-          <div className="text-gray-600 dark:text-white/70 text-sm">Nenhuma atividade encontrada.</div>
-        ) : (
-          filteredActivities.map(act => {
-            let dateStr = 'Data inválida'
-            try {
-              if (act.created_at) {
-                dateStr = formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })
-              }
-            } catch (e) {}
-
-            return (
-              <div key={act.id} className="flex items-start gap-4">
-                <div className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${getModuleBg(act.module)}`}>
-                  {getModuleIcon(act.module)}
+      {/* JANELA MODAL MOSTRANDO TODAS AS ATIVIDADES */}
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3 sm:p-6 transition-all"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-[#151619] border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <Clock size={22} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#1c1d21] dark:text-white truncate">
-                    {act.action}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg sm:text-xl font-bold text-[#1c1d21] dark:text-white">
+                      Todas as Atividades do Sistema
+                    </h2>
+                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50">
+                      {allActivities.length} registradas
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Feed completo de registros do sistema em tempo real
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-white/70 truncate">
-                    {act.module} {act.user_name && `• ${act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}`}
-                  </p>
-                </div>
-                <div className="text-xs font-medium text-gray-500 dark:text-white/70 whitespace-nowrap pt-1">
-                  {dateStr}
                 </div>
               </div>
-            )
-          })
-        )}
-      </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-xl hover:bg-gray-200/70 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+                title="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-      <div className="mt-6 pt-4 border-t border-amber-200/60 dark:border-slate-800/60 relative z-10">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors">
-          As atividades de todo o sistema aparecem aqui em tempo real.
-        </div>
-      </div>
-    </div>
+            {/* Barra de Filtro e Busca */}
+            <div className="p-4 sm:px-6 border-b border-gray-100 dark:border-white/10 bg-gray-50/40 dark:bg-transparent flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar por descrição, usuário ou módulo..."
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-amber-500 text-gray-900 dark:text-white placeholder-gray-400 transition-colors"
+                />
+              </div>
+              <select
+                value={modalModuleFilter}
+                onChange={(e) => setModalModuleFilter(e.target.value)}
+                className="bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-amber-500 text-gray-900 dark:text-white"
+              >
+                {modules.map(mod => (
+                  <option key={mod} value={mod}>
+                    {mod === 'TODAS' ? 'Todos os módulos' : mod}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Lista de Atividades do Modal */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 custom-scrollbar">
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+                </div>
+              ) : modalActivities.length === 0 ? (
+                <div className="text-center py-16 text-gray-500 dark:text-gray-400 text-sm">
+                  Nenhuma atividade encontrada com os filtros selecionados.
+                </div>
+              ) : (
+                modalActivities.map(act => {
+                  let dateStr = 'Data inválida'
+                  let exactDate = ''
+                  try {
+                    if (act.created_at) {
+                      const d = new Date(act.created_at)
+                      dateStr = formatDistanceToNow(d, { addSuffix: true, locale: ptBR })
+                      exactDate = format(d, 'dd/MM/yyyy HH:mm')
+                    }
+                  } catch (e) {}
+
+                  return (
+                    <div
+                      key={act.id}
+                      className="flex items-start gap-3.5 p-3 sm:p-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors border border-gray-100/80 dark:border-white/5"
+                    >
+                      <div className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${getModuleBg(act.module)}`}>
+                        {getModuleIcon(act.module)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#1c1d21] dark:text-white leading-snug">
+                          {act.action}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                          <span className="font-bold text-amber-700 dark:text-amber-400">{act.module}</span>
+                          {act.user_name && (
+                            <>
+                              <span>•</span>
+                              <span>{act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}</span>
+                            </>
+                          )}
+                          {exactDate && (
+                            <>
+                              <span>•</span>
+                              <span>{exactDate}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap pt-0.5 shrink-0">
+                        {dateStr}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="p-4 sm:px-6 border-t border-gray-100 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.02] flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Feed de atividades em tempo real</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   )
 }
