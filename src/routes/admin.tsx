@@ -829,7 +829,8 @@ function AdminRoute() {
                 Nenhum usuário encontrado.
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredUsers.slice(0, usersDisplayLimit).map(user => {
                   const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                   const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
@@ -930,33 +931,32 @@ function AdminRoute() {
                 })}
               </div>
 
-              {/* Botão Mostrar Mais/Menos */}
-              {filteredUsers.length > 9 && (
-                <div className="flex justify-center pt-4 gap-3">
-                  {usersDisplayLimit > 9 && (
-                    <button
-                      onClick={() => setUsersDisplayLimit(9)}
-                      className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                    >
-                      Mostrar menos
-                    </button>
-                  )}
+              <div className="flex justify-center pt-4 gap-3">
+                {usersDisplayLimit > 9 && (
                   <button
-                    onClick={() => setUsersDisplayLimit(prev => prev + 9)}
-                    className="px-6 py-2.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    onClick={() => setUsersDisplayLimit(9)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   >
-                    Mostrar mais ({filteredUsers.length - usersDisplayLimit} restantes)
+                    Mostrar menos
                   </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                )}
+                <button
+                  onClick={() => setUsersDisplayLimit(usersDisplayLimit + 9)}
+                  className="px-6 py-2.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  Mostrar mais
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      )}
 
       </div>
 
-      {/* Status do Cadastro e Cargos */}
-      <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      {activeTab === 'users' && (
+        <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Registration Toggle */}
         <div className={`rounded-2xl p-6 shadow-sm border flex flex-col justify-between ${isDark ? 'bg-[#15161A] border-white/5' : 'bg-white border-black/5'}`}>
@@ -1028,6 +1028,7 @@ function AdminRoute() {
           </div>
         </div>
       </div>
+      )}
 
       {activeTab === 'whatsapp' && (
         /* WhatsApp API Tab */
