@@ -20,7 +20,7 @@ BEGIN
   END IF;
 
   SELECT 
-    COALESCE(raw_user_meta_data->>'role', app_metadata->>'role', ''),
+    COALESCE(raw_user_meta_data->>'role', raw_app_meta_data->>'role', ''),
     COALESCE(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name', ''),
     COALESCE(email, '')
   INTO u_role, u_name, u_email
