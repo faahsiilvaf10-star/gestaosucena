@@ -1,6 +1,8 @@
 import X from 'lucide-react/dist/esm/icons/x.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
@@ -36,6 +38,7 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [sendingNotification, setSendingNotification] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const [formData, setFormData] = useState({
     name: product.name,
@@ -120,14 +123,83 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
     }
   }
 
+  const handleDelete = async () => {
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('al_products')
+        .delete()
+        .eq('id', product.id)
+
+      if (error) {
+        if (error.code === '23503' || error.message?.includes('foreign key')) {
+          const { error: softErr } = await supabase
+            .from('al_products')
+            .update({ status: 'Inativo' })
+            .eq('id', product.id)
+          if (softErr) throw softErr
+          toast.success('Item inativado do almoxarifado!')
+        } else {
+          throw error
+        }
+      } else {
+        toast.success('Item excluído com sucesso!')
+      }
+
+      setShowDeleteConfirm(false)
+      onSuccess()
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Erro ao excluir item: ' + (err.message || 'Erro inesperado'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+
+        {/* Modal de Confirmação de Exclusão */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white dark:bg-[#202022] border border-red-200 dark:border-red-900/50 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-[#1c1d21] dark:text-white mb-2">
+                Excluir Item?
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                Tem certeza que deseja excluir o item <strong className="text-red-600 dark:text-red-400 font-semibold">{product.name}</strong>? Esta ação não poderá ser desfeita.
+              </p>
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-lg font-bold border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-lg font-bold bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  Confirmar Exclusão
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
           <h2 className="font-bold text-lg text-[#1c1d21] dark:text-white">Editar Item</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -230,28 +302,41 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-black/10 dark:border-white/10 flex justify-end gap-3 bg-gray-50 dark:bg-white/5">
+        <div className="p-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-3 bg-gray-50 dark:bg-white/5">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={loading || sendingNotification}
-            className="px-5 py-2.5 rounded-lg font-bold text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-lg font-bold text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            title="Excluir este item"
           >
-            Cancelar
+            <Trash2 size={16} />
+            <span>Excluir Item</span>
           </button>
-          <button
-            type="submit"
-            form="edit-item-form"
-            disabled={loading || sendingNotification}
-            className="px-6 py-2.5 bg-[#0866ff] text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            {(loading || sendingNotification) ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Save size={18} />
-            )}
-            {sendingNotification ? 'Enviando...' : 'Salvar Alterações'}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading || sendingNotification}
+              className="px-5 py-2.5 rounded-lg font-bold text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="edit-item-form"
+              disabled={loading || sendingNotification}
+              className="px-6 py-2.5 bg-[#0866ff] text-white rounded-lg font-bold hover:bg-[#0756d6] transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {(loading || sendingNotification) ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Save size={18} />
+              )}
+              {sendingNotification ? 'Enviando...' : 'Salvar Alterações'}
+            </button>
+          </div>
         </div>
 
       </div>

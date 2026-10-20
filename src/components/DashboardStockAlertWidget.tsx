@@ -30,6 +30,7 @@ export function DashboardStockAlertWidget() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<'all' | 'out' | 'low'>('all');
   const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
+  const [showConfirmWhatsapp, setShowConfirmWhatsapp] = useState(false);
 
   const fetchStockAlerts = async () => {
     try {
@@ -155,7 +156,7 @@ export function DashboardStockAlertWidget() {
       toast.success(`${sentCount} alerta(s) de estoque enviados no WhatsApp!`);
     }
     if (failedCount > 0 && sentCount === 0) {
-      toast.error('Falha ao enviar alertas pelo WhatsApp. Verifique as configurações.');
+      toast.error('Notificação de estoque mínimo desabilitada ou falhou. Verifique as configurações.');
     }
   };
 
@@ -189,11 +190,11 @@ export function DashboardStockAlertWidget() {
           </div>
         </div>
 
-        {/* Botão de Notificação WhatsApp */}
+        {/* Botão de Notificação WhatsApp com confirmação */}
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleSendWhatsApp}
+            onClick={() => setShowConfirmWhatsapp(true)}
             disabled={sendingWhatsapp || alertItems.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
             title="Disparar aviso para o grupo do WhatsApp"
@@ -347,6 +348,45 @@ export function DashboardStockAlertWidget() {
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
+
+      {/* Modal de Confirmação para envio no WhatsApp */}
+      {showConfirmWhatsapp && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#202022] border border-red-200 dark:border-red-900/50 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mb-4">
+              <Send size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-[#1c1d21] dark:text-white mb-2">
+              Notificar Estoque no WhatsApp?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Serão enviadas notificações para os <strong className="text-red-600 dark:text-red-400 font-semibold">{alertItems.length} item(ns)</strong> críticos para o grupo configurado. Deseja continuar?
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowConfirmWhatsapp(false)}
+                disabled={sendingWhatsapp}
+                className="flex-1 py-2.5 rounded-lg font-bold border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmWhatsapp(false);
+                  handleSendWhatsApp();
+                }}
+                disabled={sendingWhatsapp}
+                className="flex-1 py-2.5 rounded-lg font-bold bg-red-600 hover:bg-red-700 text-white transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {sendingWhatsapp ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
+                Confirmar Disparo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
