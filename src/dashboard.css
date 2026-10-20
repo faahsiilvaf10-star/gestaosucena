@@ -591,10 +591,10 @@ body {
   position: absolute;
   right: 32px;
   bottom: 26px;
-  opacity: 0.85;
+  opacity: 1;
   transform: scale(2.2);
-  color: #ffffff;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.45));
+  color: #000000;
+  filter: none;
   pointer-events: none;
   transition: all 0.3s ease;
 }
