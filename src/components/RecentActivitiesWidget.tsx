@@ -30,6 +30,8 @@ export function RecentActivitiesWidget() {
 
       const { data, error } = await supabase
         .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', environment)
+        .neq('module', 'System')
+        .not('action', 'ilike', 'CRASH:%')
         .order('created_at', { ascending: false })
         .limit(50)
 
@@ -60,6 +62,7 @@ export function RecentActivitiesWidget() {
       })
 
       const loggedActivities = (data || []).filter((activity: any) => {
+        if (activity.module === 'System' || activity.action?.startsWith('CRASH:')) return false
         if (activity.module !== 'Equipamentos') return true
         return !/^(Entrada|Saída):/.test(activity.action || '')
       })
