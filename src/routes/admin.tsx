@@ -2422,19 +2422,32 @@ function AdminRoute() {
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
-            <div className={`px-6 py-4 border-b ${isDark ? 'border-white/10' : 'border-gray-100'} flex items-center gap-3`}>
-              <Edit2 className="text-[#D6A72B]" size={24} />
-              <h2 className="text-xl font-semibold">Editar Usuário</h2>
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className={`w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+            <div className={`px-6 py-4 border-b shrink-0 flex items-center justify-between ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <Edit2 className="text-[#D6A72B] shrink-0" size={22} />
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold">Editar Usuário</h2>
+                  <p className="text-xs text-gray-400 truncate max-w-[260px] sm:max-w-[340px]">{editingUser.email}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
+                title="Fechar"
+              >
+                <X size={20} />
+              </button>
             </div>
             
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nome Completo</label>
                 <input 
                   type="text" 
-                  value={editName}
+                  value={editName} 
                   onChange={e => setEditName(e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
                 />
@@ -2630,7 +2643,7 @@ function AdminRoute() {
               </div>
             </div>
 
-            <div className={`px-6 py-4 border-t flex justify-end gap-3 ${isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
+            <div className={`px-6 py-4 border-t shrink-0 flex justify-end gap-3 ${isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
               <button 
                 onClick={() => setEditingUser(null)}
                 disabled={savingEdit}
