@@ -64,7 +64,7 @@ CREATE OR REPLACE FUNCTION public.admin_reset_user_password(
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   temp_password TEXT;
@@ -80,7 +80,7 @@ BEGIN
   -- Atualizar a senha criptografada diretamente no auth.users para login imediato
   UPDATE auth.users
   SET 
-    encrypted_password = crypt(temp_password, gen_salt('bf')),
+    encrypted_password = extensions.crypt(temp_password, extensions.gen_salt('bf')),
     raw_user_meta_data = jsonb_set(
       jsonb_set(
         COALESCE(raw_user_meta_data, '{}'::jsonb),
@@ -105,7 +105,7 @@ CREATE OR REPLACE FUNCTION public.admin_change_user_password(
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 BEGIN
   -- Validar se o chamador é admin
@@ -121,7 +121,7 @@ BEGIN
   -- Atualizar a senha usando criptografia nativa do Supabase (pgcrypto)
   UPDATE auth.users
   SET 
-    encrypted_password = crypt(new_password, gen_salt('bf')),
+    encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
     raw_user_meta_data = jsonb_set(
       COALESCE(raw_user_meta_data, '{}'::jsonb),
       '{password_reset_required}',
