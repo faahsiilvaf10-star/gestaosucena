@@ -187,6 +187,9 @@ function AdminRoute() {
   // Modals for Confirmation
   const [removeRoleModal, setRemoveRoleModal] = useState<string | null>(null)
   const [blockUserModal, setBlockUserModal] = useState<AdminUser | null>(null)
+  const [blockDays, setBlockDays] = useState(30)
+  const [blockReason, setBlockReason] = useState('')
+  const [blockPermanent, setBlockPermanent] = useState(false)
   const [deleteUserModal, setDeleteUserModal] = useState<AdminUser | null>(null)
   const [deleteEmailInput, setDeleteEmailInput] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -363,23 +366,42 @@ function AdminRoute() {
     }
   }
 
-  const executeToggleBlock = async () => {
+  const executeToggleBlock = async (days?: number, reason?: string, permanent?: boolean) => {
     if (!blockUserModal) return
     const isBlocked = !!blockUserModal.banned_until
-    
+
     try {
-      const { error: rpcError } = await supabase.rpc('admin_toggle_block_user', {
-        target_user_id: blockUserModal.id,
-        should_block: !isBlocked
-      })
-      if (rpcError) throw rpcError
-      
-      toast.success(isBlocked ? 'Usuário desbloqueado!' : 'Usuário bloqueado!')
+      // Se está desbloqueando, apenas desbloqueia
+      if (isBlocked) {
+        const { error: rpcError } = await supabase.rpc('admin_toggle_block_user', {
+          target_user_id: blockUserModal.id,
+          should_block: false
+        })
+        if (rpcError) throw rpcError
+        toast.success('Usuário desbloqueado com sucesso!')
+      } else {
+        // Bloquear com duração e motivo
+        const blockedUntil = permanent
+          ? new Date('2099-12-31')
+          : new Date(Date.now() + (days || 30) * 24 * 60 * 60 * 1000)
+
+        const { error: rpcError } = await supabase.rpc('admin_block_user_with_reason', {
+          target_user_id: blockUserModal.id,
+          blocked_until: blockedUntil.toISOString(),
+          block_reason: reason || 'Bloqueio administrativo'
+        })
+        if (rpcError) throw rpcError
+        toast.success(permanent ? 'Usuário bloqueado permanentemente!' : `Usuário bloqueado por ${days} dia(s)!`)
+      }
+
       loadUsers()
     } catch (err: any) {
       toast.error('Erro ao alterar status: ' + err.message)
     } finally {
       setBlockUserModal(null)
+      setBlockDays(30)
+      setBlockReason('')
+      setBlockPermanent(false)
     }
   }
 
@@ -891,8 +913,17 @@ function AdminRoute() {
                         </td>
                       <td className="px-6 py-4">
                         {user.banned_until ? (
-                          <div className="flex items-center gap-1.5 text-red-500 font-medium">
-                            <Ban size={14} /> Bloqueado
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5 text-red-500 font-medium">
+                              <Ban size={14} /> Bloqueado
+                            </div>
+                            {user.banned_until && (
+                              <span className="text-[10px] text-gray-500">
+                                {user.banned_until === '2099-12-31' || user.banned_until.includes('2099')
+                                  ? 'Permanente'
+                                  : `Até ${new Date(user.banned_until).toLocaleDateString('pt-BR')}`}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-green-500 font-medium">
@@ -2504,16 +2535,47 @@ function AdminRoute() {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Redefinir Senha (Opcional)</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Definir Nova Senha (Opcional)</label>
+                <input
+                  type="text"
                   value={editPassword}
                   onChange={e => setEditPassword(e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 focus:border-[#D6A72B]'}`}
-                  placeholder="Deixe em branco para não alterar"
+                  placeholder="Digite nova senha ou deixe em branco"
                 />
                 <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Mínimo de 6 caracteres. A senha original do usuário não pode ser exibida por motivos de segurança.
+                  Mínimo de 6 caracteres. Deixe em branco para manter a senha atual.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <RefreshCw size={14} className="inline mr-1" />
+                  Resetar Senha
+                </label>
+                <button
+                  onClick={async () => {
+                    if (!editingUser) return
+                    try {
+                      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+                        target_user_id: editingUser.id
+                      })
+                      if (error) throw error
+                      const tempPwd = data as string
+                      if (tempPwd) {
+                        toast.success(`Senha temporária gerada: ${tempPwd}`)
+                      }
+                    } catch (err: any) {
+                      toast.error('Erro ao resetar senha: ' + err.message)
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-dashed border-orange-400 dark:border-orange-600 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={16} />
+                  Gerar Senha Temporária
+                </button>
+                <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  O usuário receberá a senha temporária para redefinir no próximo login. A senha atual será invalidada.
                 </p>
               </div>
             </div>
@@ -2568,32 +2630,160 @@ function AdminRoute() {
 
       {blockUserModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             {blockUserModal.banned_until ? (
-              <CheckCircle2 className="text-green-500 mx-auto mb-4" size={40} />
+              <>
+                <CheckCircle2 className="text-green-500 mx-auto mb-4" size={40} />
+                <h2 className="text-xl font-bold mb-2 text-center">Desbloquear Usuário</h2>
+                <p className={`mb-6 text-sm text-center ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  O usuário <strong>{blockUserModal.name}</strong> voltará a ter acesso ao sistema.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      setBlockUserModal(null)
+                      setBlockDays(30)
+                      setBlockReason('')
+                      setBlockPermanent(false)
+                    }}
+                    className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={executeToggleBlock}
+                    className="px-6 py-2 font-bold text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </>
             ) : (
-              <Ban className="text-orange-500 mx-auto mb-4" size={40} />
+              <>
+                <Ban className="text-orange-500 mx-auto mb-4" size={40} />
+                <h2 className="text-xl font-bold mb-2 text-center">Bloquear Usuário</h2>
+                <p className={`mb-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Bloquear o acesso de <strong>{blockUserModal.name}</strong> ao sistema.
+                </p>
+
+                {/* Tipo de Bloqueio */}
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tipo de Bloqueio</label>
+                  <div className="flex gap-3">
+                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
+                      !blockPermanent
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10'
+                        : 'border-gray-200 dark:border-white/10 hover:border-orange-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="blockType"
+                        checked={!blockPermanent}
+                        onChange={() => setBlockPermanent(false)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium">Temporário</span>
+                    </label>
+                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
+                      blockPermanent
+                        ? 'border-red-500 bg-red-50 dark:bg-red-500/10'
+                        : 'border-gray-200 dark:border-white/10 hover:border-red-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="blockType"
+                        checked={blockPermanent}
+                        onChange={() => setBlockPermanent(true)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium">Permanente</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Dias (se não for permanente) */}
+                {!blockPermanent && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Quantidade de Dias</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[7, 15, 30, 60].map(d => (
+                        <button
+                          key={d}
+                          onClick={() => setBlockDays(d)}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${
+                            blockDays === d
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                              : 'border-gray-200 dark:border-white/10 hover:border-orange-300'
+                          }`}
+                        >
+                          {d} dias
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={blockDays}
+                        onChange={e => setBlockDays(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
+                        className={`w-full px-4 py-2 rounded-xl border outline-none text-center ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'}`}
+                        placeholder="Ou digite outro valor..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Motivo do Bloqueio */}
+                <div className="mb-6">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Motivo do Bloqueio</label>
+                  <select
+                    value={blockReason}
+                    onChange={e => setBlockReason(e.target.value)}
+                    className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'}`}
+                  >
+                    <option value="">Selecione um motivo...</option>
+                    <option value="Solicitação do próprio usuário">Solicitação do próprio usuário</option>
+                    <option value="Desligamento">Desligamento</option>
+                    <option value="Férias/Ferias">Férias/Férias</option>
+                    <option value="Afastamento médico">Afastamento médico</option>
+                    <option value="Comportamento inadequado">Comportamento inadequado</option>
+                    <option value="Compartilhamento de conta">Compartilhamento de conta</option>
+                    <option value="Atividade suspeita">Atividade suspeita</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                  {blockReason === 'Outro' && (
+                    <input
+                      type="text"
+                      placeholder="Descreva o motivo..."
+                      className={`mt-2 w-full px-4 py-2 rounded-xl border outline-none ${isDark ? 'bg-[#0a0a0c] border-white/10' : 'bg-gray-50 border-gray-200'}`}
+                      onChange={e => setBlockReason(e.target.value)}
+                    />
+                  )}
+                </div>
+
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      setBlockUserModal(null)
+                      setBlockDays(30)
+                      setBlockReason('')
+                      setBlockPermanent(false)
+                    }}
+                    className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => executeToggleBlock(blockDays, blockReason, blockPermanent)}
+                    disabled={!blockReason}
+                    className="px-6 py-2 font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {blockPermanent ? 'Bloquear Permanentemente' : `Bloquear por ${blockDays} dia${blockDays > 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              </>
             )}
-            <h2 className="text-xl font-bold mb-2">
-              {blockUserModal.banned_until ? 'Desbloquear Usuário' : 'Bloquear Usuário'}
-            </h2>
-            <p className={`mb-6 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-              Tem certeza que deseja {blockUserModal.banned_until ? 'desbloquear' : 'bloquear'} o usuário <strong>{blockUserModal.name}</strong>?
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button 
-                onClick={() => setBlockUserModal(null)}
-                className="px-4 py-2 font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={executeToggleBlock}
-                className={`px-6 py-2 font-bold text-white rounded-lg transition-colors ${blockUserModal.banned_until ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600'}`}
-              >
-                Confirmar
-              </button>
-            </div>
           </div>
         </div>
       )}
