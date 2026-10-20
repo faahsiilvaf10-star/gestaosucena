@@ -24,8 +24,8 @@ DECLARE
   api_token TEXT;
   instance_id TEXT;
   template_text TEXT;
-  current_date DATE;
-  target_date DATE;
+  data_atual DATE;
+  data_alvo DATE;
   employee RECORD;
   message_text TEXT;
 BEGIN
@@ -39,7 +39,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Verificar se o alerta de ASO está habilitado
   enabled := COALESCE((settings_json->'asoVencendo'->>'enabled')::BOOLEAN, false);
   IF NOT enabled THEN
     RETURN;
@@ -66,10 +65,9 @@ BEGIN
     RETURN;
   END IF;
 
-  current_date := CURRENT_DATE;
-  target_date := current_date + dias_antec;
+  data_atual := CURRENT_DATE;
+  data_alvo := data_atual + dias_antec;
 
-  -- Buscar funcionários com ASO vencendo no período
   FOR employee IN
     SELECT
       nome,
@@ -87,13 +85,12 @@ BEGIN
     FROM rh_efetivo
     WHERE status = 'Ativo'
       AND validade_aso_efetiva IS NOT NULL
-      AND validade_aso_efetiva <= target_date
-      AND validade_aso_efetiva >= current_date
+      AND validade_aso_efetiva <= data_alvo
+      AND validade_aso_efetiva >= data_atual
     ORDER BY validade_aso_efetiva ASC
   LOOP
-    -- Substituir variáveis no template
     message_text := template_text;
-    message_text := REPLACE(message_text, '{data_aviso}', TO_CHAR(current_date, 'DD/MM/YYYY'));
+    message_text := REPLACE(message_text, '{data_aviso}', TO_CHAR(data_atual, 'DD/MM/YYYY'));
     message_text := REPLACE(message_text, '{dias_vencendo}', CAST(dias_antec AS TEXT));
     message_text := REPLACE(message_text, '{nome}', COALESCE(employee.nome, 'N/A'));
     message_text := REPLACE(message_text, '{cargo}', COALESCE(employee.cargo, 'N/A'));
@@ -101,7 +98,6 @@ BEGIN
     message_text := REPLACE(message_text, '{tipo_aso}', employee.tipo_aso);
     message_text := REPLACE(message_text, '{data_validade}', TO_CHAR(employee.data_validade_base, 'DD/MM/YYYY'));
 
-    -- Enviar mensagem via API
     PERFORM net.http_post(
       url := api_url || '/message/sendText/' || instance_id,
       headers := jsonb_build_object(
@@ -143,16 +139,15 @@ DECLARE
   api_token TEXT;
   instance_id TEXT;
   template_text TEXT;
-  current_time TIME;
-  current_date DATE;
-  sending_time TIME;
-  equipamentos_operando INTEGER := 0;
-  equipamentos_manutencao INTEGER := 0;
-  lista_manutencao TEXT := '';
+  hora_atual TIME;
+  data_atual DATE;
+  horario_envio TIME;
+  qtd_operando INTEGER := 0;
+  qtd_manutencao INTEGER := 0;
+  lista_manut TEXT := '';
   message_text TEXT;
   equipment RECORD;
 BEGIN
-  -- Buscar configurações do WhatsApp
   SELECT value INTO settings_json
   FROM global_settings
   WHERE key = 'whatsapp_settings';
@@ -162,7 +157,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Verificar se o relatório diário está habilitado
   enabled := COALESCE((settings_json->'relatorioDiarioEquipamentos'->>'enabled')::BOOLEAN, false);
   IF NOT enabled THEN
     RETURN;
@@ -189,22 +183,18 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Verificar se é hora de enviar
-  sending_time := hora_envio::TIME;
-  current_time := CURRENT_TIME AT TIME ZONE 'America/Belem'; -- Fuso de Brasília
-  current_date := CURRENT_DATE;
+  horario_envio := hora_envio::TIME;
+  hora_atual := CURRENT_TIME AT TIME ZONE 'America/Belem';
+  data_atual := CURRENT_DATE;
 
-  -- Verificar se estamos no minuto certo (margem de 1 minuto)
-  IF ABS(EXTRACT(MINUTE FROM current_time) - EXTRACT(MINUTE FROM sending_time)) > 1 THEN
+  IF ABS(EXTRACT(MINUTE FROM hora_atual) - EXTRACT(MINUTE FROM horario_envio)) > 1 THEN
     RETURN;
   END IF;
 
-  -- Contar equipamentos em operação
-  SELECT COUNT(*) INTO equipamentos_operando
+  SELECT COUNT(*) INTO qtd_operando
   FROM eq_equipments
   WHERE location_status = 'inside';
 
-  -- Buscar equipamentos em manutenção e montar lista
   FOR equipment IN
     SELECT
       name,
@@ -216,11 +206,10 @@ BEGIN
       AND last_exit_reason IN ('manutencao', 'manutenção', 'preventiva', 'corretiva', 'emergencial')
     ORDER BY name ASC
   LOOP
-    equipamentos_manutencao := equipamentos_manutencao + 1;
+    qtd_manutencao := qtd_manutencao + 1;
 
-    -- Calcular tempo em manutenção
     DECLARE
-      tempo_manutencao TEXT;
+      tempo_manut TEXT;
       minutos_diff BIGINT;
       horas_diff BIGINT;
       dias_diff BIGINT;
@@ -228,35 +217,33 @@ BEGIN
       minutos_diff := EXTRACT(EPOCH FROM (NOW() - equipment.updated_at)) / 60;
 
       IF minutos_diff < 60 THEN
-        tempo_manutencao := CAST(FLOOR(minutos_diff) AS TEXT) || 'min';
+        tempo_manut := CAST(FLOOR(minutos_diff) AS TEXT) || 'min';
       ELSIF minutos_diff < 1440 THEN
         horas_diff := minutos_diff / 60;
-        tempo_manutencao := CAST(FLOOR(horas_diff) AS TEXT) || 'h';
+        tempo_manut := CAST(FLOOR(horas_diff) AS TEXT) || 'h';
       ELSE
         dias_diff := minutos_diff / 1440;
-        tempo_manutencao := CAST(FLOOR(dias_diff) AS TEXT) || 'd';
+        tempo_manut := CAST(FLOOR(dias_diff) AS TEXT) || 'd';
       END IF;
     END;
 
-    lista_manutencao := lista_manutencao || '🔧 ' || COALESCE(equipment.name, 'N/A') ||
-                        ' (' || COALESCE(equipment.tag, 'N/A') || ') - ' ||
-                        COALESCE(tempo_manutencao, '?') || '\n';
+    lista_manut := lista_manut || '🔧 ' || COALESCE(equipment.name, 'N/A') ||
+                    ' (' || COALESCE(equipment.tag, 'N/A') || ') - ' ||
+                    COALESCE(tempo_manut, '?') || '\n';
   END LOOP;
 
-  -- Montar mensagem final
   message_text := template_text;
-  message_text := REPLACE(message_text, '{data}', TO_CHAR(current_date, 'DD/MM/YYYY'));
-  message_text := REPLACE(message_text, '{hora}', TO_CHAR(current_time, 'HH24:MI'));
-  message_text := REPLACE(message_text, '{quantidade_operando}', CAST(equipamentos_operando AS TEXT));
-  message_text := REPLACE(message_text, '{quantidade_manutencao}', CAST(equipamentos_manutencao AS TEXT));
+  message_text := REPLACE(message_text, '{data}', TO_CHAR(data_atual, 'DD/MM/YYYY'));
+  message_text := REPLACE(message_text, '{hora}', TO_CHAR(hora_atual, 'HH24:MI'));
+  message_text := REPLACE(message_text, '{quantidade_operando}', CAST(qtd_operando AS TEXT));
+  message_text := REPLACE(message_text, '{quantidade_manutencao}', CAST(qtd_manutencao AS TEXT));
 
-  IF lista_manutencao = '' THEN
+  IF lista_manut = '' THEN
     message_text := REPLACE(message_text, '{lista_manutencao}', '_(Nenhum equipamento em manutenção)_');
   ELSE
-    message_text := REPLACE(message_text, '{lista_manutencao}', '🔧 *Em manutenção:*\n' || lista_manutencao);
+    message_text := REPLACE(message_text, '{lista_manutencao}', '🔧 *Em manutenção:*\n' || lista_manut);
   END IF;
 
-  -- Enviar mensagem via API
   PERFORM net.http_post(
     url := api_url || '/message/sendText/' || instance_id,
     headers := jsonb_build_object(
@@ -272,7 +259,7 @@ BEGIN
   );
 
   RAISE NOTICE 'Relatório diário de equipamentos enviado: % em operação, % em manutenção',
-    equipamentos_operando, equipamentos_manutencao;
+    qtd_operando, qtd_manutencao;
 END;
 $$;
 
