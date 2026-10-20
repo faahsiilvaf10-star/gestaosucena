@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useMonthlyColors } from '../../hooks/useMonthlyColors'
 import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
-import type { RdoAtividade } from '@/components/rdo/ActivityCard'
+import { type RdoAtividade, getSubItens } from '@/components/rdo/ActivityCard'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -967,15 +967,38 @@ function RDOPage() {
               {/* Custom Activities Section */}
               {customAtividades.length > 0 && (
                 <div className="mt-6 font-bold text-purple-700">
-                  <div>📋 OUTRAS ATIVIDADES 📋</div>
+                  <div className="font-bold">📋 OUTRAS ATIVIDADES 📋</div>
                   {customAtividades.map((a, idx) => {
-                    const IconComp = (Icons as any)[a.icon] || Icons.Activity;
+                    const subItens = getSubItens(a);
+                    const markedSubItens = subItens.filter(si => si.marcado);
+
                     return (
-                      <div key={a.id || idx} className={`mt-2 text-gray-700 ${a.concluido ? 'line-through opacity-70' : ''}`}>
-                        {a.concluido ? '✅' : '○'} <strong>{a.titulo}</strong>
-                        {a.quantidade !== undefined && a.quantidade !== null && ` - Qtd: ${a.quantidade}`}
-                        {a.metragem !== undefined && a.metragem !== null && ` - ${a.metragem} ${a.unidade || 'm²'}`}
-                        {a.area && ` (${a.area})`}
+                      <div key={a.id || idx} className="mt-2 text-gray-700">
+                        <div className={a.concluido ? 'line-through opacity-70 font-semibold' : 'font-semibold'}>
+                          {a.concluido ? '✅' : '○'} {a.titulo}
+                          {a.quantidade !== undefined && a.quantidade !== null && ` - Qtd: ${a.quantidade}`}
+                          {a.metragem !== undefined && a.metragem !== null && ` - ${a.metragem} ${a.unidade || 'm²'}`}
+                          {a.area && ` (${a.area})`}
+                        </div>
+                        {markedSubItens.length > 0 ? (
+                          <div className="ml-4 mt-1 space-y-0.5 text-xs sm:text-sm font-normal text-gray-700">
+                            {markedSubItens.map(si => {
+                              const bStr = si.berma ? ` (${si.berma})` : '';
+                              const fStr = si.faixa ? ` - ${si.faixa}` : '';
+                              const vStr = si.tipo === 'medicao' && si.valor ? `: ${si.valor} ${si.unidade || 'm²'}` : '';
+                              const dStr = si.detalhe ? ` (${si.detalhe})` : '';
+                              return (
+                                <div key={si.id}>
+                                  * {si.nome}{vStr}{fStr}{bStr}{dStr}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : a.descricao ? (
+                          <div className="ml-4 mt-0.5 text-xs sm:text-sm font-normal text-gray-600 italic">
+                            {a.descricao}
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

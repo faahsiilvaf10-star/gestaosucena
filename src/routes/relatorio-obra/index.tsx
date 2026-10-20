@@ -35,11 +35,21 @@ function RelatorioObraHub() {
           ? localStorage.getItem('sucena_environment') || 'barcarena'
           : 'barcarena';
 
-      const dataToSave = {
+      // Codificar itens nas observações como fallback seguro
+      const subItens = (atividadeData as any).itens;
+      let obs = atividadeData.observacoes || '';
+      if (Array.isArray(subItens) && subItens.length > 0) {
+        obs = obs.replace(/__ITEMS__:[\s\S]*$/, '').trim();
+        obs = (obs ? obs + '\n' : '') + `__ITEMS__:${JSON.stringify(subItens)}`;
+      }
+
+      const dataToSave: any = {
         ...atividadeData,
         obra_id: env,
         data: atividadeData.data || selectedDate,
+        observacoes: obs || null,
       };
+      delete dataToSave.itens;
 
       const { error } = await supabase.from('rdo_atividades').insert([dataToSave]);
 
