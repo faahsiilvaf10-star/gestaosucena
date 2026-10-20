@@ -27,6 +27,7 @@ import CheckCheck from 'lucide-react/dist/esm/icons/check-check.js';
 import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import Mail from 'lucide-react/dist/esm/icons/mail.js';
 import Copy from 'lucide-react/dist/esm/icons/copy.js';
+import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
@@ -2810,7 +2811,7 @@ function AdminRoute() {
                     Cancelar
                   </button>
                   <button
-                    onClick={executeToggleBlock}
+                    onClick={() => executeToggleBlock()}
                     className="px-6 py-2 font-bold text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors"
                   >
                     Confirmar
