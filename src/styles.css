@@ -1004,3 +1004,24 @@ body.signature-active .sig-landscape-overlay .sigCanvas {
   background: linear-gradient(180deg, #ffffff 0%, #f4f4f5 100%);
   box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.05);
 }
+
+/* ============================================================
+   REMINDER CARD PULSE EFFECT
+   ============================================================ */
+
+@keyframes reminderPulseAnimation {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--reminder-pulse-shadow, rgba(59, 130, 246, 0.5));
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.012);
+    box-shadow: 0 0 18px 4px var(--reminder-pulse-shadow, rgba(59, 130, 246, 0.4));
+    filter: brightness(1.06);
+  }
+}
+
+.reminder-card-pulse {
+  animation: reminderPulseAnimation 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

@@ -19,6 +19,18 @@ export type Reminder = {
   reminder_mentions?: { user_id: string }[]
   environment?: string
   image_url?: string
+  card_color?: string
+  is_pulsing?: boolean
+}
+
+export function getReminderCardColor(reminder?: Reminder | null): string | undefined {
+  if (!reminder) return undefined
+  return reminder.recurrence_config?.cardColor || reminder.card_color || undefined
+}
+
+export function getReminderIsPulsing(reminder?: Reminder | null): boolean {
+  if (!reminder) return false
+  return !!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing ?? false)
 }
 
 export type UserProfile = {

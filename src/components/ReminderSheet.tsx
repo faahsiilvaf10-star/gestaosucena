@@ -7,6 +7,8 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import Circle from 'lucide-react/dist/esm/icons/circle.js';
 import Repeat from 'lucide-react/dist/esm/icons/repeat.js';
 import ImagePlus from 'lucide-react/dist/esm/icons/image-plus.js';
+import Palette from 'lucide-react/dist/esm/icons/palette.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder, uploadReminderImage } from '../lib/api-reminders'
@@ -14,6 +16,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { DateInput } from './ui/DateInput'
 import { useTheme } from '../contexts/ThemeContext'
+
+export const REMINDER_COLOR_PRESETS = [
+  { name: 'Padrão', value: '', hex: '', isDarkText: false },
+  { name: 'Azul', value: '#2563eb', hex: '#2563eb', isDarkText: false },
+  { name: 'Verde', value: '#059669', hex: '#059669', isDarkText: false },
+  { name: 'Amarelo', value: '#d97706', hex: '#d97706', isDarkText: false },
+  { name: 'Vermelho', value: '#dc2626', hex: '#dc2626', isDarkText: false },
+  { name: 'Roxo', value: '#7c3aed', hex: '#7c3aed', isDarkText: false },
+  { name: 'Rosa', value: '#db2777', hex: '#db2777', isDarkText: false },
+  { name: 'Laranja', value: '#ea580c', hex: '#ea580c', isDarkText: false },
+  { name: 'Ciano', value: '#0891b2', hex: '#0891b2', isDarkText: false },
+  { name: 'Grafite', value: '#334155', hex: '#334155', isDarkText: false },
+]
 
 interface ReminderSheetProps {
   isOpen: boolean
@@ -45,6 +60,9 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const [imageUrl, setImageUrl] = useState<string>('')
   const [isUploading, setIsUploading] = useState(false)
 
+  const [cardColor, setCardColor] = useState<string>('')
+  const [isPulsing, setIsPulsing] = useState<boolean>(false)
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setCurrentUserId(data.user.id)
@@ -65,6 +83,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setRecurringDays(reminder.recurrence_config?.days || [])
       setImageUrl(reminder.image_url || '')
       setImageFile(null)
+      setCardColor(reminder.recurrence_config?.cardColor || reminder.card_color || '')
+      setIsPulsing(!!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing ?? false))
     } else {
       setTitle('')
       setDescription('')
@@ -77,6 +97,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setRecurringDays([])
       setImageUrl('')
       setImageFile(null)
+      setCardColor('')
+      setIsPulsing(false)
     }
   }, [reminder, isOpen])
 
@@ -122,7 +144,9 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           recurrence_type: isRecurring ? 'weekly' : undefined,
           recurrence_config: {
             days: isRecurring ? recurringDays : undefined,
-            advanceNotice: advanceNotice > 0 ? advanceNotice : undefined
+            advanceNotice: advanceNotice > 0 ? advanceNotice : undefined,
+            cardColor: cardColor || undefined,
+            isPulsing: isPulsing || false
           },
           image_url: uploadedUrl || undefined
         },
@@ -386,6 +410,130 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                   <option value="Alta" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Alta</option>
                   <option value="Urgente" className={isDark ? "bg-[#121214] text-white" : "bg-white text-gray-900"}>Urgente</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Cor do Card Completo */}
+            <div className="flex items-start gap-4 group cursor-pointer pt-2">
+              <div className="w-32 flex items-center gap-2 text-sm text-gray-500 dark:text-white/40 group-hover:text-gray-900 dark:group-hover:text-white transition-colors pt-1">
+                <Palette size={16} />
+                <span>Cor do card</span>
+              </div>
+              <div className="flex-1 space-y-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {REMINDER_COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => setCardColor(preset.value)}
+                      className={`relative w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                        cardColor === preset.value
+                          ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110 shadow-sm'
+                          : 'hover:scale-105 opacity-80 hover:opacity-100'
+                      }`}
+                      style={{
+                        backgroundColor: preset.hex || (isDark ? '#27272a' : '#f4f4f5'),
+                        border: preset.hex ? '1px solid rgba(0,0,0,0.1)' : (isDark ? '1px dashed #52525b' : '1px dashed #a1a1aa')
+                      }}
+                      title={preset.name}
+                    >
+                      {cardColor === preset.value && (
+                        <Check size={14} className={preset.isDarkText ? 'text-gray-900' : 'text-white'} />
+                      )}
+                      {!preset.hex && cardColor !== preset.value && (
+                        <span className="text-[10px] text-gray-400">×</span>
+                      )}
+                    </button>
+                  ))}
+
+                  {/* Input de cor livre */}
+                  <label 
+                    className="relative w-7 h-7 rounded-full overflow-hidden border border-gray-300 dark:border-white/20 hover:scale-105 transition-all cursor-pointer flex items-center justify-center bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 shadow-xs"
+                    title="Escolher cor personalizada"
+                  >
+                    <input
+                      type="color"
+                      disabled={!canEdit}
+                      value={cardColor && cardColor.startsWith('#') ? cardColor : '#2563eb'}
+                      onChange={(e) => setCardColor(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                  </label>
+
+                  {cardColor && (
+                    <button
+                      type="button"
+                      onClick={() => setCardColor('')}
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-1 cursor-pointer"
+                      title="Restaurar cor padrão"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+
+                {/* Efeito Pulsante no Dashboard */}
+                <div className="pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1c1d21] dark:text-white">
+                    <input 
+                      type="checkbox"
+                      checked={isPulsing}
+                      onChange={(e) => setIsPulsing(e.target.checked)}
+                      className="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-black/50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 w-4 h-4 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                      disabled={!canEdit}
+                    />
+                    <span className="flex items-center gap-2">
+                      <span>Efeito pulsante no Dashboard</span>
+                      {isPulsing && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                          Pulsando ativo
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Prévia visual */}
+                {(cardColor || isPulsing) && (
+                  <div 
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${
+                      isPulsing ? 'reminder-card-pulse' : ''
+                    }`}
+                    style={{
+                      backgroundColor: cardColor 
+                        ? (isDark ? `color-mix(in srgb, ${cardColor} 22%, rgba(18, 18, 20, 0.95))` : `color-mix(in srgb, ${cardColor} 18%, #ffffff)`)
+                        : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                      borderColor: cardColor || (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
+                      '--reminder-pulse-shadow': cardColor || (isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'),
+                      color: isDark ? '#ffffff' : '#111827'
+                    } as React.CSSProperties}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isPulsing && (
+                        <span className="relative flex h-2 w-2">
+                          <span 
+                            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                            style={{ backgroundColor: cardColor || '#6366f1' }}
+                          />
+                          <span 
+                            className="relative inline-flex rounded-full h-2 w-2"
+                            style={{ backgroundColor: cardColor || '#6366f1' }}
+                          />
+                        </span>
+                      )}
+                      <span className="font-semibold">
+                        Prévia: O card completo ficará nesta cor no Dashboard {isPulsing ? '(com animação pulsante)' : ''}
+                      </span>
+                    </div>
+                    {cardColor && (
+                      <span 
+                        className="w-3.5 h-3.5 rounded-full shadow-xs shrink-0" 
+                        style={{ backgroundColor: cardColor }} 
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

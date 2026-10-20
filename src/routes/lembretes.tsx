@@ -212,6 +212,25 @@ function LembretesComponent() {
                 {filteredReminders.map((reminder) => {
                   const isCompleted = reminder.status === 'Concluído'
                   const assignee = getUserDetails(reminder.assigned_user_id)
+                  const customColor = reminder.recurrence_config?.cardColor || reminder.card_color
+                  const isPulsing = !isCompleted && !!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing)
+
+                  const customCardStyle: React.CSSProperties = {}
+                  if (customColor && !isCompleted) {
+                    if (isDark) {
+                      customCardStyle.backgroundColor = `color-mix(in srgb, ${customColor} 24%, rgba(18, 18, 20, 0.95))`
+                      customCardStyle.borderColor = `color-mix(in srgb, ${customColor} 85%, transparent)`
+                      customCardStyle.boxShadow = `0 4px 20px color-mix(in srgb, ${customColor} 25%, transparent)`
+                    } else {
+                      customCardStyle.backgroundColor = `color-mix(in srgb, ${customColor} 18%, #ffffff)`
+                      customCardStyle.borderColor = customColor
+                      customCardStyle.boxShadow = `0 4px 16px color-mix(in srgb, ${customColor} 20%, transparent)`
+                    }
+                  }
+
+                  if (isPulsing) {
+                    (customCardStyle as any)['--reminder-pulse-shadow'] = customColor || (isDark ? 'rgba(99, 102, 241, 0.5)' : 'rgba(59, 130, 246, 0.4)')
+                  }
                   
                   return (
                     <div 
@@ -223,8 +242,9 @@ function LembretesComponent() {
                       className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group ${
                         isCompleted 
                           ? `opacity-50 ${isDark ? 'bg-black/10 border-white/5' : 'bg-black/5 border-black/5'}` 
-                          : (isDark ? 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10' : 'border-black/5 bg-[#faf9f6]/70 hover:bg-white hover:border-black/10')
-                      }`}
+                          : (customColor ? '' : (isDark ? 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10' : 'border-black/5 bg-[#faf9f6]/70 hover:bg-white hover:border-black/10'))
+                      } ${isPulsing ? 'reminder-card-pulse' : ''}`}
+                      style={customCardStyle}
                     >
                       <button 
                         onClick={(e) => {
@@ -241,9 +261,23 @@ function LembretesComponent() {
                       </button>
                       
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate transition-all ${ isCompleted ? (isDark ? 'text-white/40 line-through' : 'text-gray-500 line-through') : (isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900 group-hover:text-black') }`}>
-                          {reminder.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          {isPulsing && (
+                            <span className="relative flex h-2 w-2 shrink-0" title="Alerta pulsante">
+                              <span 
+                                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                                style={{ backgroundColor: customColor || '#6366f1' }}
+                              />
+                              <span 
+                                className="relative inline-flex rounded-full h-2 w-2"
+                                style={{ backgroundColor: customColor || '#6366f1' }}
+                              />
+                            </span>
+                          )}
+                          <p className={`text-sm font-medium truncate transition-all ${ isCompleted ? (isDark ? 'text-white/40 line-through' : 'text-gray-500 line-through') : (isDark ? 'text-white/90 group-hover:text-white' : 'text-gray-900 group-hover:text-black') }`}>
+                            {reminder.title}
+                          </p>
+                        </div>
                         
                         <div className="flex items-center gap-3 mt-1.5">
                           {reminder.due_date && (
