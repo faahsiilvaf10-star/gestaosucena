@@ -58,11 +58,12 @@ export function getSubItens(atividade: RdoAtividade): SubAtividadeItem[] {
 interface ActivityCardProps {
   atividade: RdoAtividade;
   onToggleComplete: (id: string, concluido: boolean) => void;
+  onToggleSubItem?: (atividade: RdoAtividade, subItemId: string, novoMarcado: boolean) => void;
   onEdit: (atividade: RdoAtividade) => void;
   onDelete: (id: string) => void;
 }
 
-export function ActivityCard({ atividade, onToggleComplete, onEdit, onDelete }: ActivityCardProps) {
+export function ActivityCard({ atividade, onToggleComplete, onToggleSubItem, onEdit, onDelete }: ActivityCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const IconComponent = (Icons as any)[atividade.icon] || Icons.Activity;
@@ -180,13 +181,16 @@ export function ActivityCard({ atividade, onToggleComplete, onEdit, onDelete }: 
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {subItens.map((item) => (
-                  <div
+                  <button
                     key={item.id}
-                    className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs border transition-colors ${
+                    type="button"
+                    onClick={() => onToggleSubItem && onToggleSubItem(atividade, item.id, !item.marcado)}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs border transition-all text-left cursor-pointer ${
                       item.marcado
-                        ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
-                        : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 opacity-60'
+                        ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 shadow-2xs'
+                        : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
+                    title={item.marcado ? 'Atividade feita no dia (clique para desmarcar)' : 'Atividade não feita (clique para marcar como feita)'}
                   >
                     <div className="flex items-center gap-2 truncate">
                       <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-black ${
@@ -207,7 +211,7 @@ export function ActivityCard({ atividade, onToggleComplete, onEdit, onDelete }: 
                         )}
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

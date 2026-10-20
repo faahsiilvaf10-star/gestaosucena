@@ -207,10 +207,14 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
       return '';
     }
 
+    if (subItens.length === 0 && formData.concluido) {
+      lines.push(`• ${tituloFormatado}`);
+    }
+
     markedItems.forEach(item => {
       if (item.tipo === 'checkbox') {
         const detalhe = item.detalhe?.trim() ? ` (${item.detalhe.trim()})` : '';
-        lines.push(`• ${item.nome.trim()}: Realizada [✓]${detalhe}`);
+        lines.push(`• ${item.nome.trim()}${detalhe}`);
       } else {
         const val = item.valor?.trim() || '0';
         const un = item.unidade || 'm²';
@@ -263,6 +267,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
 
     // Filtra itens vazios
     const validSubItens = subItens.filter(i => i.nome.trim());
+    const anySubMarked = validSubItens.some(i => i.marcado);
 
     const atividadeData: Partial<RdoAtividade> = {
       data: dataAtual,
@@ -275,7 +280,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
       descricao: formData.descricao.trim() || undefined,
       observacoes: formData.observacoes.trim() || undefined,
       itens: validSubItens,
-      concluido: formData.concluido,
+      concluido: validSubItens.length > 0 ? anySubMarked : formData.concluido,
     };
 
     if (atividade?.id) {
@@ -325,6 +330,29 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                   autoFocus
                 />
                 {errors.titulo && <p className="text-xs text-red-500">{errors.titulo}</p>}
+
+                {/* Opção de selecionar como feita no dia (quando não há sub-atividades adicionadas) */}
+                {subItens.length === 0 && (
+                  <label
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer select-none transition-all mt-2 ${
+                      formData.concluido
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-bold'
+                        : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.concluido}
+                      onChange={e => handleChange('concluido', e.target.checked)}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                    />
+                    <span className="text-xs">
+                      {formData.concluido
+                        ? '✓ Atividade feita no dia (selecionada para o RDO de hoje)'
+                        : 'Atividade não realizada hoje'}
+                    </span>
+                  </label>
+                )}
               </div>
 
               {/* Ícone */}
@@ -427,74 +455,79 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                     subItens.map((item, idx) => (
                       <div
                         key={item.id}
-                        className={`p-3.5 rounded-xl border transition-all flex flex-col gap-2.5 ${
+                        className={`p-3 rounded-xl border transition-all flex flex-col gap-2 ${
                           item.marcado
-                            ? 'bg-white dark:bg-[#202023] border-yellow-300/80 dark:border-yellow-500/40 shadow-xs'
+                            ? 'bg-white dark:bg-[#202023] border-emerald-300 dark:border-emerald-600/50 shadow-xs'
                             : 'bg-gray-100/60 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-70'
                         }`}
                       >
-                        {/* Linha superior: Checkbox de inclusão + Nome da Atividade + Tipo + Botão Excluir */}
-                        <div className="flex items-center gap-2.5">
-                          {/* Caixa de marcar (Checkbox) que manda para a pré-visualização */}
+                        {/* Linha superior: Selecionar feita no dia ou não + Nome da atividade + Alternar Medição + Excluir */}
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          {/* Opção de ser selecionada como feita no dia ou não */}
                           <label
-                            className="flex items-center gap-1.5 cursor-pointer select-none"
-                            title={item.marcado ? 'Marcado para pré-visualização' : 'Desmarcado'}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer select-none transition-all shrink-0 ${
+                              item.marcado
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-bold'
+                                : 'bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-gray-700 text-gray-500 font-medium'
+                            }`}
+                            title={item.marcado ? 'Atividade feita no dia (vai para o RDO)' : 'Atividade NÃO realizada no dia'}
                           >
                             <input
                               type="checkbox"
                               checked={item.marcado}
                               onChange={e => handleUpdateSubItem(item.id, { marcado: e.target.checked })}
-                              className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-400 cursor-pointer accent-yellow-500"
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                             />
-                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                              {item.marcado ? 'Ativa' : 'Ignorar'}
+                            <span className="text-xs">
+                              {item.marcado ? 'Feita no dia' : 'Não feita'}
                             </span>
                           </label>
 
-                          {/* Nome da sub-atividade */}
+                          {/* Só adicionar o nome dela */}
                           <input
                             type="text"
                             value={item.nome}
                             onChange={e => handleUpdateSubItem(item.id, { nome: e.target.value })}
-                            placeholder="Nome da atividade (ex: Limpeza, Roçagem...)"
-                            className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-xs outline-none focus:border-yellow-500 font-semibold"
+                            placeholder="Nome da atividade (ex: Limpeza, Roçagem, Irrigação...)"
+                            className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-semibold outline-none focus:border-yellow-500"
+                            autoFocus={!item.nome}
                           />
 
-                          {/* Alternador de Tipo: Checkbox vs Medição */}
-                          <select
-                            value={item.tipo}
-                            onChange={e =>
-                              handleUpdateSubItem(item.id, { tipo: e.target.value as 'checkbox' | 'medicao' })
-                            }
-                            className="px-2.5 py-1.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-xs outline-none text-gray-700 dark:text-gray-300 font-medium cursor-pointer"
-                          >
-                            <option value="checkbox">Caixa de Marcar</option>
-                            <option value="medicao">Medição / Valor</option>
-                          </select>
+                          {/* Alternador de medição (igual Jardinagem) */}
+                          {item.tipo === 'checkbox' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSubItem(item.id, { tipo: 'medicao' })}
+                              className="text-[11px] px-2.5 py-1 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-white/5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+                              title="Adicionar medição (m², faixa, berma)"
+                            >
+                              + Medição
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSubItem(item.id, { tipo: 'checkbox' })}
+                              className="text-[11px] px-2.5 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/50 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+                              title="Voltar para apenas marcação simples"
+                            >
+                              ✕ Sem medição
+                            </button>
+                          )}
 
                           {/* Botão de excluir item */}
                           <button
                             type="button"
                             onClick={() => handleRemoveSubItem(item.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Remover esta atividade"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
 
-                        {/* Linha inferior condicional: detalhes ou medição */}
-                        {item.tipo === 'checkbox' ? (
-                          <input
-                            type="text"
-                            value={item.detalhe || ''}
-                            onChange={e => handleUpdateSubItem(item.id, { detalhe: e.target.value })}
-                            placeholder="Observação da tarefa (opcional: ex: limpeza manual com soprador)"
-                            className="w-full px-3 py-1 bg-white dark:bg-black/20 border border-gray-100 dark:border-white/5 rounded-md text-[11px] text-gray-600 dark:text-gray-400 outline-none"
-                          />
-                        ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-gray-100 dark:border-white/5">
-                            {/* Valor */}
+                        {/* Se for com medição (conforme Jardinagem: Faixa, Berma, Valor) */}
+                        {item.tipo === 'medicao' && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-gray-100 dark:border-white/5 animate-in fade-in duration-200">
                             <input
                               type="text"
                               value={item.valor || ''}
@@ -502,7 +535,6 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                               placeholder="Valor (ex: 150)"
                               className="px-2.5 py-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs font-mono outline-none"
                             />
-                            {/* Unidade */}
                             <select
                               value={item.unidade || 'm²'}
                               onChange={e => handleUpdateSubItem(item.id, { unidade: e.target.value })}
@@ -514,7 +546,6 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                                 </option>
                               ))}
                             </select>
-                            {/* Faixa (igual Jardinagem) */}
                             <select
                               value={item.faixa || ''}
                               onChange={e => handleUpdateSubItem(item.id, { faixa: e.target.value })}
@@ -527,7 +558,6 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                                 </option>
                               ))}
                             </select>
-                            {/* Berma / Elevado (igual Jardinagem) */}
                             <select
                               value={item.berma || ''}
                               onChange={e => handleUpdateSubItem(item.id, { berma: e.target.value })}
@@ -548,46 +578,41 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                 </div>
               </div>
 
-              {/* Descrição e Observações */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Descrição Adicional
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.descricao}
-                    onChange={e => handleChange('descricao', e.target.value)}
-                    placeholder="Detalhes adicionais..."
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-xs outline-none focus:border-yellow-500 resize-none"
-                  />
+              {/* Detalhes adicionais e observações (opcional / colapsável) */}
+              <details className="p-3.5 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/10 rounded-2xl group text-xs">
+                <summary className="font-bold text-gray-600 dark:text-gray-400 cursor-pointer select-none hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-between">
+                  <span>+ Mais Detalhes (Descrição e Observações)</span>
+                  <span className="text-[10px] text-gray-400 font-normal">opcional</span>
+                </summary>
+                <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-white/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                        Descrição Adicional
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={formData.descricao}
+                        onChange={e => handleChange('descricao', e.target.value)}
+                        placeholder="Detalhes adicionais..."
+                        className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-xs outline-none focus:border-yellow-500 resize-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                        Observações / Dificuldades
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={formData.observacoes}
+                        onChange={e => handleChange('observacoes', e.target.value)}
+                        placeholder="Observações da equipe..."
+                        className="w-full px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-xs outline-none focus:border-yellow-500 resize-none"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Observações / Dificuldades
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.observacoes}
-                    onChange={e => handleChange('observacoes', e.target.value)}
-                    placeholder="Observações da equipe..."
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-xs outline-none focus:border-yellow-500 resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Conclusão Geral */}
-              <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 cursor-pointer hover:border-yellow-400 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.concluido}
-                  onChange={e => handleChange('concluido', e.target.checked)}
-                  className="w-4 h-4 rounded text-green-600 focus:ring-green-500 cursor-pointer accent-green-600"
-                />
-                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                  Marcar toda a atividade como Concluída no dia
-                </span>
-              </label>
+              </details>
             </div>
 
             {/* Coluna Direita: Pré-visualização do Resumo (conforme Jardinagem) */}

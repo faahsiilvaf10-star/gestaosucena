@@ -117,6 +117,33 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
     }
   };
 
+  const handleToggleSubItem = async (atividade: RdoAtividade, subItemId: string, novoMarcado: boolean) => {
+    const subItens = getSubItens(atividade);
+    const updatedSubItens = subItens.map(i => i.id === subItemId ? { ...i, marcado: novoMarcado } : i);
+    const anyMarked = updatedSubItens.some(i => i.marcado);
+
+    let obs = atividade.observacoes || '';
+    obs = obs.replace(/__ITEMS__:[sS]*$/, '').trim();
+    obs = (obs ? obs + '\n' : '') + `__ITEMS__:${JSON.stringify(updatedSubItens)}`;
+
+    try {
+      const { error } = await supabase
+        .from('rdo_atividades')
+        .update({ observacoes: obs, concluido: anyMarked })
+        .eq('id', atividade.id);
+
+      if (error) throw error;
+
+      setAtividades(prev =>
+        prev.map(a => a.id === atividade.id ? { ...a, observacoes: obs, itens: updatedSubItens, concluido: anyMarked } : a)
+      );
+      toast.success(novoMarcado ? 'Atividade marcada como feita!' : 'Atividade desmarcada');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao atualizar status');
+    }
+  };
+
   const handleEdit = (atividade: RdoAtividade) => {
     setEditingAtividade(atividade);
     setIsModalOpen(true);
@@ -175,7 +202,7 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
             lines.push(`  • ${item.nome}: ${item.valor || '0'} ${item.unidade || 'm²'}${locStr}`);
           } else {
             const det = item.detalhe ? ` (${item.detalhe})` : '';
-            lines.push(`  • ${item.nome}: Realizada [✓]${det}`);
+            lines.push(`  • ${item.nome}${det}`);
           }
         });
       } else {
@@ -341,6 +368,7 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
               key={atividade.id}
               atividade={atividade}
               onToggleComplete={handleToggleComplete}
+              onToggleSubItem={handleToggleSubItem}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
