@@ -117,6 +117,7 @@ function AdminRoute() {
   const [selectedEnvForManagement, setSelectedEnvForManagement] = useState<string>('barcarena')
   const [envSearchTerm, setEnvSearchTerm] = useState('')
   const [editUserEnvAccess, setEditUserEnvAccess] = useState<string[]>([])
+  const [usersDisplayLimit, setUsersDisplayLimit] = useState(9)
 
   const [permissions, setPermissions] = useState<AllUsersPermissions>({})
   const [savingPermissions, setSavingPermissions] = useState(false)
@@ -829,7 +830,7 @@ function AdminRoute() {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredUsers.map(user => {
+                {filteredUsers.slice(0, usersDisplayLimit).map(user => {
                   const sortedAllUsers = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                   const seqIndex = sortedAllUsers.findIndex(u => u.id === user.id) + 1;
                   const displayId = String(seqIndex).padStart(4, '0');
@@ -928,9 +929,28 @@ function AdminRoute() {
                   );
                 })}
               </div>
-            )}
+
+              {/* Botão Mostrar Mais/Menos */}
+              {filteredUsers.length > 9 && (
+                <div className="flex justify-center pt-4 gap-3">
+                  {usersDisplayLimit > 9 && (
+                    <button
+                      onClick={() => setUsersDisplayLimit(9)}
+                      className="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      Mostrar menos
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setUsersDisplayLimit(prev => prev + 9)}
+                    className="px-6 py-2.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Mostrar mais ({filteredUsers.length - usersDisplayLimit} restantes)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
       </div>
