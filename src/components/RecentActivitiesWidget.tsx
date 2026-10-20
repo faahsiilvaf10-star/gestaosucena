@@ -28,24 +28,31 @@ export function RecentActivitiesWidget() {
         ? localStorage.getItem('sucena_environment') || 'barcarena'
         : 'barcarena'
 
-      const { data, error } = await supabase
-        .from('system_activities').select('id, module, action, user_name, created_at').eq('environment', environment)
-        .neq('module', 'System')
-        .not('action', 'ilike', 'CRASH:%')
-        .order('created_at', { ascending: false })
-        .limit(50)
+      const [activitiesRes, movementsRes] = await Promise.all([
+        supabase
+          .from('system_activities')
+          .select('id, module, action, user_name, created_at')
+          .eq('environment', environment)
+          .neq('module', 'System')
+          .not('action', 'ilike', 'CRASH:%')
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('eq_movements')
+          .select('id, movement_type, created_by, created_at, eq_equipments!inner(name, plate_tag, environment)')
+          .eq('eq_equipments.environment', environment)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      ])
 
-      const { data: movements, error: movementsError } = await supabase
-        .from('eq_movements')
-        .select('id, movement_type, created_by, created_at, eq_equipments!inner(Name, plate_tag, environment)')
-        .eq('eq_equipments.environment', environment)
-        .order('created_at', { ascending: false })
-        .limit(20)
+      if (activitiesRes.error) {
+        console.error('Erro ao buscar system_activities:', activitiesRes.error)
+      }
+      if (movementsRes.error) {
+        console.error('Erro ao buscar eq_movements:', movementsRes.error)
+      }
 
-      if (error) throw error
-      if (movementsError) throw movementsError
-
-      const movementActivities = (movements || []).map((movement: any) => {
+      const movementActivities = (movementsRes.data || []).map((movement: any) => {
         const equipment = movement.eq_equipments
         const equipmentName = equipment?.name || 'Equipamento'
         const plate = equipment?.plate_tag ? ` (Placa: ${equipment.plate_tag})` : ''
@@ -61,7 +68,7 @@ export function RecentActivitiesWidget() {
         }
       })
 
-      const loggedActivities = (data || []).filter((activity: any) => {
+      const loggedActivities = (activitiesRes.data || []).filter((activity: any) => {
         if (activity.module === 'System' || activity.action?.startsWith('CRASH:')) return false
         if (activity.module !== 'Equipamentos') return true
         return !/^(Entrada|Saída):/.test(activity.action || '')
