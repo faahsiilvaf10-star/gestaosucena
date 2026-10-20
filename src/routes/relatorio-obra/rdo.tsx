@@ -664,6 +664,13 @@ function RDOPage() {
 
   const renderCustomModuleText = (d: CustomRdoDailyData) => {
     if (!d) return '';
+    const modTitle = d.moduloName || (d as any).moduloNome || 'Atividade';
+    const efetivo = renderEfetivoPorArea(modTitle);
+
+    if (d.renderedSummary && d.renderedSummary.trim() && !d.renderedSummary.startsWith('Nenhuma atividade')) {
+      return d.renderedSummary.trim() + (efetivo ? `\n\n${efetivo}` : '');
+    }
+
     const lines: string[] = [];
 
     const locParts: string[] = [];
@@ -692,9 +699,6 @@ function RDOPage() {
       lines.push(`📝 *Observações:*`);
       lines.push(d.observacoes.trim());
     }
-
-    const modTitle = d.moduloName || (d as any).moduloNome || 'Atividade';
-    const efetivo = renderEfetivoPorArea(modTitle);
 
     if (lines.length > 0) {
       return lines.join('\n') + (efetivo ? `\n\n${efetivo}` : '');
