@@ -19,7 +19,6 @@ import Bell from 'lucide-react/dist/esm/icons/bell.js';
 import Play from 'lucide-react/dist/esm/icons/play.js';
 import Megaphone from 'lucide-react/dist/esm/icons/megaphone.js';
 import Send from 'lucide-react/dist/esm/icons/send.js';
-import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
 import Package from 'lucide-react/dist/esm/icons/package.js';
 import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js';
@@ -39,7 +38,6 @@ import { isRegistrationOpen, setRegistrationOpen, getWhatsappSettings, saveWhats
 import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
 import { AVAILABLE_ENVIRONMENTS, getUserEnvironmentAccess, saveUserEnvironmentAccess, UserEnvironmentAccessMap } from '../lib/environmentAccess'
-import { NotificacoesMotoristas } from '../components/admin/NotificacoesMotoristas'
 import { ComunicadosAdmin } from '../components/admin/ComunicadosAdmin'
 import '../dashboard.css'
 
@@ -111,7 +109,7 @@ function AdminRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'ambientes' | 'permissions' | 'appearance' | 'motoristas' | 'comunicados'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'whatsapp' | 'ambientes' | 'permissions' | 'appearance' | 'comunicados'>('users')
 
   // Environment Access
   const [envAccessMap, setEnvAccessMap] = useState<UserEnvironmentAccessMap>({})
@@ -780,14 +778,6 @@ function AdminRoute() {
           </button>
           
           <button 
-            onClick={() => setActiveTab('motoristas')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'motoristas' ? (isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50') }`}
-          >
-            <Smartphone size={18} />
-            Motoristas (App)
-          </button>
-
-          <button 
             onClick={() => setActiveTab('comunicados')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${ activeTab === 'comunicados' ? (isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-700') : (isDark ? 'text-gray-400 hover:text-amber-400 hover:bg-amber-500/10' : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50') }`}
           >
@@ -798,10 +788,6 @@ function AdminRoute() {
 
         {activeTab === 'comunicados' && (
           <ComunicadosAdmin isDark={isDark} />
-        )}
-
-        {activeTab === 'motoristas' && (
-          <NotificacoesMotoristas isDark={isDark} />
         )}
 
         {activeTab === 'users' && (
