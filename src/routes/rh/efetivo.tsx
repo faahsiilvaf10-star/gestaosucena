@@ -334,21 +334,23 @@ function RhEfetivoPage() {
           })
 
           // Find IDs of employees that are in DB but NOT in the new spreadsheet
-          const idsToDelete: string[] = []
+          // Instead of deleting (which fails due to foreign keys), mark as INATIVO
+          const idsToInactivate: string[] = []
           existingMap.forEach((rec: any, upperName: string) => {
             if (rec !== 'processed' && !allNamesInSheet.has(upperName)) {
-              idsToDelete.push(rec.id)
+              idsToInactivate.push(rec.id)
             }
           })
 
           // Run database operations
           let successMessage = ''
           let totalUpdated = 0
-          
-          if (idsToDelete.length > 0) {
-            const { error: delError } = await supabase.from('rh_efetivo').delete().in('id', idsToDelete)
-            if (delError) throw delError
-            successMessage += `${idsToDelete.length} removidos. `
+
+          // Mark employees not in spreadsheet as INATIVO (don't delete to preserve foreign key references)
+          if (idsToInactivate.length > 0) {
+            const { error: inactivateError } = await supabase.from('rh_efetivo').update({ status: 'INATIVO' }).in('id', idsToInactivate)
+            if (inactivateError) throw inactivateError
+            successMessage += `${idsToInactivate.length} inativados. `
           }
 
           if (uniqueNewProcessedData.length > 0) {
