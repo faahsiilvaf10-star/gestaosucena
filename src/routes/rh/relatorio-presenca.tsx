@@ -46,11 +46,12 @@ function RelatorioPresencaPage() {
   const fetchRelatorio = async () => {
     setLoading(true)
     try {
-      // 1. Fetch efetivo to get names, cargos, and total count
+      // 1. Fetch ativo efetivo to get names, cargos, and total count
       const { data: efetivo, error: efetivoError } = await supabase
         .from('rh_efetivo')
         .select('id, nome, cargo')
-        
+        .eq('status', 'ATIVO')
+
       if (efetivoError) throw efetivoError
 
       setTotalEfetivo(efetivo.length)

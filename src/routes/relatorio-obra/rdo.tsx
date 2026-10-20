@@ -94,8 +94,9 @@ function RDOPage() {
       
       const { data: eData, error: eError } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo');
-        
+        .select('id, nome, cargo')
+        .eq('status', 'ATIVO');
+
       if (eError) throw eError;
       
       const efetivoMap = new Map((eData || []).map(c => [c.id, c]));

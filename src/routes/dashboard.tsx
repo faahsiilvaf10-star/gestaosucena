@@ -115,7 +115,7 @@ function DashboardComponent() {
         .in('date', [today, tomorrow])
         
       const { data: users } = await supabase.rpc('get_system_users')
-      const { data: rhList } = await supabase.from('rh_efetivo').select('id, nome')
+      const { data: rhList } = await supabase.from('rh_efetivo').select('id, nome').eq('status', 'ATIVO')
       
       const getPalestranteInfo = (id: string) => {
         if (!id) return { id: null, nome: 'Livre', avatar: null }

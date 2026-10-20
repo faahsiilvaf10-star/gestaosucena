@@ -104,7 +104,7 @@ export default function SucenaAIModal({ isOpen, onClose }: { isOpen: boolean, on
         .limit(20)
 
       // 3. Efetivo
-      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status').limit(150)
+      const { data: employees } = await supabase.from('rh_efetivo').select('nome, cargo, status').eq('status', 'ATIVO').limit(150)
 
       const context = `
 VOCÊ É A SUCENA AI, UMA ASSISTENTE INTELIGENTE PARA O SISTEMA "GESTÃO SUCENA".

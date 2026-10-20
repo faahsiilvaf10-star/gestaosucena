@@ -65,6 +65,7 @@ function AddCollaboratorModal({
       const { data, error } = await supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, setor')
+        .eq('status', 'ATIVO')
         .order('nome', { ascending: true })
 
       if (error) throw error
