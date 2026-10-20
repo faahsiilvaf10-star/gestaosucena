@@ -272,7 +272,13 @@ GRANT EXECUTE ON FUNCTION public.cron_send_daily_equipment_report() TO service_r
 -- ====================================================================================
 
 -- Cron para ASO vencendo (executa todo dia às 08:00)
-DELETE FROM cron.job WHERE jobname = 'aso_vencendo_alert';
+DO $$
+BEGIN
+  PERFORM cron.unschedule('aso_vencendo_alert');
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
+
 SELECT cron.schedule(
   'aso_vencendo_alert',
   '0 8 * * *',
@@ -280,7 +286,13 @@ SELECT cron.schedule(
 );
 
 -- Cron para relatório diário de equipamentos (executa todo dia)
-DELETE FROM cron.job WHERE jobname = 'daily_equipment_report';
+DO $$
+BEGIN
+  PERFORM cron.unschedule('daily_equipment_report');
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
+
 SELECT cron.schedule(
   'daily_equipment_report',
   '* * * * *',
