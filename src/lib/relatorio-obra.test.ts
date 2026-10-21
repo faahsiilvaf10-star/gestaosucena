@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
   const bermas = [
-    ...Array.from({length: 32}, (_, i) => {
+    ...Array.from({length: 33}, (_, i) => {
       const num = i + 26;
       return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
     }),
@@ -12,12 +12,13 @@ describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
     'GABIÃO 3'
   ];
 
-  it('deve conter 32 itens numerados de 26 a 57 mais os locais especiais', () => {
-    expect(bermas.length).toBe(32 + 4);
+  it('deve conter 33 itens numerados de 26 a 58 mais os locais especiais', () => {
+    expect(bermas.length).toBe(33 + 4);
     expect(bermas).toContain('Berma 26');
     expect(bermas).toContain('Elevado 27');
     expect(bermas).toContain('Berma 56');
     expect(bermas).toContain('Elevado 57');
+    expect(bermas).toContain('Berma 58');
     expect(bermas).toContain('MIRANTE');
     expect(bermas).toContain('GABIÃO 1');
     expect(bermas).toContain('GABIÃO 2');
@@ -25,7 +26,7 @@ describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
   });
 
   it('todos os números pares devem ser Berma e ímpares devem ser Elevado', () => {
-    for (let n = 26; n <= 57; n++) {
+    for (let n = 26; n <= 58; n++) {
       if (n % 2 === 0) {
         expect(bermas).toContain(`Berma ${n}`);
         expect(bermas).not.toContain(`Elevado ${n}`);
@@ -52,6 +53,8 @@ describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
     expect(normalize('41')).toBe('Elevado 41');
     expect(normalize('56')).toBe('Berma 56');
     expect(normalize('57')).toBe('Elevado 57');
+    expect(normalize('58')).toBe('Berma 58');
+    expect(normalize('Elevado 58')).toBe('Berma 58');
     expect(normalize('MIRANTE')).toBe('MIRANTE');
     expect(normalize('GABIÃO 1')).toBe('GABIÃO 1');
   });

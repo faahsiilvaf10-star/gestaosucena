@@ -31,6 +31,7 @@ const PRESET_JARDINAGEM: CustomCardModel[] = [
     opcoes: ['Ipê Amarelo', 'Ipê Roxo', 'Açaí', 'Castanheira', 'Mogno', 'Mudas Nativas'],
   },
   { id: 'm-limpeza-man', tipo: 'medicao', titulo: 'LIMPEZA MANUAL (M²)', unidade: 'm²' },
+  { id: 'm-capina-man', tipo: 'medicao', titulo: 'CAPINA MANUAL (M²)', unidade: 'm²' },
   { id: 'm-limpeza-sop', tipo: 'medicao', titulo: 'LIMPEZA COM SOPRADOR (M²)', unidade: 'm²' },
   {
     id: 'm-invasoras',

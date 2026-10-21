@@ -27,7 +27,7 @@ const faixas = Array.from({length: 5}, (_, i) => i + 1); // FAIXA 1 a 5
 const fases = ['Nenhuma', 'Fase 1', 'Fase 2', 'Fase 3'];
 const elevados = [
   'Nenhum',
-  ...Array.from({length: 32}, (_, i) => {
+  ...Array.from({length: 33}, (_, i) => {
     const num = i + 26;
     return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
   }),

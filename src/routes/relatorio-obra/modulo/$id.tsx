@@ -39,7 +39,7 @@ export const Route = createFileRoute('/relatorio-obra/modulo/$id')({
 const FAIXAS = ['Faixa 1', 'Faixa 2', 'Faixa 3', 'Faixa 4', 'Faixa 5'];
 
 const BERMAS = [
-  ...Array.from({ length: 32 }, (_, i) => {
+  ...Array.from({ length: 33 }, (_, i) => {
     const num = i + 26;
     return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
   }),

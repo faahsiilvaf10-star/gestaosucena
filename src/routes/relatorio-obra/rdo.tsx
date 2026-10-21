@@ -550,6 +550,7 @@ function RDOPage() {
     }
     
     addRows('Limpeza Manual', d.limpezaManual, 'm²');
+    addRows('Capina Manual', d.capinaManual, 'm²');
     addRows('Limpeza com Soprador', d.limpezaSoprador, 'm²');
     
     if (d.invasoras) {

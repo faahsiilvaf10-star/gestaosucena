@@ -59,7 +59,7 @@ export const Route = createFileRoute('/relatorio-obra/jardinagem')({
 
 const faixas = Array.from({length: 4}, (_, i) => i + 2);
 const bermas = [
-  ...Array.from({length: 32}, (_, i) => {
+  ...Array.from({length: 33}, (_, i) => {
     const num = i + 26;
     return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
   }),
@@ -177,6 +177,7 @@ function JardinagemPage() {
   const [adubagem, setAdubagem] = useState([{value: '', faixa: '', berma: ''}]);
   const [plantio, setPlantio] = useState([{especie: '', value: '', faixa: '', berma: ''}]);
   const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: ''}]);
+  const [capinaManual, setCapinaManual] = useState([{value: '', faixa: '', berma: ''}]);
   const [limpezaSoprador, setLimpezaSoprador] = useState([{value: '', faixa: '', berma: ''}]);
   const [invasoras, setInvasoras] = useState([{nome: '', value: '', berma: '', faixa: ''}]);
   const [retiradaMudas, setRetiradaMudas] = useState([{value: '', faixa: '', berma: ''}]);
@@ -284,7 +285,7 @@ function JardinagemPage() {
 
   const handleSave = async () => {
     const dataToSave = {
-      rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
+      rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, capinaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
       outrasFaixa, outrasBerma, outrasDesc, canteiroDesc, irrigacaoPipas, irrigacaoApoioPipa, irrigacaoCarretel, irrigacaoCarretelBermas,
       manutencaoIrrigacao,
       isLocked: true
@@ -348,6 +349,7 @@ function JardinagemPage() {
       setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]));
       setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]));
       setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]));
+      setCapinaManual(normRows(parsed.capinaManual || [{ faixa: '', berma: '', value: '' }]));
       setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]));
       setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]));
       setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]));
@@ -372,6 +374,7 @@ function JardinagemPage() {
       setAdubagem([{ faixa: '', berma: '', value: '' }]);
       setPlantio([{ faixa: '', berma: '', value: '', especie: '' }]);
       setLimpezaManual([{ faixa: '', berma: '', value: '' }]);
+      setCapinaManual([{ faixa: '', berma: '', value: '' }]);
       setLimpezaSoprador([{ faixa: '', berma: '', value: '' }]);
       setInvasoras([{ faixa: '', berma: '', value: '', nome: '' }]);
       setRetiradaMudas([{ faixa: '', berma: '', value: '' }]);
@@ -424,7 +427,7 @@ function JardinagemPage() {
   }
   
   const carretelFaixas = [1, 2, 3, 4, 5];
-  const evenBermas = Array.from({length: 15}, (_, i) => 28 + i * 2);
+  const evenBermas = Array.from({length: 16}, (_, i) => 28 + i * 2);
 
   const toggleCarretelBerma = (faixa: number, berma: number) => {
     setIrrigacaoCarretelBermas(prev => {
@@ -443,7 +446,7 @@ function JardinagemPage() {
   const hasAnyData = 
     isFilled(rocagem) || isFilled(rocagemAsp) || isFilled(podagem) || 
     isFilled(cova) || isFilled(coroamento) || isFilled(adubagem) || 
-    isFilled(plantio) || isFilled(limpezaManual) || isFilled(limpezaSoprador) || 
+    isFilled(plantio) || isFilled(limpezaManual) || isFilled(capinaManual) || isFilled(limpezaSoprador) || 
     isFilled(invasoras) || isFilled(retiradaMudas) || isFilled(plantioGrama) || 
     outrasDesc.trim() !== '' || canteiroDesc.trim() !== '' || irrigacaoPipas || irrigacaoApoioPipa || irrigacaoCarretel || manutencaoIrrigacao;
 
@@ -739,6 +742,7 @@ function JardinagemPage() {
             </div>
 
             <ActivityRow title="LIMPEZA MANUAL (m²)" data={limpezaManual} setData={setLimpezaManual} />
+            <ActivityRow title="CAPINA MANUAL (m²)" data={capinaManual} setData={setCapinaManual} />
             <ActivityRow title="LIMPEZA COM SOPRADOR (m²)" data={limpezaSoprador} setData={setLimpezaSoprador} />
 
             {/* CONTROLE DE INVASORAS */}
@@ -959,6 +963,7 @@ function JardinagemPage() {
                 {renderRows('Adubagem', adubagem, 'unid')}
                 {renderPlantio()}
                 {renderRows('Limpeza Manual', limpezaManual, 'm²')}
+                {renderRows('Capina Manual', capinaManual, 'm²')}
                 {renderRows('Limpeza com Soprador', limpezaSoprador, 'm²')}
                 {renderInvasoras()}
                 {renderRows('Retirada de Mudas - Árvores', retiradaMudas, 'unid')}
