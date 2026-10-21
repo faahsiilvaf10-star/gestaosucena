@@ -123,12 +123,12 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
   const handleSave = () => {
     if (!title.trim()) return
     
+    // Se "ALL" está selecionado, salvar 'ALL' como string literal para identificar grupo
+    // Caso contrário, salvar IDs individuais dos usuários mencionados
     let finalMentions = mentions
     if (mentions.includes('ALL')) {
-      finalMentions = users.map(u => u.id)
-      if (currentUserId && !finalMentions.includes(currentUserId)) {
-        finalMentions.push(currentUserId)
-      }
+      // Manter 'ALL' como está - será detectado pelo cron para enviar ao grupo
+      // Não expandir para IDs individuais
     }
 
     const triggerSave = (uploadedUrl: string) => {
@@ -137,7 +137,8 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           title,
           description,
           priority,
-          assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : undefined,
+          // Se ALL, não definir assigned_user_id (ou deixar o primeiro)
+          assigned_user_id: finalMentions.length > 0 && !finalMentions.includes('ALL') ? finalMentions[0] : undefined,
           due_date: dueDate || undefined,
           due_time: dueTime || undefined,
           is_recurring: isRecurring,
