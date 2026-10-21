@@ -31,13 +31,28 @@ function LembretesComponent() {
   const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar'>('list')
   const [currentFilter, setCurrentFilter] = useState('Todos')
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   
   const queryClient = useQueryClient()
 
-  // Fetch Data
+  // Obter ID do usuário logado
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      if (data?.user) setCurrentUserId(data.user.id)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: { user: { id: string } | null } | null) => {
+      setCurrentUserId(session?.user?.id || null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Fetch Data - exibido exclusivamente ao usuário que o criou
   const { data: reminders = [], isLoading } = useQuery({
-    queryKey: ['reminders'],
-    queryFn: fetchReminders
+    queryKey: ['reminders', currentUserId, 'creatorOnly'],
+    queryFn: () => fetchReminders(currentUserId, { creatorOnly: true }),
+    enabled: !!currentUserId
   })
 
   const { data: users = [] } = useQuery({
@@ -97,6 +112,16 @@ function LembretesComponent() {
   ]
 
   const filteredReminders = reminders.filter(r => {
+    // Exibição estritamente exclusiva ao usuário que criou o lembrete
+    if (currentUserId && r.creator_id !== currentUserId) return false
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      const matchesTitle = r.title.toLowerCase().includes(q)
+      const matchesDesc = (r.description || '').toLowerCase().includes(q)
+      if (!matchesTitle && !matchesDesc) return false
+    }
+
     if (currentFilter === 'Concluídos') return r.status === 'Concluído'
     if (currentFilter === 'Atrasados') return atrasados.includes(r)
     if (currentFilter === 'Hoje') return r.due_date && isToday(parseISO(r.due_date))
@@ -165,6 +190,8 @@ function LembretesComponent() {
               <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
               <input 
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Pesquisar..."
                 className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full sm:w-64 transition-all ${ isDark ? 'bg-black/20 border-white/10 text-[#1c1d21] dark:text-white placeholder:text-white/30' : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500' }`}
               />

@@ -23,6 +23,8 @@ interface ReminderData {
   due_time?: string
   is_recurring: boolean
   image_url?: string
+  creator_id?: string
+  reminder_mentions?: { user_id: string }[]
 }
 
 interface ReminderNotif {
@@ -60,7 +62,7 @@ export function ReminderAlertNotification() {
         .select(`
           *,
           reminder:reminders (
-            id, title, description, priority, due_date, due_time, is_recurring, image_url
+            id, title, description, priority, due_date, due_time, is_recurring, image_url, creator_id, reminder_mentions(user_id)
           )
         `)
         .eq('user_id', currentUserId)
@@ -70,15 +72,25 @@ export function ReminderAlertNotification() {
         const pending: ReminderNotif[] = []
         for (const notif of data) {
           const snoozedDate = localStorage.getItem(`snoozed_notif_${notif.id}`)
-          if (snoozedDate !== todayDateStr) {
-            pending.push({
-              id: notif.id,
-              title: notif.title || 'Lembrete',
-              message: notif.message || 'Você tem um novo lembrete!',
-              created_at: notif.created_at,
-              reminder: notif.reminder as ReminderData
-            })
+          if (snoozedDate === todayDateStr) continue
+
+          // Um usuário que não tenha sido mencionado no lembrete não receberá nenhuma notificação dele
+          const rem = notif.reminder as (ReminderData & { reminder_mentions?: { user_id: string }[] }) | undefined
+          if (rem) {
+            const isCreator = rem.creator_id === currentUserId
+            const isMentioned = rem.reminder_mentions?.some((m: { user_id: string }) => m.user_id === currentUserId)
+            if (!isCreator && !isMentioned) {
+              continue
+            }
           }
+
+          pending.push({
+            id: notif.id,
+            title: notif.title || 'Lembrete',
+            message: notif.message || 'Você tem um novo lembrete!',
+            created_at: notif.created_at,
+            reminder: notif.reminder as ReminderData
+          })
         }
         if (pending.length > 0) {
           setNotifications(prev => {
@@ -107,10 +119,17 @@ export function ReminderAlertNotification() {
           if (notif.reminder_id) {
             const { data } = await supabase
               .from('reminders')
-              .select('id, title, description, priority, due_date, due_time, is_recurring, image_url')
+              .select('id, title, description, priority, due_date, due_time, is_recurring, image_url, creator_id, reminder_mentions(user_id)')
               .eq('id', notif.reminder_id)
               .single()
-            if (data) reminderData = data
+            if (data) {
+              const isCreator = data.creator_id === currentUserId
+              const isMentioned = (data.reminder_mentions as any[])?.some((m: { user_id: string }) => m.user_id === currentUserId)
+              if (!isCreator && !isMentioned) {
+                return
+              }
+              reminderData = data
+            }
           }
 
           const newNotif: ReminderNotif = {

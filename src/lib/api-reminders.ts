@@ -49,7 +49,39 @@ export async function fetchUsers(): Promise<UserProfile[]> {
   return data || []
 }
 
-export async function fetchReminders(): Promise<Reminder[]> {
+export type FetchRemindersOptions = {
+  creatorOnly?: boolean
+}
+
+export function filterRemindersForUser(
+  reminders: Reminder[],
+  userId?: string | null,
+  options?: FetchRemindersOptions
+): Reminder[] {
+  if (!userId) return []
+
+  // Na tela de Lembretes (/lembretes), exibe EXCLUSIVAMENTE ao usuário que o criou
+  if (options?.creatorOnly) {
+    return reminders.filter((r: Reminder) => r.creator_id === userId)
+  }
+
+  // No Dashboard (ou geral): exibido para o criador OU para usuários que foram mencionados nele
+  return reminders.filter((r: Reminder) => 
+    r.creator_id === userId || 
+    r.assigned_user_id === userId || 
+    r.reminder_mentions?.some((m: { user_id: string }) => m.user_id === userId)
+  )
+}
+
+export async function fetchReminders(
+  userId?: string | null,
+  options?: FetchRemindersOptions
+): Promise<Reminder[]> {
+  // Se não houver usuário autenticado/informado, não expor nenhum lembrete
+  if (!userId) {
+    return []
+  }
+
   const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
   
   const { data, error } = await supabase
@@ -62,7 +94,8 @@ export async function fetchReminders(): Promise<Reminder[]> {
     console.error("Error fetching reminders:", error)
     return []
   }
-  return data || []
+
+  return filterRemindersForUser((data || []) as Reminder[], userId, options)
 }
 
 export async function createReminder(reminder: Partial<Reminder>, mentions?: string[]) {

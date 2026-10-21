@@ -33,18 +33,27 @@ export function DashboardRemindersWidget() {
     })
   }
 
-  // Fetch data
-  const { data: reminders = [] } = useQuery({ queryKey: ['reminders'], queryFn: fetchReminders })
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: fetchUsers })
-  
   // We need to know who is logged in to show "Eu"
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   
-  useState(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setCurrentUserId(data.user.id)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      if (data?.user) setCurrentUserId(data.user.id)
     })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: { user: { id: string } | null } | null) => {
+      setCurrentUserId(session?.user?.id || null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Fetch data para o Dashboard (visível exclusivamente para o criador e usuários mencionados)
+  const { data: reminders = [] } = useQuery({ 
+    queryKey: ['reminders', currentUserId, 'dashboard'], 
+    queryFn: () => fetchReminders(currentUserId, { creatorOnly: false }),
+    enabled: !!currentUserId
   })
+  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: fetchUsers })
 
   // Filter for dashboard: Pendentes e (Atribuídos a mim ou criados por mim que exigem atenção hoje/atrasados)
   const activeReminders = reminders.filter(r => {
