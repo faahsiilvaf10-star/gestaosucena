@@ -116,7 +116,11 @@ function DashboardComponent() {
         .in('date', [today, tomorrow])
         
       const { data: users } = await supabase.rpc('get_system_users')
-      const { data: rhList } = await supabase.from('rh_efetivo').select('id, nome').eq('status', 'ATIVO')
+      const { data: rhListRaw } = await supabase.from('rh_efetivo').select('id, nome, status')
+      const rhList = (rhListRaw || []).filter((r: any) => {
+        const s = (r.status || '').toUpperCase().trim()
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
+      })
       
       const getPalestranteInfo = (id: string) => {
         if (!id) return { id: null, nome: 'Livre', avatar: null }

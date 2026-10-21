@@ -14,6 +14,8 @@ import Unlock from 'lucide-react/dist/esm/icons/lock-open.js';
 import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
 import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
+import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { getWhatsappSettings } from '@/lib/settings'
@@ -34,6 +36,8 @@ type Efetivo = {
   nome: string
   cargo: string | null
   setor: string | null
+  matricula?: string | null
+  status?: string
 }
 
 function AddCollaboratorModal({ 
@@ -52,9 +56,12 @@ function AddCollaboratorModal({
   const [search, setSearch] = useState('')
   const [efetivo, setEfetivo] = useState<Efetivo[]>([])
   const [loading, setLoading] = useState(false)
+  const [filterTab, setFilterTab] = useState<'TODOS' | 'DISPONIVEIS' | 'OUTRA_ABA'>('TODOS')
 
   useEffect(() => {
     if (isOpen) {
+      setSearch('')
+      setFilterTab('TODOS')
       fetchEfetivo()
     }
   }, [isOpen])
@@ -64,12 +71,18 @@ function AddCollaboratorModal({
     try {
       const { data, error } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo, setor')
-        .eq('status', 'ATIVO')
+        .select('id, nome, cargo, setor, matricula, status')
         .order('nome', { ascending: true })
 
       if (error) throw error
-      setEfetivo(data || [])
+      
+      // Considera ativos todos os colaboradores cujo status não é INATIVO, DEMITIDO ou DESLIGADO
+      const ativos = (data || []).filter((c: any) => {
+        const s = (c.status || '').toUpperCase().trim()
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
+      })
+
+      setEfetivo(ativos)
     } catch (err) {
       console.error(err)
       toast.error('Erro ao carregar efetivo')
@@ -80,70 +93,261 @@ function AddCollaboratorModal({
 
   if (!isOpen) return null
 
-  // Filtra efetivo baseado na busca e remove os que já estão na lista (em QUALQUER área)
+  // Colaboradores que já estão na área ATUAL (não precisam ser adicionados novamente)
   const currentAreaIds = new Set(
-    currentColaboradores.map(c => c.id)
+    currentColaboradores
+      .filter(c => (c.setor || 'Sem Área') === currentArea)
+      .map(c => c.id)
   )
-  
-  const filteredEfetivo = efetivo.filter(c => {
-    if (currentAreaIds.has(c.id)) return false // Já está nesta área
-    if (!search) return true
-    return c.nome.toLowerCase().includes(search.toLowerCase()) || 
-           (c.cargo && c.cargo.toLowerCase().includes(search.toLowerCase()))
+
+  // Mapeia onde cada colaborador já está alocado caso esteja em outra aba/área
+  const otherAreaMap = new Map<string, string>()
+  currentColaboradores.forEach(c => {
+    const area = c.setor || 'Sem Área'
+    if (area !== currentArea) {
+      otherAreaMap.set(c.id, area)
+    }
+  })
+
+  // Colaboradores elegíveis (excluindo os que já estão na aba atual)
+  const availableEfetivo = efetivo.filter(c => !currentAreaIds.has(c.id))
+
+  const countDisponiveis = availableEfetivo.filter(c => !otherAreaMap.has(c.id)).length
+  const countOutraAba = availableEfetivo.filter(c => otherAreaMap.has(c.id)).length
+
+  // Aplica busca e filtro de abas
+  const filteredEfetivo = availableEfetivo.filter(c => {
+    const isOtherArea = otherAreaMap.has(c.id)
+    if (filterTab === 'DISPONIVEIS' && isOtherArea) return false
+    if (filterTab === 'OUTRA_ABA' && !isOtherArea) return false
+
+    if (!search.trim()) return true
+    const term = search.toLowerCase().trim()
+    return (
+      c.nome.toLowerCase().includes(term) || 
+      (c.cargo && c.cargo.toLowerCase().includes(term)) ||
+      (c.setor && c.setor.toLowerCase().includes(term)) ||
+      (c.matricula && c.matricula.toLowerCase().includes(term))
+    )
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1a1c20] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         
-        <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
-          <h2 className="text-[#1c1d21] dark:text-white font-semibold flex items-center gap-2">
-            <Plus size={18} /> 
-            Adicionar a {currentArea}
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors p-1">
+        {/* Header */}
+        <div className="p-4 sm:p-5 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/[0.02] dark:bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-[#0866ff] flex items-center justify-center">
+              <UserPlus size={18} />
+            </div>
+            <div>
+              <h2 className="text-[#1c1d21] dark:text-white font-semibold text-base sm:text-lg flex items-center gap-2">
+                Adicionar a {currentArea}
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
+                Selecione os colaboradores para compor a presença desta área
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+            title="Fechar"
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4 border-b border-black/10 dark:border-white/10">
+        {/* Search & Filter bar */}
+        <div className="p-4 border-b border-black/10 dark:border-white/10 space-y-3 bg-black/[0.01] dark:bg-white/[0.01]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
             <input 
               type="text" 
-              placeholder="Buscar colaborador no efetivo..." 
-              className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors text-[#1c1d21] dark:text-white text-sm"
+              placeholder="Buscar por nome, cargo ou matrícula..." 
+              className="w-full bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-9 py-2.5 outline-none focus:border-[#0866ff] focus:ring-2 focus:ring-[#0866ff]/20 transition-all text-[#1c1d21] dark:text-white text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
             />
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <button
+              onClick={() => setFilterTab('TODOS')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filterTab === 'TODOS'
+                  ? 'bg-[#0866ff] text-white shadow-sm'
+                  : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+            >
+              Todos
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'TODOS' ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+                {availableEfetivo.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setFilterTab('DISPONIVEIS')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filterTab === 'DISPONIVEIS'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              Disponíveis
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'DISPONIVEIS' ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+                {countDisponiveis}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setFilterTab('OUTRA_ABA')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filterTab === 'OUTRA_ABA'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+            >
+              <ArrowRightLeft size={12} />
+              Em outra aba
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterTab === 'OUTRA_ABA' ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+                {countOutraAba}
+              </span>
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-[260px]">
           {loading ? (
-            <div className="py-10 text-center text-gray-500 dark:text-gray-400">Carregando efetivo...</div>
-          ) : filteredEfetivo.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 dark:text-gray-400">Nenhum colaborador encontrado.</div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {filteredEfetivo.map(c => (
-                <button 
-                  key={c.id}
-                  onClick={() => onAdd(c)}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
-                >
-                  <div>
-                    <div className="text-[#1c1d21] dark:text-white font-medium text-sm">{c.nome}</div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{c.cargo || 'Sem cargo'} • {c.setor || 'Sem setor'}</div>
+            <div className="p-3 space-y-2">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-black/5 dark:border-white/5 animate-pulse bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-black/10 dark:bg-white/10" />
+                    <div className="space-y-1.5">
+                      <div className="w-36 h-3.5 bg-black/10 dark:bg-white/10 rounded" />
+                      <div className="w-24 h-2.5 bg-black/10 dark:bg-white/10 rounded" />
+                    </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-gray-900 dark:group-hover:text-white transition-all">
-                    <Plus size={16} />
-                  </div>
-                </button>
+                  <div className="w-20 h-7 bg-black/10 dark:bg-white/10 rounded-lg" />
+                </div>
               ))}
             </div>
+          ) : filteredEfetivo.length === 0 ? (
+            <div className="py-12 px-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 text-gray-400 dark:text-gray-500 mx-auto flex items-center justify-center mb-3">
+                <Users size={22} />
+              </div>
+              <h4 className="text-sm font-semibold text-[#1c1d21] dark:text-white mb-1">
+                Nenhum colaborador encontrado
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                {search 
+                  ? 'Não encontramos nenhum colaborador com os termos pesquisados.' 
+                  : filterTab !== 'TODOS'
+                  ? 'Não há colaboradores para a categoria selecionada.'
+                  : 'Todos os colaboradores ativos já foram alocados nesta área.'}
+              </p>
+            </div>
+          ) : (
+            filteredEfetivo.map(c => {
+              const currentOtherArea = otherAreaMap.get(c.id)
+              const initials = c.nome
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+
+              return (
+                <div 
+                  key={c.id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-black/5 dark:border-white/5 hover:border-black/15 dark:hover:border-white/15 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-all group"
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30 text-[#0866ff] dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">
+                      {initials || <Users size={16} />}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[#1c1d21] dark:text-white font-medium text-sm truncate">
+                        {c.nome}
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                        <span className="truncate">{c.cargo || 'Sem cargo'}</span>
+                        {c.matricula && (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono text-[11px] text-gray-400">Matrícula: {c.matricula}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="mt-1">
+                        {currentOtherArea ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            <ArrowRightLeft size={10} />
+                            Na aba: <strong>{currentOtherArea}</strong>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Disponível
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => onAdd(c)}
+                    className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      currentOtherArea
+                        ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                        : 'bg-[#0866ff] hover:bg-[#0756d6] text-white shadow-sm shadow-blue-500/20'
+                    }`}
+                    title={currentOtherArea ? `Mover da aba ${currentOtherArea} para ${currentArea}` : `Adicionar à ${currentArea}`}
+                  >
+                    {currentOtherArea ? (
+                      <>
+                        <ArrowRightLeft size={13} />
+                        <span className="hidden sm:inline">Mover para cá</span>
+                        <span className="sm:hidden">Mover</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={14} />
+                        <span>Adicionar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )
+            })
           )}
+        </div>
+
+        {/* Footer info */}
+        <div className="p-3 px-5 border-t border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <span>{filteredEfetivo.length} de {availableEfetivo.length} colaboradores listados</span>
+          <button 
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-[#1c1d21] dark:text-white font-medium transition-colors"
+          >
+            Concluir
+          </button>
         </div>
       </div>
     </div>
@@ -576,6 +780,15 @@ function RhListaPresencaPage() {
         }))
       
       if (recordsToInsert.length > 0) {
+        // Se algum colaborador salvo aqui estava registrado em outra área nesta mesma data, remove da outra área para evitar duplicidade
+        const funcIds = recordsToInsert.map(r => r.funcionario_id)
+        await supabase
+          .from('rh_presencas')
+          .delete()
+          .eq('data', attendanceDate)
+          .neq('area', activeTab)
+          .in('funcionario_id', funcIds)
+
         const { error } = await supabase
           .from('rh_presencas')
           .insert(recordsToInsert)

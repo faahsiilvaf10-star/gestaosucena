@@ -121,13 +121,15 @@ function DDSSchedulePage() {
       const { data, error } = await supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, status')
-        .eq('status', 'ATIVO')
         .order('nome', { ascending: true })
       if (error) {
         console.error("Erro ao buscar efetivo do RH:", error)
         throw error
       }
-      return data || []
+      return (data || []).filter((d: any) => {
+        const s = (d.status || '').toUpperCase().trim();
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO';
+      })
     }
   })
 

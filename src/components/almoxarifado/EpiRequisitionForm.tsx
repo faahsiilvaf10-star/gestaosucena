@@ -523,14 +523,16 @@ export function EpiRequisitionForm() {
       const { data, error } = await supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, matricula, status')
-        .eq('status', 'ATIVO')
         .order('nome');
 
       if (error) {
         console.error("Erro ao buscar funcionários:", error);
       }
 
-      return data || [];
+      return (data || []).filter((d: any) => {
+        const s = (d.status || '').toUpperCase().trim();
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO';
+      });
     }
   });
 

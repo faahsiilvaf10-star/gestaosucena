@@ -49,13 +49,18 @@ function RelatorioPresencaPage() {
       // 1. Fetch ativo efetivo to get names, cargos, and total count
       const { data: efetivo, error: efetivoError } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo')
-        .eq('status', 'ATIVO')
+        .select('id, nome, cargo, status')
+        .order('nome', { ascending: true })
 
       if (efetivoError) throw efetivoError
 
-      setTotalEfetivo(efetivo.length)
-      const efetivoMap = new Map(efetivo.map(e => [e.id, { nome: e.nome, cargo: e.cargo }]))
+      const ativos = (efetivo || []).filter((e: any) => {
+        const s = (e.status || '').toUpperCase().trim();
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO';
+      });
+
+      setTotalEfetivo(ativos.length)
+      const efetivoMap = new Map((efetivo || []).map((e: any) => [e.id, { nome: e.nome, cargo: e.cargo }]))
 
       // 2. Fetch presenças for date
       const { data: presencas, error: presencasError } = await supabase

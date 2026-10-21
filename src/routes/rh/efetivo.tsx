@@ -245,7 +245,8 @@ function RhEfetivoPage() {
             const matricula = getVal(['MATRÍCULA', 'MATRICULA', 'RE'])
             const matriculaHydro = getVal(['MATRÍCULA HYDRO', 'MATRICULA HYDRO', 'HYDRO', 'MAT. HYDRO', 'MAT HYDRO'])
             const matriculaSucena = getVal(['MATRÍCULA SUCENA', 'MATRICULA SUCENA', 'SUCENA', 'MAT. SUCENA', 'MAT SUCENA'])
-            const status = getVal(['STATUS', 'SITUAÇÃO', 'SITUACAO']) || 'ATIVO'
+            const rawStatus = String(getVal(['STATUS', 'SITUAÇÃO', 'SITUACAO']) || 'ATIVO').trim().toUpperCase()
+            const status = (rawStatus === 'INATIVO' || rawStatus === 'DEMITIDO' || rawStatus === 'DESLIGADO') ? 'INATIVO' : 'ATIVO'
             const setor = getVal(['SETOR', 'DEPARTAMENTO', 'ÁREA', 'AREA', 'LOCALIDADE', 'LOCALIDADE '])
             
             // Helper for parsing dates

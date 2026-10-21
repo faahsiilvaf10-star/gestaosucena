@@ -39,7 +39,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
   useEffect(() => {
     Promise.all([
       supabase.rpc('get_system_users'),
-      supabase.from('rh_efetivo').select('id, nome, cargo').eq('status', 'ATIVO')
+      supabase.from('rh_efetivo').select('id, nome, cargo, status')
     ]).then(([sysRes, rhRes]) => {
       const list: Array<{ id: string; nome: string; cargo?: string; source: 'system' | 'rh' }> = []
       const ids = new Set<string>()
@@ -57,6 +57,8 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
       })
 
       ;(rhRes.data || []).forEach((e: any) => {
+        const s = (e.status || '').toUpperCase().trim()
+        if (s === 'INATIVO' || s === 'DEMITIDO' || s === 'DESLIGADO') return
         if (e.id && e.nome && !ids.has(e.id)) {
           list.push({
             id: e.id,
