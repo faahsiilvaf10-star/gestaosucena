@@ -5,7 +5,7 @@ import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
 import UserIcon from 'lucide-react/dist/esm/icons/user.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Edit3 from 'lucide-react/dist/esm/icons/pen-tool.js';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchReminders, toggleReminderCompletion, updateReminder, fetchUsers, Reminder } from '../lib/api-reminders'
 import { format, parseISO, isPast, isToday, getDay, getDate } from 'date-fns'
@@ -34,23 +34,26 @@ export function DashboardRemindersWidget() {
   }
 
   // Fetch data
-  const { data: reminders = [] } = useQuery({ queryKey: ['reminders'], queryFn: fetchReminders })
+  const { data: reminders = [] } = useQuery({ 
+    queryKey: ['reminders'], 
+    queryFn: () => fetchReminders(currentUserId || undefined)
+  })
   const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: fetchUsers })
   
   // We need to know who is logged in to show "Eu"
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   
-  useState(() => {
-    supabase.auth.getUser().then(({ data }) => {
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) setCurrentUserId(data.user.id)
     })
-  })
+  }, [])
 
   // Filter for dashboard: Pendentes e (Atribuídos a mim ou criados por mim que exigem atenção hoje/atrasados)
-  const activeReminders = reminders.filter(r => {
+  const activeReminders = reminders.filter((r: Reminder) => {
     if (r.status === 'Concluído' || r.status === 'Cancelado') return false
     
-    const isMentioned = r.reminder_mentions?.some(m => m.user_id === currentUserId)
+    const isMentioned = r.reminder_mentions?.some((m: { user_id: string }) => m.user_id === currentUserId)
     const isMine = r.creator_id === currentUserId || r.assigned_user_id === currentUserId || isMentioned
     if (!isMine) return false
 

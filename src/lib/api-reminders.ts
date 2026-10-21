@@ -49,7 +49,7 @@ export async function fetchUsers(): Promise<UserProfile[]> {
   return data || []
 }
 
-export async function fetchReminders(): Promise<Reminder[]> {
+export async function fetchReminders(userId?: string): Promise<Reminder[]> {
   const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
   
   const { data, error } = await supabase
@@ -62,6 +62,17 @@ export async function fetchReminders(): Promise<Reminder[]> {
     console.error("Error fetching reminders:", error)
     return []
   }
+
+  // Se userId fornecido, filtra apenas lembretes do criador ou onde é mencionado
+  if (userId) {
+    const filtered = (data || []).filter((r: Reminder) => 
+      r.creator_id === userId || 
+      r.assigned_user_id === userId || 
+      r.reminder_mentions?.some((m: { user_id: string }) => m.user_id === userId)
+    )
+    return filtered
+  }
+  
   return data || []
 }
 

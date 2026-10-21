@@ -31,13 +31,22 @@ function LembretesComponent() {
   const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar'>('list')
   const [currentFilter, setCurrentFilter] = useState('Todos')
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   
   const queryClient = useQueryClient()
 
-  // Fetch Data
+  // Get current user ID on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      if (data.user) setCurrentUserId(data.user.id)
+    })
+  }, [])
+
+  // Fetch Data - only show reminders created by or mentioning the current user
   const { data: reminders = [], isLoading } = useQuery({
-    queryKey: ['reminders'],
-    queryFn: fetchReminders
+    queryKey: ['reminders', currentUserId],
+    queryFn: () => fetchReminders(currentUserId || undefined),
+    enabled: true // fetch even before we have userId (will return all, then filter client-side)
   })
 
   const { data: users = [] } = useQuery({
