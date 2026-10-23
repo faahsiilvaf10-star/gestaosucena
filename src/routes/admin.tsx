@@ -2717,7 +2717,9 @@ function AdminRoute() {
                       if (!editingUser?.email) return
                       setSendingResetEmail(true)
                       try {
-                        const { error } = await supabase.auth.resetPasswordForEmail(editingUser.email)
+                        const { error } = await supabase.auth.resetPasswordForEmail(editingUser.email, {
+                          redirectTo: window.location.origin + '/',
+                        })
                         if (error) throw error
                         toast.success(`Link de redefinição enviado para ${editingUser.email}!`)
                       } catch (err: any) {

@@ -88,6 +88,19 @@ export default function DashboardStep({
     return null;
   });
 
+  // Redireciona para login se não houver motorista ativo no armazenamento
+  useEffect(() => {
+    const driverStr = typeof window !== "undefined" ? localStorage.getItem("app_motorista_driver") : null;
+    if (!driverStr) {
+      if (onLogout) {
+        onLogout();
+      } else {
+        localStorage.setItem("app_motorista_current_step", "login");
+        window.location.reload();
+      }
+    }
+  }, [onLogout]);
+
   // Sincroniza fila pendente e recupera equipamento se necessário ao montar a tela
   useEffect(() => {
     if (typeof navigator !== "undefined" && navigator.onLine) {
@@ -391,6 +404,8 @@ export default function DashboardStep({
           }
 
           const keysToRemove = [
+            "app_motorista_driver",
+            "app_motorista_current_step",
             "app_motorista_current_dispatch",
             "app_motorista_equipment_id",
             "app_motorista_timeline",
@@ -406,13 +421,15 @@ export default function DashboardStep({
 
           if (isPastMidnight && !isAlreadyFinished) {
             alert(
-              "Seu turno do dia anterior foi encerrado automaticamente. Registre um novo turno para hoje.",
+              "Seu turno do dia anterior foi encerrado automaticamente. Por favor, faça login para registrar um novo turno.",
             );
           } else {
-            alert("Seu turno foi finalizado. A tela será recarregada para iniciar nova operação.");
+            alert("Seu turno foi finalizado. A tela voltará para a tela de login.");
           }
 
-          if (onBack) {
+          if (onLogout) {
+            onLogout();
+          } else if (onBack) {
             onBack();
           } else {
             window.location.reload();

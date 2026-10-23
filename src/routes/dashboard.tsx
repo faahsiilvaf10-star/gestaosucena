@@ -49,20 +49,22 @@ function DashboardComponent() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const user = data?.user || null
+      if (!user) {
+        navigate({ to: '/' })
+        return
+      }
       setCurrentUser(user)
-      if (user) {
-        const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
-        const accessMap = await getUserEnvironmentAccess()
-        const hasAccess = hasEnvironmentAccess(user.id, currentEnv, accessMap, user.user_metadata?.full_name, user.user_metadata?.role)
-        if (!hasAccess) {
-          toast.error('Você não possui acesso ao ambiente selecionado.', {
-            description: 'Redirecionando para a seleção de unidades permitidas.'
-          })
-          navigate({ to: '/ambientes' })
-        }
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      const accessMap = await getUserEnvironmentAccess()
+      const hasAccess = hasEnvironmentAccess(user.id, currentEnv, accessMap, user.user_metadata?.full_name, user.user_metadata?.role)
+      if (!hasAccess) {
+        toast.error('Você não possui acesso ao ambiente selecionado.', {
+          description: 'Redirecionando para a seleção de unidades permitidas.'
+        })
+        navigate({ to: '/ambientes' })
       }
     })
-  }, [])
+  }, [navigate])
   
   // Buscar lista de presença real (últimos 7 dias)
   const { data: chartData } = useQuery({

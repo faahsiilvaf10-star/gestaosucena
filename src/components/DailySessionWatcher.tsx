@@ -6,12 +6,17 @@ import {
   getNextMidnightTimestamp,
   setDailySessionExpiry,
   handleMidnightLogout,
+  isSessionExpired,
+  clearDailySessionExpiry,
 } from '../lib/sessionManager'
 
 /**
  * Componente sentinela global para garantir que todos os usuários
  * permaneçam logados durante o dia todo sem queda por inatividade,
  * e sejam pontualmente deslogados às 00:00 (meia-noite).
+ *
+ * Se a sessão for resetada pelo banco de dados ou expirada, garante
+ * o retorno imediato à tela de login (/).
  */
 export function DailySessionWatcher() {
   const router = useRouter()
@@ -19,12 +24,33 @@ export function DailySessionWatcher() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    const isAppPath = () => {
+      if (typeof window === 'undefined') return false
+      const path = window.location.pathname
+      return path !== '/' && !path.startsWith('/equipamentos/app-motorista')
+    }
+
     const checkAndSchedule = async () => {
+      // 1. Se a expiração de meia-noite já passou, executa o logout imediatamente
+      if (isSessionExpired()) {
+        await handleMidnightLogout(() => {
+          router.navigate({ to: '/' })
+        })
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
-      // Se não há sessão ativa, não há o que agendar
+      // 2. Se não há sessão ativa
       if (!session) {
         if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        // Se estiver em rota interna (ex: /dashboard) sem sessão ativa, volta para o login normalmente
+        if (isAppPath()) {
+          clearDailySessionExpiry()
+          localStorage.removeItem('sucena_environment')
+          localStorage.removeItem('sucena_user_name')
+          router.navigate({ to: '/' })
+        }
         return
       }
 
@@ -67,22 +93,25 @@ export function DailySessionWatcher() {
     // 1. Checagem imediata ao carregar
     checkAndSchedule()
 
-    // 2. Intervalo de segurança (30 segundos) para cobrir suspensão/hibernação de notebooks
-    intervalRef.current = setInterval(() => {
-      const expiresAtStr = localStorage.getItem(SESSION_EXPIRES_KEY)
-      if (expiresAtStr) {
-        const expiresAt = Number(expiresAtStr)
-        if (!isNaN(expiresAt) && Date.now() >= expiresAt) {
-          supabase.auth.getSession().then(({ data }) => {
-            if (data.session) {
-              handleMidnightLogout(() => {
-                router.navigate({ to: '/' })
-              })
-            }
-          })
+    // 2. Intervalo de segurança (15 segundos) para cobrir expiração ou reset no banco
+    intervalRef.current = setInterval(async () => {
+      if (isSessionExpired()) {
+        await handleMidnightLogout(() => {
+          router.navigate({ to: '/' })
+        })
+        return
+      }
+
+      if (isAppPath()) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          clearDailySessionExpiry()
+          localStorage.removeItem('sucena_environment')
+          localStorage.removeItem('sucena_user_name')
+          router.navigate({ to: '/' })
         }
       }
-    }, 30000)
+    }, 15000)
 
     // 3. Listener para quando a aba voltar a ficar visível ou receber foco
     const handleReactivation = () => {
@@ -96,11 +125,9 @@ export function DailySessionWatcher() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === SESSION_EXPIRES_KEY && !e.newValue) {
         // Outra aba encerrou a sessão
-        supabase.auth.getSession().then(({ data }) => {
-          if (!data.session && window.location.pathname !== '/') {
-            router.navigate({ to: '/' })
-          }
-        })
+        if (isAppPath()) {
+          router.navigate({ to: '/' })
+        }
       }
     }
     window.addEventListener('storage', handleStorageChange)
@@ -110,9 +137,14 @@ export function DailySessionWatcher() {
       if (event === 'SIGNED_IN' && session) {
         setDailySessionExpiry()
         checkAndSchedule()
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
         if (timeoutRef.current) clearTimeout(timeoutRef.current)
-        localStorage.removeItem(SESSION_EXPIRES_KEY)
+        clearDailySessionExpiry()
+        localStorage.removeItem('sucena_environment')
+        localStorage.removeItem('sucena_user_name')
+        if (isAppPath()) {
+          router.navigate({ to: '/' })
+        }
       }
     })
 

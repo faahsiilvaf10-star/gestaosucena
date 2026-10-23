@@ -57,7 +57,8 @@ export async function handleMidnightLogout(onNavigate?: () => void): Promise<voi
   try {
     clearDailySessionExpiry()
     localStorage.removeItem('sucena_environment')
-    await supabase.auth.signOut()
+    localStorage.removeItem('sucena_user_name')
+    await supabase.auth.signOut().catch(() => {})
     
     toast.warning('Sua sessão diária expirou às 00:00. Por favor, faça login novamente para continuar.', {
       duration: 6000,

@@ -19,7 +19,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
-import { setDailySessionExpiry } from '../lib/sessionManager'
+import { setDailySessionExpiry, clearDailySessionExpiry } from '../lib/sessionManager'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -87,9 +87,19 @@ function Index() {
     
     // Load registration status
     isRegistrationOpen().then(isOpen => setRegistrationOpen(isOpen))
-    // Check for password recovery hash
-    if (window.location.hash.includes('type=recovery')) {
+    // Check for password recovery hash or params
+    if (window.location.hash.includes('type=recovery') || window.location.href.includes('type=recovery')) {
       setViewState('RESET_PASSWORD')
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setViewState('RESET_PASSWORD')
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
   }, [])
 
@@ -134,9 +144,11 @@ function Index() {
       toast.error('Erro ao redefinir: ' + translatedError)
       setErrorMessage(translatedError)
     } else {
-      toast.success('Senha redefinida com sucesso!')
+      await supabase.auth.signOut().catch(() => {})
+      clearDailySessionExpiry()
+      toast.success('Senha redefinida com sucesso! Faça login com sua nova senha.')
       setViewState('LOGIN')
-      // Clear hash from URL
+      // Clear hash and parameters from URL
       window.history.replaceState(null, '', window.location.pathname)
     }
   }

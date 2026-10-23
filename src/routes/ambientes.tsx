@@ -44,6 +44,10 @@ function AmbientesComponent() {
           const { data: userData } = await supabase.auth.getUser()
           user = userData?.user || null
         }
+        if (!user) {
+          navigate({ to: '/' })
+          return
+        }
         setCurrentUser(user)
         setAccessMap(map)
       } catch (err) {

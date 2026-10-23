@@ -100,22 +100,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        const role = data.user.user_metadata?.role || ''
-        const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
-        if (userName && userName !== 'Usuário') {
-          try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
-        }
-        setCurrentUser({
-          id: data.user.id || '',
-          name: userName,
-          role: role || 'Usuário',
-          avatarUrl: data.user.user_metadata?.avatar_url || ''
-        })
+      if (!data?.user) {
+        navigate({ to: '/' })
+        return
       }
+      const role = data.user.user_metadata?.role || ''
+      const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
+      if (userName && userName !== 'Usuário') {
+        try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
+      }
+      setCurrentUser({
+        id: data.user.id || '',
+        name: userName,
+        role: role || 'Usuário',
+        avatarUrl: data.user.user_metadata?.avatar_url || ''
+      })
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+        navigate({ to: '/' })
+        return
+      }
       if (session?.user) {
         const role = session.user.user_metadata?.role || ''
         const userName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
@@ -132,7 +138,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     // Solicita permissão de localização no Android (Capacitor) ao abrir o app

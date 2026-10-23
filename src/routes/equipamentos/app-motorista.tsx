@@ -21,10 +21,13 @@ export type AppMotoristaStep = 'login' | 'environment' | 'equipment' | 'wizard' 
 
 function AppMotoristaWrapper() {
   const [session, setSession] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [currentStepState, setCurrentStepState] = useState<AppMotoristaStep>(
-    (localStorage.getItem('app_motorista_current_step') as AppMotoristaStep) || 'login'
-  )
+  const [currentStepState, setCurrentStepState] = useState<AppMotoristaStep>(() => {
+    if (typeof window === 'undefined') return 'login'
+    const driver = localStorage.getItem('app_motorista_driver')
+    const savedStep = localStorage.getItem('app_motorista_current_step') as AppMotoristaStep
+    if (driver && savedStep) return savedStep
+    return 'login'
+  })
   const [announcements, setAnnouncements] = useState<Array<{title: string, body: string}>>([])
 
   // Exibe notificação no sistema e in-app banner
@@ -194,7 +197,16 @@ function AppMotoristaWrapper() {
           />
         )}
         {currentStep === 'wizard' && <WizardStep onFinish={() => setCurrentStep('dashboard')} onCancel={() => setCurrentStep('equipment')} />}
-        {currentStep === 'dashboard' && <DashboardStep onBack={() => setCurrentStep('equipment')} />}
+        {currentStep === 'dashboard' && (
+          <DashboardStep
+            onLogout={() => {
+              const keys = ['app_motorista_driver', 'app_motorista_current_step', 'app_motorista_current_dispatch', 'app_motorista_equipment_id', 'app_motorista_timeline', 'app_motorista_active_status', 'app_motorista_active_status_color', 'app_motorista_status_start', 'app_motorista_wizard_state', 'app_motorista_water_point', 'app_motorista_water_start', 'app_motorista_fuel_level']
+              keys.forEach(k => localStorage.removeItem(k))
+              setCurrentStep('login')
+            }}
+            onBack={() => setCurrentStep('equipment')}
+          />
+        )}
       </div>
       
       {/* MODAL DE COMUNICADO OFICIAL */}
