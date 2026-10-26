@@ -92,14 +92,33 @@ export function ArenaDeJogo({
     [modo, fase, config.tamanho, config.palavras, semente, categorias],
   )
 
+  const tabuleiroCruzadas = geracao.tabuleiroCruzadas
+  const dicasIniciais = useMemo(
+    () => tabuleiroCruzadas?.dicasIniciais ?? {},
+    [tabuleiroCruzadas],
+  )
+
   const [pontos, setPontos] = useState(pontosIniciais ?? 0)
   const [encontradas, setEncontradas] = useState<Set<string>>(new Set(palavrasIniciais ?? []))
   const [selecao, setSelecao] = useState<Posicao[]>([])
   const [erro, setErro] = useState(0)
   const [tempoRestante, setTempoRestante] = useState(tempoInicial ?? config.segundos)
-  const [letras, setLetras] = useState<Record<string, string>>(letrasIniciais ?? {})
-  const [confirmadas, setConfirmadas] = useState<Set<string>>(new Set(confirmadasIniciais ?? []))
-  const [ativa, setAtiva] = useState<Posicao | null>(null)
+  const [letras, setLetras] = useState<Record<string, string>>(() => ({
+    ...(geracao.tabuleiroCruzadas?.dicasIniciais ?? {}),
+    ...(letrasIniciais ?? {}),
+  }))
+  const [confirmadas, setConfirmadas] = useState<Set<string>>(() => {
+    const dicas = Object.keys(geracao.tabuleiroCruzadas?.dicasIniciais ?? {})
+    return new Set([...dicas, ...(confirmadasIniciais ?? [])])
+  })
+  const [ativa, setAtiva] = useState<Posicao | null>(() => {
+    if (modo === 'cruzada' && geracao.tabuleiroCruzadas?.slots[0]) {
+      const primeiroSlot = geracao.tabuleiroCruzadas.slots[0]
+      const dicas = geracao.tabuleiroCruzadas.dicasIniciais ?? {}
+      return primeiroSlot.cells.find((c) => !dicas[`${c.r}:${c.c}`]) ?? primeiroSlot.cells[0]
+    }
+    return null
+  })
   const [terminou, setTerminou] = useState(false)
   const [pausado, setPausado] = useState(pausadoInicial)
 
@@ -151,13 +170,23 @@ export function ArenaDeJogo({
     encontradosRef.current = new Set(palavrasIniciais ?? [])
     setEncontradas(new Set(palavrasIniciais ?? []))
     setSelecao([])
-    setLetras(letrasIniciais ?? {})
-    setConfirmadas(new Set(confirmadasIniciais ?? []))
-    setAtiva(null)
+
+    const dicas = geracao.tabuleiroCruzadas?.dicasIniciais ?? {}
+    setLetras({ ...dicas, ...(letrasIniciais ?? {}) })
+    setConfirmadas(new Set([...Object.keys(dicas), ...(confirmadasIniciais ?? [])]))
+
+    if (modo === 'cruzada' && geracao.tabuleiroCruzadas?.slots[0]) {
+      const primeiroSlot = geracao.tabuleiroCruzadas.slots[0]
+      const primeiraVazia = primeiroSlot.cells.find((c) => !dicas[`${c.r}:${c.c}`]) ?? primeiroSlot.cells[0]
+      setAtiva(primeiraVazia)
+    } else {
+      setAtiva(null)
+    }
+
     setTerminou(false)
     setPausado(pausadoInicial)
     chamadaConclusao.current = false
-  }, [fase, config.segundos, prazoFinal, semente])
+  }, [fase, config.segundos, prazoFinal, semente, geracao, modo, letrasIniciais, confirmadasIniciais, palavrasIniciais, pontosIniciais, tempoInicial, pausadoInicial])
 
   // Cronômetro com suporte a pausa
   useEffect(() => {
@@ -236,8 +265,6 @@ export function ArenaDeJogo({
   // ---------------------------------------------------------------
   // Palavras cruzadas
   // ---------------------------------------------------------------
-  const tabuleiroCruzadas = geracao.tabuleiroCruzadas
-
   const slotDaCasa = useCallback(
     (pos: Posicao) =>
       tabuleiroCruzadas?.slots.find((slot) =>
@@ -256,6 +283,36 @@ export function ArenaDeJogo({
       return slot.cells[novoIndice]
     },
     [slotDaCasa],
+  )
+
+  const proximaCasaVazia = useCallback(
+    (pos: Posicao) => {
+      const slot = slotDaCasa(pos)
+      if (!slot) return pos
+      const indice = slot.cells.findIndex((cell) => cell.r === pos.r && cell.c === pos.c)
+      // 1. Procura a próxima casa no mesmo slot que não seja dica e não esteja confirmada
+      for (let i = indice + 1; i < slot.cells.length; i++) {
+        const c = slot.cells[i]
+        const k = `${c.r}:${c.c}`
+        if (!dicasIniciais[k] && !confirmadas.has(k)) {
+          return c
+        }
+      }
+      // 2. Se não encontrou depois do cursor, busca se há alguma casa anterior vazia
+      for (let i = 0; i < indice; i++) {
+        const c = slot.cells[i]
+        const k = `${c.r}:${c.c}`
+        if (!dicasIniciais[k] && !confirmadas.has(k)) {
+          return c
+        }
+      }
+      // 3. Se todas as casas deste slot já estão preenchidas/confirmadas, vai para a próxima casa normal do slot se existir
+      if (indice + 1 < slot.cells.length) {
+        return slot.cells[indice + 1]
+      }
+      return pos
+    },
+    [confirmadas, dicasIniciais, slotDaCasa],
   )
 
   const mover = useCallback(
@@ -292,9 +349,17 @@ export function ArenaDeJogo({
 
   const digitar = useCallback(
     (letra: string) => {
-      if (!ativa || !tabuleiroCruzadas || bloqueado || pausado || terminou) return
+      if (!ativa || !tabuleiroCruzadas || bloqueado || pausado || (terminou || chamadaConclusao.current)) return
       const chave = `${ativa.r}:${ativa.c}`
       const correta = tabuleiroCruzadas.grid[ativa.r][ativa.c]
+      const ehDica = Boolean(dicasIniciais[chave])
+
+      if (ehDica) {
+        // Se a casa já é uma dica inicial, mantém intacta e avança para a próxima casa a preencher
+        setAtiva(proximaCasaVazia(ativa))
+        return
+      }
+
       setLetras((prev) => ({ ...prev, [chave]: letra }))
 
       if (letra === correta) {
@@ -304,25 +369,59 @@ export function ArenaDeJogo({
         som('erro')
         setErro((v) => v + 1)
       }
-      setAtiva(avancarNaPalavra(ativa, 'proximo'))
+
+      setAtiva(proximaCasaVazia(ativa))
     },
-    [ativa, avancarNaPalavra, bloqueado, pausado, som, tabuleiroCruzadas, terminou],
+    [ativa, tabuleiroCruzadas, bloqueado, pausado, terminou, dicasIniciais, proximaCasaVazia, som],
   )
 
   const apagar = useCallback(() => {
-    if (!ativa || pausado) return
+    if (!ativa || pausado || (terminou || chamadaConclusao.current)) return
     const chave = `${ativa.r}:${ativa.c}`
-    setLetras((prev) => {
-      const novo = { ...prev }
-      delete novo[chave]
-      return novo
-    })
-    setConfirmadas((prev) => {
-      const novo = new Set(prev)
-      novo.delete(chave)
-      return novo
-    })
-  }, [ativa, pausado])
+
+    // Se a casa atual é uma dica inicial, não apaga a dica, apenas recua
+    if (dicasIniciais[chave]) {
+      const anterior = avancarNaPalavra(ativa, 'anterior')
+      if (anterior.r !== ativa.r || anterior.c !== ativa.c) {
+        setAtiva(anterior)
+      }
+      return
+    }
+
+    // Se tem letra digitada pelo jogador na casa atual, apaga ela
+    if (letras[chave]) {
+      setLetras((prev) => {
+        const novo = { ...prev }
+        delete novo[chave]
+        return novo
+      })
+      setConfirmadas((prev) => {
+        const novo = new Set(prev)
+        novo.delete(chave)
+        return novo
+      })
+      return
+    }
+
+    // Se já estava vazia, recua para a anterior e apaga se não for dica
+    const anterior = avancarNaPalavra(ativa, 'anterior')
+    if (anterior.r !== ativa.r || anterior.c !== ativa.c) {
+      const chaveAnt = `${anterior.r}:${anterior.c}`
+      if (!dicasIniciais[chaveAnt]) {
+        setLetras((prev) => {
+          const novo = { ...prev }
+          delete novo[chaveAnt]
+          return novo
+        })
+        setConfirmadas((prev) => {
+          const novo = new Set(prev)
+          novo.delete(chaveAnt)
+          return novo
+        })
+      }
+      setAtiva(anterior)
+    }
+  }, [ativa, pausado, terminou, dicasIniciais, letras, avancarNaPalavra])
 
   // Detecta slots completos (palavras cruzadas resolvidas).
   useEffect(() => {

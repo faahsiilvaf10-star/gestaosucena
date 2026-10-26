@@ -276,6 +276,8 @@ export interface TabuleiroCruzadas {
   slots: Slot[]
   /** Casa inicial (r, c) -> número. */
   numeros: Record<string, number>
+  /** Letras de dica pré-reveladas no tabuleiro (chave "r:c" -> letra). */
+  dicasIniciais: Record<string, string>
 }
 
 interface Ocupacao {
@@ -286,6 +288,72 @@ interface Ocupacao {
 }
 
 /**
+ * Seleciona letras de dica pré-reveladas no tabuleiro de palavras cruzadas.
+ * - Palavras curtas (3 a 4 letras): 1 letra revelada
+ * - Palavras médias (5 a 7 letras): 2 letras reveladas
+ * - Palavras longas (8+ letras): 2 a 3 letras reveladas
+ * Prioriza cruzamentos entre palavras e a primeira letra para servir de âncora.
+ */
+function gerarDicasCruzadas(
+  slots: Slot[],
+  random: () => number,
+  fase = 1,
+): Record<string, string> {
+  const dicas: Record<string, string> = {}
+
+  // Mapeia todas as casas que são interseções (cruzamentos entre duas palavras)
+  const contagemCasas = new Map<string, number>()
+  for (const slot of slots) {
+    for (const cell of slot.cells) {
+      const k = `${cell.r}:${cell.c}`
+      contagemCasas.set(k, (contagemCasas.get(k) ?? 0) + 1)
+    }
+  }
+
+  for (const slot of slots) {
+    const len = slot.cells.length
+    if (len <= 2) continue
+
+    // Teto de letras reveladas: sempre garante ao menos 1 a 2 letras sem entregar a palavra inteira
+    const metaReveladas =
+      fase <= 2
+        ? len <= 4 ? 2 : len <= 6 ? 2 : 3
+        : len <= 4 ? 1 : len <= 6 ? 2 : 2
+    const maxReveladas = Math.max(1, Math.min(len - 2, metaReveladas))
+
+    let jaReveladas = slot.cells.filter((c) => dicas[`${c.r}:${c.c}`] !== undefined).length
+    if (jaReveladas >= maxReveladas) continue
+
+    const candidatos: { index: number; peso: number }[] = []
+    for (let i = 0; i < len; i++) {
+      const cell = slot.cells[i]
+      const k = `${cell.r}:${cell.c}`
+      if (dicas[k] !== undefined) continue
+
+      const isIntersecao = (contagemCasas.get(k) ?? 0) > 1
+      let peso = 10
+      if (isIntersecao) peso += 16 // interseções ajudam duas palavras ao mesmo tempo
+      if (i === 0) peso += 14 // primeira letra serve como âncora clara
+      if (i === Math.floor(len / 2)) peso += 8
+
+      candidatos.push({ index: i, peso: peso + Math.floor(random() * 8) })
+    }
+
+    candidatos.sort((a, b) => b.peso - a.peso)
+
+    for (const cand of candidatos) {
+      if (jaReveladas >= maxReveladas) break
+      const cell = slot.cells[cand.index]
+      const k = `${cell.r}:${cell.c}`
+      dicas[k] = slot.word[cand.index]
+      jaReveladas++
+    }
+  }
+
+  return dicas
+}
+
+/**
  * Gera um quebra-cabeça de palavras cruzadas a partir de uma lista de
  * palavras, construindo palavras que se cruzam entre si.
  */
@@ -293,6 +361,7 @@ export function gerarCruzadas(
   palavras: WordEntry[],
   tamanho: number,
   semente: number,
+  fase = 1,
 ): TabuleiroCruzadas {
   const random = criarRandom(semente)
   const ocupacao = new Map<string, Ocupacao>()
@@ -365,7 +434,7 @@ export function gerarCruzadas(
   const ordenadas = [...palavras].sort((a, b) => b.word.length - a.word.length)
   const primeira = ordenadas[0]
   if (!primeira) {
-    return { grid: [], tamanho, slots: [], numeros: {} }
+    return { grid: [], tamanho, slots: [], numeros: {}, dicasIniciais: {} }
   }
 
   // Primeira palavra: horizontal, centralizada.
@@ -438,7 +507,9 @@ export function gerarCruzadas(
   const numeros: Record<string, number> = {}
   for (const [k, numero] of inicios.entries()) numeros[k] = numero
 
-  return { grid, tamanho, slots, numeros }
+  const dicasIniciais = gerarDicasCruzadas(slots, random, fase)
+
+  return { grid, tamanho, slots, numeros, dicasIniciais }
 }
 
 /**
@@ -462,7 +533,7 @@ export function gerarFase(
   )
 
   if (modo === 'cruzada') {
-    const tabuleiro = gerarCruzadas(sorteadas, tamanho, semente)
+    const tabuleiro = gerarCruzadas(sorteadas, tamanho, semente, fase)
     return { tabuleiroBusca: null, tabuleiroCruzadas: tabuleiro, palavras: tabuleiro.slots.map((slot) => ({
       word: slot.word,
       clue: slot.clue,
