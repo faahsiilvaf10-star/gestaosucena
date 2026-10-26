@@ -12,6 +12,7 @@ import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
 import Bot from 'lucide-react/dist/esm/icons/bot.js';
+import Puzzle from 'lucide-react/dist/esm/icons/puzzle.js';
 import Video from 'lucide-react/dist/esm/icons/video.js';
 import Menu from 'lucide-react/dist/esm/icons/menu.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
@@ -27,6 +28,7 @@ import { VerifiedBadge, isAdmin } from './ui/VerifiedBadge'
 import { LiquidMetalButton } from './ui/liquid-metal-button'
 import { usePermissions } from '../hooks/usePermissions'
 import { MODULES } from '../lib/permissions'
+import { ModalCacaPalavras } from './caca-palavras/ModalCacaPalavras'
 
 interface UserInfo {
   id: string
@@ -64,6 +66,7 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isJogoAberto, setIsJogoAberto] = useState(false)
   
   const { canView } = usePermissions(currentUser.id)
   const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null
@@ -289,6 +292,13 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
           <div className="sucena-mobile-actions">
             <button
               className="sucena-mobile-action-btn"
+              onClick={() => setIsJogoAberto(true)}
+              aria-label="Jogar Caça Palavras"
+            >
+              <Puzzle size={20} strokeWidth={1.8} />
+            </button>
+            <button
+              className="sucena-mobile-action-btn"
               onClick={() => setIsSearchOpen(true)}
               aria-label="Pesquisar"
             >
@@ -392,8 +402,16 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
 
           {/* AÇÕES */}
           <div className="nav-actions">
-            <button 
-              className="nav-action-btn" 
+            <button
+              className="nav-action-btn"
+              aria-label="Jogar Caça Palavras"
+              title="Caça Palavras"
+              onClick={() => setIsJogoAberto(true)}
+            >
+              <Puzzle size={16} strokeWidth={1.8} />
+            </button>
+            <button
+              className="nav-action-btn"
               aria-label="Pesquisar"
               onClick={() => setIsSearchOpen(true)}
             >
@@ -422,9 +440,14 @@ export function WindowsNavbar({ currentUser, onLogoutRequest }: WindowsNavbarPro
         onClose={() => setIsSearchOpen(false)} 
       />
       
-      <SucenaAIModal 
-        isOpen={isAiOpen} 
-        onClose={() => setIsAiOpen(false)} 
+      <SucenaAIModal
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+      />
+
+      <ModalCacaPalavras
+        aberto={isJogoAberto}
+        aoFechar={() => setIsJogoAberto(false)}
       />
     </>
   )
