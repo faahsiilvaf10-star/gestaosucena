@@ -30,7 +30,7 @@ export function ModalCacaPalavras({ aberto, aoFechar }: Props) {
 
   return (
     <div className="dark fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-0 backdrop-blur-md sm:p-4 text-white">
-      <div className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden border border-white/10 bg-[#0c0e14] shadow-2xl sm:h-[92vh] sm:rounded-3xl">
+      <div className="relative flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden border border-white/10 bg-[#0c0e14] shadow-2xl sm:h-[92vh] sm:rounded-3xl">
         <CacaPalavrasHub aoFechar={aoFechar} />
       </div>
     </div>

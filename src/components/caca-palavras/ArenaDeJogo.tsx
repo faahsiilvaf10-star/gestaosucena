@@ -478,35 +478,35 @@ export function ArenaDeJogo({
   return (
     <div className="relative space-y-4">
       {/* HUD Superior */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 shadow-inner">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Fase</span>
-          <span className="text-lg font-black text-white">{fase}</span>
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">
+        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Fase</span>
+          <span className="text-sm sm:text-lg font-black text-white">{fase}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 shadow-inner">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Nível</span>
-          <span className="text-lg font-black text-emerald-400">{config.nivel}</span>
+        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Nível</span>
+          <span className="text-sm sm:text-lg font-black text-emerald-400">{config.nivel}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 shadow-inner">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Pontos</span>
-          <span className="text-lg font-black tabular-nums text-amber-400">{pontos}</span>
+        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Pontos</span>
+          <span className="text-sm sm:text-lg font-black tabular-nums text-amber-400">{pontos}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 shadow-inner">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Palavras</span>
-          <span className="text-lg font-black tabular-nums text-white">
+        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Palavras</span>
+          <span className="text-sm sm:text-lg font-black tabular-nums text-white">
             {encontradas.size}/{modo === 'busca' ? tabuleiroBusca?.colocacoes.length : tabuleiroCruzadas?.slots.length}
           </span>
         </div>
         <div
-          className={`rounded-xl border px-3 py-2 transition-colors shadow-inner ${
+          className={`rounded-xl border p-2 sm:px-3 sm:py-2 transition-colors shadow-inner ${
             tempoCritico
               ? 'border-red-500/70 bg-red-500/20 animate-pulse'
               : 'border-white/10 bg-slate-900/70'
           }`}
         >
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Tempo</span>
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Tempo</span>
           <span
-            className={`text-lg font-black tabular-nums ${tempoCritico ? 'text-red-400' : 'text-white'}`}
+            className={`text-sm sm:text-lg font-black tabular-nums ${tempoCritico ? 'text-red-400' : 'text-white'}`}
           >
             {String(Math.floor(tempo / 60)).padStart(2, '0')}:{String(tempo % 60).padStart(2, '0')}
           </span>
@@ -517,13 +517,13 @@ export function ArenaDeJogo({
           type="button"
           onClick={pausarJogo}
           title="Pausar jogo e congelar tempo"
-          className="flex flex-col justify-center rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-left transition-all hover:border-amber-400/50 hover:bg-amber-500/15 group shadow-inner"
+          className="flex flex-col justify-center rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 text-left transition-all hover:border-amber-400/50 hover:bg-amber-500/15 group shadow-inner"
         >
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 group-hover:text-amber-300">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 group-hover:text-amber-300">
             Controle
           </span>
-          <span className="flex items-center gap-1.5 text-sm font-black text-white group-hover:text-amber-300">
-            <Pause className="h-4 w-4 fill-amber-400 text-amber-400" />
+          <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-white group-hover:text-amber-300">
+            <Pause className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
             Pausar
           </span>
         </button>

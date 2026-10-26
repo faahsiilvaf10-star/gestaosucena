@@ -323,27 +323,27 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#0b0e14] text-white select-none">
       {/* Cabeçalho Gaming */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-slate-950/60 px-4 py-3 sm:px-6 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border border-white/15 shadow-inner">
-            <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-950/60 px-3 py-2.5 sm:px-6 sm:py-3 backdrop-blur-md">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border border-white/15 shadow-inner shrink-0">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 animate-pulse" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-black tracking-tight text-white">Caça Palavras & Cruzadas</h2>
-              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[0.65rem] font-bold text-emerald-400">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h2 className="text-sm sm:text-base font-black tracking-tight text-white truncate">Caça Palavras & Cruzadas</h2>
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 sm:px-2 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold text-emerald-400">
                 PRO
               </span>
             </div>
-            <p className="text-[0.7rem] text-slate-400">
+            <p className="hidden sm:block text-[0.7rem] text-slate-400">
               {FASES_POR_PARTIDA} fases progressivas · multiplayer online 1x1 · ranking geral
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Navegação entre Abas */}
-          <nav className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] p-1">
+          <nav className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-white/10 bg-white/[0.04] p-0.5 sm:p-1">
             {abas.map(({ id, label, Icone }) => {
               const ativa = aba === id
               return (
@@ -354,14 +354,14 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
                     som('clique')
                     setAba(id)
                   }}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-all ${
                     ativa
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 ring-1 ring-white/20'
                       : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
                   <Icone className="h-3.5 w-3.5" />
-                  {label}
+                  <span>{label}</span>
                 </button>
               )
             })}
@@ -372,9 +372,9 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
             type="button"
             onClick={alternarMudo}
             title={mudo ? 'Ativar som' : 'Desativar som'}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white shrink-0"
           >
-            {mudo ? <VolumeX className="h-4 w-4 text-red-400" /> : <Volume2 className="h-4 w-4 text-emerald-400" />}
+            {mudo ? <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400" /> : <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />}
           </button>
 
           {/* Botão Fechar Modal */}
@@ -383,7 +383,7 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
               type="button"
               onClick={fecharComSalvamento}
               title="Fechar (Esc) - Salva partida automaticamente"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -392,7 +392,7 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
       </header>
 
       {/* Conteúdo Principal */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-6 sm:py-5">
         {aba === 'solo' && (
           <div className="mx-auto max-w-4xl space-y-6">
             {!jogando ? (
@@ -641,34 +641,35 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
             ) : (
               <div className="space-y-4 animate-[role-fade-in_0.3s_ease-out]">
                 {/* Barra de controle da partida em andamento */}
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-3 backdrop-blur-md">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-slate-300">
-                      Pontos Acumulados: <span className="text-amber-400 font-black">{pontosTotais}</span>
+                <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 sm:p-3 backdrop-blur-md">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300">
+                      Pontos: <span className="text-amber-400 font-black">{pontosTotais}</span>
                     </span>
-                    <span className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-slate-300">
+                    <span className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300">
                       Fase <span className="text-emerald-400 font-black">{fase}</span> de {FASES_POR_PARTIDA}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => salvarESair()}
                       title="Salva nível, tempo e envia pontos ao ranking"
-                      className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/30"
+                      className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/30"
                     >
                       <Save className="h-3.5 w-3.5 text-emerald-400" />
-                      Salvar & Sair
+                      <span>Salvar<span className="hidden sm:inline"> & Sair</span></span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => salvarESair()}
                       title="Sai do jogo salvando automaticamente o progresso"
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300"
+                      className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300 transition-colors hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300"
                     >
-                      <RotateCcw className="h-3.5 w-3.5" /> Sair do jogo
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Sair</span>
                     </button>
                   </div>
                 </div>

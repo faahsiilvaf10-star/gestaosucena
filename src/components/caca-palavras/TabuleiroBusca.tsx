@@ -208,7 +208,7 @@ export function TabuleiroBusca({
       onPointerUp={finalizarArraste}
     >
       <div
-        className="grid gap-1 sm:gap-1.5 p-2 rounded-2xl border border-white/10 bg-slate-950/70 shadow-2xl backdrop-blur-md"
+        className="grid gap-0.5 sm:gap-1.5 p-1 sm:p-2 rounded-2xl border border-white/10 bg-slate-950/70 shadow-2xl backdrop-blur-md"
         style={{ gridTemplateColumns: `repeat(${tabuleiro.tamanho}, minmax(0, 1fr))` }}
       >
         {tabuleiro.grid.map((linha, r) =>
@@ -239,12 +239,12 @@ export function TabuleiroBusca({
                 onPointerDown={(e) => handlePointerDown(r, c, e)}
                 onPointerEnter={() => handlePointerEnter(r, c)}
                 onClick={() => handleClick(r, c)}
-                className={`relative aspect-square flex items-center justify-center rounded-lg border text-[clamp(0.75rem,2.4vw,1.15rem)] font-black uppercase transition-transform duration-100 cursor-pointer ${estilo}`}
+                className={`relative aspect-square flex items-center justify-center rounded-[4px] sm:rounded-lg border text-[clamp(0.65rem,2.8vw,1.15rem)] font-black uppercase transition-transform duration-100 cursor-pointer ${estilo}`}
                 aria-label={`Linha ${r + 1}, Coluna ${c + 1}: Letra ${letra}`}
               >
                 {letra}
                 {isEncontrada && (
-                  <span className="pointer-events-none absolute inset-0 rounded-lg bg-emerald-400/10 animate-[pulse-glow_2s_ease-in-out_infinite]" />
+                  <span className="pointer-events-none absolute inset-0 rounded-[4px] sm:rounded-lg bg-emerald-400/10 animate-[pulse-glow_2s_ease-in-out_infinite]" />
                 )}
               </button>
             )
@@ -264,34 +264,34 @@ export function ListaPalavras({
   encontradas: Set<string>
 }) {
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-col sm:gap-2.5">
       {colocacoes.map((colocacao) => {
         const achada = encontradas.has(colocacao.word)
         return (
           <li
             key={colocacao.word}
-            className={`rounded-xl border p-3 transition-all duration-300 ${
+            className={`rounded-xl border p-2 sm:p-3 transition-all duration-300 ${
               achada
                 ? 'border-emerald-500/50 bg-emerald-500/15 opacity-70'
                 : 'border-white/10 bg-slate-900/70 hover:border-white/25 hover:bg-slate-900/90'
             }`}
           >
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-1.5">
               <span
-                className={`text-sm font-black tracking-wider ${
+                className={`text-xs sm:text-sm font-black tracking-wider truncate ${
                   achada ? 'text-emerald-300 line-through decoration-2' : 'text-white'
                 }`}
               >
                 {colocacao.word}
               </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-slate-300">
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.55rem] sm:text-[0.62rem] font-bold uppercase tracking-wider text-slate-300">
                   {colocacao.category}
                 </span>
-                {achada && <Check className="h-3.5 w-3.5 text-emerald-400 stroke-[3]" />}
+                {achada && <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 stroke-[3]" />}
               </div>
             </div>
-            <p className="mt-1 text-xs text-slate-400 leading-snug">{colocacao.clue}</p>
+            <p className="mt-1 hidden sm:block text-xs text-slate-400 leading-snug">{colocacao.clue}</p>
           </li>
         )
       })}
