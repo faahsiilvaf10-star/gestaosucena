@@ -63,6 +63,57 @@ export interface JogadorPartida {
 
 const CHAVE_SCORES_LOCAL = 'caca_palavras_scores_local'
 const CHAVE_JOGADORES_LOCAL = 'caca_palavras_jogadores_local'
+const PREFIXO_PARTIDA_SOLO_SALVA = 'caca_palavras_partida_solo_'
+
+export interface EstadoFaseSolo {
+  tempoRestante: number
+  encontradas: string[]
+  pontosFase: number
+  letrasCruzadas?: Record<string, string>
+  confirmadasCruzadas?: string[]
+}
+
+export interface PartidaSoloSalva {
+  id: string
+  userId: string
+  userName: string
+  modo: ModoJogo
+  fase: number
+  nivel: number
+  sementeBase: number
+  pontosTotais: number
+  palavrasTotais: number
+  categorias: string[]
+  estadoFase: EstadoFaseSolo
+  salvoEm: string
+}
+
+export function obterChavePartidaSalva(userId?: string): string {
+  return `${PREFIXO_PARTIDA_SOLO_SALVA}${userId || 'anonimo'}`
+}
+
+export function obterPartidaSoloSalva(userId?: string): PartidaSoloSalva | null {
+  const chave = obterChavePartidaSalva(userId)
+  const salva = lerLocal<PartidaSoloSalva | null>(chave, null)
+  if (!salva) return null
+  if (!salva.fase || salva.fase < 1 || salva.fase > 5) return null
+  return salva
+}
+
+export function salvarPartidaSolo(partida: PartidaSoloSalva): void {
+  const chave = obterChavePartidaSalva(partida.userId)
+  gravarLocal(chave, partida)
+}
+
+export function limparPartidaSoloSalva(userId?: string): void {
+  if (typeof window === 'undefined') return
+  const chave = obterChavePartidaSalva(userId)
+  try {
+    localStorage.removeItem(chave)
+  } catch {
+    /* ignorado */
+  }
+}
 
 /** Erros de "tabela não existe" (42P01) e de permissão (42501). */
 function erroDeBancoNaoPronto(error: { code?: string; message?: string } | null): boolean {
@@ -107,6 +158,23 @@ function gravarLocal(chave: string, valor: unknown) {
 
 /** Grava o resultado de uma partida no ranking. */
 export async function salvarPontuacao(pontuacao: Pontuacao): Promise<boolean> {
+  // Atualiza também os pontos acumulados do jogador na tabela de presença/perfil
+  if (pontuacao.user_id) {
+    void supabase
+      .from('caca_palavras_players')
+      .upsert(
+        {
+          user_id: pontuacao.user_id,
+          user_name: pontuacao.user_name,
+          avatar_url: pontuacao.avatar_url ?? null,
+          online: true,
+          pontos: pontuacao.score,
+          updated_at: new Date().toISOString(),
+        } as never,
+        { onConflict: 'user_id' },
+      )
+  }
+
   const { error } = await supabase
     .from('caca_palavras_scores')
     .insert({
@@ -129,7 +197,14 @@ export async function salvarPontuacao(pontuacao: Pontuacao): Promise<boolean> {
       console.warn('[Caça Palavras] falha ao salvar pontuação:', error.message)
     }
     const locais = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
-    locais.push({ ...pontuacao, id: Date.now(), created_at: new Date().toISOString() })
+    const indexExistente = locais.findIndex(
+      (p) => p.user_id === pontuacao.user_id && p.modo === pontuacao.modo && !p.vitoria,
+    )
+    if (indexExistente >= 0 && pontuacao.score >= locais[indexExistente].score) {
+      locais[indexExistente] = { ...pontuacao, id: locais[indexExistente].id, created_at: new Date().toISOString() }
+    } else {
+      locais.push({ ...pontuacao, id: Date.now(), created_at: new Date().toISOString() })
+    }
     gravarLocal(CHAVE_SCORES_LOCAL, locais.slice(-200))
     return false
   }

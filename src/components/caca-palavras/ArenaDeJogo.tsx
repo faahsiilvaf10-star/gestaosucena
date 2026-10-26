@@ -4,6 +4,10 @@ import { configDaFase } from './wordBank'
 import { TabuleiroBusca, ListaPalavras } from './TabuleiroBusca'
 import { TabuleiroCruzadas } from './TabuleiroCruzadas'
 import { useGameSounds } from './useGameSounds'
+import Pause from 'lucide-react/dist/esm/icons/pause.js'
+import Play from 'lucide-react/dist/esm/icons/play.js'
+import Save from 'lucide-react/dist/esm/icons/save.js'
+import RotateCcw from 'lucide-react/dist/esm/icons/rotate-ccw.js'
 
 export interface ResultadoFase {
   pontos: number
@@ -11,6 +15,14 @@ export interface ResultadoFase {
   totalPalavras: number
   tempoRestante: number
   completo: boolean
+}
+
+export interface SnapshotFase {
+  tempoRestante: number
+  encontradas: string[]
+  pontosFase: number
+  letras?: Record<string, string>
+  confirmadas?: string[]
 }
 
 interface Props {
@@ -28,6 +40,21 @@ interface Props {
   aoProgresso?: (pontos: number, palavras: number) => void
   /** Categorias opcionalmente filtradas. */
   categorias?: string[]
+
+  // Suporte a restauração de jogo salvo
+  tempoInicial?: number
+  palavrasIniciais?: string[]
+  pontosIniciais?: number
+  letrasIniciais?: Record<string, string>
+  confirmadasIniciais?: string[]
+
+  // Pausa e salvamento
+  pausadoInicial?: boolean
+  aoPausar?: () => void
+  aoRetomar?: () => void
+  aoSalvarSair?: (snapshot: SnapshotFase) => void
+  aoReiniciar?: () => void
+  aoAtualizarEstado?: (snapshot: SnapshotFase) => void
 }
 
 /** Pontuação de uma palavra encontrada. */
@@ -45,6 +72,17 @@ export function ArenaDeJogo({
   aoPerderTempo,
   aoProgresso,
   categorias,
+  tempoInicial,
+  palavrasIniciais,
+  pontosIniciais,
+  letrasIniciais,
+  confirmadasIniciais,
+  pausadoInicial = false,
+  aoPausar,
+  aoRetomar,
+  aoSalvarSair,
+  aoReiniciar,
+  aoAtualizarEstado,
 }: Props) {
   const { som, mudo, alternarMudo } = useGameSounds()
   const config = useMemo(() => configDaFase(fase), [fase])
@@ -54,43 +92,79 @@ export function ArenaDeJogo({
     [modo, fase, config.tamanho, config.palavras, semente, categorias],
   )
 
-  const [pontos, setPontos] = useState(0)
-  const [encontradas, setEncontradas] = useState<Set<string>>(new Set())
+  const [pontos, setPontos] = useState(pontosIniciais ?? 0)
+  const [encontradas, setEncontradas] = useState<Set<string>>(new Set(palavrasIniciais ?? []))
   const [selecao, setSelecao] = useState<Posicao[]>([])
   const [erro, setErro] = useState(0)
-  const [tempoRestante, setTempoRestante] = useState(config.segundos)
-  const [letras, setLetras] = useState<Record<string, string>>({})
-  const [confirmadas, setConfirmadas] = useState<Set<string>>(new Set())
+  const [tempoRestante, setTempoRestante] = useState(tempoInicial ?? config.segundos)
+  const [letras, setLetras] = useState<Record<string, string>>(letrasIniciais ?? {})
+  const [confirmadas, setConfirmadas] = useState<Set<string>>(new Set(confirmadasIniciais ?? []))
   const [ativa, setAtiva] = useState<Posicao | null>(null)
   const [terminou, setTerminou] = useState(false)
+  const [pausado, setPausado] = useState(pausadoInicial)
 
+  const tempoPausadoRef = useRef(tempoInicial ?? config.segundos)
   const inicioRef = useRef<number>(Date.now())
-  const deadlineRef = useRef<number>(Date.now() + config.segundos * 1000)
-  const pontosRef = useRef(0)
-  const encontradosRef = useRef<Set<string>>(new Set())
+  const deadlineRef = useRef<number>(Date.now() + (tempoInicial ?? config.segundos) * 1000)
+  const pontosRef = useRef(pontosIniciais ?? 0)
+  const encontradosRef = useRef<Set<string>>(new Set(palavrasIniciais ?? []))
   const chamadaConclusao = useRef(false)
 
-  // Reinicia o estado quando a fase muda.
+  const obterSnapshot = useCallback((): SnapshotFase => ({
+    tempoRestante: Math.max(1, Math.round(tempoPausadoRef.current)),
+    encontradas: Array.from(encontradosRef.current),
+    pontosFase: pontosRef.current,
+    letras: modo === 'cruzada' ? letras : undefined,
+    confirmadas: modo === 'cruzada' ? Array.from(confirmadas) : undefined,
+  }), [confirmadas, letras, modo])
+
+  // Pausar o jogo (congelar cronômetro)
+  const pausarJogo = useCallback(() => {
+    if (terminou || pausado) return
+    const restante = Math.max(0, (deadlineRef.current - Date.now()) / 1000)
+    tempoPausadoRef.current = restante
+    setTempoRestante(restante)
+    setPausado(true)
+    som('clique')
+    aoPausar?.()
+    aoAtualizarEstado?.(obterSnapshot())
+  }, [aoAtualizarEstado, aoPausar, obterSnapshot, pausado, som, terminou])
+
+  // Retomar o jogo (descongelar cronômetro)
+  const retomarJogo = useCallback(() => {
+    if (!pausado) return
+    deadlineRef.current = Date.now() + tempoPausadoRef.current * 1000
+    setPausado(false)
+    som('clique')
+    aoRetomar?.()
+  }, [aoRetomar, pausado, som])
+
+  // Reinicia ou ajusta o estado quando a fase/semente muda
   useEffect(() => {
     inicioRef.current = Date.now()
-    deadlineRef.current = prazoFinal ?? Date.now() + config.segundos * 1000
-    setPontos(0)
-    pontosRef.current = 0
-    encontradosRef.current = new Set()
-    setEncontradas(new Set())
+    const segundosFase = tempoInicial ?? config.segundos
+    deadlineRef.current = prazoFinal ?? Date.now() + segundosFase * 1000
+    tempoPausadoRef.current = segundosFase
+    setTempoRestante(segundosFase)
+    setPontos(pontosIniciais ?? 0)
+    pontosRef.current = pontosIniciais ?? 0
+    encontradosRef.current = new Set(palavrasIniciais ?? [])
+    setEncontradas(new Set(palavrasIniciais ?? []))
     setSelecao([])
-    setLetras({})
-    setConfirmadas(new Set())
+    setLetras(letrasIniciais ?? {})
+    setConfirmadas(new Set(confirmadasIniciais ?? []))
     setAtiva(null)
     setTerminou(false)
+    setPausado(pausadoInicial)
     chamadaConclusao.current = false
   }, [fase, config.segundos, prazoFinal, semente])
 
-  // Cronômetro.
+  // Cronômetro com suporte a pausa
   useEffect(() => {
-    if (terminou) return
+    if (terminou || pausado) return
     const intervalo = window.setInterval(() => {
       const restante = Math.max(0, (deadlineRef.current - Date.now()) / 1000)
+      tempoPausadoRef.current = restante
       setTempoRestante(restante)
       if (restante <= 0 && !chamadaConclusao.current) {
         chamadaConclusao.current = true
@@ -102,7 +176,7 @@ export function ArenaDeJogo({
       }
     }, 250)
     return () => window.clearInterval(intervalo)
-  }, [terminou, aoPerderTempo, som])
+  }, [terminou, pausado, aoPerderTempo, som])
 
   // Notifica o progresso (modo online).
   useEffect(() => {
@@ -124,13 +198,18 @@ export function ArenaDeJogo({
       encontradosRef.current = novo
       setEncontradas(novo)
       som('acerto')
+      aoAtualizarEstado?.({
+        tempoRestante: Math.max(1, Math.round(tempoPausadoRef.current)),
+        encontradas: Array.from(novo),
+        pontosFase: pontosRef.current,
+      })
     },
-    [fase, som, tempoRestante],
+    [aoAtualizarEstado, fase, som, tempoRestante],
   )
 
   const concluirSelecao = useCallback(
     (cells: Posicao[]) => {
-      if (!tabuleiroBusca || bloqueado || (terminou || chamadaConclusao.current)) return
+      if (!tabuleiroBusca || bloqueado || pausado || (terminou || chamadaConclusao.current)) return
       if (cells.length <= 1) return
 
       const texto = cells.map((p) => tabuleiroBusca.grid[p.r]?.[p.c] ?? '').join('')
@@ -151,7 +230,7 @@ export function ArenaDeJogo({
         window.setTimeout(() => setSelecao([]), 350)
       }
     },
-    [bloqueado, tabuleiroBusca, registrarAcertoBusca, som, terminou],
+    [bloqueado, pausado, tabuleiroBusca, registrarAcertoBusca, som, terminou],
   )
 
   // ---------------------------------------------------------------
@@ -181,7 +260,7 @@ export function ArenaDeJogo({
 
   const mover = useCallback(
     (direcao: 'cima' | 'baixo' | 'esquerda' | 'direita') => {
-      if (!ativa || !tabuleiroCruzadas) return
+      if (!ativa || !tabuleiroCruzadas || pausado) return
       const dentroDaPalavra =
         direcao === 'cima' ||
         direcao === 'baixo'
@@ -208,12 +287,12 @@ export function ArenaDeJogo({
         c += passos[1]
       }
     },
-    [ativa, slotDaCasa, avancarNaPalavra, tabuleiroCruzadas],
+    [ativa, slotDaCasa, avancarNaPalavra, tabuleiroCruzadas, pausado],
   )
 
   const digitar = useCallback(
     (letra: string) => {
-      if (!ativa || !tabuleiroCruzadas || bloqueado || terminou) return
+      if (!ativa || !tabuleiroCruzadas || bloqueado || pausado || terminou) return
       const chave = `${ativa.r}:${ativa.c}`
       const correta = tabuleiroCruzadas.grid[ativa.r][ativa.c]
       setLetras((prev) => ({ ...prev, [chave]: letra }))
@@ -227,11 +306,11 @@ export function ArenaDeJogo({
       }
       setAtiva(avancarNaPalavra(ativa, 'proximo'))
     },
-    [ativa, avancarNaPalavra, bloqueado, som, tabuleiroCruzadas, terminou],
+    [ativa, avancarNaPalavra, bloqueado, pausado, som, tabuleiroCruzadas, terminou],
   )
 
   const apagar = useCallback(() => {
-    if (!ativa) return
+    if (!ativa || pausado) return
     const chave = `${ativa.r}:${ativa.c}`
     setLetras((prev) => {
       const novo = { ...prev }
@@ -243,7 +322,7 @@ export function ArenaDeJogo({
       novo.delete(chave)
       return novo
     })
-  }, [ativa])
+  }, [ativa, pausado])
 
   // Detecta slots completos (palavras cruzadas resolvidas).
   useEffect(() => {
@@ -261,12 +340,19 @@ export function ArenaDeJogo({
         encontradosRef.current = novo
         setEncontradas(novo)
         som('acerto')
+        aoAtualizarEstado?.({
+          tempoRestante: Math.max(1, Math.round(tempoPausadoRef.current)),
+          encontradas: Array.from(novo),
+          pontosFase: pontosRef.current,
+          letras,
+          confirmadas: Array.from(confirmadas),
+        })
       }
     }
     if (encontradosRef.current.size >= tabuleiroCruzadas.slots.length && tabuleiroCruzadas.slots.length > 0) {
       concluirFase(true)
     }
-  }, [confirmadas, modo, tabuleiroCruzadas, fase, tempoRestante, som])
+  }, [confirmadas, modo, tabuleiroCruzadas, fase, tempoRestante, som, aoAtualizarEstado, letras])
 
   // ---------------------------------------------------------------
   function terminatedGuard() {
@@ -291,9 +377,9 @@ export function ArenaDeJogo({
   const tempoCritico = tempo <= 10
 
   return (
-    <div className="space-y-4">
-      {/* HUD */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+    <div className="relative space-y-4">
+      {/* HUD Superior */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
         <div className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 shadow-inner">
           <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Fase</span>
           <span className="text-lg font-black text-white">{fase}</span>
@@ -326,6 +412,22 @@ export function ArenaDeJogo({
             {String(Math.floor(tempo / 60)).padStart(2, '0')}:{String(tempo % 60).padStart(2, '0')}
           </span>
         </div>
+
+        {/* Botão Pausar e Salvar */}
+        <button
+          type="button"
+          onClick={pausarJogo}
+          title="Pausar jogo e congelar tempo"
+          className="flex flex-col justify-center rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-left transition-all hover:border-amber-400/50 hover:bg-amber-500/15 group shadow-inner"
+        >
+          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 group-hover:text-amber-300">
+            Controle
+          </span>
+          <span className="flex items-center gap-1.5 text-sm font-black text-white group-hover:text-amber-300">
+            <Pause className="h-4 w-4 fill-amber-400 text-amber-400" />
+            Pausar
+          </span>
+        </button>
       </div>
 
       {/* Barra de progresso das palavras */}
@@ -370,6 +472,7 @@ export function ArenaDeJogo({
             confirmadas={confirmadas}
             ativa={ativa}
             aoEscolherCelula={(pos) => {
+              if (pausado) return
               setAtiva(pos)
               som('clique')
             }}
@@ -379,6 +482,76 @@ export function ArenaDeJogo({
           />
         </div>
       ) : null}
+
+      {/* Modal / Overlay de Pausa */}
+      {pausado && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center rounded-2xl bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-gradient-to-b from-[#141824] to-[#0c0e14] p-6 text-center shadow-2xl animate-[role-fade-in_0.25s_ease-out]">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/20 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+              <Pause className="h-7 w-7 fill-amber-400" />
+            </div>
+
+            <h3 className="text-xl font-black text-white">Jogo Pausado</h3>
+            <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+              O cronômetro está congelado. Seu progresso e pontos estão seguros.
+            </p>
+
+            <div className="my-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-left">
+              <div>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Fase Atual</span>
+                <span className="text-sm font-black text-white">Fase {fase}</span>
+              </div>
+              <div>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Tempo Congelado</span>
+                <span className="text-sm font-black tabular-nums text-amber-400">
+                  {String(Math.floor(tempo / 60)).padStart(2, '0')}:{String(tempo % 60).padStart(2, '0')}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Palavras Feitas</span>
+                <span className="text-sm font-black text-emerald-400">
+                  {encontradas.size} / {modo === 'busca' ? tabuleiroBusca?.colocacoes.length : tabuleiroCruzadas?.slots.length}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Pontos da Fase</span>
+                <span className="text-sm font-black text-amber-400">+{pontos} pts</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={retomarJogo}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/30 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Play className="h-4 w-4 fill-white" />
+                Continuar Jogando
+              </button>
+
+              <button
+                type="button"
+                onClick={() => aoSalvarSair?.(obterSnapshot())}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] py-2.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/[0.12] hover:text-white"
+              >
+                <Save className="h-3.5 w-3.5 text-amber-400" />
+                Salvar e Sair para o Menu
+              </button>
+
+              {aoReiniciar && (
+                <button
+                  type="button"
+                  onClick={aoReiniciar}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 py-2 text-[0.72rem] font-semibold text-red-300 transition-colors hover:bg-red-500/20"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Reiniciar Fase do Zero
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

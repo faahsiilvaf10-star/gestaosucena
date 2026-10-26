@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Gamepad from 'lucide-react/dist/esm/icons/gamepad.js'
 import Globe from 'lucide-react/dist/esm/icons/globe.js'
 import Trophy from 'lucide-react/dist/esm/icons/trophy.js'
@@ -12,9 +12,18 @@ import Check from 'lucide-react/dist/esm/icons/check.js'
 import Zap from 'lucide-react/dist/esm/icons/zap.js'
 import Flame from 'lucide-react/dist/esm/icons/flame.js'
 import Medal from 'lucide-react/dist/esm/icons/medal.js'
+import Save from 'lucide-react/dist/esm/icons/save.js'
+import Pause from 'lucide-react/dist/esm/icons/pause.js'
 import { supabase } from '../../lib/supabase'
-import { salvarPontuacao, type ModoJogo } from '../../lib/cacaPalavras'
-import { ArenaDeJogo, type ResultadoFase } from './ArenaDeJogo'
+import {
+  salvarPontuacao,
+  type ModoJogo,
+  obterPartidaSoloSalva,
+  salvarPartidaSolo,
+  limparPartidaSoloSalva,
+  type PartidaSoloSalva,
+} from '../../lib/cacaPalavras'
+import { ArenaDeJogo, type ResultadoFase, type SnapshotFase } from './ArenaDeJogo'
 import { PainelOnline, type UsuarioOnline } from './PainelOnline'
 import { PainelRanking } from './PainelRanking'
 import { useGameSounds } from './useGameSounds'
@@ -53,11 +62,24 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
   const [fimDeJogo, setFimDeJogo] = useState<{ pontos: number; venceu: boolean; motivo: string } | null>(null)
   const [atualizarRanking, setAtualizarRanking] = useState(0)
 
-  // Usuário logado
+  // Salvamento e restauração solo
+  const [partidaSalva, setPartidaSalva] = useState<PartidaSoloSalva | null>(null)
+  const [tempoRestaurado, setTempoRestaurado] = useState<number | undefined>(undefined)
+  const [palavrasRestauradas, setPalavrasRestauradas] = useState<string[] | undefined>(undefined)
+  const [pontosRestaurados, setPontosRestaurados] = useState<number | undefined>(undefined)
+  const [letrasRestauradas, setLetrasRestauradas] = useState<Record<string, string> | undefined>(undefined)
+  const [confirmadasRestauradas, setConfirmadasRestauradas] = useState<string[] | undefined>(undefined)
+  const ultimoSnapshotRef = useRef<SnapshotFase | null>(null)
+
+  // Usuário logado e leitura do jogo salvo
   useEffect(() => {
     let ativo = true
     void supabase.auth.getUser().then(({ data }) => {
-      if (!ativo || !data?.user) return
+      if (!ativo) return
+      if (!data?.user) {
+        setPartidaSalva(obterPartidaSoloSalva(undefined))
+        return
+      }
       const user = data.user
       setUsuario({
         id: user.id,
@@ -68,22 +90,12 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
           'Usuário',
         avatarUrl: (user.user_metadata?.avatar_url as string | undefined) ?? null,
       })
+      setPartidaSalva(obterPartidaSoloSalva(user.id))
     })
     return () => {
       ativo = false
     }
   }, [])
-
-  const iniciarJogo = useCallback(() => {
-    setSementeBase(Math.floor(Math.random() * 1_000_000_000))
-    setFase(1)
-    setPontosTotais(0)
-    setPalavrasTotais(0)
-    setJogando(true)
-    setFimDeJogo(null)
-    setModalFase(null)
-    som('entrada')
-  }, [som])
 
   const salvarResultado = useCallback(
     async (pontos: number, venceu: boolean) => {
@@ -106,13 +118,133 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
     [fase, modo, palavrasTotais, usuario],
   )
 
+  const iniciarJogo = useCallback(() => {
+    limparPartidaSoloSalva(usuario?.id)
+    setPartidaSalva(null)
+    setTempoRestaurado(undefined)
+    setPalavrasRestauradas(undefined)
+    setPontosRestaurados(undefined)
+    setLetrasRestauradas(undefined)
+    setConfirmadasRestauradas(undefined)
+    ultimoSnapshotRef.current = null
+
+    setSementeBase(Math.floor(Math.random() * 1_000_000_000))
+    setFase(1)
+    setPontosTotais(0)
+    setPalavrasTotais(0)
+    setJogando(true)
+    setFimDeJogo(null)
+    setModalFase(null)
+    som('entrada')
+  }, [som, usuario?.id])
+
+  const continuarJogoSalvo = useCallback(() => {
+    if (!partidaSalva) return
+    setModo(partidaSalva.modo as Modo)
+    setFase(partidaSalva.fase)
+    setSementeBase(partidaSalva.sementeBase)
+    setPontosTotais(partidaSalva.pontosTotais)
+    setPalavrasTotais(partidaSalva.palavrasTotais)
+    if (partidaSalva.categorias?.length) {
+      setCategorias(partidaSalva.categorias as Categoria[])
+    }
+    if (partidaSalva.estadoFase) {
+      setTempoRestaurado(
+        partidaSalva.estadoFase.tempoRestante > 0 ? partidaSalva.estadoFase.tempoRestante : undefined,
+      )
+      setPalavrasRestauradas(partidaSalva.estadoFase.encontradas)
+      setPontosRestaurados(partidaSalva.estadoFase.pontosFase)
+      setLetrasRestauradas(partidaSalva.estadoFase.letrasCruzadas)
+      setConfirmadasRestauradas(partidaSalva.estadoFase.confirmadasCruzadas)
+    }
+    setJogando(true)
+    setFimDeJogo(null)
+    setModalFase(null)
+    som('entrada')
+  }, [partidaSalva, som])
+
+  const salvarESair = useCallback(
+    (snapshotCustom?: SnapshotFase) => {
+      const snap = snapshotCustom ?? ultimoSnapshotRef.current
+      const pontosFase = snap?.pontosFase ?? 0
+      const pontosTotalComFase = pontosTotais + pontosFase
+
+      const dadosParaSalvar: PartidaSoloSalva = {
+        id: `solo_${sementeBase}_${usuario?.id || 'anonimo'}`,
+        userId: usuario?.id || 'anonimo',
+        userName: usuario?.nome || 'Jogador',
+        modo,
+        fase,
+        nivel: Math.min(5, 1 + Math.floor((fase - 1) / 2)),
+        sementeBase,
+        pontosTotais,
+        palavrasTotais,
+        categorias,
+        estadoFase: {
+          tempoRestante: snap?.tempoRestante ?? 120,
+          encontradas: snap?.encontradas ?? [],
+          pontosFase,
+          letrasCruzadas: snap?.letras,
+          confirmadasCruzadas: snap?.confirmadas,
+        },
+        salvoEm: new Date().toISOString(),
+      }
+
+      salvarPartidaSolo(dadosParaSalvar)
+      setPartidaSalva(dadosParaSalvar)
+
+      // Pontos acumulados são enviados imediatamente para o ranking
+      if (pontosTotalComFase > 0) {
+        void salvarResultado(pontosTotalComFase, false)
+      }
+
+      setJogando(false)
+      setFimDeJogo(null)
+      setModalFase(null)
+      som('clique')
+    },
+    [categorias, fase, modo, palavrasTotais, pontosTotais, salvarResultado, sementeBase, som, usuario?.id, usuario?.nome],
+  )
+
+  const fecharComSalvamento = useCallback(() => {
+    if (jogando) {
+      salvarESair()
+    }
+    aoFechar?.()
+  }, [aoFechar, jogando, salvarESair])
+
+  // Captura tecla Escape com prioridade para salvar jogo antes de fechar modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && jogando) {
+        salvarESair()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [jogando, salvarESair])
+
+  // Salva automaticamente se a aba ou janela for fechada/recarregada
+  useEffect(() => {
+    if (!jogando) return
+    const onBeforeUnload = () => {
+      salvarESair()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [jogando, salvarESair])
+
   const aoConcluirFase = useCallback(
     (resultado: ResultadoFase) => {
       const bonus = resultado.completo ? 200 * fase : 0
       const total = pontosTotais + resultado.pontos + bonus
+      const totalPalavras = palavrasTotais + resultado.palavrasEncontradas
       setPontosTotais(total)
-      setPalavrasTotais((v) => v + resultado.palavrasEncontradas)
+      setPalavrasTotais(totalPalavras)
       som(resultado.completo ? 'vitoria' : 'derrota')
+
+      // Sincroniza os pontos conquistados no ranking
+      void salvarResultado(total, resultado.completo)
 
       if (fase >= FASES_POR_PARTIDA) {
         setFimDeJogo({
@@ -122,13 +254,41 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
             ? 'Sensacional! Você completou todas as 5 fases com sucesso!'
             : 'O tempo limite da fase final expirou.',
         })
-        void salvarResultado(total, resultado.completo)
+        limparPartidaSoloSalva(usuario?.id)
+        setPartidaSalva(null)
         return
       }
 
+      // Salva o avanço para a próxima fase
+      const proximaSalva: PartidaSoloSalva = {
+        id: `solo_${sementeBase}_${usuario?.id || 'anonimo'}`,
+        userId: usuario?.id || 'anonimo',
+        userName: usuario?.nome || 'Jogador',
+        modo,
+        fase: fase + 1,
+        nivel: Math.min(5, 1 + Math.floor(fase / 2)),
+        sementeBase,
+        pontosTotais: total,
+        palavrasTotais: totalPalavras,
+        categorias,
+        estadoFase: {
+          tempoRestante: 0,
+          encontradas: [],
+          pontosFase: 0,
+        },
+        salvoEm: new Date().toISOString(),
+      }
+      salvarPartidaSolo(proximaSalva)
+      setPartidaSalva(proximaSalva)
+      setTempoRestaurado(undefined)
+      setPalavrasRestauradas(undefined)
+      setPontosRestaurados(undefined)
+      setLetrasRestauradas(undefined)
+      setConfirmadasRestauradas(undefined)
+
       setModalFase({ pontos: resultado.pontos + bonus, proxima: true })
     },
-    [fase, pontosTotais, salvarResultado, som],
+    [categorias, fase, modo, palavrasTotais, pontosTotais, salvarResultado, sementeBase, som, usuario?.id, usuario?.nome],
   )
 
   const aoPerderTempo = useCallback(() => {
@@ -138,7 +298,9 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
       motivo: 'O tempo da fase acabou. Tente novamente para alcançar o topo do pódio!',
     })
     void salvarResultado(pontosTotais, false)
-  }, [pontosTotais, salvarResultado])
+    limparPartidaSoloSalva(usuario?.id)
+    setPartidaSalva(null)
+  }, [pontosTotais, salvarResultado, usuario?.id])
 
   const alternarCategoria = (categoria: Categoria) => {
     som('clique')
@@ -219,8 +381,8 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
           {aoFechar && (
             <button
               type="button"
-              onClick={aoFechar}
-              title="Fechar (Esc)"
+              onClick={fecharComSalvamento}
+              title="Fechar (Esc) - Salva partida automaticamente"
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300"
             >
               <X className="h-4 w-4" />
@@ -235,6 +397,73 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
           <div className="mx-auto max-w-4xl space-y-6">
             {!jogando ? (
               <div className="space-y-6 animate-[role-fade-in_0.3s_ease-out]">
+                {/* Banner de Partida Salva em Andamento */}
+                {partidaSalva && (
+                  <div className="relative overflow-hidden rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-slate-950 p-5 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                          <Play className="h-6 w-6 fill-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-0.5 text-[0.65rem] font-black uppercase tracking-wider text-emerald-300">
+                              Partida Salva
+                            </span>
+                            <span className="text-[0.7rem] text-slate-400">
+                              Salvo às {new Date(partidaSalva.salvoEm).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-black text-white mt-1">
+                            Continuar de onde parou ({partidaSalva.modo === 'busca' ? 'Caça Palavras' : 'Palavras Cruzadas'})
+                          </h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                            <span className="font-bold text-emerald-400">
+                              Fase {partidaSalva.fase} de {FASES_POR_PARTIDA} (Nível {partidaSalva.nivel})
+                            </span>
+                            <span>·</span>
+                            <span className="font-bold text-amber-400">
+                              {partidaSalva.pontosTotais + (partidaSalva.estadoFase?.pontosFase ?? 0)} pontos acumulados
+                            </span>
+                            {partidaSalva.estadoFase?.encontradas?.length ? (
+                              <>
+                                <span>·</span>
+                                <span className="text-slate-300">
+                                  {partidaSalva.estadoFase.encontradas.length} palavras feitas
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm('Deseja iniciar do zero? O progresso da partida salva será apagado.')) {
+                              iniciarJogo()
+                            }
+                          }}
+                          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-xs font-bold text-slate-400 transition-colors hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          Novo Jogo (Do Zero)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={continuarJogoSalvo}
+                          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-5 py-2.5 text-sm font-black text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] active:scale-[0.98]"
+                        >
+                          <Play className="h-4 w-4 fill-white" />
+                          Continuar Fase {partidaSalva.fase}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Seletor de Modo de Jogo */}
                 <div>
                   <label className="mb-2.5 block text-xs font-extrabold uppercase tracking-wider text-slate-400">
@@ -422,26 +651,44 @@ export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      som('clique')
-                      setJogando(false)
-                      setFimDeJogo(null)
-                      setModalFase(null)
-                    }}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" /> Sair do jogo
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => salvarESair()}
+                      title="Salva nível, tempo e envia pontos ao ranking"
+                      className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/30"
+                    >
+                      <Save className="h-3.5 w-3.5 text-emerald-400" />
+                      Salvar & Sair
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => salvarESair()}
+                      title="Sai do jogo salvando automaticamente o progresso"
+                      className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> Sair do jogo
+                    </button>
+                  </div>
                 </div>
 
                 <ArenaDeJogo
-                  key={`${modo}-${fase}-${sementeBase}`}
+                  key={`${modo}-${fase}-${sementeBase}-${tempoRestaurado ? 'restaurado' : 'novo'}`}
                   modo={modo}
                   fase={fase}
                   semente={sementeBase + fase * 7919}
                   categorias={categorias.length ? categorias : undefined}
+                  tempoInicial={tempoRestaurado}
+                  palavrasIniciais={palavrasRestauradas}
+                  pontosIniciais={pontosRestaurados}
+                  letrasIniciais={letrasRestauradas}
+                  confirmadasIniciais={confirmadasRestauradas}
+                  aoSalvarSair={(snap) => salvarESair(snap)}
+                  aoReiniciar={iniciarJogo}
+                  aoAtualizarEstado={(snap) => {
+                    ultimoSnapshotRef.current = snap
+                  }}
                   aoConcluirFase={aoConcluirFase}
                   aoPerderTempo={aoPerderTempo}
                 />
