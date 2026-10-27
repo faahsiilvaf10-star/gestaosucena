@@ -5,7 +5,7 @@ import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
 import UserIcon from 'lucide-react/dist/esm/icons/user.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Edit3 from 'lucide-react/dist/esm/icons/pen-tool.js';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchReminders, toggleReminderCompletion, updateReminder, fetchUsers, Reminder } from '../lib/api-reminders'
 import { format, parseISO, isPast, isToday, getDay, getDate } from 'date-fns'
