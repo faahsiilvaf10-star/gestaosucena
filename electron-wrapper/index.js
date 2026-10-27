@@ -2,6 +2,10 @@ const { app, BrowserWindow, Menu, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+// Desabilita cache HTTP
+app.commandLine.appendSwitch('disable-http-cache');
+app.commandLine.appendSwitch('disable-application-cache');
+
 // URL do projeto no Lovable / Vercel
 const APP_URL = 'https://gestaosucena.vercel.app';
 
@@ -64,7 +68,8 @@ function createWindow() {
   });
 
   // Carregar o site
-  win.loadURL(APP_URL).catch(() => {
+  const buildUrl = `${APP_URL}?t=${Date.now()}`;
+  win.loadURL(buildUrl).catch(() => {
     // Fallback caso falhe (sem internet) — se adapta ao tema ativo
     const bg = isDark ? '#0d0d0d' : '#f0f2f5';
     const cardBg = isDark ? '#1a1a1a' : '#ffffff';

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, session } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
@@ -8,6 +8,10 @@ const { autoUpdater } = pkg;
 import extract from 'extract-zip';
 import { exec } from 'child_process';
 // __dirname is natively available in CommonJS
+
+// Desabilita o cache HTTP do Chromium para sempre buscar a versão mais nova do servidor
+app.commandLine.appendSwitch('disable-http-cache');
+app.commandLine.appendSwitch('disable-application-cache');
 
 /**
  * Lê o tema salvo pelo app web no perfil do Electron para evitar flash de cor
@@ -206,8 +210,8 @@ ipcMain.handle('launch-main-app', () => {
 
   appWindow.setMenu(null);
   appWindow.maximize();
-
-  appWindow.loadURL(APP_URL);
+  const buildUrl = `${APP_URL}?t=${Date.now()}`;
+  appWindow.loadURL(buildUrl);
 
   // Fecha o launcher quando o app principal abre
   if (mainWindow && !mainWindow.isDestroyed()) {
