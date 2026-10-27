@@ -12,7 +12,8 @@ import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { useGlobalPresenceSync } from '../hooks/useGlobalPresenceSync'
 import { ChatSidebar } from './ChatSidebar'
-import { WindowsNavbar } from './WindowsNavbar'
+import { HydroSidebar } from './HydroSidebar'
+import '../hydro-panel.css'
 import { ChatWindow } from './chat/ChatWindow'
 import { DdsUploadModal } from './DdsUploadModal'
 import { isAdmin } from './ui/VerifiedBadge'
@@ -45,6 +46,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useGlobalPresenceSync(currentUser.id)
   
   const { currentColor } = useMonthlyColors()
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      return localStorage.getItem('hydro_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
 
   // Verifica atualização imediatamente ao carregar
   useEffect(() => {
@@ -230,7 +241,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
+    <div className={`overflow-y-auto overflow-x-hidden font-sans ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} app hydro-dashboard-root selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
@@ -262,29 +273,33 @@ export function AppLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
-      <div className="sticky top-0 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />
-        </div>
-      </div>
+
+
+      <HydroSidebar isSidebarCollapsed={isSidebarCollapsed} setIsSidebarCollapsed={setIsSidebarCollapsed} />
 
       {/* Main Scrollable Content */}
       <main 
-        className="vt-main relative z-0 flex flex-col min-h-full"
+        className={`vt-main relative z-0 flex flex-col min-h-full ${isDashboard ? 'p-0' : 'pt-4'}`}
         style={{ 
-          /* Em mobile: sem padding lateral excessivo */
-          paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+          marginLeft: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
+          width: typeof window !== 'undefined' && window.innerWidth <= 900 ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
+          paddingLeft: isSidebarCollapsed ? (typeof window !== 'undefined' && window.innerWidth <= 900 ? '14px' : '58px') : undefined,
+          paddingBottom: isDashboard ? 0 : 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+          transition: 'margin-left .48s cubic-bezier(.45,0,.15,1), width .48s cubic-bezier(.45,0,.15,1), padding-left .48s cubic-bezier(.45,0,.15,1)',
         }}
       >
-        <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">
-          {/* Back Button: visible only on sub-pages (depth >= 2) */}
-          {location.pathname.split('/').filter(Boolean).length >= 2 && (
-            <div className="pt-5">
-              <BackButton />
-            </div>
-          )}
-          {children}
-        </div>
+        {isDashboard ? (
+          children
+        ) : (
+          <div className="px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto">
+            {location.pathname.split('/').filter(Boolean).length >= 2 && (
+              <div className="pt-2 pb-4">
+                <BackButton />
+              </div>
+            )}
+            {children}
+          </div>
+        )}
       </main>
 
       {/* Chat Sidebar Overlay */}
@@ -300,15 +315,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Bottom Status Bar */}
-      <footer 
-        className={`fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
-        style={{
-          height: 'max(36px, calc(36px + env(safe-area-inset-bottom, 0px)))',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
-          paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
-        }}
-      >
+      {!isDashboard && (
+        <footer 
+          className={`fixed bottom-0 right-0 z-50 flex items-center justify-between transition-all duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
+          style={{
+            left: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
+            height: 'max(36px, calc(36px + env(safe-area-inset-bottom, 0px)))',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
+            paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
+            transition: 'left .48s cubic-bezier(.45,0,.15,1)',
+          }}
+        >
         
         {/* Bottom Left: Logout — escondido em mobile pequeno para economizar espaço */}
         <div className="flex items-center gap-3 sm:gap-4">
@@ -382,6 +400,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
       </footer>
+      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

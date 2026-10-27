@@ -35,9 +35,7 @@ function RootContent() {
     <div className={`min-h-screen ${isDark ? 'text-white' : 'text-[#1c1d21]'}`}>
       <DailySessionWatcher />
       <GlobalBackground />
-      {isDashboard ? (
-        <Outlet />
-      ) : isAppRoute ? (
+      {isAppRoute ? (
         <AppLayout>
           <Outlet />
         </AppLayout>
