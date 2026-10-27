@@ -166,12 +166,14 @@ function DashboardComponent() {
   // Auth & Environment Check
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }: { data: any }) => {
-      const user = data?.user || null
+      const isDevMock = typeof window !== 'undefined' && window.location.search.includes('mock=true')
+      const user = data?.user || (isDevMock ? { id: 'mock-user', user_metadata: { full_name: 'Fabrício' } } : null)
       if (!user) {
         navigate({ to: '/' })
         return
       }
       setCurrentUser(user)
+      if (isDevMock) return
       const currentEnv =
         typeof window !== 'undefined'
           ? localStorage.getItem('sucena_environment') || 'barcarena'

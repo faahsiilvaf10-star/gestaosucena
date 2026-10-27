@@ -28,52 +28,34 @@ a{color:inherit;text-decoration:none} button{font:inherit;cursor:pointer;border:
 .main{min-width:0;width:calc(100% - var(--sbw));max-width:none;margin:0 0 0 var(--sbw);padding:clamp(18px,2vw,30px) clamp(18px,2.4vw,40px) clamp(22px,2.4vw,36px);display:flex;flex-direction:column;gap:clamp(16px,1.6vw,22px)}
 
 /* ---------- SIDEBAR ---------- */
-.sidebar{background:#0B0B0C;border:0;border-radius:0;padding:24px 16px 20px;display:flex;flex-direction:column;gap:6px;position:fixed;left:0;top:0;bottom:0;z-index:60;height:100vh;height:100dvh;margin:0;width:var(--sbw);overflow:visible;box-shadow:none}
-/* A curva do preto é para FORA, para a DIREITA — no formato do desenho
-   enviado: um OMBRO convexo do próprio preto nas quinas do lado
-   direito, em cima e embaixo. Medido no desenho, o preto avança cerca
-   de 25px PARA A DIREITA além da borda reta da barra bem na quina e
-   afina rápido, até sumir uns 30px ao longo da borda — não é um
-   círculo (o lóbulo redondo anterior afinava devagar demais e sobrava
-   dos lados) nem border-radius (que só corta a quina e recua o arco
-   para a esquerda). Cada ombro é um SVG com a curva exata desse
-   formato (::before em cima; ::after embaixo, espelhado na vertical).
-   O lado esquerdo continua reto e encostado na borda da tela, e a
-   passagem branca do item selecionado não muda. */
+.sidebar{background:#0B0B0C !important;border:0 !important;border-radius:0 !important;padding:24px 16px 20px !important;display:flex !important;flex-direction:column !important;gap:6px !important;position:fixed !important;left:0 !important;top:0 !important;bottom:0 !important;z-index:60 !important;height:100vh !important;height:100dvh !important;margin:0 !important;width:var(--sbw) !important;overflow:visible !important;box-shadow:none !important}
 .sidebar:before,.sidebar:after{content:"";position:absolute;width:28px;height:34px;right:-28px;z-index:0;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 34'%3E%3Cpath d='M0 0H28Q9 7 0 34Z' fill='%230B0B0C'/%3E%3C/svg%3E") no-repeat;background-size:100% 100%}
 .sidebar:before{top:0}
 .sidebar:after{bottom:0;transform:scaleY(-1)}
-.brand{display:flex;align-items:center;gap:11px;padding:2px 10px 20px;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 10px 20px;position:relative;z-index:1;flex:none}
 .brand-mark{width:42px;height:42px;flex:none}
 .brand-name{line-height:1}
 .brand-name b{display:block;font-size:21px;font-weight:800;letter-spacing:.04em;color:#fff}
 .brand-name span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.28em;color:var(--yellow);margin-top:3px}
 .nav-label{position:relative;z-index:1;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8A8A93;padding:14px 10px 6px}
-#mainNav{position:relative;z-index:1}
-/* Item selecionado SEM amarelo: apenas uma faixa branca estreita atrás do
-   item ativo. No desktop ela começa recuada dentro do item e termina rente
-   à borda direita da barra (sem sombra e sem borda), passando direto para a
-   página branca ao lado, sem nenhuma linha separando os dois. Os DOIS cantos
-   dessa passagem — o de cima e o de baixo, onde a borda preta encontra o
-   branco — são arredondados com filetes côncavos (::before/::after): a curva
-   branca suaviza a quina do preto nos dois lados da faixa. Ela desliza de um
-   item para o outro ao trocar a seleção, e os filetes deslizam junto. */
-.nav-page{position:absolute;left:0;top:0;width:0;height:0;background:#FFFFFF;border-radius:11px 0 0 11px;box-shadow:none;border:0;pointer-events:none;z-index:0;opacity:0;transition:top .5s cubic-bezier(.45,0,.15,1),left .5s cubic-bezier(.45,0,.15,1),width .5s cubic-bezier(.45,0,.15,1),height .5s cubic-bezier(.45,0,.15,1),opacity .2s ease;will-change:top,left,width,height}
+#mainNav{position:relative !important;z-index:1 !important;display:flex !important;flex-direction:column !important;gap:4px !important;width:100% !important;flex:none !important}
+.nav-page{position:absolute !important;background:#FFFFFF !important;border-radius:11px 0 0 11px !important;box-shadow:none !important;border:0 !important;pointer-events:none !important;z-index:0 !important;opacity:0;transition:top .5s cubic-bezier(.45,0,.15,1),left .5s cubic-bezier(.45,0,.15,1),width .5s cubic-bezier(.45,0,.15,1),height .5s cubic-bezier(.45,0,.15,1),opacity .2s ease !important;will-change:top,left,width,height}
 .nav-page:before,.nav-page:after{content:"";position:absolute;right:0;width:18px;height:18px;pointer-events:none}
 .nav-page:before{top:-18px;background:radial-gradient(circle at 0 0,transparent 17px,#FFFFFF 18.5px)}
 .nav-page:after{bottom:-18px;background:radial-gradient(circle at 0 100%,transparent 17px,#FFFFFF 18.5px)}
 .nav-page.no-anim{transition:none!important}
 .nav-page.ready{opacity:1}
-@media(max-width:900px){.nav-page{border-radius:11px}.nav-page:before,.nav-page:after{display:none}}
-.nav-item{position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:11px;font-size:14.5px;font-weight:600;color:#D8D8DE;width:100%;text-align:left;transition:color .25s ease,background .15s ease}
-.nav-item svg{width:19px;height:19px;flex:none;stroke-width:1.9;color:#F2C230;transition:color .25s ease}
-.nav-item:hover{background:#1D1D21;color:#fff}
-.nav-item.active{background:transparent;color:#1A1400}
-.nav-item.active:hover{background:transparent;color:#1A1400}
-.nav-item.active svg{color:#1A1400}
-.nav-badge{margin-left:auto;background:var(--yellow);color:#1A1400;font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:grid;place-items:center;padding:0 6px}
-.nav-item.active .nav-badge{background:#0B0B0C;color:#FFFFFF}
-.sidebar-foot{margin-top:auto;background:linear-gradient(160deg,#FFD84D,var(--yellow));color:#1A1400;border-radius:14px;padding:16px;position:relative;z-index:1;overflow:hidden}
+@media(max-width:900px){.nav-page{border-radius:11px !important}.nav-page:before,.nav-page:after{display:none !important}}
+#mainNav .nav-item{position:relative !important;z-index:1 !important;display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:flex-start !important;gap:12px !important;padding:11px 14px !important;border-radius:11px !important;font-size:14.5px !important;font-weight:600 !important;color:#D8D8DE !important;width:100% !important;height:auto !important;min-height:42px !important;max-height:44px !important;flex:none !important;text-align:left !important;transition:color .25s ease,background .15s ease !important;background:none !important;border:0 !important;cursor:pointer !important;box-sizing:border-box !important}
+#mainNav .nav-item svg{width:19px !important;height:19px !important;flex:none !important;stroke-width:1.9 !important;color:#F2C230 !important;transition:color .25s ease !important}
+#mainNav .nav-item:hover{background:#1D1D21 !important;color:#fff !important}
+#mainNav .nav-item.active{background:transparent !important;color:#1A1400 !important}
+#mainNav .nav-item.active:hover{background:transparent !important;color:#1A1400 !important}
+#mainNav .nav-item.active svg{color:#1A1400 !important}
+#mainNav .nav-item::after, #mainNav .nav-item::before{display:none !important;content:none !important}
+#mainNav .nav-badge{margin-left:auto !important;background:var(--yellow) !important;color:#1A1400 !important;font-size:11px !important;font-weight:800 !important;min-width:20px !important;height:20px !important;border-radius:99px !important;display:grid !important;place-items:center !important;padding:0 6px !important}
+#mainNav .nav-item.active .nav-badge{background:#0B0B0C !important;color:#FFFFFF !important}
+.sidebar-foot{margin-top:auto !important;background:linear-gradient(160deg,#FFD84D,var(--yellow)) !important;color:#1A1400 !important;border-radius:14px !important;padding:16px !important;position:relative !important;z-index:1 !important;overflow:hidden !important;flex:none !important}
 .sidebar-foot:after{content:"";position:absolute;right:-18px;bottom:-22px;width:84px;height:84px;border-radius:50%;background:rgba(11,11,12,.10)}
 .sidebar-foot svg{width:24px;height:24px;color:#1A1400}
 .sidebar-foot p{margin:8px 0 0;font-size:13.5px;line-height:1.45;font-weight:700;position:relative;z-index:1}
