@@ -4,6 +4,13 @@ import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
+import UserCheck from 'lucide-react/dist/esm/icons/user-check.js';
+import UserX from 'lucide-react/dist/esm/icons/user-x.js';
+import Layers from 'lucide-react/dist/esm/icons/layers.js';
+import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
@@ -11,7 +18,6 @@ import { DashboardRemindersWidget } from '../components/DashboardRemindersWidget
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
-import { useTheme } from '../contexts/ThemeContext'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { isOutside, isUnderMaintenance, locationFromMovements, MovementRecord } from '../lib/equipamentos/locationStatus'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
@@ -27,7 +33,6 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardComponent() {
-  const { isDark } = useTheme()
   const navigate = useNavigate()
   const hojeDay = new Date().getDate()
   
@@ -435,45 +440,29 @@ function DashboardComponent() {
   return (
     <div className="dashboard-page selection:bg-blue-500/30">
       <div className="dashboard-container">
-        
-        {/* Title & Date — responsivo */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-2 px-2 sm:px-0">
-          <div>
-            <h1
-              className={`tracking-tight ${isDark ? 'text-white' : 'text-gray-900 drop-shadow-none'}`}
-              style={{ fontSize: 'clamp(32px, 8vw, 54px)', lineHeight: '1' }}
-            >
-              Olá, <span>{displayFirstName}</span>!
-            </h1>
-            <p className={`text-sm mt-1 ml-0.5 font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
-              Visão geral da operação
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <div className={`flex flex-col items-end gap-1 font-evantic tracking-wide ${isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]' : 'text-gray-900'}`}>
-              <div className="flex items-center gap-2" style={{ fontSize: 'clamp(14px, 4vw, 18px)' }}>
-                <CalendarDays size={18} className={`flex-shrink-0 ${isDark ? 'opacity-80' : 'opacity-60'}`} />
-                <span className="sm:hidden">{currentDateShort}</span>
-                <span className="hidden sm:inline">{currentDate}</span>
-              </div>
-              <div className={`hidden sm:flex gap-3 text-[9px] tracking-[0.2em] font-sans mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                <span className={`cursor-pointer transition-colors border-b-2 pb-1 ${isDark ? 'hover:text-white border-[#00d2ff] text-white' : 'hover:text-gray-900 border-[#f5c400] text-gray-900 font-bold'}`}>PESSOAS</span>
-                <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
-                <span className={`cursor-pointer transition-colors ${isDark ? 'hover:text-white' : 'hover:text-gray-900'}`}>OPERAÇÃO</span>
-                <span className={isDark ? 'text-slate-600' : 'text-gray-300'}>•</span>
-                <span className={`cursor-pointer transition-colors ${isDark ? 'hover:text-white' : 'hover:text-gray-900'}`}>RESULTADOS</span>
-              </div>
+
+        {/* ===== HEADER ===== */}
+        <header className="dashboard-header">
+          <div className="dashboard-header-left">
+            <div className="dashboard-header-icon">
+              <Users size={22} strokeWidth={1.75} />
             </div>
-            
-            <div className={`hidden md:flex flex-col text-[9px] tracking-[0.2em] font-sans border-l pl-5 opacity-80 ${isDark ? 'text-slate-500 border-white/10' : 'text-gray-400 border-gray-200'}`}>
-              <span>GRANDES</span>
-              <span>PESSOAS</span>
-              <span>MOVEM</span>
-              <span>RESULTADOS</span>
+            <div className="min-w-0">
+              <h1 className="dashboard-title">
+                Olá, {displayFirstName}
+              </h1>
+              <p className="dashboard-subtitle">
+                Visão geral da operação · {capitalizeWords(new Date().toLocaleDateString('pt-BR', { weekday: 'long' }))}
+              </p>
             </div>
           </div>
-        </div>
+
+          <div className="dashboard-date">
+            <CalendarDays size={17} strokeWidth={1.75} className="shrink-0 opacity-70" />
+            <span className="sm:hidden">{currentDateShort}</span>
+            <span className="hidden sm:inline">{currentDate}</span>
+          </div>
+        </header>
 
         {/* ===== ALERTA DE INSPEÇÃO MENSAL DE CINTAS ===== */}
         <div className="mb-2">
@@ -499,114 +488,70 @@ function DashboardComponent() {
           )}
           
           {/* TOTAL FUNCIONARIOS */}
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 relative pb-8">
-            <div className="card-header relative z-10">
+          <div className="dashboard-card semantic-neutral card-total" data-accent>
+            <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/users_total.png" alt="Users" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                <div className="icon-box">
+                  <Users size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">TOTAL DE FUNCIONÁRIOS</h3>
+                <h3 className="card-title">Total de funcionários</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
             </div>
-            <div className="big-number relative z-10">{totalFuncionarios}</div>
-            <div className="big-number-label relative z-10">colaboradores</div>
-            
-            {/* Elemento visual do canto inferior direito */}
-            <svg className={`employee-decoration relative z-10 ${isDark ? 'text-white' : 'text-black'}`} xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div className="big-number">{totalFuncionarios}</div>
+            <div className="big-number-label">colaboradores no quadro</div>
 
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-line"></span>
-                <span className="footer-text">NOSSO MAIOR ATIVO</span>
-              </div>
-            )}
+            {/* Marca d'água discreta da categoria */}
+            <svg className="employee-decoration" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
 
           {/* PRESENÇA */}
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card semantic-green card-presence" data-accent>
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/users.png" alt="Presentes" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                <div className="icon-box">
+                  <UserCheck size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">PRESENTES HOJE</h3>
+                <h3 className="card-title">Presentes hoje</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
             </div>
             <div className="donut-wrapper">
-              <Chart02 
-                value={todayData.presentes} 
-                total={totalFuncNum} 
-                color="#f5c400" 
-                trackColor="rgba(245, 196, 0, 0.15)" 
-                label="Presentes" 
+              <Chart02
+                value={todayData.presentes}
+                total={totalFuncNum}
+                color="var(--status-success)"
+                trackColor="var(--status-success-soft)"
+                label="Presentes"
               />
-              <div className="percent-box percent-yellow">
-                <div className="flex items-center gap-2">
-                  <strong>{pctPresenca}%</strong>
-                  {isDark && (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="18" y="4" width="4" height="16" rx="1" />
-                      <rect x="10" y="10" width="4" height="10" rx="1" />
-                      <rect x="2" y="16" width="4" height="4" rx="1" />
-                    </svg>
-                  )}
-                </div>
+              <div className="percent-box percent-green">
+                <strong>{pctPresenca}%</strong>
                 <span>de presença</span>
               </div>
             </div>
-            {isDark && (
-              <div className="card-footer" style={{ right: '16px', left: 'auto' }}>
-                <span className="footer-text">PESSOAS FAZEM A DIFERENÇA</span>
-              </div>
-            )}
           </div>
 
           {/* AUSÊNCIAS */}
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-4 pb-8">
+          <div className="dashboard-card semantic-red card-absence" data-accent>
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/user_x.png" alt="Ausências" className="w-8 h-8 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/></svg>}
+                <div className="icon-box">
+                  <UserX size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">AUSÊNCIAS</h3>
+                <h3 className="card-title">Ausências</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
             </div>
             <div className="donut-wrapper">
-              <Chart02 
-                value={todayData.ausencias} 
-                total={totalFuncNum} 
-                color="#f5c400" 
-                trackColor="rgba(245, 196, 0, 0.15)" 
-                label="Ausências" 
+              <Chart02
+                value={todayData.ausencias}
+                total={totalFuncNum}
+                color="var(--status-danger)"
+                trackColor="var(--status-danger-soft)"
+                label="Ausências"
               />
-              <div className="percent-box percent-yellow">
-                <div className="flex items-center gap-2">
-                  <strong>{pctAusencia}%</strong>
-                  {isDark && (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="18" y="4" width="4" height="16" rx="1" />
-                      <rect x="10" y="10" width="4" height="10" rx="1" />
-                      <rect x="2" y="16" width="4" height="4" rx="1" />
-                    </svg>
-                  )}
-                </div>
+              <div className="percent-box percent-red">
+                <strong>{pctAusencia}%</strong>
                 <span>de ausências</span>
               </div>
             </div>
-            {isDark && (
-              <div className="card-footer" style={{ right: '16px', left: 'auto' }}>
-                <span className="footer-text">ACOMPANHAMENTO CONTÍNUO</span>
-              </div>
-            )}
           </div>
 
           {/* LEMBRETES PARA HOJE */}
@@ -616,27 +561,27 @@ function DashboardComponent() {
 
           {/* ASO VENCENDO */}
           {asoVencendo.length > 0 && (
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
+          <div className="dashboard-card semantic-red col-span-1 md:col-span-12" data-accent>
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/alert.png" alt="ASO" className="w-8 h-8 object-contain drop-shadow-sm" /> : <AlertTriangle size={20} className="animate-pulse" />}
+                <div className="icon-box">
+                  <AlertTriangle size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">VENCIMENTO ASO</h3>
+                <h3 className="card-title">Vencimento ASO</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
+              <span className="percent-box percent-red" style={{ minWidth: 'auto', padding: '6px 10px' }}>
+                <strong style={{ fontSize: '15px', marginBottom: 0 }}>{asoVencendo.length}</strong>
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {asoVencendo.length > 0 ? (
                 asoVencendo.map((aso: any, idx: number) => (
-                  <div key={idx} className="birthday-item" style={{ borderColor: aso.diasRestantes <= 0 ? 'rgba(239, 68, 68, 0.3)' : '' }}>
-                    <span className={`birthday-name capitalize ${aso.diasRestantes <= 0 ? 'text-red-500 font-bold' : ''}`}>
+                  <div key={idx} className={`birthday-item ${aso.diasRestantes <= 0 ? 'is-danger' : aso.diasRestantes <= 5 ? 'is-warning' : ''}`}>
+                    <span className="birthday-name capitalize">
                       {typeof aso.nome === 'string' ? aso.nome.toLowerCase() : aso.nome}
                     </span>
-                    <span className={`birthday-day text-xs font-bold ${aso.diasRestantes <= 0 ? 'text-red-500' : aso.diasRestantes <= 5 ? 'text-orange-500' : 'text-yellow-500'}`}>
-                      {aso.diasRestantes < 0 ? `Vencido` : aso.diasRestantes === 0 ? 'Vence Hoje' : `${aso.diasRestantes} dias`}
+                    <span className="birthday-day">
+                      {aso.diasRestantes < 0 ? 'Vencido' : aso.diasRestantes === 0 ? 'Vence hoje' : `${aso.diasRestantes} dias`}
                     </span>
                   </div>
                 ))
@@ -644,62 +589,52 @@ function DashboardComponent() {
                 <div className="col-span-full py-6 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium">Nenhum ASO próximo do vencimento</div>
               )}
             </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">🏥 SAÚDE OCUPACIONAL</span>
-              </div>
-            )}
           </div>
           )}
 
           {/* ANIVERSARIANTE DO DIA */}
           {aniversariantesHoje.length > 0 && (
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
+          <div className="dashboard-card semantic-amber col-span-1 md:col-span-12" data-accent>
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-8 h-8 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                <div className="icon-box">
+                  <Gift size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">ANIVERSARIANTE DO DIA</h3>
+                <h3 className="card-title">Aniversariante do dia</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
+              <span className="percent-box percent-yellow" style={{ minWidth: 'auto', padding: '6px 10px' }}>
+                <strong style={{ fontSize: '15px', marginBottom: 0 }}>{aniversariantesHoje.length}</strong>
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {aniversariantesHoje.length > 0 ? (
                 aniversariantesHoje.map((aniv: any, idx: number) => (
                   <div key={idx} className="birthday-item active">
                     <span className="birthday-name capitalize">{typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}</span>
-                    <span className="birthday-day font-bold text-yellow-500">HOJE! 🎉</span>
+                    <span className="birthday-day">Hoje</span>
                   </div>
                 ))
               ) : (
                 <div className="text-sm text-gray-500 text-center mt-4">Nenhum hoje</div>
               )}
             </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">🎈 PARABÉNS!</span>
-              </div>
-            )}
           </div>
           )}
 
           {/* ANIVERSARIANTES DO MÊS */}
-          <div className="dashboard-card neon-card neon-yellow col-span-1 md:col-span-12 pb-8">
+          <div className="dashboard-card semantic-amber col-span-1 md:col-span-12" data-accent>
             <div className="card-header">
               <div className="card-title-wrap">
-                <div className="icon-box icon-yellow">
-                  {!isDark ? <img src="/icons/gift.png" alt="Presente" className="w-8 h-8 object-contain drop-shadow-sm" /> : <Gift size={20} />}
+                <div className="icon-box">
+                  <Gift size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">ANIVERSARIANTES DO MÊS</h3>
+                <h3 className="card-title">Aniversariantes do mês</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
+              <span className="percent-box percent-yellow" style={{ minWidth: 'auto', padding: '6px 10px' }}>
+                <strong style={{ fontSize: '15px', marginBottom: 0 }}>{aniversariantesMes.length}</strong>
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {aniversariantesMes.length > 0 ? (
                 aniversariantesMes.map((aniv: any, idx: number) => (
                   <div key={idx} className={`birthday-item ${aniv.day === hojeDay ? 'active' : ''}`}>
@@ -711,16 +646,11 @@ function DashboardComponent() {
                 <div className="text-sm text-gray-500 text-center mt-4">Nenhum neste mês</div>
               )}
             </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">🎂 VIDAS QUE FAZEM PARTE DESSA HISTÓRIA</span>
-              </div>
-            )}
           </div>
 
           {/* OPERAÇÃO */}
-          <div 
-            className="dashboard-card neon-card neon-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-12 pb-8 cursor-pointer"
+          <div
+            className="dashboard-card semantic-blue group !overflow-visible hover:z-50 col-span-1 md:col-span-12 cursor-pointer"
             onClick={() => navigate({ to: '/equipamentos' })}
           >
             {/* Tooltip Em Operação */}
@@ -754,35 +684,23 @@ function DashboardComponent() {
             
             <div className="card-header relative z-0">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-blue"}>
-                  {!isDark ? <img src="/icons/layers.png" alt="Operação" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>}
+                <div className="icon-box">
+                  <Layers size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">EM OPERAÇÃO</h3>
+                <h3 className="card-title">Em operação</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="donut-wrapper">
-              <Chart02 
-                value={eqData?.operacao || 0} 
-                total={totalVehiclesNum} 
-                color="#1677ff" 
-                trackColor="rgba(22, 119, 255, 0.15)" 
-                label="Em Operação" 
+              <Chart02
+                value={eqData?.operacao || 0}
+                total={totalVehiclesNum}
+                color="var(--status-info)"
+                trackColor="var(--status-info-soft)"
+                label="Em Operação"
               />
               <div className="percent-box percent-blue">
-                <div className="flex items-center gap-2">
-                  <strong>{pctOperacao}%</strong>
-                  {isDark && (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="18" y="4" width="4" height="16" rx="1" />
-                      <rect x="10" y="10" width="4" height="10" rx="1" />
-                      <rect x="2" y="16" width="4" height="4" rx="1" />
-                    </svg>
-                  )}
-                </div>
+                <strong>{pctOperacao}%</strong>
                 <span>em operação</span>
               </div>
             </div>
@@ -813,42 +731,25 @@ function DashboardComponent() {
             
             <div className="card-header relative z-0">
               <div className="card-title-wrap">
-                <div className={!isDark ? "flex-shrink-0" : "icon-box icon-orange"}>
-                  {!isDark ? <img src="/icons/wrench.png" alt="Manutenção" className="w-12 h-12 object-contain drop-shadow-sm" /> : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>}
+                <div className="icon-box">
+                  <Wrench size={19} strokeWidth={1.75} />
                 </div>
-                <h3 className="card-title">EM MANUTENÇÃO</h3>
+                <h3 className="card-title">Em manutenção</h3>
               </div>
-              <button className="card-menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
             </div>
             <div className="donut-wrapper">
-              <Chart02 
-                value={eqData?.manutencao || 0} 
-                total={totalEquipmentsNum} 
-                color="#ff7200" 
-                trackColor="rgba(255, 114, 0, 0.15)" 
-                label="Em Manutenção" 
+              <Chart02
+                value={eqData?.manutencao || 0}
+                total={totalEquipmentsNum}
+                color="var(--status-warning)"
+                trackColor="var(--status-warning-soft)"
+                label="Em Manutenção"
               />
               <div className="percent-box percent-orange">
-                <div className="flex items-center gap-2">
-                  <strong>{pctManutencao}%</strong>
-                  {isDark && (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="18" y="4" width="4" height="16" rx="1" />
-                      <rect x="10" y="10" width="4" height="10" rx="1" />
-                      <rect x="2" y="16" width="4" height="4" rx="1" />
-                    </svg>
-                  )}
-                </div>
+                <strong>{pctManutencao}%</strong>
                 <span>em manutenção</span>
               </div>
             </div>
-            {isDark && (
-              <div className="card-footer">
-                <span className="footer-text">⚙️ OPERAÇÃO EM MOVIMENTO</span>
-              </div>
-            )}
           </div>
             </div>
           </div>
@@ -990,29 +891,29 @@ function DashboardComponent() {
           </div>
 
           {/* DDS AMANHÃ */}
-          <div 
-            className="dashboard-card cursor-pointer hover:shadow-md transition-shadow col-span-1 md:col-span-6"
+          <div
+            className="dashboard-card semantic-blue card-dds cursor-pointer"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
             <div className="dds-card-content">
               <div className="dds-main">
                 {ddsData?.amanha?.palestrante?.avatar ? (
-                  <div className="icon-box p-0 overflow-hidden shrink-0 shadow-sm border border-gray-100/50">
+                  <div className="icon-box p-0 overflow-hidden shrink-0">
                     <img src={ddsData.amanha.palestrante.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="icon-box icon-blue shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  <div className="icon-box shrink-0">
+                    <FileText size={19} strokeWidth={1.75} />
                   </div>
                 )}
-                <div>
-                  <div className="dds-label text-blue-600">DDS Amanhã</div>
+                <div className="min-w-0">
+                  <div className="dds-label">DDS amanhã</div>
                   <div className="dds-status capitalize">{ddsData?.amanha?.palestrante?.nome?.toLowerCase() || 'livre'}</div>
                   <div className="dds-theme">Tema: {ddsData?.amanha?.tema || 'Sem tema agendado'}</div>
                 </div>
               </div>
               <div className="dds-arrow">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <ChevronRight size={20} strokeWidth={1.75} />
               </div>
             </div>
           </div>
