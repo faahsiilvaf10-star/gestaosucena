@@ -1,5 +1,5 @@
-import LogOut from 'lucide-react/dist/esm/icons/log-out.js'
-import Shield from 'lucide-react/dist/esm/icons/shield.js'
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
+import Shield from 'lucide-react/dist/esm/icons/shield.js';
 import { useState, useEffect, ReactNode } from 'react'
 import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
@@ -12,21 +12,21 @@ import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { useGlobalPresenceSync } from '../hooks/useGlobalPresenceSync'
 import { ChatSidebar } from './ChatSidebar'
+import { WindowsNavbar } from './WindowsNavbar'
 import { ChatWindow } from './chat/ChatWindow'
 import { DdsUploadModal } from './DdsUploadModal'
 import { isAdmin } from './ui/VerifiedBadge'
 import { toast } from 'sonner'
+import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { InstacenaNotificationPopup } from './instacena/InstacenaNotificationPopup'
+import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
 import { clearDailySessionExpiry } from '../lib/sessionManager'
-import { PortalSidebar } from './layout/PortalSidebar'
-import { PortalHeader } from './layout/PortalHeader'
-import { GlobalSearchModal } from './GlobalSearchModal'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -35,20 +35,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [showMonthlyColorsModal, setShowMonthlyColorsModal] = useState(false)
+  const [announcement, setAnnouncement] = useState<{ type: 'entry'|'exit', eq: any, move: any } | null>(null)
   const [currentUser, setCurrentUser] = useState({ id: '', name: '', role: '', avatarUrl: '' })
-
+  
   const { toggleSidebar, unreadCountGlobally, activeChats, isSidebarOpen } = useChat()
   usePresence(currentUser.id)
   useChatRealtime(currentUser.id)
   useGlobalPresenceSync(currentUser.id)
+  
+  const { currentColor } = useMonthlyColors()
 
   // Verifica atualização imediatamente ao carregar
   useEffect(() => {
     const checkUpdate = async () => {
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" })
         if (!res.ok) return
         const data = await res.json()
         const serverVersion = data.version
@@ -58,87 +60,133 @@ export function AppLayout({ children }: { children: ReactNode }) {
         const STORAGE_KEY = 'app_acknowledged_version'
         const acknowledgedVersion = localStorage.getItem(STORAGE_KEY)
 
-        if (
-          serverVersion &&
-          acknowledgedVersion &&
-          serverVersion !== acknowledgedVersion &&
-          CURRENT_VERSION &&
-          serverVersion !== CURRENT_VERSION
-        ) {
-          console.log('[AppLayout] Nova versão detectada, limpando cache...')
-          if ('caches' in window) {
+        // Se há nova versão, limpa cache e recarrega
+        if (serverVersion && acknowledgedVersion && serverVersion !== acknowledgedVersion && CURRENT_VERSION && serverVersion !== CURRENT_VERSION) {
+          console.log('[AppLayout] Nova versao detectada, limpando cache...')
+
+          // Limpa todos os caches
+          if ("caches" in window) {
             const names = await caches.keys()
-            await Promise.all(names.map((n) => caches.delete(n)))
+            await Promise.all(names.map(n => caches.delete(n)))
           }
-          if ('serviceWorker' in navigator) {
+
+          // Desregistra service workers
+          if ("serviceWorker" in navigator) {
             const regs = await navigator.serviceWorker.getRegistrations()
-            await Promise.all(regs.map((r) => r.unregister()))
+            await Promise.all(regs.map(r => r.unregister()))
           }
+
+          // Atualiza versão reconhecida
           localStorage.setItem(STORAGE_KEY, serverVersion)
+
+          // Recarrega
           window.location.href = window.location.pathname + '?t=' + Date.now()
         }
       } catch (e) {
         console.warn('[AppLayout] Erro ao verificar update:', e)
       }
     }
+
+    // Executa imediatamente
     checkUpdate()
   }, [])
 
+  const colorStyles = {
+    red: { dot: 'bg-red-500', ping: 'bg-red-400' },
+    blue: { dot: 'bg-blue-500', ping: 'bg-blue-400' },
+    yellow: { dot: 'bg-yellow-500', ping: 'bg-yellow-400' },
+    green: { dot: 'bg-green-500', ping: 'bg-green-400' }
+  }
+  
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }: { data: any }) => {
+    supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) {
         navigate({ to: '/' })
         return
       }
       const role = data.user.user_metadata?.role || ''
-      const userName =
-        data.user.user_metadata?.full_name ||
-        data.user.user_metadata?.name ||
-        data.user.email?.split('@')[0] ||
-        'Usuário'
+      const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
       if (userName && userName !== 'Usuário') {
-        try {
-          localStorage.setItem('sucena_user_name', userName)
-        } catch (_) {}
+        try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
       }
       setCurrentUser({
         id: data.user.id || '',
         name: userName,
         role: role || 'Usuário',
-        avatarUrl: data.user.user_metadata?.avatar_url || '',
+        avatarUrl: data.user.user_metadata?.avatar_url || ''
       })
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event: any, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
         navigate({ to: '/' })
         return
       }
       if (session?.user) {
         const role = session.user.user_metadata?.role || ''
-        const userName =
-          session.user.user_metadata?.full_name ||
-          session.user.user_metadata?.name ||
-          session.user.email?.split('@')[0] ||
-          'Usuário'
+        const userName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
         if (userName && userName !== 'Usuário') {
-          try {
-            localStorage.setItem('sucena_user_name', userName)
-          } catch (_) {}
+          try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
         }
         setCurrentUser({
           id: session.user.id || '',
           name: userName,
           role: role || 'Usuário',
-          avatarUrl: session.user.user_metadata?.avatar_url || '',
+          avatarUrl: session.user.user_metadata?.avatar_url || ''
         })
       }
     })
 
     return () => subscription.unsubscribe()
   }, [navigate])
+
+  useEffect(() => {
+    // Solicita permissão de localização no Android (Capacitor) ao abrir o app
+    const requestLocation = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.Capacitor?.isNative) {
+          const { Geolocation } = await import('@capacitor/geolocation')
+          const permissions = await Geolocation.checkPermissions()
+          if (permissions.location !== 'granted') {
+            await Geolocation.requestPermissions()
+          }
+        }
+      } catch (error) {
+        console.log('Erro ao solicitar localização:', error)
+      }
+    }
+    requestLocation()
+  }, [])
+
+  useEffect(() => {
+    // Global listener for Equipment Movements (Entry/Exit announcements)
+    const handleMovement = async (move: any) => {
+      const { data: eq } = await supabase.from('eq_equipments').select('id, name, plate_tag, category').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena').eq('id', move.equipment_id).single()
+      
+      setAnnouncement({
+        type: move.movement_type as 'entry'|'exit',
+        eq: eq,
+        move: move
+      })
+    }
+
+    const channel = supabase.channel('global_eq_movements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'eq_movements' }, async (payload) => {
+        handleMovement(payload.new)
+      })
+      .on('broadcast', { event: 'eq_moved' }, async ({ payload }) => {
+        handleMovement(payload)
+      })
+      .subscribe()
+
+    const localListener = (e: any) => handleMovement(e.detail)
+    window.addEventListener('eq_moved_local', localListener)
+
+    return () => {
+      supabase.removeChannel(channel)
+      window.removeEventListener('eq_moved_local', localListener)
+    }
+  }, [])
 
   const handleLogoutConfirm = async () => {
     setShowLogoutConfirm(false)
@@ -147,16 +195,45 @@ export function AppLayout({ children }: { children: ReactNode }) {
       clearDailySessionExpiry()
       await supabase.auth.signOut()
       navigate({ to: '/' })
-    }, 1500)
+    }, 5000)
+  }
+
+  const handleHardRefresh = async () => {
+    const toastId = toast.loading('Baixando atualizações e limpando cache...')
+    
+    try {
+      // 1. Limpa os arquivos cacheados pelo PWA / Service Worker (CSS, JS, Imagens antigos)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+
+      // 2. Desregistra e força atualização do Service Worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        for (const registration of registrations) {
+          await registration.unregister()
+        }
+      }
+
+      toast.success('Atualização concluída! Reiniciando...', { id: toastId })
+      
+      // Pequeno delay para ler a mensagem antes de forçar o refresh e aplicar o novo código
+      setTimeout(() => {
+        window.location.href = window.location.pathname + '?t=' + Date.now()
+      }, 1000)
+      
+    } catch (error) {
+      console.error('Erro ao atualizar:', error)
+      window.location.href = window.location.pathname + '?t=' + Date.now()
+    }
   }
 
   return (
-    <div className="min-h-screen font-jakarta selection:bg-amber-500/30 bg-[#FFFFFF] text-[#17233B]">
-      <LogoutOverlay
-        isVisible={isLoggingOut}
-        userName={currentUser.name}
-        userRole={currentUser.role}
-      />
+    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
+    style={{ height: '100dvh', maxHeight: '100dvh' }}
+    >
+      <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
       <AppUpdateNotification />
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
       <DdsAlertManager />
@@ -168,86 +245,186 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </>
       )}
 
-      {/* Global Search Modal */}
-      <GlobalSearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
+      
+      {/* Draggable title bar for Electron .exe — allows moving the window */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          height: 28, 
+          zIndex: 9998,
+          // @ts-ignore — Electron-specific CSS property
+          WebkitAppRegion: 'drag',
+          pointerEvents: 'auto',
+        }} 
       />
 
-      {/* Hydro Layout Grid Structure */}
-      <div className="app hydro-app">
-        {/* Left Floating Rounded Sidebar */}
-        <PortalSidebar
-          currentUserId={currentUser.id}
-          isOpen={isMobileSidebarOpen}
-          onClose={() => setIsMobileSidebarOpen(false)}
-        />
-
-        {/* Main Content Area */}
-        <div className="main hydro-main">
-          {/* Top Header Bar */}
-          <PortalHeader
-            currentUser={currentUser}
-            onMenuToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            onOpenSearch={() => setIsSearchOpen(true)}
-            onLogoutRequest={() => setShowLogoutConfirm(true)}
-          />
-
-          {/* Page Body Content */}
-          <main className="flex-1 w-full flex flex-col gap-5 min-w-0">
-            {location.pathname.split('/').filter(Boolean).length >= 2 && (
-              <div className="mb-2">
-                <BackButton />
-              </div>
-            )}
-            {children}
-          </main>
+      {/* Top Navigation Bar — Windows 11 Liquid Glass */}
+      <div className="sticky top-0 z-[60] pointer-events-none">
+        <div className="pointer-events-auto">
+          <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />
         </div>
       </div>
+
+      {/* Main Scrollable Content */}
+      <main 
+        className="vt-main relative z-0 flex flex-col min-h-full"
+        style={{ 
+          /* Em mobile: sem padding lateral excessivo */
+          paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+        }}
+      >
+        <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">
+          {/* Back Button: visible only on sub-pages (depth >= 2) */}
+          {location.pathname.split('/').filter(Boolean).length >= 2 && (
+            <div className="pt-5">
+              <BackButton />
+            </div>
+          )}
+          {children}
+        </div>
+      </main>
 
       {/* Chat Sidebar Overlay */}
       {currentUser.id && <ChatSidebar currentUserId={currentUser.id} />}
 
       {/* Floating Chat Windows */}
-      <div
-        className={`fixed bottom-[24px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${
-          isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]'
-        }`}
+      <div 
+        className={`fixed bottom-[40px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]' }`}
       >
-        {currentUser.id &&
-          activeChats.map((chatId) => (
-            <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
-          ))}
+        {currentUser.id && activeChats.map(chatId => (
+          <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
+        ))}
       </div>
 
-      {/* Confirm Logout Modal */}
+      {/* Bottom Status Bar */}
+      <footer 
+        className={`fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
+        style={{
+          height: 'max(36px, calc(36px + env(safe-area-inset-bottom, 0px)))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
+          paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
+        }}
+      >
+        
+        {/* Bottom Left: Logout — escondido em mobile pequeno para economizar espaço */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          <button 
+            onClick={() => setShowLogoutConfirm(true)}
+            className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors touch-target ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
+            style={{ minWidth: 44, minHeight: 44 }}
+          >
+            <LogOut size={13} />
+            <span className="hidden sm:inline">SAIR</span>
+          </button>
+          
+          <button 
+            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
+            title="Sincronizar Atualizações e Limpar Cache"
+            onClick={handleHardRefresh}
+            style={{ minWidth: 44, minHeight: 44 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          </button>
+          
+          {isAdmin(currentUser.name, currentUser.role) && (
+            <Link 
+              to="/admin"
+              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
+              title="Administração"
+              style={{ minWidth: 44, minHeight: 44 }}
+            >
+              <Shield size={16} />
+            </Link>
+          )}
+        </div>
+
+        {/* Bottom Right: Tools */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex justify-center pointer-events-none">
+          <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-5 w-auto object-contain transition-all duration-300 opacity-60 ${isDark ? 'filter brightness-0 invert' : ''}`} />
+        </div>
+
+        {/* Bottom Right: Chat + Status */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          <MiniWeatherWidget />
+
+          {/* Chat Icon with Badge */}
+          <button 
+            onClick={toggleSidebar}
+            className={`relative transition-colors ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            {unreadCountGlobally > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
+              </span>
+            )}
+          </button>
+
+          {/* Status Dot */}
+          <button 
+            className={`flex items-center gap-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} relative z-10`}
+            onClick={() => {
+              setShowMonthlyColorsModal(true)
+            }}
+            title="Configurar cores mensais"
+            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${colorStyles[currentColor as keyof typeof colorStyles]?.ping || 'bg-red-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colorStyles[currentColor as keyof typeof colorStyles]?.dot || 'bg-red-500'}`}></span>
+            </span>
+          </button>
+        </div>
+
+      </footer>
+
+      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#111C2E] border border-gray-200 dark:border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 mx-auto flex items-center justify-center mb-4">
-              <LogOut size={24} />
-            </div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Encerrar Sessão</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-6">
-              Deseja realmente sair do sistema de gestão?
-            </p>
-            <div className="flex items-center gap-3">
-              <button
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className={`p-6 rounded-2xl w-full max-w-sm border shadow-2xl ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
+            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Confirmar saída</h3>
+            <p className={`text-sm mb-6 ${isDark ? 'text-white/70' : 'text-gray-600'}`}>Tem certeza que deseja sair do sistema?</p>
+            
+            <div className="flex justify-end gap-3">
+              <button 
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 transition-colors"
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                style={{ minHeight: 44 }}
               >
                 Cancelar
               </button>
-              <button
+              <button 
                 onClick={handleLogoutConfirm}
-                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors"
+                className="px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors"
+                style={{ minHeight: 44 }}
               >
-                Sim, sair
+                Sair
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Equipment Announcement Modal */}
+      {announcement && (
+        <EquipmentAnnouncementModal 
+          announcement={announcement}
+          isDark={isDark}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
+
+      {/* Monthly Colors Modal */}
+      <MonthlyColorsModal 
+        isOpen={showMonthlyColorsModal} 
+        onClose={() => setShowMonthlyColorsModal(false)} 
+      />
+
     </div>
   )
 }
