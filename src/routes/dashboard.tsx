@@ -15,6 +15,7 @@ export const Route = createFileRoute('/dashboard')({
 interface NavItemDef {
   id: string
   label: string
+  href: string
   badge?: string
   icon: React.ReactNode
 }
@@ -23,6 +24,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'inicio',
     label: 'Início',
+    href: '/dashboard',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M3 10.5 12 3l9 7.5" />
@@ -33,6 +35,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'lembretes',
     label: 'Lembretes',
+    href: '/lembretes',
     badge: '3',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -44,6 +47,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'instagram',
     label: 'Instagram',
+    href: '/instacena',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -55,6 +59,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'almoxarifado',
     label: 'Almoxarifado',
+    href: '/almoxarifado',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
@@ -65,6 +70,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'documentos',
     label: 'Documentos',
+    href: '/documentos',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -75,6 +81,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'equipamentos',
     label: 'Equipamentos',
+    href: '/equipamentos',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M3 16V8h11v8M14 10h4l3 3v3h-7" />
@@ -86,6 +93,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'seguranca',
     label: 'Segurança',
+    href: '/seguranca',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z" />
@@ -96,6 +104,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'rh',
     label: 'RH',
+    href: '/rh',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="9" cy="8" r="3.5" />
@@ -106,6 +115,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'relatorio-obra',
     label: 'Relatório de Obra',
+    href: '/relatorio-obra',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />
@@ -115,6 +125,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'meio-ambiente',
     label: 'Meio Ambiente',
+    href: '/meio-ambiente',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M12 21c-5 0-8-3-8-8 0-6 5-10 12-11-1 8-3 13-8 15 3 1 6 0 8-2-1 4-2 6-4 6Z" />
@@ -125,6 +136,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'planejamento',
     label: 'Planejamento',
+    href: '#',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -135,6 +147,7 @@ const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'reunioes',
     label: 'Reuniões',
+    href: '/reunioes',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="9" cy="8" r="3.5" />
@@ -309,11 +322,20 @@ function DashboardComponent() {
     return () => window.removeEventListener('resize', handleResize)
   }, [activeItem, isSidebarCollapsed])
 
-  // Click on nav item: moves the white selection without changing content
-  const handleNavClick = (id: string, idx: number) => {
-    setActiveItem(id)
+  // Click on nav item: moves the selection and navigates to the target route
+  const handleNavClick = (item: NavItemDef, idx: number) => {
+    setActiveItem(item.id)
     const el = itemRefs.current[idx]
     updatePagePosition(el)
+
+    if (item.href === '#') {
+      toast.info('Módulo de Planejamento em desenvolvimento.')
+      return
+    }
+
+    if (item.href && item.href !== '/dashboard') {
+      navigate({ to: item.href as any })
+    }
   }
 
   // Close notifications on Esc or outside click
@@ -369,6 +391,7 @@ function DashboardComponent() {
       id: 'documentos',
       name: 'documentos',
       label: 'Documentos',
+      href: '/documentos',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -380,6 +403,7 @@ function DashboardComponent() {
       id: 'equipamentos',
       name: 'equipamentos',
       label: 'Equipamentos',
+      href: '/equipamentos',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M3 16V8h11v8M14 10h4l3 3v3h-7" />
@@ -392,6 +416,7 @@ function DashboardComponent() {
       id: 'almoxarifado',
       name: 'almoxarifado',
       label: 'Almoxarifado',
+      href: '/almoxarifado',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
@@ -403,6 +428,7 @@ function DashboardComponent() {
       id: 'relatorio-obra',
       name: 'relatorios relatorio de obra',
       label: 'Relatórios',
+      href: '/relatorio-obra',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />
@@ -413,6 +439,7 @@ function DashboardComponent() {
       id: 'planejamento',
       name: 'planejamento',
       label: 'Planejamento',
+      href: '#',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -424,6 +451,7 @@ function DashboardComponent() {
       id: 'reunioes',
       name: 'reunioes',
       label: 'Reuniões',
+      href: '/reunioes',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="9" cy="8" r="3.5" />
@@ -478,7 +506,7 @@ function DashboardComponent() {
                 }}
                 type="button"
                 className={`nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => handleNavClick(item.id, idx)}
+                onClick={() => handleNavClick(item, idx)}
               >
                 {item.icon}
                 {item.label}
@@ -622,14 +650,25 @@ function DashboardComponent() {
               </div>
             </div>
 
-            <button className="icon-btn" aria-label="Calendário" type="button">
+            <button
+              className="icon-btn"
+              aria-label="Calendário"
+              type="button"
+              onClick={() => navigate({ to: '/lembretes' as any })}
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
                 <rect x="3" y="5" width="18" height="16" rx="2" />
                 <path d="M3 10h18M8 3v4M16 3v4" />
               </svg>
             </button>
 
-            <div className="user-chip">
+            <div
+              className="user-chip"
+              role="button"
+              tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate({ to: '/configuracoes' as any })}
+            >
               <div className="avatar-f" aria-hidden="true">
                 {avatarLetter}
               </div>
@@ -854,7 +893,7 @@ function DashboardComponent() {
               <button
                 type="button"
                 className="link-all"
-                onClick={() => handleNavClick('lembretes', 1)}
+                onClick={() => navigate({ to: '/lembretes' as any })}
               >
                 Ver todos{' '}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
@@ -901,7 +940,7 @@ function DashboardComponent() {
               <button
                 type="button"
                 className="link-all"
-                onClick={() => handleNavClick('documentos', 4)}
+                onClick={() => navigate({ to: '/documentos' as any })}
               >
                 Ver todos{' '}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
@@ -920,6 +959,7 @@ function DashboardComponent() {
                   type="button"
                   className={`pend ${p.urgent ? 'urgent' : ''}`}
                   data-name={norm(p.name)}
+                  onClick={() => navigate({ to: '/documentos' as any })}
                 >
                   <span className="pend-ico">
                     {p.urgent ? (
@@ -984,7 +1024,7 @@ function DashboardComponent() {
                 <button
                   type="button"
                   className="safety-btn"
-                  onClick={() => handleNavClick('seguranca', 6)}
+                  onClick={() => navigate({ to: '/seguranca' as any })}
                 >
                   Juntos somos mais fortes{' '}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
@@ -1058,9 +1098,12 @@ function DashboardComponent() {
                 className="quick-item"
                 data-name={item.name}
                 onClick={() => {
-                  const targetIdx = NAV_ITEMS.findIndex((n) => n.id === item.id)
-                  if (targetIdx !== -1) {
-                    handleNavClick(item.id, targetIdx)
+                  if (item.href === '#') {
+                    toast.info('Módulo de Planejamento em desenvolvimento.')
+                    return
+                  }
+                  if (item.href) {
+                    navigate({ to: item.href as any })
                   }
                 }}
               >
