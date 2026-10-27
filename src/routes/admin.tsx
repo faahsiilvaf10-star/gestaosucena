@@ -2420,7 +2420,7 @@ function AdminRoute() {
                       
                       {/* Renderiza o card mock com a classe correspondente ao tema */}
                       <div 
-                        className={`mock-preview-card dashboard-card semantic-amber ${isDark ? "dashboard-card-dark-preview" : ""} p-6 w-64 h-32 flex flex-col justify-center items-center text-center shadow-2xl relative z-10`}
+                        className={`mock-preview-card dashboard-card ${isDark ? "neon-card neon-yellow" : ""} p-6 w-64 h-32 flex flex-col justify-center items-center text-center shadow-2xl relative z-10`}
                       >
                         <span className={`text-lg font-bold ${isDark ? 'text-[#1c1d21] dark:text-white' : 'text-[#07173f]'}`}>Exemplo de Card</span>
                         <span className={`text-xs mt-2 ${isDark ? 'text-gray-300' : 'text-[#53698e]'}`}>Opacidade: {isDark ? (appearance.darkCardOpacity ?? 35) : (appearance.lightCardOpacity ?? 75)}%</span>
