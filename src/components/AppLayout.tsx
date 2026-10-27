@@ -152,8 +152,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className={`min-h-screen font-sans selection:bg-sky-500/30 transition-colors duration-300 ${
-        isDark ? 'bg-[#090E17] text-white' : 'bg-[#F4F7FB] text-gray-900'
+      className={`min-h-screen font-sans selection:bg-amber-500/30 transition-colors duration-300 ${
+        isDark ? 'bg-[#0F172A] text-white' : 'bg-[#F4F6F9] text-slate-900'
       }`}
     >
       <LogoutOverlay
@@ -186,7 +186,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Main Layout Area (shifted right on desktop by sidebar width) */}
-      <div className="lg:pl-[220px] flex flex-col min-h-screen">
+      <div className="lg:pl-[215px] flex flex-col min-h-screen">
         {/* Top Header Bar */}
         <PortalHeader
           currentUser={currentUser}

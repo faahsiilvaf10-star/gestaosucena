@@ -37,11 +37,9 @@ export function PortalHeader({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Extrai primeiro nome
   const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'Fabrício'
   const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
 
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -53,42 +51,41 @@ export function PortalHeader({
   }, [])
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full bg-white dark:bg-[#0B1524] border-b border-gray-200/80 dark:border-white/10 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-xs">
+    <header className="sticky top-0 z-30 h-16 w-full bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-white/10 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-2xs">
       {/* Left side: Hamburger (Mobile) + Search Bar */}
       <div className="flex items-center gap-3 flex-1 max-w-2xl">
-        {/* Mobile menu toggle */}
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+          className="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
           aria-label="Abrir menu"
         >
           <Menu size={20} />
         </button>
 
-        {/* Search input field */}
+        {/* Search input field — Rounded-full Pill */}
         <div
           onClick={onOpenSearch}
           className="relative flex items-center w-full max-w-lg cursor-pointer group"
         >
           <Search
-            size={17}
-            className="absolute left-3.5 text-gray-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors pointer-events-none"
+            size={16}
+            className="absolute left-4 text-slate-400 group-hover:text-amber-500 transition-colors pointer-events-none"
           />
           <input
             type="text"
             readOnly
             placeholder="Buscar colaboradores, documentos, equipamentos..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 cursor-pointer focus:outline-none hover:border-gray-300 dark:hover:border-white/20 transition-all shadow-2xs"
+            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 cursor-pointer focus:outline-none hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-2xs"
           />
         </div>
       </div>
 
-      {/* Right side: Actions (Notifications, Calendar, Theme, Profile) */}
+      {/* Right side: Actions (Notifications with RED 3 badge, Calendar, Theme, Profile) */}
       <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
-        {/* Notifications (Lembretes) */}
+        {/* Notifications (Lembretes) with Red Badge 3 */}
         <Link
           to="/lembretes"
-          className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-all"
+          className="relative p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"
           title="Lembretes e Notificações"
         >
           <Bell size={18} strokeWidth={1.8} />
@@ -100,49 +97,49 @@ export function PortalHeader({
         {/* Calendar shortcut */}
         <Link
           to="/rh/calendario-hydro"
-          className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-all hidden sm:flex"
-          title="Calendário Hydro"
+          className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all hidden sm:flex"
+          title="Calendário"
         >
           <Calendar size={18} strokeWidth={1.8} />
         </Link>
 
-        {/* Theme Toggle Button */}
+        {/* Theme Toggle Button (Sun icon) */}
         <div className="flex items-center">
-          <ThemeToggle variant="ghost" className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl" />
+          <ThemeToggle variant="ghost" className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full" />
         </div>
 
-        {/* User Profile Capsule with Dropdown */}
+        {/* User Profile Capsule */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2.5 pl-1.5 pr-2 py-1 rounded-xl hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all"
+            className="flex items-center gap-2.5 pl-1.5 pr-2 py-1 rounded-full hover:bg-slate-100/80 dark:hover:bg-white/10 transition-all"
           >
             {/* User Avatar Circle */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-sky-100 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-500/30 flex items-center justify-center overflow-hidden shrink-0 text-sky-700 dark:text-sky-300 shadow-2xs">
-              {currentUser.avatarUrl ? (
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User size={18} strokeWidth={2} />
-              )}
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+              <img
+                src={currentUser.avatarUrl || '/layout/avatar-fabricio.png'}
+                alt={currentUser.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+              <User size={18} className="text-slate-600 dark:text-slate-300" />
             </div>
 
             {/* User Info Texts */}
             <div className="hidden md:flex flex-col text-left leading-tight">
-              <span className="text-[13px] font-bold text-gray-900 dark:text-white">
+              <span className="text-[13px] font-bold text-slate-900 dark:text-white">
                 Olá, {displayFirstName}
               </span>
-              <span className="text-[11px] text-gray-500 dark:text-gray-400 font-normal">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                 Visão geral da operação
               </span>
             </div>
 
             <ChevronDown
-              size={15}
-              className={`text-gray-400 transition-transform duration-200 ${
+              size={14}
+              className={`text-slate-400 transition-transform duration-200 ${
                 isDropdownOpen ? 'rotate-180' : ''
               }`}
             />
@@ -150,22 +147,22 @@ export function PortalHeader({
 
           {/* Profile Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#111C2E] rounded-2xl shadow-xl border border-gray-200 dark:border-white/10 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="px-4 py-2 border-b border-gray-100 dark:border-white/10">
-                <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                  {currentUser.name || 'Usuário'}
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1F2937] rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="px-4 py-2 border-b border-slate-100 dark:border-white/10">
+                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  {currentUser.name || 'Fabrício'}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">
-                  {currentUser.role || 'Operação'}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                  {currentUser.role || 'Visão geral da operação'}
                 </p>
               </div>
 
-              <div className="py-1 text-xs text-gray-700 dark:text-gray-200 font-medium">
+              <div className="py-1 text-xs text-slate-700 dark:text-slate-200 font-medium">
                 {isAdmin(currentUser.role, currentUser.name) && (
                   <Link
                     to="/admin"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-amber-600 dark:text-amber-400"
+                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-amber-600 dark:text-amber-400"
                   >
                     <Shield size={15} />
                     <span>Painel Administrativo</span>
@@ -175,7 +172,7 @@ export function PortalHeader({
                 <Link
                   to="/ambientes"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <Building size={15} />
                   <span>Trocar Ambiente</span>
@@ -184,14 +181,14 @@ export function PortalHeader({
                 <Link
                   to="/configuracoes"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <Settings size={15} />
                   <span>Configurações</span>
                 </Link>
               </div>
 
-              <div className="pt-1 border-t border-gray-100 dark:border-white/10">
+              <div className="pt-1 border-t border-slate-100 dark:border-white/10">
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false)
