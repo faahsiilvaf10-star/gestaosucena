@@ -1,16 +1,11 @@
-import Search from 'lucide-react/dist/esm/icons/search.js'
-import Bell from 'lucide-react/dist/esm/icons/bell.js'
-import Calendar from 'lucide-react/dist/esm/icons/calendar.js'
-import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.js'
 import Menu from 'lucide-react/dist/esm/icons/menu.js'
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.js'
 import User from 'lucide-react/dist/esm/icons/user.js'
-import LogOut from 'lucide-react/dist/esm/icons/log-out.js'
 import Settings from 'lucide-react/dist/esm/icons/settings.js'
 import Shield from 'lucide-react/dist/esm/icons/shield.js'
-import Building from 'lucide-react/dist/esm/icons/building.js'
+import LogOut from 'lucide-react/dist/esm/icons/log-out.js'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ThemeToggle } from '../ThemeToggle'
 import { isAdmin } from '../ui/VerifiedBadge'
 
 interface UserInfo {
@@ -34,16 +29,24 @@ export function PortalHeader({
   onLogoutRequest,
 }: PortalHeaderProps) {
   const navigate = useNavigate()
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
 
-  const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'Fabrício'
+  const notifRef = useRef<HTMLDivElement>(null)
+  const userRef = useRef<HTMLDivElement>(null)
+
+  const fullName = currentUser.name || 'Fabrício'
+  const firstName = fullName.split(' ')[0]
   const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
+  const initial = displayFirstName.charAt(0)
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false)
+      }
+      if (userRef.current && !userRef.current.contains(e.target as Node)) {
+        setIsUserDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -51,153 +54,222 @@ export function PortalHeader({
   }, [])
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-white/10 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-2xs">
-      {/* Left side: Hamburger (Mobile) + Search Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-2xl">
+    <header className="hydro-topbar">
+      {/* Mobile Menu Button */}
+      {onMenuToggle && (
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+          className="lg:hidden hydro-icon-btn shrink-0"
           aria-label="Abrir menu"
         >
           <Menu size={20} />
         </button>
+      )}
 
-        {/* Search input field — Rounded-full Pill */}
-        <div
-          onClick={onOpenSearch}
-          className="relative flex items-center w-full max-w-lg cursor-pointer group"
-        >
-          <Search
-            size={16}
-            className="absolute left-4 text-slate-400 group-hover:text-amber-500 transition-colors pointer-events-none"
-          />
-          <input
-            type="text"
-            readOnly
-            placeholder="Buscar colaboradores, documentos, equipamentos..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 cursor-pointer focus:outline-none hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-2xs"
-          />
-        </div>
-      </div>
+      {/* Search Input Bar */}
+      <label className="hydro-search cursor-pointer" onClick={onOpenSearch}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          id="searchInput"
+          type="search"
+          readOnly
+          placeholder="Buscar colaboradores, documentos, equipamentos…"
+          aria-label="Buscar no painel"
+          className="cursor-pointer"
+        />
+      </label>
 
-      {/* Right side: Actions (Notifications with RED 3 badge, Calendar, Theme, Profile) */}
-      <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
-        {/* Notifications (Lembretes) with Red Badge 3 */}
-        <Link
-          to="/lembretes"
-          className="relative p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"
-          title="Lembretes e Notificações"
-        >
-          <Bell size={18} strokeWidth={1.8} />
-          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#EF4444] text-[9.5px] font-bold text-white shadow-xs">
-            3
-          </span>
-        </Link>
-
-        {/* Calendar shortcut */}
-        <Link
-          to="/rh/calendario-hydro"
-          className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all hidden sm:flex"
-          title="Calendário"
-        >
-          <Calendar size={18} strokeWidth={1.8} />
-        </Link>
-
-        {/* Theme Toggle Button (Sun icon) */}
-        <div className="flex items-center">
-          <ThemeToggle variant="ghost" className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full" />
-        </div>
-
-        {/* User Profile Capsule */}
-        <div className="relative" ref={dropdownRef}>
+      {/* Top Actions */}
+      <div className="hydro-top-actions">
+        {/* Notifications Wrap */}
+        <div className="hydro-notif-wrap" ref={notifRef}>
           <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2.5 pl-1.5 pr-2 py-1 rounded-full hover:bg-slate-100/80 dark:hover:bg-white/10 transition-all"
+            className="hydro-icon-btn"
+            id="bellBtn"
+            aria-label="Notificações, 3 não lidas"
+            aria-expanded={isNotifOpen}
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
           >
-            {/* User Avatar Circle */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-              <img
-                src={currentUser.avatarUrl || '/layout/avatar-fabricio.png'}
-                alt={currentUser.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-              <User size={18} className="text-slate-600 dark:text-slate-300" />
-            </div>
-
-            {/* User Info Texts */}
-            <div className="hidden md:flex flex-col text-left leading-tight">
-              <span className="text-[13px] font-bold text-slate-900 dark:text-white">
-                Olá, {displayFirstName}
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                Visão geral da operação
-              </span>
-            </div>
-
-            <ChevronDown
-              size={14}
-              className={`text-slate-400 transition-transform duration-200 ${
-                isDropdownOpen ? 'rotate-180' : ''
-              }`}
-            />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+              <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+            </svg>
+            <span className="hydro-dot-badge">3</span>
           </button>
 
-          {/* Profile Dropdown Menu */}
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1F2937] rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="px-4 py-2 border-b border-slate-100 dark:border-white/10">
-                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                  {currentUser.name || 'Fabrício'}
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
-                  {currentUser.role || 'Visão geral da operação'}
+          {/* Notifications Panel */}
+          <div
+            className={`hydro-notif-panel ${isNotifOpen ? 'open' : ''}`}
+            role="dialog"
+            aria-label="Notificações"
+          >
+            <div className="flex items-center justify-between pb-1 border-b border-[#EEECE6] mb-1">
+              <h3 className="m-0 text-[12px] font-extrabold uppercase tracking-wider text-[#7A8699]">
+                Notificações
+              </h3>
+              <Link
+                to="/lembretes"
+                onClick={() => setIsNotifOpen(false)}
+                className="text-[11.5px] font-bold text-[#E6A800] hover:underline"
+              >
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="flex flex-col gap-1 max-h-[340px] overflow-y-auto">
+              <Link
+                to="/reunioes"
+                onClick={() => setIsNotifOpen(false)}
+                className="hydro-notif-item text-inherit no-underline"
+              >
+                <div
+                  className="n-ico"
+                  style={{ background: 'var(--hydro-yellow-soft)', color: 'var(--hydro-yellow-dark)' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                </div>
+                <div>
+                  <b>Reunião de Contrato Hydro</b>
+                  <p>6 participantes confirmados como presentes hoje.</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/documentos"
+                onClick={() => setIsNotifOpen(false)}
+                className="hydro-notif-item text-inherit no-underline"
+              >
+                <div
+                  className="n-ico"
+                  style={{ background: 'var(--hydro-red-bg)', color: 'var(--hydro-red)' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path d="M12 3 2 20h20L12 3Z" />
+                    <path d="M12 10v4M12 17.5v.5" />
+                  </svg>
+                </div>
+                <div>
+                  <b>Documento vencido</b>
+                  <p>Fabio Genilson Fernandes Dos Remedios — Contrato / Documentação.</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/documentos"
+                onClick={() => setIsNotifOpen(false)}
+                className="hydro-notif-item text-inherit no-underline"
+              >
+                <div
+                  className="n-ico"
+                  style={{ background: 'var(--hydro-amber-bg)', color: 'var(--hydro-amber)' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
+                </div>
+                <div>
+                  <b>Vence em 10 dias</b>
+                  <p>Creiane Alcantara Navegantes — ASO / Documentação.</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Action Button */}
+        <Link
+          to="/rh/calendario-hydro"
+          className="hydro-icon-btn hidden sm:grid"
+          aria-label="Calendário"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 10h18M8 3v4M16 3v4" />
+          </svg>
+        </Link>
+
+        {/* User Chip Capsule */}
+        <div className="relative" ref={userRef}>
+          <div
+            className="hydro-user-chip"
+            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="hydro-avatar-f" aria-hidden="true">
+              {currentUser.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt={currentUser.name} />
+              ) : (
+                initial
+              )}
+            </div>
+            <div>
+              <b>Olá, {displayFirstName}</b>
+              <span>Visão geral da operação</span>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-[#7A8699]">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+
+          {/* User Menu Dropdown */}
+          {isUserDropdownOpen && (
+            <div className="absolute right-0 top-[52px] w-56 bg-white border border-[#E8E6E0] rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-4 py-2 border-b border-[#EEECE6]">
+                <p className="text-xs font-bold text-[#17233B] truncate">{currentUser.name}</p>
+                <p className="text-[11px] text-[#7A8699] capitalize truncate">
+                  {currentUser.role || 'Colaborador'}
                 </p>
               </div>
 
-              <div className="py-1 text-xs text-slate-700 dark:text-slate-200 font-medium">
-                {isAdmin(currentUser.role, currentUser.name) && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-amber-600 dark:text-amber-400"
-                  >
-                    <Shield size={15} />
-                    <span>Painel Administrativo</span>
-                  </Link>
-                )}
-
+              <div className="py-1">
                 <Link
-                  to="/ambientes"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  to="/rh"
+                  onClick={() => setIsUserDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-[#17233B] hover:bg-[#FAFAF8] transition-colors"
                 >
-                  <Building size={15} />
-                  <span>Trocar Ambiente</span>
+                  <User size={15} className="text-[#7A8699]" />
+                  Meu Perfil / RH
                 </Link>
 
                 <Link
                   to="/configuracoes"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  onClick={() => setIsUserDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-[#17233B] hover:bg-[#FAFAF8] transition-colors"
                 >
-                  <Settings size={15} />
-                  <span>Configurações</span>
+                  <Settings size={15} className="text-[#7A8699]" />
+                  Configurações
                 </Link>
+
+                {isAdmin(currentUser.role) && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-[#17233B] hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    <Shield size={15} className="text-[#E6A800]" />
+                    Painel Administrador
+                  </Link>
+                )}
               </div>
 
-              <div className="pt-1 border-t border-slate-100 dark:border-white/10">
+              <div className="pt-1 border-t border-[#EEECE6]">
                 <button
                   onClick={() => {
-                    setIsDropdownOpen(false)
-                    onLogoutRequest?.()
+                    setIsUserDropdownOpen(false)
+                    if (onLogoutRequest) onLogoutRequest()
                   }}
-                  className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors text-left"
                 >
                   <LogOut size={15} />
-                  <span>Encerrar Sessão</span>
+                  Sair do sistema
                 </button>
               </div>
             </div>

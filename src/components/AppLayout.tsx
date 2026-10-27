@@ -152,8 +152,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className={`min-h-screen font-sans selection:bg-amber-500/30 transition-colors duration-300 ${
-        isDark ? 'bg-[#0F172A] text-white' : 'bg-[#F4F6F9] text-slate-900'
+      className={`min-h-screen font-jakarta selection:bg-amber-500/30 transition-colors duration-300 ${
+        isDark ? 'bg-[#0B0B0C] text-white' : 'bg-[#FFFFFF] text-[#17233B]'
       }`}
     >
       <LogoutOverlay
@@ -178,33 +178,35 @@ export function AppLayout({ children }: { children: ReactNode }) {
         onClose={() => setIsSearchOpen(false)}
       />
 
-      {/* Left Persistent Navigation Sidebar */}
-      <PortalSidebar
-        currentUserId={currentUser.id}
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-      />
-
-      {/* Main Layout Area (shifted right on desktop by sidebar width) */}
-      <div className="lg:pl-[215px] flex flex-col min-h-screen">
-        {/* Top Header Bar */}
-        <PortalHeader
-          currentUser={currentUser}
-          onMenuToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onLogoutRequest={() => setShowLogoutConfirm(true)}
+      {/* Hydro Layout Grid Structure */}
+      <div className="hydro-app">
+        {/* Left Floating Rounded Sidebar */}
+        <PortalSidebar
+          currentUserId={currentUser.id}
+          isOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
         />
 
-        {/* Scrollable Page Content */}
-        <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
-          {/* Back Button on subpages (depth >= 2) */}
-          {location.pathname.split('/').filter(Boolean).length >= 2 && (
-            <div className="mb-4">
-              <BackButton />
-            </div>
-          )}
-          {children}
-        </main>
+        {/* Main Content Area */}
+        <div className="hydro-main">
+          {/* Top Header Bar */}
+          <PortalHeader
+            currentUser={currentUser}
+            onMenuToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onLogoutRequest={() => setShowLogoutConfirm(true)}
+          />
+
+          {/* Page Body Content */}
+          <main className="flex-1 w-full flex flex-col gap-5 min-w-0">
+            {location.pathname.split('/').filter(Boolean).length >= 2 && (
+              <div className="mb-2">
+                <BackButton />
+              </div>
+            )}
+            {children}
+          </main>
+        </div>
       </div>
 
       {/* Chat Sidebar Overlay */}

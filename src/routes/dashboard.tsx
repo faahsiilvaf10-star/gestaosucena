@@ -38,65 +38,6 @@ export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
 })
 
-/**
- * Donut Gauge SVG circular limpo e sem distorções
- */
-function DonutGauge({
-  value,
-  total,
-  color,
-  trackColor,
-  size = 88,
-  strokeWidth = 9,
-}: {
-  value: number
-  total: number
-  color: string
-  trackColor: string
-  size?: number
-  strokeWidth?: number
-}) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const percentage = total > 0 ? Math.min(100, Math.max(0, (value / total) * 100)) : 0
-  const strokeDashoffset = circumference - (percentage / 100) * circumference
-
-  return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={trackColor}
-          strokeWidth={strokeWidth}
-          fill="transparent"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          fill="transparent"
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center leading-none">
-        <span className="text-[22px] font-extrabold text-slate-900 dark:text-white tracking-tight">
-          {value}
-        </span>
-        <span className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-          de {total}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 function DashboardComponent() {
   const navigate = useNavigate()
   const hojeDay = new Date().getDate()
@@ -344,577 +285,542 @@ function DashboardComponent() {
     [aniversariantesMes, hojeDay]
   )
 
-  // Data formatada exata: "27 de outubro de 2026 | Terça-Feira"
+  // Data formatada
   const dayNumber = format(new Date(), 'dd')
   const monthName = format(new Date(), 'MMMM', { locale: ptBR })
   const yearNumber = format(new Date(), 'yyyy')
   const weekdayRaw = format(new Date(), 'EEEE', { locale: ptBR })
-  const weekdayFormatted = weekdayRaw
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join('-')
-  const dateHeaderString = `${dayNumber} de ${monthName} de ${yearNumber}  |  ${weekdayFormatted}`
+  const weekdayFormatted = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1).toLowerCase()
+  const datePillString = `${dayNumber} de ${monthName} de ${yearNumber}`
 
   const rawName = currentUser?.user_metadata?.full_name || currentUser?.name || 'Fabrício'
   const firstName = rawName.split(' ')[0]
   const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
 
-  // Lista de colaboradores do carrossel da foto
-  const presentColaboradores = [
-    { id: '1', nome: 'Alessandra Souza Chaves' },
-    { id: '2', nome: 'Danieli Farias' },
-    { id: '3', nome: 'Você' },
-    { id: '4', nome: 'Tiago Augusto Rosa machado' },
-    { id: '5', nome: 'Luis Carlos Passos Araújo' },
-    { id: '6', nome: 'Alexsandro Chaves' },
+  // 6 Participantes presentes da Reunião
+  const presentPeople = [
+    { name: 'Alessandra Souza Chaves', initial: 'AS', bg: '#7C5C00' },
+    { name: 'Danieli Farias', initial: 'DF', bg: '#0E7490' },
+    { name: 'Você', initial: 'F', bg: '#14243E' },
+    { name: 'Tiago Augusto Rosa Machado', initial: 'TM', bg: '#15803D' },
+    { name: 'Luís Carlos Passos Araújo', initial: 'LA', bg: '#B45309' },
+    { name: 'Alexssandro Chaves', initial: 'AC', bg: '#6D28D9' },
   ]
 
-  // Pendências
-  const pendenciasMock = [
+  // Pendências com status
+  const pendingItems = [
     {
-      id: 'p1',
-      nome: 'Fabio Genilson Fernandes Dos Remedios',
-      categoria: 'Contrato / Documentação',
-      status: 'Vencido',
-      isDanger: true,
+      id: 'pend-1',
+      name: 'Fabio Genilson Fernandes Dos Remedios',
+      category: 'Contrato / Documentação',
+      tag: 'Vencido',
+      isUrgent: true,
       route: '/documentos',
     },
     {
-      id: 'p2',
-      nome: 'Creiane Alcantara Navegantes',
-      categoria: 'ASO / Documentação',
-      status: '10 dias',
-      isDanger: false,
+      id: 'pend-2',
+      name: 'Creiane Alcantara Navegantes',
+      category: 'ASO / Documentação',
+      tag: '10 dias',
+      isUrgent: false,
       route: '/rh',
     },
   ]
 
   return (
-    <div className="space-y-6 pb-12 selection:bg-amber-500/30">
+    <div className="flex flex-col gap-5 pb-10 font-jakarta">
       {/* ==========================================================
-          1. HERO BANNER CLARO (PANORAMA + ESCAVADEIRA + LEMA)
+          1. HERO BANNER IDENTICAL TO Painel Hydro Reabilitação (1).html
           ========================================================== */}
-      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs border border-slate-200/70 dark:border-white/10 min-h-[145px] sm:min-h-[155px] flex items-center bg-[#FAF9F5] dark:bg-[#111827]">
-        {/* Background Image: Panorama with Excavator & Mountain Sky */}
-        <div
-          className="absolute inset-0 bg-cover bg-right sm:bg-center"
-          style={{
-            backgroundImage: `url('/layout/hydro-hero-banner-light.png')`,
-            backgroundPosition: 'right center',
-          }}
-        />
-
-        {/* Subtle soft white gradient on left for crisp readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent dark:from-[#111827]/95 dark:via-[#111827]/80 dark:to-transparent" />
-
-        {/* Banner Content */}
-        <div className="relative z-10 w-full px-5 sm:px-8 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Left Column: Greeting & Date */}
-          <div className="max-w-xl">
-            <div className="flex items-center gap-3">
-              {/* Sun Icon with Rays in Golden Yellow */}
-              <div className="w-10 h-10 rounded-full bg-amber-400/15 flex items-center justify-center text-amber-500 shrink-0">
-                <Sun size={26} strokeWidth={2.2} className="text-amber-500" />
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">
-                Olá, {displayFirstName}!
-              </h1>
-            </div>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 font-medium leading-relaxed">
-              Tudo certo na operação. Vamos juntos por mais segurança e resultados!
-            </p>
-
-            {/* Date line with Calendar Icon */}
-            <div className="flex items-center gap-2 mt-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <Calendar size={14} className="text-slate-500 dark:text-slate-400 shrink-0" />
-              <span>{dateHeaderString}</span>
-            </div>
-          </div>
-
-          {/* Right Column: Hand-drawn script motto (rendered in banner image) */}
-          <div className="hidden lg:flex flex-col items-end text-right pr-4">
-            <div className="font-serif italic text-slate-800 dark:text-amber-200 text-lg leading-tight drop-shadow-2xs">
-              Segurança
-            </div>
-            <div className="font-serif italic text-slate-800 dark:text-amber-200 text-lg leading-tight drop-shadow-2xs">
-              é o nosso maior
-            </div>
-            <div className="font-serif italic text-slate-800 dark:text-amber-200 text-lg leading-tight drop-shadow-2xs">
-              resultado!
-            </div>
-            <div className="w-28 h-1 bg-[#FBBF24] rounded-full mt-1" />
+      <section className="hydro-hero" aria-label="Boas-vindas">
+        <img className="bg" src="/hero-excavator.webp" alt="Operação Hydro Reabilitação" />
+        <div className="hydro-hero-overlay" />
+        <div className="hydro-hero-content">
+          <span className="hydro-hero-kicker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+            </svg>
+            Olá, {displayFirstName}!
+          </span>
+          <h1>Olá, {displayFirstName}!</h1>
+          <p>Tudo certo na operação. Vamos juntos por mais segurança e resultados!</p>
+          <div className="hydro-hero-meta">
+            <span className="pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 10h18M8 3v4M16 3v4" />
+              </svg>
+              {datePillString}
+            </span>
+            <span className="pill">{weekdayFormatted}</span>
+            <span className="pill">Barcarena · PA</span>
           </div>
         </div>
-      </div>
+        <div className="hydro-hero-script" aria-hidden="true">
+          Segurança
+          <br />
+          é o nosso maior
+          <br />
+          resultado!
+        </div>
+      </section>
 
       {/* ==========================================================
-          2. ROW OF 3 TOP KPI METRIC CARDS
+          2. 3 TOP KPI CARDS
           ========================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* CARD 1: TOTAL DE FUNCIONÁRIOS */}
-        <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div>
-            {/* Header: Icon + Title */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                <Users size={17} strokeWidth={2} />
-              </div>
-              <h3 className="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-                TOTAL DE FUNCIONÁRIOS
-              </h3>
+      <section className="hydro-kpis" aria-label="Indicadores de hoje">
+        {/* TOTAL DE FUNCIONÁRIOS */}
+        <article className="hydro-kpi">
+          <div className="hydro-kpi-head">
+            <div
+              className="hydro-kpi-ico"
+              style={{ background: 'var(--hydro-yellow-soft)', color: 'var(--hydro-yellow-dark)' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7" />
+              </svg>
             </div>
-
-            {/* Big Number */}
-            <div className="mt-3">
-              <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {totalFuncionarios}
-              </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                colaboradores no quadro
-              </p>
-            </div>
-          </div>
-
-          {/* Bottom Badge: +2 vs mês anterior */}
-          <div className="flex items-center gap-2 mt-4 pt-2">
-            <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-500/20">
-              <ArrowUp size={12} strokeWidth={2.5} />
-              +2
-            </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              vs. mês anterior
+            <span>
+              Total de
+              <br />
+              funcionários
             </span>
           </div>
-
-          {/* Watermark silhouette on the right */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-30 dark:opacity-10">
-            <Users size={72} strokeWidth={1} className="text-slate-400" />
-          </div>
-        </div>
-
-        {/* CARD 2: PRESENTES HOJE */}
-        <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs relative overflow-hidden flex flex-col justify-between">
           <div>
-            {/* Header: Icon + Title */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                <Calendar size={17} strokeWidth={2} />
-              </div>
-              <h3 className="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-                PRESENTES HOJE
-              </h3>
+            <div className="hydro-kpi-big">{totalFuncionarios}</div>
+            <div className="hydro-kpi-sub">colaboradores no quadro</div>
+            <span className="hydro-trend">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+              +2&nbsp;
+              <span style={{ fontWeight: 600, color: 'var(--hydro-muted)' }}>vs. mês anterior</span>
+            </span>
+          </div>
+        </article>
+
+        {/* PRESENTES HOJE */}
+        <article className="hydro-kpi">
+          <div className="hydro-kpi-head">
+            <div
+              className="hydro-kpi-ico"
+              style={{ background: 'var(--hydro-green-bg)', color: 'var(--hydro-green)' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4" />
+              </svg>
             </div>
-
-            {/* Donut Chart + Percent Box */}
-            <div className="flex items-center justify-between mt-3 gap-3">
-              <DonutGauge
-                value={displayPresentes}
-                total={totalFuncionarios}
-                color="#10B981"
-                trackColor="#E2E8F0"
-                size={88}
-                strokeWidth={9}
-              />
-
-              <div className="flex items-center gap-2.5 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3.5 py-2.5 rounded-xl">
-                <UserCheck size={20} className="text-emerald-600 shrink-0" strokeWidth={2.2} />
-                <div className="flex flex-col leading-tight">
-                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    {pctPresenca}%
-                  </span>
-                  <span className="text-[10.5px] text-emerald-700/80 dark:text-emerald-300 font-medium">
-                    de presença
-                  </span>
-                </div>
+            <span>
+              Presentes
+              <br />
+              hoje
+            </span>
+          </div>
+          <div className="hydro-kpi-body">
+            <div
+              className="hydro-donut"
+              role="img"
+              aria-label={`${displayPresentes} de ${totalFuncionarios} presentes, ${pctPresenca} por cento de presença`}
+            >
+              <svg width="96" height="96" viewBox="0 0 96 96">
+                <circle cx="48" cy="48" r="40" fill="none" stroke="var(--hydro-line)" strokeWidth="10" />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  fill="none"
+                  stroke="#22C55E"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="251.3"
+                  strokeDashoffset={251.3 - (251.3 * pctPresenca) / 100}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              <div className="hydro-donut-center">
+                <b>{displayPresentes}</b>
+                <span>de {totalFuncionarios}</span>
+              </div>
+            </div>
+            <div className="hydro-kpi-foot flex-1">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                style={{ color: 'var(--hydro-green)' }}
+              >
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8" />
+              </svg>
+              <div>
+                <b style={{ color: 'var(--hydro-green)' }}>{pctPresenca}%</b>
+                <br />
+                <span>de presença</span>
               </div>
             </div>
           </div>
-        </div>
+        </article>
 
-        {/* CARD 3: AUSÊNCIAS */}
-        <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div>
-            {/* Header: Icon + Title */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
-                <Megaphone size={17} strokeWidth={2} />
-              </div>
-              <h3 className="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-                AUSÊNCIAS
-              </h3>
+        {/* AUSÊNCIAS HOJE */}
+        <article className="hydro-kpi">
+          <div className="hydro-kpi-head">
+            <div
+              className="hydro-kpi-ico"
+              style={{ background: 'var(--hydro-red-bg)', color: 'var(--hydro-red)' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 8h6M19 5v6" />
+              </svg>
             </div>
-
-            {/* Donut Chart + Percent Box */}
-            <div className="flex items-center justify-between mt-3 gap-3">
-              <DonutGauge
-                value={displayAusencias}
-                total={totalFuncionarios}
-                color="#EF4444"
-                trackColor="#FEE2E2"
-                size={88}
-                strokeWidth={9}
-              />
-
-              <div className="flex items-center gap-2.5 bg-red-50/80 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-3.5 py-2.5 rounded-xl">
-                <UserX size={20} className="text-red-500 shrink-0" strokeWidth={2.2} />
-                <div className="flex flex-col leading-tight">
-                  <span className="text-lg font-bold text-red-500">
-                    {pctAusencia}%
-                  </span>
-                  <span className="text-[10.5px] text-red-600/80 dark:text-red-300 font-medium">
-                    de ausências
-                  </span>
-                </div>
+            <span>
+              Ausências
+              <br />
+              hoje
+            </span>
+          </div>
+          <div className="hydro-kpi-body">
+            <div
+              className="hydro-donut"
+              role="img"
+              aria-label={`${displayAusencias} de ${totalFuncionarios} ausências, ${pctAusencia} por cento`}
+            >
+              <svg width="96" height="96" viewBox="0 0 96 96">
+                <circle cx="48" cy="48" r="40" fill="none" stroke="#FDE8E8" strokeWidth="10" />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  fill="none"
+                  stroke="#DC2626"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="251.3"
+                  strokeDashoffset={251.3 - (251.3 * pctAusencia) / 100}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              <div className="hydro-donut-center">
+                <b>{displayAusencias}</b>
+                <span>de {totalFuncionarios}</span>
+              </div>
+            </div>
+            <div className="hydro-kpi-foot red flex-1">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                style={{ color: 'var(--hydro-red)' }}
+              >
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6" />
+              </svg>
+              <div>
+                <b style={{ color: 'var(--hydro-red)' }}>{pctAusencia}%</b>
+                <br />
+                <span>de ausências</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
       {/* ==========================================================
-          3. MIDDLE SECTION (2 COLUMNS: LEFT 70%, RIGHT 30%)
+          3. CONTENT GRID (LEFT: MEETINGS & PENDÊNCIAS | RIGHT: SAFETY & CLIMA)
           ========================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* LEFT COLUMN: LEMBRETES & VENCIMENTOS (8 COLS) */}
-        <div className="lg:col-span-8 space-y-5">
-          {/* CARD 1: LEMBRETES PARA HOJE */}
-          <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs">
-            {/* Header with Yellow Round Clock Icon */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#FBBF24] text-slate-900 flex items-center justify-center shrink-0 shadow-2xs">
-                  <Clock size={15} strokeWidth={2.3} />
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
-                  Lembretes para Hoje
-                </h3>
-              </div>
-
-              <Link
-                to="/lembretes"
-                className="text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-1 group"
-              >
-                <span>Ver todos</span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+      <div className="hydro-content-grid">
+        {/* LEFT COLUMN */}
+        <section className="hydro-card hydro-card-pad" aria-label="Lembretes para hoje">
+          {/* Section Header */}
+          <div className="hydro-card-head">
+            <div className="ch-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
             </div>
-
-            {/* Yellow Alert Container with Reunião de Contrato Hydro & Employee Chips */}
-            <div className="bg-[#FFFBEB] dark:bg-amber-950/20 border border-[#FDE68A] dark:border-amber-500/20 rounded-2xl p-3.5 sm:p-4 mt-3.5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {ddsData?.hoje?.tema || 'Reunião de Contrato Hydro'}
-                </span>
-              </div>
-
-              {/* Horizontal list of present team chips on clean white */}
-              <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
-                {presentColaboradores.map((colab) => (
-                  <div
-                    key={colab.id}
-                    className="flex items-center gap-2 bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-white/10 px-3 py-1.5 rounded-xl shrink-0 shadow-2xs"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] flex items-center justify-center shrink-0">
-                      {colab.nome.charAt(0)}
-                    </div>
-
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {colab.nome}
-                      </span>
-                      <span className="flex items-center gap-1 text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Presente
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div>
+              <h2>Lembretes para hoje</h2>
+              <p>Reunião, vencimentos e pendências em um só lugar</p>
             </div>
+            <Link to="/lembretes" className="hydro-link-all">
+              Ver todos{' '}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </Link>
           </div>
 
-          {/* CARD 2: VENCIMENTOS E PENDÊNCIAS */}
-          <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs">
-            {/* Header with Red Alert Icon and Badge 2 */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={15} strokeWidth={2.2} />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
-                    Vencimentos e Pendências
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Atenção aos prazos e documentos
-                  </p>
-                </div>
-              </div>
-
-              <Link
-                to="/documentos"
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 flex items-center gap-1.5 group"
-              >
-                <span>Ver todos</span>
-                <ChevronRight size={13} />
-                <span className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 text-[10px] font-bold flex items-center justify-center">
-                  2
-                </span>
-              </Link>
+          {/* Meeting Container */}
+          <div className="hydro-meeting">
+            <div className="hydro-meeting-top">
+              <span className="m-dot" />
+              <h3>Reunião de Contrato Hydro</h3>
+              <time>Hoje · 6 presentes</time>
             </div>
-
-            {/* List of 2 pending cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3.5">
-              {pendenciasMock.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => navigate({ to: item.route as any })}
-                  className={`flex items-center justify-between p-3.5 rounded-2xl border transition-colors cursor-pointer group ${
-                    item.isDanger
-                      ? 'bg-red-50/70 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 hover:bg-red-50'
-                      : 'bg-sky-50/60 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20 hover:bg-sky-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                        item.isDanger
-                          ? 'bg-red-100 dark:bg-red-500/20 text-red-500'
-                          : 'bg-sky-100 dark:bg-sky-500/20 text-sky-600'
-                      }`}
-                    >
-                      <Calendar size={16} strokeWidth={2} />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {item.nome}
-                      </p>
-                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                        {item.categoria}
-                      </p>
-                    </div>
+            <div className="hydro-people">
+              {presentPeople.map((p, idx) => (
+                <div key={idx} className="hydro-person">
+                  <div className="hydro-p-ava" style={{ background: p.bg }}>
+                    {p.initial}
+                    <i />
                   </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    <span
-                      className={`text-[10.5px] font-bold px-2.5 py-0.5 rounded-full ${
-                        item.isDanger
-                          ? 'bg-red-200/90 dark:bg-red-500/30 text-red-700 dark:text-red-300'
-                          : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                    <ChevronRight
-                      size={14}
-                      className="text-slate-400 group-hover:translate-x-0.5 transition-transform"
-                    />
+                  <div>
+                    <b>{p.name}</b>
+                    <span>Presente</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* RIGHT COLUMN: SEGURANÇA & CLIMA (4 COLS) */}
-        <div className="lg:col-span-4 space-y-5">
-          {/* BANNER 1: SEGURANÇA EM PRIMEIRO LUGAR (COM CAPACETE HYDRO) */}
-          <div
-            onClick={() => navigate({ to: '/seguranca' })}
-            className="rounded-2xl overflow-hidden relative shadow-xs border border-slate-800 bg-[#1A222B] min-h-[145px] p-4 flex flex-col justify-between cursor-pointer hover:shadow-md transition-shadow group"
-          >
-            {/* Background Helmet Image on Right */}
-            <div
-              className="absolute right-0 top-0 bottom-0 w-36 sm:w-44 bg-contain bg-right bg-no-repeat pointer-events-none"
-              style={{
-                backgroundImage: `url('/layout/capacete-hydro-card.png')`,
-              }}
-            />
-
-            {/* Content Overlay */}
-            <div className="relative z-10 max-w-[200px]">
-              {/* Header Badge */}
-              <div className="flex items-center gap-1.5 text-[9.5px] font-extrabold tracking-widest text-amber-400 uppercase">
-                <Sun size={12} strokeWidth={2.5} />
-                <span>NOSSA PRIORIDADE</span>
-              </div>
-
-              {/* Title */}
-              <h4 className="text-sm sm:text-base font-bold text-white mt-1 leading-snug">
-                Segurança em primeiro lugar
-              </h4>
-
-              {/* Description */}
-              <p className="text-[10.5px] text-slate-300 mt-1 leading-relaxed">
-                Trabalhar com segurança é cuidar de você, da sua família e do nosso futuro.
-              </p>
+          {/* Vencimentos e Pendências Header */}
+          <div className="hydro-section-divider">
+            <div className="ch-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M12 3 2 20h20L12 3Z" />
+                <path d="M12 10v4M12 17.5v.5" />
+              </svg>
             </div>
-
-            {/* Golden Yellow Button */}
-            <div className="relative z-10 mt-3">
-              <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-slate-900 px-3.5 py-1.5 rounded-full bg-[#FBBF24] hover:bg-[#F59E0B] shadow-xs transition-colors">
-                <span>Juntos somos mais fortes!</span>
-                <ChevronRight size={13} />
-              </span>
+            <div>
+              <h3>Vencimentos e pendências</h3>
+              <p>Atenção aos prazos e documentos</p>
             </div>
+            <Link to="/documentos" className="hydro-link-all">
+              Ver todos{' '}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </Link>
+            <span className="hydro-count-badge" aria-label="2 pendências">
+              2
+            </span>
           </div>
 
-          {/* BANNER 2: CLIMA / WEATHER WIDGET (BARCARENA - PA) */}
-          <div className="bg-white dark:bg-[#1F2937] rounded-2xl p-5 border border-slate-200/70 dark:border-white/10 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sun size={18} className="text-amber-500" />
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                  Barcarena - PA
+          {/* Pending List */}
+          <div className="hydro-pend-list">
+            {pendingItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => navigate({ to: item.route as any })}
+                className={`hydro-pend ${item.isUrgent ? 'urgent' : ''}`}
+              >
+                <span className="pend-ico">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
                 </span>
-              </div>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <b>{item.name}</b>
+                  <span>{item.category}</span>
+                </span>
+                <span className={`hydro-pend-tag ${item.isUrgent ? 'hydro-tag-red' : 'hydro-tag-amber'}`}>
+                  {item.tag}
+                </span>
+                <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        </section>
 
-              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                <CloudSun size={18} className="text-amber-500" />
-                <div className="flex flex-col text-right leading-none">
-                  <span>Máx 34°</span>
-                  <span className="mt-0.5">Mín 24°</span>
+        {/* RIGHT COLUMN */}
+        <div className="hydro-side-stack">
+          {/* Safety Card with Hardhat Image */}
+          <section className="hydro-safety" aria-label="Segurança em primeiro lugar">
+            <img
+              src="/safety-helmet.webp"
+              alt="Capacete de segurança branco sobre bancada em obra ao pôr do sol"
+            />
+            <div className="hydro-safety-body">
+              <span className="s-kicker">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                </svg>
+                NOSSA PRIORIDADE
+              </span>
+              <h3>Segurança em primeiro lugar</h3>
+              <p>Trabalhar com segurança é cuidar de você, da sua família e do nosso futuro.</p>
+              <Link to="/seguranca" className="hydro-safety-btn">
+                <span>Juntos somos mais fortes</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </Link>
+            </div>
+          </section>
+
+          {/* Weather Card */}
+          <section className="hydro-card hydro-weather" aria-label="Clima em Barcarena">
+            <div className="hydro-weather-top">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+              </svg>
+              Barcarena · PA
+              <span style={{ marginLeft: 'auto', fontWeight: 600, color: 'var(--hydro-faint)' }}>
+                {dayNumber} de {monthName.slice(0, 3)}.
+              </span>
+            </div>
+            <div className="hydro-weather-main">
+              <div>
+                <b>33°C</b>
+                <small>Céu claro</small>
+              </div>
+              <div className="hydro-weather-range">
+                <div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+                  </svg>
+                  Máx <b>34°</b>
+                </div>
+                <div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path d="M17.5 18a4.5 4.5 0 0 0 .4-8.97A6 6 0 1 0 6 17.6c.3.27.7.4 1 .4h10.5Z" />
+                  </svg>
+                  Mín <b>24°</b>
                 </div>
               </div>
             </div>
-
-            <div className="mt-3">
-              <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                33°C
-              </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                Céu claro
-              </p>
-            </div>
-          </div>
+            <p
+              style={{
+                margin: '14px 0 0',
+                paddingTop: '12px',
+                borderTop: '1px solid var(--hydro-line2)',
+                fontSize: '12.5px',
+                lineHeight: 1.5,
+                color: 'var(--hydro-muted)',
+                fontWeight: 600,
+              }}
+            >
+              Dia quente e seco na frente de obra — hidratação e pausas regulares para toda a equipe.
+            </p>
+          </section>
         </div>
       </div>
 
       {/* ==========================================================
-          4. BOTTOM ACTION BAR: "ACESSO RÁPIDO"
+          4. BOTTOM QUICK ACCESS ACTION BAR
           ========================================================== */}
-      <div className="bg-white dark:bg-[#1F2937] border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-2xs overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 p-1 md:p-0">
-        {/* Left Yellow Tab: ⚡ Acesso rápido */}
-        <div className="bg-[#FBBF24] text-slate-900 font-extrabold text-xs sm:text-sm px-5 py-3 flex items-center gap-2 rounded-xl md:rounded-none md:rounded-l-2xl w-full md:w-auto shrink-0 justify-center">
-          <Zap size={16} className="fill-slate-900 text-slate-900" />
-          <span>Acesso rápido</span>
+      <section className="hydro-quick" aria-label="Acesso rápido">
+        <div className="hydro-quick-label">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+          </svg>
+          Acesso rápido
         </div>
-
-        {/* Middle Links List */}
-        <div className="flex items-center gap-4 sm:gap-6 px-4 py-2 flex-wrap justify-center text-xs font-semibold text-slate-700 dark:text-slate-200">
-          <Link
-            to="/documentos"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <FileText size={15} />
-            <span>Documentos</span>
+        <div className="hydro-quick-items">
+          <Link to="/documentos" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+            </svg>
+            Documentos
           </Link>
-
-          <Link
-            to="/equipamentos"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <Truck size={15} />
-            <span>Equipamentos</span>
+          <Link to="/equipamentos" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <path d="M3 16V8h11v8M14 10h4l3 3v3h-7" />
+              <circle cx="7" cy="18" r="2" />
+              <circle cx="17" cy="18" r="2" />
+            </svg>
+            Equipamentos
           </Link>
-
-          <Link
-            to="/almoxarifado"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <Package size={15} />
-            <span>Almoxarifado</span>
+          <Link to="/almoxarifado" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+              <path d="m3 8 9 5 9-5M12 13v8" />
+            </svg>
+            Almoxarifado
           </Link>
-
-          <Link
-            to="/relatorio-obra"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <BarChart2 size={15} />
-            <span>Relatórios</span>
+          <Link to="/relatorio-obra" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />
+            </svg>
+            Relatórios
           </Link>
-
-          <Link
-            to="/permissao-trabalho"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <Calendar size={15} />
-            <span>Planejamento</span>
+          <Link to="/permissao-trabalho" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M3 10h18M8 3v4M16 3v4" />
+            </svg>
+            Planejamento
           </Link>
-
-          <Link
-            to="/reunioes"
-            className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            <Users size={15} />
-            <span>Reuniões</span>
+          <Link to="/reunioes" className="hydro-quick-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+              <circle cx="9" cy="8" r="3.5" />
+              <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7" />
+            </svg>
+            Reuniões
           </Link>
         </div>
+      </section>
 
-        {/* Right Signature Motto */}
-        <div className="flex flex-col items-center md:items-end px-5 py-2 text-center md:text-right shrink-0">
-          <span className="font-extrabold text-[11px] tracking-wider text-slate-800 dark:text-slate-100">
-            HYDRO REABILITAÇÃO
-          </span>
-          <span className="text-[10px] font-semibold text-amber-500 italic mt-0.5">
-            Mais segurança. Mais resultados.
-          </span>
-        </div>
-      </div>
+      {/* FOOTER */}
+      <footer className="hydro-footer">
+        <span>
+          <b>HYDRO REABILITAÇÃO</b> &nbsp;·&nbsp; Painel da operação — {weekdayFormatted.toLowerCase()},{' '}
+          {dayNumber} de {monthName} de {yearNumber}
+        </span>
+        <span className="foot-brand">
+          <b style={{ letterSpacing: '.04em' }}>Mais segurança. Mais resultados.</b>
+        </span>
+      </footer>
 
       {/* ==========================================================
-          5. SEÇÃO OPERACIONAL COMPLEMENTAR (DDS, ESTOQUE, ATIVIDADES)
+          5. OPERATIONAL TOOLS / MODALS (DDS, INSPEÇÃO, ESTOQUE)
           ========================================================== */}
-      <div className="pt-4 border-t border-slate-200/60 dark:border-white/10 space-y-5">
+      <div className="pt-2 border-t border-[#EEECE6] space-y-4">
         <AlertaInspecaoMensal />
 
-        {/* Alerta PT vencendo */}
+        {/* Permissão de Trabalho Alert if any expiring */}
         {expiringPTs.length > 0 && (
           <div
-            className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-red-500/20 transition-colors"
+            className="bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-red-100/70 transition-colors"
             onClick={() => navigate({ to: '/permissao-trabalho' })}
           >
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-red-500" size={24} />
               <div>
-                <h3 className="font-bold text-red-500 dark:text-red-400">
-                  Alerta de Permissão de Trabalho
-                </h3>
-                <p className="text-sm text-red-600 dark:text-red-300">
-                  Você tem {expiringPTs.length} permiss
-                  {expiringPTs.length > 1 ? 'ões' : 'ão'} de trabalho vencendo nos próximos 5 dias ou já vencida(s).
+                <h3 className="font-bold text-red-600">Alerta de Permissão de Trabalho</h3>
+                <p className="text-xs text-red-500">
+                  Você tem {expiringPTs.length} permiss{expiringPTs.length > 1 ? 'ões' : 'ão'} de
+                  trabalho com atenção aos prazos.
                 </p>
               </div>
             </div>
-            <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+            <button className="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors">
               Ver detalhes
             </button>
           </div>
         )}
 
-        {/* DDS Hoje & DDS Amanhã */}
+        {/* DDS Hoje Card & Postar DDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            className="bg-white dark:bg-[#1F2937] p-4 rounded-2xl border border-slate-200/70 dark:border-white/10 shadow-2xs cursor-pointer hover:shadow-md transition-shadow flex items-center justify-between"
+            className="bg-white p-4 rounded-2xl border border-[#E8E6E0] shadow-xs cursor-pointer hover:border-amber-400 transition-colors flex items-center justify-between"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                 <FileText size={20} strokeWidth={2} />
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide">
                   DDS Hoje
                 </span>
-                <p className="text-sm font-bold text-slate-900 dark:text-white capitalize truncate">
+                <p className="text-sm font-bold text-slate-900 capitalize truncate">
                   {ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'livre'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  Tema: <span className="font-semibold text-slate-700 dark:text-slate-300">{ddsData?.hoje?.tema}</span>
+                <p className="text-xs text-slate-500 truncate">
+                  Tema: <span className="font-semibold text-slate-700">{ddsData?.hoje?.tema}</span>
                 </p>
               </div>
             </div>
@@ -925,7 +831,7 @@ function DashboardComponent() {
                   e.stopPropagation()
                   setIsDdsModalOpen(true)
                 }}
-                className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 px-3 py-1.5 rounded-lg font-medium transition-colors border border-amber-500/20"
+                className="text-xs bg-amber-400/20 hover:bg-amber-400/30 text-amber-900 px-3 py-1.5 rounded-lg font-bold transition-colors border border-amber-300"
               >
                 {ddsData?.hoje?.postedMedia ? 'Alterar Foto' : 'Postar DDS'}
               </button>
@@ -934,22 +840,22 @@ function DashboardComponent() {
           </div>
 
           <div
-            className="bg-white dark:bg-[#1F2937] p-4 rounded-2xl border border-slate-200/70 dark:border-white/10 shadow-2xs cursor-pointer hover:shadow-md transition-shadow flex items-center justify-between"
+            className="bg-white p-4 rounded-2xl border border-[#E8E6E0] shadow-xs cursor-pointer hover:border-slate-300 transition-colors flex items-center justify-between"
             onClick={() => navigate({ to: '/seguranca/dds' })}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                 <CalendarDays size={20} strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
                   DDS Amanhã
                 </span>
-                <p className="text-sm font-bold text-slate-900 dark:text-white capitalize truncate">
+                <p className="text-sm font-bold text-slate-900 capitalize truncate">
                   {ddsData?.amanha?.palestrante?.nome?.toLowerCase() || 'livre'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  Tema: <span className="font-semibold text-slate-700 dark:text-slate-300">{ddsData?.amanha?.tema}</span>
+                <p className="text-xs text-slate-500 truncate">
+                  Tema: <span className="font-semibold text-slate-700">{ddsData?.amanha?.tema}</span>
                 </p>
               </div>
             </div>
@@ -958,7 +864,7 @@ function DashboardComponent() {
         </div>
 
         {/* Widgets Inferiores */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-2">
           <div className="lg:col-span-6 flex flex-col gap-5">
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
@@ -1007,30 +913,28 @@ function DashboardComponent() {
       {/* Modal de Aniversariante do Dia */}
       {showBirthdayModal && aniversariantesHoje.length > 0 && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
-          <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
             <button
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
               onClick={() => setShowBirthdayModal(false)}
             >
               <X size={24} />
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/20 rounded-full flex items-center justify-center text-amber-500 mb-4 animate-bounce">
+              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 mb-4 animate-bounce">
                 <Gift size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Tem festa hoje! 🎉
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">Hoje é o aniversário de:</p>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Tem festa hoje! 🎉</h2>
+              <p className="text-slate-600 mb-6">Hoje é o aniversário de:</p>
 
               <div className="w-full flex flex-col gap-3 mb-8">
                 {aniversariantesHoje.map((aniv: any, i: number) => (
                   <div
                     key={i}
-                    className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-4 flex items-center justify-center"
+                    className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center"
                   >
-                    <span className="font-bold text-lg text-slate-900 dark:text-white capitalize">
+                    <span className="font-bold text-lg text-slate-900 capitalize">
                       {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
                     </span>
                   </div>
