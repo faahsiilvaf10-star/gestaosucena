@@ -151,11 +151,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div
-      className={`min-h-screen font-jakarta selection:bg-amber-500/30 transition-colors duration-300 ${
-        isDark ? 'bg-[#0B0B0C] text-white' : 'bg-[#FFFFFF] text-[#17233B]'
-      }`}
-    >
+    <div className="min-h-screen font-jakarta selection:bg-amber-500/30 bg-[#FFFFFF] text-[#17233B]">
       <LogoutOverlay
         isVisible={isLoggingOut}
         userName={currentUser.name}
@@ -179,7 +175,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Hydro Layout Grid Structure */}
-      <div className="hydro-app">
+      <div className="app hydro-app">
         {/* Left Floating Rounded Sidebar */}
         <PortalSidebar
           currentUserId={currentUser.id}
@@ -188,7 +184,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         />
 
         {/* Main Content Area */}
-        <div className="hydro-main">
+        <div className="main hydro-main">
           {/* Top Header Bar */}
           <PortalHeader
             currentUser={currentUser}

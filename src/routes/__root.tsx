@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import hydroCss from "../hydro-panel.css?url";
+import "../hydro-panel.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { CustomCursor } from "../components/CustomCursor";

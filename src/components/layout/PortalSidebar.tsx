@@ -1,6 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import { usePermissions } from '../../hooks/usePermissions'
 import { MODULES } from '../../lib/permissions'
+import { useEffect, useRef } from 'react'
 import X from 'lucide-react/dist/esm/icons/x.js'
 
 interface PortalSidebarProps {
@@ -9,19 +10,21 @@ interface PortalSidebarProps {
   onClose?: () => void
 }
 
-interface NavSection {
-  title: string
-  items: {
-    id: string
-    label: string
-    href: string
-    routeMatch: string
-    badge?: string
-    svgPath: React.ReactNode
-  }[]
+export interface MenuItemDef {
+  id: string
+  label: string
+  href: string
+  routeMatch: string
+  badge?: string
+  svgPath: React.ReactNode
 }
 
-const NAV_SECTIONS: NavSection[] = [
+interface NavSection {
+  title: string
+  items: MenuItemDef[]
+}
+
+export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Principal',
     items: [
@@ -185,10 +188,47 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ]
 
+// Compatibilidade com componentes legados
+export const PORTAL_MENU_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
+
 export function PortalSidebar({ currentUserId, isOpen = false, onClose }: PortalSidebarProps) {
   const location = useLocation()
   const currentPath = location.pathname
   const { canView } = usePermissions(currentUserId || '')
+
+  const navRef = useRef<HTMLElement>(null)
+  const bubbleRef = useRef<HTMLDivElement>(null)
+
+  // Atualização dinâmica da bolha amarela deslizante com brilho neon
+  useEffect(() => {
+    const updateBubble = () => {
+      if (!navRef.current || !bubbleRef.current) return
+      const activeEl = navRef.current.querySelector<HTMLElement>('.nav-item.active')
+      if (activeEl) {
+        const navRect = navRef.current.getBoundingClientRect()
+        const activeRect = activeEl.getBoundingClientRect()
+        const top = activeRect.top - navRect.top + navRef.current.scrollTop
+        const left = activeRect.left - navRect.left + navRef.current.scrollLeft
+        bubbleRef.current.style.top = `${top}px`
+        bubbleRef.current.style.left = `${left}px`
+        bubbleRef.current.style.width = `${activeRect.width}px`
+        bubbleRef.current.style.height = `${activeRect.height}px`
+        bubbleRef.current.classList.add('ready')
+      }
+    }
+
+    // Atualiza após renderização do frame
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(updateBubble)
+      return () => cancelAnimationFrame(raf2)
+    })
+
+    window.addEventListener('resize', updateBubble)
+    return () => {
+      cancelAnimationFrame(raf1)
+      window.removeEventListener('resize', updateBubble)
+    }
+  }, [currentPath])
 
   return (
     <>
@@ -200,15 +240,15 @@ export function PortalSidebar({ currentUserId, isOpen = false, onClose }: Portal
         />
       )}
 
-      {/* Floating Dark Rounded Sidebar matching Painel Hydro Reabilitação (1).html */}
+      {/* Floating Dark Rounded Sidebar matching docs/painel-referencia.html */}
       <aside
-        className={`hydro-sidebar ${
+        className={`sidebar hydro-sidebar ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         } transition-transform duration-300`}
       >
         {/* Brand Header */}
-        <div className="hydro-brand justify-between">
-          <Link to="/dashboard" onClick={onClose} className="hydro-brand-name flex flex-col no-underline">
+        <div className="brand justify-between">
+          <Link to="/dashboard" onClick={onClose} className="brand-name flex flex-col no-underline">
             <b>HYDRO</b>
             <span>REABILITAÇÃO</span>
           </Link>
@@ -225,8 +265,11 @@ export function PortalSidebar({ currentUserId, isOpen = false, onClose }: Portal
           )}
         </div>
 
-        {/* Navigation Sections */}
-        <nav aria-label="Navegação principal" id="mainNav" className="flex flex-col gap-1 flex-1">
+        {/* Navigation Sections com bolha deslizante */}
+        <nav aria-label="Navegação principal" id="mainNav" ref={navRef} className="flex flex-col gap-1 flex-1 relative">
+          {/* Bolha amarela deslizante neon */}
+          <div className="nav-bubble" ref={bubbleRef} id="navBubble" aria-hidden="true" />
+
           {NAV_SECTIONS.map((section) => {
             const filteredItems = section.items.filter((item) => {
               const isControlled = MODULES.some((m) => m.id === item.id)
@@ -236,8 +279,8 @@ export function PortalSidebar({ currentUserId, isOpen = false, onClose }: Portal
             if (filteredItems.length === 0) return null
 
             return (
-              <div key={section.title} className="flex flex-col">
-                <div className="hydro-nav-label">{section.title}</div>
+              <div key={section.title} className="flex flex-col z-1">
+                <div className="nav-label">{section.title}</div>
                 {filteredItems.map((item) => {
                   const isActive =
                     item.id === 'dashboard'
@@ -249,13 +292,13 @@ export function PortalSidebar({ currentUserId, isOpen = false, onClose }: Portal
                       key={item.id}
                       to={item.href}
                       onClick={onClose}
-                      className={`hydro-nav-item ${isActive ? 'active' : ''}`}
+                      className={`nav-item ${isActive ? 'active' : ''}`}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         {item.svgPath}
                       </svg>
                       <span>{item.label}</span>
-                      {item.badge && <span className="hydro-nav-badge">{item.badge}</span>}
+                      {item.badge && <span className="nav-badge">{item.badge}</span>}
                     </Link>
                   )
                 })}
@@ -265,7 +308,7 @@ export function PortalSidebar({ currentUserId, isOpen = false, onClose }: Portal
         </nav>
 
         {/* Bottom Safety Box */}
-        <div className="hydro-sidebar-foot">
+        <div className="sidebar-foot">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
             <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z" />
             <path d="m9 11.5 2 2 4-4" />

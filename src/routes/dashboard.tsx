@@ -218,12 +218,12 @@ function DashboardComponent() {
         .select('*')
         .order('data_vencimento', { ascending: true })
 
-      if (error) return []
+      if (error || !data) return []
 
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      return data.filter((pt: any) => {
+      return (data || []).filter((pt: any) => {
         if (!pt.data_vencimento) return false
         const vencDate = parseISO(pt.data_vencimento)
         if (isNaN(vencDate.getTime())) return false

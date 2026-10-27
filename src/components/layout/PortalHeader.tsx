@@ -54,12 +54,12 @@ export function PortalHeader({
   }, [])
 
   return (
-    <header className="hydro-topbar">
+    <header className="topbar hydro-topbar">
       {/* Mobile Menu Button */}
       {onMenuToggle && (
         <button
           onClick={onMenuToggle}
-          className="lg:hidden hydro-icon-btn shrink-0"
+          className="lg:hidden icon-btn hydro-icon-btn shrink-0"
           aria-label="Abrir menu"
         >
           <Menu size={20} />
@@ -67,7 +67,7 @@ export function PortalHeader({
       )}
 
       {/* Search Input Bar */}
-      <label className="hydro-search cursor-pointer" onClick={onOpenSearch}>
+      <label className="search hydro-search cursor-pointer" onClick={onOpenSearch}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
@@ -83,11 +83,11 @@ export function PortalHeader({
       </label>
 
       {/* Top Actions */}
-      <div className="hydro-top-actions">
+      <div className="top-actions hydro-top-actions">
         {/* Notifications Wrap */}
-        <div className="hydro-notif-wrap" ref={notifRef}>
+        <div className="notif-wrap hydro-notif-wrap" ref={notifRef}>
           <button
-            className="hydro-icon-btn"
+            className="icon-btn hydro-icon-btn"
             id="bellBtn"
             aria-label="Notificações, 3 não lidas"
             aria-expanded={isNotifOpen}
@@ -97,12 +97,12 @@ export function PortalHeader({
               <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
               <path d="M10.3 21a2 2 0 0 0 3.4 0" />
             </svg>
-            <span className="hydro-dot-badge">3</span>
+            <span className="dot-badge hydro-dot-badge">3</span>
           </button>
 
           {/* Notifications Panel */}
           <div
-            className={`hydro-notif-panel ${isNotifOpen ? 'open' : ''}`}
+            className={`notif-panel hydro-notif-panel ${isNotifOpen ? 'open' : ''}`}
             role="dialog"
             aria-label="Notificações"
           >
@@ -123,7 +123,7 @@ export function PortalHeader({
               <Link
                 to="/reunioes"
                 onClick={() => setIsNotifOpen(false)}
-                className="hydro-notif-item text-inherit no-underline"
+                className="notif-item hydro-notif-item text-inherit no-underline"
               >
                 <div
                   className="n-ico"
@@ -143,7 +143,7 @@ export function PortalHeader({
               <Link
                 to="/documentos"
                 onClick={() => setIsNotifOpen(false)}
-                className="hydro-notif-item text-inherit no-underline"
+                className="notif-item hydro-notif-item text-inherit no-underline"
               >
                 <div
                   className="n-ico"
@@ -163,7 +163,7 @@ export function PortalHeader({
               <Link
                 to="/documentos"
                 onClick={() => setIsNotifOpen(false)}
-                className="hydro-notif-item text-inherit no-underline"
+                className="notif-item hydro-notif-item text-inherit no-underline"
               >
                 <div
                   className="n-ico"
@@ -186,7 +186,7 @@ export function PortalHeader({
         {/* Calendar Action Button */}
         <Link
           to="/rh/calendario-hydro"
-          className="hydro-icon-btn hidden sm:grid"
+          className="icon-btn hydro-icon-btn hidden sm:grid"
           aria-label="Calendário"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
@@ -198,12 +198,12 @@ export function PortalHeader({
         {/* User Chip Capsule */}
         <div className="relative" ref={userRef}>
           <div
-            className="hydro-user-chip"
+            className="user-chip hydro-user-chip"
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
             role="button"
             tabIndex={0}
           >
-            <div className="hydro-avatar-f" aria-hidden="true">
+            <div className="avatar-f hydro-avatar-f" aria-hidden="true">
               {currentUser.avatarUrl ? (
                 <img src={currentUser.avatarUrl} alt={currentUser.name} />
               ) : (
