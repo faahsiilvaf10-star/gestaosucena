@@ -1539,3 +1539,195 @@ table {
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch !important;
 }
+
+
+/* ==========================================================
+   MOBILE CELULAR (<= 768px):
+   1. BOTÃO "REQUISIÇÃO RÁPIDA" NO TOPO (ESTILO ACESSO RÁPIDO)
+   2. BARRA DE AÇÕES DOCKED FIXA NO RODAPÉ (BELL, COR, USER, SAIR)
+   ========================================================== */
+
+/* Em telas normais e desktop (> 768px), o botão é oculto */
+.btn-requisicao-rapida-mobile {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  /* Botão Requisição Rápida no Topo (apenas celular) */
+  .btn-requisicao-rapida-mobile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: linear-gradient(135deg, var(--yellow), #FFD84D) !important;
+    color: #1A1400 !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    letter-spacing: -0.01em !important;
+    padding: 8px 16px 8px 14px !important;
+    border-radius: 9999px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    margin-left: auto !important;
+  }
+
+  .btn-requisicao-rapida-mobile:active {
+    transform: scale(0.95) !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25) !important;
+  }
+
+  .btn-requisicao-rapida-mobile svg {
+    width: 16px !important;
+    height: 16px !important;
+    color: #1A1400 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .btn-requisicao-rapida-mobile span {
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+
+  /* Topbar no mobile */
+  .topbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    padding-left: 52px !important; /* Espaço para o botão amarelo flutuante de expandir a barra */
+  }
+
+  /* Barra de Ações (Sino, Cor Proibida, Perfil e Sair) FIXADA NO RODAPÉ NO MOBILE */
+  .top-actions {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    height: 58px !important;
+    background: var(--surface) !important;
+    border-top: 1px solid var(--line) !important;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08) !important;
+    z-index: 95 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    padding: 0 8px calc(env(safe-area-inset-bottom, 0px) + 2px) 8px !important;
+    margin: 0 !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  /* Espaçamento inferior na página para o conteúdo não ficar sob o rodapé fixo */
+  .vt-main, main, .main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Painel de Notificações abre para CIMA a partir da barra inferior */
+  .notif-panel {
+    top: auto !important;
+    bottom: 66px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 120px) !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18) !important;
+    border-radius: 16px !important;
+    transform-origin: bottom left !important;
+  }
+
+  /* Ajustes dos itens na barra inferior */
+  .notif-wrap .icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+  }
+
+  .forbidden-note {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: var(--surface2) !important;
+    padding: 4px 10px 4px 6px !important;
+    border-radius: 9999px !important;
+    border: 1px solid var(--line) !important;
+    cursor: pointer !important;
+  }
+  .forbidden-note .icon-btn.forbidden-color {
+    width: 26px !important;
+    height: 26px !important;
+    box-shadow: none !important;
+  }
+  .forbidden-note .icon-btn.forbidden-color svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .forbidden-note .forbidden-label small {
+    display: none !important;
+  }
+  .forbidden-note .forbidden-label b {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+  }
+
+  .user-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 4px 10px 4px 4px !important;
+    border-radius: 9999px !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--line) !important;
+    cursor: pointer !important;
+    margin-left: 0 !important;
+  }
+  .user-chip .avatar-f {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .user-chip b {
+    font-size: 12px !important;
+    max-width: 80px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+  .user-chip span, .user-chip > svg {
+    display: none !important;
+  }
+
+  .logout-top-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 6px 10px !important;
+    border-radius: 9999px !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  }
+  .logout-top-btn span {
+    display: inline !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+  }
+  .logout-top-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .user-chip b {
+    max-width: 55px !important;
+  }
+}
