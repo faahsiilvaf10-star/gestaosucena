@@ -491,11 +491,11 @@ export function SignatureOverlay({
             key={isStep2 ? 'canvas-authorizer' : 'canvas-employee'}
             ref={isStep2 ? authorizerSigRef : employeeSigRef}
             penColor="#0f172a"
-            minWidth={0.8}
-            maxWidth={1.2}
-            dotSize={0.8}
-            throttle={16}
-            velocityFilterWeight={0.7}
+            minWidth={1.8}
+            maxWidth={3.2}
+            dotSize={2.0}
+            throttle={0}
+            velocityFilterWeight={0.5}
             clearOnResize={false}
             onBegin={() => {
               if (isStep2) setAuthorizerDrawn(true);
