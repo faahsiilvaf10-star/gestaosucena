@@ -260,6 +260,9 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
     if (item.href && path !== item.href) {
       navigate({ to: item.href as any })
     }
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      setIsSidebarCollapsed(true)
+    }
   }
 
   // Ambiente selecionado
@@ -298,6 +301,15 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
       {/* ==========================================================
           SIDEBAR — FIXA, PRETA #0B0B0C, OMBROS CONVEXOS EM SVG
           ========================================================== */}
+      {/* Backdrop overlay para fechar o menu no celular */}
+      {!isSidebarCollapsed && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={() => setIsSidebarCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside className="sidebar" id="sidebar">
         {/* Marca dinâmica conforme o ambiente selecionado */}
         <div className="brand cursor-pointer" onClick={() => navigate({ to: '/dashboard' as any })}>
