@@ -7,6 +7,7 @@ import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from '
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { getUserEnvironmentAccess, hasEnvironmentAccess } from '../lib/environmentAccess'
+import { fetchReminders } from '../lib/api-reminders'
 import {
   MAINTENANCE_REASONS,
   isUnderMaintenance,
@@ -365,6 +366,24 @@ function DashboardComponent() {
     },
     staleTime: 60 * 1000,
     refetchInterval: 300000,
+  })
+
+  // Lembretes do dia onde o usuário foi mencionado
+  const { data: userMentionedReminders = [] } = useQuery({
+    queryKey: ['user_mentioned_reminders', todayStr, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return []
+      const allReminders = await fetchReminders()
+      // Filtrar: apenas lembretes de hoje onde o usuário foi mencionado
+      return allReminders.filter((r: any) => {
+        if (r.due_date !== todayStr) return false
+        if (!r.reminder_mentions || r.reminder_mentions.length === 0) return false
+        return r.reminder_mentions.some((m: any) => m.user_id === currentUser.id)
+      })
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 30 * 1000,
+    refetchInterval: 60000,
   })
 
   // Métricas da frota: somente equipamentos pesados em operação
@@ -939,43 +958,64 @@ function DashboardComponent() {
 
       {/* 5. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
       <div className="content-grid" style={{ marginTop: '24px' }}>
-        <section className="card card-pad" aria-label="Lembretes para hoje">
-          <div className="card-head">
-            <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-            <div><h2>Lembretes para hoje</h2><p>Reunião, vencimentos e pendências em um só lugar</p></div>
-            <a className="link-all" href="#" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
-          </div>
-
-          <div className={`meeting ${isMentionsOpen ? "open" : ""}`} id="meetingCard">
-            <div className="meeting-top"><span className="m-dot"></span><h3>Reunião de Contrato Hydro</h3><time>Hoje</time></div>
-            <button className="mentions-toggle" id="mentionsToggle" type="button" aria-expanded={isMentionsOpen} aria-controls="peopleWrap" onClick={() => setIsMentionsOpen(!isMentionsOpen)}>
-              <span className="mentions-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg></span>
-              <span className="mentions-text"><b><strong>{people.length}</strong> usuários mencionados</b><small id="mentionsHint">{isMentionsOpen ? "Toque para ocultar os usuários mencionados" : "Toque para ver os usuários mencionados"}</small></span>
-              <span className="mentions-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
-            </button>
-            <div className="people-wrap" id="peopleWrap">
-              <div className="people-inner">
-                <div className="people" id="peopleList">
-                  {filteredPeople.map((p: any) => (
-                    <div key={p.id} className="person" data-name={norm(p.name)}>
-                      <div className="p-ava" style={{ background: p.bg }}>{p.initial}<i></i></div>
-                      <div><b>{p.name}</b><span>Presente</span></div>
-                    </div>
-                  ))}</div>
-              </div>
+        {userMentionedReminders.length > 0 && (
+          <section className="card card-pad" aria-label="Lembretes para hoje">
+            <div className="card-head">
+              <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div><h2>Lembretes para hoje</h2><p>{userMentionedReminders.length} lembrete{userMentionedReminders.length > 1 ? 's' : ''} onde você foi mencionado</p></div>
+              <a className="link-all" href="/lembretes" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
             </div>
-          </div>
 
-          <div className="pendencias-alert" role="alert" aria-label="Atenção: vencimentos e pendências">
-          <div className="section-divider">
-            <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.5"/></svg></div>
-            <div><h3>Vencimentos e pendências</h3><p>Atenção aos prazos e documentos</p></div>
-            <span className="pend-attention"><i aria-hidden="true"></i>Atenção</span>
-            <a className="link-all" href="#" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
-            <span className="count-badge" aria-label={`${pendencias.length} pendências`}>{pendencias.length}</span>
-          </div>
+            <div className="space-y-3">
+              {userMentionedReminders.map((reminder: any) => (
+                <div key={reminder.id} className="pend" style={{ padding: '12px 16px', borderRadius: '12px', background: 'var(--surface2)', border: '1px solid var(--line)', transition: 'border-color .15s', cursor: 'pointer' }} onClick={() => navigate({ to: '/lembretes' })}>
+                  <div className="flex items-center gap-3">
+                    <div className={`pend-ico flex-shrink-0 ${reminder.priority === 'Urgente' ? 'tag-red' : reminder.priority === 'Alta' ? 'tag-orange' : reminder.priority === 'Baixa' ? 'tag-blue' : 'tag-amber'}`} style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="flex items-center gap-2">
+                        <p style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reminder.title}</p>
+                        {reminder.priority !== 'Normal' && (
+                          <span className={`pend-tag ${reminder.priority === 'Urgente' ? 'tag-red' : reminder.priority === 'Alta' ? 'tag-orange' : reminder.priority === 'Baixa' ? 'tag-blue' : 'tag-amber'}`} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>
+                            {reminder.priority}
+                          </span>
+                        )}
+                        {reminder.is_recurring && (
+                          <span className="tag-blue" style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>Recorrente</span>
+                        )}
+                      </div>
+                      {reminder.description && (
+                        <p style={{ marginTop: '4px', fontSize: '12.5px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {reminder.description}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ color: 'var(--faint)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '16px', height: '16px' }}>
+                        <path d="m9 6 6 6-6 6"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-          <div className="pend-list" id="pendList">
+        {pendencias.length > 0 && (
+          <section className="card card-pad" aria-label="Vencimentos e pendências">
+            <div className="card-head">
+              <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.5"/></svg></div>
+              <div><h3>Vencimentos e pendências</h3><p>Atenção aos prazos e documentos</p></div>
+              <a className="link-all" href="/rh" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
+              <span className="count-badge" aria-label={`${pendencias.length} pendências`}>{pendencias.length}</span>
+            </div>
+
+            <div className="space-y-2">
               {filteredPendencias.slice(0, 4).map((item: any) => (
                 <button
                   key={item.id}
@@ -1005,10 +1045,10 @@ function DashboardComponent() {
                     <path d="m9 6 6 6-6 6"/>
                   </svg>
                 </button>
-              ))}</div>
-          </div>
-          <p id="searchEmpty" style={{ display: 'none', margin: '14px 0 0', fontSize: '13.5px', color: 'var(--muted)', fontWeight: '600' }}>Nenhum colaborador ou pendência encontrado para essa busca.</p>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="side-stack">
           <section className="safety" aria-label="Segurança em primeiro lugar">
