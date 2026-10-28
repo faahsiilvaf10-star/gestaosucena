@@ -44,6 +44,29 @@ function DashboardComponent() {
   const queryClient = useQueryClient()
   const hojeDay = new Date().getDate()
 
+  // Ambiente selecionado
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+      queryClient.invalidateQueries()
+    }
+
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [queryClient])
+
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
@@ -121,9 +144,9 @@ function DashboardComponent() {
   // Data de hoje formatada
   const todayStr = format(new Date(), 'yyyy-MM-dd')
 
-  // Presenças reais do dia atual (busca estritamente a lista de presença salva de hoje)
+  // Presenças reais do dia atual (busca estritamente a lista de presença salva de hoje no ambiente ativo)
   const { data: attendanceInfo } = useQuery({
-    queryKey: ['presencas_dashboard_hoje', todayStr],
+    queryKey: ['presencas_dashboard_hoje', currentEnv, todayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rh_presencas')
@@ -162,9 +185,9 @@ function DashboardComponent() {
     }
   }, [queryClient])
 
-  // Buscar efetivo completo (Dados reais)
+  // Buscar efetivo completo do ambiente ativo (Dados reais)
   const { data: efetivo = [] } = useQuery({
-    queryKey: ['efetivo_dashboard'],
+    queryKey: ['efetivo_dashboard', currentEnv],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rh_efetivo')
@@ -177,7 +200,7 @@ function DashboardComponent() {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Total de colaboradores ativos reais
+  // Total de colaboradores ativos reais do ambiente selecionado
   const activeEmployees = useMemo(() => {
     return (efetivo || []).filter((e: any) => {
       const s = (e.status || '').toUpperCase().trim()
@@ -185,12 +208,12 @@ function DashboardComponent() {
     })
   }, [efetivo])
 
-  const totalFuncionarios = activeEmployees.length > 0 ? activeEmployees.length : (efetivo.length > 0 ? efetivo.length : 48)
+  const totalFuncionarios = activeEmployees.length
 
   const { displayPresentes, displayAusencias, pctPresenca, pctAusencia, isAttendanceSaved } = useMemo(() => {
     const isSaved = Boolean(attendanceInfo?.isSaved)
     const records = attendanceInfo?.records || []
-    if (!isSaved || records.length === 0) {
+    if (!isSaved || records.length === 0 || totalFuncionarios === 0) {
       return {
         displayPresentes: 0,
         displayAusencias: 0,
@@ -228,7 +251,7 @@ function DashboardComponent() {
 
   // Permissões de Trabalho reais
   const { data: expiringPTs = [] } = useQuery({
-    queryKey: ['expiring_pts'],
+    queryKey: ['expiring_pts', currentEnv],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('permissao_trabalho')
@@ -254,7 +277,7 @@ function DashboardComponent() {
 
   // DDS do dia real
   const { data: ddsData } = useQuery({
-    queryKey: ['dds_dashboard'],
+    queryKey: ['dds_dashboard', currentEnv],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd')
       const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
@@ -318,7 +341,7 @@ function DashboardComponent() {
   // reconciliados com `eq_movements` (mesma fonte de verdade de
   // /equipamentos/todos: o último movimento de portaria decide).
   const { data: fleetData } = useQuery({
-    queryKey: ['equipamentos_frota_dashboard'],
+    queryKey: ['equipamentos_frota_dashboard', currentEnv],
     queryFn: async () => {
       const [eqRes, movRes] = await Promise.all([
         supabase
@@ -374,7 +397,7 @@ function DashboardComponent() {
 
   // Lembretes do dia onde o usuário foi mencionado
   const { data: userMentionedReminders = [] } = useQuery({
-    queryKey: ['user_mentioned_reminders', todayStr, currentUser?.id],
+    queryKey: ['user_mentioned_reminders', currentEnv, todayStr, currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return []
       const allReminders = await fetchReminders()
@@ -520,11 +543,6 @@ function DashboardComponent() {
   const weekdayRaw = format(new Date(), 'EEEE', { locale: ptBR })
   const weekdayFormatted = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1).toLowerCase()
   const datePillString = `${dayNumber} de ${monthName} de ${yearNumber}`
-
-  const currentEnv =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('sucena_environment') || 'barcarena'
-      : 'barcarena'
 
   // Nome do ambiente ativo (o seletor de ambiente fica no topo, no AppLayout)
   const environmentLabel =
