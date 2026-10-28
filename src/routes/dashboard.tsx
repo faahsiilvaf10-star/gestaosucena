@@ -19,13 +19,12 @@ import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidg
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import '../hydro-panel.css'
-import '../dashboard.css'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
 })
 
-const CIRC = 251.3
+const CIRC = 251.327
 const bdayColors = ['#F472B6', '#FBBF24', '#34D399', '#60A5FA', '#A78BFA', '#FB923C', '#F87171']
 
 /** Equipamento lido de `eq_equipments` (cache materializado de `eq_movements`). */
@@ -118,40 +117,53 @@ function DashboardComponent() {
     })
   }, [navigate])
 
-  // Presenças dos últimos 7 dias (Dados reais)
-  const { data: chartData } = useQuery({
-    queryKey: ['presencas_dashboard'],
+  // Data de hoje formatada
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+
+  // Presenças reais do banco (se hoje não tiver chamada feita ainda, herda o dia mais recente salvo com registros)
+  const { data: attendanceInfo } = useQuery({
+    queryKey: ['presencas_dashboard_real', todayStr],
     queryFn: async () => {
       const days = []
       for (let i = 6; i >= 0; i--) {
         days.push(format(subDays(new Date(), i), 'yyyy-MM-dd'))
       }
 
-      const { data, error } = await supabase
-        .from('rh_presencas')
-        .select('data, status, funcionario_id')
-        .in('data', days)
+      const [weekRes, latestRes] = await Promise.all([
+        supabase
+          .from('rh_presencas')
+          .select('data, status, funcionario_id, area')
+          .in('data', days),
+        supabase
+          .from('rh_presencas')
+          .select('data, status, funcionario_id, area')
+          .order('data', { ascending: false })
+          .limit(100),
+      ])
 
-      if (error) throw error
+      if (weekRes.error) throw weekRes.error
 
-      return days.map((dayStr) => {
-        const records = data?.filter((r: any) => r.data === dayStr) || []
-        return {
-          date: dayStr,
-          records,
-          presentes: records.filter((r: any) => r.status === 'PRESENTE').length,
-          ausencias: records.filter(
-            (r: any) => r.status === 'AUSENTE' || r.status === 'ATESTADO' || r.status === 'EXTERNO'
-          ).length,
-        }
-      })
+      const weekData = weekRes.data || []
+      const latestData = latestRes.data || []
+
+      // Registros de hoje
+      const todayRecords = weekData.filter((r: any) => r.data === todayStr)
+      const hasToday = todayRecords.length > 0
+
+      // Se hoje tiver registros salvos usa hoje, senão usa a data mais recente registrada no banco
+      const fallbackDate = latestData[0]?.data || todayStr
+      const activeRecords = hasToday ? todayRecords : latestData.filter((r: any) => r.data === fallbackDate)
+      const activeDate = hasToday ? todayStr : fallbackDate
+
+      return {
+        activeDate,
+        isToday: hasToday,
+        records: activeRecords,
+      }
     },
-    refetchInterval: 300000,
-    staleTime: 5 * 60 * 1000,
+    refetchInterval: 120000,
+    staleTime: 60 * 1000,
   })
-
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const todayData = chartData?.find((d: any) => d.date === todayStr) || { presentes: 16, ausencias: 0, records: [] }
 
   // Buscar efetivo completo (Dados reais)
   const { data: efetivo = [] } = useQuery({
@@ -177,10 +189,34 @@ function DashboardComponent() {
   }, [efetivo])
 
   const totalFuncionarios = activeEmployees.length > 0 ? activeEmployees.length : (efetivo.length > 0 ? efetivo.length : 48)
-  const displayPresentes = todayData.presentes > 0 ? todayData.presentes : 16
-  const displayAusencias = todayData.ausencias >= 0 && todayData.presentes > 0 ? todayData.ausencias : 0
-  const pctPresenca = Math.round((displayPresentes / totalFuncionarios) * 100) || 33
-  const pctAusencia = Math.round((displayAusencias / totalFuncionarios) * 100) || 0
+
+  const { displayPresentes, displayAusencias, pctPresenca, pctAusencia } = useMemo(() => {
+    const records = attendanceInfo?.records || []
+    if (records.length === 0) {
+      return { displayPresentes: 0, displayAusencias: 0, pctPresenca: 0, pctAusencia: 0 }
+    }
+
+    const presentes = records.filter((r: any) => (r.status || '').toUpperCase() === 'PRESENTE').length
+    const explicitAusencias = records.filter((r: any) => {
+      const st = (r.status || '').toUpperCase()
+      return st === 'AUSENTE' || st === 'ATESTADO' || st === 'EXTERNO'
+    }).length
+
+    // Se houver ausências explicitamente marcadas, usa; caso contrário, a diferença entre o quadro total e os presentes é a ausência
+    const ausencias = explicitAusencias > 0
+      ? explicitAusencias
+      : Math.max(0, totalFuncionarios - presentes)
+
+    const pctP = totalFuncionarios > 0 ? Math.min(100, Math.round((presentes / totalFuncionarios) * 100)) : 0
+    const pctA = totalFuncionarios > 0 ? Math.min(100, Math.max(0, 100 - pctP)) : 0
+
+    return {
+      displayPresentes: presentes,
+      displayAusencias: ausencias,
+      pctPresenca: pctP,
+      pctAusencia: pctA,
+    }
+  }, [attendanceInfo, totalFuncionarios])
 
   const presencaTarget = CIRC - (CIRC * pctPresenca) / 100
   const ausenciaTarget = CIRC - (CIRC * pctAusencia) / 100
@@ -654,7 +690,7 @@ function DashboardComponent() {
     arcEl.style.strokeDashoffset = String(target)
   }
 
-  // Trigger animations on mount
+  // Trigger animations on mount and when attendance metrics update
   useEffect(() => {
     const timer = setTimeout(() => {
       replayGauge('pipa')
@@ -665,6 +701,11 @@ function DashboardComponent() {
     }, 350)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    handlePlayDonut('presenca')
+    handlePlayDonut('ausencia')
+  }, [pctPresenca, pctAusencia])
 
   // Normalization for search filtering
   const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -735,7 +776,7 @@ function DashboardComponent() {
           <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4"/></svg></div><span>Presentes<br/>hoje</span></div>
           <div className="kpi-body">
             <div className="donut arc-green" role="img" tabIndex={0} aria-label={`${displayPresentes} de ${totalFuncionarios} presentes, ${pctPresenca} por cento de presença. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("presenca")}>
-              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="var(--line)" strokeWidth="10"/><circle ref={donutPresencaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradGreen)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={presencaTarget} data-pct={pctPresenca} /></svg>
+              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="var(--line)" strokeWidth="10"/><circle ref={donutPresencaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradGreen)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={presencaTarget} data-pct={pctPresenca} /></svg>
               <div className="donut-center"><b data-count={displayPresentes}>{displayPresentes}</b><span>de {totalFuncionarios}</span></div>
               <span className="donut-tip">{pctPresenca}% de presença<small>{displayPresentes} de {totalFuncionarios} presentes hoje · clique para reanimar</small></span>
             </div>
@@ -747,7 +788,7 @@ function DashboardComponent() {
           <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--red-bg)', color: 'var(--red)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 8h6M19 5v6"/></svg></div><span>Ausências<br/>hoje</span></div>
           <div className="kpi-body">
             <div className="donut arc-red" role="img" tabIndex={0} aria-label={`${displayAusencias} de ${totalFuncionarios} ausências, ${pctAusencia} por cento. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("ausencia")}>
-              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="#FDE8E8" strokeWidth="10"/><circle ref={donutAusenciaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradRed)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={ausenciaTarget} data-pct={pctAusencia} /></svg>
+              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="#FDE8E8" strokeWidth="10"/><circle ref={donutAusenciaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradRed)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={ausenciaTarget} data-pct={pctAusencia} /></svg>
               <div className="donut-center"><b data-count={displayAusencias}>{displayAusencias}</b><span>de {totalFuncionarios}</span></div>
               <span className="donut-tip">{pctAusencia}% de ausências<small>{displayAusencias} de {totalFuncionarios} ausências hoje · clique para reanimar</small></span>
             </div>
@@ -759,8 +800,143 @@ function DashboardComponent() {
     
     
 
-      {/* 3. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
-      <div className="content-grid">
+      {/* 3. DDS CARD (Moved above Lembretes) */}
+      <section className="dds-card-section" style={{ marginTop: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div
+            className="card card-pad"
+            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--yellow)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--amber-bg)', color: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                    <path d="M14 2v6h6" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--amber)' }}>
+                    DDS Hoje
+                  </span>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'Livre'}
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.hoje?.tema}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsDdsModalOpen(true)
+                  }}
+                  style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, background: 'var(--amber-bg)', color: 'var(--amber)', border: '1px solid var(--amber)', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  {ddsData?.hoje?.postedMedia ? 'Alterar Foto' : 'Postar DDS'}
+                </button>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="card card-pad"
+            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--line2)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--surface2)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--muted)' }}>
+                    DDS Amanhã
+                  </span>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {ddsData?.amanha?.palestrante?.nome?.toLowerCase() || 'Livre'}
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.amanha?.tema}</span>
+                  </p>
+                </div>
+              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. EQUIPAMENTOS EM OPERAÇÃO E MANUTENÇÃO (VELOCÍMETROS) - Moved after KPIs */}
+      <section className="card card-pad" aria-label="Equipamentos em operação e em manutenção" style={{ marginTop: '24px' }}>
+      <div className="fleet">
+        <div className="fleet-half">
+          <div className="fleet-head">
+            <div className="ch-ico" style={{ background: 'var(--blue-bg)', color: 'var(--blue)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div>
+            <span>Em operação (Pesados)</span>
+          </div>
+          <div className="fleet-body">
+            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.operation} de ${fleetMetrics.total} em operação, ${fleetMetrics.pctOperation} por cento`} title="Clique para ver o velocímetro da frota de novo" onClick={() => replayGauge("pipa")}>
+              <div className="gauge-dial">
+              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#DCE9FD" strokeWidth="15" strokeLinecap="round"/>
+                <path ref={pipaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
+                <g stroke="#A9B8CC" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
+                <g ref={pipaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationOperation} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#2563EB"/></g>
+              </svg>
+              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
+              </div>
+              <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total} pesados</span></div>
+              <span className="gauge-tip">{fleetMetrics.pctOperation}% em operação<small>{fleetMetrics.operation} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+            </div>
+            <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Equipamentos<br/>Pesados</div></div>
+          </div>
+          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} pesados em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
+        </div>
+        <div className="fleet-half">
+          <div className="fleet-head">
+            <div className="ch-ico" style={{ background: '#FFF3E4', color: '#EA580C' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3 3.7-3.7Z"/></svg></div>
+            <span>Em manutenção</span>
+          </div>
+          <div className="fleet-body">
+            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.maintenance} de ${fleetMetrics.total} em manutenção, ${fleetMetrics.pctMaintenance} por cento`} title="Clique para ver o velocímetro de manutenção de novo" onClick={() => replayGauge("oficina")}>
+              <div className="gauge-dial">
+              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FDEBD9" strokeWidth="15" strokeLinecap="round"/>
+                <path ref={oficinaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
+                <g stroke="#C9B096" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
+                <g ref={oficinaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationMaintenance} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#EA580C"/></g>
+              </svg>
+              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
+              </div>
+              <div className="gauge-center"><b data-count={fleetMetrics.maintenance}>{fleetMetrics.maintenance}</b><span>de {fleetMetrics.total}</span></div>
+              <span className="gauge-tip">{fleetMetrics.pctMaintenance}% em manutenção<small>{fleetMetrics.maintenance} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+            </div>
+            <div><div className="pct-chip orange"><b data-count-pct={fleetMetrics.pctMaintenance}>{fleetMetrics.pctMaintenance}%</b><span>em manutenção</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
+          </div>
+          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-orange"><i className="d-orange"></i>{fleetMetrics.maintenance} em manutenção</span><span className="hl-orange"><i className="d-orange-rest"></i>{fleetMetrics.outOfMaintenance} fora de manutenção</span></div>
+        </div>
+      </div>
+    </section>
+
+      {/* 5. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
+      <div className="content-grid" style={{ marginTop: '24px' }}>
         <section className="card card-pad" aria-label="Lembretes para hoje">
           <div className="card-head">
             <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
@@ -861,7 +1037,7 @@ function DashboardComponent() {
     
 
       {/* 4. ANIVERSARIANTES DO MÊS */}
-      <section ref={bdayCardRef} className="card card-pad bday-card" id="bdayCard" aria-label="Aniversariantes do mês" title="Clique para soltar confetes" onClick={(e) => triggerBdayBurst(e.clientX, e.clientY)}>
+      <section ref={bdayCardRef} className="card card-pad bday-card" id="bdayCard" aria-label="Aniversariantes do mês" title="Clique para soltar confetes" onClick={(e) => triggerBdayBurst(e.clientX, e.clientY)} style={{ marginTop: '24px' }}>
         <div className="bday-bunting" aria-hidden="true">
           <svg className="b1" style={{ left: '6%' }} width="300" height="30" viewBox="0 0 300 30"><path d="M0 1 Q150 16 300 1" fill="none" stroke="#D8B4C8" strokeWidth="1.6"/><path d="M14 4 30 5 21 20Z" fill="#F472B6"/><path d="M52 7 68 8 59 23Z" fill="#FBBF24"/><path d="M90 9 106 9 97 24Z" fill="#34D399"/><path d="M128 10 144 10 135 25Z" fill="#60A5FA"/><path d="M166 10 182 9 173 24Z" fill="#A78BFA"/><path d="M204 9 220 8 211 23Z" fill="#FB923C"/><path d="M242 7 258 5 249 20Z" fill="#F472B6"/><path d="M272 4 288 3 279 18Z" fill="#34D399"/></svg>
           <svg className="b2" style={{ right: '4%' }} width="240" height="30" viewBox="0 0 240 30"><path d="M0 1 Q120 14 240 1" fill="none" stroke="#D8B4C8" strokeWidth="1.6"/><path d="M12 4 28 5 19 20Z" fill="#60A5FA"/><path d="M46 7 62 8 53 23Z" fill="#F472B6"/><path d="M80 9 96 9 87 24Z" fill="#FBBF24"/><path d="M114 10 130 10 121 25Z" fill="#FB923C"/><path d="M148 9 164 8 155 23Z" fill="#34D399"/><path d="M182 7 198 5 189 20Z" fill="#A78BFA"/><path d="M210 4 226 3 217 18Z" fill="#F472B6"/></svg>
@@ -923,7 +1099,7 @@ function DashboardComponent() {
               <div className="gauge-dial">
               <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
                 <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#DCE9FD" strokeWidth="15" strokeLinecap="round"/>
-                <path ref={pipaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
+                <path ref={pipaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
                 <g stroke="#A9B8CC" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
                 <g ref={pipaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationOperation} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#2563EB"/></g>
               </svg>
@@ -946,7 +1122,7 @@ function DashboardComponent() {
               <div className="gauge-dial">
               <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
                 <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FDEBD9" strokeWidth="15" strokeLinecap="round"/>
-                <path ref={oficinaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
+                <path ref={oficinaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
                 <g stroke="#C9B096" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
                 <g ref={oficinaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationMaintenance} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#EA580C"/></g>
               </svg>

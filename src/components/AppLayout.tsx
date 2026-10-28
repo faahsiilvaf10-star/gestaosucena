@@ -28,6 +28,7 @@ import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
 import { clearDailySessionExpiry } from '../lib/sessionManager'
+import { useNotifications } from '../context/NotificationContext'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -59,6 +60,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
+  const { state, markAsRead, markAllAsRead } = useNotifications()
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -283,6 +285,88 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   }
 
+  // Helper functions for notifications
+  const getNotificationIconStyle = (type: string) => {
+    switch (type) {
+      case 'mention':
+        return { background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }
+      case 'instacena_post':
+        return { background: 'linear-gradient(135deg, var(--amber), var(--rose))', color: 'white' }
+      case 'instacena_like':
+        return { background: 'var(--rose-bg)', color: 'var(--rose)' }
+      case 'instacena_comment':
+        return { background: 'var(--indigo-bg)', color: 'var(--indigo)' }
+      case 'instacena_story':
+        return { background: 'linear-gradient(135deg, var(--purple), var(--pink))', color: 'white' }
+      case 'system':
+      default:
+        return { background: 'var(--red-bg)', color: 'var(--red)' }
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'mention':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        )
+      case 'instacena_post':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.2" cy="6.8" r=".6" fill="currentColor" />
+          </svg>
+        )
+      case 'instacena_like':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 1-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 1-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 1 0-7.78z" />
+          </svg>
+        )
+      case 'instacena_comment':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        )
+      case 'instacena_story':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        )
+      case 'system':
+      default:
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M12 3 2 20h20L12 3Z" />
+            <path d="M12 10v4M12 17.5v.5" />
+          </svg>
+        )
+    }
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Agora mesmo'
+    if (diffMins < 60) return `${diffMins}min atrás`
+    if (diffHours < 24) return `${diffHours}h atrás`
+    if (diffDays < 7) return `${diffDays}d atrás`
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  }
+
   return (
     <div className={`overflow-y-auto overflow-x-hidden font-sans ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} app hydro-dashboard-root selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
@@ -356,7 +440,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   className="icon-btn"
                   id="bellBtn"
                   type="button"
-                  aria-label="Notificações, 3 não lidas"
+                  aria-label={`Notificações, ${state.unreadCount} não lidas`}
                   aria-expanded={isNotifOpen}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -367,7 +451,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
                     <path d="M10.3 21a2 2 0 0 0 3.4 0" />
                   </svg>
-                  <span className="dot-badge">3</span>
+                  {state.unreadCount > 0 && (
+                    <span className="dot-badge">{state.unreadCount > 99 ? '99+' : state.unreadCount}</span>
+                  )}
                 </button>
 
                 <div
@@ -376,72 +462,62 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   role="dialog"
                   aria-label="Notificações"
                 >
-                  <h3>Notificações</h3>
-                  <div
-                    className="notif-item cursor-pointer"
-                    onClick={() => {
-                      setIsNotifOpen(false)
-                      navigate({ to: '/reunioes' as any })
-                    }}
-                  >
-                    <div
-                      className="n-ico"
-                      style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M12 7v5l3 2" />
-                      </svg>
-                    </div>
-                    <div>
-                      <b>Reunião de Contrato Hydro</b>
-                      <p>6 participantes confirmados como presentes hoje.</p>
-                    </div>
+                  <div className="notif-header">
+                    <h3>Notificações</h3>
+                    {state.unreadCount > 0 && (
+                      <button
+                        className="mark-all-read-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markAllAsRead()
+                        }}
+                        title="Marcar todas como lidas"
+                      >
+                        Marcar todas como lidas
+                      </button>
+                    )}
                   </div>
-
-                  <div
-                    className="notif-item cursor-pointer"
-                    onClick={() => {
-                      setIsNotifOpen(false)
-                      navigate({ to: '/documentos' as any })
-                    }}
-                  >
-                    <div
-                      className="n-ico"
-                      style={{ background: 'var(--red-bg)', color: 'var(--red)' }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path d="M12 3 2 20h20L12 3Z" />
-                        <path d="M12 10v4M12 17.5v.5" />
+                  {state.notifications.length === 0 ? (
+                    <div className="notif-empty">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+                        <path d="M10.3 21a2 2 0 0 0 3.4 0" />
                       </svg>
+                      <p>Nenhuma notificação</p>
                     </div>
-                    <div>
-                      <b>Documento vencido</b>
-                      <p>Fabio Genilson Fernandes Dos Remedios — Contrato / Documentação.</p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="notif-item cursor-pointer"
-                    onClick={() => {
-                      setIsNotifOpen(false)
-                      navigate({ to: '/rh' as any })
-                    }}
-                  >
-                    <div
-                      className="n-ico"
-                      style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <rect x="3" y="5" width="18" height="16" rx="2" />
-                        <path d="M3 10h18M8 3v4M16 3v4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <b>Vence em 10 dias</b>
-                      <p>Creiane Alcantara Navegantes — ASO / Documentação.</p>
-                    </div>
-                  </div>
+                  ) : (
+                    state.notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`notif-item cursor-pointer ${!notif.read ? 'unread' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!notif.read) {
+                            markAsRead(notif.id)
+                          }
+                          setIsNotifOpen(false)
+                          if (notif.targetUrl) {
+                            navigate({ to: notif.targetUrl as any })
+                          }
+                        }}
+                      >
+                        <div
+                          className="n-ico"
+                          style={getNotificationIconStyle(notif.type)}
+                        >
+                          {getNotificationIcon(notif.type)}
+                        </div>
+                        <div className="notif-content">
+                          <div className="notif-title-row">
+                            <b>{notif.title}</b>
+                            {!notif.read && <span className="unread-dot" />}
+                          </div>
+                          <p>{notif.message}</p>
+                          <small className="notif-time">{formatTimeAgo(notif.createdAt)}</small>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

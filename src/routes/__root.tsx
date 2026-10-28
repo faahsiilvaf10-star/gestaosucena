@@ -20,6 +20,7 @@ import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
 import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
+import { NotificationProvider } from "../context/NotificationContext";
 import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
 import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
@@ -36,9 +37,11 @@ function RootContent() {
       <DailySessionWatcher />
       <GlobalBackground />
       {isAppRoute ? (
-        <AppLayout>
-          <Outlet />
-        </AppLayout>
+        <NotificationProvider>
+          <AppLayout>
+            <Outlet />
+          </AppLayout>
+        </NotificationProvider>
       ) : (
         <Outlet />
       )}

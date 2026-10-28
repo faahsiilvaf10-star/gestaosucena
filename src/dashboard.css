@@ -501,7 +501,7 @@ body {
   flex-wrap: wrap;
 }
 
-.donut {
+.donut-wrapper .donut {
   --value: 0;
   --accent: var(--status-info);
   --track: var(--status-info-soft);
@@ -524,7 +524,7 @@ body {
   transform: rotate(-90deg);
 }
 
-.donut::after {
+.donut-wrapper .donut::after {
   content: "";
 
   position: absolute;
@@ -889,15 +889,13 @@ body {
   .donut-wrapper {
     align-items: center;
   }
-
-  .donut {
+  .donut-wrapper .donut {
     width: 112px;
     height: 112px;
 
     flex-basis: 112px;
   }
-
-  .donut::after {
+  .donut-wrapper .donut::after {
     inset: 13px;
   }
 
