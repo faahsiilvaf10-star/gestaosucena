@@ -252,142 +252,9 @@ function generateReceiptPng(
       }
     };
 
-    /**
-     * Mede a espessura média do traço: 2 * (Área / Perímetro)
-     */
-    const measureThickness = (canvas: HTMLCanvasElement): number => {
-      const cCtx = canvas.getContext('2d');
-      if (!cCtx) return 1.0;
-      try {
-        const imgData = cCtx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-        let ink = 0;
-        let boundary = 0;
-        const w = canvas.width;
-        const h = canvas.height;
-        for (let py = 0; py < h; py++) {
-          for (let px = 0; px < w; px++) {
-            if (data[(py * w + px) * 4 + 3] > 40) {
-              ink++;
-              const top = py > 0 ? data[((py - 1) * w + px) * 4 + 3] : 0;
-              const bot = py < h - 1 ? data[((py + 1) * w + px) * 4 + 3] : 0;
-              const left = px > 0 ? data[(py * w + (px - 1)) * 4 + 3] : 0;
-              const right = px < w - 1 ? data[(py * w + (px + 1)) * 4 + 3] : 0;
-              if (top <= 40 || bot <= 40 || left <= 40 || right <= 40) {
-                boundary++;
-              }
-            }
-          }
-        }
-        return boundary > 0 ? (2 * ink) / boundary : 1.0;
-      } catch (_) {
-        return 1.0;
-      }
-    };
-
-    /**
-     * Normaliza a espessura do traço da assinatura para que ambas fiquem
-     * uniformes com a mesma espessura fina e nítida (caneta de espessura constante),
-     * eliminando discrepâncias causadas por velocidade do toque, DPR ou resolução.
-     */
-    const normalizeSignatureCanvas = (
-      img: HTMLImageElement,
-      sx: number,
-      sy: number,
-      sWidth: number,
-      sHeight: number,
-      targetW: number,
-      targetH: number,
-      targetThickness = 1.0
-    ): HTMLCanvasElement => {
-      const c = document.createElement('canvas');
-      c.width = targetW;
-      c.height = targetH;
-      const cCtx = c.getContext('2d');
-      if (!cCtx) return c;
-
-      // Desabilita suavização para manter bordas nítidas
-      cCtx.imageSmoothingEnabled = false;
-      cCtx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
-
-      // Se targetThickness >= 2.0, a assinatura está boa - não precisa de processamento
-      if (targetThickness >= 2.0) {
-        return c;
-      }
-
-      try {
-        const w = targetW;
-        const h = targetH;
-        const curT = measureThickness(c);
-
-        // Só afina se estiver MUITO mais grossa que o alvo (evita apagar assinaturas finas)
-        // threshold mínimo de 3.0 para considerar que precisa de ajuste
-        if (curT > Math.max(targetThickness + 1.5, 3.0)) {
-          const imgData = cCtx.getImageData(0, 0, w, h);
-          const data = imgData.data;
-          const dist = new Float32Array(w * h);
-          const INF = 9999;
-
-          // Chamfer distance transform (Passo 1: Top-Left -> Bottom-Right)
-          for (let py = 0; py < h; py++) {
-            for (let px = 0; px < w; px++) {
-              const idx = py * w + px;
-              if (data[idx * 4 + 3] <= 40) {
-                dist[idx] = 0;
-              } else {
-                let d = INF;
-                if (px > 0) d = Math.min(d, dist[idx - 1] + 1);
-                if (py > 0) d = Math.min(d, dist[idx - w] + 1);
-                if (px > 0 && py > 0) d = Math.min(d, dist[idx - w - 1] + 1.414);
-                if (px < w - 1 && py > 0) d = Math.min(d, dist[idx - w + 1] + 1.414);
-                dist[idx] = d;
-              }
-            }
-          }
-
-          // Passo 2: Bottom-Right -> Top-Left
-          for (let py = h - 1; py >= 0; py--) {
-            for (let px = w - 1; px >= 0; px--) {
-              const idx = py * w + px;
-              let d = dist[idx];
-              if (d > 0) {
-                if (px < w - 1) d = Math.min(d, dist[idx + 1] + 1);
-                if (py < h - 1) d = Math.min(d, dist[idx + w] + 1);
-                if (px < w - 1 && py < h - 1) d = Math.min(d, dist[idx + w + 1] + 1.414);
-                if (px > 0 && py < h - 1) d = Math.min(d, dist[idx + w - 1] + 1.414);
-                dist[idx] = d;
-              }
-            }
-          }
-
-          // Usa um delta muito menor para preservar mais da assinatura original
-          const delta = Math.min((curT - targetThickness) * 0.25, 1.5);
-          for (let py = 0; py < h; py++) {
-            for (let px = 0; px < w; px++) {
-              const idx = py * w + px;
-              const a = data[idx * 4 + 3];
-              if (a > 40) {
-                const d = dist[idx];
-                if (d <= delta - 0.5) {
-                  // Só remove se estiver muito perto da borda
-                  data[idx * 4 + 3] = 0;
-                } else if (d < delta + 0.5) {
-                  const factor = (d - (delta - 0.5)) / 1.0;
-                  data[idx * 4 + 3] = Math.round(a * Math.max(0, Math.min(1, factor)));
-                }
-              }
-            }
-          }
-          cCtx.putImageData(imgData, 0, 0);
-        }
-      } catch (_) {}
-
-      return c;
-    };
-
-    // Dimensões maiores para assinaturas mais nítidas e legíveis
-    const maxW = 280;
-    const maxH = 80;
+        // Dimensões ideais para assinaturas nítidas, legíveis e com linhas contínuas
+    const maxW = 260;
+    const maxH = 75;
 
     let authImg: HTMLImageElement | null = null;
     let empImg: HTMLImageElement | null = null;
@@ -407,21 +274,23 @@ function generateReceiptPng(
     const authBounds = authImg ? getTrimmedBounds(authImg) : null;
     const empBounds = empImg ? getTrimmedBounds(empImg) : null;
 
-    // Harmoniza a escala de desenho - permite assinaturas maiores para melhor legibilidade
+    // Harmoniza a escala de desenho preservando a resolução nativa sem corte ou distorção
     const scaleAuth = authBounds && authBounds.width > 0 && authBounds.height > 0
-      ? Math.min(maxW / authBounds.width, maxH / authBounds.height, 1.5)
+      ? Math.min(maxW / authBounds.width, maxH / authBounds.height, 1.2)
       : 1.0;
 
     let scaleEmp = empBounds && empBounds.width > 0 && empBounds.height > 0
-      ? Math.min(maxW / empBounds.width, maxH / empBounds.height, 1.5)
+      ? Math.min(maxW / empBounds.width, maxH / empBounds.height, 1.2)
       : 1.0;
 
     if (authBounds && empBounds) {
-      // Permite que a assinatura do recebedor seja proporcional ao autorizador
-      scaleEmp = Math.min(scaleEmp, Math.max(scaleAuth * 1.2, 0.6));
+      scaleEmp = Math.min(scaleEmp, Math.max(scaleAuth * 1.1, 0.7));
     }
 
-    let measuredAuthThickness = 1.0;
+    // Desenha as assinaturas com suavização de alta precisão (linhas contínuas e corretas, sem traços serrilhados)
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     if (authBounds) {
       const drawW = Math.max(10, Math.round(authBounds.width * scaleAuth));
@@ -429,20 +298,17 @@ function generateReceiptPng(
       const drawX = Math.round(centerL - drawW / 2);
       const drawY = Math.round(y - drawH - 5);
 
-      // Espessura alvo de 2.5 para manter assinaturas mais visíveis e nítidas
-      const authCanvas = normalizeSignatureCanvas(
+      ctx.drawImage(
         authBounds.img,
         authBounds.sx,
         authBounds.sy,
         authBounds.sWidth,
         authBounds.sHeight,
+        drawX,
+        drawY,
         drawW,
-        drawH,
-        2.5
+        drawH
       );
-
-      ctx.drawImage(authCanvas, drawX, drawY);
-      measuredAuthThickness = measureThickness(authCanvas);
     }
     drawLine(centerL - sigW / 2, y, centerL + sigW / 2, y, '#333');
 
@@ -452,23 +318,20 @@ function generateReceiptPng(
       const drawX = Math.round(centerR - drawW / 2);
       const drawY = Math.round(y - drawH - 5);
 
-      // Espessura alvo mínima de 2.0 para manter assinaturas visíveis e nítidas
-      const targetThickness = Math.max(2.0, Math.min(measuredAuthThickness + 0.5, 3.0));
-
-      const empCanvas = normalizeSignatureCanvas(
+      ctx.drawImage(
         empBounds.img,
         empBounds.sx,
         empBounds.sy,
         empBounds.sWidth,
         empBounds.sHeight,
+        drawX,
+        drawY,
         drawW,
-        drawH,
-        targetThickness
+        drawH
       );
-
-      ctx.drawImage(empCanvas, drawX, drawY);
     }
     drawLine(centerR - sigW / 2, y, centerR + sigW / 2, y, '#333');
+    ctx.restore();
 
     // Títulos centralizados abaixo das linhas
     ctx.save();
@@ -479,8 +342,8 @@ function generateReceiptPng(
     ctx.fillText('ASSINATURA DO FUNCIONÁRIO', centerR, y + 20);
     ctx.restore();
 
-    // Retorna JPEG (resolve o problema de fundo preto/fundo transparente nas APIs de WhatsApp)
-    resolve(canvas.toDataURL('image/jpeg', 0.95));
+    // Retorna PNG nítido e sem artefatos de compressão, com fundo branco sólido
+    resolve(canvas.toDataURL('image/png'));
   });
 }
 

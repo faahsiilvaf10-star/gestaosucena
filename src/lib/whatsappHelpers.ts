@@ -274,7 +274,7 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
             caption,
             base64Media: base64ToSend,
             imageUrl: params.receiptImageUrl || undefined,
-            fileName: 'recibo-epi.jpg'
+            fileName: 'recibo-epi.png'
           }
         });
         if (res.success) {
