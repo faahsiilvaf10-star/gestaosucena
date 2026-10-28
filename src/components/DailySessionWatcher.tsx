@@ -26,6 +26,7 @@ export function DailySessionWatcher() {
   useEffect(() => {
     const isAppPath = () => {
       if (typeof window === 'undefined') return false
+      if (window.location.search.includes('mock=true')) return false
       const path = window.location.pathname
       return path !== '/' && !path.startsWith('/equipamentos/app-motorista')
     }

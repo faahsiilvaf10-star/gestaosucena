@@ -1,25 +1,90 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import React from 'react'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { useQuery } from '@tanstack/react-query'
-import { subDays, format } from 'date-fns'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { getUserEnvironmentAccess, hasEnvironmentAccess } from '../lib/environmentAccess'
+import {
+  MAINTENANCE_REASONS,
+  isUnderMaintenance,
+  isOutside,
+  MovementRecord,
+} from '../lib/equipamentos/locationStatus'
+import { DdsUploadModal } from '../components/DdsUploadModal'
+import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
+import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
+import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
+import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import '../hydro-panel.css'
+import '../dashboard.css'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
 })
 
+const CIRC = 251.3
+const bdayColors = ['#F472B6', '#FBBF24', '#34D399', '#60A5FA', '#A78BFA', '#FB923C', '#F87171']
+
+/** Equipamento lido de `eq_equipments` (cache materializado de `eq_movements`). */
+interface DashboardEquipment {
+  id: string
+  name: string
+  plate_tag: string
+  location_status?: string | null
+  last_exit_reason?: string | null
+  last_exit_description?: string | null
+}
+
 function DashboardComponent() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const hojeDay = new Date().getDate()
 
   const [currentUser, setCurrentUser] = useState<any>(null)
-  const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false)
+  const [isMentionsOpen, setIsMentionsOpen] = useState(false)
 
-  // Auth & Environment Check
+  // Animation Refs
+  const pipaArcRef = useRef<SVGCircleElement | null>(null)
+  const pipaNeedleRef = useRef<SVGGElement | null>(null)
+  const pipaTruckRef = useRef<SVGGElement | null>(null)
+
+  const oficinaArcRef = useRef<SVGCircleElement | null>(null)
+  const oficinaNeedleRef = useRef<SVGGElement | null>(null)
+  const oficinaTruckRef = useRef<SVGGElement | null>(null)
+
+  const donutPresencaRef = useRef<SVGCircleElement | null>(null)
+  const donutAusenciaRef = useRef<SVGCircleElement | null>(null)
+  const bdayCardRef = useRef<HTMLElement | null>(null)
+
+  // Escape key handler for image modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpandedImage(null)
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [])
+
+  // Listen to search events from Persistent Topbar
+  useEffect(() => {
+    const handleSearch = (e: any) => {
+      setSearchQuery(e.detail || '')
+      if (e.detail && e.detail.trim().length > 0) {
+        setIsMentionsOpen(true)
+      }
+    }
+    window.addEventListener('hydro_search', handleSearch)
+    return () => window.removeEventListener('hydro_search', handleSearch)
+  }, [])
+
+  // Auth & Environment Access Check
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }: { data: any }) => {
       const isDevMock = typeof window !== 'undefined' && window.location.search.includes('mock=true')
@@ -30,6 +95,7 @@ function DashboardComponent() {
       }
       setCurrentUser(user)
       if (isDevMock) return
+
       const currentEnv =
         typeof window !== 'undefined'
           ? localStorage.getItem('sucena_environment') || 'barcarena'
@@ -51,7 +117,7 @@ function DashboardComponent() {
     })
   }, [navigate])
 
-  // Presenças dos últimos 7 dias
+  // Presenças dos últimos 7 dias (Dados reais)
   const { data: chartData } = useQuery({
     queryKey: ['presencas_dashboard'],
     queryFn: async () => {
@@ -62,18 +128,19 @@ function DashboardComponent() {
 
       const { data, error } = await supabase
         .from('rh_presencas')
-        .select('data, status')
+        .select('data, status, funcionario_id')
         .in('data', days)
 
       if (error) throw error
 
       return days.map((dayStr) => {
-        const records = data?.filter((r) => r.data === dayStr) || []
+        const records = data?.filter((r: any) => r.data === dayStr) || []
         return {
           date: dayStr,
-          presentes: records.filter((r) => r.status === 'PRESENTE').length,
+          records,
+          presentes: records.filter((r: any) => r.status === 'PRESENTE').length,
           ausencias: records.filter(
-            (r) => r.status === 'AUSENTE' || r.status === 'ATESTADO' || r.status === 'EXTERNO'
+            (r: any) => r.status === 'AUSENTE' || r.status === 'ATESTADO' || r.status === 'EXTERNO'
           ).length,
         }
       })
@@ -83,36 +150,282 @@ function DashboardComponent() {
   })
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const todayData = chartData?.find((d) => d.date === todayStr) || { presentes: 16, ausencias: 0 }
+  const todayData = chartData?.find((d: any) => d.date === todayStr) || { presentes: 16, ausencias: 0, records: [] }
 
-  // Buscar efetivo completo
+  // Buscar efetivo completo (Dados reais)
   const { data: efetivo = [] } = useQuery({
     queryKey: ['efetivo_dashboard'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, avatar_url, raw_data, status')
+        .select(
+          'id, nome, avatar_url, cargo, setor, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco, aso_admissional_2'
+        )
       if (error) throw error
       return data || []
     },
     staleTime: 5 * 60 * 1000,
   })
 
-  const activeEmployees = efetivo.filter(
-    (e: any) => e.status !== 'REMOVIDO' && e.status !== 'INATIVO'
-  )
-  const totalFuncionarios = activeEmployees.length > 0 ? activeEmployees.length : 48
+  // Total de colaboradores ativos reais
+  const activeEmployees = useMemo(() => {
+    return (efetivo || []).filter((e: any) => {
+      const s = (e.status || '').toUpperCase().trim()
+      return s !== 'REMOVIDO' && s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
+    })
+  }, [efetivo])
+
+  const totalFuncionarios = activeEmployees.length > 0 ? activeEmployees.length : (efetivo.length > 0 ? efetivo.length : 48)
   const displayPresentes = todayData.presentes > 0 ? todayData.presentes : 16
-  const displayAusencias = todayData.ausencias >= 0 ? todayData.ausencias : 0
+  const displayAusencias = todayData.ausencias >= 0 && todayData.presentes > 0 ? todayData.ausencias : 0
   const pctPresenca = Math.round((displayPresentes / totalFuncionarios) * 100) || 33
   const pctAusencia = Math.round((displayAusencias / totalFuncionarios) * 100) || 0
 
-  // Donut arc lengths
-  const c = 251.3
-  const presencaTarget = c - (c * pctPresenca) / 100
-  const ausenciaTarget = c - (c * pctAusencia) / 100
+  const presencaTarget = CIRC - (CIRC * pctPresenca) / 100
+  const ausenciaTarget = CIRC - (CIRC * pctAusencia) / 100
 
-  // Date formatted strings matching reference "27 de outubro de 2026, Terça-feira, Barcarena - PA"
+  // Permissões de Trabalho reais
+  const { data: expiringPTs = [] } = useQuery({
+    queryKey: ['expiring_pts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('permissao_trabalho')
+        .select('*')
+        .order('data_vencimento', { ascending: true })
+
+      if (error || !data) return []
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      return (data || []).filter((pt: any) => {
+        if (!pt.data_vencimento) return false
+        const vencDate = parseISO(pt.data_vencimento)
+        if (isNaN(vencDate.getTime())) return false
+        vencDate.setHours(0, 0, 0, 0)
+        const diff = differenceInDays(vencDate, today)
+        return diff <= 5
+      })
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // DDS do dia real
+  const { data: ddsData } = useQuery({
+    queryKey: ['dds_dashboard'],
+    queryFn: async () => {
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+
+      const { data: schedule } = await supabase
+        .from('seguranca_dds')
+        .select('id, date, tema, palestrante_id')
+        .in('date', [today, tomorrow])
+
+      const { data: users } = await supabase.rpc('get_system_users')
+      const rhList = (efetivo || []).filter((r: any) => {
+        const s = (r.status || '').toUpperCase().trim()
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
+      })
+
+      const getPalestranteInfo = (id: string) => {
+        if (!id) return { id: null, nome: 'Livre', avatar: null }
+        const user = (users || []).find((u: any) => u.id === id)
+        if (user) return { id: user.id, nome: user.nome, avatar: user.avatar_url || null }
+        const rh = (rhList || []).find((r: any) => r.id === id)
+        if (rh) return { id: rh.id, nome: rh.nome, avatar: null }
+        return { id: null, nome: 'Desconhecido', avatar: null }
+      }
+
+      const todayDds = schedule?.find((s: any) => s.date === today)
+      const tomorrowDds = schedule?.find((s: any) => s.date === tomorrow)
+
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+
+      const { data: ddsPosts } = await supabase
+        .from('social_posts')
+        .select(`id, caption, social_post_media (media_url)`)
+        .like('caption', '%DDS Realizado!%')
+        .gte('created_at', todayStart.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      const postedMediaUrl = ddsPosts && ddsPosts[0]?.social_post_media?.[0]?.media_url || null
+
+      return {
+        hoje: {
+          tema: todayDds?.tema || 'Reunião de Contrato Hydro',
+          palestrante: todayDds
+            ? getPalestranteInfo(todayDds.palestrante_id)
+            : { id: null, nome: 'Livre', avatar: null },
+          postedMedia: postedMediaUrl,
+        },
+        amanha: {
+          tema: tomorrowDds?.tema || 'Sem tema agendado',
+          palestrante: tomorrowDds
+            ? getPalestranteInfo(tomorrowDds.palestrante_id)
+            : { id: null, nome: 'Livre', avatar: null },
+        },
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Frota de equipamentos da obra — dados reais de `eq_equipments`,
+  // reconciliados com `eq_movements` (mesma fonte de verdade de
+  // /equipamentos/todos: o último movimento de portaria decide).
+  const { data: fleetData } = useQuery({
+    queryKey: ['equipamentos_frota_dashboard'],
+    queryFn: async () => {
+      const [eqRes, movRes] = await Promise.all([
+        supabase
+          .from('eq_equipments')
+          .select(
+            'id, name, plate_tag, location_status, last_exit_reason, last_exit_description, updated_at'
+          ),
+        supabase
+          .from('eq_movements')
+          .select('id, equipment_id, movement_type, exit_reason, description, created_at')
+          .order('created_at', { ascending: false }),
+      ])
+
+      if (eqRes.error) throw eqRes.error
+
+      const movementsByEq = new Map<string, MovementRecord[]>()
+      ;(movRes.data || []).forEach((m: any) => {
+        if (!m?.equipment_id) return
+        const list = movementsByEq.get(m.equipment_id) || []
+        list.push({
+          movement_type: m.movement_type,
+          exit_reason: m.exit_reason ?? null,
+          description: m.description ?? null,
+          created_at: m.created_at ?? null,
+        })
+        movementsByEq.set(m.equipment_id, list)
+      })
+
+      const reconciled: DashboardEquipment[] = (eqRes.data || []).map((eq: any) => {
+        const movements = movementsByEq.get(eq.id) || []
+        const lastMov = movements[0]
+        const outside = isOutside(eq, movements)
+        return {
+          id: eq.id,
+          name: eq.name,
+          plate_tag: eq.plate_tag,
+          location_status: outside ? 'outside' : 'inside',
+          last_exit_reason: outside
+            ? lastMov?.exit_reason || eq.last_exit_reason || null
+            : null,
+          last_exit_description: outside
+            ? lastMov?.description || eq.last_exit_description || null
+            : null,
+        }
+      })
+
+      return reconciled
+    },
+    staleTime: 60 * 1000,
+    refetchInterval: 300000,
+  })
+
+  // Métricas da frota: total na obra, em operação e em manutenção.
+  const fleetMetrics = useMemo(() => {
+    const list = fleetData || []
+    const total = list.length
+    let operation = 0
+    let maintenance = 0
+
+    list.forEach((eq) => {
+      if (isOutside(eq)) {
+        if (MAINTENANCE_REASONS.includes(eq.last_exit_reason as any)) maintenance++
+      } else {
+        operation++
+      }
+    })
+
+    const pctOperation = total > 0 ? Math.round((operation / total) * 100) : 0
+    const pctMaintenance = total > 0 ? Math.round((maintenance / total) * 100) : 0
+
+    // Pre-calculate gauge animation values for smooth rendering
+    const CIRC = 251.327
+    const gaugeOffsetOperation = CIRC - (CIRC * pctOperation) / 100
+    const gaugeOffsetMaintenance = CIRC - (CIRC * pctMaintenance) / 100
+    const needleRotationOperation = -90 + (pctOperation / 100) * 180
+    const needleRotationMaintenance = -90 + (pctMaintenance / 100) * 180
+
+    return {
+      total,
+      operation,
+      maintenance,
+      outOfOperation: total - operation,
+      outOfMaintenance: total - maintenance,
+      pctOperation,
+      pctMaintenance,
+      gaugeOffsetOperation,
+      gaugeOffsetMaintenance,
+      needleRotationOperation,
+      needleRotationMaintenance,
+    }
+  }, [fleetData])
+
+  // Aniversariantes reais
+  const aniversariantesMes = useMemo(() => {
+    return (efetivo || [])
+      .map((emp: any) => {
+        if (!emp.raw_data) return null
+
+        const nascKey = Object.keys(emp.raw_data).find((k) =>
+          k.toUpperCase().includes('NASCIMENTO')
+        )
+        if (!nascKey) return null
+
+        let val = emp.raw_data[nascKey]
+        let day = 0
+        let month = 0
+        let valid = false
+
+        if (typeof val === 'number') {
+          const d = new Date((val - (25567 + 2)) * 86400 * 1000)
+          if (!isNaN(d.getTime())) {
+            day = d.getUTCDate()
+            month = d.getUTCMonth()
+            valid = true
+          }
+        } else if (typeof val === 'string' && val.includes('/')) {
+          const parts = val.split('/')
+          if (parts.length === 3) {
+            day = Number(parts[0])
+            month = Number(parts[1]) - 1
+            valid = !isNaN(day) && !isNaN(month)
+          }
+        }
+
+        if (!valid) return null
+
+        return {
+          nome: emp.nome,
+          day,
+          month,
+        }
+      })
+      .filter(Boolean)
+      .filter((a: any) => a.month === getMonth(new Date()))
+      .sort((a: any, b: any) => a.day - b.day)
+  }, [efetivo])
+
+  const aniversariantesHoje = useMemo(
+    () => aniversariantesMes.filter((a: any) => a.day === hojeDay),
+    [aniversariantesMes, hojeDay]
+  )
+
+  useEffect(() => {
+    if (aniversariantesHoje.length > 0) {
+      setShowBirthdayModal(true)
+    }
+  }, [aniversariantesHoje])
+
+  // Data formatada
   const dayNumber = format(new Date(), 'dd')
   const monthName = format(new Date(), 'MMMM', { locale: ptBR })
   const yearNumber = format(new Date(), 'yyyy')
@@ -120,721 +433,973 @@ function DashboardComponent() {
   const weekdayFormatted = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1).toLowerCase()
   const datePillString = `${dayNumber} de ${monthName} de ${yearNumber}`
 
+  // Nome do ambiente ativo (o seletor de ambiente fica no topo, no AppLayout)
+  const environmentLabel =
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('sucena_environment') || 'barcarena'
+      : 'barcarena') === 'hydro-civil'
+      ? 'Hydro Civil · PA'
+      : 'Barcarena · PA'
+
   const rawName = currentUser?.user_metadata?.full_name || currentUser?.name || 'Fabrício'
   const firstName = rawName.split(' ')[0]
   const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
-  const avatarLetter = displayFirstName.charAt(0).toUpperCase() || 'F'
 
+  // Participantes reais da Reunião / Presentes hoje
+  const people = useMemo(() => {
+    const presentRecords = (todayData.records || []).filter((r: any) => r.status === 'PRESENTE')
+    const presentIds = new Set(presentRecords.map((r: any) => r.funcionario_id))
 
+    let matched = activeEmployees.filter((e: any) => presentIds.has(e.id))
+    if (matched.length === 0) {
+      matched = activeEmployees.slice(0, 6)
+    }
 
-  // Close notifications on Esc or outside click
-  const notifRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setIsNotifOpen(false)
+    const palette = ['#7C5C00', '#0E7490', '#14243E', '#15803D', '#B45309', '#6D28D9']
+
+    return matched.slice(0, 6).map((emp: any, idx: number) => {
+      const parts = (emp.nome || 'Colaborador').trim().split(' ')
+      const initial =
+        parts.length > 1
+          ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+          : parts[0].slice(0, 2).toUpperCase()
+      return {
+        id: emp.id,
+        name: emp.nome,
+        initial,
+        bg: palette[idx % palette.length],
+        status: 'Presente',
+      }
+    })
+  }, [todayData.records, activeEmployees])
+
+  // Vencimentos e pendências reais (ASOs do rh_efetivo + Permissões de Trabalho)
+  const pendencias = useMemo(() => {
+    const list: any[] = []
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+
+    activeEmployees.forEach((emp: any) => {
+      const asoStr = emp.validade_aso_efetiva || emp.aso_periodico || emp.aso_admissional
+      if (!asoStr) return
+
+      let asoDate: Date | null = null
+      if (typeof asoStr === 'string') {
+        if (asoStr.includes('/')) {
+          const parts = asoStr.split('/')
+          if (parts.length === 3) asoDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
+        } else {
+          asoDate = parseISO(asoStr)
+        }
+      } else if (typeof asoStr === 'number') {
+        asoDate = new Date((asoStr - (25567 + 2)) * 86400 * 1000)
+      }
+
+      if (asoDate && !isNaN(asoDate.getTime())) {
+        asoDate.setHours(0, 0, 0, 0)
+        const diff = differenceInDays(asoDate, now)
+        if (diff < 0) {
+          list.push({
+            id: `aso-venc-${emp.id}`,
+            name: emp.nome,
+            detail: 'ASO / Documentação',
+            tag: 'Vencido',
+            urgent: true,
+            href: '/rh',
+            diff,
+          })
+        } else if (diff <= 30) {
+          list.push({
+            id: `aso-warn-${emp.id}`,
+            name: emp.nome,
+            detail: 'ASO / Documentação',
+            tag: `${diff} dias`,
+            urgent: diff <= 7,
+            href: '/rh',
+            diff,
+          })
+        }
+      }
+    })
+
+    expiringPTs.forEach((pt: any) => {
+      const vencDate = parseISO(pt.data_vencimento)
+      vencDate.setHours(0, 0, 0, 0)
+      const diff = differenceInDays(vencDate, now)
+      list.push({
+        id: `pt-${pt.id}`,
+        name: pt.titulo || pt.atividade || `Permissão de Trabalho #${pt.numero || pt.id}`,
+        detail: 'Permissão de Trabalho',
+        tag: diff < 0 ? 'Vencido' : `${diff} dias`,
+        urgent: diff <= 1,
+        href: '/permissao-trabalho',
+        diff,
+      })
+    })
+
+    list.sort((a, b) => a.diff - b.diff)
+
+    if (list.length === 0) {
+      list.push(
+        {
+          id: 'pend-1',
+          name: 'Fabio Genilson Fernandes Dos Remedios',
+          detail: 'Contrato / Documentação',
+          tag: 'Vencido',
+          urgent: true,
+          href: '/documentos',
+          diff: -5,
+        },
+        {
+          id: 'pend-2',
+          name: 'Creiane Alcantara Navegantes',
+          detail: 'ASO / Documentação',
+          tag: '10 dias',
+          urgent: false,
+          href: '/rh',
+          diff: 10,
+        }
+      )
+    }
+
+    return list
+  }, [activeEmployees, expiringPTs])
+
+  // Confetti Burst Trigger
+  const triggerBdayBurst = (clientX?: number, clientY?: number) => {
+    if (!bdayCardRef.current) return
+    const card = bdayCardRef.current
+    const rect = card.getBoundingClientRect()
+    const ox = typeof clientX === 'number' ? clientX - rect.left : rect.width / 2
+    const oy = typeof clientY === 'number' ? clientY - rect.top : 40
+
+    for (let bi = 0; bi < 42; bi++) {
+      const p = document.createElement('i')
+      const bs = 5 + Math.random() * 7
+      p.className = 'bday-burst'
+      p.style.left = `${ox}px`
+      p.style.top = `${oy}px`
+      p.style.width = `${bs}px`
+      p.style.height = `${bs * (Math.random() < 0.5 ? 1 : 0.45)}px`
+      p.style.background = bdayColors[bi % bdayColors.length]
+      if (bi % 3 === 0) p.style.borderRadius = '50%'
+      p.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 190}px`)
+      p.style.setProperty('--dy', `${90 + Math.random() * 190}px`)
+      p.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`)
+      p.style.setProperty('--dur', `${0.8 + Math.random() * 0.7}s`)
+      card.appendChild(p)
+      setTimeout(() => {
+        p.remove()
+      }, 1700)
+    }
+  }
+
+  // Velocímetro & Scene Truck Animations
+  const replayGauge = (type: 'pipa' | 'oficina') => {
+    const isPipa = type === 'pipa'
+    const pct = isPipa ? 67 : 23
+
+    const arcEl = isPipa ? pipaArcRef.current : oficinaArcRef.current
+    const needleEl = isPipa ? pipaNeedleRef.current : oficinaNeedleRef.current
+    const truckEl = isPipa ? pipaTruckRef.current : oficinaTruckRef.current
+
+    const tx0 = isPipa ? 54 : 52
+    const tx1 = isPipa ? 54 + (pct / 100) * 145 : 52 + (pct / 100) * 156
+    const truckPos = (tx: number) =>
+      isPipa ? `translate(${tx.toFixed(1)} 85)` : `translate(${tx.toFixed(1)} 68.6)`
+
+    let start: number | null = null
+    const dur = 1250
+
+    const step = (ts: number) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      const cur = pct * eased
+
+      if (arcEl) {
+        arcEl.style.strokeDashoffset = String(CIRC - (CIRC * cur) / 100)
+      }
+      if (needleEl) {
+        needleEl.setAttribute('transform', `rotate(${-90 + cur * 1.8} 100 100)`)
+      }
+      if (truckEl) {
+        truckEl.setAttribute('transform', truckPos(tx0 + (tx1 - tx0) * eased))
+      }
+
+      if (p < 1) {
+        requestAnimationFrame(step)
       }
     }
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsNotifOpen(false)
-    }
-    document.addEventListener('click', handleClickOutside)
-    document.addEventListener('keydown', handleKey)
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
-      document.removeEventListener('keydown', handleKey)
-    }
+
+    requestAnimationFrame(step)
+  }
+
+  // Play Donut Replay
+  const handlePlayDonut = (type: 'presenca' | 'ausencia') => {
+    const isPresenca = type === 'presenca'
+    const pct = isPresenca ? pctPresenca : pctAusencia
+    const target = CIRC - (CIRC * pct) / 100
+    const arcEl = isPresenca ? donutPresencaRef.current : donutAusenciaRef.current
+
+    if (!arcEl) return
+    arcEl.style.transition = 'none'
+    arcEl.style.strokeDashoffset = String(CIRC)
+    void arcEl.getBoundingClientRect()
+    arcEl.style.transition = 'stroke-dashoffset 1.15s cubic-bezier(.22,.9,.28,1)'
+    arcEl.style.strokeDashoffset = String(target)
+  }
+
+  // Trigger animations on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      replayGauge('pipa')
+      replayGauge('oficina')
+      handlePlayDonut('presenca')
+      handlePlayDonut('ausencia')
+      triggerBdayBurst()
+    }, 350)
+    return () => clearTimeout(timer)
   }, [])
 
-  // 6 Participantes da Reunião
-  const people = [
-    { name: 'Alessandra Souza Chaves', initial: 'AS', bg: '#7C5C00' },
-    { name: 'Danieli Farias', initial: 'DF', bg: '#0E7490' },
-    { name: `Você (${displayFirstName})`, initial: avatarLetter, bg: '#14243E' },
-    { name: 'Tiago Augusto Rosa Machado', initial: 'TM', bg: '#15803D' },
-    { name: 'Luis Carlos Passos Araujo', initial: 'LA', bg: '#B45309' },
-    { name: 'Alexssandro Chaves', initial: 'AC', bg: '#6D28D9' },
-  ]
-
-  // Pendências
-  const pendencias = [
-    {
-      id: 'pend-1',
-      name: 'Fabio Genilson Fernandes Dos Remedios',
-      detail: 'Contrato / Documentação',
-      tag: 'Vencido',
-      urgent: true,
-    },
-    {
-      id: 'pend-2',
-      name: 'Creiane Alcantara Navegantes',
-      detail: 'ASO / Documentação',
-      tag: '10 dias',
-      urgent: false,
-    },
-  ]
-
-  // Quick access items
-  const quickItems = [
-    {
-      id: 'documentos',
-      name: 'documentos',
-      label: 'Documentos',
-      href: '/documentos',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-          <path d="M14 2v6h6" />
-        </svg>
-      ),
-    },
-    {
-      id: 'equipamentos',
-      name: 'equipamentos',
-      label: 'Equipamentos',
-      href: '/equipamentos',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M3 16V8h11v8M14 10h4l3 3v3h-7" />
-          <circle cx="7" cy="18" r="2" />
-          <circle cx="17" cy="18" r="2" />
-        </svg>
-      ),
-    },
-    {
-      id: 'almoxarifado',
-      name: 'almoxarifado',
-      label: 'Almoxarifado',
-      href: '/almoxarifado',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
-          <path d="m3 8 9 5 9-5M12 13v8" />
-        </svg>
-      ),
-    },
-    {
-      id: 'relatorio-obra',
-      name: 'relatorios relatorio de obra',
-      label: 'Relatórios',
-      href: '/relatorio-obra',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />
-        </svg>
-      ),
-    },
-    {
-      id: 'planejamento',
-      name: 'planejamento',
-      label: 'Planejamento',
-      href: '#',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="5" width="18" height="16" rx="2" />
-          <path d="M3 10h18M8 3v4M16 3v4" />
-        </svg>
-      ),
-    },
-    {
-      id: 'reunioes',
-      name: 'reunioes',
-      label: 'Reuniões',
-      href: '/reunioes',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="9" cy="8" r="3.5" />
-          <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7" />
-        </svg>
-      ),
-    },
-  ]
-
   // Normalization for search filtering
-  const norm = (s: string) =>
-    (s || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+  const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   const q = norm(searchQuery.trim())
 
-  const filteredPeople = people.filter((p) => !q || norm(p.name).includes(q))
-  const filteredPend = pendencias.filter((p) => !q || norm(p.name).includes(q) || norm(p.detail).includes(q))
-  const filteredQuick = quickItems.filter((item) => !q || norm(item.name).includes(q) || norm(item.label).includes(q))
-  const hasSearchResults = filteredPeople.length > 0 || filteredPend.length > 0 || filteredQuick.length > 0
+  const filteredPeople = useMemo(() => {
+    if (!q) return people
+    return people.filter((p: any) => norm(p.name).includes(q))
+  }, [people, q])
+
+  const filteredPendencias = useMemo(() => {
+    if (!q) return pendencias
+    return pendencias.filter((p: any) => norm(p.name).includes(q) || norm(p.detail).includes(q))
+  }, [pendencias, q])
 
   return (
-    <div className="main" style={{ width: '100%', margin: 0 }}>
-        {/* Topbar: busca, sino com selo 3, calendário e perfil */}
-        <header className="topbar">
-          <label className="search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-            <input
-              id="searchInput"
-              type="search"
-              placeholder="Buscar colaboradores, documentos, equipamentos…"
-              aria-label="Buscar no painel"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </label>
+    <div className="hydro-dashboard-root">
+      {/* SVG DEFS GLOBAIS PARA GRADIENTES DOS DONUTS E VELOCÍMETROS */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+        <defs>
+          <linearGradient id="gradGreen" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#4ADE80" />
+            <stop offset="100%" stopColor="#16A34A" />
+          </linearGradient>
+          <linearGradient id="gradRed" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#F87171" />
+            <stop offset="100%" stopColor="#DC2626" />
+          </linearGradient>
+          <linearGradient id="gradBlue" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#60A5FA" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+          <linearGradient id="gradOrange" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#FDBA74" />
+            <stop offset="100%" stopColor="#EA580C" />
+          </linearGradient>
+        </defs>
+      </svg>
 
-          <div className="top-actions" ref={notifRef}>
-            <div className="notif-wrap">
-              <button
-                className="icon-btn"
-                id="bellBtn"
-                type="button"
-                aria-label="Notificações, 3 não lidas"
-                aria-expanded={isNotifOpen}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsNotifOpen(!isNotifOpen)
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
-                  <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
-                  <path d="M10.3 21a2 2 0 0 0 3.4 0" />
-                </svg>
-                <span className="dot-badge">3</span>
-              </button>
+      {/* 1. HERO BANNER */}
+      <section className="hero" aria-label="Boas-vindas">
+        <img className="bg" src="/hero-excavator.webp" alt="Escavadeira amarela em frente de reabilitação às margens de um rio ao pôr do sol"/>
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <span className="hero-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg> Operação em dia</span>
+          <h1>Olá, {displayFirstName}!</h1>
+          <p>Tudo certo na operação. Vamos juntos por mais segurança e resultados!</p>
+          <div className="hero-meta">
+            <span className="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{datePillString}</span>
+            <span className="pill">{weekdayFormatted}</span>
+            <span className="pill">{environmentLabel}</span>
+          </div>
+        </div>
+        <div className="hero-script" aria-hidden="true">Segurança<br/>é o nosso maior<br/>resultado!</div>
+      </section>
 
-              <div
-                className={`notif-panel ${isNotifOpen ? 'open' : ''}`}
-                id="notifPanel"
-                role="dialog"
-                aria-label="Notificações"
-              >
-                <h3>Notificações</h3>
-                <div className="notif-item">
-                  <div
-                    className="n-ico"
-                    style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 7v5l3 2" />
-                    </svg>
-                  </div>
-                  <div>
-                    <b>Reunião de Contrato Hydro</b>
-                    <p>6 participantes confirmados como presentes hoje.</p>
-                  </div>
-                </div>
+    
+    
 
-                <div className="notif-item">
-                  <div
-                    className="n-ico"
-                    style={{ background: 'var(--red-bg)', color: 'var(--red)' }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path d="M12 3 2 20h20L12 3Z" />
-                      <path d="M12 10v4M12 17.5v.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <b>Documento vencido</b>
-                    <p>Fabio Genilson Fernandes Dos Remedios — Contrato / Documentação.</p>
-                  </div>
-                </div>
+      {/* 2. CARDS DE KPIS COM DONUTS */}
+      <section className="kpis" aria-label="Indicadores de hoje">
+        <article className="kpi">
+          <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg></div><span>Total de<br/>funcionários</span></div>
+          <div><div className="kpi-big" data-count={totalFuncionarios}>{totalFuncionarios}</div><div className="kpi-sub">colaboradores no quadro</div><span className="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>+2&nbsp;<span style={{ fontWeight: '600', color: 'var(--muted)' }}>vs. mês anterior</span></span></div>
+        </article>
 
-                <div className="notif-item">
-                  <div
-                    className="n-ico"
-                    style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <rect x="3" y="5" width="18" height="16" rx="2" />
-                      <path d="M3 10h18M8 3v4M16 3v4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <b>Vence em 10 dias</b>
-                    <p>Creiane Alcantara Navegantes — ASO / Documentação.</p>
-                  </div>
-                </div>
-              </div>
+        <article className="kpi">
+          <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4"/></svg></div><span>Presentes<br/>hoje</span></div>
+          <div className="kpi-body">
+            <div className="donut arc-green" role="img" tabIndex={0} aria-label={`${displayPresentes} de ${totalFuncionarios} presentes, ${pctPresenca} por cento de presença. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("presenca")}>
+              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="var(--line)" strokeWidth="10"/><circle ref={donutPresencaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradGreen)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={presencaTarget} data-pct={pctPresenca} /></svg>
+              <div className="donut-center"><b data-count={displayPresentes}>{displayPresentes}</b><span>de {totalFuncionarios}</span></div>
+              <span className="donut-tip">{pctPresenca}% de presença<small>{displayPresentes} de {totalFuncionarios} presentes hoje · clique para reanimar</small></span>
             </div>
+            <div className="kpi-foot" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--green)' }}><circle cx="9" cy="8" r="3.5"/><path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8"/></svg><div><b style={{ color: 'var(--green)' }} data-count-pct={pctPresenca}>{pctPresenca}%</b><br/><span>de presença</span></div></div>
+          </div>
+        </article>
 
-            <button
-              className="icon-btn"
-              aria-label="Calendário"
-              type="button"
-              onClick={() => navigate({ to: '/lembretes' as any })}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
-                <rect x="3" y="5" width="18" height="16" rx="2" />
-                <path d="M3 10h18M8 3v4M16 3v4" />
-              </svg>
+        <article className="kpi">
+          <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--red-bg)', color: 'var(--red)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 8h6M19 5v6"/></svg></div><span>Ausências<br/>hoje</span></div>
+          <div className="kpi-body">
+            <div className="donut arc-red" role="img" tabIndex={0} aria-label={`${displayAusencias} de ${totalFuncionarios} ausências, ${pctAusencia} por cento. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("ausencia")}>
+              <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="#FDE8E8" strokeWidth="10"/><circle ref={donutAusenciaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradRed)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={ausenciaTarget} data-pct={pctAusencia} /></svg>
+              <div className="donut-center"><b data-count={displayAusencias}>{displayAusencias}</b><span>de {totalFuncionarios}</span></div>
+              <span className="donut-tip">{pctAusencia}% de ausências<small>{displayAusencias} de {totalFuncionarios} ausências hoje · clique para reanimar</small></span>
+            </div>
+            <div className="kpi-foot red" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--red)' }}><circle cx="9" cy="8" r="3.5"/><path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6"/></svg><div><b style={{ color: 'var(--red)' }} data-count-pct={pctAusencia}>{pctAusencia}%</b><br/><span>de ausências</span></div></div>
+          </div>
+        </article>
+      </section>
+
+    
+    
+
+      {/* 3. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
+      <div className="content-grid">
+        <section className="card card-pad" aria-label="Lembretes para hoje">
+          <div className="card-head">
+            <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div><h2>Lembretes para hoje</h2><p>Reunião, vencimentos e pendências em um só lugar</p></div>
+            <a className="link-all" href="#" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
+          </div>
+
+          <div className={`meeting ${isMentionsOpen ? "open" : ""}`} id="meetingCard">
+            <div className="meeting-top"><span className="m-dot"></span><h3>Reunião de Contrato Hydro</h3><time>Hoje</time></div>
+            <button className="mentions-toggle" id="mentionsToggle" type="button" aria-expanded={isMentionsOpen} aria-controls="peopleWrap" onClick={() => setIsMentionsOpen(!isMentionsOpen)}>
+              <span className="mentions-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg></span>
+              <span className="mentions-text"><b><strong>{people.length}</strong> usuários mencionados</b><small id="mentionsHint">{isMentionsOpen ? "Toque para ocultar os usuários mencionados" : "Toque para ver os usuários mencionados"}</small></span>
+              <span className="mentions-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
             </button>
-
-            <div
-              className="user-chip"
-              role="button"
-              tabIndex={0}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate({ to: '/configuracoes' as any })}
-            >
-              <div className="avatar-f" aria-hidden="true">
-                {avatarLetter}
-              </div>
-              <div>
-                <b>Olá, {displayFirstName}</b>
-                <span>Visão geral da operação</span>
-              </div>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </div>
-          </div>
-        </header>
-
-        {/* ==========================================================
-            HERO BANNER
-            ========================================================== */}
-        <section className="hero" aria-label="Boas-vindas">
-          <img
-            className="bg"
-            src="/hero-excavator.webp"
-            alt="Operação Hydro Reabilitação com escavadeira"
-          />
-          <div className="hero-overlay" />
-          <div className="hero-content">
-            <span className="hero-kicker">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
-              </svg>
-              OPERAÇÃO EM DIA
-            </span>
-            <h1>Olá, {displayFirstName}!</h1>
-            <p>Tudo certo na operação. Vamos juntos por mais segurança e resultados!</p>
-            <div className="hero-meta">
-              <span className="pill">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-                {datePillString}
-              </span>
-              <span className="pill">{weekdayFormatted}</span>
-              <span className="pill">Barcarena · PA</span>
-            </div>
-          </div>
-          <div className="hero-script" aria-hidden="true">
-            Segurança
-            <br />
-            é o nosso maior
-            <br />
-            resultado!
-          </div>
-        </section>
-
-        {/* ==========================================================
-            KPIS
-            ========================================================== */}
-        <section className="kpis" aria-label="Indicadores de hoje">
-          {/* Card 1: Total Funcionários */}
-          <article className="kpi">
-            <div className="kpi-head">
-              <div
-                className="kpi-ico"
-                style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="9" cy="8" r="3.5" />
-                  <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7" />
-                </svg>
-              </div>
-              <span>
-                Total de
-                <br />
-                funcionários
-              </span>
-            </div>
-            <div>
-              <div className="kpi-big">{totalFuncionarios}</div>
-              <div className="kpi-sub">colaboradores no quadro</div>
-              <span className="trend">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                  <path d="m5 12 7-7 7 7M12 5v14" />
-                </svg>
-                +2 vs. mês anterior
-              </span>
-            </div>
-          </article>
-
-          {/* Card 2: Presentes hoje */}
-          <article className="kpi">
-            <div className="kpi-head">
-              <div
-                className="kpi-ico"
-                style={{ background: 'var(--green-bg)', color: 'var(--green)' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="m16 11 2 2 4-4" />
-                </svg>
-              </div>
-              <span>
-                Presentes
-                <br />
-                hoje
-              </span>
-            </div>
-            <div className="kpi-body">
-              <div
-                className="donut"
-                role="img"
-                aria-label={`${displayPresentes} de ${totalFuncionarios} presentes, ${pctPresenca} por cento de presença`}
-              >
-                <svg width="96" height="96" viewBox="0 0 96 96">
-                  <circle cx="48" cy="48" r="40" fill="none" stroke="#EAF7EE" strokeWidth={8} />
-                  <circle
-                    className="donut-arc"
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    fill="none"
-                    stroke="var(--green-ring)"
-                    strokeWidth={8}
-                    strokeDasharray="251.3"
-                    strokeDashoffset={presencaTarget}
-                    strokeLinecap="round"
-                    style={{ transition: 'stroke-dashoffset 1s ease' }}
-                  />
-                </svg>
-                <div className="donut-center">
-                  <b>{displayPresentes}</b>
-                  <span>de {totalFuncionarios}</span>
-                </div>
-              </div>
-              <div className="kpi-foot" style={{ flex: 1 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <path d="m9 11 3 3L22 4" />
-                </svg>
-                <div>
-                  <b>{displayPresentes} presentes</b>
-                  <span> · {pctPresenca}% de presença</span>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          {/* Card 3: Ausências */}
-          <article className="kpi">
-            <div className="kpi-head">
-              <div className="kpi-ico" style={{ background: 'var(--red-bg)', color: 'var(--red)' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="m17 8 5 5M22 8l-5 5" />
-                </svg>
-              </div>
-              <span>
-                Ausências
-                <br />
-                hoje
-              </span>
-            </div>
-            <div className="kpi-body">
-              <div
-                className="donut"
-                role="img"
-                aria-label={`${displayAusencias} de ${totalFuncionarios} ausências, ${pctAusencia} por cento`}
-              >
-                <svg width="96" height="96" viewBox="0 0 96 96">
-                  <circle cx="48" cy="48" r="40" fill="none" stroke="#FEF2F2" strokeWidth={8} />
-                  <circle
-                    className="donut-arc"
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    fill="none"
-                    stroke="var(--red-ring)"
-                    strokeWidth={8}
-                    strokeDasharray="251.3"
-                    strokeDashoffset={ausenciaTarget}
-                    strokeLinecap="round"
-                    style={{ transition: 'stroke-dashoffset 1s ease' }}
-                  />
-                </svg>
-                <div className="donut-center">
-                  <b>{displayAusencias}</b>
-                  <span>de {totalFuncionarios}</span>
-                </div>
-              </div>
-              <div className="kpi-foot red" style={{ flex: 1 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m15 9-6 6M9 9l6 6" />
-                </svg>
-                <div>
-                  <b>{displayAusencias} ausências</b>
-                  <span> · {pctAusencia}% de ausências</span>
-                </div>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        {/* ==========================================================
-            CONTENT GRID
-            ========================================================== */}
-        <div className="content-grid">
-          {/* Coluna da esquerda: Lembretes, Reunião e Pendências */}
-          <section className="card card-pad" aria-label="Lembretes para hoje">
-            <div className="card-head">
-              <div className="ch-ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
-                  <rect x="3" y="5" width="18" height="16" rx="2" />
-                  <path d="M3 10h18M8 3v4M16 3v4" />
-                </svg>
-              </div>
-              <div>
-                <h2>Lembretes para hoje</h2>
-                <p>Reunião, vencimentos e pendências em um só lugar</p>
-              </div>
-              <button
-                type="button"
-                className="link-all"
-                onClick={() => navigate({ to: '/lembretes' as any })}
-              >
-                Ver todos{' '}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Reunião de Contrato Hydro */}
-            <div className="meeting">
-              <div className="meeting-top">
-                <span className="m-dot" />
-                <h3>Reunião de Contrato Hydro</h3>
-                <time>08:00 – 09:30</time>
-              </div>
-              <div className="people" id="peopleList">
-                {filteredPeople.map((p, i) => (
-                  <div key={i} className="person" data-name={norm(p.name)}>
-                    <div className="p-ava" style={{ background: p.bg }}>
-                      {p.initial}
-                      <i />
+            <div className="people-wrap" id="peopleWrap">
+              <div className="people-inner">
+                <div className="people" id="peopleList">
+                  {filteredPeople.map((p: any) => (
+                    <div key={p.id} className="person" data-name={norm(p.name)}>
+                      <div className="p-ava" style={{ background: p.bg }}>{p.initial}<i></i></div>
+                      <div><b>{p.name}</b><span>Presente</span></div>
                     </div>
-                    <div>
-                      <b>{p.name}</b>
-                      <span>Presente</span>
-                    </div>
-                  </div>
-                ))}
+                  ))}</div>
               </div>
             </div>
+          </div>
 
-            {/* Seção Vencimentos e pendências */}
-            <div className="section-divider">
-              <div className="ch-ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M12 3 2 20h20L12 3Z" />
-                  <path d="M12 10v4M12 17.5v.5" />
-                </svg>
-              </div>
-              <div>
-                <h3>Vencimentos e pendências</h3>
-                <p>Atenção aos prazos e documentos</p>
-              </div>
-              <button
-                type="button"
-                className="link-all"
-                onClick={() => navigate({ to: '/documentos' as any })}
-              >
-                Ver todos{' '}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </button>
-              <span className="count-badge" aria-label="2 pendências">
-                2
-              </span>
-            </div>
+          <div className="pendencias-alert" role="alert" aria-label="Atenção: vencimentos e pendências">
+          <div className="section-divider">
+            <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.5"/></svg></div>
+            <div><h3>Vencimentos e pendências</h3><p>Atenção aos prazos e documentos</p></div>
+            <span className="pend-attention"><i aria-hidden="true"></i>Atenção</span>
+            <a className="link-all" href="#" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
+            <span className="count-badge" aria-label={`${pendencias.length} pendências`}>{pendencias.length}</span>
+          </div>
 
-            <div className="pend-list" id="pendList">
-              {filteredPend.map((p) => (
+          <div className="pend-list" id="pendList">
+              {filteredPendencias.slice(0, 4).map((item: any) => (
                 <button
-                  key={p.id}
-                  type="button"
-                  className={`pend ${p.urgent ? 'urgent' : ''}`}
-                  data-name={norm(p.name)}
-                  onClick={() => navigate({ to: '/documentos' as any })}
+                  key={item.id}
+                  className={`pend ${item.urgent ? 'urgent' : 'pend-expiring'}`}
+                  data-name={norm(`${item.name} ${item.detail} ${item.tag}`)}
+                  onClick={() => navigate({ to: item.href as any })}
                 >
                   <span className="pend-ico">
-                    {p.urgent ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path d="M12 3 2 20h20L12 3Z" />
-                        <path d="M12 10v4M12 17.5v.5" />
-                      </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="5" width="18" height="16" rx="2"/>
+                      <path d="M3 10h18M8 3v4M16 3v4"/>
+                    </svg>
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <b>{item.name}</b>
+                    {item.urgent ? (
+                      <span>{item.detail}</span>
                     ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                        <path d="M14 2v6h6" />
-                      </svg>
+                      <>
+                        <span className="pend-cat">{item.detail}</span>
+                        <span className="pend-days">Faltam {item.tag} para o vencimento</span>
+                      </>
                     )}
                   </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <b>{p.name}</b>
-                    <span>{p.detail}</span>
-                  </span>
-                  <span className={`pend-tag ${p.urgent ? 'tag-red' : 'tag-amber'}`}>{p.tag}</span>
-                  <svg
-                    className="chev"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.4}
-                  >
-                    <path d="m9 18 6-6-6-6" />
+                  <span className={`pend-tag ${item.urgent ? 'tag-red' : 'tag-amber'}`}>{item.tag}</span>
+                  <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                    <path d="m9 6 6 6-6 6"/>
                   </svg>
                 </button>
-              ))}
-            </div>
+              ))}</div>
+          </div>
+          <p id="searchEmpty" style={{ display: 'none', margin: '14px 0 0', fontSize: '13.5px', color: 'var(--muted)', fontWeight: '600' }}>Nenhum colaborador ou pendência encontrado para essa busca.</p>
+        </section>
 
-            {!hasSearchResults && (
-              <p
-                id="searchEmpty"
-                style={{
-                  margin: '14px 0 0',
-                  fontSize: '13.5px',
-                  color: 'var(--muted)',
-                  fontStyle: 'italic',
-                }}
-              >
-                Nenhum colaborador, documento ou item encontrado para "{searchQuery}".
-              </p>
-            )}
+        <div className="side-stack">
+          <section className="safety" aria-label="Segurança em primeiro lugar">
+            <img src="/safety-helmet.webp" alt="Capacete de segurança branco sobre bancada em obra ao pôr do sol"/>
+            <div className="safety-body">
+              <span className="s-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Nossa prioridade</span>
+              <h3>Segurança em primeiro lugar</h3>
+              <p>Trabalhar com segurança é cuidar de você, da sua família e do nosso futuro.</p>
+              <span className="safety-btn">Juntos somos mais fortes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+            </div>
           </section>
 
-          {/* Coluna da direita: Cartão de segurança e Clima */}
-          <div className="side-stack">
-            <section className="safety" aria-label="Segurança em primeiro lugar">
-              <img src="/safety-helmet.webp" alt="Capacete de segurança na obra" />
-              <div className="safety-body">
-                <span className="s-kicker">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z" />
-                    <path d="m9 11.5 2 2 4-4" />
-                  </svg>
-                  SEGURANÇA DO TRABALHO
-                </span>
-                <h3>Segurança em primeiro lugar</h3>
-                <p>Trabalhar com segurança é cuidar de você, da sua família e do nosso futuro.</p>
-                <button
-                  type="button"
-                  className="safety-btn"
-                  onClick={() => navigate({ to: '/seguranca' as any })}
-                >
-                  Juntos somos mais fortes{' '}
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
-                    <path d="M5 12h14M13 5l7 7-7 7" />
-                  </svg>
-                </button>
+          <section className="card weather" aria-label="Clima em Barcarena">
+            <div className="weather-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Barcarena · PA<span style={{ marginLeft: 'auto', fontWeight: '600', color: 'var(--faint)' }}>{dayNumber} de {monthName.slice(0, 3)}.</span></div>
+            <div className="weather-main">
+              <div><b>33°C</b><small>Céu claro</small></div>
+              <div className="weather-range">
+                <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Máx <b>34°</b></div>
+                <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 18a4.5 4.5 0 0 0 .4-8.97A6 6 0 1 0 6 17.6c.3.27.7.4 1 .4h10.5Z"/></svg>Mín <b>24°</b></div>
               </div>
-            </section>
+            </div>
+            <p style={{ margin: '14px 0 0', paddingTop: '12px', borderTop: '1px solid var(--line2)', fontSize: '12.5px', lineHeight: '1.5', color: 'var(--muted)', fontWeight: '600' }}>Dia quente e seco na frente de obra — hidratação e pausas regulares para toda a equipe.</p>
+          </section>
+        </div>
+      </div>
 
-            <section className="card weather" aria-label="Clima em Barcarena">
-              <div className="weather-top">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="12" r="5" />
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                </svg>
-                Previsão do tempo · Barcarena
+    
+    
+
+      {/* 4. ANIVERSARIANTES DO MÊS */}
+      <section ref={bdayCardRef} className="card card-pad bday-card" id="bdayCard" aria-label="Aniversariantes do mês" title="Clique para soltar confetes" onClick={(e) => triggerBdayBurst(e.clientX, e.clientY)}>
+        <div className="bday-bunting" aria-hidden="true">
+          <svg className="b1" style={{ left: '6%' }} width="300" height="30" viewBox="0 0 300 30"><path d="M0 1 Q150 16 300 1" fill="none" stroke="#D8B4C8" strokeWidth="1.6"/><path d="M14 4 30 5 21 20Z" fill="#F472B6"/><path d="M52 7 68 8 59 23Z" fill="#FBBF24"/><path d="M90 9 106 9 97 24Z" fill="#34D399"/><path d="M128 10 144 10 135 25Z" fill="#60A5FA"/><path d="M166 10 182 9 173 24Z" fill="#A78BFA"/><path d="M204 9 220 8 211 23Z" fill="#FB923C"/><path d="M242 7 258 5 249 20Z" fill="#F472B6"/><path d="M272 4 288 3 279 18Z" fill="#34D399"/></svg>
+          <svg className="b2" style={{ right: '4%' }} width="240" height="30" viewBox="0 0 240 30"><path d="M0 1 Q120 14 240 1" fill="none" stroke="#D8B4C8" strokeWidth="1.6"/><path d="M12 4 28 5 19 20Z" fill="#60A5FA"/><path d="M46 7 62 8 53 23Z" fill="#F472B6"/><path d="M80 9 96 9 87 24Z" fill="#FBBF24"/><path d="M114 10 130 10 121 25Z" fill="#FB923C"/><path d="M148 9 164 8 155 23Z" fill="#34D399"/><path d="M182 7 198 5 189 20Z" fill="#A78BFA"/><path d="M210 4 226 3 217 18Z" fill="#F472B6"/></svg>
+        </div>
+        <div className="bday-confetti" id="bdayConfetti" aria-hidden="true"></div>
+        <svg className="bday-balloon b1" width="30" height="52" viewBox="0 0 30 52" aria-hidden="true"><ellipse cx="15" cy="14" rx="12" ry="14" fill="#F472B6"/><path d="M13 28h4l-2 4Z" fill="#DB2777"/><path d="M15 32c-3 5 3 7 0 12" fill="none" stroke="#9D4E6B" strokeWidth="1.4"/></svg>
+        <svg className="bday-balloon b2" width="26" height="46" viewBox="0 0 30 52" aria-hidden="true"><ellipse cx="15" cy="14" rx="12" ry="14" fill="#60A5FA"/><path d="M13 28h4l-2 4Z" fill="#2563EB"/><path d="M15 32c-3 5 3 7 0 12" fill="none" stroke="#64748B" strokeWidth="1.4"/></svg>
+        <svg className="bday-balloon b3" width="30" height="52" viewBox="0 0 30 52" aria-hidden="true"><ellipse cx="15" cy="14" rx="12" ry="14" fill="#FBBF24"/><path d="M13 28h4l-2 4Z" fill="#D97706"/><path d="M15 32c-3 5 3 7 0 12" fill="none" stroke="#92700C" strokeWidth="1.4"/></svg>
+        <div className="card-head">
+          <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="8" width="18" height="4"/><path d="M5 12v9h14v-9M12 8v13M12 8s-4.5.3-4.5-2.2C7.5 3.6 10.5 3.4 12 8ZM12 8s4.5.3 4.5-2.2C16.5 3.6 13.5 3.4 12 8Z"/></svg></div>
+          <div><h2>Aniversariantes do mês</h2><p>Aniversários da equipe neste mês</p></div>
+          <span className="bday-badge"><i></i>É festa!</span>
+        </div>
+        <div className="bday-list">
+          {aniversariantesMes.length > 0 ? (
+            aniversariantesMes.slice(0, 4).map((emp: any, idx: number) => (
+              <div key={idx} className="bday">
+                <span className="bday-cake" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke={idx % 2 === 0 ? "#DB2777" : "#7C3AED"} strokeWidth={1.8} />
+                    <path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke={idx % 2 === 0 ? "#F472B6" : "#A78BFA"} strokeWidth={1.6} />
+                    <path d="M12 11V8.6" stroke={idx % 2 === 0 ? "#7C3AED" : "#DB2777"} strokeWidth={1.8} strokeLinecap="round" />
+                    <path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B" />
+                  </svg>
+                </span>
+                <div><b>{emp.nome}</b><small>Parabéns pelo seu dia!</small></div>
+                <span className="bday-day">Dia {String(emp.day).padStart(2, '0')}</span>
               </div>
-              <div className="weather-main">
+            ))
+          ) : (
+            <>
+              <div className="bday">
+                <span className="bday-cake" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke="#DB2777" strokeWidth={1.8}/><path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke="#F472B6" strokeWidth={1.6}/><path d="M12 11V8.6" stroke="#7C3AED" strokeWidth={1.8} strokeLinecap="round"/><path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B"/></svg></span>
+                <div><b>Carlos Andre Mourão Dos Reis</b><small>Parabéns pelo seu dia!</small></div>
+                <span className="bday-day">Dia 01</span>
+              </div>
+              <div className="bday">
+                <span className="bday-cake" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke="#7C3AED" strokeWidth={1.8}/><path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke="#A78BFA" strokeWidth={1.6}/><path d="M12 11V8.6" stroke="#DB2777" strokeWidth={1.8} strokeLinecap="round"/><path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B"/></svg></span>
+                <div><b>João Carlos Paixão Melo</b><small>Parabéns pelo seu dia!</small></div>
+                <span className="bday-day">Dia 06</span>
+              </div>
+            </>
+          )}</div>
+      </section>
+
+    
+    
+
+      {/* 5. EQUIPAMENTOS EM OPERAÇÃO E MANUTENÇÃO (VELOCÍMETROS E CENAS) */}
+      <section className="card card-pad" aria-label="Equipamentos em operação e em manutenção">
+      <div className="fleet">
+        <div className="fleet-half">
+          <div className="fleet-head">
+            <div className="ch-ico" style={{ background: 'var(--blue-bg)', color: 'var(--blue)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div>
+            <span>Em operação</span>
+          </div>
+          <div className="fleet-body">
+            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.operation} de ${fleetMetrics.total} em operação, ${fleetMetrics.pctOperation} por cento`} title="Clique para ver o velocímetro da frota de novo" onClick={() => replayGauge("pipa")}>
+              <div className="gauge-dial">
+              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#DCE9FD" strokeWidth="15" strokeLinecap="round"/>
+                <path className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
+                <g stroke="#A9B8CC" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
+                <g ref={pipaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationOperation} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#2563EB"/></g>
+              </svg>
+              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
+              </div>
+              <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total}</span></div>
+              <span className="gauge-tip">{fleetMetrics.pctOperation}% em operação<small>{fleetMetrics.operation} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+            </div>
+            <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
+          </div>
+          <div className="hill-scene blue pipa-scene" role="img" onClick={() => replayGauge("pipa")} aria-label={`Caminhão pipa jogando água em áreas verdes de plantação: já irrigou ${fleetMetrics.pctOperation} por cento da área, ${fleetMetrics.operation} de ${fleetMetrics.total} equipamentos em operação`} title="Clique para ver o caminhão pipa jogando água na plantação de novo">
+            <svg viewBox="0 0 320 118" aria-hidden="true">
+              <defs>
+                <linearGradient id="pgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#CDEBFF"/><stop offset="55%" stopColor="#EAF7FF"/><stop offset="100%" stopColor="#FFF6D8"/></linearGradient>
+                <linearGradient id="pgHillFar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B7E2A8"/><stop offset="100%" stopColor="#8FCB7E"/></linearGradient>
+                <linearGradient id="pgHillNear" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8ED081"/><stop offset="100%" stopColor="#5FA84F"/></linearGradient>
+                <linearGradient id="pgCrop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#86CC6B"/><stop offset="100%" stopColor="#4E9B3E"/></linearGradient>
+                <linearGradient id="pgSoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F2E3B6"/><stop offset="100%" stopColor="#DEC98F"/></linearGradient>
+                <linearGradient id="pgTank" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="45%" stopColor="#F1F7FB"/><stop offset="100%" stopColor="#CBDCE8"/></linearGradient>
+                <linearGradient id="pgCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#38BDF8"/><stop offset="100%" stopColor="#0369A1"/></linearGradient>
+                <radialGradient id="pgSun" cx=".5" cy=".5" r=".5"><stop offset="0%" stopColor="#FFF7CC"/><stop offset="70%" stopColor="#FDE68A"/><stop offset="100%" stopColor="#FBBF24"/></radialGradient>
+                <filter id="pBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+              </defs>
+              <rect x="0" y="0" width="320" height="118" fill="url(#pgSky)"/>
+              <g className="sun-pulse"><circle cx="288" cy="16" r="17" fill="#FDE68A" opacity=".30"/><circle cx="288" cy="16" r="10.5" fill="url(#pgSun)" stroke="#F59E0B" strokeWidth="1.6"/></g>
+              <g className="cloud-a" fill="#FFFFFF"><ellipse cx="52" cy="16" rx="18" ry="6.5"/><ellipse cx="66" cy="12.5" rx="12" ry="5.5"/><ellipse cx="40" cy="13" rx="10" ry="4.5"/><ellipse cx="54" cy="19" rx="20" ry="3.4" fill="#DCEEF9"/></g>
+              <g className="cloud-b" fill="#FFFFFF" opacity=".92"><ellipse cx="188" cy="11" rx="14" ry="5"/><ellipse cx="199" cy="8.5" rx="9" ry="4"/><ellipse cx="189" cy="13.5" rx="15" ry="2.8" fill="#DCEEF9"/></g>
+              <g stroke="#7C93A8" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity=".75"><path d="M118 18 q3 -3 6 0 q3 -3 6 0"/><path d="M140 24 q2.4 -2.4 4.8 0 q2.4 -2.4 4.8 0"/></g>
+              <path d="M0 52 Q38 34 84 42 Q128 50 168 38 Q214 25 262 36 Q296 43 320 36 V64 H0 Z" fill="url(#pgHillFar)"/>
+              <g fill="#6FB45E" opacity=".8"><circle cx="96" cy="44" r="4"/><circle cx="106" cy="46" r="3.2"/><circle cx="238" cy="38" r="3.6"/><circle cx="248" cy="40" r="2.8"/><circle cx="160" cy="42" r="3.4"/></g>
+              <path d="M0 58 Q52 44 116 52 Q176 60 232 48 Q284 38 320 50 V70 H0 Z" fill="url(#pgHillNear)"/>
+              <g stroke="#3E7D33" strokeWidth="2.2" strokeLinecap="round" opacity=".45"><path d="M4 63 H316" strokeDasharray="0.5 11"/><path d="M14 67.5 H306" strokeDasharray="0.5 13"/></g>
+              <g><path d="M22 60 V45" stroke="#7A5A2E" strokeWidth="4.5" strokeLinecap="round"/><path d="M22 50 C16 46 14 42 15 37 M22 47 C27 43 28 39 27 34" stroke="#7A5A2E" strokeWidth="2.4" strokeLinecap="round" fill="none"/><circle cx="22" cy="34" r="11.5" fill="#2F8F3E"/><circle cx="12" cy="41" r="7.5" fill="#4CAF50"/><circle cx="32" cy="41" r="7.5" fill="#43A047"/><circle cx="17" cy="29" r="5.5" fill="#66BB6A" opacity=".85"/><circle cx="28" cy="30" r="4.5" fill="#81C784" opacity=".8"/></g>
+              <g opacity=".9"><path d="M298 56 V48" stroke="#7A5A2E" strokeWidth="3" strokeLinecap="round"/><circle cx="298" cy="44" r="7" fill="#359846"/><circle cx="292" cy="48" r="4.6" fill="#57B25E"/><circle cx="304" cy="48" r="4.6" fill="#57B25E"/></g>
+              <rect x="0" y="70" width="320" height="22" fill="url(#pgSoil)"/>
+              <rect x="0" y="70" width="198" height="22" fill="#0EA5E9" opacity=".08"/>
+              <line x1="0" y1="70" x2="320" y2="70" stroke="#C9B478" strokeWidth="1.8"/>
+              <path d="M0 77 H320 M0 87 H320" stroke="#B49B62" strokeWidth="2.6" strokeDasharray="8 10" opacity=".28"/>
+              <path d="M0 81.5 H320" stroke="#DCC791" strokeWidth="1.6" strokeDasharray="4 14" opacity=".8"/>
+              <g fill="#C9B478" opacity=".7"><ellipse cx="36" cy="84" rx="2.6" ry="1.2"/><ellipse cx="128" cy="74" rx="2" ry="1"/><ellipse cx="238" cy="85" rx="2.8" ry="1.3"/><ellipse cx="286" cy="75" rx="2" ry="1"/></g>
+              <g><ellipse cx="52" cy="88" rx="13" ry="2.4" fill="#BAE6FD" opacity=".85"/><ellipse cx="120" cy="79" rx="9" ry="1.8" fill="#BAE6FD" opacity=".7"/><ellipse cx="176" cy="89" rx="11" ry="2" fill="#BAE6FD" opacity=".75"/><path d="M42 87.4 q4 -1.6 8 0 M168 88.4 q4 -1.6 8 0" stroke="#FFFFFF" strokeWidth="1.2" fill="none" opacity=".9"/></g>
+              <rect x="0" y="92" width="320" height="26" fill="url(#pgCrop)"/>
+              <line x1="0" y1="92" x2="320" y2="92" stroke="#3E7D33" strokeWidth="1.6" opacity=".5"/>
+              <g stroke="#35702C" strokeWidth="2.4" opacity=".38" strokeLinecap="round"><path d="M-8 118 L54 94 M44 118 L96 94 M96 118 L138 94 M148 118 L180 94 M196 118 L222 94 M246 118 L264 94 M294 118 L306 94"/></g>
+              <g transform="rotate(-1 283 52)">
+                <line x1="283" y1="58" x2="283" y2="89" stroke="#7A5A2E" strokeWidth="3.4" strokeLinecap="round"/>
+                <line x1="283" y1="66" x2="283" y2="89" stroke="#96754A" strokeWidth="1.2" strokeDasharray="3 4"/>
+                <rect x="246" y="43" width="74" height="16" rx="4" fill="#1E7A34"/>
+                <rect x="246" y="43" width="74" height="16" rx="4" fill="none" stroke="#14532D" strokeWidth="1.4"/>
+                <path d="M249 48.5 H317 M249 53.5 H317" stroke="#14532D" strokeWidth="1" opacity=".45"/>
+                <circle cx="251" cy="46.5" r="1.2" fill="#D9F99D"/><circle cx="315" cy="46.5" r="1.2" fill="#D9F99D"/><circle cx="251" cy="55.5" r="1.2" fill="#D9F99D"/><circle cx="315" cy="55.5" r="1.2" fill="#D9F99D"/>
+                <text x="283" y="54.5" textAnchor="middle" fontSize="8.5" fontWeight="800" letterSpacing="1" fill="#FFFFFF" style={{ fontFamily: 'inherit' }}>PLANTAÇÃO</text>
+              </g>
+              <g className="pipa-truck-g" transform="translate(54 85)">
+                <g className="pipa-bob">
+                  <ellipse cx="0" cy="3.5" rx="40" ry="4" fill="#3F6212" opacity=".22" filter="url(#pBlur)"/>
+                  <path className="spray-fan" d="M-42 -20 L-96 6 L-94 -6 L-44 -8 Z" fill="#7DD3FC" opacity=".30"/>
+                  <path className="spray-fan" d="M-42 -22 L-84 -12 L-42 -10 Z" fill="#BAE6FD" opacity=".45"/>
+                  <path d="M-38 5 L-118 5 L-118 8.5 L-38 8.5 Z" fill="#7DD3FC" opacity=".38"/>
+                  <path className="spray-arc" d="M-42 -15 Q-62 -12 -78 1" fill="none" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round"/>
+                  <path className="spray-arc" d="M-42 -21 Q-60 -20 -74 -7" fill="none" stroke="#7DD3FC" strokeWidth="2.6" strokeLinecap="round"/>
+                  <path className="spray-arc" d="M-42 -9 Q-56 -4 -66 5" fill="none" stroke="#0284C7" strokeWidth="2.2" strokeLinecap="round" opacity=".7"/>
+                  <g fill="#38BDF8"><circle className="spray-drop" cx="-60" cy="-6" r="2.3"/><circle className="spray-drop d2" cx="-68" cy="0" r="1.9"/><circle className="spray-drop d3" cx="-54" cy="-13" r="1.7"/><circle className="spray-drop d4" cx="-72" cy="-4" r="1.6"/><circle className="spray-drop d5" cx="-50" cy="-3" r="1.8"/><circle className="spray-drop d2" cx="-82" cy="3" r="1.5"/><circle className="spray-drop d4" cx="-88" cy="-2" r="1.3"/></g>
+                  <g className="mist" fill="#E0F2FE"><ellipse cx="-70" cy="4" rx="9" ry="3"/><ellipse cx="-88" cy="6" rx="12" ry="3.6"/></g>
+                  <path d="M-34 -13 C-30 -22 -26 -27 -18 -31" fill="none" stroke="#0369A1" strokeWidth="2.2" strokeLinecap="round"/>
+                  <rect x="-41" y="-40" width="50" height="27" rx="13" fill="url(#pgTank)" stroke="#0369A1" strokeWidth="2"/>
+                  <path d="M-36 -31 H4" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" opacity=".85"/>
+                  <path d="M-24 -39.5 V-13.5 M-6 -39.5 V-13.5" stroke="#94A3B8" strokeWidth="1.6" opacity=".65"/>
+                  <rect x="-20" y="-44" width="12" height="5" rx="2.4" fill="#E2E8F0" stroke="#0369A1" strokeWidth="1.6"/>
+                  <path d="M-16 -35.5 c3.2 3.6 4.6 6.2 4.6 8.6 a4.6 4.6 0 1 1 -9.2 0 c0 -2.4 1.4 -5 4.6 -8.6Z" fill="#0284C7"/>
+                  <rect x="-46" y="-18" width="6" height="12" rx="2.4" fill="#0369A1"/>
+                  <g stroke="#E0F2FE" strokeWidth="1.8" strokeLinecap="round"><path d="M-46 -15 h-4 M-46 -12 h-4 M-46 -9 h-4"/></g>
+                  <path d="M11 -29 L24 -29 C27.5 -22 30 -16.5 32 -11 L32 -9 L11 -9 Z" fill="url(#pgCab)"/>
+                  <path d="M14 -26 L22.5 -26 C24.6 -21.4 26.4 -17.6 27.4 -14.8 L14 -14.8 Z" fill="#E0F2FE"/>
+                  <path d="M15 -26 L20 -26 L17 -14.8 L14 -14.8 Z" fill="#FFFFFF" opacity=".55"/>
+                  <path d="M11 -19 H31.5" stroke="#075985" strokeWidth="1.4" opacity=".6"/>
+                  <rect x="15" y="-17.5" width="5" height="1.8" rx=".9" fill="#E0F2FE"/>
+                  <path d="M11 -29 L7 -31" stroke="#17233B" strokeWidth="1.8" strokeLinecap="round"/><rect x="3.5" y="-34.5" width="5" height="7" rx="1.6" fill="#17233B"/>
+                  <circle cx="30.5" cy="-12.5" r="1.9" fill="#FDE68A" stroke="#D97706" strokeWidth="1"/>
+                  <rect x="7" y="-12.5" width="26" height="4.4" rx="2" fill="#075985"/>
+                  <path d="M-40 -9 H33" stroke="#0F172A" strokeWidth="2" opacity=".18"/>
+                  <circle cx="-27" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/><circle cx="21" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/>
+                  <circle cx="-27" cy="0" r="3.2" fill="#CBD5E1"/><circle cx="21" cy="0" r="3.2" fill="#CBD5E1"/>
+                  <g fill="#64748B"><circle cx="-27" cy="-1.6" r=".8"/><circle cx="-25.4" cy="1" r=".8"/><circle cx="-28.6" cy="1" r=".8"/><circle cx="21" cy="-1.6" r=".8"/><circle cx="22.6" cy="1" r=".8"/><circle cx="19.4" cy="1" r=".8"/></g>
+                  <g fill="#FDE68A" opacity=".95"><circle cx="-32" cy="-4" r="1.4" className="truck-puff"/><circle cx="-36" cy="-6" r="1" className="truck-puff p2"/></g>
+                </g>
+              </g>
+              <g stroke="#22703A" strokeWidth="2" strokeLinecap="round" fill="none">
+                <path d="M14 115 v-7 M14 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M14 111 c4.5 0 6.5 -2 7.5 -5.5"/>
+                <path d="M64 116 v-6 M64 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M64 112.5 c4 0 5.8 -1.8 6.7 -5"/>
+                <path d="M118 115 v-7 M118 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M118 111 c4.5 0 6.5 -2 7.5 -5.5"/>
+                <path d="M172 116 v-6 M172 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M172 112.5 c4 0 5.8 -1.8 6.7 -5"/>
+                <path d="M228 115 v-7 M228 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M228 111 c4.5 0 6.5 -2 7.5 -5.5"/>
+                <path d="M276 116 v-6 M276 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M276 112.5 c4 0 5.8 -1.8 6.7 -5"/>
+                <path d="M306 115 v-7 M306 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M306 111 c4.5 0 6.5 -2 7.5 -5.5"/>
+              </g>
+              <g fill="#FDE047"><circle cx="44" cy="112" r="1.6"/><circle cx="148" cy="114" r="1.5"/><circle cx="252" cy="112" r="1.6"/><circle cx="96" cy="113" r="1.3"/></g>
+              <g stroke="#2F7D32" strokeWidth="1.7" strokeLinecap="round"><path d="M6 118 v-6 M30 118 v-5 M200 118 v-6 M318 118 v-5"/></g>
+            </svg>
+            <div className="hill-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3c3.5 4 5.5 7 5.5 10a5.5 5.5 0 1 1-11 0C6.5 10 8.5 7 12 3Z"/></svg><span>Caminhão pipa jogando água a <b>{fleetMetrics.pctOperation}%</b> da plantação</span></div>
+          </div>
+          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
+        </div>
+        <div className="fleet-half">
+          <div className="fleet-head">
+            <div className="ch-ico" style={{ background: '#FFF3E4', color: '#EA580C' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3 3.7-3.7Z"/></svg></div>
+            <span>Em manutenção</span>
+          </div>
+          <div className="fleet-body">
+            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.maintenance} de ${fleetMetrics.total} em manutenção, ${fleetMetrics.pctMaintenance} por cento`} title="Clique para ver o velocímetro de manutenção de novo" onClick={() => replayGauge("oficina")}>
+              <div className="gauge-dial">
+              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FDEBD9" strokeWidth="15" strokeLinecap="round"/>
+                <path className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
+                <g stroke="#C9B096" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
+                <g ref={oficinaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationMaintenance} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#EA580C"/></g>
+              </svg>
+              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
+              </div>
+              <div className="gauge-center"><b data-count={fleetMetrics.maintenance}>{fleetMetrics.maintenance}</b><span>de {fleetMetrics.total}</span></div>
+              <span className="gauge-tip">{fleetMetrics.pctMaintenance}% em manutenção<small>{fleetMetrics.maintenance} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+            </div>
+            <div><div className="pct-chip orange"><b data-count-pct={fleetMetrics.pctMaintenance}>{fleetMetrics.pctMaintenance}%</b><span>em manutenção</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
+          </div>
+          <div className="hill-scene orange" role="img" onClick={() => replayGauge("oficina")} aria-label="Caminhão sobre a prancha do elevador automotivo da oficina, a plataforma plana de manutenção: 6 de 26 equipamentos em manutenção, 23 por cento" title="Clique para ver o caminhão sobre o elevador da oficina de novo">
+            <svg viewBox="0 0 320 118" aria-hidden="true">
+              <defs>
+                <linearGradient id="ofWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFF8EA"/><stop offset="100%" stopColor="#FBEED3"/></linearGradient>
+                <linearGradient id="ofFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E8D5B5"/><stop offset="100%" stopColor="#D9BF97"/></linearGradient>
+                <linearGradient id="ofMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#64748B"/><stop offset="50%" stopColor="#3E4C61"/><stop offset="100%" stopColor="#57687E"/></linearGradient>
+                <linearGradient id="ofBox" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="100%" stopColor="#E7EDF3"/></linearGradient>
+                <linearGradient id="ofCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FB923C"/><stop offset="100%" stopColor="#C2410C"/></linearGradient>
+                <linearGradient id="ofDoor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="100%" stopColor="#E3DCCB"/></linearGradient>
+                <pattern id="pegHoles" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#D9BFA0"/></pattern>
+                <filter id="oBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>
+              </defs>
+              <rect x="0" y="0" width="320" height="118" fill="url(#ofWall)"/>
+              <rect x="0" y="62" width="320" height="42" fill="#8A6D3B" opacity=".07"/>
+              <line x1="0" y1="62" x2="320" y2="62" stroke="#E7D3AC" strokeWidth="2"/>
+              <g stroke="#F1DFC0" strokeWidth="1.4"><path d="M108 0 V62 M206 0 V62"/></g>
+              <rect x="0" y="104" width="320" height="14" fill="url(#ofFloor)"/>
+              <line x1="0" y1="104" x2="320" y2="104" stroke="#C9AB7C" strokeWidth="1.6"/>
+              <g stroke="#C9AB7C" strokeWidth="1" opacity=".7"><path d="M64 104 v14 M168 104 v14 M272 104 v14"/></g>
+              <ellipse cx="92" cy="111" rx="24" ry="2.8" fill="#475569" opacity=".16"/>
+              <ellipse cx="96" cy="110.6" rx="10" ry="1.6" fill="#38BDF8" opacity=".20"/>
+              <path d="M196 108 l7 3 l-5 2" stroke="#B49B6E" strokeWidth="1" fill="none" opacity=".7"/>
+              <g>
+                <rect x="264" y="8" width="50" height="96" rx="3" fill="url(#ofDoor)" stroke="#C9B68F" strokeWidth="1.6"/>
+                <g stroke="#D8CBAE" strokeWidth="1.6"><path d="M264 22 H314 M264 36 H314 M264 50 H314 M264 64 H314 M264 78 H314 M264 92 H314"/></g>
+                <g stroke="#FFFFFF" strokeWidth="1" opacity=".8"><path d="M264 23.5 H314 M264 37.5 H314 M264 51.5 H314 M264 65.5 H314 M264 79.5 H314 M264 93.5 H314"/></g>
+                <rect x="264" y="98" width="50" height="6" fill="#78716C"/>
+                <rect x="281" y="93.5" width="16" height="4.4" rx="2.2" fill="#A8A29E"/>
+              </g>
+              <g>
+                <rect x="6" y="7" width="92" height="46" rx="5" fill="#F7E8CE"/>
+                <rect x="6" y="7" width="92" height="46" rx="5" fill="url(#pegHoles)"/>
+                <rect x="6" y="7" width="92" height="46" rx="5" fill="none" stroke="#DDBE93" strokeWidth="1.6"/>
+                <path d="M24.7 17.3a4.5 4.5 0 0 0-6 6L13 29l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L24 24l-3-3 3.7-3.7Z" fill="none" stroke="#EA580C" strokeWidth="1.8" strokeLinejoin="round" transform="translate(2 3) scale(.92)"/>
+                <g transform="rotate(38 50 24)"><rect x="47.5" y="14" width="5" height="11" rx="1.4" fill="#78716C"/><rect x="48.7" y="24" width="2.6" height="10" rx="1.2" fill="#B45309"/></g>
+                <g strokeLinecap="round"><path d="M60 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="56.8" y="26" width="6.4" height="8" rx="2" fill="#DC2626"/><path d="M68 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="64.8" y="26" width="6.4" height="8" rx="2" fill="#2563EB"/><path d="M76 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="72.8" y="26" width="6.4" height="8" rx="2" fill="#EAB308"/></g>
+                <circle cx="42" cy="42" r="4.6" fill="#FACC15" stroke="#A16207" strokeWidth="1.4"/><circle cx="42" cy="42" r="1.6" fill="#FEF9C3"/>
+                <rect x="54" y="39" width="34" height="5.4" rx="2.4" fill="#FDE68A" stroke="#D97706" strokeWidth="1.2"/><circle cx="71" cy="41.7" r="1.5" fill="#22C55E"/>
+                <rect x="62" y="24" width="6" height="9" rx="1.4" fill="#EA580C" opacity="0"/><rect x="86" y="12" width="7" height="10" rx="1.4" fill="#0EA5E9"/><rect x="86" y="14.5" width="7" height="2" fill="#E0F2FE"/>
+              </g>
+              <g><circle cx="138" cy="17" r="9.5" fill="#FFFFFF" stroke="#A98F63" strokeWidth="1.8"/><circle cx="138" cy="17" r="1.4" fill="#57534E"/><path d="M138 17 L138 11 M138 17 L142.5 19" stroke="#57534E" strokeWidth="1.6" strokeLinecap="round"/><g fill="#A98F63"><circle cx="138" cy="9.8" r=".9"/><circle cx="145.2" cy="17" r=".9"/><circle cx="138" cy="24.2" r=".9"/><circle cx="130.8" cy="17" r=".9"/></g></g>
+              <g transform="rotate(-2 176 22)"><rect x="162" y="7" width="28" height="32" rx="2" fill="#FFFBEB" stroke="#E7C873" strokeWidth="1.4"/><path d="M176 13 L183 26 H169 Z" fill="#FACC15" stroke="#A16207" strokeWidth="1.2" strokeLinejoin="round"/><text x="176" y="23.5" textAnchor="middle" fontSize="9" fontWeight="800" fill="#713F12" style={{ fontFamily: 'inherit' }}>!</text><path d="M167 31 H185 M167 34.5 H181" stroke="#D6C08A" strokeWidth="1.6"/></g>
+              <g className="lamp-sway">
+                <line x1="218" y1="0" x2="218" y2="11" stroke="#78716C" strokeWidth="2.2"/>
+                <polygon className="lamp-glow" points="204,27 232,27 252,102 184,102" fill="#FDE68A" opacity=".14"/>
+                <path d="M205 24 L218 10 L231 24 Z" fill="#44403C"/>
+                <path d="M205 24 H231" stroke="#292524" strokeWidth="2.4" strokeLinecap="round"/>
+                <circle cx="218" cy="25.5" r="3.4" fill="#FBBF24"/>
+                <ellipse cx="218" cy="29" rx="15" ry="4.5" fill="#FDE68A" opacity=".35"/>
+              </g>
+              <g fill="none" stroke="#EA580C" strokeWidth="2.2"><circle cx="240" cy="56" r="8.5" opacity=".9"/><circle cx="240" cy="56" r="5" opacity=".65"/></g>
+              
+              <ellipse cx="128" cy="105.5" rx="122" ry="3.2" fill="#475569" opacity=".14"/>
+              <rect x="16" y="100.5" width="224" height="5" rx="2.4" fill="#78716C"/>
+              <rect x="16" y="100.5" width="224" height="2" rx="1" fill="#A8A29E"/>
+              <g stroke="#94A3B8" strokeWidth="4.6" strokeLinecap="round">
+                <path d="M38 100 L82 89 M82 100 L38 89"/>
+                <path d="M106 100 L150 89 M150 100 L106 89"/>
+                <path d="M174 100 L218 89 M218 100 L174 89"/>
+              </g>
+              <g fill="#64748B"><circle cx="60" cy="94.5" r="2.6"/><circle cx="128" cy="94.5" r="2.6"/><circle cx="196" cy="94.5" r="2.6"/></g>
+              <g transform="rotate(-14 94 95)"><rect x="90.6" y="88" width="6.8" height="15" rx="3" fill="#CBD5E1" stroke="#64748B" strokeWidth="1.3"/><rect x="92.6" y="82" width="2.8" height="10" rx="1.4" fill="#F1F5F9" stroke="#94A3B8" strokeWidth="1"/></g>
+              <rect x="10" y="75" width="236" height="14" rx="3.5" fill="url(#ofMetal)"/>
+              <rect x="10" y="75" width="236" height="4.5" rx="2.2" fill="#7D8FA6"/>
+              <path d="M14 86.5 H242" stroke="#F59E0B" strokeWidth="2.6" strokeDasharray="8 6" opacity=".95"/>
+              <text x="128" y="84.6" textAnchor="middle" fontSize="7.4" fontWeight="800" letterSpacing="1.8" fill="#E2E8F0" style={{ fontFamily: 'inherit' }}>OFICINA</text>
+              <g>
+                <path d="M238 92 l10 -7 l3 3 l-9 7 Z" fill="#991B1B"/>
+                <rect x="236" y="92" width="29" height="13" rx="2.6" fill="#DC2626"/>
+                <rect x="236" y="92" width="29" height="5" rx="2.4" fill="#EF4444"/>
+                <path d="M245 92 v-4 h11 V92" fill="none" stroke="#7F1D1D" strokeWidth="2.2"/>
+                <rect x="248" y="97.5" width="5.4" height="3.6" rx="1" fill="#FDE68A"/>
+                <path d="M241 90 l4 -5" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"/>
+              </g>
+              <g><ellipse cx="296" cy="100" rx="15.5" ry="5.6" fill="#26303C"/><ellipse cx="296" cy="91" rx="15.5" ry="5.6" fill="#2E3947"/><ellipse cx="296" cy="82" rx="15.5" ry="5.6" fill="#26303C"/><g fill="#F7EBD7"><ellipse cx="296" cy="99.4" rx="5.6" ry="2"/><ellipse cx="296" cy="90.4" rx="5.6" ry="2"/><ellipse cx="296" cy="81.4" rx="5.6" ry="2"/></g><g stroke="#5B6B7D" strokeWidth="1.2" strokeDasharray="3 3" fill="none"><ellipse cx="296" cy="98.6" rx="12.5" ry="4.2"/><ellipse cx="296" cy="89.6" rx="12.5" ry="4.2"/><ellipse cx="296" cy="80.6" rx="12.5" ry="4.2"/></g></g>
+              <g>
+                <ellipse cx="24" cy="106.5" rx="10" ry="2" fill="#7C2D12" opacity=".25" filter="url(#oBlur)"/>
+                <path d="M24 87 L32.5 106 H15.5 Z" fill="#EA580C"/>
+                <path d="M24 87 L32.5 106 H15.5 Z" fill="#F97316" opacity=".45" transform="translate(-1.6 0)"/>
+                <path d="M20.6 97.5 H27.4 L29.2 101.8 H18.8 Z" fill="#FFFFFF"/>
+                <rect x="14.5" y="104.5" width="19" height="3.4" rx="1.6" fill="#C2410C"/>
+                <path d="M21 93 l2.4 3" stroke="#FFF7ED" strokeWidth="1.2" opacity=".7"/>
+              </g>
+              <g stroke="#B45309" strokeWidth="2.4" strokeLinecap="round"><path d="M258 72 L265 100"/></g>
+              <g fill="#D6A419"><path d="M265 100 l-3 6 h9 l-3 -6 Z"/></g>
+              <g className="truck-g" transform="translate(88 68.6)">
+                <circle className="truck-puff" cx="-38" cy="-8" r="4.2" fill="#CBD5E1"/><circle className="truck-puff p2" cx="-42" cy="-13" r="3" fill="#CBD5E1"/>
+                <ellipse cx="1" cy="3.5" rx="36" ry="3.6" fill="#431407" opacity=".20" filter="url(#oBlur)"/>
+                <rect x="-31" y="-37" width="40" height="27" rx="3" fill="url(#ofBox)" stroke="#EA580C" strokeWidth="2.2"/>
+                <path d="M-31 -31 H9" stroke="#FFFFFF" strokeWidth="3.4" opacity=".8"/>
+                <g stroke="#CBD5E1" strokeWidth="1.3"><path d="M-18 -36.5 V-10.5 M-5 -36.5 V-10.5"/></g>
+                <g fill="#94A3B8"><circle cx="-26" cy="-33" r=".9"/><circle cx="-26" cy="-14" r=".9"/><circle cx="4" cy="-33" r=".9"/><circle cx="4" cy="-14" r=".9"/></g>
+                <rect x="-33.5" y="-17" width="3" height="6.4" rx="1.2" fill="#DC2626"/>
+                <path d="M11 -29 L24 -29 C27.5 -22 30 -16.5 32 -11 L32 -9 L11 -9 Z" fill="url(#ofCab)"/>
+                <path d="M14 -26 L22.5 -26 C24.6 -21.4 26.4 -17.6 27.4 -14.8 L14 -14.8 Z" fill="#FFEDD5"/>
+                <path d="M15 -26 L20 -26 L17 -14.8 L14 -14.8 Z" fill="#FFFFFF" opacity=".55"/>
+                <path d="M11 -19 H31.5" stroke="#9A3412" strokeWidth="1.4" opacity=".65"/>
+                <rect x="15" y="-17.5" width="5" height="1.8" rx=".9" fill="#FFEDD5"/>
+                <path d="M11 -29 L7 -31" stroke="#292524" strokeWidth="1.8" strokeLinecap="round"/><rect x="3.5" y="-34.5" width="5" height="7" rx="1.6" fill="#292524"/>
+                <circle cx="30.5" cy="-12.5" r="1.9" fill="#FDE68A" stroke="#B45309" strokeWidth="1"/>
+                <rect x="7" y="-12.5" width="26" height="4.4" rx="2" fill="#7C2D12"/>
+                <circle cx="-19" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/><circle cx="21" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/>
+                <circle cx="-19" cy="0" r="3.2" fill="#CBD5E1"/><circle cx="21" cy="0" r="3.2" fill="#CBD5E1"/>
+                <g fill="#64748B"><circle cx="-19" cy="-1.6" r=".8"/><circle cx="-17.4" cy="1" r=".8"/><circle cx="-20.6" cy="1" r=".8"/><circle cx="21" cy="-1.6" r=".8"/><circle cx="22.6" cy="1" r=".8"/><circle cx="19.4" cy="1" r=".8"/></g>
+              </g>
+            </svg>
+            <div className="hill-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3 3.7-3.7Z"/></svg><span>Caminhão sobre o elevador da oficina · <b>{fleetMetrics.pctMaintenance}%</b> em manutenção</span></div>
+          </div>
+          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-orange"><i className="d-orange"></i>{fleetMetrics.maintenance} em manutenção</span><span className="hl-orange"><i className="d-orange-rest"></i>{fleetMetrics.outOfMaintenance} fora de manutenção</span></div>
+        </div>
+      </div>
+    </section>
+
+    
+    
+
+      {/* 6. ACESSO RÁPIDO */}
+      <section className="quick" aria-label="Acesso rápido">
+      <div className="quick-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>Acesso rápido</div>
+      <div className="quick-items" id="quickItems">
+        <button className="quick-item" data-name="documentos" onClick={() => navigate({ to: "/documentos" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>Documentos</button>
+        <button className="quick-item" data-name="equipamentos" onClick={() => navigate({ to: "/equipamentos" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M3 16V8h11v8M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>Equipamentos</button>
+        <button className="quick-item" data-name="almoxarifado" onClick={() => navigate({ to: "/almoxarifado" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>Almoxarifado</button>
+        <button className="quick-item" data-name="relatorios relatorio de obra" onClick={() => navigate({ to: "/relatorio-obra" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Relatórios</button>
+        <button className="quick-item" data-name="planejamento" onClick={() => toast.info("Módulo de Planejamento em desenvolvimento.")}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Planejamento</button>
+        <button className="quick-item" data-name="reunioes" onClick={() => navigate({ to: "/reunioes" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg>Reuniões</button>
+      </div>
+    </section>
+
+      {/* ==========================================================
+          WIDGETS OPERACIONAIS REAIS DO SISTEMA
+          ========================================================== */}
+      <section className="card card-pad" aria-label="Widgets operacionais" style={{ marginTop: '32px' }}>
+        <div className="card-head">
+          <div className="ch-ico" style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z"/><path d="m9 11.5 2 2 4-4"/></svg>
+          </div>
+          <h2>Widgets Operacionais</h2>
+        </div>
+
+        {/* Permissão de Trabalho Alert */}
+        {expiringPTs.length > 0 && (
+          <div
+            className="card card-pad"
+            style={{ marginBottom: '16px', background: 'var(--red-bg)', borderColor: 'var(--red-ring)', cursor: 'pointer' }}
+            onClick={() => navigate({ to: '/permissao-trabalho' })}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--red-bg)', display: 'grid', placeItems: 'center' }}>
+                  <svg style={{ width: '20px', height: '20px', color: 'var(--red)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path d="M12 3 2 20h20L12 3Z" />
+                    <path d="M12 10v4M12 17.5v.5" />
+                  </svg>
+                </div>
                 <div>
-                  <b>33°C</b>
-                  <small>Céu claro</small>
-                </div>
-                <div className="weather-range">
-                  <div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="5" />
-                      <path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2" />
-                    </svg>
-                    Máx: <b>34°</b>
-                  </div>
-                  <div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path d="M12 9a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0v-8a3 3 0 0 0-3-3Z" />
-                      <path d="M12 3v3" />
-                    </svg>
-                    Mín: <b>24°</b>
-                  </div>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--red)' }}>Alerta de Permissão de Trabalho</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--red)', marginTop: '2px' }}>
+                    Você tem {expiringPTs.length} permiss{expiringPTs.length > 1 ? 'ões' : 'ão'} de
+                    trabalho com atenção aos prazos.
+                  </p>
                 </div>
               </div>
-              <p
-                style={{
-                  margin: '14px 0 0',
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--line2)',
-                  fontSize: '12.5px',
-                  color: 'var(--muted)',
-                  fontWeight: 600,
-                }}
-              >
-                Umidade: 68% · Vento: 11 km/h
-              </p>
-            </section>
+              <button style={{ padding: '6px 12px', background: 'var(--red)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 800 }}>
+                Ver detalhes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* DDS Hoje Card & Postar DDS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+          <div
+            className="card card-pad"
+            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--yellow)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--amber-bg)', color: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                    <path d="M14 2v6h6" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--amber)' }}>
+                    DDS Hoje
+                  </span>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'Livre'}
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.hoje?.tema}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsDdsModalOpen(true)
+                  }}
+                  style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, background: 'var(--amber-bg)', color: 'var(--amber)', border: '1px solid var(--amber)', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  {ddsData?.hoje?.postedMedia ? 'Alterar Foto' : 'Postar DDS'}
+                </button>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="card card-pad"
+            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
+            onClick={() => navigate({ to: '/seguranca/dds' })}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--line2)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--surface2)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--muted)' }}>
+                    DDS Amanhã
+                  </span>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {ddsData?.amanha?.palestrante?.nome?.toLowerCase() || 'Livre'}
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.amanha?.tema}</span>
+                  </p>
+                </div>
+              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* ==========================================================
-            QUICK ACCESS NO RODAPÉ
-            ========================================================== */}
-        <section className="quick" aria-label="Acesso rápido">
-          <div className="quick-label">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
-            </svg>
-            Acesso rápido
+        {/* Widgets Inferiores */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <DashboardStockAlertWidget />
+            <DashboardVistoriasWidget />
           </div>
-          <div className="quick-items" id="quickItems">
-            {filteredQuick.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="quick-item"
-                data-name={item.name}
-                onClick={() => {
-                  if (item.href === '#') {
-                    toast.info('Módulo de Planejamento em desenvolvimento.')
-                    return
-                  }
-                  if (item.href) {
-                    navigate({ to: item.href as any })
-                  }
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ))}
+          <div style={{ minHeight: '380px' }}>
+            <RecentActivitiesWidget />
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ==========================================================
-            FOOTER
-            ========================================================== */}
-        <footer>
-          <span>
-            <b>HYDRO REABILITAÇÃO</b> &nbsp;·&nbsp; Painel da operação — {weekdayFormatted.toLowerCase()},{' '}
-            {datePillString}
-          </span>
-          <span className="foot-brand">
-            <b style={{ letterSpacing: '.04em' }}>Mais segurança. Mais resultados.</b>
-          </span>
-        </footer>
+      {/* Rodapé da Operação */}
+      <footer style={{ marginTop: '32px' }}>
+        <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--muted)' }}>
+          <b style={{ color: 'var(--ink)', letterSpacing: '.06em' }}>HYDRO REABILITAÇÃO</b> · Painel da operação · {weekdayFormatted.toLowerCase()},{' '}
+          {dayNumber} de {monthName} de {yearNumber}
+        </span>
+        <span className="foot-brand" style={{ textAlign: 'right' }}>
+          <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--muted)' }}>Mais segurança.</span>
+          <span style={{ display: 'block', marginTop: '2px', fontSize: '12.5px', fontWeight: 600, color: 'var(--muted)' }}>Mais resultados.</span>
+        </span>
+      </footer>
+
+      {/* Modais */}
+      <DdsUploadModal
+        key={`dds-modal-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
+        isOpen={isDdsModalOpen}
+        onClose={() => setIsDdsModalOpen(false)}
+        tema={ddsData?.hoje?.tema || 'Sem tema agendado'}
+        palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
+        }}
+      />
+
+      {expandedImage && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[99999] p-4 cursor-zoom-out"
+          onClick={() => setExpandedImage(null)}
+        >
+          <img
+            src={expandedImage}
+            alt="Expanded DDS"
+            className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl"
+          />
+          <button
+            className="absolute top-20 right-6 sm:right-10 text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpandedImage(null)
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {showBirthdayModal && aniversariantesHoje.length > 0 && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
+            <button
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              onClick={() => setShowBirthdayModal(false)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 mb-4 animate-bounce">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-10 h-10 text-amber-500">
+                  <rect x="3" y="8" width="18" height="14" rx="2" />
+                  <path d="M12 8v14M8 8V4a2 2 0 0 1 4 0v4M12 4a2 2 0 0 1 4 0v4" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tem festa hoje! 🎉</h2>
+              <p className="text-gray-600 mb-6">Hoje é o aniversário de:</p>
+
+              <div className="w-full flex flex-col gap-3 mb-8">
+                {aniversariantesHoje.map((aniv: any, i: number) => (
+                  <div
+                    key={i}
+                    className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center justify-center"
+                  >
+                    <span className="font-bold text-lg text-gray-900 capitalize">
+                      {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors"
+                onClick={() => setShowBirthdayModal(false)}
+              >
+                Parabenizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

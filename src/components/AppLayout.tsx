@@ -1,6 +1,6 @@
 import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
 import Shield from 'lucide-react/dist/esm/icons/shield.js';
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import { LogoutOverlay } from './LogoutOverlay'
@@ -56,6 +56,46 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   })
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsNotifOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value
+    setSearchQuery(q)
+    window.dispatchEvent(new CustomEvent('hydro_search', { detail: q }))
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (location.pathname !== '/dashboard' && location.pathname !== '/dashboard/') {
+        navigate({ to: '/dashboard' as any })
+      }
+    }
+  }
+
+  const rawName = currentUser.name || 'Fabrício'
+  const firstName = rawName.split(' ')[0]
+  const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
+  const avatarLetter = displayFirstName.charAt(0).toUpperCase() || 'F'
+
 
   // Verifica atualização imediatamente ao carregar
   useEffect(() => {
@@ -111,24 +151,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) {
+      const isDevMock = typeof window !== 'undefined' && window.location.search.includes('mock=true')
+      const user = data?.user || (isDevMock ? { id: 'mock-user', email: 'fabricio@hydro.com', user_metadata: { full_name: 'Fabrício', role: 'Visão geral da operação' } } : null)
+      if (!user) {
         navigate({ to: '/' })
         return
       }
-      const role = data.user.user_metadata?.role || ''
-      const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
+      const role = user.user_metadata?.role || ''
+      const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário'
       if (userName && userName !== 'Usuário') {
         try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
       }
       setCurrentUser({
-        id: data.user.id || '',
+        id: user.id || '',
         name: userName,
         role: role || 'Usuário',
-        avatarUrl: data.user.user_metadata?.avatar_url || ''
+        avatarUrl: user.user_metadata?.avatar_url || ''
       })
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (typeof window !== 'undefined' && window.location.search.includes('mock=true')) return
       if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
         navigate({ to: '/' })
         return
@@ -279,15 +322,194 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main Scrollable Content */}
       <main 
-        className={`vt-main relative z-0 flex flex-col min-h-full ${isDashboard ? 'p-0' : 'pt-4'}`}
+        className={`vt-main relative z-0 flex flex-col min-h-full ${isDashboard ? 'p-0' : 'pt-0'}`}
         style={{ 
           marginLeft: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
           width: typeof window !== 'undefined' && window.innerWidth <= 900 ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
           paddingLeft: isSidebarCollapsed ? (typeof window !== 'undefined' && window.innerWidth <= 900 ? '14px' : '58px') : undefined,
-          paddingBottom: isDashboard ? 0 : 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+          paddingBottom: 'max(32px, calc(32px + env(safe-area-inset-bottom, 0px)))',
           transition: 'margin-left .48s cubic-bezier(.45,0,.15,1), width .48s cubic-bezier(.45,0,.15,1), padding-left .48s cubic-bezier(.45,0,.15,1)',
         }}
       >
+        {/* Barra superior persistente em todo o sistema */}
+        <div style={{ padding: '20px 28px 12px 28px', width: '100%' }}>
+          <header className="topbar">
+            <label className="search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                id="globalSearchInput"
+                type="search"
+                placeholder="Buscar colaboradores, documentos, equipamentos…"
+                aria-label="Buscar no painel"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+              />
+            </label>
+
+            <div className="top-actions" ref={notifRef}>
+              <div className="notif-wrap">
+                <button
+                  className="icon-btn"
+                  id="bellBtn"
+                  type="button"
+                  aria-label="Notificações, 3 não lidas"
+                  aria-expanded={isNotifOpen}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsNotifOpen((prev) => !prev)
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+                    <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+                  </svg>
+                  <span className="dot-badge">3</span>
+                </button>
+
+                <div
+                  className={`notif-panel ${isNotifOpen ? 'open' : ''}`}
+                  id="notifPanel"
+                  role="dialog"
+                  aria-label="Notificações"
+                >
+                  <h3>Notificações</h3>
+                  <div
+                    className="notif-item cursor-pointer"
+                    onClick={() => {
+                      setIsNotifOpen(false)
+                      navigate({ to: '/reunioes' as any })
+                    }}
+                  >
+                    <div
+                      className="n-ico"
+                      style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <b>Reunião de Contrato Hydro</b>
+                      <p>6 participantes confirmados como presentes hoje.</p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="notif-item cursor-pointer"
+                    onClick={() => {
+                      setIsNotifOpen(false)
+                      navigate({ to: '/documentos' as any })
+                    }}
+                  >
+                    <div
+                      className="n-ico"
+                      style={{ background: 'var(--red-bg)', color: 'var(--red)' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path d="M12 3 2 20h20L12 3Z" />
+                        <path d="M12 10v4M12 17.5v.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <b>Documento vencido</b>
+                      <p>Fabio Genilson Fernandes Dos Remedios — Contrato / Documentação.</p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="notif-item cursor-pointer"
+                    onClick={() => {
+                      setIsNotifOpen(false)
+                      navigate({ to: '/rh' as any })
+                    }}
+                  >
+                    <div
+                      className="n-ico"
+                      style={{ background: 'var(--amber-bg)', color: 'var(--amber)' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <rect x="3" y="5" width="18" height="16" rx="2" />
+                        <path d="M3 10h18M8 3v4M16 3v4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <b>Vence em 10 dias</b>
+                      <p>Creiane Alcantara Navegantes — ASO / Documentação.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="forbidden-note"
+                role="button"
+                tabIndex={0}
+                title="Cor proibida do mês: Azul"
+                onClick={() => setShowMonthlyColorsModal(true)}
+              >
+                <button
+                  className="icon-btn forbidden-color"
+                  type="button"
+                  aria-label="Cor proibida do mês: azul"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.2" />
+                    <path d="M6.2 6.2 17.8 17.8" />
+                  </svg>
+                </button>
+                <div className="forbidden-label" aria-hidden="true">
+                  <small>Cor proibida do mês</small>
+                  <b>Azul</b>
+                </div>
+              </div>
+
+              <div
+                className="user-chip cursor-pointer"
+                role="button"
+                tabIndex={0}
+                title="Abrir perfil / configurações"
+                onClick={() => navigate({ to: '/configuracoes' as any })}
+              >
+                <div className="avatar-f" aria-hidden="true">
+                  {currentUser.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    avatarLetter
+                  )}
+                </div>
+                <div>
+                  <b>Olá, {displayFirstName}</b>
+                  <span>{currentUser.role || 'Visão geral da operação'}</span>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+
+              
+              <button
+                className="logout-top-btn"
+                type="button"
+                title="Sair do sistema"
+                onClick={() => setShowLogoutConfirm(true)}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>SAIR</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        {/* Conteúdo da página */}
         {isDashboard ? (
           children
         ) : (
@@ -313,94 +535,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
         ))}
       </div>
-
-      {/* Bottom Status Bar */}
-      {!isDashboard && (
-        <footer 
-          className={`fixed bottom-0 right-0 z-50 flex items-center justify-between transition-all duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
-          style={{
-            left: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
-            height: 'max(36px, calc(36px + env(safe-area-inset-bottom, 0px)))',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
-            paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
-            transition: 'left .48s cubic-bezier(.45,0,.15,1)',
-          }}
-        >
-        
-        {/* Bottom Left: Logout — escondido em mobile pequeno para economizar espaço */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <button 
-            onClick={() => setShowLogoutConfirm(true)}
-            className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors touch-target ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
-            style={{ minWidth: 44, minHeight: 44 }}
-          >
-            <LogOut size={13} />
-            <span className="hidden sm:inline">SAIR</span>
-          </button>
-          
-          <button 
-            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
-            title="Sincronizar Atualizações e Limpar Cache"
-            onClick={handleHardRefresh}
-            style={{ minWidth: 44, minHeight: 44 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
-          </button>
-          
-          {isAdmin(currentUser.name, currentUser.role) && (
-            <Link 
-              to="/admin"
-              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
-              title="Administração"
-              style={{ minWidth: 44, minHeight: 44 }}
-            >
-              <Shield size={16} />
-            </Link>
-          )}
-        </div>
-
-        {/* Bottom Right: Tools */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex justify-center pointer-events-none">
-          <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-5 w-auto object-contain transition-all duration-300 opacity-60 ${isDark ? 'filter brightness-0 invert' : ''}`} />
-        </div>
-
-        {/* Bottom Right: Chat + Status */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <MiniWeatherWidget />
-
-          {/* Chat Icon with Badge */}
-          <button 
-            onClick={toggleSidebar}
-            className={`relative transition-colors ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
-            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            {unreadCountGlobally > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
-                {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
-              </span>
-            )}
-          </button>
-
-          {/* Status Dot */}
-          <button 
-            className={`flex items-center gap-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} relative z-10`}
-            onClick={() => {
-              setShowMonthlyColorsModal(true)
-            }}
-            title="Configurar cores mensais"
-            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${colorStyles[currentColor as keyof typeof colorStyles]?.ping || 'bg-red-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colorStyles[currentColor as keyof typeof colorStyles]?.dot || 'bg-red-500'}`}></span>
-            </span>
-          </button>
-        </div>
-
-      </footer>
-      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

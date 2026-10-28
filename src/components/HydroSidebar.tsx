@@ -13,8 +13,8 @@ export interface NavItemDef {
 
 export const NAV_ITEMS: NavItemDef[] = [
   {
-    id: 'inicio',
-    label: 'Início',
+    id: 'destaques',
+    label: 'Destaques',
     href: '/dashboard',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -36,8 +36,8 @@ export const NAV_ITEMS: NavItemDef[] = [
     ),
   },
   {
-    id: 'instagram',
-    label: 'Instagram',
+    id: 'instacena',
+    label: 'Instacena',
     href: '/instacena',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -127,7 +127,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'planejamento',
     label: 'Planejamento',
-    href: '#',
+    href: '/relatorio-obra/rdo',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -146,6 +146,29 @@ export const NAV_ITEMS: NavItemDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'emergencia',
+    label: 'Emergência',
+    href: '/emergencia',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    id: 'admin',
+    label: 'Administração',
+    href: '/admin',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+  },
 ]
 
 interface HydroSidebarProps {
@@ -160,9 +183,16 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
 
   // Determine active item by current URL path
   const activeIdx = useMemo(() => {
-    if (path === '/dashboard' || path === '/dashboard/') return 0
+    if (path === '/dashboard' || path === '/dashboard/') {
+      return 0
+    }
+    // Specific match for Planejamento -> /relatorio-obra/rdo
+    if (path.startsWith('/relatorio-obra/rdo')) {
+      const planIdx = NAV_ITEMS.findIndex((item) => item.id === 'planejamento')
+      if (planIdx !== -1) return planIdx
+    }
     const foundIdx = NAV_ITEMS.findIndex((item) => {
-      if (item.href === '#' || item.href === '/dashboard') return false
+      if (item.href === '#' || item.href === '/dashboard' || item.id === 'planejamento') return false
       return path.startsWith(item.href)
     })
     return foundIdx !== -1 ? foundIdx : 0
@@ -243,7 +273,7 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
           </div>
         </div>
 
-        {/* Lista contínua de navegação com faixa branca estreita deslizante */}
+        {/* Lista contínua de 14 itens com faixa branca estreita deslizante */}
         <nav aria-label="Navegação principal" id="mainNav">
           <div
             className={`nav-page ${isPageReady ? 'ready' : ''}`}
@@ -317,4 +347,3 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
     </>
   )
 }
-
