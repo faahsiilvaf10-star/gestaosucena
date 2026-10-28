@@ -496,7 +496,9 @@ function DashboardComponent() {
 
   // Participantes reais da Reunião / Presentes hoje
   const people = useMemo(() => {
-    const presentRecords = (todayData.records || []).filter((r: any) => r.status === 'PRESENTE')
+    const presentRecords = (attendanceInfo?.records || []).filter(
+      (r: any) => (r.status || '').toUpperCase() === 'PRESENTE'
+    )
     const presentIds = new Set(presentRecords.map((r: any) => r.funcionario_id))
 
     let matched = activeEmployees.filter((e: any) => presentIds.has(e.id))
@@ -520,7 +522,7 @@ function DashboardComponent() {
         status: 'Presente',
       }
     })
-  }, [todayData.records, activeEmployees])
+  }, [attendanceInfo?.records, activeEmployees])
 
   // Vencimentos e pendências reais (ASOs do rh_efetivo + Permissões de Trabalho)
   const pendencias = useMemo(() => {
