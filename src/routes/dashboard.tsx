@@ -683,7 +683,7 @@ function DashboardComponent() {
   return (
     <div className="hydro-dashboard-root">
       {/* SVG DEFS GLOBAIS PARA GRADIENTES DOS DONUTS E VELOCÍMETROS */}
-      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+      <svg style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
         <defs>
           <linearGradient id="gradGreen" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#4ADE80" />

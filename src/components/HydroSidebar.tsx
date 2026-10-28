@@ -27,7 +27,6 @@ export const NAV_ITEMS: NavItemDef[] = [
     id: 'lembretes',
     label: 'Lembretes',
     href: '/lembretes',
-    badge: '3',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
