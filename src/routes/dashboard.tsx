@@ -441,50 +441,66 @@ function DashboardComponent() {
     }
   }, [fleetData])
 
-  // Aniversariantes reais
+  // Aniversariantes reais (apenas colaboradores ativos do efetivo)
   const aniversariantesMes = useMemo(() => {
-    return (efetivo || [])
+    const currentMonth = getMonth(new Date())
+
+    return (activeEmployees || [])
       .map((emp: any) => {
         if (!emp.raw_data) return null
 
-        const nascKey = Object.keys(emp.raw_data).find((k) =>
-          k.toUpperCase().includes('NASCIMENTO')
-        )
+        const nascKey = Object.keys(emp.raw_data).find((k) => {
+          const upper = k.toUpperCase()
+          return upper.includes('NASCIMENTO') || upper.includes('NASC')
+        })
         if (!nascKey) return null
 
-        let val = emp.raw_data[nascKey]
+        const val = emp.raw_data[nascKey]
         let day = 0
-        let month = 0
+        let month = -1
         let valid = false
 
         if (typeof val === 'number') {
-          const d = new Date((val - (25567 + 2)) * 86400 * 1000)
+          // Serial Excel: 25569 = 01/01/1970
+          const d = new Date((val - 25569) * 86400 * 1000)
+          d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
           if (!isNaN(d.getTime())) {
-            day = d.getUTCDate()
-            month = d.getUTCMonth()
+            day = d.getDate()
+            month = d.getMonth()
             valid = true
           }
-        } else if (typeof val === 'string' && val.includes('/')) {
-          const parts = val.split('/')
-          if (parts.length === 3) {
-            day = Number(parts[0])
-            month = Number(parts[1]) - 1
-            valid = !isNaN(day) && !isNaN(month)
+        } else if (typeof val === 'string') {
+          const s = val.trim()
+          if (s.includes('/')) {
+            const parts = s.split('/')
+            if (parts.length === 3) {
+              day = Number(parts[0])
+              month = Number(parts[1]) - 1
+              valid = !isNaN(day) && !isNaN(month)
+            }
+          } else if (s.includes('-')) {
+            const parts = s.split('-')
+            if (parts.length === 3) {
+              day = Number(parts[2])
+              month = Number(parts[1]) - 1
+              valid = !isNaN(day) && !isNaN(month)
+            }
           }
         }
 
-        if (!valid) return null
+        if (!valid || month !== currentMonth) return null
 
         return {
+          id: emp.id,
           nome: emp.nome,
+          cargo: emp.cargo || '',
           day,
           month,
         }
       })
       .filter(Boolean)
-      .filter((a: any) => a.month === getMonth(new Date()))
       .sort((a: any, b: any) => a.day - b.day)
-  }, [efetivo])
+  }, [activeEmployees])
 
   const aniversariantesHoje = useMemo(
     () => aniversariantesMes.filter((a: any) => a.day === hojeDay),
@@ -1107,34 +1123,44 @@ function DashboardComponent() {
         </div>
         <div className="bday-list">
           {aniversariantesMes.length > 0 ? (
-            aniversariantesMes.slice(0, 4).map((emp: any, idx: number) => (
-              <div key={idx} className="bday">
-                <span className="bday-cake" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke={idx % 2 === 0 ? "#DB2777" : "#7C3AED"} strokeWidth={1.8} />
-                    <path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke={idx % 2 === 0 ? "#F472B6" : "#A78BFA"} strokeWidth={1.6} />
-                    <path d="M12 11V8.6" stroke={idx % 2 === 0 ? "#7C3AED" : "#DB2777"} strokeWidth={1.8} strokeLinecap="round" />
-                    <path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B" />
-                  </svg>
-                </span>
-                <div><b>{emp.nome}</b><small>Parabéns pelo seu dia!</small></div>
-                <span className="bday-day">Dia {String(emp.day).padStart(2, '0')}</span>
-              </div>
-            ))
+            aniversariantesMes.slice(0, 4).map((emp: any, idx: number) => {
+              const isToday = emp.day === hojeDay
+              const hasPassed = emp.day < hojeDay
+              const diff = emp.day - hojeDay
+
+              let subtitle = ''
+              if (isToday) {
+                subtitle = '🎉 É hoje! Parabéns pelo seu dia!'
+              } else if (hasPassed) {
+                subtitle = `Comemorado dia ${String(emp.day).padStart(2, '0')}/${String(new Date().getMonth() + 1).padStart(2, '0')}${emp.cargo ? ` · ${emp.cargo}` : ''}`
+              } else {
+                subtitle = `Faltam ${diff} ${diff === 1 ? 'dia' : 'dias'}${emp.cargo ? ` · ${emp.cargo}` : ''}`
+              }
+
+              return (
+                <div key={emp.id || idx} className="bday">
+                  <span className="bday-cake" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke={idx % 2 === 0 ? "#DB2777" : "#7C3AED"} strokeWidth={1.8} />
+                      <path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke={idx % 2 === 0 ? "#F472B6" : "#A78BFA"} strokeWidth={1.6} />
+                      <path d="M12 11V8.6" stroke={idx % 2 === 0 ? "#7C3AED" : "#DB2777"} strokeWidth={1.8} strokeLinecap="round" />
+                      <path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B" />
+                    </svg>
+                  </span>
+                  <div>
+                    <b>{emp.nome}</b>
+                    <small>{subtitle}</small>
+                  </div>
+                  <span className="bday-day">Dia {String(emp.day).padStart(2, '0')}</span>
+                </div>
+              )
+            })
           ) : (
-            <>
-              <div className="bday">
-                <span className="bday-cake" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke="#DB2777" strokeWidth={1.8}/><path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke="#F472B6" strokeWidth={1.6}/><path d="M12 11V8.6" stroke="#7C3AED" strokeWidth={1.8} strokeLinecap="round"/><path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B"/></svg></span>
-                <div><b>Carlos Andre Mourão Dos Reis</b><small>Parabéns pelo seu dia!</small></div>
-                <span className="bday-day">Dia 01</span>
-              </div>
-              <div className="bday">
-                <span className="bday-cake" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 21h16M5 21v-5.5A1.5 1.5 0 0 1 6.5 14h11A1.5 1.5 0 0 1 19 15.5V21" stroke="#7C3AED" strokeWidth={1.8}/><path d="M5 17.2c1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0 1.2 1.1 2.3 1.1 3.5 0" stroke="#A78BFA" strokeWidth={1.6}/><path d="M12 11V8.6" stroke="#DB2777" strokeWidth={1.8} strokeLinecap="round"/><path className="flame" d="M12 3.4c.95 1.05 1.35 1.95 1.35 2.75a1.35 1.45 0 1 1-2.7 0c0-.8.4-1.7 1.35-2.75Z" fill="#F59E0B"/></svg></span>
-                <div><b>João Carlos Paixão Melo</b><small>Parabéns pelo seu dia!</small></div>
-                <span className="bday-day">Dia 06</span>
-              </div>
-            </>
-          )}</div>
+            <p style={{ margin: '8px 0', fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
+              Nenhum colaborador aniversariando neste mês de {monthName}.
+            </p>
+          )}
+        </div>
       </section>
 
       {/* 5. ACESSO RÁPIDO */}
