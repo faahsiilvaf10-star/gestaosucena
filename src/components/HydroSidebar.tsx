@@ -218,6 +218,9 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
         width: targetEl.offsetWidth,
         height: targetEl.offsetHeight,
       })
+      try {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } catch (_) {}
     } else {
       const extra = 3
       const inset = 8

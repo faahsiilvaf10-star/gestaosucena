@@ -416,7 +416,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }}
       >
         {/* Barra superior persistente em todo o sistema */}
-        <div style={{ padding: '20px 28px 12px 28px', width: '100%' }}>
+        <div className="topbar-container" style={{ width: '100%' }}>
           <header className="topbar">
             <label className="search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

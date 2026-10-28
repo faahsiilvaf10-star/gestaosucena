@@ -852,6 +852,23 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
   white-space: nowrap;
 }
 
+
+.topbar-wrapper {
+  padding: 20px 28px 12px 28px;
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (max-width: 900px) {
+  .topbar-wrapper {
+    padding: 14px 16px 8px 16px;
+  }
+}
+@media (max-width: 640px) {
+  .topbar-wrapper {
+    padding: 10px 12px 6px 12px;
+  }
+}
+
 /* Topbar row layout */
 .topbar {
   display: flex !important;
@@ -882,4 +899,514 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 .user-chip {
   flex: none !important;
   white-space: nowrap !important;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .top-actions {
+    order: 1 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-left: 0 !important;
+  }
+  .search {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 42px !important;
+  }
+  .search input {
+    font-size: 13.5px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .top-actions {
+    gap: 6px !important;
+  }
+  .user-chip {
+    padding: 4px 8px 4px 4px !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+  }
+  .user-chip b {
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+  .user-chip span {
+    display: none !important;
+  }
+  .user-chip > svg {
+    display: none !important;
+  }
+  .forbidden-note {
+    gap: 2px !important;
+  }
+  .forbidden-note .forbidden-label {
+    padding: 4px 7px !important;
+  }
+  .forbidden-note .forbidden-label small {
+    display: none !important;
+  }
+  .forbidden-note .forbidden-label b {
+    font-size: 11.5px !important;
+  }
+  .forbidden-note .icon-btn.forbidden-color {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  .forbidden-note .icon-btn.forbidden-color svg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .logout-top-btn {
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+  }
+  .logout-top-btn span {
+    display: none !important;
+  }
+  .icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+@media (max-width: 380px) {
+  .user-chip b {
+    display: none !important;
+  }
+  .user-chip {
+    padding: 2px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ==========================================================
+   MOBILE & TABLET RESPONSIVE SYSTEM (SISTEMA FLUIDO SEM CORTES)
+   ========================================================== */
+@media (max-width: 900px) {
+  .sidebar {
+    position: relative !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    border: 0 !important;
+    border-bottom: 1px solid #26262A !important;
+    border-radius: 0 0 20px 20px !important;
+    padding: 12px 14px 10px 14px !important;
+    box-shadow: 0 10px 24px rgba(11,11,12,.18) !important;
+  }
+  .sidebar:before, .sidebar:after {
+    display: none !important;
+  }
+  .sidebar .brand {
+    padding: 0 4px 8px 4px !important;
+    justify-content: flex-start !important;
+  }
+  .sidebar .brand-name b {
+    font-size: 17px !important;
+  }
+  .sidebar .brand-name span {
+    font-size: 9.5px !important;
+    letter-spacing: .2em !important;
+  }
+  .sidebar nav#mainNav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding: 4px 2px 6px 2px !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .sidebar nav#mainNav::-webkit-scrollbar {
+    display: none !important;
+  }
+  .sidebar .nav-item {
+    width: auto !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+    padding: 7px 13px !important;
+    font-size: 12.5px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    border-radius: 99px !important;
+    background: #1D1D21 !important;
+    color: #D8D8DE !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+  .sidebar .nav-item svg {
+    width: 16px !important;
+    height: 16px !important;
+    color: #F2C230 !important;
+  }
+  .sidebar .nav-item.active {
+    background: #FFFFFF !important;
+    color: #1A1400 !important;
+    font-weight: 800 !important;
+  }
+  .sidebar .nav-item.active svg {
+    color: #1A1400 !important;
+  }
+  .sidebar .nav-badge {
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 10px !important;
+    padding: 0 5px !important;
+    margin-left: 4px !important;
+  }
+  .sidebar .nav-page {
+    display: none !important;
+  }
+  .sidebar-foot {
+    display: none !important;
+  }
+  .sidebar-toggle {
+    top: 10px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .sidebar-toggle svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .app.sidebar-collapsed .sidebar-toggle {
+    left: 12px !important;
+    right: auto !important;
+    top: 10px !important;
+  }
+  .main, .vt-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hydro-dashboard-page {
+    padding: 0 12px 24px !important;
+    gap: 16px !important;
+  }
+  .card-pad {
+    padding: 16px 14px !important;
+  }
+  /* Hero */
+  .hero {
+    min-height: 160px !important;
+    border-radius: 16px !important;
+  }
+  .hero-overlay {
+    background: linear-gradient(180deg, rgba(255, 252, 240, 0.96) 0%, rgba(255, 252, 240, 0.90) 65%, rgba(20, 30, 50, 0.45) 100%) !important;
+  }
+  .hero-content {
+    padding: 18px 16px !important;
+    max-width: 100% !important;
+  }
+  .hero h1 {
+    font-size: clamp(22px, 6vw, 28px) !important;
+    margin: 8px 0 4px !important;
+  }
+  .hero p {
+    font-size: 13.5px !important;
+    line-height: 1.4 !important;
+  }
+  .hero-meta {
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+  .hero-meta .pill {
+    padding: 4px 8px !important;
+    font-size: 11.5px !important;
+  }
+  .hero-script {
+    display: none !important;
+  }
+
+  /* KPIs */
+  .kpis {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .kpi {
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+    gap: 10px !important;
+  }
+  .kpi-body {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+
+  /* DDS Cards */
+  .dds-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Content grid & side stack */
+  .content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .side-stack {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .safety {
+    min-height: 200px !important;
+    border-radius: 16px !important;
+  }
+  .safety-body {
+    padding: 18px 16px !important;
+  }
+  .safety h3 {
+    font-size: 18px !important;
+  }
+  .safety p {
+    font-size: 13px !important;
+  }
+  .weather {
+    border-radius: 16px !important;
+    padding: 16px 14px !important;
+  }
+
+  /* Pendências */
+  .section-divider {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .pend-attention {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+  .pend {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    border-radius: 12px !important;
+  }
+  .pend b {
+    font-size: 13px !important;
+    word-break: break-word !important;
+  }
+  .pend span {
+    font-size: 11.5px !important;
+  }
+  .pend-days {
+    font-size: 11.5px !important;
+  }
+  .pend-tag {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Birthday Card */
+  .bday-card {
+    border-radius: 16px !important;
+    padding: 16px 14px !important;
+  }
+  .bday-card .card-head {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .bday-badge {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+  .bday {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    flex: 1 1 100% !important;
+    border-radius: 12px !important;
+  }
+  .bday b {
+    font-size: 13px !important;
+    word-break: break-word !important;
+  }
+  .bday small {
+    font-size: 11px !important;
+  }
+  .bday-day {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Quick Access */
+  .quick {
+    border-radius: 16px !important;
+  }
+  .quick-label {
+    clip-path: none !important;
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+    font-size: 13.5px !important;
+  }
+  .quick-items {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    width: 100% !important;
+  }
+  .quick-item {
+    border-left: 0 !important;
+    border-top: 1px solid var(--line2) !important;
+    padding: 12px 8px !important;
+    font-size: 12px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  .quick-item:nth-child(even) {
+    border-left: 1px solid var(--line2) !important;
+  }
+
+  /* Footer */
+  footer {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 8px !important;
+    padding: 12px 4px 24px !important;
+  }
+  footer .foot-brand {
+    text-align: center !important;
+  }
+}
+
+/* Telas pequenas (<= 520px) — celulares padrão */
+@media (max-width: 520px) {
+  /* DDS Card Mobile Grid: foto e info na linha 1, botão postar na linha 2 */
+  .dds-card {
+    display: grid !important;
+    grid-template-columns: 74px 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 10px 12px !important;
+    align-items: center !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+  .dds-photo {
+    width: 74px !important;
+    height: 74px !important;
+    border-radius: 12px !important;
+    grid-row: 1 !important;
+    grid-column: 1 !important;
+  }
+  .dds-main {
+    grid-row: 1 !important;
+    grid-column: 2 !important;
+    min-width: 0 !important;
+  }
+  .dds-name {
+    font-size: 14.5px !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+  .dds-tema {
+    font-size: 11.5px !important;
+    padding: 6px 8px !important;
+  }
+  .dds-side {
+    grid-row: 2 !important;
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding-top: 6px !important;
+  }
+  .dds-post {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+  .dds-chev {
+    display: none !important;
+  }
+
+  /* Fleet Gauges Mobile */
+  .fleet {
+    grid-template-columns: 1fr !important;
+  }
+  .fleet-half {
+    padding: 0 !important;
+  }
+  .fleet-half + .fleet-half {
+    border-left: 0 !important;
+    border-top: 1px solid var(--line2) !important;
+    padding-top: 16px !important;
+    margin-top: 16px !important;
+  }
+  .fleet-body {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 12px !important;
+  }
+  .gauge {
+    margin: 0 auto !important;
+    width: 168px !important;
+  }
+  .gauge-dial {
+    width: 168px !important;
+    height: 108px !important;
+  }
+  .gauge-dial svg {
+    width: 168px !important;
+    height: 108px !important;
+  }
+  .gauge-center b {
+    font-size: 26px !important;
+  }
+  .pct-chip {
+    width: 100% !important;
+    max-width: 220px !important;
+    text-align: center !important;
+    padding: 10px 14px !important;
+  }
+  .fleet-legend {
+    justify-content: center !important;
+  }
+
+  /* Confetes e balões decorativos em mobile */
+  .bday-balloon.b1, .bday-balloon.b2, .bday-balloon.b3 {
+    display: none !important;
+  }
+  .bday-bunting svg.b2 {
+    display: none !important;
+  }
+}
+
+/* Tabelas e Modais Responsivos Globais */
+.modal-content, [role="dialog"] {
+  max-width: min(94vw, 560px) !important;
+  box-sizing: border-box !important;
+}
+
+table {
+  max-width: 100% !important;
+}
+.overflow-x-auto, .table-container, .table-responsive {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
