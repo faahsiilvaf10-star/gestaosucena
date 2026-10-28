@@ -3,14 +3,26 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import AlertCircle from 'lucide-react/dist/esm/icons/circle-alert.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
+import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
+import Check from 'lucide-react/dist/esm/icons/check.js';
+import Lock from 'lucide-react/dist/esm/icons/lock.js';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import { useState, useEffect, useRef } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 
 import { supabase } from '../lib/supabase'
 import { AvatarCropperModal } from '../components/profile/AvatarCropperModal'
 import { getCroppedImg } from '../lib/cropImage'
 import { Area } from 'react-easy-crop'
 import { VerifiedBadge, isAdmin } from '../components/ui/VerifiedBadge'
+import { 
+  AVAILABLE_ENVIRONMENTS, 
+  getUserEnvironmentAccess, 
+  hasEnvironmentAccess, 
+  UserEnvironmentAccessMap,
+  EnvironmentInfo 
+} from '../lib/environmentAccess'
 
 export const Route = createFileRoute('/configuracoes')({
   component: ConfiguracoesRoute,
@@ -32,6 +44,16 @@ function ConfiguracoesRoute() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [role, setRole] = useState('')
   
+  // Environment Data
+  const [activeEnv, setActiveEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+  const [accessMap, setAccessMap] = useState<UserEnvironmentAccessMap>({})
+  const [loadingEnvAccess, setLoadingEnvAccess] = useState(true)
+
   // Image Cropping
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [isCropperOpen, setIsCropperOpen] = useState(false)
@@ -70,7 +92,11 @@ function ConfiguracoesRoute() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const user = await getValidUser()
+        const [user, envAccess] = await Promise.all([
+          getValidUser(),
+          getUserEnvironmentAccess().catch(() => ({} as UserEnvironmentAccessMap))
+        ])
+
         if (user) {
           setCurrentUser(user)
           setName(user.user_metadata?.full_name || '')
@@ -84,14 +110,52 @@ function ConfiguracoesRoute() {
           navigate({ to: '/' })
           return
         }
+
+        if (envAccess) {
+          setAccessMap(envAccess)
+        }
       } catch (err) {
         console.error('Erro ao carregar perfil:', err)
       } finally {
         setLoading(false)
+        setLoadingEnvAccess(false)
       }
     }
     loadProfile()
   }, [])
+
+  const isEnvAccessible = (envId: string) => {
+    if (!currentUser) return false
+    return hasEnvironmentAccess(
+      currentUser.id,
+      envId,
+      accessMap,
+      name || currentUser.user_metadata?.full_name,
+      role || currentUser.user_metadata?.role
+    )
+  }
+
+  const handleSelectEnv = (env: EnvironmentInfo) => {
+    if (env.id === activeEnv) return
+
+    if (!isEnvAccessible(env.id)) {
+      toast.error(`Acesso restrito ao ambiente ${env.name}.`, {
+        description: 'Solicite a liberação a um administrador do sistema no painel de administração.'
+      })
+      return
+    }
+
+    try {
+      localStorage.setItem('sucena_environment', env.id)
+      setActiveEnv(env.id)
+      toast.success(`Ambiente alterado para ${env.name}!`, {
+        description: 'Os dados do sistema agora refletem a unidade selecionada.'
+      })
+      window.dispatchEvent(new CustomEvent('sucena_environment_change', { detail: env.id }))
+    } catch (err) {
+      console.error('Erro ao alternar ambiente:', err)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -230,7 +294,7 @@ function ConfiguracoesRoute() {
         
         <div className="mb-8">
           <h1 className="tracking-tight" style={{ fontSize: 'clamp(24px, 7vw, 54px)', lineHeight: '1' }}>Configurações de Perfil</h1>
-          <p className="text-gray-600 dark:text-white/70 text-sm">Gerencie suas informações pessoais, e-mail e senha de acesso.</p>
+          <p className="text-gray-600 dark:text-white/70 text-sm">Gerencie suas informações pessoais, e-mail, senha e ambiente de trabalho.</p>
         </div>
 
         {message && (
@@ -242,8 +306,8 @@ function ConfiguracoesRoute() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Avatar Section */}
-          <div className="lg:col-span-1">
+          {/* Avatar & Ambiente Section */}
+          <div className="lg:col-span-1 space-y-6">
             <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 p-6 rounded-2xl flex flex-col items-center text-center">
               <div className="relative group mb-4">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 dark:border-[#1a1a1c] bg-gray-100 dark:bg-[#1a1a1c]">
@@ -278,6 +342,90 @@ function ConfiguracoesRoute() {
                 {isAdmin(name, role) && <VerifiedBadge />}
               </h3>
               <p className="text-sm text-gray-500 dark:text-white/70 break-all">{email}</p>
+            </div>
+
+            {/* Card de Ambiente Operacional */}
+            <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/5 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                    <Building2 size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#1c1d21] dark:text-white">Ambiente Operacional</h3>
+                    <p className="text-[11px] text-gray-500 dark:text-white/60">Unidade ativa no sistema</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista dos ambientes com feedback visual premium */}
+              <div className="space-y-2">
+                {AVAILABLE_ENVIRONMENTS.map(env => {
+                  const isActive = activeEnv === env.id
+                  const hasAccess = isEnvAccessible(env.id)
+
+                  return (
+                    <div
+                      key={env.id}
+                      onClick={() => handleSelectEnv(env)}
+                      role="button"
+                      tabIndex={0}
+                      className={`group relative p-3.5 rounded-xl border transition-all text-left flex items-start justify-between gap-3 ${
+                        isActive
+                          ? 'border-yellow-500/60 bg-yellow-500/[0.08] dark:bg-yellow-500/[0.12] shadow-sm'
+                          : hasAccess
+                            ? 'border-gray-200 dark:border-white/10 hover:border-yellow-500/30 hover:bg-gray-50 dark:hover:bg-white/[0.02] cursor-pointer'
+                            : 'border-gray-200/60 dark:border-white/5 opacity-60 bg-gray-50/50 dark:bg-black/20 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs tracking-tight text-[#1c1d21] dark:text-white">
+                            {env.name}
+                          </span>
+                          {isActive && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-yellow-500 text-black">
+                              <Check size={11} strokeWidth={3} />
+                              Ativo
+                            </span>
+                          )}
+                          {!hasAccess && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
+                              <Lock size={10} />
+                              Bloqueado
+                            </span>
+                          )}
+                        </div>
+                        {env.contract && (
+                          <p className="text-[11px] text-gray-500 dark:text-white/60 mt-0.5 font-medium">
+                            {env.contract}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-gray-400 dark:text-white/50 mt-1 line-clamp-2">
+                          {env.description}
+                        </p>
+                      </div>
+
+                      {hasAccess && !isActive && (
+                        <span className="text-[11px] font-semibold text-yellow-600 dark:text-yellow-400 shrink-0 group-hover:translate-x-0.5 transition-transform flex items-center gap-1 mt-0.5">
+                          Trocar
+                          <ArrowRight size={12} />
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Botão rápido para o portal de seleção */}
+              <button
+                type="button"
+                onClick={() => navigate({ to: '/ambientes' as any })}
+                className="w-full text-center text-xs font-semibold text-gray-600 dark:text-white/70 hover:text-yellow-500 dark:hover:text-yellow-400 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>Ver portal completo de ambientes</span>
+                <ArrowRight size={13} />
+              </button>
             </div>
           </div>
 
@@ -401,5 +549,3 @@ function ConfiguracoesRoute() {
     </>
   )
 }
-
-
