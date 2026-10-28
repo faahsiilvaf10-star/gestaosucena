@@ -869,7 +869,7 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 @media (max-width: 768px) {
   .topbar-container,
   .topbar-wrapper {
-    padding: 12px 14px 6px 14px !important;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 14px 10px 14px !important;
   }
 }
 
@@ -1166,7 +1166,7 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
   /* Botão amarelo flutuante de toggle no mobile */
   .sidebar-toggle {
     position: fixed !important;
-    top: 14px !important;
+    top: calc(26px + env(safe-area-inset-top, 0px)) !important;
     left: calc(min(85vw, 290px) - 16px) !important;
     right: auto !important;
     z-index: 110 !important;
@@ -1194,7 +1194,7 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
   .app.sidebar-collapsed .sidebar-toggle {
     left: 12px !important;
     right: auto !important;
-    top: 14px !important;
+    top: calc(26px + env(safe-area-inset-top, 0px)) !important;
   }
 
   .app.sidebar-collapsed .sidebar-toggle svg {
@@ -1565,31 +1565,37 @@ table {
   .btn-requisicao-rapida-mobile {
     display: inline-flex !important;
     align-items: center !important;
+    justify-content: center !important;
     gap: 8px !important;
+    flex: 1 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: 44px !important;
     background: linear-gradient(135deg, var(--yellow), #FFD84D) !important;
     color: #1A1400 !important;
     font-weight: 800 !important;
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     letter-spacing: -0.01em !important;
-    padding: 8px 16px 8px 14px !important;
+    padding: 0 18px !important;
     border-radius: 9999px !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.7) !important;
     box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     cursor: pointer !important;
     user-select: none !important;
     -webkit-tap-highlight-color: transparent !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-    margin-left: auto !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .btn-requisicao-rapida-mobile:active {
-    transform: scale(0.95) !important;
+    transform: scale(0.97) !important;
     box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25) !important;
   }
 
   .btn-requisicao-rapida-mobile svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 17px !important;
+    height: 17px !important;
     color: #1A1400 !important;
     flex-shrink: 0 !important;
   }
@@ -1605,11 +1611,13 @@ table {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
     width: 100% !important;
     min-height: 48px !important;
-    padding-left: 52px !important; /* Espaço para o botão amarelo flutuante de expandir a barra */
+    padding-left: 56px !important; /* Espaço para o botão amarelo flutuante de expandir a barra */
+    overflow: visible !important;
+    box-sizing: border-box !important;
   }
 
   /* Barra de Ações (Sino, Cor Proibida, Perfil e Sair) FIXADA NO RODAPÉ NO MOBILE */
