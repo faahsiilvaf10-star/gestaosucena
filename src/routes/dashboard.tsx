@@ -121,50 +121,46 @@ function DashboardComponent() {
   // Data de hoje formatada
   const todayStr = format(new Date(), 'yyyy-MM-dd')
 
-  // Presenças reais do banco (se hoje não tiver chamada feita ainda, herda o dia mais recente salvo com registros)
+  // Presenças reais do dia atual (busca estritamente a lista de presença salva de hoje)
   const { data: attendanceInfo } = useQuery({
-    queryKey: ['presencas_dashboard_real', todayStr],
+    queryKey: ['presencas_dashboard_hoje', todayStr],
     queryFn: async () => {
-      const days = []
-      for (let i = 6; i >= 0; i--) {
-        days.push(format(subDays(new Date(), i), 'yyyy-MM-dd'))
-      }
+      const { data, error } = await supabase
+        .from('rh_presencas')
+        .select('data, status, funcionario_id, area')
+        .eq('data', todayStr)
 
-      const [weekRes, latestRes] = await Promise.all([
-        supabase
-          .from('rh_presencas')
-          .select('data, status, funcionario_id, area')
-          .in('data', days),
-        supabase
-          .from('rh_presencas')
-          .select('data, status, funcionario_id, area')
-          .order('data', { ascending: false })
-          .limit(100),
-      ])
+      if (error) throw error
 
-      if (weekRes.error) throw weekRes.error
-
-      const weekData = weekRes.data || []
-      const latestData = latestRes.data || []
-
-      // Registros de hoje
-      const todayRecords = weekData.filter((r: any) => r.data === todayStr)
-      const hasToday = todayRecords.length > 0
-
-      // Se hoje tiver registros salvos usa hoje, senão usa a data mais recente registrada no banco
-      const fallbackDate = latestData[0]?.data || todayStr
-      const activeRecords = hasToday ? todayRecords : latestData.filter((r: any) => r.data === fallbackDate)
-      const activeDate = hasToday ? todayStr : fallbackDate
+      const todayRecords = (data || []).filter((r: any) => (r.status || '').toUpperCase() !== 'REMOVIDO')
+      const isSaved = todayRecords.length > 0
 
       return {
-        activeDate,
-        isToday: hasToday,
-        records: activeRecords,
+        isSaved,
+        records: todayRecords,
       }
     },
-    refetchInterval: 120000,
-    staleTime: 60 * 1000,
+    refetchInterval: 30000,
+    staleTime: 10 * 1000,
   })
+
+  // Invalida a query quando houver alteração em tempo real em rh_presencas
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-presencas-rt')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rh_presencas' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['presencas_dashboard_hoje'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [queryClient])
 
   // Buscar efetivo completo (Dados reais)
   const { data: efetivo = [] } = useQuery({
@@ -191,10 +187,17 @@ function DashboardComponent() {
 
   const totalFuncionarios = activeEmployees.length > 0 ? activeEmployees.length : (efetivo.length > 0 ? efetivo.length : 48)
 
-  const { displayPresentes, displayAusencias, pctPresenca, pctAusencia } = useMemo(() => {
+  const { displayPresentes, displayAusencias, pctPresenca, pctAusencia, isAttendanceSaved } = useMemo(() => {
+    const isSaved = Boolean(attendanceInfo?.isSaved)
     const records = attendanceInfo?.records || []
-    if (records.length === 0) {
-      return { displayPresentes: 0, displayAusencias: 0, pctPresenca: 0, pctAusencia: 0 }
+    if (!isSaved || records.length === 0) {
+      return {
+        displayPresentes: 0,
+        displayAusencias: 0,
+        pctPresenca: 0,
+        pctAusencia: 0,
+        isAttendanceSaved: false,
+      }
     }
 
     const presentes = records.filter((r: any) => (r.status || '').toUpperCase() === 'PRESENTE').length
@@ -209,13 +212,14 @@ function DashboardComponent() {
       : Math.max(0, totalFuncionarios - presentes)
 
     const pctP = totalFuncionarios > 0 ? Math.min(100, Math.round((presentes / totalFuncionarios) * 100)) : 0
-    const pctA = totalFuncionarios > 0 ? Math.min(100, Math.max(0, 100 - pctP)) : 0
+    const pctA = totalFuncionarios > 0 ? Math.min(100, Math.round((ausencias / totalFuncionarios) * 100)) : 0
 
     return {
       displayPresentes: presentes,
       displayAusencias: ausencias,
       pctPresenca: pctP,
       pctAusencia: pctA,
+      isAttendanceSaved: true,
     }
   }, [attendanceInfo, totalFuncionarios])
 
@@ -788,7 +792,14 @@ function DashboardComponent() {
             <div className="donut arc-green" role="img" tabIndex={0} aria-label={`${displayPresentes} de ${totalFuncionarios} presentes, ${pctPresenca} por cento de presença. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("presenca")}>
               <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="var(--line)" strokeWidth="10"/><circle ref={donutPresencaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradGreen)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={presencaTarget} data-pct={pctPresenca} /></svg>
               <div className="donut-center"><b data-count={displayPresentes}>{displayPresentes}</b><span>de {totalFuncionarios}</span></div>
-              <span className="donut-tip">{pctPresenca}% de presença<small>{displayPresentes} de {totalFuncionarios} presentes hoje · clique para reanimar</small></span>
+              <span className="donut-tip">
+                {isAttendanceSaved ? `${pctPresenca}% de presença` : 'Aguardando lista de hoje'}
+                <small>
+                  {isAttendanceSaved
+                    ? `${displayPresentes} de ${totalFuncionarios} presentes hoje · clique para reanimar`
+                    : 'Nenhum registro de presença salvo para hoje'}
+                </small>
+              </span>
             </div>
             <div className="kpi-foot" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--green)' }}><circle cx="9" cy="8" r="3.5"/><path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8"/></svg><div><b style={{ color: 'var(--green)' }} data-count-pct={pctPresenca}>{pctPresenca}%</b><br/><span>de presença</span></div></div>
           </div>
@@ -800,7 +811,14 @@ function DashboardComponent() {
             <div className="donut arc-red" role="img" tabIndex={0} aria-label={`${displayAusencias} de ${totalFuncionarios} ausências, ${pctAusencia} por cento. Clique para reanimar.`} title="Clique para reanimar" onClick={() => handlePlayDonut("ausencia")}>
               <svg width="104" height="104" viewBox="0 0 96 96"><circle className="donut-track" cx="48" cy="48" r="40" fill="none" stroke="#FDE8E8" strokeWidth="10"/><circle ref={donutAusenciaRef} className="donut-arc" cx="48" cy="48" r="40" fill="none" stroke="url(#gradRed)" strokeWidth="10" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={ausenciaTarget} data-pct={pctAusencia} /></svg>
               <div className="donut-center"><b data-count={displayAusencias}>{displayAusencias}</b><span>de {totalFuncionarios}</span></div>
-              <span className="donut-tip">{pctAusencia}% de ausências<small>{displayAusencias} de {totalFuncionarios} ausências hoje · clique para reanimar</small></span>
+              <span className="donut-tip">
+                {isAttendanceSaved ? `${pctAusencia}% de ausências` : 'Aguardando lista de hoje'}
+                <small>
+                  {isAttendanceSaved
+                    ? `${displayAusencias} de ${totalFuncionarios} ausências hoje · clique para reanimar`
+                    : 'Nenhum registro de presença salvo para hoje'}
+                </small>
+              </span>
             </div>
             <div className="kpi-foot red" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--red)' }}><circle cx="9" cy="8" r="3.5"/><path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6"/></svg><div><b style={{ color: 'var(--red)' }} data-count-pct={pctAusencia}>{pctAusencia}%</b><br/><span>de ausências</span></div></div>
           </div>
