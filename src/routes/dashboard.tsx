@@ -173,7 +173,7 @@ function DashboardComponent() {
       const { data, error } = await supabase
         .from('rh_efetivo')
         .select(
-          'id, nome, avatar_url, cargo, setor, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco, aso_admissional_2'
+          'id, nome, cargo, setor, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco, aso_admissional_2'
         )
       if (error) throw error
       return data || []
@@ -550,24 +550,42 @@ function DashboardComponent() {
     now.setHours(0, 0, 0, 0)
 
     activeEmployees.forEach((emp: any) => {
-      const asoStr = emp.validade_aso_efetiva || emp.aso_periodico || emp.aso_admissional
-      if (!asoStr) return
+      // Coleta todas as datas de exames disponíveis
+      const dates = [
+        emp.aso_admissional,
+        emp.aso_periodico,
+        emp.retorno_ao_trabalho,
+        emp.mudanca_de_risco,
+        emp.aso_admissional_2,
+      ].filter(Boolean) as string[]
+
+      // Se validade_aso_efetiva já existe, usa ela; senão calcula + 1 ano a partir do exame mais recente
+      let validadeString = emp.validade_aso_efetiva
+      if (dates.length > 0 && !validadeString) {
+        const latestDate = dates.reduce((a: string, b: string) => (a > b ? a : b))
+        const d = new Date(latestDate + 'T12:00:00')
+        d.setFullYear(d.getFullYear() + 1)
+        validadeString = d.toISOString().split('T')[0]
+      }
+
+      if (!validadeString) return
 
       let asoDate: Date | null = null
-      if (typeof asoStr === 'string') {
-        if (asoStr.includes('/')) {
-          const parts = asoStr.split('/')
+      if (typeof validadeString === 'string') {
+        if (validadeString.includes('/')) {
+          const parts = validadeString.split('/')
           if (parts.length === 3) asoDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
         } else {
-          asoDate = parseISO(asoStr)
+          const parts = validadeString.split('-')
+          if (parts.length === 3) asoDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
         }
-      } else if (typeof asoStr === 'number') {
-        asoDate = new Date((asoStr - (25567 + 2)) * 86400 * 1000)
       }
 
       if (asoDate && !isNaN(asoDate.getTime())) {
         asoDate.setHours(0, 0, 0, 0)
-        const diff = differenceInDays(asoDate, now)
+        const diff = Math.ceil((asoDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+        // Inclui todos os Vencidos (diff < 0) e os Vencendo em até 30 dias (diff <= 30)
         if (diff < 0) {
           list.push({
             id: `aso-venc-${emp.id}`,
@@ -575,7 +593,7 @@ function DashboardComponent() {
             detail: 'ASO / Documentação',
             tag: 'Vencido',
             urgent: true,
-            href: '/rh',
+            href: '/rh/efetivo',
             diff,
           })
         } else if (diff <= 30) {
@@ -583,9 +601,9 @@ function DashboardComponent() {
             id: `aso-warn-${emp.id}`,
             name: emp.nome,
             detail: 'ASO / Documentação',
-            tag: `${diff} dias`,
-            urgent: diff <= 7,
-            href: '/rh',
+            tag: diff === 0 ? 'Vence hoje' : `${diff} dias`,
+            urgent: diff <= 5,
+            href: '/rh/efetivo',
             diff,
           })
         }
@@ -595,7 +613,7 @@ function DashboardComponent() {
     expiringPTs.forEach((pt: any) => {
       const vencDate = parseISO(pt.data_vencimento)
       vencDate.setHours(0, 0, 0, 0)
-      const diff = differenceInDays(vencDate, now)
+      const diff = Math.ceil((vencDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       list.push({
         id: `pt-${pt.id}`,
         name: pt.titulo || pt.atividade || `Permissão de Trabalho #${pt.numero || pt.id}`,
@@ -608,29 +626,6 @@ function DashboardComponent() {
     })
 
     list.sort((a, b) => a.diff - b.diff)
-
-    if (list.length === 0) {
-      list.push(
-        {
-          id: 'pend-1',
-          name: 'Fabio Genilson Fernandes Dos Remedios',
-          detail: 'Contrato / Documentação',
-          tag: 'Vencido',
-          urgent: true,
-          href: '/documentos',
-          diff: -5,
-        },
-        {
-          id: 'pend-2',
-          name: 'Creiane Alcantara Navegantes',
-          detail: 'ASO / Documentação',
-          tag: '10 dias',
-          urgent: false,
-          href: '/rh',
-          diff: 10,
-        }
-      )
-    }
 
     return list
   }, [activeEmployees, expiringPTs])
@@ -1007,16 +1002,21 @@ function DashboardComponent() {
         )}
 
         {pendencias.length > 0 && (
-          <section className="card card-pad" aria-label="Vencimentos e pendências">
-            <div className="card-head">
-              <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.5"/></svg></div>
-              <div><h3>Vencimentos e pendências</h3><p>Atenção aos prazos e documentos</p></div>
-              <a className="link-all" href="/rh" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
-              <span className="count-badge" aria-label={`${pendencias.length} pendências`}>{pendencias.length}</span>
+          <section className="card card-pad pendencias-alert" aria-label="Vencimentos e pendências">
+            <div className="section-divider flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.5v.5"/></svg></div>
+                <div><h3>Vencimentos e pendências</h3><p>Atenção aos prazos e documentos</p></div>
+                <span className="pend-attention"><i></i>ATENÇÃO</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a className="link-all" href="/rh/efetivo" onClick={(e) => { e.preventDefault(); navigate({ to: '/rh/efetivo' as any }); }}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
+                <span className="count-badge" aria-label={`${pendencias.length} pendências`}>{pendencias.length}</span>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              {filteredPendencias.slice(0, 4).map((item: any) => (
+            <div className="pend-list space-y-2" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+              {filteredPendencias.map((item: any) => (
                 <button
                   key={item.id}
                   className={`pend ${item.urgent ? 'urgent' : 'pend-expiring'}`}
