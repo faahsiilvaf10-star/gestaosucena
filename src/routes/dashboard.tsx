@@ -85,6 +85,10 @@ function DashboardComponent() {
 
   const donutPresencaRef = useRef<SVGCircleElement | null>(null)
   const donutAusenciaRef = useRef<SVGCircleElement | null>(null)
+  const pipaRaf = useRef<number | null>(null)
+  const oficinaRaf = useRef<number | null>(null)
+  const donutPresencaRaf = useRef<number | null>(null)
+  const donutAusenciaRaf = useRef<number | null>(null)
   const bdayCardRef = useRef<HTMLElement | null>(null)
 
   // Escape key handler for image modal
@@ -697,16 +701,24 @@ function DashboardComponent() {
     }
   }
 
-  // Velocímetro Gauge Replay
-  const replayGauge = (type: 'pipa' | 'oficina') => {
+  // Velocímetro Gauge Animation
+  const replayGauge = (type: 'pipa' | 'oficina', targetPct?: number) => {
     const isPipa = type === 'pipa'
-    const pct = isPipa ? fleetMetrics.pctOperation : fleetMetrics.pctMaintenance
+    const pct = typeof targetPct === 'number' ? targetPct : (isPipa ? fleetMetrics.pctOperation : fleetMetrics.pctMaintenance)
 
     const arcEl = isPipa ? pipaArcRef.current : oficinaArcRef.current
     const needleEl = isPipa ? pipaNeedleRef.current : oficinaNeedleRef.current
+    const rafRef = isPipa ? pipaRaf : oficinaRaf
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+
+    if (!arcEl && !needleEl) return
 
     let start: number | null = null
-    const dur = 1250
+    const dur = 1200
 
     const step = (ts: number) => {
       if (!start) start = ts
@@ -722,44 +734,89 @@ function DashboardComponent() {
       }
 
       if (p < 1) {
-        requestAnimationFrame(step)
+        rafRef.current = requestAnimationFrame(step)
+      } else {
+        rafRef.current = null
       }
     }
 
-    requestAnimationFrame(step)
+    rafRef.current = requestAnimationFrame(step)
   }
 
-  // Play Donut Replay
-  const handlePlayDonut = (type: 'presenca' | 'ausencia') => {
+  // Play Donut Animation
+  const handlePlayDonut = (type: 'presenca' | 'ausencia', targetPct?: number) => {
     const isPresenca = type === 'presenca'
-    const pct = isPresenca ? pctPresenca : pctAusencia
-    const target = CIRC - (CIRC * pct) / 100
+    const pct = typeof targetPct === 'number' ? targetPct : (isPresenca ? pctPresenca : pctAusencia)
     const arcEl = isPresenca ? donutPresencaRef.current : donutAusenciaRef.current
+    const rafRef = isPresenca ? donutPresencaRaf : donutAusenciaRaf
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
 
     if (!arcEl) return
-    arcEl.style.transition = 'none'
-    arcEl.style.strokeDashoffset = String(CIRC)
-    void arcEl.getBoundingClientRect()
-    arcEl.style.transition = 'stroke-dashoffset 1.15s cubic-bezier(.22,.9,.28,1)'
-    arcEl.style.strokeDashoffset = String(target)
+
+    let start: number | null = null
+    const dur = 1200
+
+    const step = (ts: number) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      const cur = pct * eased
+
+      arcEl.style.strokeDashoffset = String(CIRC - (CIRC * cur) / 100)
+
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(step)
+      } else {
+        rafRef.current = null
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(step)
   }
 
-  // Trigger animations on mount and when attendance metrics update
+  // Limpeza de requestAnimationFrame no desmonte
+  useEffect(() => {
+    return () => {
+      if (pipaRaf.current) cancelAnimationFrame(pipaRaf.current)
+      if (oficinaRaf.current) cancelAnimationFrame(oficinaRaf.current)
+      if (donutPresencaRaf.current) cancelAnimationFrame(donutPresencaRaf.current)
+      if (donutAusenciaRaf.current) cancelAnimationFrame(donutAusenciaRaf.current)
+    }
+  }, [])
+
+  // Dispara animações ao montar o componente
   useEffect(() => {
     const timer = setTimeout(() => {
-      replayGauge('pipa')
-      replayGauge('oficina')
       handlePlayDonut('presenca')
       handlePlayDonut('ausencia')
+      replayGauge('pipa')
+      replayGauge('oficina')
       triggerBdayBurst()
-    }, 350)
+    }, 200)
     return () => clearTimeout(timer)
   }, [])
 
+  // Preenche com animação assim que os dados de presença forem carregados
   useEffect(() => {
-    handlePlayDonut('presenca')
-    handlePlayDonut('ausencia')
-  }, [pctPresenca, pctAusencia])
+    const timer = setTimeout(() => {
+      handlePlayDonut('presenca', pctPresenca)
+      handlePlayDonut('ausencia', pctAusencia)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [pctPresenca, pctAusencia, isAttendanceSaved])
+
+  // Preenche com animação assim que os dados de equipamentos/frota forem carregados
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      replayGauge('pipa', fleetMetrics.pctOperation)
+      replayGauge('oficina', fleetMetrics.pctMaintenance)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [fleetMetrics.pctOperation, fleetMetrics.pctMaintenance, fleetMetrics.total])
 
   // Normalization for search filtering
   const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
