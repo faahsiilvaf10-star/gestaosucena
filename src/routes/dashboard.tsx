@@ -33,6 +33,7 @@ interface DashboardEquipment {
   id: string
   name: string
   plate_tag: string
+  category?: string | null
   location_status?: string | null
   last_exit_reason?: string | null
   last_exit_description?: string | null
@@ -282,7 +283,7 @@ function DashboardComponent() {
         supabase
           .from('eq_equipments')
           .select(
-            'id, name, plate_tag, location_status, last_exit_reason, last_exit_description, updated_at'
+            'id, name, plate_tag, category, location_status, last_exit_reason, last_exit_description, updated_at'
           ),
         supabase
           .from('eq_movements')
@@ -313,6 +314,7 @@ function DashboardComponent() {
           id: eq.id,
           name: eq.name,
           plate_tag: eq.plate_tag,
+          category: eq.category || null,
           location_status: outside ? 'outside' : 'inside',
           last_exit_reason: outside
             ? lastMov?.exit_reason || eq.last_exit_reason || null
@@ -329,14 +331,25 @@ function DashboardComponent() {
     refetchInterval: 300000,
   })
 
-  // Métricas da frota: total na obra, em operação e em manutenção.
+  // Métricas da frota: somente equipamentos pesados em operação
   const fleetMetrics = useMemo(() => {
     const list = fleetData || []
-    const total = list.length
+    
+    // Função para identificar equipamento pesado (exclui leves, jardinagem e canteiro)
+    const isPesado = (eq: DashboardEquipment) => {
+      const cat = (eq.category || '').toLowerCase().trim()
+      if (!cat) return true
+      if (cat.includes('pesado')) return true
+      if (cat.includes('leve') || cat.includes('jardinagem') || cat.includes('canteiro')) return false
+      return true
+    }
+
+    const heavyList = list.filter(isPesado)
+    const total = heavyList.length
     let operation = 0
     let maintenance = 0
 
-    list.forEach((eq) => {
+    heavyList.forEach((eq) => {
       if (isOutside(eq)) {
         if (MAINTENANCE_REASONS.includes(eq.last_exit_reason as any)) maintenance++
       } else {
@@ -594,19 +607,13 @@ function DashboardComponent() {
     }
   }
 
-  // Velocímetro & Scene Truck Animations
+  // Velocímetro Gauge Replay
   const replayGauge = (type: 'pipa' | 'oficina') => {
     const isPipa = type === 'pipa'
-    const pct = isPipa ? 67 : 23
+    const pct = isPipa ? fleetMetrics.pctOperation : fleetMetrics.pctMaintenance
 
     const arcEl = isPipa ? pipaArcRef.current : oficinaArcRef.current
     const needleEl = isPipa ? pipaNeedleRef.current : oficinaNeedleRef.current
-    const truckEl = isPipa ? pipaTruckRef.current : oficinaTruckRef.current
-
-    const tx0 = isPipa ? 54 : 52
-    const tx1 = isPipa ? 54 + (pct / 100) * 145 : 52 + (pct / 100) * 156
-    const truckPos = (tx: number) =>
-      isPipa ? `translate(${tx.toFixed(1)} 85)` : `translate(${tx.toFixed(1)} 68.6)`
 
     let start: number | null = null
     const dur = 1250
@@ -622,9 +629,6 @@ function DashboardComponent() {
       }
       if (needleEl) {
         needleEl.setAttribute('transform', `rotate(${-90 + cur * 1.8} 100 100)`)
-      }
-      if (truckEl) {
-        truckEl.setAttribute('transform', truckPos(tx0 + (tx1 - tx0) * eased))
       }
 
       if (p < 1) {
@@ -912,116 +916,25 @@ function DashboardComponent() {
         <div className="fleet-half">
           <div className="fleet-head">
             <div className="ch-ico" style={{ background: 'var(--blue-bg)', color: 'var(--blue)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div>
-            <span>Em operação</span>
+            <span>Em operação (Pesados)</span>
           </div>
           <div className="fleet-body">
             <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.operation} de ${fleetMetrics.total} em operação, ${fleetMetrics.pctOperation} por cento`} title="Clique para ver o velocímetro da frota de novo" onClick={() => replayGauge("pipa")}>
               <div className="gauge-dial">
               <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
                 <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#DCE9FD" strokeWidth="15" strokeLinecap="round"/>
-                <path className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
+                <path ref={pipaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
                 <g stroke="#A9B8CC" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
                 <g ref={pipaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationOperation} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#2563EB"/></g>
               </svg>
               <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
               </div>
-              <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total}</span></div>
+              <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total} pesados</span></div>
               <span className="gauge-tip">{fleetMetrics.pctOperation}% em operação<small>{fleetMetrics.operation} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
             </div>
-            <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
+            <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Equipamentos<br/>Pesados</div></div>
           </div>
-          <div className="hill-scene blue pipa-scene" role="img" onClick={() => replayGauge("pipa")} aria-label={`Caminhão pipa jogando água em áreas verdes de plantação: já irrigou ${fleetMetrics.pctOperation} por cento da área, ${fleetMetrics.operation} de ${fleetMetrics.total} equipamentos em operação`} title="Clique para ver o caminhão pipa jogando água na plantação de novo">
-            <svg viewBox="0 0 320 118" aria-hidden="true">
-              <defs>
-                <linearGradient id="pgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#CDEBFF"/><stop offset="55%" stopColor="#EAF7FF"/><stop offset="100%" stopColor="#FFF6D8"/></linearGradient>
-                <linearGradient id="pgHillFar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B7E2A8"/><stop offset="100%" stopColor="#8FCB7E"/></linearGradient>
-                <linearGradient id="pgHillNear" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8ED081"/><stop offset="100%" stopColor="#5FA84F"/></linearGradient>
-                <linearGradient id="pgCrop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#86CC6B"/><stop offset="100%" stopColor="#4E9B3E"/></linearGradient>
-                <linearGradient id="pgSoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F2E3B6"/><stop offset="100%" stopColor="#DEC98F"/></linearGradient>
-                <linearGradient id="pgTank" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="45%" stopColor="#F1F7FB"/><stop offset="100%" stopColor="#CBDCE8"/></linearGradient>
-                <linearGradient id="pgCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#38BDF8"/><stop offset="100%" stopColor="#0369A1"/></linearGradient>
-                <radialGradient id="pgSun" cx=".5" cy=".5" r=".5"><stop offset="0%" stopColor="#FFF7CC"/><stop offset="70%" stopColor="#FDE68A"/><stop offset="100%" stopColor="#FBBF24"/></radialGradient>
-                <filter id="pBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
-              </defs>
-              <rect x="0" y="0" width="320" height="118" fill="url(#pgSky)"/>
-              <g className="sun-pulse"><circle cx="288" cy="16" r="17" fill="#FDE68A" opacity=".30"/><circle cx="288" cy="16" r="10.5" fill="url(#pgSun)" stroke="#F59E0B" strokeWidth="1.6"/></g>
-              <g className="cloud-a" fill="#FFFFFF"><ellipse cx="52" cy="16" rx="18" ry="6.5"/><ellipse cx="66" cy="12.5" rx="12" ry="5.5"/><ellipse cx="40" cy="13" rx="10" ry="4.5"/><ellipse cx="54" cy="19" rx="20" ry="3.4" fill="#DCEEF9"/></g>
-              <g className="cloud-b" fill="#FFFFFF" opacity=".92"><ellipse cx="188" cy="11" rx="14" ry="5"/><ellipse cx="199" cy="8.5" rx="9" ry="4"/><ellipse cx="189" cy="13.5" rx="15" ry="2.8" fill="#DCEEF9"/></g>
-              <g stroke="#7C93A8" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity=".75"><path d="M118 18 q3 -3 6 0 q3 -3 6 0"/><path d="M140 24 q2.4 -2.4 4.8 0 q2.4 -2.4 4.8 0"/></g>
-              <path d="M0 52 Q38 34 84 42 Q128 50 168 38 Q214 25 262 36 Q296 43 320 36 V64 H0 Z" fill="url(#pgHillFar)"/>
-              <g fill="#6FB45E" opacity=".8"><circle cx="96" cy="44" r="4"/><circle cx="106" cy="46" r="3.2"/><circle cx="238" cy="38" r="3.6"/><circle cx="248" cy="40" r="2.8"/><circle cx="160" cy="42" r="3.4"/></g>
-              <path d="M0 58 Q52 44 116 52 Q176 60 232 48 Q284 38 320 50 V70 H0 Z" fill="url(#pgHillNear)"/>
-              <g stroke="#3E7D33" strokeWidth="2.2" strokeLinecap="round" opacity=".45"><path d="M4 63 H316" strokeDasharray="0.5 11"/><path d="M14 67.5 H306" strokeDasharray="0.5 13"/></g>
-              <g><path d="M22 60 V45" stroke="#7A5A2E" strokeWidth="4.5" strokeLinecap="round"/><path d="M22 50 C16 46 14 42 15 37 M22 47 C27 43 28 39 27 34" stroke="#7A5A2E" strokeWidth="2.4" strokeLinecap="round" fill="none"/><circle cx="22" cy="34" r="11.5" fill="#2F8F3E"/><circle cx="12" cy="41" r="7.5" fill="#4CAF50"/><circle cx="32" cy="41" r="7.5" fill="#43A047"/><circle cx="17" cy="29" r="5.5" fill="#66BB6A" opacity=".85"/><circle cx="28" cy="30" r="4.5" fill="#81C784" opacity=".8"/></g>
-              <g opacity=".9"><path d="M298 56 V48" stroke="#7A5A2E" strokeWidth="3" strokeLinecap="round"/><circle cx="298" cy="44" r="7" fill="#359846"/><circle cx="292" cy="48" r="4.6" fill="#57B25E"/><circle cx="304" cy="48" r="4.6" fill="#57B25E"/></g>
-              <rect x="0" y="70" width="320" height="22" fill="url(#pgSoil)"/>
-              <rect x="0" y="70" width="198" height="22" fill="#0EA5E9" opacity=".08"/>
-              <line x1="0" y1="70" x2="320" y2="70" stroke="#C9B478" strokeWidth="1.8"/>
-              <path d="M0 77 H320 M0 87 H320" stroke="#B49B62" strokeWidth="2.6" strokeDasharray="8 10" opacity=".28"/>
-              <path d="M0 81.5 H320" stroke="#DCC791" strokeWidth="1.6" strokeDasharray="4 14" opacity=".8"/>
-              <g fill="#C9B478" opacity=".7"><ellipse cx="36" cy="84" rx="2.6" ry="1.2"/><ellipse cx="128" cy="74" rx="2" ry="1"/><ellipse cx="238" cy="85" rx="2.8" ry="1.3"/><ellipse cx="286" cy="75" rx="2" ry="1"/></g>
-              <g><ellipse cx="52" cy="88" rx="13" ry="2.4" fill="#BAE6FD" opacity=".85"/><ellipse cx="120" cy="79" rx="9" ry="1.8" fill="#BAE6FD" opacity=".7"/><ellipse cx="176" cy="89" rx="11" ry="2" fill="#BAE6FD" opacity=".75"/><path d="M42 87.4 q4 -1.6 8 0 M168 88.4 q4 -1.6 8 0" stroke="#FFFFFF" strokeWidth="1.2" fill="none" opacity=".9"/></g>
-              <rect x="0" y="92" width="320" height="26" fill="url(#pgCrop)"/>
-              <line x1="0" y1="92" x2="320" y2="92" stroke="#3E7D33" strokeWidth="1.6" opacity=".5"/>
-              <g stroke="#35702C" strokeWidth="2.4" opacity=".38" strokeLinecap="round"><path d="M-8 118 L54 94 M44 118 L96 94 M96 118 L138 94 M148 118 L180 94 M196 118 L222 94 M246 118 L264 94 M294 118 L306 94"/></g>
-              <g transform="rotate(-1 283 52)">
-                <line x1="283" y1="58" x2="283" y2="89" stroke="#7A5A2E" strokeWidth="3.4" strokeLinecap="round"/>
-                <line x1="283" y1="66" x2="283" y2="89" stroke="#96754A" strokeWidth="1.2" strokeDasharray="3 4"/>
-                <rect x="246" y="43" width="74" height="16" rx="4" fill="#1E7A34"/>
-                <rect x="246" y="43" width="74" height="16" rx="4" fill="none" stroke="#14532D" strokeWidth="1.4"/>
-                <path d="M249 48.5 H317 M249 53.5 H317" stroke="#14532D" strokeWidth="1" opacity=".45"/>
-                <circle cx="251" cy="46.5" r="1.2" fill="#D9F99D"/><circle cx="315" cy="46.5" r="1.2" fill="#D9F99D"/><circle cx="251" cy="55.5" r="1.2" fill="#D9F99D"/><circle cx="315" cy="55.5" r="1.2" fill="#D9F99D"/>
-                <text x="283" y="54.5" textAnchor="middle" fontSize="8.5" fontWeight="800" letterSpacing="1" fill="#FFFFFF" style={{ fontFamily: 'inherit' }}>PLANTAÇÃO</text>
-              </g>
-              <g className="pipa-truck-g" transform="translate(54 85)">
-                <g className="pipa-bob">
-                  <ellipse cx="0" cy="3.5" rx="40" ry="4" fill="#3F6212" opacity=".22" filter="url(#pBlur)"/>
-                  <path className="spray-fan" d="M-42 -20 L-96 6 L-94 -6 L-44 -8 Z" fill="#7DD3FC" opacity=".30"/>
-                  <path className="spray-fan" d="M-42 -22 L-84 -12 L-42 -10 Z" fill="#BAE6FD" opacity=".45"/>
-                  <path d="M-38 5 L-118 5 L-118 8.5 L-38 8.5 Z" fill="#7DD3FC" opacity=".38"/>
-                  <path className="spray-arc" d="M-42 -15 Q-62 -12 -78 1" fill="none" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round"/>
-                  <path className="spray-arc" d="M-42 -21 Q-60 -20 -74 -7" fill="none" stroke="#7DD3FC" strokeWidth="2.6" strokeLinecap="round"/>
-                  <path className="spray-arc" d="M-42 -9 Q-56 -4 -66 5" fill="none" stroke="#0284C7" strokeWidth="2.2" strokeLinecap="round" opacity=".7"/>
-                  <g fill="#38BDF8"><circle className="spray-drop" cx="-60" cy="-6" r="2.3"/><circle className="spray-drop d2" cx="-68" cy="0" r="1.9"/><circle className="spray-drop d3" cx="-54" cy="-13" r="1.7"/><circle className="spray-drop d4" cx="-72" cy="-4" r="1.6"/><circle className="spray-drop d5" cx="-50" cy="-3" r="1.8"/><circle className="spray-drop d2" cx="-82" cy="3" r="1.5"/><circle className="spray-drop d4" cx="-88" cy="-2" r="1.3"/></g>
-                  <g className="mist" fill="#E0F2FE"><ellipse cx="-70" cy="4" rx="9" ry="3"/><ellipse cx="-88" cy="6" rx="12" ry="3.6"/></g>
-                  <path d="M-34 -13 C-30 -22 -26 -27 -18 -31" fill="none" stroke="#0369A1" strokeWidth="2.2" strokeLinecap="round"/>
-                  <rect x="-41" y="-40" width="50" height="27" rx="13" fill="url(#pgTank)" stroke="#0369A1" strokeWidth="2"/>
-                  <path d="M-36 -31 H4" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" opacity=".85"/>
-                  <path d="M-24 -39.5 V-13.5 M-6 -39.5 V-13.5" stroke="#94A3B8" strokeWidth="1.6" opacity=".65"/>
-                  <rect x="-20" y="-44" width="12" height="5" rx="2.4" fill="#E2E8F0" stroke="#0369A1" strokeWidth="1.6"/>
-                  <path d="M-16 -35.5 c3.2 3.6 4.6 6.2 4.6 8.6 a4.6 4.6 0 1 1 -9.2 0 c0 -2.4 1.4 -5 4.6 -8.6Z" fill="#0284C7"/>
-                  <rect x="-46" y="-18" width="6" height="12" rx="2.4" fill="#0369A1"/>
-                  <g stroke="#E0F2FE" strokeWidth="1.8" strokeLinecap="round"><path d="M-46 -15 h-4 M-46 -12 h-4 M-46 -9 h-4"/></g>
-                  <path d="M11 -29 L24 -29 C27.5 -22 30 -16.5 32 -11 L32 -9 L11 -9 Z" fill="url(#pgCab)"/>
-                  <path d="M14 -26 L22.5 -26 C24.6 -21.4 26.4 -17.6 27.4 -14.8 L14 -14.8 Z" fill="#E0F2FE"/>
-                  <path d="M15 -26 L20 -26 L17 -14.8 L14 -14.8 Z" fill="#FFFFFF" opacity=".55"/>
-                  <path d="M11 -19 H31.5" stroke="#075985" strokeWidth="1.4" opacity=".6"/>
-                  <rect x="15" y="-17.5" width="5" height="1.8" rx=".9" fill="#E0F2FE"/>
-                  <path d="M11 -29 L7 -31" stroke="#17233B" strokeWidth="1.8" strokeLinecap="round"/><rect x="3.5" y="-34.5" width="5" height="7" rx="1.6" fill="#17233B"/>
-                  <circle cx="30.5" cy="-12.5" r="1.9" fill="#FDE68A" stroke="#D97706" strokeWidth="1"/>
-                  <rect x="7" y="-12.5" width="26" height="4.4" rx="2" fill="#075985"/>
-                  <path d="M-40 -9 H33" stroke="#0F172A" strokeWidth="2" opacity=".18"/>
-                  <circle cx="-27" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/><circle cx="21" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/>
-                  <circle cx="-27" cy="0" r="3.2" fill="#CBD5E1"/><circle cx="21" cy="0" r="3.2" fill="#CBD5E1"/>
-                  <g fill="#64748B"><circle cx="-27" cy="-1.6" r=".8"/><circle cx="-25.4" cy="1" r=".8"/><circle cx="-28.6" cy="1" r=".8"/><circle cx="21" cy="-1.6" r=".8"/><circle cx="22.6" cy="1" r=".8"/><circle cx="19.4" cy="1" r=".8"/></g>
-                  <g fill="#FDE68A" opacity=".95"><circle cx="-32" cy="-4" r="1.4" className="truck-puff"/><circle cx="-36" cy="-6" r="1" className="truck-puff p2"/></g>
-                </g>
-              </g>
-              <g stroke="#22703A" strokeWidth="2" strokeLinecap="round" fill="none">
-                <path d="M14 115 v-7 M14 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M14 111 c4.5 0 6.5 -2 7.5 -5.5"/>
-                <path d="M64 116 v-6 M64 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M64 112.5 c4 0 5.8 -1.8 6.7 -5"/>
-                <path d="M118 115 v-7 M118 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M118 111 c4.5 0 6.5 -2 7.5 -5.5"/>
-                <path d="M172 116 v-6 M172 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M172 112.5 c4 0 5.8 -1.8 6.7 -5"/>
-                <path d="M228 115 v-7 M228 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M228 111 c4.5 0 6.5 -2 7.5 -5.5"/>
-                <path d="M276 116 v-6 M276 112.5 c-4 0 -5.8 -1.8 -6.7 -5 M276 112.5 c4 0 5.8 -1.8 6.7 -5"/>
-                <path d="M306 115 v-7 M306 111 c-4.5 0 -6.5 -2 -7.5 -5.5 M306 111 c4.5 0 6.5 -2 7.5 -5.5"/>
-              </g>
-              <g fill="#FDE047"><circle cx="44" cy="112" r="1.6"/><circle cx="148" cy="114" r="1.5"/><circle cx="252" cy="112" r="1.6"/><circle cx="96" cy="113" r="1.3"/></g>
-              <g stroke="#2F7D32" strokeWidth="1.7" strokeLinecap="round"><path d="M6 118 v-6 M30 118 v-5 M200 118 v-6 M318 118 v-5"/></g>
-            </svg>
-            <div className="hill-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3c3.5 4 5.5 7 5.5 10a5.5 5.5 0 1 1-11 0C6.5 10 8.5 7 12 3Z"/></svg><span>Caminhão pipa jogando água a <b>{fleetMetrics.pctOperation}%</b> da plantação</span></div>
-          </div>
-          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
+          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} pesados em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
         </div>
         <div className="fleet-half">
           <div className="fleet-head">
@@ -1033,7 +946,7 @@ function DashboardComponent() {
               <div className="gauge-dial">
               <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
                 <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FDEBD9" strokeWidth="15" strokeLinecap="round"/>
-                <path className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
+                <path ref={oficinaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.3" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
                 <g stroke="#C9B096" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
                 <g ref={oficinaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationMaintenance} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#EA580C"/></g>
               </svg>
@@ -1043,114 +956,6 @@ function DashboardComponent() {
               <span className="gauge-tip">{fleetMetrics.pctMaintenance}% em manutenção<small>{fleetMetrics.maintenance} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
             </div>
             <div><div className="pct-chip orange"><b data-count-pct={fleetMetrics.pctMaintenance}>{fleetMetrics.pctMaintenance}%</b><span>em manutenção</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
-          </div>
-          <div className="hill-scene orange" role="img" onClick={() => replayGauge("oficina")} aria-label="Caminhão sobre a prancha do elevador automotivo da oficina, a plataforma plana de manutenção: 6 de 26 equipamentos em manutenção, 23 por cento" title="Clique para ver o caminhão sobre o elevador da oficina de novo">
-            <svg viewBox="0 0 320 118" aria-hidden="true">
-              <defs>
-                <linearGradient id="ofWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFF8EA"/><stop offset="100%" stopColor="#FBEED3"/></linearGradient>
-                <linearGradient id="ofFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E8D5B5"/><stop offset="100%" stopColor="#D9BF97"/></linearGradient>
-                <linearGradient id="ofMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#64748B"/><stop offset="50%" stopColor="#3E4C61"/><stop offset="100%" stopColor="#57687E"/></linearGradient>
-                <linearGradient id="ofBox" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="100%" stopColor="#E7EDF3"/></linearGradient>
-                <linearGradient id="ofCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FB923C"/><stop offset="100%" stopColor="#C2410C"/></linearGradient>
-                <linearGradient id="ofDoor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFFFFF"/><stop offset="100%" stopColor="#E3DCCB"/></linearGradient>
-                <pattern id="pegHoles" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#D9BFA0"/></pattern>
-                <filter id="oBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>
-              </defs>
-              <rect x="0" y="0" width="320" height="118" fill="url(#ofWall)"/>
-              <rect x="0" y="62" width="320" height="42" fill="#8A6D3B" opacity=".07"/>
-              <line x1="0" y1="62" x2="320" y2="62" stroke="#E7D3AC" strokeWidth="2"/>
-              <g stroke="#F1DFC0" strokeWidth="1.4"><path d="M108 0 V62 M206 0 V62"/></g>
-              <rect x="0" y="104" width="320" height="14" fill="url(#ofFloor)"/>
-              <line x1="0" y1="104" x2="320" y2="104" stroke="#C9AB7C" strokeWidth="1.6"/>
-              <g stroke="#C9AB7C" strokeWidth="1" opacity=".7"><path d="M64 104 v14 M168 104 v14 M272 104 v14"/></g>
-              <ellipse cx="92" cy="111" rx="24" ry="2.8" fill="#475569" opacity=".16"/>
-              <ellipse cx="96" cy="110.6" rx="10" ry="1.6" fill="#38BDF8" opacity=".20"/>
-              <path d="M196 108 l7 3 l-5 2" stroke="#B49B6E" strokeWidth="1" fill="none" opacity=".7"/>
-              <g>
-                <rect x="264" y="8" width="50" height="96" rx="3" fill="url(#ofDoor)" stroke="#C9B68F" strokeWidth="1.6"/>
-                <g stroke="#D8CBAE" strokeWidth="1.6"><path d="M264 22 H314 M264 36 H314 M264 50 H314 M264 64 H314 M264 78 H314 M264 92 H314"/></g>
-                <g stroke="#FFFFFF" strokeWidth="1" opacity=".8"><path d="M264 23.5 H314 M264 37.5 H314 M264 51.5 H314 M264 65.5 H314 M264 79.5 H314 M264 93.5 H314"/></g>
-                <rect x="264" y="98" width="50" height="6" fill="#78716C"/>
-                <rect x="281" y="93.5" width="16" height="4.4" rx="2.2" fill="#A8A29E"/>
-              </g>
-              <g>
-                <rect x="6" y="7" width="92" height="46" rx="5" fill="#F7E8CE"/>
-                <rect x="6" y="7" width="92" height="46" rx="5" fill="url(#pegHoles)"/>
-                <rect x="6" y="7" width="92" height="46" rx="5" fill="none" stroke="#DDBE93" strokeWidth="1.6"/>
-                <path d="M24.7 17.3a4.5 4.5 0 0 0-6 6L13 29l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L24 24l-3-3 3.7-3.7Z" fill="none" stroke="#EA580C" strokeWidth="1.8" strokeLinejoin="round" transform="translate(2 3) scale(.92)"/>
-                <g transform="rotate(38 50 24)"><rect x="47.5" y="14" width="5" height="11" rx="1.4" fill="#78716C"/><rect x="48.7" y="24" width="2.6" height="10" rx="1.2" fill="#B45309"/></g>
-                <g strokeLinecap="round"><path d="M60 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="56.8" y="26" width="6.4" height="8" rx="2" fill="#DC2626"/><path d="M68 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="64.8" y="26" width="6.4" height="8" rx="2" fill="#2563EB"/><path d="M76 18 v10" stroke="#94A3B8" strokeWidth="2"/><rect x="72.8" y="26" width="6.4" height="8" rx="2" fill="#EAB308"/></g>
-                <circle cx="42" cy="42" r="4.6" fill="#FACC15" stroke="#A16207" strokeWidth="1.4"/><circle cx="42" cy="42" r="1.6" fill="#FEF9C3"/>
-                <rect x="54" y="39" width="34" height="5.4" rx="2.4" fill="#FDE68A" stroke="#D97706" strokeWidth="1.2"/><circle cx="71" cy="41.7" r="1.5" fill="#22C55E"/>
-                <rect x="62" y="24" width="6" height="9" rx="1.4" fill="#EA580C" opacity="0"/><rect x="86" y="12" width="7" height="10" rx="1.4" fill="#0EA5E9"/><rect x="86" y="14.5" width="7" height="2" fill="#E0F2FE"/>
-              </g>
-              <g><circle cx="138" cy="17" r="9.5" fill="#FFFFFF" stroke="#A98F63" strokeWidth="1.8"/><circle cx="138" cy="17" r="1.4" fill="#57534E"/><path d="M138 17 L138 11 M138 17 L142.5 19" stroke="#57534E" strokeWidth="1.6" strokeLinecap="round"/><g fill="#A98F63"><circle cx="138" cy="9.8" r=".9"/><circle cx="145.2" cy="17" r=".9"/><circle cx="138" cy="24.2" r=".9"/><circle cx="130.8" cy="17" r=".9"/></g></g>
-              <g transform="rotate(-2 176 22)"><rect x="162" y="7" width="28" height="32" rx="2" fill="#FFFBEB" stroke="#E7C873" strokeWidth="1.4"/><path d="M176 13 L183 26 H169 Z" fill="#FACC15" stroke="#A16207" strokeWidth="1.2" strokeLinejoin="round"/><text x="176" y="23.5" textAnchor="middle" fontSize="9" fontWeight="800" fill="#713F12" style={{ fontFamily: 'inherit' }}>!</text><path d="M167 31 H185 M167 34.5 H181" stroke="#D6C08A" strokeWidth="1.6"/></g>
-              <g className="lamp-sway">
-                <line x1="218" y1="0" x2="218" y2="11" stroke="#78716C" strokeWidth="2.2"/>
-                <polygon className="lamp-glow" points="204,27 232,27 252,102 184,102" fill="#FDE68A" opacity=".14"/>
-                <path d="M205 24 L218 10 L231 24 Z" fill="#44403C"/>
-                <path d="M205 24 H231" stroke="#292524" strokeWidth="2.4" strokeLinecap="round"/>
-                <circle cx="218" cy="25.5" r="3.4" fill="#FBBF24"/>
-                <ellipse cx="218" cy="29" rx="15" ry="4.5" fill="#FDE68A" opacity=".35"/>
-              </g>
-              <g fill="none" stroke="#EA580C" strokeWidth="2.2"><circle cx="240" cy="56" r="8.5" opacity=".9"/><circle cx="240" cy="56" r="5" opacity=".65"/></g>
-              
-              <ellipse cx="128" cy="105.5" rx="122" ry="3.2" fill="#475569" opacity=".14"/>
-              <rect x="16" y="100.5" width="224" height="5" rx="2.4" fill="#78716C"/>
-              <rect x="16" y="100.5" width="224" height="2" rx="1" fill="#A8A29E"/>
-              <g stroke="#94A3B8" strokeWidth="4.6" strokeLinecap="round">
-                <path d="M38 100 L82 89 M82 100 L38 89"/>
-                <path d="M106 100 L150 89 M150 100 L106 89"/>
-                <path d="M174 100 L218 89 M218 100 L174 89"/>
-              </g>
-              <g fill="#64748B"><circle cx="60" cy="94.5" r="2.6"/><circle cx="128" cy="94.5" r="2.6"/><circle cx="196" cy="94.5" r="2.6"/></g>
-              <g transform="rotate(-14 94 95)"><rect x="90.6" y="88" width="6.8" height="15" rx="3" fill="#CBD5E1" stroke="#64748B" strokeWidth="1.3"/><rect x="92.6" y="82" width="2.8" height="10" rx="1.4" fill="#F1F5F9" stroke="#94A3B8" strokeWidth="1"/></g>
-              <rect x="10" y="75" width="236" height="14" rx="3.5" fill="url(#ofMetal)"/>
-              <rect x="10" y="75" width="236" height="4.5" rx="2.2" fill="#7D8FA6"/>
-              <path d="M14 86.5 H242" stroke="#F59E0B" strokeWidth="2.6" strokeDasharray="8 6" opacity=".95"/>
-              <text x="128" y="84.6" textAnchor="middle" fontSize="7.4" fontWeight="800" letterSpacing="1.8" fill="#E2E8F0" style={{ fontFamily: 'inherit' }}>OFICINA</text>
-              <g>
-                <path d="M238 92 l10 -7 l3 3 l-9 7 Z" fill="#991B1B"/>
-                <rect x="236" y="92" width="29" height="13" rx="2.6" fill="#DC2626"/>
-                <rect x="236" y="92" width="29" height="5" rx="2.4" fill="#EF4444"/>
-                <path d="M245 92 v-4 h11 V92" fill="none" stroke="#7F1D1D" strokeWidth="2.2"/>
-                <rect x="248" y="97.5" width="5.4" height="3.6" rx="1" fill="#FDE68A"/>
-                <path d="M241 90 l4 -5" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"/>
-              </g>
-              <g><ellipse cx="296" cy="100" rx="15.5" ry="5.6" fill="#26303C"/><ellipse cx="296" cy="91" rx="15.5" ry="5.6" fill="#2E3947"/><ellipse cx="296" cy="82" rx="15.5" ry="5.6" fill="#26303C"/><g fill="#F7EBD7"><ellipse cx="296" cy="99.4" rx="5.6" ry="2"/><ellipse cx="296" cy="90.4" rx="5.6" ry="2"/><ellipse cx="296" cy="81.4" rx="5.6" ry="2"/></g><g stroke="#5B6B7D" strokeWidth="1.2" strokeDasharray="3 3" fill="none"><ellipse cx="296" cy="98.6" rx="12.5" ry="4.2"/><ellipse cx="296" cy="89.6" rx="12.5" ry="4.2"/><ellipse cx="296" cy="80.6" rx="12.5" ry="4.2"/></g></g>
-              <g>
-                <ellipse cx="24" cy="106.5" rx="10" ry="2" fill="#7C2D12" opacity=".25" filter="url(#oBlur)"/>
-                <path d="M24 87 L32.5 106 H15.5 Z" fill="#EA580C"/>
-                <path d="M24 87 L32.5 106 H15.5 Z" fill="#F97316" opacity=".45" transform="translate(-1.6 0)"/>
-                <path d="M20.6 97.5 H27.4 L29.2 101.8 H18.8 Z" fill="#FFFFFF"/>
-                <rect x="14.5" y="104.5" width="19" height="3.4" rx="1.6" fill="#C2410C"/>
-                <path d="M21 93 l2.4 3" stroke="#FFF7ED" strokeWidth="1.2" opacity=".7"/>
-              </g>
-              <g stroke="#B45309" strokeWidth="2.4" strokeLinecap="round"><path d="M258 72 L265 100"/></g>
-              <g fill="#D6A419"><path d="M265 100 l-3 6 h9 l-3 -6 Z"/></g>
-              <g className="truck-g" transform="translate(88 68.6)">
-                <circle className="truck-puff" cx="-38" cy="-8" r="4.2" fill="#CBD5E1"/><circle className="truck-puff p2" cx="-42" cy="-13" r="3" fill="#CBD5E1"/>
-                <ellipse cx="1" cy="3.5" rx="36" ry="3.6" fill="#431407" opacity=".20" filter="url(#oBlur)"/>
-                <rect x="-31" y="-37" width="40" height="27" rx="3" fill="url(#ofBox)" stroke="#EA580C" strokeWidth="2.2"/>
-                <path d="M-31 -31 H9" stroke="#FFFFFF" strokeWidth="3.4" opacity=".8"/>
-                <g stroke="#CBD5E1" strokeWidth="1.3"><path d="M-18 -36.5 V-10.5 M-5 -36.5 V-10.5"/></g>
-                <g fill="#94A3B8"><circle cx="-26" cy="-33" r=".9"/><circle cx="-26" cy="-14" r=".9"/><circle cx="4" cy="-33" r=".9"/><circle cx="4" cy="-14" r=".9"/></g>
-                <rect x="-33.5" y="-17" width="3" height="6.4" rx="1.2" fill="#DC2626"/>
-                <path d="M11 -29 L24 -29 C27.5 -22 30 -16.5 32 -11 L32 -9 L11 -9 Z" fill="url(#ofCab)"/>
-                <path d="M14 -26 L22.5 -26 C24.6 -21.4 26.4 -17.6 27.4 -14.8 L14 -14.8 Z" fill="#FFEDD5"/>
-                <path d="M15 -26 L20 -26 L17 -14.8 L14 -14.8 Z" fill="#FFFFFF" opacity=".55"/>
-                <path d="M11 -19 H31.5" stroke="#9A3412" strokeWidth="1.4" opacity=".65"/>
-                <rect x="15" y="-17.5" width="5" height="1.8" rx=".9" fill="#FFEDD5"/>
-                <path d="M11 -29 L7 -31" stroke="#292524" strokeWidth="1.8" strokeLinecap="round"/><rect x="3.5" y="-34.5" width="5" height="7" rx="1.6" fill="#292524"/>
-                <circle cx="30.5" cy="-12.5" r="1.9" fill="#FDE68A" stroke="#B45309" strokeWidth="1"/>
-                <rect x="7" y="-12.5" width="26" height="4.4" rx="2" fill="#7C2D12"/>
-                <circle cx="-19" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/><circle cx="21" cy="0" r="7.4" fill="#1F2937" stroke="#F8FAFC" strokeWidth="2"/>
-                <circle cx="-19" cy="0" r="3.2" fill="#CBD5E1"/><circle cx="21" cy="0" r="3.2" fill="#CBD5E1"/>
-                <g fill="#64748B"><circle cx="-19" cy="-1.6" r=".8"/><circle cx="-17.4" cy="1" r=".8"/><circle cx="-20.6" cy="1" r=".8"/><circle cx="21" cy="-1.6" r=".8"/><circle cx="22.6" cy="1" r=".8"/><circle cx="19.4" cy="1" r=".8"/></g>
-              </g>
-            </svg>
-            <div className="hill-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3 3.7-3.7Z"/></svg><span>Caminhão sobre o elevador da oficina · <b>{fleetMetrics.pctMaintenance}%</b> em manutenção</span></div>
           </div>
           <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-orange"><i className="d-orange"></i>{fleetMetrics.maintenance} em manutenção</span><span className="hl-orange"><i className="d-orange-rest"></i>{fleetMetrics.outOfMaintenance} fora de manutenção</span></div>
         </div>
