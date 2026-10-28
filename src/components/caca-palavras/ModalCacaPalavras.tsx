@@ -11,7 +11,7 @@ interface Props {
  * Bloco do Caça Palavras: abre como sobreposição a partir do botão da
  * barra superior.
  */
-export function ModalCacaPalavras({ aberto, aoFechar }: Props) {
+export function ModalCacaPalavras({ aberto, aoFechar, modoInicial = 'cruzada' }: Props) {
   useEffect(() => {
     if (!aberto) return
     const aoTeclar = (event: KeyboardEvent) => {
@@ -31,7 +31,7 @@ export function ModalCacaPalavras({ aberto, aoFechar }: Props) {
   return (
     <div className="dark fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-0 backdrop-blur-md sm:p-4 text-white">
       <div className="relative flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden border border-white/10 bg-[#0c0e14] shadow-2xl sm:h-[92vh] sm:rounded-3xl">
-        <CacaPalavrasHub aoFechar={aoFechar} />
+        <CacaPalavrasHub aoFechar={aoFechar} modoInicial={modoInicial} />
       </div>
     </div>
   )

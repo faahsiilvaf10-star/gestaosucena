@@ -43,12 +43,12 @@ const CATEGORIA_EMOJIS: Record<Categoria, string> = {
   Esportes: '⚽',
 }
 
-export function CacaPalavrasHub({ aoFechar }: { aoFechar?: () => void }) {
+export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFechar?: () => void; modoInicial?: Modo }) {
   const { som, mudo, alternarMudo } = useGameSounds()
 
   const [aba, setAba] = useState<Aba>('solo')
   const [usuario, setUsuario] = useState<UsuarioOnline | null>(null)
-  const [modo, setModo] = useState<Modo>('busca')
+  const [modo, setModo] = useState<Modo>(modoInicial)
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [rankingModo, setRankingModo] = useState<ModoJogo | undefined>(undefined)
 
