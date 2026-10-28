@@ -1747,3 +1747,34 @@ table {
     max-width: 55px !important;
   }
 }
+
+
+/* ==========================================================
+   JOGOS: PALAVRAS CRUZADAS NA BARRA LATERAL
+   ========================================================== */
+.sidebar-games{margin-top:auto;position:relative;z-index:1;padding:4px 2px 0}
+.sidebar-foot{margin-top:10px}
+.games-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border-radius:13px;background:#17171B;border:1.5px solid #2C2C33;color:#fff;text-transform:uppercase;transition:background .2s ease,border-color .2s ease,transform .2s ease;cursor:pointer}
+.games-item:hover{background:#1F1F24;border-color:var(--yellow);transform:translateY(-1px)}
+.games-item:active{transform:scale(.985)}
+.games-item.active{background:var(--yellow);border-color:var(--yellow);color:#1A1400}
+.game-icon{display:grid;grid-template-columns:repeat(3,11px);grid-template-rows:repeat(3,11px);gap:2px;flex:none;padding:5px;background:#0B0B0C;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:transform .35s cubic-bezier(.34,1.5,.4,1)}
+.games-item:hover .game-icon{transform:rotate(-7deg) scale(1.1)}
+.games-item.active .game-icon{box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.game-icon i{display:grid;place-items:center;background:#fff;color:#0B0B0C;font-size:8px;font-weight:800;font-style:normal;line-height:1;border-radius:2.5px;animation:gcWave 2.4s ease-in-out infinite}
+.game-icon i.blk{background:var(--yellow);animation-name:gcWaveBlk}
+.game-icon i:nth-child(2){animation-delay:.15s}.game-icon i:nth-child(3){animation-delay:.3s}
+.game-icon i:nth-child(4){animation-delay:.45s}.game-icon i:nth-child(5){animation-delay:.6s}
+.game-icon i:nth-child(6){animation-delay:.75s}.game-icon i:nth-child(7){animation-delay:.9s}
+.game-icon i:nth-child(8){animation-delay:1.05s}.game-icon i:nth-child(9){animation-delay:1.2s}
+@keyframes gcWave{0%,100%{transform:translateY(0)}30%{transform:translateY(-3.5px)}55%{transform:translateY(0)}}
+@keyframes gcWaveBlk{0%,100%{transform:translateY(0) rotate(0deg)}30%{transform:translateY(-3.5px) rotate(90deg)}55%{transform:translateY(0) rotate(0deg)}}
+.games-text{min-width:0;flex:1}
+.games-text b{display:block;font-size:14.5px;font-weight:800;letter-spacing:.06em;line-height:1.15}
+.games-text small{display:block;margin-top:2px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#A7A7B0;text-transform:uppercase;white-space:nowrap}
+.games-item.active .games-text small{color:#5C4A00}
+.games-play{width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#1A1400;display:grid;place-items:center;flex:none;animation:gamesPlayPulse 1.8s ease-out infinite}
+.games-play svg{width:13px;height:13px;margin-left:2px}
+.games-item.active .games-play{background:#0B0B0C;color:var(--yellow)}
+@keyframes gamesPlayPulse{0%{box-shadow:0 0 0 0 rgba(255,196,0,.5)}70%{box-shadow:0 0 0 8px rgba(255,196,0,0)}100%{box-shadow:0 0 0 0 rgba(255,196,0,0)}}
+@media(prefers-reduced-motion:reduce){.game-icon i,.games-play{animation:none}}

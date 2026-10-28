@@ -1,3 +1,4 @@
+import { ModalCacaPalavras } from './caca-palavras/ModalCacaPalavras'
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -177,6 +178,7 @@ interface HydroSidebarProps {
 }
 
 export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: HydroSidebarProps) {
+  const [isJogoAberto, setIsJogoAberto] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const path = location.pathname
@@ -348,6 +350,36 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
         </nav>
 
         {/* Rodapé da sidebar: cartão amarelo com cantos arredondados */}
+                {/* Jogos: Palavras Cruzadas */}
+        <div className="sidebar-games">
+          <button
+            className={`games-item ${isJogoAberto ? 'active' : ''}`}
+            id="gamesBtn"
+            type="button"
+            aria-label="Jogos: abrir palavras cruzadas"
+            aria-expanded={isJogoAberto}
+            onClick={() => {
+              setIsJogoAberto(true)
+              if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+                setIsSidebarCollapsed(true)
+              }
+            }}
+          >
+            <span className="game-icon" aria-hidden="true">
+              <i>C</i><i>R</i><i>U</i><i>Z</i><i className="blk"></i><i>A</i><i>D</i><i>A</i><i>S</i>
+            </span>
+            <span className="games-text">
+              <b>Jogos</b>
+              <small>Palavras cruzadas</small>
+            </span>
+            <span className="games-play" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 4.8v14.4c0 .9 1 1.5 1.8 1L20 13a1.2 1.2 0 0 0 0-2L8.8 3.9C8 3.4 7 4 7 4.8Z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+
         <div className="sidebar-foot">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z" />
@@ -357,6 +389,12 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
           <small>Segurança é responsabilidade de todos, todos os dias.</small>
         </div>
       </aside>
+      <ModalCacaPalavras
+        aberto={isJogoAberto}
+        aoFechar={() => setIsJogoAberto(false)}
+        modoInicial="cruzada"
+      />
+
 
       {/* ==========================================================
           BOTÃO REDONDO AMARELO DE ESCONDER / EXPANDIR A BARRA
