@@ -550,40 +550,34 @@ function DashboardComponent() {
     now.setHours(0, 0, 0, 0)
 
     activeEmployees.forEach((emp: any) => {
-      // Coleta todas as datas de exames disponíveis
+      // Coleta as datas reais de exames médicos ocupacionais (PCMSO / NR-7)
       const dates = [
         emp.aso_admissional,
         emp.aso_periodico,
         emp.retorno_ao_trabalho,
         emp.mudanca_de_risco,
-        emp.aso_admissional_2,
       ].filter(Boolean) as string[]
 
-      // Se validade_aso_efetiva já existe, usa ela; senão calcula + 1 ano a partir do exame mais recente
-      let validadeString = emp.validade_aso_efetiva
-      if (dates.length > 0 && !validadeString) {
+      let validadeDate: Date | null = null
+
+      // A validade do ASO é de exatamente 1 ano após a data do exame médico mais recente realizado
+      if (dates.length > 0) {
         const latestDate = dates.reduce((a: string, b: string) => (a > b ? a : b))
-        const d = new Date(latestDate + 'T12:00:00')
-        d.setFullYear(d.getFullYear() + 1)
-        validadeString = d.toISOString().split('T')[0]
-      }
-
-      if (!validadeString) return
-
-      let asoDate: Date | null = null
-      if (typeof validadeString === 'string') {
-        if (validadeString.includes('/')) {
-          const parts = validadeString.split('/')
-          if (parts.length === 3) asoDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
-        } else {
-          const parts = validadeString.split('-')
-          if (parts.length === 3) asoDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+        const parts = latestDate.split('-')
+        if (parts.length === 3) {
+          validadeDate = new Date(parseInt(parts[0]) + 1, parseInt(parts[1]) - 1, parseInt(parts[2]))
+        }
+      } else if (emp.validade_aso_efetiva) {
+        // Fallback apenas caso não haja nenhuma data de exame médico cadastrada
+        const parts = emp.validade_aso_efetiva.split('-')
+        if (parts.length === 3) {
+          validadeDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
         }
       }
 
-      if (asoDate && !isNaN(asoDate.getTime())) {
-        asoDate.setHours(0, 0, 0, 0)
-        const diff = Math.ceil((asoDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      if (validadeDate && !isNaN(validadeDate.getTime())) {
+        validadeDate.setHours(0, 0, 0, 0)
+        const diff = Math.ceil((validadeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
         // Inclui todos os Vencidos (diff < 0) e os Vencendo em até 30 dias (diff <= 30)
         if (diff < 0) {
