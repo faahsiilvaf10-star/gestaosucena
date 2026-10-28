@@ -418,6 +418,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Barra superior persistente em todo o sistema */}
         <div className="topbar-container" style={{ width: '100%' }}>
           <header className="topbar">
+            {/* Botão Requisição Rápida (visível exclusivamente no mobile / celular) */}
+            <button
+              type="button"
+              className="btn-requisicao-rapida-mobile"
+              onClick={() => navigate({ to: '/almoxarifado/requisicoes/nova' as any })}
+              title="Nova Requisição Rápida"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+              </svg>
+              <span>Requisição Rápida</span>
+            </button>
             <label className="search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <circle cx="11" cy="11" r="7" />
