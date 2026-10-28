@@ -273,8 +273,8 @@ function Index() {
 
   const btnClass = `w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors mt-2 border flex items-center justify-center disabled:opacity-70 ${
     isDark
-      ? 'bg-[#27272a] hover:bg-[#3f3f46] border-white/5 text-white/90'
-      : 'bg-gray-900 hover:bg-gray-800 border-transparent text-white shadow-sm'
+      ? '!bg-[#27272a] hover:!bg-[#3f3f46] !border-white/5 !text-white'
+      : '!bg-gray-900 hover:!bg-gray-800 !border-transparent !text-white shadow-sm'
   }`
 
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
@@ -565,7 +565,7 @@ function Index() {
               />
             </div>
 
-            <button type="submit" className={btnClass} disabled={isLoading || !captchaToken}>
+            <button type="submit" className={btnClass} style={{ backgroundColor: isDark ? '#27272a' : '#111827', color: '#ffffff' }} disabled={isLoading || !captchaToken}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : !captchaToken ? 'Aguardando verificação...' : 'Entrar'}
             </button>
             
@@ -689,7 +689,7 @@ function Index() {
 
 
 
-            <button type="submit" className={btnClass} disabled={isLoading || !captchaToken}>
+            <button type="submit" className={btnClass} style={{ backgroundColor: isDark ? '#27272a' : '#111827', color: '#ffffff' }} disabled={isLoading || !captchaToken}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : !captchaToken ? 'Aguardando verificação...' : 'Cadastrar'}
             </button>
             
@@ -753,7 +753,7 @@ function Index() {
               </div>
             )}
 
-            <button type="submit" className={btnClass} disabled={isLoading}>
+            <button type="submit" className={btnClass} style={{ backgroundColor: isDark ? '#27272a' : '#111827', color: '#ffffff' }} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Enviar Link de Recuperação'}
             </button>
             
@@ -807,7 +807,7 @@ function Index() {
               </div>
             )}
 
-            <button type="submit" className={btnClass} disabled={isLoading}>
+            <button type="submit" className={btnClass} style={{ backgroundColor: isDark ? '#27272a' : '#111827', color: '#ffffff' }} disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Salvar Nova Senha'}
             </button>
           </form>
