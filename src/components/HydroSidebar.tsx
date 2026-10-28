@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { AVAILABLE_ENVIRONMENTS } from '../lib/environmentAccess'
 import '../hydro-panel.css'
 
 export interface NavItemDef {
@@ -258,17 +259,48 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
     }
   }
 
+  // Ambiente selecionado
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
+
+  const { brandTitle, brandSubtitle } = useMemo(() => {
+    const envObj = AVAILABLE_ENVIRONMENTS.find((e) => e.id === currentEnv)
+    const envName = envObj?.name || (currentEnv === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO')
+    const parts = envName.split(' ')
+    const title = parts[0] || 'HYDRO'
+    const subtitle = parts.slice(1).join(' ') || (currentEnv === 'hydro-civil' ? 'CIVIL' : 'REABILITAÇÃO')
+    return { brandTitle: title, brandSubtitle: subtitle }
+  }, [currentEnv])
+
   return (
     <>
       {/* ==========================================================
           SIDEBAR — FIXA, PRETA #0B0B0C, OMBROS CONVEXOS EM SVG
           ========================================================== */}
       <aside className="sidebar" id="sidebar">
-        {/* Marca: HYDRO em branco, REABILITAÇÃO em amarelo, sem ícone de folha */}
+        {/* Marca dinâmica conforme o ambiente selecionado */}
         <div className="brand cursor-pointer" onClick={() => navigate({ to: '/dashboard' as any })}>
           <div className="brand-name">
-            <b>HYDRO</b>
-            <span>REABILITAÇÃO</span>
+            <b>{brandTitle}</b>
+            <span>{brandSubtitle}</span>
           </div>
         </div>
 

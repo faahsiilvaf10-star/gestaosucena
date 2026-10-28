@@ -521,13 +521,19 @@ function DashboardComponent() {
   const weekdayFormatted = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1).toLowerCase()
   const datePillString = `${dayNumber} de ${monthName} de ${yearNumber}`
 
+  const currentEnv =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('sucena_environment') || 'barcarena'
+      : 'barcarena'
+
   // Nome do ambiente ativo (o seletor de ambiente fica no topo, no AppLayout)
   const environmentLabel =
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('sucena_environment') || 'barcarena'
-      : 'barcarena') === 'hydro-civil'
+    currentEnv === 'hydro-civil'
       ? 'Hydro Civil · PA'
       : 'Barcarena · PA'
+
+  const envDisplayName =
+    currentEnv === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO'
 
   const rawName = currentUser?.user_metadata?.full_name || currentUser?.name || 'Fabrício'
   const firstName = rawName.split(' ')[0]
@@ -1234,7 +1240,7 @@ function DashboardComponent() {
       {/* Rodapé da Operação */}
       <footer style={{ marginTop: '32px' }}>
         <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--muted)' }}>
-          <b style={{ color: 'var(--ink)', letterSpacing: '.06em' }}>HYDRO REABILITAÇÃO</b> · Painel da operação · {weekdayFormatted.toLowerCase()},{' '}
+          <b style={{ color: 'var(--ink)', letterSpacing: '.06em' }}>{envDisplayName}</b> · Painel da operação · {weekdayFormatted.toLowerCase()},{' '}
           {dayNumber} de {monthName} de {yearNumber}
         </span>
         <span className="foot-brand" style={{ textAlign: 'right' }}>
