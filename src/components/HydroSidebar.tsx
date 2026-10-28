@@ -14,7 +14,7 @@ export interface NavItemDef {
 export const NAV_ITEMS: NavItemDef[] = [
   {
     id: 'destaques',
-    label: 'Destaques',
+    label: 'DESTAQUES',
     href: '/dashboard',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -25,7 +25,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'lembretes',
-    label: 'Lembretes',
+    label: 'LEMBRETES',
     href: '/lembretes',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -36,7 +36,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'instacena',
-    label: 'Instacena',
+    label: 'INSTACENA',
     href: '/instacena',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -48,7 +48,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'almoxarifado',
-    label: 'Almoxarifado',
+    label: 'ALMOXARIFADO',
     href: '/almoxarifado',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -59,7 +59,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'documentos',
-    label: 'Documentos',
+    label: 'DOCUMENTOS',
     href: '/documentos',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -70,7 +70,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'equipamentos',
-    label: 'Equipamentos',
+    label: 'EQUIPAMENTOS',
     href: '/equipamentos',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -82,7 +82,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'seguranca',
-    label: 'Segurança',
+    label: 'SEGURANÇA',
     href: '/seguranca',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -104,7 +104,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'relatorio-obra',
-    label: 'Relatório de Obra',
+    label: 'RELATÓRIO DE OBRA',
     href: '/relatorio-obra',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -114,7 +114,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'meio-ambiente',
-    label: 'Meio Ambiente',
+    label: 'MEIO AMBIENTE',
     href: '/meio-ambiente',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -125,7 +125,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'planejamento',
-    label: 'Planejamento',
+    label: 'PLANEJAMENTO',
     href: '/relatorio-obra/rdo',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -136,7 +136,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'reunioes',
-    label: 'Reuniões',
+    label: 'REUNIÕES',
     href: '/reunioes',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -147,7 +147,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'emergencia',
-    label: 'Emergência',
+    label: 'EMERGÊNCIA',
     href: '/emergencia',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -159,7 +159,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   {
     id: 'admin',
-    label: 'Administração',
+    label: 'ADMINISTRAÇÃO',
     href: '/admin',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">

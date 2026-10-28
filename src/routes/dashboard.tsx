@@ -1083,65 +1083,7 @@ function DashboardComponent() {
           )}</div>
       </section>
 
-    
-    
-
-      {/* 5. EQUIPAMENTOS EM OPERAÇÃO E MANUTENÇÃO (VELOCÍMETROS E CENAS) */}
-      <section className="card card-pad" aria-label="Equipamentos em operação e em manutenção">
-      <div className="fleet">
-        <div className="fleet-half">
-          <div className="fleet-head">
-            <div className="ch-ico" style={{ background: 'var(--blue-bg)', color: 'var(--blue)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div>
-            <span>Em operação (Pesados)</span>
-          </div>
-          <div className="fleet-body">
-            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.operation} de ${fleetMetrics.total} em operação, ${fleetMetrics.pctOperation} por cento`} title="Clique para ver o velocímetro da frota de novo" onClick={() => replayGauge("pipa")}>
-              <div className="gauge-dial">
-              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
-                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#DCE9FD" strokeWidth="15" strokeLinecap="round"/>
-                <path ref={pipaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradBlue)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetOperation} data-pct={fleetMetrics.pctOperation}/>
-                <g stroke="#A9B8CC" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
-                <g ref={pipaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationOperation} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#2563EB"/></g>
-              </svg>
-              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
-              </div>
-              <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total} pesados</span></div>
-              <span className="gauge-tip">{fleetMetrics.pctOperation}% em operação<small>{fleetMetrics.operation} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
-            </div>
-            <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Equipamentos<br/>Pesados</div></div>
-          </div>
-          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} pesados em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
-        </div>
-        <div className="fleet-half">
-          <div className="fleet-head">
-            <div className="ch-ico" style={{ background: '#FFF3E4', color: '#EA580C' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3 3.7-3.7Z"/></svg></div>
-            <span>Em manutenção</span>
-          </div>
-          <div className="fleet-body">
-            <div className="gauge" role="img" tabIndex={0} aria-label={`Velocímetro: ${fleetMetrics.maintenance} de ${fleetMetrics.total} em manutenção, ${fleetMetrics.pctMaintenance} por cento`} title="Clique para ver o velocímetro de manutenção de novo" onClick={() => replayGauge("oficina")}>
-              <div className="gauge-dial">
-              <svg width="184" height="118" viewBox="0 0 200 115" aria-hidden="true">
-                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FDEBD9" strokeWidth="15" strokeLinecap="round"/>
-                <path ref={oficinaArcRef} className="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#gradOrange)" strokeWidth="15" strokeLinecap="round" strokeDasharray="251.327" strokeDashoffset={fleetMetrics.gaugeOffsetMaintenance} data-pct={fleetMetrics.pctMaintenance}/>
-                <g stroke="#C9B096" strokeWidth="2" strokeLinecap="round"><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-90 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(-18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(0 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(18 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(36 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(54 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(72 100 100)"/><line x1="100" y1="7" x2="100" y2="16" transform="rotate(90 100 100)"/></g>
-                <g ref={oficinaNeedleRef} className="gauge-needle" transform={`rotate(${fleetMetrics.needleRotationMaintenance} 100 100)`}><polygon points="97.4,100 102.6,100 100.9,38 99.1,38" fill="#17233B"/><circle cx="100" cy="100" r="10" fill="#17233B"/><circle cx="100" cy="100" r="4.5" fill="#EA580C"/></g>
-              </svg>
-              <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
-              </div>
-              <div className="gauge-center"><b data-count={fleetMetrics.maintenance}>{fleetMetrics.maintenance}</b><span>de {fleetMetrics.total}</span></div>
-              <span className="gauge-tip">{fleetMetrics.pctMaintenance}% em manutenção<small>{fleetMetrics.maintenance} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
-            </div>
-            <div><div className="pct-chip orange"><b data-count-pct={fleetMetrics.pctMaintenance}>{fleetMetrics.pctMaintenance}%</b><span>em manutenção</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
-          </div>
-          <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-orange"><i className="d-orange"></i>{fleetMetrics.maintenance} em manutenção</span><span className="hl-orange"><i className="d-orange-rest"></i>{fleetMetrics.outOfMaintenance} fora de manutenção</span></div>
-        </div>
-      </div>
-    </section>
-
-    
-    
-
-      {/* 6. ACESSO RÁPIDO */}
+      {/* 5. ACESSO RÁPIDO */}
       <section className="quick" aria-label="Acesso rápido">
       <div className="quick-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>Acesso rápido</div>
       <div className="quick-items" id="quickItems">
