@@ -1,6 +1,6 @@
 import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
 import Shield from 'lucide-react/dist/esm/icons/shield.js';
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, useRef, ReactNode } from 'react'
 import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import { LogoutOverlay } from './LogoutOverlay'
@@ -12,7 +12,8 @@ import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
 import { useGlobalPresenceSync } from '../hooks/useGlobalPresenceSync'
 import { ChatSidebar } from './ChatSidebar'
-import { WindowsNavbar } from './WindowsNavbar'
+import { HydroSidebar } from './HydroSidebar'
+import '../hydro-panel.css'
 import { ChatWindow } from './chat/ChatWindow'
 import { DdsUploadModal } from './DdsUploadModal'
 import { isAdmin } from './ui/VerifiedBadge'
@@ -27,6 +28,7 @@ import { MiniWeatherWidget } from './MiniWeatherWidget'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
 import { clearDailySessionExpiry } from '../lib/sessionManager'
+import { useNotifications } from '../context/NotificationContext'
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -45,6 +47,57 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useGlobalPresenceSync(currentUser.id)
   
   const { currentColor } = useMonthlyColors()
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      return localStorage.getItem('hydro_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const { state, markAsRead, markAllAsRead } = useNotifications()
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsNotifOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value
+    setSearchQuery(q)
+    window.dispatchEvent(new CustomEvent('hydro_search', { detail: q }))
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (location.pathname !== '/dashboard' && location.pathname !== '/dashboard/') {
+        navigate({ to: '/dashboard' as any })
+      }
+    }
+  }
+
+  const rawName = currentUser.name || 'Fabrício'
+  const firstName = rawName.split(' ')[0]
+  const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase()
+  const avatarLetter = displayFirstName.charAt(0).toUpperCase() || 'F'
+
 
   // Verifica atualização imediatamente ao carregar
   useEffect(() => {
@@ -100,24 +153,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) {
+      const isDevMock = typeof window !== 'undefined' && window.location.search.includes('mock=true')
+      const user = data?.user || (isDevMock ? { id: 'mock-user', email: 'fabricio@hydro.com', user_metadata: { full_name: 'Fabrício', role: 'Visão geral da operação' } } : null)
+      if (!user) {
         navigate({ to: '/' })
         return
       }
-      const role = data.user.user_metadata?.role || ''
-      const userName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário'
+      const role = user.user_metadata?.role || ''
+      const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário'
       if (userName && userName !== 'Usuário') {
         try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
       }
       setCurrentUser({
-        id: data.user.id || '',
+        id: user.id || '',
         name: userName,
         role: role || 'Usuário',
-        avatarUrl: data.user.user_metadata?.avatar_url || ''
+        avatarUrl: user.user_metadata?.avatar_url || ''
       })
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (typeof window !== 'undefined' && window.location.search.includes('mock=true')) return
       if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
         navigate({ to: '/' })
         return
@@ -229,8 +285,90 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   }
 
+  // Helper functions for notifications
+  const getNotificationIconStyle = (type: string) => {
+    switch (type) {
+      case 'mention':
+        return { background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }
+      case 'instacena_post':
+        return { background: 'linear-gradient(135deg, var(--amber), var(--rose))', color: 'white' }
+      case 'instacena_like':
+        return { background: 'var(--rose-bg)', color: 'var(--rose)' }
+      case 'instacena_comment':
+        return { background: 'var(--indigo-bg)', color: 'var(--indigo)' }
+      case 'instacena_story':
+        return { background: 'linear-gradient(135deg, var(--purple), var(--pink))', color: 'white' }
+      case 'system':
+      default:
+        return { background: 'var(--red-bg)', color: 'var(--red)' }
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'mention':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        )
+      case 'instacena_post':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.2" cy="6.8" r=".6" fill="currentColor" />
+          </svg>
+        )
+      case 'instacena_like':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 1-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 1-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 1 0-7.78z" />
+          </svg>
+        )
+      case 'instacena_comment':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        )
+      case 'instacena_story':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        )
+      case 'system':
+      default:
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M12 3 2 20h20L12 3Z" />
+            <path d="M12 10v4M12 17.5v.5" />
+          </svg>
+        )
+    }
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Agora mesmo'
+    if (diffMins < 60) return `${diffMins}min atrás`
+    if (diffHours < 24) return `${diffHours}h atrás`
+    if (diffDays < 7) return `${diffDays}d atrás`
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  }
+
   return (
-    <div className={`overflow-y-auto overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
+    <div className={`overflow-y-auto overflow-x-hidden font-sans ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} app hydro-dashboard-root selection:bg-purple-500/30 transition-colors duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
     style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
       <LogoutOverlay isVisible={isLoggingOut} userName={currentUser.name} userRole={currentUser.role} />
@@ -262,29 +400,204 @@ export function AppLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
-      <div className="sticky top-0 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <WindowsNavbar currentUser={currentUser} onLogoutRequest={() => setShowLogoutConfirm(true)} />
-        </div>
-      </div>
+
+
+      <HydroSidebar isSidebarCollapsed={isSidebarCollapsed} setIsSidebarCollapsed={setIsSidebarCollapsed} />
 
       {/* Main Scrollable Content */}
       <main 
-        className="vt-main relative z-0 flex flex-col min-h-full"
+        className={`vt-main relative z-0 flex flex-col min-h-full ${isDashboard ? 'p-0' : 'pt-0'}`}
         style={{ 
-          /* Em mobile: sem padding lateral excessivo */
-          paddingBottom: 'max(56px, calc(56px + env(safe-area-inset-bottom, 0px)))',
+          marginLeft: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
+          width: typeof window !== 'undefined' && window.innerWidth <= 900 ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
+          paddingLeft: isSidebarCollapsed ? (typeof window !== 'undefined' && window.innerWidth <= 900 ? '14px' : '58px') : undefined,
+          paddingBottom: 'max(32px, calc(32px + env(safe-area-inset-bottom, 0px)))',
+          transition: 'margin-left .48s cubic-bezier(.45,0,.15,1), width .48s cubic-bezier(.45,0,.15,1), padding-left .48s cubic-bezier(.45,0,.15,1)',
         }}
       >
-        <div className="px-3 sm:px-6 md:px-12 lg:px-24 xl:px-32">
-          {/* Back Button: visible only on sub-pages (depth >= 2) */}
-          {location.pathname.split('/').filter(Boolean).length >= 2 && (
-            <div className="pt-5">
-              <BackButton />
+        {/* Barra superior persistente em todo o sistema */}
+        <div style={{ padding: '20px 28px 12px 28px', width: '100%' }}>
+          <header className="topbar">
+            <label className="search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                id="globalSearchInput"
+                type="search"
+                placeholder="Buscar colaboradores, documentos, equipamentos…"
+                aria-label="Buscar no painel"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+              />
+            </label>
+
+            <div className="top-actions" ref={notifRef}>
+              <div className="notif-wrap">
+                <button
+                  className="icon-btn"
+                  id="bellBtn"
+                  type="button"
+                  aria-label={`Notificações, ${state.unreadCount} não lidas`}
+                  aria-expanded={isNotifOpen}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsNotifOpen((prev) => !prev)
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+                    <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+                  </svg>
+                  {state.unreadCount > 0 && (
+                    <span className="dot-badge">{state.unreadCount > 99 ? '99+' : state.unreadCount}</span>
+                  )}
+                </button>
+
+                <div
+                  className={`notif-panel ${isNotifOpen ? 'open' : ''}`}
+                  id="notifPanel"
+                  role="dialog"
+                  aria-label="Notificações"
+                >
+                  <div className="notif-header">
+                    <h3>Notificações</h3>
+                    {state.unreadCount > 0 && (
+                      <button
+                        className="mark-all-read-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markAllAsRead()
+                        }}
+                        title="Marcar todas como lidas"
+                      >
+                        Marcar todas como lidas
+                      </button>
+                    )}
+                  </div>
+                  {state.notifications.length === 0 ? (
+                    <div className="notif-empty">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+                        <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+                      </svg>
+                      <p>Nenhuma notificação</p>
+                    </div>
+                  ) : (
+                    state.notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`notif-item cursor-pointer ${!notif.read ? 'unread' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!notif.read) {
+                            markAsRead(notif.id)
+                          }
+                          setIsNotifOpen(false)
+                          if (notif.targetUrl) {
+                            navigate({ to: notif.targetUrl as any })
+                          }
+                        }}
+                      >
+                        <div
+                          className="n-ico"
+                          style={getNotificationIconStyle(notif.type)}
+                        >
+                          {getNotificationIcon(notif.type)}
+                        </div>
+                        <div className="notif-content">
+                          <div className="notif-title-row">
+                            <b>{notif.title}</b>
+                            {!notif.read && <span className="unread-dot" />}
+                          </div>
+                          <p>{notif.message}</p>
+                          <small className="notif-time">{formatTimeAgo(notif.createdAt)}</small>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div
+                className="forbidden-note"
+                role="button"
+                tabIndex={0}
+                title="Cor proibida do mês: Azul"
+                onClick={() => setShowMonthlyColorsModal(true)}
+              >
+                <button
+                  className="icon-btn forbidden-color"
+                  type="button"
+                  aria-label="Cor proibida do mês: azul"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.2" />
+                    <path d="M6.2 6.2 17.8 17.8" />
+                  </svg>
+                </button>
+                <div className="forbidden-label" aria-hidden="true">
+                  <small>Cor proibida do mês</small>
+                  <b>Azul</b>
+                </div>
+              </div>
+
+              <div
+                className="user-chip cursor-pointer"
+                role="button"
+                tabIndex={0}
+                title="Abrir perfil / configurações"
+                onClick={() => navigate({ to: '/configuracoes' as any })}
+              >
+                <div className="avatar-f" aria-hidden="true">
+                  {currentUser.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    avatarLetter
+                  )}
+                </div>
+                <div>
+                  <b>Olá, {displayFirstName}</b>
+                  <span>{currentUser.role || 'Visão geral da operação'}</span>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+
+              
+              <button
+                className="logout-top-btn"
+                type="button"
+                title="Sair do sistema"
+                onClick={() => setShowLogoutConfirm(true)}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>SAIR</span>
+              </button>
             </div>
-          )}
-          {children}
+          </header>
         </div>
+
+        {/* Conteúdo da página */}
+        {isDashboard ? (
+          children
+        ) : (
+          <div className="px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto">
+            {location.pathname.split('/').filter(Boolean).length >= 2 && (
+              <div className="pt-2 pb-4">
+                <BackButton />
+              </div>
+            )}
+            {children}
+          </div>
+        )}
       </main>
 
       {/* Chat Sidebar Overlay */}
@@ -298,90 +611,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
         ))}
       </div>
-
-      {/* Bottom Status Bar */}
-      <footer 
-        className={`fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between transition-colors duration-300 ${isDark ? 'bg-[#0a0a0c]/80 backdrop-blur-md border-t border-white/5' : 'bg-[#faf9f6]/90 backdrop-blur-md border-t border-black/5 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]'}`}
-        style={{
-          height: 'max(36px, calc(36px + env(safe-area-inset-bottom, 0px)))',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
-          paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
-        }}
-      >
-        
-        {/* Bottom Left: Logout — escondido em mobile pequeno para economizar espaço */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <button 
-            onClick={() => setShowLogoutConfirm(true)}
-            className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors touch-target ${isDark ? 'text-white hover:text-yellow-400' : 'text-gray-900 hover:text-yellow-500'}`}
-            style={{ minWidth: 44, minHeight: 44 }}
-          >
-            <LogOut size={13} />
-            <span className="hidden sm:inline">SAIR</span>
-          </button>
-          
-          <button 
-            className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-gray-900 hover:bg-black/5'}`}
-            title="Sincronizar Atualizações e Limpar Cache"
-            onClick={handleHardRefresh}
-            style={{ minWidth: 44, minHeight: 44 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
-          </button>
-          
-          {isAdmin(currentUser.name, currentUser.role) && (
-            <Link 
-              to="/admin"
-              className={`flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-white/70 hover:text-[#D6A72B] hover:bg-white/10' : 'text-gray-700 hover:text-[#D6A72B] hover:bg-black/5'}`}
-              title="Administração"
-              style={{ minWidth: 44, minHeight: 44 }}
-            >
-              <Shield size={16} />
-            </Link>
-          )}
-        </div>
-
-        {/* Bottom Right: Tools */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex justify-center pointer-events-none">
-          <img src={isDark ? "/logo.png" : "/logo-light-theme.png"} alt="Sucena Logo" className={`h-5 w-auto object-contain transition-all duration-300 opacity-60 ${isDark ? 'filter brightness-0 invert' : ''}`} />
-        </div>
-
-        {/* Bottom Right: Chat + Status */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <MiniWeatherWidget />
-
-          {/* Chat Icon with Badge */}
-          <button 
-            onClick={toggleSidebar}
-            className={`relative transition-colors ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
-            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            {unreadCountGlobally > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#D6A72B] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
-                {unreadCountGlobally > 99 ? '99+' : unreadCountGlobally}
-              </span>
-            )}
-          </button>
-
-          {/* Status Dot */}
-          <button 
-            className={`flex items-center gap-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'} relative z-10`}
-            onClick={() => {
-              setShowMonthlyColorsModal(true)
-            }}
-            title="Configurar cores mensais"
-            style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${colorStyles[currentColor as keyof typeof colorStyles]?.ping || 'bg-red-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colorStyles[currentColor as keyof typeof colorStyles]?.dot || 'bg-red-500'}`}></span>
-            </span>
-          </button>
-        </div>
-
-      </footer>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

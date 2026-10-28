@@ -20,6 +20,7 @@ import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
 import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
+import { NotificationProvider } from "../context/NotificationContext";
 import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
 import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
@@ -28,16 +29,19 @@ function RootContent() {
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
-  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes')) && !path.startsWith('/equipamentos/app-motorista')
+  const isDashboard = path === '/dashboard' || path === '/dashboard/'
+  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes') || path.startsWith('/admin')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
     <div className={`min-h-screen ${isDark ? 'text-white' : 'text-[#1c1d21]'}`}>
       <DailySessionWatcher />
       <GlobalBackground />
       {isAppRoute ? (
-        <AppLayout>
-          <Outlet />
-        </AppLayout>
+        <NotificationProvider>
+          <AppLayout>
+            <Outlet />
+          </AppLayout>
+        </NotificationProvider>
       ) : (
         <Outlet />
       )}
@@ -112,7 +116,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&display=swap&=swap" },
+            { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,

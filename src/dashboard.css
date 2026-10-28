@@ -1,80 +1,128 @@
+/* ==========================================================
+   GESTÃO SUCENA — DESIGN SYSTEM DO DASHBOARD
+   Estética: corporativo sóbrio. Sem neon, sem glow, sem borda
+   dourada. Superfícies neutras + cor semântica por status.
+   ========================================================== */
+
 :root {
-  --dash-bg: #eaf3ff;
-  --text-primary: #07173f;
-  --text-secondary: #53698e;
-  --text-label: #23385c;
+  /* --- Marca / base institucional --- */
+  --brand-900: #0f2138;
+  --brand-800: #16304f;
+  --brand-700: #1e3a5f;
+  --brand-600: #2a5183;
+  --brand-500: #3a6ba6;
 
-  --blue: #1677ff;
-  --green: #20c76c;
-  --red: #f23759;
-  --orange: #ff7200;
+  /* --- Neutros (superfícies) --- */
+  --neutral-50: #f7f8fa;
+  --neutral-100: #eef0f4;
+  --neutral-200: #e2e5eb;
+  --neutral-300: #cfd4de;
+  --neutral-400: #9aa3b4;
+  --neutral-500: #6b7688;
+  --neutral-600: #4d5768;
+  --neutral-700: #363f4e;
+  --neutral-800: #232b38;
+  --neutral-900: #141a24;
 
-  --glass-bg: rgba(255, 255, 255, var(--light-card-opacity, 0.75));
+  /* --- Semântica de status --- */
+  --status-success: #16a34a;
+  --status-success-soft: #e8f6ee;
+  --status-success-ink: #12683a;
 
-  --glass-border: #ffd033; /* Golden yellow border matching the image */
+  --status-warning: #d97706;
+  --status-warning-soft: #fdf1e0;
+  --status-warning-ink: #92500a;
 
-  /* Superfícies claras — texto sempre grafite por cima */
-  --surface-soft: rgba(255, 255, 255, 0.7);
-  --surface-border: rgba(20, 40, 80, 0.08);
-  --shadow-soft:
-    0 10px 30px rgba(31, 73, 125, 0.08),
-    0 0 10px rgba(255, 208, 51, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  --status-danger: #dc2626;
+  --status-danger-soft: #fdeaea;
+  --status-danger-ink: #9b1c1c;
 
-  --shadow-hover:
-    0 16px 38px rgba(31, 73, 125, 0.13),
-    0 0 15px rgba(255, 208, 51, 0.25);
+  --status-info: #2563eb;
+  --status-info-soft: #e8effd;
+  --status-info-ink: #1d4ed8;
 
-  --radius: 22px;
+  --status-neutral: #6b7688;
+  --status-neutral-soft: #eef0f4;
+  --status-neutral-ink: #4d5768;
+
+  /* --- Tokens semânticos da página --- */
+  --dash-bg: var(--neutral-100);
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-600);
+  --text-label: var(--neutral-700);
+
+  --card-bg: #ffffff;
+  --card-border: var(--neutral-200);
+  --card-radius: 14px;
+
+  --shadow-card:
+    0 1px 2px rgba(20, 26, 36, 0.04),
+    0 4px 12px rgba(20, 26, 36, 0.05);
+
+  --shadow-card-hover:
+    0 1px 2px rgba(20, 26, 36, 0.05),
+    0 8px 24px rgba(20, 26, 36, 0.09);
+
+  --ring-focus: 0 0 0 3px rgba(30, 58, 95, 0.16);
 }
 
 .dark {
-  --dash-bg: #0b0b0e;
+  --brand-900: #0b1220;
+  --brand-800: #101c2e;
+  --brand-700: #16273d;
+  --brand-600: #1e3a5f;
+  --brand-500: #3a6ba6;
+
+  --neutral-50: #171c25;
+  --neutral-100: #12161e;
+  --neutral-200: #232a36;
+  --neutral-300: #2f3746;
+  --neutral-400: #4b5566;
+  --neutral-500: #7c8798;
+  --neutral-600: #9aa3b4;
+  --neutral-700: #c3cad6;
+  --neutral-800: #e2e6ee;
+  --neutral-900: #ffffff;
+
+  --status-success: #34c27f;
+  --status-success-soft: rgba(52, 194, 127, 0.12);
+  --status-success-ink: #5fd6a0;
+
+  --status-warning: #e59331;
+  --status-warning-soft: rgba(229, 147, 49, 0.12);
+  --status-warning-ink: #f0b063;
+
+  --status-danger: #f0595c;
+  --status-danger-soft: rgba(240, 89, 92, 0.12);
+  --status-danger-ink: #f68083;
+
+  --status-info: #5b8def;
+  --status-info-soft: rgba(91, 141, 239, 0.12);
+  --status-info-ink: #7ea8f5;
+
+  --status-neutral: #7c8798;
+  --status-neutral-soft: rgba(255, 255, 255, 0.06);
+  --status-neutral-ink: #a8b1c0;
+
+  --dash-bg: var(--neutral-100);
   --text-primary: #ffffff;
-  --text-secondary: #e2e8f0;
-  --text-label: #f8fafc;
+  --text-secondary: var(--neutral-600);
+  --text-label: var(--neutral-700);
 
-  --blue: #38bdf8;
-  --green: #20c76c;
-  --red: #f23759;
-  --orange: #ff7200;
+  --card-bg: #161b24;
+  --card-border: #232a36;
 
-  --glass-bg: rgba(20, 20, 24, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.25);
 
-  --surface-soft: rgba(24, 24, 28, 0.85);
-  --surface-border: rgba(255, 255, 255, 0.08);
+  --shadow-card-hover:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .dark body {
   color: #ffffff !important;
-}
-
-.dark .dashboard-header {
-  background: rgba(18, 18, 22, 0.75);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dark .dashboard-card {
-  background: rgba(20, 20, 24, 0.8);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.dark .dashboard-header-icon {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-.dark .dashboard-title {
-  color: #ffffff;
-}
-
-.dark .dashboard-subtitle {
-  color: #e2e8f0;
-}
-
-.dark .dashboard-date {
-  color: #ffffff;
 }
 
 * {
@@ -114,76 +162,77 @@ body {
   margin: 0 auto;
 }
 
-/* HEADER */
+/* ==========================================================
+   HEADER — faixa de contexto, não um card decorativo
+   ========================================================== */
 
 .dashboard-header {
-  min-height: 110px;
+  min-height: 96px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  padding: 22px 28px;
+  padding: 20px 24px;
 
-  background: rgba(255, 255, 255, 0.50);
+  background: var(--card-bg);
 
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 22px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
 
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: var(--shadow-card);
 
-  box-shadow: var(--shadow-soft);
-
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .dashboard-header-left {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 
 .dashboard-header-icon {
   display: grid;
   place-items: center;
 
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
 
-  border-radius: 18px;
+  border-radius: 12px;
 
-  background: rgba(53, 119, 255, 0.10);
+  background: var(--status-info-soft);
 
-  color: #123c82;
+  color: var(--status-info-ink);
 }
 
 .dashboard-title {
   margin: 0;
 
-  font-size: clamp(24px, 2vw, 31px);
-  font-weight: 750;
+  font-size: clamp(22px, 1.8vw, 28px);
+  font-weight: 700;
 
-  letter-spacing: -0.8px;
+  letter-spacing: -0.4px;
 }
 
 .dashboard-subtitle {
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .dashboard-date {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 
-  color: #31517e;
-  font-size: 15px;
-  line-height: 1.6;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* GRID */
+/* ==========================================================
+   GRID
+   ========================================================== */
 
 .dashboard-grid {
   display: grid;
@@ -191,23 +240,22 @@ body {
   gap: 16px;
 }
 
-/* CARDS */
+/* ==========================================================
+   CARDS — superfície neutra, sem vidro e sem neon
+   ========================================================== */
 
 .dashboard-card {
   position: relative;
 
   min-width: 0;
-  padding: 24px;
+  padding: 20px;
 
-  background: var(--glass-bg);
+  background: var(--card-bg);
 
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
 
-  backdrop-filter: blur(12px) saturate(145%);
-  -webkit-backdrop-filter: blur(12px) saturate(145%);
-
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
 
   overflow: hidden;
 
@@ -216,9 +264,9 @@ body {
   touch-action: manipulation;
 
   transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-card > * {
@@ -227,7 +275,12 @@ body {
 
 .dashboard-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--neutral-300);
+}
+
+.dark .dashboard-card:hover {
+  border-color: var(--neutral-300);
 }
 
 .card-weather,
@@ -235,14 +288,14 @@ body {
 .card-operation,
 .card-maintenance {
   grid-column: span 3;
-  min-height: 275px;
+  min-height: 250px;
 }
 
 .card-total,
 .card-presence,
 .card-absence {
   grid-column: span 4;
-  min-height: 225px;
+  min-height: 210px;
 }
 
 .card-dds {
@@ -250,93 +303,113 @@ body {
   min-height: 145px;
 }
 
+/* ==========================================================
+   CABEÇALHO DO CARD — título com peso, sem competir com o dado
+   ========================================================== */
+
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .card-title-wrap {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .card-title {
   margin: 0;
 
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
 
-  letter-spacing: 0.1px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 
-  color: var(--text-primary);
+  color: var(--text-label);
 }
 
 .card-menu {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
 
   background: transparent;
 
   display: grid;
   place-items: center;
 
-  color: #34547f;
+  color: var(--neutral-400);
 
   cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .card-menu:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--neutral-100);
+  color: var(--neutral-600);
 }
 
-/* ICON BOX */
+.dark .card-menu:hover {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+/* ==========================================================
+   ÍCONES — chip neutro com cor semântica, sem "caixa de luz"
+   ========================================================== */
 
 .icon-box {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
 
   display: grid;
   place-items: center;
 
-  border-radius: 14px;
+  flex-shrink: 0;
+
+  border-radius: 10px;
 }
 
 .icon-blue {
-  background: rgba(22, 119, 255, 0.12);
-  color: var(--blue);
+  background: var(--status-info-soft);
+  color: var(--status-info-ink);
 }
 
 .icon-green {
-  background: rgba(32, 199, 108, 0.13);
-  color: var(--green);
+  background: var(--status-success-soft);
+  color: var(--status-success-ink);
 }
 
 .icon-red {
-  background: rgba(242, 55, 89, 0.12);
-  color: var(--red);
+  background: var(--status-danger-soft);
+  color: var(--status-danger-ink);
 }
 
 .icon-orange {
-  background: rgba(255, 114, 0, 0.13);
-  color: var(--orange);
+  background: var(--status-warning-soft);
+  color: var(--status-warning-ink);
 }
 
 .icon-yellow {
-  background: rgba(245, 196, 0, 0.15);
-  color: #b89300;
+  background: var(--status-warning-soft);
+  color: var(--status-warning-ink);
 }
 
 .icon-purple {
-  background: rgba(111, 83, 255, 0.12);
-  color: #6747ef;
+  background: var(--status-info-soft);
+  color: var(--status-info-ink);
 }
 
 /* WEATHER */
@@ -393,46 +466,52 @@ body {
   gap: 10px;
 }
 
-/* NUMBERS */
+/* ==========================================================
+   NÚMEROS — o dado é o protagonista
+   ========================================================== */
 
 .big-number {
-  margin: 12px 0 0;
+  margin: 0;
 
-  font-size: clamp(50px, 5vw, 66px);
+  font-size: clamp(40px, 4vw, 52px);
   line-height: 1;
 
-  font-weight: 750;
-  letter-spacing: -2px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+
+  color: var(--text-primary);
 }
 
 .big-number-label {
-  margin-top: 8px;
+  margin-top: 6px;
 
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: 13px;
 }
 
-/* DONUT */
+/* ==========================================================
+   DONUT
+   ========================================================== */
 
 .donut-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.donut {
+.donut-wrapper .donut {
   --value: 0;
-  --accent: #1677ff;
-  --track: rgba(22, 119, 255, 0.15);
+  --accent: var(--status-info);
+  --track: var(--status-info-soft);
 
   position: relative;
 
-  width: 120px;
-  height: 120px;
+  width: 116px;
+  height: 116px;
 
-  flex: 0 0 120px;
+  flex: 0 0 116px;
 
   border-radius: 50%;
 
@@ -445,19 +524,15 @@ body {
   transform: rotate(-90deg);
 }
 
-.donut::after {
+.donut-wrapper .donut::after {
   content: "";
 
   position: absolute;
-  inset: 15px;
+  inset: 14px;
 
   border-radius: 50%;
 
-  background:
-    rgba(246, 251, 255, 0.88);
-
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.70);
+  background: var(--card-bg);
 }
 
 .donut-content {
@@ -477,70 +552,82 @@ body {
 }
 
 .donut-number {
-  font-size: 35px;
-  font-weight: 750;
+  font-size: 30px;
+  font-weight: 700;
 
   line-height: 1;
+
+  color: var(--text-primary);
 }
 
 .donut-total {
-  margin-top: 5px;
+  margin-top: 4px;
 
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
+/* ==========================================================
+   PERCENT — bloco de status, não um selo decorativo
+   ========================================================== */
+
 .percent-box {
-  min-width: 110px;
-  padding: 12px 14px;
-  border-radius: 15px;
+  min-width: 104px;
+  padding: 10px 12px;
+  border-radius: 10px;
   text-align: center;
 }
 
 .percent-box strong {
   display: block;
 
-  font-size: 26px;
-  line-height: 1;
+  font-size: 22px;
+  line-height: 1.1;
 
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .percent-box span {
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .percent-green {
-  background: rgba(32, 199, 108, 0.10);
-  color: #00a844;
+  background: var(--status-success-soft);
+  color: var(--status-success-ink);
 }
 
 .percent-blue {
-  background: rgba(22, 119, 255, 0.10);
-  color: #006fe9;
+  background: var(--status-info-soft);
+  color: var(--status-info-ink);
 }
 
 .percent-red {
-  background: rgba(242, 55, 89, 0.10);
-  color: #e31b42;
+  background: var(--status-danger-soft);
+  color: var(--status-danger-ink);
 }
 
 .percent-yellow {
-  background: rgba(245, 196, 0, 0.15);
-  color: #b89300;
+  background: var(--status-warning-soft);
+  color: var(--status-warning-ink);
 }
 
 .percent-orange {
-  background: rgba(255, 114, 0, 0.10);
-  color: #f16400;
+  background: var(--status-warning-soft);
+  color: var(--status-warning-ink);
 }
 
-/* BIRTHDAYS */
+/* ==========================================================
+   LISTAGENS — linhas tabulares, não pílulas
+   ========================================================== */
 
 .birthday-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .birthday-item {
@@ -552,17 +639,55 @@ body {
 
   gap: 10px;
 
-  padding: 11px 14px;
+  padding: 9px 12px;
 
-  border-radius: 12px;
+  border-radius: 8px;
 
-  background: rgba(255, 255, 255, 0.34);
+  background: var(--neutral-50);
+  border: 1px solid transparent;
 
-  border: 1px solid rgba(255, 255, 255, 0.50);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dark .birthday-item {
+  background: var(--neutral-50);
+}
+
+.birthday-item:hover {
+  border-color: var(--card-border);
 }
 
 .birthday-item.active {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--status-warning-soft);
+  border-color: color-mix(in srgb, var(--status-warning) 28%, transparent);
+}
+
+.birthday-item.is-warning {
+  background: var(--status-warning-soft);
+  border-color: color-mix(in srgb, var(--status-warning) 30%, transparent);
+}
+
+.birthday-item.is-danger {
+  background: var(--status-danger-soft);
+  border-color: color-mix(in srgb, var(--status-danger) 30%, transparent);
+}
+
+.birthday-item.is-danger .birthday-name,
+.birthday-item.is-danger .birthday-day {
+  color: var(--status-danger-ink);
+  font-weight: 600;
+}
+
+.birthday-item.is-warning .birthday-day {
+  color: var(--status-warning-ink);
+  font-weight: 600;
+}
+
+.birthday-item.active .birthday-day {
+  color: var(--status-warning-ink);
+  font-weight: 600;
 }
 
 .birthday-name {
@@ -572,31 +697,41 @@ body {
   white-space: nowrap;
   text-overflow: ellipsis;
 
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+
+  color: var(--text-primary);
 }
 
 .birthday-item.active .birthday-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .birthday-day {
   flex-shrink: 0;
 
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 600;
+
+  color: var(--text-secondary);
 }
 
-/* TOTAL EMPLOYEES DECORATION */
+/* ==========================================================
+   DECORAÇÃO — marca d'água sutil, nunca sobre o dado
+   ========================================================== */
 
 .employee-decoration {
   position: absolute;
-  right: 32px;
-  bottom: 26px;
-  opacity: 1;
-  transform: scale(2.2);
-  color: #000000;
-  filter: none;
+  right: 18px;
+  bottom: 14px;
+  opacity: 0.06;
+  color: var(--brand-700);
   pointer-events: none;
-  transition: all 0.3s ease;
+  transition: opacity 0.25s ease;
+}
+
+.dashboard-card:hover .employee-decoration {
+  opacity: 0.1;
 }
 
 /* DDS */
@@ -614,33 +749,46 @@ body {
 .dds-main {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
+  min-width: 0;
 }
 
 .dds-label {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
 
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+
+  color: var(--status-info-ink);
 }
 
 .dds-status {
-  font-size: 30px;
-  font-weight: 750;
-  line-height: 1.1;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+
+  color: var(--text-primary);
 }
 
 .dds-theme {
-  margin-top: 8px;
+  margin-top: 4px;
 
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .dds-arrow {
-  color: #4d6f9c;
+  flex-shrink: 0;
+  color: var(--neutral-400);
+  transition: transform 0.2s ease;
+}
+
+.dashboard-card:hover .dds-arrow {
+  transform: translateX(3px);
+  color: var(--status-info);
 }
 
 /* LOAD ANIMATION */
@@ -699,11 +847,11 @@ body {
     align-items: flex-start;
     flex-direction: column;
 
-    gap: 18px;
+    gap: 14px;
 
-    padding: 20px;
+    padding: 16px;
 
-    border-radius: 18px;
+    border-radius: var(--card-radius);
   }
 
   .dashboard-date {
@@ -727,12 +875,10 @@ body {
     grid-column: 1 / -1;
 
     min-height: auto;
-
-    border-radius: 18px;
   }
 
   .dashboard-card {
-    padding: 18px; /* Slightly reduced for mobile */
+    padding: 16px; /* Slightly reduced for mobile */
   }
 
   .dashboard-card:active {
@@ -743,15 +889,13 @@ body {
   .donut-wrapper {
     align-items: center;
   }
+  .donut-wrapper .donut {
+    width: 112px;
+    height: 112px;
 
-  .donut {
-    width: 122px;
-    height: 122px;
-
-    flex-basis: 122px;
+    flex-basis: 112px;
   }
-
-  .donut::after {
+  .donut-wrapper .donut::after {
     inset: 13px;
   }
 
@@ -760,16 +904,11 @@ body {
   }
 
   .percent-box {
-    min-width: 112px;
-    padding: 12px;
+    min-width: 108px;
   }
 
   .weather-temp {
     font-size: 42px;
-  }
-
-  .employee-decoration {
-    transform: scale(1.6);
   }
 }
 
@@ -779,9 +918,8 @@ body {
   }
 
   .dashboard-header-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
+    width: 44px;
+    height: 44px;
   }
 
   .donut-wrapper {
@@ -789,7 +927,7 @@ body {
   }
 
   .percent-box {
-    min-width: 105px;
+    min-width: 100px;
   }
 }
 
@@ -802,349 +940,104 @@ body {
 }
 
 /* =========================================
-   DARK MODE OVERRIDES
+   DARK MODE — herda os tokens do bloco .dark
 ========================================= */
-.dark .dashboard-page {
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-label: rgba(255, 255, 255, 0.9);
+
+.dark .dashboard-header-icon {
+  background: var(--status-info-soft);
+  color: var(--status-info-ink);
 }
 
-.dark .dashboard-header {
-  background: rgba(20, 25, 30, 0.7);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+.dark .employee-decoration {
+  color: var(--neutral-700);
 }
 
-.dark .dashboard-card {
-  background: rgba(0, 0, 0, 0.35);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+/* =========================================
+   CATEGORIAS SEMÂNTICAS
+   Substituem o antigo neon-* : a cor deixa de ser
+   decorativa e passa a carregar significado.
+========================================= */
+
+.semantic-blue {
+  --card-accent: var(--status-info);
+  --card-accent-soft: var(--status-info-soft);
+  --card-accent-ink: var(--status-info-ink);
 }
 
-.dark .icon-box {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2) !important;
+.semantic-green {
+  --card-accent: var(--status-success);
+  --card-accent-soft: var(--status-success-soft);
+  --card-accent-ink: var(--status-success-ink);
 }
 
-.dark .donut {
-  --accent: #ffffff !important;
-  --track: rgba(255, 255, 255, 0.1) !important;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+.semantic-amber {
+  --card-accent: var(--status-warning);
+  --card-accent-soft: var(--status-warning-soft);
+  --card-accent-ink: var(--status-warning-ink);
 }
 
-.dark .donut::after {
-  background: rgba(25, 30, 40, 0.95);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+.semantic-red {
+  --card-accent: var(--status-danger);
+  --card-accent-soft: var(--status-danger-soft);
+  --card-accent-ink: var(--status-danger-ink);
 }
 
-.dark .percent-box {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.semantic-neutral {
+  --card-accent: var(--status-neutral);
+  --card-accent-soft: var(--status-neutral-soft);
+  --card-accent-ink: var(--status-neutral-ink);
 }
 
-.dark .percent-box strong {
-  color: #ffffff !important;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.75) !important;
+/* Aplica o acento do card aos filhos que heredam */
+.semantic-blue .icon-box,
+.semantic-green .icon-box,
+.semantic-amber .icon-box,
+.semantic-red .icon-box,
+.semantic-neutral .icon-box {
+  background: var(--card-accent-soft);
+  color: var(--card-accent-ink);
 }
 
-.dark .percent-box span {
-  color: rgba(255, 255, 255, 0.75) !important;
-}
-
-.dark .big-number {
-  color: #ffffff;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-}
-
-.dark .card-title {
-  color: #ffffff;
-}
-
-.dark .anniversary-list li,
-.dark .weather-temp,
-.dark .weather-desc {
-  color: #ffffff;
-}
-
-/* ==========================================================
-   NEON CYBERPUNK THEME (DARK MODE OVERRIDE)
-   ========================================================== */
-
-.dark .dashboard-page {
-  position: relative;
-}
-
-.dark .dashboard-page::before {
-  display: none;
-}
-
-.neon-title .neon-name {
-  color: #00e5ff;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
-  font-weight: 700;
-}
-
-/* NEON CARDS (BASE) */
-@property --border-angle {
-  syntax: "<angle>";
-  inherits: true;
-  initial-value: 0deg;
-}
-
-@keyframes borderRotate {
-  to {
-    --border-angle: 360deg;
-  }
-}
-
-.neon-card {
-  position: relative;
-}
-
-/* ==========================================================
-   NEON CARD — TEMA CLARO
-   Superfície branca translúcida; a borda mantém a cor neon
-   da categoria, só que com menos intensidade para não vibrar.
-   ========================================================== */
-
-.neon-card::before {
+/* Barra de acento no topo do card — sinaliza a categoria
+   sem borda colorida em volta de todo o perímetro. */
+.dashboard-card[data-accent]::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 16px;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--border-angle),
-    transparent 20%,
-    color-mix(in srgb, var(--neon-border-color, #1677ff) 55%, transparent) 50%,
-    transparent 80%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.55;
-  z-index: 10;
-  animation: borderRotate 30s linear infinite;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+
+  background: var(--card-accent);
+  opacity: 0.85;
 }
 
-.neon-card {
-  --neon-border-color: #1677ff;
-  background: rgba(255, 255, 255, var(--light-card-opacity, 0.75)) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 16px !important;
-  border: 1px solid rgba(20, 40, 80, 0.08) !important;
-  overflow: hidden;
-  box-shadow: var(--shadow-soft) !important;
-  transition: all 0.3s ease;
-}
+/* =========================================
+   CARD FOOTER — selo de contexto, sem eco neon
+========================================= */
 
-.neon-card:hover {
-  box-shadow: var(--shadow-hover) !important;
-  transform: translateY(-2px);
-}
-
-/* Texto sobre a cor da categoria — legível no claro */
-.neon-blue   { --neon-border-color: #0891b2; --neon-text: #0e7490; --neon-soft: rgba(14, 116, 144, 0.10); }
-.neon-green  { --neon-border-color: #059669; --neon-text: #047857; --neon-soft: rgba(5, 150, 105, 0.12); }
-.neon-pink   { --neon-border-color: #db2777; --neon-text: #be185d; --neon-soft: rgba(219, 39, 119, 0.10); }
-.neon-purple { --neon-border-color: #7c3aed; --neon-text: #6d28d9; --neon-soft: rgba(124, 58, 237, 0.10); }
-.neon-orange { --neon-border-color: #ea580c; --neon-text: #c2410c; --neon-soft: rgba(234, 88, 12, 0.10); }
-.neon-yellow { --neon-border-color: #ca8a04; --neon-text: #a16207; --neon-soft: rgba(202, 138, 4, 0.12); }
-.neon-red    { --neon-border-color: #dc2626; --neon-text: #b91c1c; --neon-soft: rgba(220, 38, 38, 0.10); }
-
-.neon-blue .percent-box,
-.neon-green .percent-box,
-.neon-pink .percent-box,
-.neon-purple .percent-box,
-.neon-orange .percent-box,
-.neon-yellow .percent-box,
-.neon-red .percent-box {
-  background: var(--neon-soft);
-  color: var(--neon-text);
-  border: 1px solid color-mix(in srgb, var(--neon-border-color) 25%, transparent);
-}
-
-.neon-blue .icon-box,
-.neon-green .icon-box,
-.neon-pink .icon-box,
-.neon-purple .icon-box,
-.neon-orange .icon-box,
-.neon-yellow .icon-box,
-.neon-red .icon-box {
-  color: var(--neon-text);
-  background: var(--neon-soft);
-  border: 1px solid color-mix(in srgb, var(--neon-border-color) 22%, transparent);
-  box-shadow: none;
-}
-
-.dark .neon-card::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: var(--radius, 22px);
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--border-angle),
-    transparent 20%,
-    var(--neon-border-color, #ffffff) 50%,
-    transparent 80%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.9;
-  z-index: 10;
-  animation: borderRotate 30s linear infinite;
-}
-
-.neon-card.neon-blue { --neon-color: #00d2ff; }
-.neon-card.neon-green { --neon-color: #00ff88; }
-.neon-card.neon-pink { --neon-color: #ff00aa; }
-.neon-card.neon-purple { --neon-color: #aa00ff; }
-.neon-card.neon-orange { --neon-color: #ffaa00; }
-.neon-card.neon-yellow { --neon-color: #ffd700; }
-.neon-card.neon-red { --neon-color: #ff3333; }
-
-.dark .neon-card {
-  --neon-border-color: #ffffff;
-  background: rgba(0, 0, 0, var(--dark-card-opacity, 0.35)) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-  transition: all 0.3s ease;
-}
-
-/* No escuro as cores saturadas da categoria valem (glow neon) */
-.dark .neon-blue   { --neon-border-color: #00d2ff; --neon-text: #00d2ff; --neon-soft: rgba(0, 210, 255, 0.10); }
-.dark .neon-green  { --neon-border-color: #00ff88; --neon-text: #00ff88; --neon-soft: rgba(0, 255, 136, 0.10); }
-.dark .neon-pink   { --neon-border-color: #ff00aa; --neon-text: #ff00aa; --neon-soft: rgba(255, 0, 170, 0.10); }
-.dark .neon-purple { --neon-border-color: #aa00ff; --neon-text: #aa00ff; --neon-soft: rgba(170, 0, 255, 0.10); }
-.dark .neon-orange { --neon-border-color: #ffaa00; --neon-text: #ffaa00; --neon-soft: rgba(255, 170, 0, 0.10); }
-.dark .neon-yellow { --neon-border-color: #ffd700; --neon-text: #ffd700; --neon-soft: rgba(255, 215, 0, 0.10); }
-.dark .neon-red    { --neon-border-color: #ff3333; --neon-text: #ff3333; --neon-soft: rgba(255, 51, 51, 0.10); }
-
-.dark .neon-card::before {
-  border-radius: 16px;
-  opacity: 0.9;
-  background: conic-gradient(
-    from var(--border-angle),
-    transparent 20%,
-    var(--neon-border-color, #ffffff) 50%,
-    transparent 80%
-  );
-}
-
-.dark .neon-card:hover {
-  box-shadow: 0 10px 40px rgba(255, 255, 255, 0.15) !important;
-  transform: translateY(-2px);
-}
-
-/* Card Footers */
 .card-footer {
   position: absolute;
   bottom: 12px;
-  left: 16px;
+  left: 20px;
+  right: 20px;
+
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 8px;
-  letter-spacing: 0.15em;
-  color: rgba(20, 40, 80, 0.45);
+
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+
+  color: var(--neutral-400);
   z-index: 2;
 }
 
 .card-footer .footer-line {
-  width: 24px;
+  width: 20px;
   height: 1px;
-  background: rgba(20, 40, 80, 0.2);
+  background: currentColor;
+  opacity: 0.4;
 }
 
-.dark .card-footer {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.dark .card-footer .footer-line {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.dark .card-title {
-  color: #fff !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.05em;
-}
-
-.dark .big-number {
-  color: #fff !important;
-  text-shadow: 0 0 15px rgba(255,255,255,0.2) !important;
-}
-
-.dark .donut-number {
-  color: #fff !important;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4) !important;
-}
-
-.dark .donut::after {
-  background: #09090b !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Custom Neon Overrides for Donut (All White) */
-.dark .donut { 
-  --accent: #ffffff !important; 
-  --track: rgba(255, 255, 255, 0.1) !important; 
-  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9)) !important; 
-}
-
-/* Percent boxes */
-.dark .neon-yellow .percent-box { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.22) !important; box-shadow: 0 0 15px rgba(255, 255, 255, 0.08) !important; }
-.dark .neon-green .percent-box { background: rgba(0, 255, 136, 0.1) !important; color: #00ff88 !important; border: 1px solid rgba(0,255,136,0.2); }
-.dark .neon-pink .percent-box { background: rgba(255, 0, 170, 0.1) !important; color: #ff00aa !important; border: 1px solid rgba(255,0,170,0.2); }
-.dark .neon-blue .percent-box { background: rgba(0, 210, 255, 0.1) !important; color: #00d2ff !important; border: 1px solid rgba(0,210,255,0.2); }
-.dark .neon-orange .percent-box { background: rgba(255, 170, 0, 0.1) !important; color: #ffaa00 !important; border: 1px solid rgba(255,170,0,0.2); }
-.dark .neon-red .percent-box { background: rgba(255, 51, 51, 0.1) !important; color: #ff3333 !important; border: 1px solid rgba(255,51,51,0.2); }
-
-.dark .icon-box {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.dark .neon-blue .icon-box { color: #00d2ff; filter: drop-shadow(0 0 5px rgba(0,210,255,0.5)); }
-.dark .neon-green .icon-box { color: #00ff88; filter: drop-shadow(0 0 5px rgba(0,255,136,0.5)); }
-.dark .neon-pink .icon-box { color: #ff00aa; filter: drop-shadow(0 0 5px rgba(255,0,170,0.5)); }
-.dark .neon-purple .icon-box { color: #aa00ff; filter: drop-shadow(0 0 5px rgba(170,0,255,0.5)); }
-.dark .neon-orange .icon-box { color: #ffaa00; filter: drop-shadow(0 0 5px rgba(255,170,0,0.5)); }
-.dark .neon-red .icon-box { color: #ff3333; filter: drop-shadow(0 0 5px rgba(255,51,51,0.5)); }
-
-.dark .employee-decoration {
-  opacity: 0.85 !important;
-  color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.75)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.45)) !important;
-}
-
-.dark .birthday-item {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
-}
-
-.dark .birthday-item.active {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
