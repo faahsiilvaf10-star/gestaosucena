@@ -39,6 +39,15 @@ interface DashboardEquipment {
   last_exit_description?: string | null
 }
 
+function formatEquipmentLabel(eq: DashboardEquipment): string {
+  const name = (eq.name || '').trim()
+  const plate = (eq.plate_tag || '').trim()
+  if (plate && !name.toUpperCase().includes(plate.toUpperCase())) {
+    return name + ' (' + plate + ')'
+  }
+  return name || plate || 'Equipamento'
+}
+
 function DashboardComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -250,6 +259,42 @@ function DashboardComponent() {
     }
   }, [attendanceInfo, totalFuncionarios])
 
+  // Lista com primeiro nome dos colaboradores ausentes hoje
+  const absentFirstNames = useMemo(() => {
+    const isSaved = Boolean(attendanceInfo?.isSaved)
+    const records = attendanceInfo?.records || []
+    if (!isSaved || records.length === 0 || totalFuncionarios === 0) return []
+
+    const explicitAbsentIds = new Set(
+      records
+        .filter((r: any) => {
+          const st = (r.status || '').toUpperCase()
+          return st === 'AUSENTE' || st === 'ATESTADO' || st === 'EXTERNO' || st === 'FALTA'
+        })
+        .map((r: any) => r.funcionario_id)
+    )
+
+    const presentIds = new Set(
+      records
+        .filter((r: any) => (r.status || '').toUpperCase() === 'PRESENTE')
+        .map((r: any) => r.funcionario_id)
+    )
+
+    let absentEmployees: any[] = []
+    if (explicitAbsentIds.size > 0) {
+      absentEmployees = activeEmployees.filter((emp: any) => explicitAbsentIds.has(emp.id))
+    } else {
+      absentEmployees = activeEmployees.filter((emp: any) => !presentIds.has(emp.id))
+    }
+
+    return absentEmployees
+      .map((emp: any) => {
+        const first = (emp.nome || '').trim().split(/\s+/)[0] || ''
+        return first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : ''
+      })
+      .filter(Boolean)
+  }, [attendanceInfo, activeEmployees, totalFuncionarios])
+
   const presencaTarget = CIRC - (CIRC * pctPresenca) / 100
   const ausenciaTarget = CIRC - (CIRC * pctAusencia) / 100
 
@@ -435,11 +480,18 @@ function DashboardComponent() {
     let operation = 0
     let maintenance = 0
 
+    const operationEquipments: DashboardEquipment[] = []
+    const maintenanceEquipments: DashboardEquipment[] = []
+
     heavyList.forEach((eq) => {
       if (isOutside(eq)) {
-        if (MAINTENANCE_REASONS.includes(eq.last_exit_reason as any)) maintenance++
+        if (MAINTENANCE_REASONS.includes(eq.last_exit_reason as any)) {
+          maintenance++
+          maintenanceEquipments.push(eq)
+        }
       } else {
         operation++
+        operationEquipments.push(eq)
       }
     })
 
@@ -457,6 +509,8 @@ function DashboardComponent() {
       total,
       operation,
       maintenance,
+      operationEquipments,
+      maintenanceEquipments,
       outOfOperation: total - operation,
       outOfMaintenance: total - maintenance,
       pctOperation,
@@ -893,9 +947,10 @@ function DashboardComponent() {
                 {isAttendanceSaved ? `${pctPresenca}% de presença` : 'Aguardando lista de hoje'}
                 <small>
                   {isAttendanceSaved
-                    ? `${displayPresentes} de ${totalFuncionarios} presentes hoje · clique para reanimar`
+                    ? `${displayPresentes} de ${totalFuncionarios} presentes hoje`
                     : 'Nenhum registro de presença salvo para hoje'}
                 </small>
+                <span className="donut-tip-hint">clique para reanimar</span>
               </span>
             </div>
             <div className="kpi-foot" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--green)' }}><circle cx="9" cy="8" r="3.5"/><path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8"/></svg><div><b style={{ color: 'var(--green)' }} data-count-pct={pctPresenca}>{pctPresenca}%</b><br/><span>de presença</span></div></div>
@@ -912,13 +967,32 @@ function DashboardComponent() {
                 {isAttendanceSaved ? `${pctAusencia}% de ausências` : 'Aguardando lista de hoje'}
                 <small>
                   {isAttendanceSaved
-                    ? `${displayAusencias} de ${totalFuncionarios} ausências hoje · clique para reanimar`
+                    ? absentFirstNames.length > 0
+                      ? 'Ausente' + (absentFirstNames.length > 1 ? 's: ' : ': ') + (
+                          absentFirstNames.length <= 6
+                            ? absentFirstNames.join(', ')
+                            : absentFirstNames.slice(0, 6).join(', ') + ' (+' + (absentFirstNames.length - 6) + ')'
+                        )
+                      : 'Nenhum colaborador ausente hoje 🎉'
                     : 'Nenhum registro de presença salvo para hoje'}
                 </small>
+                <span className="donut-tip-hint">clique para reanimar</span>
               </span>
             </div>
             <div className="kpi-foot red" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--red)' }}><circle cx="9" cy="8" r="3.5"/><path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6"/></svg><div><b style={{ color: 'var(--red)' }} data-count-pct={pctAusencia}>{pctAusencia}%</b><br/><span>de ausências</span></div></div>
           </div>
+          {isAttendanceSaved && absentFirstNames.length > 0 && (
+            <div className="kpi-absent-names" title={absentFirstNames.join(', ')}>
+              <span style={{ fontWeight: 800, color: 'var(--red)', marginRight: '6px' }}>
+                Ausente{absentFirstNames.length > 1 ? 's' : ''}:
+              </span>
+              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                {absentFirstNames.length <= 5
+                  ? absentFirstNames.join(', ')
+                  : absentFirstNames.slice(0, 5).join(', ') + ' (+' + (absentFirstNames.length - 5) + ')'}
+              </span>
+            </div>
+          )}
         </article>
       </section>
 
@@ -1042,11 +1116,32 @@ function DashboardComponent() {
               <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
               </div>
               <div className="gauge-center"><b data-count={fleetMetrics.operation}>{fleetMetrics.operation}</b><span>de {fleetMetrics.total} pesados</span></div>
-              <span className="gauge-tip">{fleetMetrics.pctOperation}% em operação<small>{fleetMetrics.operation} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+              <span className="gauge-tip">
+                {fleetMetrics.pctOperation}% em operação
+                <small>
+                  {fleetMetrics.operationEquipments.length > 0
+                    ? 'Na obra: ' + (
+                        fleetMetrics.operationEquipments.length <= 4
+                          ? fleetMetrics.operationEquipments.map(formatEquipmentLabel).join(', ')
+                          : fleetMetrics.operationEquipments.slice(0, 4).map(formatEquipmentLabel).join(', ') + ' (+' + (fleetMetrics.operationEquipments.length - 4) + ')'
+                      )
+                    : 'Nenhum pesado em operação no momento'}
+                </small>
+                <span className="gauge-tip-hint">clique para reanimar</span>
+              </span>
             </div>
             <div><div className="pct-chip blue"><b data-count-pct={fleetMetrics.pctOperation}>{fleetMetrics.pctOperation}%</b><span>em operação</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Equipamentos<br/>Pesados</div></div>
           </div>
           <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-blue"><i className="d-blue"></i>{fleetMetrics.operation} pesados em operação</span><span className="hl-blue"><i className="d-blue-rest"></i>{fleetMetrics.outOfOperation} fora de operação</span></div>
+          {fleetMetrics.operationEquipments.length > 0 && (
+            <div className="fleet-eq-list" title="Equipamentos pesados em operação na obra">
+              {fleetMetrics.operationEquipments.map((eq) => (
+                <span key={eq.id} className="fleet-eq-pill blue" title={formatEquipmentLabel(eq)}>
+                  {formatEquipmentLabel(eq)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="fleet-half">
           <div className="fleet-head">
@@ -1065,11 +1160,32 @@ function DashboardComponent() {
               <span className="gauge-scale left">0</span><span className="gauge-scale right">{fleetMetrics.total}</span>
               </div>
               <div className="gauge-center"><b data-count={fleetMetrics.maintenance}>{fleetMetrics.maintenance}</b><span>de {fleetMetrics.total}</span></div>
-              <span className="gauge-tip">{fleetMetrics.pctMaintenance}% em manutenção<small>{fleetMetrics.maintenance} de {fleetMetrics.total} equipamentos · clique para reanimar</small></span>
+              <span className="gauge-tip">
+                {fleetMetrics.pctMaintenance}% em manutenção
+                <small>
+                  {fleetMetrics.maintenanceEquipments.length > 0
+                    ? 'Fora por manutenção: ' + (
+                        fleetMetrics.maintenanceEquipments.length <= 4
+                          ? fleetMetrics.maintenanceEquipments.map(formatEquipmentLabel).join(', ')
+                          : fleetMetrics.maintenanceEquipments.slice(0, 4).map(formatEquipmentLabel).join(', ') + ' (+' + (fleetMetrics.maintenanceEquipments.length - 4) + ')'
+                      )
+                    : 'Nenhum equipamento em manutenção'}
+                </small>
+                <span className="gauge-tip-hint">clique para reanimar</span>
+              </span>
             </div>
             <div><div className="pct-chip orange"><b data-count-pct={fleetMetrics.pctMaintenance}>{fleetMetrics.pctMaintenance}%</b><span>em manutenção</span></div><div className="gauge-label" style={{ marginTop: '10px' }}>Velocímetro<br/>da frota</div></div>
           </div>
           <div className="fleet-legend" style={{ marginTop: '12px' }}><span className="hl-orange"><i className="d-orange"></i>{fleetMetrics.maintenance} em manutenção</span><span className="hl-orange"><i className="d-orange-rest"></i>{fleetMetrics.outOfMaintenance} fora de manutenção</span></div>
+          {fleetMetrics.maintenanceEquipments.length > 0 && (
+            <div className="fleet-eq-list" title="Equipamentos fora da obra em manutenção">
+              {fleetMetrics.maintenanceEquipments.map((eq) => (
+                <span key={eq.id} className="fleet-eq-pill orange" title={formatEquipmentLabel(eq)}>
+                  {formatEquipmentLabel(eq)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
