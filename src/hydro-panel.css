@@ -26,7 +26,7 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .main{min-width:0;width:calc(100% - var(--sbw));max-width:none;margin:0 0 0 var(--sbw);padding:clamp(18px,2vw,30px) clamp(18px,2.4vw,40px) clamp(22px,2.4vw,36px);display:flex;flex-direction:column;gap:clamp(16px,1.6vw,22px)}
 
 /* ---------- SIDEBAR ---------- */
-.sidebar{background:#0B0B0C;border:0;border-radius:0;padding:24px 16px 20px;display:flex;flex-direction:column;gap:6px;position:fixed;left:0;top:0;bottom:0;z-index:60;height:100vh;height:100dvh;margin:0;width:var(--sbw);overflow:visible;box-shadow:none}
+.sidebar{background:#0B0B0C;border:0;border-radius:0;padding:34px 16px 20px;display:flex;flex-direction:column;gap:6px;position:fixed;left:0;top:0;bottom:0;z-index:60;height:100vh;height:100dvh;margin:0;width:var(--sbw);overflow:visible;box-shadow:none}
 /* A curva do preto é para FORA, para a DIREITA — no formato do desenho
    enviado: um OMBRO convexo do próprio preto nas quinas do lado
    direito, em cima e embaixo. Medido no desenho, o preto avança cerca
@@ -86,7 +86,7 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
    assim continua visível e clicável mesmo com a barra escondida. */
 .sidebar{transition:transform .48s cubic-bezier(.45,0,.15,1)}
 .main{transition:margin-left .48s cubic-bezier(.45,0,.15,1),width .48s cubic-bezier(.45,0,.15,1),padding-left .48s cubic-bezier(.45,0,.15,1)}
-.sidebar-toggle{position:fixed;top:26px;left:calc(var(--sbw) - 15px);z-index:80;width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#1A1400;border:2px solid #FFFFFF;box-shadow:0 2px 10px rgba(20,30,55,.28);display:grid;place-items:center;padding:0;transition:left .48s cubic-bezier(.45,0,.15,1),background .2s ease}
+.sidebar-toggle{position:fixed;top:46px;left:calc(var(--sbw) - 15px);z-index:80;width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#1A1400;border:2px solid #FFFFFF;box-shadow:0 2px 10px rgba(20,30,55,.28);display:grid;place-items:center;padding:0;transition:left .48s cubic-bezier(.45,0,.15,1),background .2s ease}
 .sidebar-toggle svg{width:15px;height:15px;stroke-width:2.6;transition:transform .48s cubic-bezier(.45,0,.15,1)}
 .sidebar-toggle:hover{background:#FFD84D}
 .app.sidebar-collapsed .sidebar{transform:translateX(calc(-100% - 34px))}
@@ -854,14 +854,22 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 
 
 
+.topbar-container,
 .topbar-wrapper {
-  padding: 20px 28px 12px 28px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 38px 28px 14px 28px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 @media (max-width: 900px) {
+  .topbar-container,
   .topbar-wrapper {
-    padding: 12px 14px 6px 14px;
+    padding: 32px 14px 8px 14px !important;
+  }
+}
+@media (max-width: 768px) {
+  .topbar-container,
+  .topbar-wrapper {
+    padding: 12px 14px 6px 14px !important;
   }
 }
 
