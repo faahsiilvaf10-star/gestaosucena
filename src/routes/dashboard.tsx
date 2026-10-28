@@ -868,87 +868,101 @@ function DashboardComponent() {
     
     
 
-      {/* 3. DDS CARD (Moved above Lembretes) */}
-      <section className="dds-card-section" style={{ marginTop: '24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-          <div
-            className="card card-pad"
-            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
-            onClick={() => navigate({ to: '/seguranca/dds' })}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--yellow)'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--amber-bg)', color: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                    <path d="M14 2v6h6" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--amber)' }}>
-                    DDS Hoje
-                  </span>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {ddsData?.hoje?.palestrante?.nome?.toLowerCase() || 'Livre'}
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.hoje?.tema}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsDdsModalOpen(true)
-                  }}
-                  style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, background: 'var(--amber-bg)', color: 'var(--amber)', border: '1px solid var(--amber)', borderRadius: '8px', cursor: 'pointer' }}
-                >
-                  {ddsData?.hoje?.postedMedia ? 'Alterar Foto' : 'Postar DDS'}
-                </button>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
-                  <path d="m9 6 6 6-6 6" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="card card-pad"
-            style={{ cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
-            onClick={() => navigate({ to: '/seguranca/dds' })}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--line2)'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--surface2)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px' }}>
-                    <rect x="3" y="5" width="18" height="16" rx="2" />
-                    <path d="M3 10h18M8 3v4M16 3v4" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--muted)' }}>
-                    DDS Amanhã
-                  </span>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', marginTop: '2px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {ddsData?.amanha?.palestrante?.nome?.toLowerCase() || 'Livre'}
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Tema: <span style={{ fontWeight: 700, color: 'var(--ink2)' }}>{ddsData?.amanha?.tema}</span>
-                  </p>
-                </div>
-              </div>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ width: '16px', height: '16px', color: 'var(--faint)' }}>
-                <path d="m9 6 6 6-6 6" />
+      {/* 3. DDS — PALESTRANTES DE HOJE E DE AMANHÃ COM ILUSTRAÇÃO / FOTO DE PERFIL */}
+      <section className="dds-row" aria-label="Palestrantes do DDS de hoje e de amanhã" style={{ marginTop: '24px' }}>
+        <button
+          className="dds-card today"
+          type="button"
+          onClick={() => navigate({ to: '/seguranca/dds' })}
+          aria-label={`Palestrante do DDS hoje: ${ddsData?.hoje?.palestrante?.nome || 'Livre'}, tema ${ddsData?.hoje?.tema || 'Sem tema'}. Postar DDS`}
+        >
+          <span className="dds-photo today">
+            <img
+              src={ddsData?.hoje?.palestrante?.avatar || '/dds-palestrante-hoje.webp'}
+              alt={`Palestrante do DDS de hoje: ${ddsData?.hoje?.palestrante?.nome || 'Palestrante'}`}
+            />
+            <span className="dds-photo-badge today"><i></i>Hoje</span>
+            <span className="dds-mic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3" />
+                <path d="M5 10a7 7 0 0 0 14 0M12 19v3" />
               </svg>
-            </div>
-          </div>
-        </div>
+            </span>
+          </span>
+          <span className="dds-main">
+            <span className="dds-top">
+              <span className="dds-label today">DDS Hoje</span>
+              <span className="dds-role">Palestrante</span>
+              <span className="dds-waves" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+              </span>
+            </span>
+            <span className="dds-name">
+              {ddsData?.hoje?.palestrante?.nome || 'Livre'}
+            </span>
+            <span className="dds-tema">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+              </svg>
+              <span>Tema: <span className="dds-tema-text">{ddsData?.hoje?.tema || 'Sem tema agendado'}</span></span>
+            </span>
+          </span>
+          <span className="dds-side">
+            <span
+              className="dds-post"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsDdsModalOpen(true)
+              }}
+            >
+              {ddsData?.hoje?.postedMedia ? 'Alterar Foto' : 'Postar DDS'}
+            </span>
+            <svg className="dds-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </span>
+        </button>
+
+        <button
+          className="dds-card tomorrow"
+          type="button"
+          onClick={() => navigate({ to: '/seguranca/dds' })}
+          aria-label={`Palestrante do DDS amanhã: ${ddsData?.amanha?.palestrante?.nome || 'Livre'}, tema ${ddsData?.amanha?.tema || 'Sem tema'}`}
+        >
+          <span className="dds-photo tomorrow">
+            <img
+              src={ddsData?.amanha?.palestrante?.avatar || '/dds-palestrante-amanha.webp'}
+              alt={`Palestrante do DDS de amanhã: ${ddsData?.amanha?.palestrante?.nome || 'Palestrante'}`}
+            />
+            <span className="dds-photo-badge tomorrow"><i></i>Amanhã</span>
+            <span className="dds-mic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 10h18M8 3v4M16 3v4" />
+              </svg>
+            </span>
+          </span>
+          <span className="dds-main">
+            <span className="dds-top">
+              <span className="dds-label tomorrow">DDS Amanhã</span>
+              <span className="dds-role tomorrow">Palestrante</span>
+            </span>
+            <span className="dds-name">
+              {ddsData?.amanha?.palestrante?.nome || 'Livre'}
+            </span>
+            <span className="dds-tema">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+              </svg>
+              <span>Tema: <span className="dds-tema-text">{ddsData?.amanha?.tema || 'Sem tema agendado'}</span></span>
+            </span>
+          </span>
+          <span className="dds-side">
+            <svg className="dds-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </span>
+        </button>
       </section>
 
       {/* 4. EQUIPAMENTOS EM OPERAÇÃO E MANUTENÇÃO (VELOCÍMETROS) - Moved after KPIs */}
