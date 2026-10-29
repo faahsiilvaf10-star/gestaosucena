@@ -71,14 +71,12 @@ export function SucenaLoginTransition({ onComplete }: SucenaLoginTransitionProps
         @keyframes fadeAll {
           0% { opacity: 0; }
           4% { opacity: 1; }
-          93% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(1.02); pointer-events: none; }
+          100% { opacity: 1; }
         }
         @keyframes fadeAllReduced {
           0% { opacity: 0; }
           15% { opacity: 1; }
-          80% { opacity: 1; }
-          100% { opacity: 0; pointer-events: none; }
+          100% { opacity: 1; }
         }
         @keyframes ambientPulse {
           0%, 100% { opacity: 0.22; transform: scale(0.98); }

@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
-import { useNavigate, createFileRoute } from '@tanstack/react-router'
+import { useNavigate, useRouter, createFileRoute } from '@tanstack/react-router'
 import { Turnstile } from '@marsidev/react-turnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
@@ -28,6 +28,7 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   const navigate = useNavigate()
+  const router = useRouter()
   const { isDark } = useTheme()
   const [viewState, setViewState] = useState<'LOGIN' | 'REGISTER' | 'SUCCESS' | 'FORGOT_PASSWORD' | 'RESET_PASSWORD'>('LOGIN')
   const [showPassword, setShowPassword] = useState(false)
@@ -212,6 +213,13 @@ function Index() {
       if (!localStorage.getItem('sucena_environment')) {
         localStorage.setItem('sucena_environment', 'barcarena')
       }
+
+      // Ativa flag para efeito Fade no Dashboard e pré-carrega rota
+      try {
+        sessionStorage.setItem('sucena_login_transition', 'true')
+        router.preloadRoute({ to: '/dashboard' }).catch(() => {})
+      } catch (_) {}
+
       // Tocar som de entrada ao iniciar a transição para o Dashboard
       try {
         if (typeof window !== 'undefined') {
@@ -293,18 +301,24 @@ function Index() {
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
 
   return (
-    <div className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300`}>
-      
+    <div
+      className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${
+        showTransition ? '!bg-[#070709]' : ''
+      }`}
+      style={showTransition ? { background: '#070709' } : undefined}
+    >
       {showTransition && (
         <SucenaLoginTransition
           onComplete={() => {
-            navigate({ to: '/dashboard' })
+            navigate({ to: '/dashboard', replace: true })
           }}
         />
       )}
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-[360px] mx-auto px-4 py-12">
+
+      {/* Main Content - totalmente oculto durante a transição para nunca vazar a tela de login */}
+      {!showTransition && (
+        <>
+          <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-[360px] mx-auto px-4 py-12">
         
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
@@ -644,6 +658,8 @@ function Index() {
           <ThemeToggle />
         </div>
       </div>
+        </>
+      )}
 
     </div>
   )

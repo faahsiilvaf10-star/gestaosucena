@@ -77,6 +77,16 @@ function DashboardComponent() {
   }, [queryClient])
 
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [isIntroFade, setIsIntroFade] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isFromLogin = sessionStorage.getItem('sucena_login_transition') === 'true'
+      if (isFromLogin) {
+        sessionStorage.removeItem('sucena_login_transition')
+        return true
+      }
+    }
+    return false
+  })
   const [searchQuery, setSearchQuery] = useState('')
   const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
@@ -899,7 +909,31 @@ function DashboardComponent() {
   }, [pendencias, q])
 
   return (
-    <div className="hydro-dashboard-root">
+    <div
+      className="hydro-dashboard-root"
+      style={isIntroFade ? { animation: 'dashboardContentFade 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards' } : undefined}
+    >
+      {/* Transição suave estilo Fade ao entrar pelo login */}
+      {isIntroFade && (
+        <div
+          className="fixed inset-0 z-[99999] pointer-events-none bg-[#070709]"
+          style={{
+            animation: 'dashboardReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          }}
+          onAnimationEnd={() => setIsIntroFade(false)}
+        />
+      )}
+      <style>{`
+        @keyframes dashboardReveal {
+          0% { opacity: 1; }
+          30% { opacity: 0.95; }
+          100% { opacity: 0; }
+        }
+        @keyframes dashboardContentFade {
+          0% { opacity: 0; filter: blur(4px); transform: translateY(6px); }
+          100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+        }
+      `}</style>
       {/* SVG DEFS GLOBAIS PARA GRADIENTES DOS DONUTS E VELOCÍMETROS */}
       <svg style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
         <defs>
