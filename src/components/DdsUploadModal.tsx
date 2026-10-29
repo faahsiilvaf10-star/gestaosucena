@@ -244,6 +244,36 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
         
       if (mediaError) throw mediaError
 
+      // Sincroniza tema e palestrante na tabela seguranca_dds
+      try {
+        const todayDateStr = new Date().toISOString().split('T')[0]
+        let speakerIdToSave: string | null = null
+        if (speaker && speaker.toLowerCase() !== 'livre') {
+          const sLower = speaker.toLowerCase().trim()
+          const matchedColab = colaboradores.find(c => (c.nome || '').toLowerCase().trim() === sLower)
+          if (matchedColab?.id) {
+            speakerIdToSave = matchedColab.id
+          } else {
+            const { data: sysUsers } = await supabase.rpc('get_system_users')
+            const matchedSys = sysUsers?.find((u: any) => (u.nome || '').toLowerCase().trim() === sLower)
+            if (matchedSys?.id) speakerIdToSave = matchedSys.id
+          }
+        }
+
+        const updateObj: any = {}
+        if (editableTema?.trim()) updateObj.tema = editableTema.trim()
+        if (speakerIdToSave) updateObj.palestrante_id = speakerIdToSave
+
+        if (Object.keys(updateObj).length > 0) {
+          await supabase
+            .from('seguranca_dds')
+            .update(updateObj)
+            .eq('date', todayDateStr)
+        }
+      } catch (syncErr) {
+        console.warn('Aviso ao sincronizar seguranca_dds:', syncErr)
+      }
+
       broadcastInstacenaActivity({
         type: 'post',
         actorId: user.id,

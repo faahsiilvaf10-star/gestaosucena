@@ -201,6 +201,20 @@ function DashboardComponent() {
           queryClient.invalidateQueries({ queryKey: ['presencas_dashboard_hoje'] })
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'seguranca_dds' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'social_posts' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
+        }
+      )
       .subscribe()
 
     return () => {
@@ -352,13 +366,36 @@ function DashboardComponent() {
         return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
       })
 
-      const getPalestranteInfo = (id: string) => {
-        if (!id) return { id: null, nome: 'Livre', avatar: null }
-        const user = (users || []).find((u: any) => u.id === id)
-        if (user) return { id: user.id, nome: user.nome, avatar: user.avatar_url || null }
-        const rh = (rhList || []).find((r: any) => r.id === id)
-        if (rh) return { id: rh.id, nome: rh.nome, avatar: null }
-        return { id: null, nome: 'Desconhecido', avatar: null }
+      const getPalestranteInfo = (idOrName?: string | null) => {
+        if (!idOrName || idOrName.toLowerCase() === 'livre') return { id: null, nome: 'Livre', avatar: null }
+        
+        // 1. Busca por ID em usuários e RH
+        const userById = (users || []).find((u: any) => u.id === idOrName)
+        if (userById) return { id: userById.id, nome: userById.nome || userById.name, avatar: userById.avatar_url || null }
+        const rhById = (rhList || []).find((r: any) => r.id === idOrName)
+        if (rhById) return { id: rhById.id, nome: rhById.nome, avatar: null }
+
+        // 2. Busca por Nome exato (case-insensitive)
+        const cleanName = idOrName.trim().toLowerCase()
+        const userByName = (users || []).find((u: any) => (u.nome || u.name || '').trim().toLowerCase() === cleanName)
+        if (userByName) return { id: userByName.id, nome: userByName.nome || userByName.name, avatar: userByName.avatar_url || null }
+        const rhByName = (rhList || []).find((r: any) => (r.nome || '').trim().toLowerCase() === cleanName)
+        if (rhByName) return { id: rhByName.id, nome: rhByName.nome, avatar: null }
+
+        // 3. Busca por correspondência parcial de Nome
+        const userPartial = (users || []).find((u: any) => {
+          const n = (u.nome || u.name || '').trim().toLowerCase()
+          return n && (n.includes(cleanName) || cleanName.includes(n))
+        })
+        if (userPartial) return { id: userPartial.id, nome: userPartial.nome || userPartial.name, avatar: userPartial.avatar_url || null }
+
+        const rhPartial = (rhList || []).find((r: any) => {
+          const n = (r.nome || '').trim().toLowerCase()
+          return n && (n.includes(cleanName) || cleanName.includes(n))
+        })
+        if (rhPartial) return { id: rhPartial.id, nome: rhPartial.nome, avatar: null }
+
+        return { id: null, nome: idOrName.trim(), avatar: null }
       }
 
       const todayDds = schedule?.find((s: any) => s.date === today)
@@ -375,7 +412,8 @@ function DashboardComponent() {
         .order('created_at', { ascending: false })
         .limit(1)
 
-      let postedMediaUrl = ddsPosts && ddsPosts[0]?.social_post_media?.[0]?.media_url || null
+      let activePost = ddsPosts && ddsPosts[0] ? ddsPosts[0] : null
+      let postedMediaUrl = activePost?.social_post_media?.[0]?.media_url || null
 
       if (!postedMediaUrl) {
         const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -386,15 +424,52 @@ function DashboardComponent() {
           .gte('created_at', `${todayStr}T00:00:00.000Z`)
           .order('created_at', { ascending: false })
           .limit(1)
-        postedMediaUrl = fallbackPosts && fallbackPosts[0]?.social_post_media?.[0]?.media_url || null
+        if (fallbackPosts && fallbackPosts[0]) {
+          activePost = fallbackPosts[0]
+          postedMediaUrl = fallbackPosts[0].social_post_media?.[0]?.media_url || null
+        }
+      }
+
+      // Extrai Tema e Palestrante reais da postagem do DDS realizado hoje
+      let postedTema: string | null = null
+      let postedSpeaker: string | null = null
+
+      if (activePost?.caption) {
+        const caption = activePost.caption
+        const temaMatch = caption.match(/\*{0,2}Tema:\*{0,2}\s*([^\n\r*]+)/i)
+        if (temaMatch && temaMatch[1]?.trim()) {
+          postedTema = temaMatch[1].trim()
+        }
+
+        const speakerMatch = caption.match(/\*{0,2}Palestrante:\*{0,2}\s*([^\n\r*]+)/i)
+        if (speakerMatch && speakerMatch[1]?.trim() && speakerMatch[1].trim().toLowerCase() !== 'livre') {
+          postedSpeaker = speakerMatch[1].trim()
+        }
+      }
+
+      // Se houver palestrante e tema informados no DDS realizado, eles prevalecem
+      const finalPalestranteHoje = postedSpeaker
+        ? getPalestranteInfo(postedSpeaker)
+        : (todayDds ? getPalestranteInfo(todayDds.palestrante_id) : { id: null, nome: 'Livre', avatar: null })
+
+      const finalTemaHoje = postedTema || todayDds?.tema || 'Reunião de Contrato Hydro'
+
+      // Sincroniza em segundo plano com a tabela seguranca_dds caso esteja defasada
+      if (todayDds && (postedTema || postedSpeaker)) {
+        const needsTemaUpdate = postedTema && todayDds.tema !== postedTema
+        const needsSpeakerUpdate = finalPalestranteHoje.id && todayDds.palestrante_id !== finalPalestranteHoje.id
+        if (needsTemaUpdate || needsSpeakerUpdate) {
+          const patch: any = {}
+          if (needsTemaUpdate) patch.tema = postedTema
+          if (needsSpeakerUpdate) patch.palestrante_id = finalPalestranteHoje.id
+          supabase.from('seguranca_dds').update(patch).eq('id', todayDds.id).then().catch(() => {})
+        }
       }
 
       return {
         hoje: {
-          tema: todayDds?.tema || 'Reunião de Contrato Hydro',
-          palestrante: todayDds
-            ? getPalestranteInfo(todayDds.palestrante_id)
-            : { id: null, nome: 'Livre', avatar: null },
+          tema: finalTemaHoje,
+          palestrante: finalPalestranteHoje,
           postedMedia: postedMediaUrl,
         },
         amanha: {
@@ -405,7 +480,7 @@ function DashboardComponent() {
         },
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   })
 
   // Frota de equipamentos da obra — dados reais de `eq_equipments`,

@@ -304,6 +304,7 @@ function DDSSchedulePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
+      queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
       setEditDialogOpen(false)
       toast.success("Salvo com sucesso!")
     },
@@ -323,6 +324,7 @@ function DDSSchedulePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds'] })
       queryClient.invalidateQueries({ queryKey: ['seguranca_dds_today'] })
+      queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
     }
   })
 
