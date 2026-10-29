@@ -239,7 +239,7 @@ export function ComunicadoModal({
       <div className="comunicado flex flex-col max-h-[90vh]">
         {/* LOGO original Sucena sobreposta no topo */}
         <img
-          src="/logo.png"
+          src="/logo-relatorio.png"
           alt="Sucena"
           className="comunicado-logo"
         />

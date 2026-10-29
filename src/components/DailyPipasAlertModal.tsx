@@ -53,7 +53,7 @@ export function DailyPipasAlertModal({ enabled }: { enabled: boolean }) {
   return (
     <div className="comunicado-overlay" role="dialog" aria-modal="true">
       <div className="comunicado flex flex-col max-h-[90vh]">
-        <img src="/logo.png" alt="Sucena" className="comunicado-logo" />
+        <img src="/logo-relatorio.png" alt="Sucena" className="comunicado-logo" />
 
         <div className="comunicado-titulo">
           <span className="comunicado-icone" aria-hidden="true">
