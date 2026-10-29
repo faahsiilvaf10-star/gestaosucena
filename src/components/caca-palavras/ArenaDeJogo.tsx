@@ -479,21 +479,21 @@ export function ArenaDeJogo({
     <div className="relative space-y-4">
       {/* HUD Superior */}
       <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Fase</span>
-          <span className="text-sm sm:text-lg font-black text-white">{fase}</span>
+        <div className="rounded-xl border border-slate-200 bg-white p-2 sm:px-3 sm:py-2 shadow-xs">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Fase</span>
+          <span className="text-sm sm:text-lg font-black text-slate-900">{fase}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Nível</span>
-          <span className="text-sm sm:text-lg font-black text-emerald-400">{config.nivel}</span>
+        <div className="rounded-xl border border-slate-200 bg-white p-2 sm:px-3 sm:py-2 shadow-xs">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Nível</span>
+          <span className="text-sm sm:text-lg font-black text-emerald-700">{config.nivel}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Pontos</span>
-          <span className="text-sm sm:text-lg font-black tabular-nums text-amber-400">{pontos}</span>
+        <div className="rounded-xl border border-slate-200 bg-white p-2 sm:px-3 sm:py-2 shadow-xs">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Pontos</span>
+          <span className="text-sm sm:text-lg font-black tabular-nums text-amber-700">{pontos}</span>
         </div>
-        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 shadow-inner">
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Palavras</span>
-          <span className="text-sm sm:text-lg font-black tabular-nums text-white">
+        <div className="rounded-xl border border-slate-200 bg-white p-2 sm:px-3 sm:py-2 shadow-xs">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Palavras</span>
+          <span className="text-sm sm:text-lg font-black tabular-nums text-slate-900">
             {encontradas.size}/{modo === 'busca' ? tabuleiroBusca?.colocacoes.length : tabuleiroCruzadas?.slots.length}
           </span>
         </div>
@@ -504,9 +504,9 @@ export function ArenaDeJogo({
               : 'border-white/10 bg-slate-900/70'
           }`}
         >
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">Tempo</span>
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Tempo</span>
           <span
-            className={`text-sm sm:text-lg font-black tabular-nums ${tempoCritico ? 'text-red-400' : 'text-white'}`}
+            className={`text-sm sm:text-lg font-black tabular-nums ${tempoCritico ? 'text-red-700' : 'text-slate-900'}`}
           >
             {String(Math.floor(tempo / 60)).padStart(2, '0')}:{String(tempo % 60).padStart(2, '0')}
           </span>
@@ -517,12 +517,12 @@ export function ArenaDeJogo({
           type="button"
           onClick={pausarJogo}
           title="Pausar jogo e congelar tempo"
-          className="flex flex-col justify-center rounded-xl border border-white/10 bg-slate-900/70 p-2 sm:px-3 sm:py-2 text-left transition-all hover:border-amber-400/50 hover:bg-amber-500/15 group shadow-inner"
+          className="flex flex-col justify-center rounded-xl border border-slate-200 bg-white p-2 sm:px-3 sm:py-2 text-left transition-all hover:border-amber-300 hover:bg-amber-50 group shadow-xs"
         >
-          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 group-hover:text-amber-300">
+          <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-300">
             Controle
           </span>
-          <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-white group-hover:text-amber-300">
+          <span className="flex items-center gap-1 text-xs sm:text-sm font-black text-slate-900 group-hover:text-amber-800">
             <Pause className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
             Pausar
           </span>
@@ -530,7 +530,7 @@ export function ArenaDeJogo({
       </div>
 
       {/* Barra de progresso das palavras */}
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-stroke/40">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
         <div
           className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500"
           style={{
@@ -585,36 +585,36 @@ export function ArenaDeJogo({
       {/* Modal / Overlay de Pausa */}
       {pausado && (
         <div className="absolute inset-0 z-40 flex items-center justify-center rounded-2xl bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-gradient-to-b from-[#141824] to-[#0c0e14] p-6 text-center shadow-2xl animate-[role-fade-in_0.25s_ease-out]">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl animate-[role-fade-in_0.25s_ease-out]">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/20 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
               <Pause className="h-7 w-7 fill-amber-400" />
             </div>
 
-            <h3 className="text-xl font-black text-white">Jogo Pausado</h3>
-            <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+            <h3 className="text-xl font-black text-slate-900">Jogo Pausado</h3>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">
               O cronômetro está congelado. Seu progresso e pontos estão seguros.
             </p>
 
-            <div className="my-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-left">
+            <div className="my-4 grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left">
               <div>
-                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Fase Atual</span>
-                <span className="text-sm font-black text-white">Fase {fase}</span>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-500">Fase Atual</span>
+                <span className="text-sm font-black text-slate-900">Fase {fase}</span>
               </div>
               <div>
-                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Tempo Congelado</span>
-                <span className="text-sm font-black tabular-nums text-amber-400">
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-500">Tempo Congelado</span>
+                <span className="text-sm font-black tabular-nums text-amber-700">
                   {String(Math.floor(tempo / 60)).padStart(2, '0')}:{String(tempo % 60).padStart(2, '0')}
                 </span>
               </div>
               <div>
-                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Palavras Feitas</span>
-                <span className="text-sm font-black text-emerald-400">
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-500">Palavras Feitas</span>
+                <span className="text-sm font-black text-emerald-700">
                   {encontradas.size} / {modo === 'busca' ? tabuleiroBusca?.colocacoes.length : tabuleiroCruzadas?.slots.length}
                 </span>
               </div>
               <div>
-                <span className="block text-[0.6rem] font-bold uppercase text-slate-400">Pontos da Fase</span>
-                <span className="text-sm font-black text-amber-400">+{pontos} pts</span>
+                <span className="block text-[0.6rem] font-bold uppercase text-slate-500">Pontos da Fase</span>
+                <span className="text-sm font-black text-amber-700">+{pontos} pts</span>
               </div>
             </div>
 
@@ -631,7 +631,7 @@ export function ArenaDeJogo({
               <button
                 type="button"
                 onClick={() => aoSalvarSair?.(obterSnapshot())}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] py-2.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/[0.12] hover:text-white"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 hover:text-slate-950"
               >
                 <Save className="h-3.5 w-3.5 text-amber-400" />
                 Salvar e Sair para o Menu
@@ -641,7 +641,7 @@ export function ArenaDeJogo({
                 <button
                   type="button"
                   onClick={aoReiniciar}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 py-2 text-[0.72rem] font-semibold text-red-300 transition-colors hover:bg-red-500/20"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-2 text-[0.72rem] font-semibold text-red-700 transition-colors hover:bg-red-100"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Reiniciar Fase do Zero

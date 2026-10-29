@@ -54,10 +54,10 @@ export function PainelRanking({ modo, userId, atualizarEm = 0 }: Props) {
 
   if (ranking.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900/50 p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
         <Trophy className="mx-auto mb-3 h-8 w-8 text-slate-500" />
-        <p className="text-sm font-semibold text-white">Nenhuma pontuação registrada ainda</p>
-        <p className="mt-1 text-xs text-slate-400">Jogue uma partida solo ou online para inaugurar o ranking dos 3 primeiros.</p>
+        <p className="text-sm font-semibold text-slate-900">Nenhuma pontuação registrada ainda</p>
+        <p className="mt-1 text-xs text-slate-600 font-medium">Jogue uma partida solo ou online para inaugurar o ranking dos 3 primeiros.</p>
       </div>
     )
   }
@@ -101,9 +101,9 @@ export function PainelRanking({ modo, userId, atualizarEm = 0 }: Props) {
 
       {/* Demais posições */}
       {resto.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
           <table className="w-full text-sm">
-            <thead className="bg-slate-950/80 text-[0.65rem] uppercase tracking-wider text-slate-400">
+            <thead className="bg-slate-50 text-[0.65rem] uppercase tracking-wider text-slate-700 border-b border-slate-200">
               <tr>
                 <th className="px-3.5 py-2.5 text-left font-bold">#</th>
                 <th className="px-3.5 py-2.5 text-left font-bold">Jogador</th>
@@ -113,27 +113,27 @@ export function PainelRanking({ modo, userId, atualizarEm = 0 }: Props) {
                 <th className="px-3.5 py-2.5 text-right font-bold">Pontos</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-100">
               {resto.map((pontuacao, indice) => {
                 const souEu = pontuacao.user_id === userId
                 return (
                   <tr
                     key={pontuacao.id ?? `${pontuacao.user_id}-${indice}`}
                     className={`transition-colors ${
-                      souEu ? 'bg-amber-400/10' : 'hover:bg-white/[0.04]'
+                      souEu ? 'bg-amber-50' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <td className="px-3.5 py-2.5 font-bold tabular-nums text-slate-400">{indice + 4}</td>
-                    <td className="px-3.5 py-2.5 font-semibold text-white">
+                    <td className="px-3.5 py-2.5 font-bold tabular-nums text-slate-500">{indice + 4}</td>
+                    <td className="px-3.5 py-2.5 font-bold text-slate-900">
                       {pontuacao.user_name}
                       {souEu && <span className="ml-1.5 rounded bg-amber-500/20 px-1.5 py-0.5 text-[0.6rem] font-bold text-amber-400">VOCÊ</span>}
                     </td>
-                    <td className="px-3.5 py-2.5 text-xs uppercase text-slate-400">{pontuacao.modo}</td>
-                    <td className="hidden px-3.5 py-2.5 text-xs tabular-nums text-slate-400 sm:table-cell">
+                    <td className="px-3.5 py-2.5 text-xs uppercase text-slate-600 font-semibold">{pontuacao.modo}</td>
+                    <td className="hidden px-3.5 py-2.5 text-xs tabular-nums text-slate-600 font-medium sm:table-cell">
                       {pontuacao.fase}
                     </td>
-                    <td className="px-3.5 py-2.5 text-xs tabular-nums text-slate-400">{formatarTempo(pontuacao.tempo_ms)}</td>
-                    <td className="px-3.5 py-2.5 text-right font-black tabular-nums text-amber-400">
+                    <td className="px-3.5 py-2.5 text-xs tabular-nums text-slate-600 font-medium">{formatarTempo(pontuacao.tempo_ms)}</td>
+                    <td className="px-3.5 py-2.5 text-right font-black tabular-nums text-amber-700">
                       {pontuacao.score}
                     </td>
                   </tr>

@@ -539,14 +539,14 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     return (
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 p-3 shadow-inner">
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-300">Você</p>
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 shadow-xs">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-800">Você</p>
             <p className="text-lg font-black text-white">
               {meuProgresso.pontos} pts · {meuProgresso.palavras} palavras
             </p>
           </div>
-          <div className="rounded-2xl border border-sky-400/40 bg-sky-400/10 p-3 shadow-inner">
-            <p className="text-xs font-bold uppercase tracking-wider text-sky-300">
+          <div className="rounded-2xl border border-sky-300 bg-sky-50 p-3 shadow-xs">
+            <p className="text-xs font-bold uppercase tracking-wider text-sky-800">
               {oponente?.nome ?? 'Adversário'}
             </p>
             <p className="text-lg font-black text-white">
@@ -556,7 +556,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
         </div>
 
         {faseEu !== null && faseOponente === null && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/15 px-3 py-2 text-sm font-semibold text-emerald-300">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 shadow-xs">
             <Hourglass className="h-4 w-4 animate-spin" /> Você fechou a fase! Aguardando o adversário…
           </div>
         )}
@@ -583,20 +583,20 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
         <div
           className={`rounded-3xl border p-8 ${
             venci
-              ? 'border-emerald-400/50 bg-emerald-400/15 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+              ? 'border-emerald-300 bg-emerald-50 shadow-md'
               : vencedor === 'empate'
-                ? 'border-amber-400/50 bg-amber-400/15 shadow-[0_0_30px_rgba(245,158,11,0.2)]'
-                : 'border-red-500/50 bg-red-500/15 shadow-[0_0_30px_rgba(239,68,68,0.2)]'
+                ? 'border-amber-300 bg-amber-50 shadow-md'
+                : 'border-red-300 bg-red-50 shadow-md'
           }`}
         >
           <CircleCheck className="mx-auto mb-3 h-12 w-12 text-white" />
           <h3 className="text-2xl font-black text-white">
             {venci ? 'Você venceu o duelo!' : vencedor === 'empate' ? 'Empate!' : 'Vitória do Adversário'}
           </h3>
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-sm text-slate-700 font-medium">
             {meuTotal} pontos contra {oponenteTotal} de {oponente?.nome ?? 'adversário'}.
           </p>
-          <p className="mt-4 text-xs text-slate-400">Sua pontuação já foi registrada no ranking geral.</p>
+          <p className="mt-4 text-xs text-slate-600 font-medium">Sua pontuação já foi registrada no ranking geral.</p>
         </div>
         <button
           type="button"
@@ -622,7 +622,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
   if (tela === 'sala') {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-xs">
           <Hourglass className="mx-auto mb-2 h-8 w-8 text-amber-400 animate-pulse" />
           <h3 className="text-lg font-black text-white">
             {partida?.host_id === user.id ? 'Aguardando adversário' : 'Conectando ao adversário'}
@@ -633,9 +633,9 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
               : 'O jogo começa em instantes.'}
           </p>
           {partida ? (
-            <div className="mx-auto mt-4 w-fit rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 px-8 py-3">
-              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">Código da Sala</p>
-              <p className="text-3xl font-black tracking-[0.25em] text-emerald-300">{partida.codigo}</p>
+            <div className="mx-auto mt-4 w-fit rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-50 px-8 py-3">
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-600">Código da Sala</p>
+              <p className="text-3xl font-black tracking-[0.25em] text-emerald-700">{partida.codigo}</p>
             </div>
           ) : null}
           {oponente ? (
@@ -652,7 +652,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
             setPartida(null)
             setOponente(null)
           }}
-          className="w-full rounded-xl border border-white/10 bg-slate-900/60 py-3 text-sm font-bold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+          className="w-full rounded-xl border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-xs"
         >
           Cancelar e voltar ao lobby
         </button>
@@ -683,12 +683,12 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
             onChange={(e) => setCodigoDigitado(e.target.value.toUpperCase())}
             placeholder="Código da partida"
             maxLength={6}
-            className="w-44 rounded-xl border border-white/10 bg-slate-900/60 px-3.5 py-2.5 text-sm font-bold uppercase tracking-widest text-white outline-none focus:border-emerald-500 placeholder:text-slate-500"
+            className="w-44 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold uppercase tracking-widest text-slate-900 outline-none focus:border-emerald-500 placeholder:text-slate-400 shadow-xs"
           />
           <button
             type="button"
             onClick={() => void entrarNoDesafio(codigoDigitado)}
-            className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:border-emerald-400 hover:bg-slate-800"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-emerald-400 hover:bg-slate-50 shadow-xs"
           >
             Entrar
           </button>
@@ -697,11 +697,11 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
 
       {convites.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Convites recebidos</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Convites recebidos</h4>
           {convites.map((convite) => (
             <div
               key={convite.codigo}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 shadow"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 shadow-xs"
             >
               <p className="text-sm font-semibold text-white">
                 {convite.hostNome} está esperando você
@@ -721,20 +721,20 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
 
       {partidasAbertas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Desafios abertos</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Desafios abertos</h4>
           {partidasAbertas.map((aberta) => (
             <div
               key={aberta.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs"
             >
               <p className="text-sm font-semibold text-white">
                 Código <span className="font-black tracking-widest text-emerald-400">{aberta.codigo}</span>
-                <span className="ml-2 text-xs uppercase text-slate-400 font-bold">{aberta.modo}</span>
+                <span className="ml-2 text-xs uppercase text-slate-600 font-bold">{aberta.modo}</span>
               </p>
               <button
                 type="button"
                 onClick={() => void entrarNoDesafio(aberta.codigo)}
-                className="rounded-xl border border-white/10 bg-slate-800/80 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:border-emerald-400"
+                className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 transition-colors hover:border-emerald-400 hover:bg-slate-50 shadow-xs"
               >
                 Entrar
               </button>
@@ -748,7 +748,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
           <Users className="h-3.5 w-3.5 text-emerald-400" /> Usuários cadastrados online ({jogadoresOnline.length})
         </h4>
         {jogadoresOnline.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-white/10 bg-slate-900/40 px-4 py-6 text-center text-xs text-slate-400">
+          <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-xs text-slate-600 font-medium">
             Nenhum outro jogador online no momento. Compartilhe o código com alguém para jogar 1x1!
           </p>
         ) : (
@@ -756,12 +756,12 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
             {jogadoresOnline.map((jogador) => (
               <li
                 key={jogador.user_id}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-3 py-2.5"
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-xs"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-black text-emerald-300">
                   {jogador.user_name.slice(0, 2).toUpperCase()}
                 </span>
-                <span className="truncate text-sm font-semibold text-white">
+                <span className="truncate text-sm font-semibold text-slate-900">
                   {jogador.user_name}
                 </span>
                 <span className="ml-auto h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />

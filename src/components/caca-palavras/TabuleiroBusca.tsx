@@ -208,7 +208,7 @@ export function TabuleiroBusca({
       onPointerUp={finalizarArraste}
     >
       <div
-        className="grid gap-0.5 sm:gap-1.5 p-1 sm:p-2 rounded-2xl border border-white/10 bg-slate-950/70 shadow-2xl backdrop-blur-md"
+        className="grid gap-0.5 sm:gap-1.5 p-1 sm:p-2 rounded-2xl border border-slate-200 bg-white shadow-lg"
         style={{ gridTemplateColumns: `repeat(${tabuleiro.tamanho}, minmax(0, 1fr))` }}
       >
         {tabuleiro.grid.map((linha, r) =>
@@ -285,13 +285,13 @@ export function ListaPalavras({
                 {colocacao.word}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.55rem] sm:text-[0.62rem] font-bold uppercase tracking-wider text-slate-300">
+                <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[0.55rem] sm:text-[0.62rem] font-bold uppercase tracking-wider text-slate-700">
                   {colocacao.category}
                 </span>
                 {achada && <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 stroke-[3]" />}
               </div>
             </div>
-            <p className="mt-1 hidden sm:block text-xs text-slate-400 leading-snug">{colocacao.clue}</p>
+            <p className="mt-1 hidden sm:block text-xs text-slate-600 font-medium leading-snug">{colocacao.clue}</p>
           </li>
         )
       })}

@@ -155,7 +155,7 @@ export function TabuleiroCruzadas({
           <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
             {slotAtivo ? (
               <>
-                <span className="shrink-0 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[0.65rem] font-black text-amber-400">
+                <span className="shrink-0 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[0.65rem] font-black text-amber-700">
                   {slotAtivo.numero} {slotAtivo.direcao === 'H' ? 'HOR' : 'VERT'}
                 </span>
                 <p className="truncate text-xs font-bold text-white sm:text-sm">
@@ -226,13 +226,13 @@ export function TabuleiroCruzadas({
                     }`}
                   >
                     {numero ? (
-                      <span className="absolute left-0.5 top-0 text-[0.45rem] font-black leading-none text-slate-400 sm:text-[0.55rem]">
+                      <span className="absolute left-0.5 top-0 text-[0.45rem] font-black leading-none text-slate-500 sm:text-[0.55rem]">
                         {numero}
                       </span>
                     ) : null}
                     {isDica ? (
                       <span
-                        className="absolute right-0.5 top-0 text-[0.4rem] font-black leading-none text-emerald-400 sm:text-[0.5rem]"
+                        className="absolute right-0.5 top-0 text-[0.4rem] font-black leading-none text-emerald-700 sm:text-[0.5rem]"
                         title="Dica inicial"
                       >
                         ★
@@ -261,18 +261,18 @@ export function TabuleiroCruzadas({
         {/* Teclado Virtual Integrado para Mobile / Tablets */}
         <div className="mt-3 block">
           <div className="flex items-center justify-between mb-1.5 px-1">
-            <span className="text-[11px] font-bold text-slate-400">Teclado na Tela</span>
+            <span className="text-[11px] font-bold text-slate-700">Teclado na Tela</span>
             <button
               type="button"
               onClick={() => setMostrarTeclado((v) => !v)}
-              className="text-[11px] text-sky-400 hover:underline"
+              className="text-[11px] text-sky-600 font-bold hover:underline"
             >
               {mostrarTeclado ? 'Ocultar teclado' : 'Mostrar teclado'}
             </button>
           </div>
 
           {mostrarTeclado && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/90 p-1.5 sm:p-2.5 shadow-2xl backdrop-blur-md">
+            <div className="rounded-2xl border border-slate-200 bg-slate-100 p-1.5 sm:p-2.5 shadow-md">
               <div className="flex flex-col gap-1 sm:gap-1.5">
                 {/* Linha 1 */}
                 <div className="flex justify-center gap-1 sm:gap-1.5">
@@ -281,7 +281,7 @@ export function TabuleiroCruzadas({
                       key={k}
                       type="button"
                       onClick={() => aoDigitar(k)}
-                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-slate-800/80 text-xs sm:text-sm font-black text-white shadow-sm transition-transform active:scale-95 active:bg-amber-400/40 hover:bg-slate-700"
+                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-black text-slate-900 shadow-xs transition-transform active:scale-95 active:bg-amber-100 hover:bg-slate-50"
                     >
                       {k}
                     </button>
@@ -295,7 +295,7 @@ export function TabuleiroCruzadas({
                       key={k}
                       type="button"
                       onClick={() => aoDigitar(k)}
-                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-slate-800/80 text-xs sm:text-sm font-black text-white shadow-sm transition-transform active:scale-95 active:bg-amber-400/40 hover:bg-slate-700"
+                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-black text-slate-900 shadow-xs transition-transform active:scale-95 active:bg-amber-100 hover:bg-slate-50"
                     >
                       {k}
                     </button>
@@ -307,7 +307,7 @@ export function TabuleiroCruzadas({
                   <button
                     type="button"
                     onClick={aoApagar}
-                    className="flex h-10 flex-[1.4] max-w-[58px] items-center justify-center rounded-lg border border-red-500/30 bg-red-500/15 text-xs font-black text-red-300 shadow-sm transition-transform active:scale-95 active:bg-red-500/30 hover:bg-red-500/20"
+                    className="flex h-10 flex-[1.4] max-w-[58px] items-center justify-center rounded-lg border border-red-300 bg-red-50 text-xs font-black text-red-700 shadow-xs transition-transform active:scale-95 active:bg-red-100 hover:bg-red-100"
                     title="Apagar letra (Backspace)"
                   >
                     ⌫
@@ -318,7 +318,7 @@ export function TabuleiroCruzadas({
                       key={k}
                       type="button"
                       onClick={() => aoDigitar(k)}
-                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-slate-800/80 text-xs sm:text-sm font-black text-white shadow-sm transition-transform active:scale-95 active:bg-amber-400/40 hover:bg-slate-700"
+                      className="flex h-10 flex-1 max-w-[42px] items-center justify-center rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-black text-slate-900 shadow-xs transition-transform active:scale-95 active:bg-amber-100 hover:bg-slate-50"
                     >
                       {k}
                     </button>
@@ -327,7 +327,7 @@ export function TabuleiroCruzadas({
                   <button
                     type="button"
                     onClick={() => alternarSlot('proximo')}
-                    className="flex h-10 flex-[1.4] max-w-[58px] items-center justify-center rounded-lg border border-sky-500/30 bg-sky-500/15 text-xs font-black text-sky-300 shadow-sm transition-transform active:scale-95 active:bg-sky-500/30 hover:bg-sky-500/20"
+                    className="flex h-10 flex-[1.4] max-w-[58px] items-center justify-center rounded-lg border border-sky-300 bg-sky-50 text-xs font-black text-sky-700 shadow-xs transition-transform active:scale-95 active:bg-sky-100 hover:bg-sky-100"
                     title="Avançar para a próxima palavra"
                   >
                     ➜
@@ -342,18 +342,18 @@ export function TabuleiroCruzadas({
       {/* Painel de Dicas: Abas no Mobile, Colunas no Desktop */}
       <aside className="space-y-3">
         {/* Banner de Dicas Iniciais */}
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300 shadow-sm">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 shadow-xs">
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-black text-emerald-400">
             ★
           </span>
           <span className="leading-tight text-[11px] sm:text-xs">
-            Letras em verde com <strong className="text-emerald-200">★</strong> são <strong>dicas iniciais</strong>!
+            Letras em verde com <strong className="text-emerald-700">★</strong> são <strong>dicas iniciais</strong>!
           </span>
         </div>
 
         {/* Abas no Mobile (< lg) */}
         <div className="block lg:hidden">
-          <div className="flex rounded-xl border border-white/10 bg-white/[0.04] p-1 mb-2">
+          <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-1 mb-2">
             <button
               type="button"
               onClick={() => setAbaMobile('H')}
@@ -378,7 +378,7 @@ export function TabuleiroCruzadas({
             </button>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 backdrop-blur-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
             <ul className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {(abaMobile === 'H' ? horizontais : verticais).map((slot) => {
                 const completo = slot.cells.every((cell) => confirmadas.has(`${cell.r}:${cell.c}`))
@@ -392,11 +392,11 @@ export function TabuleiroCruzadas({
                       aoEscolherCelula(primeiraVazia)
                     }}
                     className={`flex cursor-pointer gap-2 rounded-lg p-1.5 text-xs leading-snug transition-colors ${
-                      isSlotAtivo ? 'bg-sky-500/25 text-white ring-1 ring-sky-400/50' : 'hover:bg-white/5'
+                      isSlotAtivo ? 'bg-sky-100 text-sky-950 font-bold ring-1 ring-sky-300' : 'hover:bg-slate-50 text-slate-800'
                     }`}
                   >
-                    <span className="font-black text-amber-400">{slot.numero}.</span>
-                    <span className={completo ? 'text-emerald-400 line-through opacity-70' : 'text-slate-200'}>
+                    <span className="font-black text-amber-700">{slot.numero}.</span>
+                    <span className={completo ? 'text-emerald-700 line-through opacity-70' : 'text-slate-900'}>
                       {slot.clue}
                     </span>
                   </li>
@@ -408,8 +408,8 @@ export function TabuleiroCruzadas({
 
         {/* Layout Desktop (>= lg) */}
         <div className="hidden lg:block space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3.5 backdrop-blur-sm">
-            <h4 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-300">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs">
+            <h4 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-900">
               Horizontais ({horizontais.length})
             </h4>
             <ul className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
@@ -425,11 +425,11 @@ export function TabuleiroCruzadas({
                       aoEscolherCelula(primeiraVazia)
                     }}
                     className={`flex cursor-pointer gap-2 rounded-lg p-1 text-xs leading-snug transition-colors ${
-                      isSlotAtivo ? 'bg-sky-500/20 text-white ring-1 ring-sky-400/40' : 'hover:bg-white/5'
+                      isSlotAtivo ? 'bg-sky-100 text-sky-950 font-bold ring-1 ring-sky-300' : 'hover:bg-slate-50 text-slate-800'
                     }`}
                   >
-                    <span className="font-bold text-amber-400">{slot.numero}.</span>
-                    <span className={completo ? 'text-emerald-400 line-through opacity-70' : 'text-slate-300'}>
+                    <span className="font-bold text-amber-700">{slot.numero}.</span>
+                    <span className={completo ? 'text-emerald-700 line-through opacity-70' : 'text-slate-900'}>
                       {slot.clue}
                     </span>
                   </li>
@@ -438,8 +438,8 @@ export function TabuleiroCruzadas({
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3.5 backdrop-blur-sm">
-            <h4 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-300">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs">
+            <h4 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-900">
               Verticais ({verticais.length})
             </h4>
             <ul className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
@@ -455,11 +455,11 @@ export function TabuleiroCruzadas({
                       aoEscolherCelula(primeiraVazia)
                     }}
                     className={`flex cursor-pointer gap-2 rounded-lg p-1 text-xs leading-snug transition-colors ${
-                      isSlotAtivo ? 'bg-sky-500/20 text-white ring-1 ring-sky-400/40' : 'hover:bg-white/5'
+                      isSlotAtivo ? 'bg-sky-100 text-sky-950 font-bold ring-1 ring-sky-300' : 'hover:bg-slate-50 text-slate-800'
                     }`}
                   >
-                    <span className="font-bold text-amber-400">{slot.numero}.</span>
-                    <span className={completo ? 'text-emerald-400 line-through opacity-70' : 'text-slate-300'}>
+                    <span className="font-bold text-amber-700">{slot.numero}.</span>
+                    <span className={completo ? 'text-emerald-700 line-through opacity-70' : 'text-slate-900'}>
                       {slot.clue}
                     </span>
                   </li>

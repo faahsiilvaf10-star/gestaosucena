@@ -321,21 +321,21 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
   )
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#0b0e14] text-white select-none">
+    <div className="flex h-full min-h-0 flex-col bg-[#f8fafc] text-slate-900 select-none">
       {/* Cabeçalho Gaming */}
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-950/60 px-3 py-2.5 sm:px-6 sm:py-3 backdrop-blur-md">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 py-2.5 sm:px-6 sm:py-3 backdrop-blur-md shadow-xs">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border border-white/15 shadow-inner shrink-0">
-            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 animate-pulse" />
+          <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-amber-50 border border-amber-200 shadow-xs shrink-0">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <h2 className="text-sm sm:text-base font-black tracking-tight text-white truncate">Caça Palavras & Cruzadas</h2>
-              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 sm:px-2 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold text-emerald-400">
+              <h2 className="text-sm sm:text-base font-black tracking-tight text-slate-900 truncate">Caça Palavras & Cruzadas</h2>
+              <span className="rounded-full bg-emerald-100/80 border border-emerald-300 px-1.5 sm:px-2 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold text-emerald-800">
                 PRO
               </span>
             </div>
-            <p className="hidden sm:block text-[0.7rem] text-slate-400">
+            <p className="hidden sm:block text-[0.7rem] text-slate-600 font-medium">
               {FASES_POR_PARTIDA} fases progressivas · multiplayer online 1x1 · ranking geral
             </p>
           </div>
@@ -343,7 +343,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Navegação entre Abas */}
-          <nav className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-white/10 bg-white/[0.04] p-0.5 sm:p-1">
+          <nav className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-slate-200 bg-slate-100 p-0.5 sm:p-1">
             {abas.map(({ id, label, Icone }) => {
               const ativa = aba === id
               return (
@@ -372,9 +372,9 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
             type="button"
             onClick={alternarMudo}
             title={mudo ? 'Ativar som' : 'Desativar som'}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white shrink-0"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 shrink-0 shadow-xs"
           >
-            {mudo ? <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400" /> : <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />}
+            {mudo ? <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400" /> : <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-700" />}
           </button>
 
           {/* Botão Fechar Modal */}
@@ -383,7 +383,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
               type="button"
               onClick={fecharComSalvamento}
               title="Fechar (Esc) - Salva partida automaticamente"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 shrink-0"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-red-50 hover:border-red-300 hover:text-red-700 shrink-0 shadow-xs"
             >
               <X className="h-4 w-4" />
             </button>
@@ -399,22 +399,22 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
               <div className="space-y-6 animate-[role-fade-in_0.3s_ease-out]">
                 {/* Banner de Partida Salva em Andamento */}
                 {partidaSalva && (
-                  <div className="relative overflow-hidden rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-slate-950 p-5 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                  <div className="relative overflow-hidden rounded-3xl border border-emerald-300 bg-emerald-50/90 p-5 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3.5">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-                          <Play className="h-6 w-6 fill-emerald-400" />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300 bg-emerald-100 text-emerald-700 shadow-xs">
+                          <Play className="h-6 w-6 fill-emerald-700" />
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-0.5 text-[0.65rem] font-black uppercase tracking-wider text-emerald-300">
+                            <span className="rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-0.5 text-[0.65rem] font-black uppercase tracking-wider text-emerald-800">
                               Partida Salva
                             </span>
                             <span className="text-[0.7rem] text-slate-400">
                               Salvo às {new Date(partidaSalva.salvoEm).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <h3 className="text-base font-black text-white mt-1">
+                          <h3 className="text-base font-black text-slate-900 mt-1">
                             Continuar de onde parou ({partidaSalva.modo === 'busca' ? 'Caça Palavras' : 'Palavras Cruzadas'})
                           </h3>
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-300">
@@ -445,7 +445,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                               iniciarJogo()
                             }
                           }}
-                          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-xs font-bold text-slate-400 transition-colors hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300"
+                          className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 shadow-xs"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           Novo Jogo (Do Zero)
@@ -454,7 +454,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                         <button
                           type="button"
                           onClick={continuarJogoSalvo}
-                          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-5 py-2.5 text-sm font-black text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] active:scale-[0.98]"
+                          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 px-5 py-2.5 text-sm font-black text-white shadow-md shadow-emerald-700/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
                           <Play className="h-4 w-4 fill-white" />
                           Continuar Fase {partidaSalva.fase}
@@ -485,10 +485,10 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="inline-block rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-emerald-300 mb-1.5">
+                          <span className="inline-block rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-emerald-800 mb-1.5">
                             Grade de Busca
                           </span>
-                          <h3 className="text-base font-black text-white">Caça Palavras</h3>
+                          <h3 className="text-base font-black text-slate-900">Caça Palavras</h3>
                         </div>
                         <div
                           className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
@@ -520,10 +520,10 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="inline-block rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-amber-300 mb-1.5">
+                          <span className="inline-block rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-amber-800 mb-1.5">
                             Grade Cruzada
                           </span>
-                          <h3 className="text-base font-black text-white">Palavras Cruzadas</h3>
+                          <h3 className="text-base font-black text-slate-900">Palavras Cruzadas</h3>
                         </div>
                         <div
                           className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
@@ -543,10 +543,10 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                 </div>
 
                 {/* Seletor de Categorias Temáticas */}
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-sm">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
                         2. Categorias Temáticas (Opcional)
                       </h4>
                       <p className="text-[0.72rem] text-slate-400">
@@ -562,7 +562,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                           som('clique')
                           setCategorias([])
                         }}
-                        className="text-xs font-bold text-amber-400 hover:text-amber-300 hover:underline"
+                        className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline"
                       >
                         Limpar filtro
                       </button>
@@ -597,7 +597,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                 <button
                   type="button"
                   onClick={iniciarJogo}
-                  className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 py-4 text-base font-black text-white shadow-[0_0_35px_-5px_rgba(16,185,129,0.45)] transition-all hover:scale-[1.01] hover:shadow-[0_0_45px_-2px_rgba(16,185,129,0.65)] active:scale-[0.99]"
+                  className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 py-4 text-base font-black text-white shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.01] active:scale-[0.99]"
                 >
                   <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform">
                     <Play className="h-4 w-4 fill-white text-white translate-x-0.5" />
@@ -607,32 +607,32 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
 
                 {/* Seção Informativa e Dicas (Preenchendo a área inferior) */}
                 <div className="grid gap-3 pt-2 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 transition-colors hover:bg-slate-900/60">
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors hover:border-slate-300">
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
                       <Zap className="h-4 w-4" />
                     </div>
-                    <h5 className="text-xs font-bold text-white">Velocidade & Bônus</h5>
-                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-400">
+                    <h5 className="text-xs font-bold text-slate-900">Velocidade & Bônus</h5>
+                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-600 font-medium">
                       Encontre as palavras rapidamente para ganhar pontos extras de tempo. Completar cada fase rende até +1.000 pts de bônus!
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 transition-colors hover:bg-slate-900/60">
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors hover:border-slate-300">
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
                       <Flame className="h-4 w-4" />
                     </div>
-                    <h5 className="text-xs font-bold text-white">Dificuldade Progressiva</h5>
-                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-400">
+                    <h5 className="text-xs font-bold text-slate-900">Dificuldade Progressiva</h5>
+                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-600 font-medium">
                       As 5 fases aumentam gradualmente o tamanho da grade e introduzem palavras na diagonal e invertidas.
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 transition-colors hover:bg-slate-900/60">
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors hover:border-slate-300">
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
                       <Medal className="h-4 w-4" />
                     </div>
-                    <h5 className="text-xs font-bold text-white">Pódio & Ranking</h5>
-                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-400">
+                    <h5 className="text-xs font-bold text-slate-900">Pódio & Ranking</h5>
+                    <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-600 font-medium">
                       Suas pontuações entram no mural dos 3 melhores da Sucena. Desafie colegas no modo 1x1 online em tempo real!
                     </p>
                   </div>
@@ -641,13 +641,13 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
             ) : (
               <div className="space-y-4 animate-[role-fade-in_0.3s_ease-out]">
                 {/* Barra de controle da partida em andamento */}
-                <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 sm:p-3 backdrop-blur-md">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:p-3 shadow-xs">
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300">
-                      Pontos: <span className="text-amber-400 font-black">{pontosTotais}</span>
+                    <span className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-800">
+                      Pontos: <span className="text-amber-700 font-black">{pontosTotais}</span>
                     </span>
-                    <span className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300">
-                      Fase <span className="text-emerald-400 font-black">{fase}</span> de {FASES_POR_PARTIDA}
+                    <span className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-800">
+                      Fase <span className="text-emerald-700 font-black">{fase}</span> de {FASES_POR_PARTIDA}
                     </span>
                   </div>
 
@@ -656,7 +656,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                       type="button"
                       onClick={() => salvarESair()}
                       title="Salva nível, tempo e envia pontos ao ranking"
-                      className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/30"
+                      className="flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
                     >
                       <Save className="h-3.5 w-3.5 text-emerald-400" />
                       <span>Salvar<span className="hidden sm:inline"> & Sair</span></span>
@@ -666,7 +666,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                       type="button"
                       onClick={() => salvarESair()}
                       title="Sai do jogo salvando automaticamente o progresso"
-                      className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-slate-300 transition-colors hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-300"
+                      className="flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-bold text-slate-700 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
                       <span>Sair</span>
@@ -701,9 +701,9 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
         {aba === 'online' && (
           <div className="mx-auto max-w-4xl space-y-4">
             {!usuario ? (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900/50 p-8 text-center">
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
                 <Globe className="mx-auto mb-3 h-10 w-10 text-slate-500" />
-                <p className="text-base font-bold text-white">Você precisa estar logado</p>
+                <p className="text-base font-bold text-slate-900">Você precisa estar logado</p>
                 <p className="mt-1 text-xs text-slate-400">
                   O modo online é exclusivo para usuários cadastrados no sistema. Entre com sua conta para
                   desafiar outro jogador em tempo real.
@@ -718,7 +718,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
               />
             )}
 
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Modalidade da partida online
               </p>
@@ -784,17 +784,17 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
       {/* Modal de fase concluída */}
       {modalFase && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="animate-[role-fade-in_0.35s_ease-out] w-full max-w-sm rounded-3xl border border-emerald-400/40 bg-gradient-to-b from-[#141824] to-[#0c0e14] p-6 text-center shadow-2xl">
+          <div className="animate-[role-fade-in_0.35s_ease-out] w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
               <Trophy className="h-7 w-7" />
             </div>
-            <h3 className="text-xl font-black text-white">Fase {fase} Concluída!</h3>
+            <h3 className="text-xl font-black text-slate-900">Fase {fase} Concluída!</h3>
             <p className="mt-1 text-sm font-semibold text-emerald-400">
               +{modalFase.pontos} pontos conquistados
             </p>
             <div className="my-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
               <p className="text-xs text-slate-400">Total acumulado na partida</p>
-              <p className="text-2xl font-black text-amber-400">{pontosTotais} pts</p>
+              <p className="text-2xl font-black text-amber-700">{pontosTotais} pts</p>
             </div>
             <button
               type="button"
@@ -803,7 +803,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                 setModalFase(null)
                 setFase((f) => f + 1)
               }}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 text-sm font-black text-white shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-sm font-black text-white shadow-md shadow-emerald-700/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               Iniciar Fase {fase + 1} ({FASES_POR_PARTIDA} no total)
             </button>
@@ -814,7 +814,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
       {/* Modal de fim de jogo */}
       {fimDeJogo && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="animate-[role-fade-in_0.35s_ease-out] w-full max-w-sm rounded-3xl border border-white/15 bg-gradient-to-b from-[#141824] to-[#0c0e14] p-6 text-center shadow-2xl">
+          <div className="animate-[role-fade-in_0.35s_ease-out] w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
             <div
               className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border ${
                 fimDeJogo.venceu
@@ -827,7 +827,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
             <h3 className="text-xl font-black text-white">
               {fimDeJogo.venceu ? 'Vitória Completa!' : 'Fim de Jogo'}
             </h3>
-            <p className="mt-1 text-xs text-slate-300 leading-relaxed">{fimDeJogo.motivo}</p>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">{fimDeJogo.motivo}</p>
             <div className="my-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
               <p className="text-3xl font-black tabular-nums text-amber-400">{fimDeJogo.pontos}</p>
               <p className="text-[0.7rem] text-slate-400">pontos registrados no ranking</p>
@@ -840,14 +840,14 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                   setFimDeJogo(null)
                   setJogando(false)
                 }}
-                className="flex-1 rounded-xl border border-white/15 bg-white/[0.04] py-3 text-xs font-bold text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+                className="flex-1 rounded-xl border border-slate-300 bg-white py-3 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50 hover:text-slate-950 shadow-xs"
               >
                 Menu Principal
               </button>
               <button
                 type="button"
                 onClick={iniciarJogo}
-                className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 text-xs font-black text-white shadow-lg shadow-emerald-500/30 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-xs font-black text-white shadow-md shadow-emerald-700/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 Jogar Novamente
               </button>
