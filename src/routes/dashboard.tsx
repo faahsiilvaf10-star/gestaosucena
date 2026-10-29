@@ -359,13 +359,25 @@ function DashboardComponent() {
 
       const { data: ddsPosts } = await supabase
         .from('social_posts')
-        .select(`id, caption, social_post_media (media_url)`)
-        .like('caption', '%DDS Realizado!%')
+        .select(`id, caption, created_at, social_post_media (media_url)`)
+        .ilike('caption', '%DDS Realizado%')
         .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: false })
         .limit(1)
 
-      const postedMediaUrl = ddsPosts && ddsPosts[0]?.social_post_media?.[0]?.media_url || null
+      let postedMediaUrl = ddsPosts && ddsPosts[0]?.social_post_media?.[0]?.media_url || null
+
+      if (!postedMediaUrl) {
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+        const { data: fallbackPosts } = await supabase
+          .from('social_posts')
+          .select(`id, caption, created_at, social_post_media (media_url)`)
+          .ilike('caption', '%DDS Realizado%')
+          .gte('created_at', `${todayStr}T00:00:00.000Z`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        postedMediaUrl = fallbackPosts && fallbackPosts[0]?.social_post_media?.[0]?.media_url || null
+      }
 
       return {
         hoje: {
@@ -1007,18 +1019,39 @@ function DashboardComponent() {
           onClick={() => navigate({ to: '/seguranca/dds' })}
           aria-label={`Palestrante do DDS hoje: ${ddsData?.hoje?.palestrante?.nome || 'Livre'}, tema ${ddsData?.hoje?.tema || 'Sem tema'}. Postar DDS`}
         >
-          <span className="dds-photo today">
+          <span
+            className={`dds-photo today ${ddsData?.hoje?.postedMedia ? 'cursor-zoom-in group/photo' : ''}`}
+            onClick={(e) => {
+              if (ddsData?.hoje?.postedMedia) {
+                e.stopPropagation()
+                setExpandedImage(ddsData.hoje.postedMedia)
+              }
+            }}
+            title={ddsData?.hoje?.postedMedia ? 'Clique para ver a foto do DDS ampliada' : undefined}
+          >
             <img
-              src={ddsData?.hoje?.palestrante?.avatar || '/dds-palestrante-hoje.webp'}
-              alt={`Palestrante do DDS de hoje: ${ddsData?.hoje?.palestrante?.nome || 'Palestrante'}`}
+              src={ddsData?.hoje?.postedMedia || ddsData?.hoje?.palestrante?.avatar || '/dds-palestrante-hoje.webp'}
+              alt={`Foto do DDS de hoje: ${ddsData?.hoje?.palestrante?.nome || 'Palestrante'}`}
+              style={ddsData?.hoje?.postedMedia ? { objectFit: 'cover', objectPosition: 'center' } : undefined}
             />
             <span className="dds-photo-badge today"><i></i>Hoje</span>
-            <span className="dds-mic">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="9" y="2" width="6" height="12" rx="3" />
-                <path d="M5 10a7 7 0 0 0 14 0M12 19v3" />
-              </svg>
-            </span>
+            {ddsData?.hoje?.postedMedia ? (
+              <span className="dds-mic transition-transform group-hover/photo:scale-110" title="Clique para ampliar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-[#1A1400]" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </span>
+            ) : (
+              <span className="dds-mic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="9" y="2" width="6" height="12" rx="3" />
+                  <path d="M5 10a7 7 0 0 0 14 0M12 19v3" />
+                </svg>
+              </span>
+            )}
           </span>
           <span className="dds-main">
             <span className="dds-top">
@@ -1468,25 +1501,25 @@ function DashboardComponent() {
 
       {expandedImage && (
         <div
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[99999] p-4 cursor-zoom-out"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4 cursor-zoom-out animate-in fade-in duration-200"
           onClick={() => setExpandedImage(null)}
         >
-          <img
-            src={expandedImage}
-            alt="Expanded DDS"
-            className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl"
-          />
-          <button
-            className="absolute top-20 right-6 sm:right-10 text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
-            onClick={(e) => {
-              e.stopPropagation()
-              setExpandedImage(null)
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="relative max-w-[92vw] max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={expandedImage}
+              alt="Foto do DDS Ampliada"
+              className="max-w-full max-h-[88vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+            />
+            <button
+              className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 text-white p-2.5 bg-black/75 hover:bg-black/95 backdrop-blur-md rounded-full transition-all cursor-pointer border border-white/20 shadow-2xl hover:scale-105"
+              onClick={() => setExpandedImage(null)}
+              aria-label="Fechar visualização"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
