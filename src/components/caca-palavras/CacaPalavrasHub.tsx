@@ -36,6 +36,8 @@ const CATEGORIA_EMOJIS: Record<Categoria, string> = {
   Mundo: '🌍',
   História: '🏛️',
   Trabalho: '💼',
+  'Segurança & EPIs': '🦺',
+  'Meio Ambiente': '♻️',
   Entretenimento: '🎬',
   Ciência: '🔬',
   Natureza: '🌿',
