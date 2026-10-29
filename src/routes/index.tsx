@@ -212,6 +212,17 @@ function Index() {
       if (!localStorage.getItem('sucena_environment')) {
         localStorage.setItem('sucena_environment', 'barcarena')
       }
+      // Tocar som de entrada ao iniciar a transição para o Dashboard
+      try {
+        if (typeof window !== 'undefined') {
+          (window as any).__last_entry_sound_at = Date.now()
+          const audio = new Audio('/Som_entrada.mp3')
+          audio.volume = 0.85
+          audio.play().catch(err => console.warn('Autoplay do som de entrada bloqueado pelo navegador:', err))
+        }
+      } catch (err) {
+        console.warn('Erro ao inicializar som de entrada:', err)
+      }
       setShowTransition(true)
     }
   }

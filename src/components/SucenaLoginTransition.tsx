@@ -7,11 +7,32 @@ interface SucenaLoginTransitionProps {
 const S_PATH =
   'M 35.25 0.1 C 36.46 0.08, 40.00 -0.26, 42.25 0.00 C 44.50 0.26, 46.58 0.84, 48.75 1.65 C 50.92 2.46, 53.51 3.79, 55.25 4.85 C 56.99 5.91, 60.08 7.08, 59.20 8.00 C 58.33 8.92, 52.20 9.63, 50.00 10.35 C 47.80 11.07, 47.13 11.61, 46.00 12.30 C 44.88 12.99, 44.00 13.68, 43.25 14.50 C 42.50 15.32, 41.96 16.29, 41.50 17.25 C 41.04 18.21, 40.64 19.04, 40.50 20.25 C 40.36 21.46, 40.29 22.63, 40.65 24.50 C 41.01 26.38, 41.49 28.38, 42.65 31.50 C 43.81 34.63, 46.50 40.38, 47.60 43.25 C 48.70 46.13, 48.89 46.13, 49.25 48.75 C 49.61 51.38, 49.77 56.50, 49.75 59.00 C 49.73 61.50, 49.87 61.46, 49.15 63.75 C 48.43 66.04, 46.68 70.42, 45.45 72.75 C 44.22 75.08, 42.87 76.44, 41.75 77.75 C 40.63 79.06, 39.92 79.69, 38.75 80.60 C 37.58 81.51, 36.75 82.28, 34.75 83.20 C 32.75 84.13, 29.67 85.60, 26.75 86.15 C 23.83 86.70, 19.58 86.63, 17.25 86.50 C 14.92 86.38, 14.83 86.21, 12.75 85.40 C 10.67 84.59, 6.76 82.88, 4.75 81.65 C 2.74 80.42, -0.09 79.16, 0.70 78.00 C 1.49 76.84, 7.03 75.80, 9.50 74.70 C 11.97 73.60, 13.93 72.52, 15.50 71.40 C 17.07 70.28, 18.09 68.98, 18.90 68.00 C 19.71 67.02, 20.00 66.42, 20.35 65.50 C 20.70 64.58, 20.89 63.50, 21.00 62.50 C 21.11 61.50, 21.18 60.75, 21.00 59.50 C 20.82 58.25, 21.30 58.42, 19.90 55.00 C 18.50 51.58, 14.08 42.79, 12.60 39.00 C 11.12 35.21, 11.27 34.63, 11.00 32.25 C 10.73 29.88, 10.70 27.25, 11.00 24.75 C 11.30 22.25, 11.81 19.67, 12.80 17.25 C 13.79 14.83, 15.38 12.26, 16.95 10.25 C 18.52 8.24, 20.53 6.51, 22.25 5.20 C 23.97 3.89, 25.13 3.24, 27.25 2.40 C 29.38 1.56, 33.67 0.53, 35.00 0.15 C 36.33 -0.23, 34.04 0.13, 35.25 0.10 Z'
 
+function playEntrySound() {
+  if (typeof window === 'undefined') return
+  const now = Date.now()
+  if ((window as any).__last_entry_sound_at && now - (window as any).__last_entry_sound_at < 5000) {
+    return
+  }
+  (window as any).__last_entry_sound_at = now
+  try {
+    const audio = new Audio('/Som_entrada.mp3')
+    audio.volume = 0.85
+    audio.play().catch(err => {
+      console.warn('Autoplay do som de entrada bloqueado pelo navegador:', err)
+    })
+  } catch (err) {
+    console.warn('Erro ao tocar som de entrada:', err)
+  }
+}
+
 export function SucenaLoginTransition({ onComplete }: SucenaLoginTransitionProps) {
   const [reducedMotion, setReducedMotion] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('Iniciando sistema...')
 
   useEffect(() => {
+    // Toca o som de entrada ao iniciar a transição
+    playEntrySound()
+
     const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     setReducedMotion(isReduced)
 
