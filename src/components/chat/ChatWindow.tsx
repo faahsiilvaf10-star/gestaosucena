@@ -92,6 +92,8 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
   const [otherUserId, setOtherUserId] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -186,15 +188,17 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
     }
   })
 
-  const handleDeleteConversation = async () => {
-    if (confirm('Tem certeza que deseja excluir esta conversa? As mensagens anteriores serão limpas da sua tela.')) {
-      try {
-        await clearConversation(conversationId, currentUserId)
-        closeChat(conversationId)
-        window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId } }))
-      } catch (err) {
-        console.error('Erro ao excluir conversa:', err)
-      }
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await clearConversation(conversationId, currentUserId)
+      setShowConfirmDelete(false)
+      closeChat(conversationId)
+      window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId } }))
+    } catch (err) {
+      console.error('Erro ao excluir conversa:', err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -280,7 +284,10 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
           {showOptions && (
             <div className={`absolute top-10 right-0 w-44 rounded-xl shadow-xl overflow-hidden z-50 border ${isDark ? 'bg-[#15161A] border-white/10' : 'bg-white border-gray-100'}`}>
               <button 
-                onClick={handleDeleteConversation}
+                onClick={() => {
+                  setShowOptions(false)
+                  setShowConfirmDelete(true)
+                }}
                 className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center gap-2 transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium`}
               >
                 <Trash2 size={14} />
@@ -395,8 +402,56 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
         onMessageSent={handleMessageSent} 
       />
       </div>
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DENTRO DA PÁGINA */}
+      {showConfirmDelete && (
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => !isDeleting && setShowConfirmDelete(false)}
+        >
+          <div 
+            className="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 dark:border-white/10 text-center animate-in zoom-in-95 duration-150"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-3.5 shadow-inner">
+              <Trash2 size={24} strokeWidth={2.2} />
+            </div>
+
+            <h4 className="text-[17px] font-bold text-gray-900 dark:text-white mb-1.5">
+              Excluir conversa?
+            </h4>
+
+            <p className="text-[13.5px] text-gray-600 dark:text-gray-300 mb-5 leading-relaxed">
+              Deseja realmente excluir a conversa com <strong className="text-gray-900 dark:text-white font-semibold">{contactName}</strong>? As mensagens serão removidas da sua lista permanentemente.
+            </p>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDelete(false)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 font-semibold text-[13px] hover:bg-gray-50 dark:hover:bg-white/5 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-[13px] active:scale-[0.98] transition-all cursor-pointer shadow-md shadow-red-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  'Sim, excluir'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-

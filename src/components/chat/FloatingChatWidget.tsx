@@ -13,6 +13,7 @@ import {
   getConversations,
   getOrCreateDirectConversation,
   clearConversation,
+  restoreConversation,
   getUnreadMessagesData,
   markConversationAsRead
 } from '../../lib/api-chat'
@@ -112,6 +113,8 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
   const [unreadConversationsCount, setUnreadConversationsCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'conversas' | 'equipe'>('conversas')
+  const [convToDelete, setConvToDelete] = useState<{ id: string; title: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const popupRef = useRef<HTMLDivElement>(null)
 
@@ -130,15 +133,34 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
       setUnreadCountGlobally(unreadData.totalUnread)
       setUnreadConversationsCount(unreadData.unreadConversationsCount)
 
+      // Carrega registros locais de conversas apagadas para redundância instantânea
+      let localDeletedMap: Record<string, string> = {}
+      try {
+        if (typeof window !== 'undefined') {
+          const raw = localStorage.getItem('sucena_deleted_conversations_' + currentUserId)
+          if (raw) localDeletedMap = JSON.parse(raw)
+        }
+      } catch (_) {}
+
       // 2. Filtra conversas pertencentes ao usuario atual
       const myConvs = allConvs.filter((conv: any) => {
         const myPart = conv.participants?.find((p: any) => p.user_id === currentUserId)
         if (!myPart) return false
 
-        if (myPart.cleared_at && conv.last_message) {
-          const cleared = new Date(myPart.cleared_at).getTime()
-          const lastMsg = new Date(conv.last_message.created_at).getTime()
-          if (cleared >= lastMsg) return false
+        // Momento em que a conversa foi excluída/limpa (banco ou cache local)
+        const dbClearedAt = myPart.cleared_at ? new Date(myPart.cleared_at).getTime() : 0
+        const localClearedAt = localDeletedMap[conv.id] ? new Date(localDeletedMap[conv.id]).getTime() : 0
+        const effectiveClearedAt = Math.max(dbClearedAt, localClearedAt)
+
+        if (effectiveClearedAt > 0) {
+          // Busca o timestamp da última mensagem (objeto joined ou campo da tabela)
+          const lastMsgDate = conv.last_message?.created_at || conv.last_message_at
+          const lastMsgTime = lastMsgDate ? new Date(lastMsgDate).getTime() : 0
+
+          // Se não há mensagens após o momento em que foi apagada, a conversa não deve retornar
+          if (!lastMsgTime || lastMsgTime <= effectiveClearedAt) {
+            return false
+          }
         }
         return true
       })
@@ -253,6 +275,7 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
   const handleStartDirectChat = async (targetUserId: string) => {
     try {
       const convId = await getOrCreateDirectConversation(currentUserId, targetUserId)
+      restoreConversation(convId, currentUserId)
       openChat(convId)
       await markConversationAsRead(convId, currentUserId)
       window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId: convId } }))
@@ -266,22 +289,29 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
     }
   }
 
-  // Opção para excluir conversa
-  const handleDeleteConversation = async (e: React.MouseEvent, convId: string) => {
+  // Opção para solicitar confirmação in-page de exclusão
+  const handlePromptDelete = (e: React.MouseEvent, conv: FormattedConversation) => {
     e.stopPropagation()
-    if (!window.confirm('Tem certeza que deseja excluir esta conversa? As mensagens anteriores serão limpas para você.')) {
-      return
-    }
+    setConvToDelete({ id: conv.id, title: conv.title })
+  }
+
+  // Executa exclusão permanente confirmada pelo usuário
+  const handleConfirmDelete = async () => {
+    if (!convToDelete) return
+    setIsDeleting(true)
+    const convId = convToDelete.id
 
     try {
       await clearConversation(convId, currentUserId)
       setConversations(prev => prev.filter(c => c.id !== convId))
       closeChat(convId)
       window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId: convId } }))
+      setConvToDelete(null)
       await loadChatData()
     } catch (err: any) {
       console.error('Erro ao excluir conversa:', err)
-      alert('Erro ao excluir conversa: ' + (err.message || 'Erro desconhecido'))
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -475,7 +505,7 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
 
                             {/* BOTAO PARA EXCLUIR CONVERSA */}
                             <button
-                              onClick={(e) => handleDeleteConversation(e, conv.id)}
+                              onClick={(e) => handlePromptDelete(e, conv)}
                               className="p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
                               title="Excluir conversa"
                               aria-label="Excluir conversa"

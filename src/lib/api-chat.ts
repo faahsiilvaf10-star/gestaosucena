@@ -197,15 +197,50 @@ export async function getOrCreateDirectConversation(userId1: string, userId2: st
 }
 
 export async function clearConversation(conversationId: string, userId: string) {
-  const { error } = await supabase
-    .from('conversation_participants')
-    .update({ cleared_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .eq('user_id', userId)
+  const now = new Date().toISOString()
 
-  if (error) {
-    console.error('Error clearing conversation:', error)
-    throw error
+  // 1. Persistência local imediata para garantir exclusão permanente no cliente
+  try {
+    if (typeof window !== 'undefined' && userId) {
+      const storageKey = 'sucena_deleted_conversations_' + userId
+      const raw = localStorage.getItem(storageKey)
+      const map = raw ? JSON.parse(raw) : {}
+      map[conversationId] = now
+      localStorage.setItem(storageKey, JSON.stringify(map))
+    }
+  } catch (e) {
+    console.warn('Erro ao salvar conversa excluída no localStorage:', e)
+  }
+
+  // 2. Atualiza no Supabase
+  try {
+    const { error } = await supabase
+      .from('conversation_participants')
+      .update({ cleared_at: now })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.warn('Aviso ao atualizar cleared_at no Supabase:', error)
+    }
+  } catch (err) {
+    console.warn('Falha na requisição de exclusão no Supabase:', err)
+  }
+}
+
+export function restoreConversation(conversationId: string, userId: string) {
+  try {
+    if (typeof window !== 'undefined' && userId) {
+      const storageKey = 'sucena_deleted_conversations_' + userId
+      const raw = localStorage.getItem(storageKey)
+      if (raw) {
+        const map = JSON.parse(raw)
+        delete map[conversationId]
+        localStorage.setItem(storageKey, JSON.stringify(map))
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao restaurar conversa no localStorage:', e)
   }
 }
 
@@ -246,6 +281,14 @@ export async function getUnreadMessagesData(currentUserId: string): Promise<{
     const unreadByConversation: Record<string, number> = {}
     let totalUnread = 0
 
+    let localDeletedMap: Record<string, string> = {}
+    try {
+      if (typeof window !== 'undefined' && currentUserId) {
+        const raw = localStorage.getItem('sucena_deleted_conversations_' + currentUserId)
+        if (raw) localDeletedMap = JSON.parse(raw)
+      }
+    } catch (_) {}
+
     const partMap = new Map()
     participations.forEach(p => partMap.set(p.conversation_id, p))
 
@@ -253,8 +296,11 @@ export async function getUnreadMessagesData(currentUserId: string): Promise<{
       const p = partMap.get(msg.conversation_id)
       if (!p) return
 
-      // Exclude messages before user cleared conversation
-      if (p.cleared_at && new Date(msg.created_at).getTime() <= new Date(p.cleared_at).getTime()) {
+      // Exclude messages before user cleared conversation (db or local)
+      const localCleared = localDeletedMap[msg.conversation_id]
+      const dbCleared = p.cleared_at
+      const effectiveCleared = localCleared || dbCleared
+      if (effectiveCleared && new Date(msg.created_at).getTime() <= new Date(effectiveCleared).getTime()) {
         return
       }
 
