@@ -3,7 +3,8 @@ import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { SucenaLoginTransition } from '../components/SucenaLoginTransition'
 import { useState, useEffect } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -25,6 +26,8 @@ type Environment = {
 
 function AmbientesComponent() {
   const navigate = useNavigate()
+  const router = useRouter()
+  const [showTransition, setShowTransition] = useState(false)
   const { isDark } = useTheme()
   const [hoveredEnv, setHoveredEnv] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -98,20 +101,48 @@ function AmbientesComponent() {
     }
 
     localStorage.setItem('sucena_environment', env.id)
-    navigate({ to: '/dashboard' })
+
+    // Prepara efeito Fade no Dashboard e pré-carrega rota
+    try {
+      sessionStorage.setItem('sucena_login_transition', 'true')
+      router.preloadRoute({ to: '/dashboard' }).catch(() => {})
+    } catch (_) {}
+
+    // Tocar som de entrada ao iniciar a transição para o Dashboard
+    try {
+      if (typeof window !== 'undefined') {
+        const audio = new Audio('/Som_entrada.mp3')
+        audio.volume = 0.85
+        audio.play().catch(err => console.warn('Autoplay bloqueado:', err))
+      }
+    } catch (err) {}
+
+    setShowTransition(true)
   }
 
   return (
     <div
       className={`min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans transition-colors duration-300 ${
-        isDark ? 'text-white' : 'text-[#1c1d21]'
+        showTransition ? '!bg-[#070709]' : isDark ? 'text-white' : 'text-[#1c1d21]'
       }`}
       style={{
-        background: isDark
+        background: showTransition
+          ? '#070709'
+          : isDark
           ? 'radial-gradient(ellipse at center top, #1a1508 0%, #0d0d0d 35%, #050505 100%)'
           : 'radial-gradient(ellipse at center top, #fffdf7 0%, #f7f3e8 45%, #eceff4 100%)',
       }}
     >
+      {showTransition && (
+        <SucenaLoginTransition
+          onComplete={() => {
+            navigate({ to: '/dashboard', replace: true })
+          }}
+        />
+      )}
+
+      {!showTransition && (
+        <>
       {/* Golden glow at top */}
       <div
         className={`absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[250px] rounded-full blur-[120px] pointer-events-none transition-opacity duration-500 ${
@@ -325,6 +356,8 @@ function AmbientesComponent() {
           <ThemeToggle />
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

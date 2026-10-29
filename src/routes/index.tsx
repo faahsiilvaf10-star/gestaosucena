@@ -20,7 +20,6 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { getAvailableRoles } from '../lib/roles'
 import { isRegistrationOpen } from '../lib/settings'
 import { setDailySessionExpiry, clearDailySessionExpiry } from '../lib/sessionManager'
-import { SucenaLoginTransition } from '../components/SucenaLoginTransition'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -214,24 +213,8 @@ function Index() {
         localStorage.setItem('sucena_environment', 'barcarena')
       }
 
-      // Ativa flag para efeito Fade no Dashboard e pré-carrega rota
-      try {
-        sessionStorage.setItem('sucena_login_transition', 'true')
-        router.preloadRoute({ to: '/dashboard' }).catch(() => {})
-      } catch (_) {}
-
-      // Tocar som de entrada ao iniciar a transição para o Dashboard
-      try {
-        if (typeof window !== 'undefined') {
-          (window as any).__last_entry_sound_at = Date.now()
-          const audio = new Audio('/Som_entrada.mp3')
-          audio.volume = 0.85
-          audio.play().catch(err => console.warn('Autoplay do som de entrada bloqueado pelo navegador:', err))
-        }
-      } catch (err) {
-        console.warn('Erro ao inicializar som de entrada:', err)
-      }
-      setShowTransition(true)
+      // Redireciona diretamente para a seleção de ambiente
+      navigate({ to: '/ambientes' })
     }
   }
 
@@ -301,24 +284,8 @@ function Index() {
   const linkClass = `text-sm transition-colors cursor-pointer select-none ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`
 
   return (
-    <div
-      className={`min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300 ${
-        showTransition ? '!bg-[#070709]' : ''
-      }`}
-      style={showTransition ? { background: '#070709' } : undefined}
-    >
-      {showTransition && (
-        <SucenaLoginTransition
-          onComplete={() => {
-            navigate({ to: '/dashboard', replace: true })
-          }}
-        />
-      )}
-
-      {/* Main Content - totalmente oculto durante a transição para nunca vazar a tela de login */}
-      {!showTransition && (
-        <>
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-[360px] mx-auto px-4 py-12">
+    <div className="min-h-screen w-full flex flex-col relative overflow-hidden font-sans transition-colors duration-300">
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-[360px] mx-auto px-4 py-12">
         
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
@@ -658,9 +625,6 @@ function Index() {
           <ThemeToggle />
         </div>
       </div>
-        </>
-      )}
-
     </div>
   )
 }
