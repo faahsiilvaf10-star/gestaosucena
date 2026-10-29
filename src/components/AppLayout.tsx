@@ -244,14 +244,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const handleLogoutConfirm = async () => {
+  const handleDirectLogout = async () => {
     setShowLogoutConfirm(false)
-    setIsLoggingOut(true)
-    setTimeout(async () => {
+    try {
+      localStorage.removeItem('sucena_saved_password')
       clearDailySessionExpiry()
       await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Erro ao sair:', err)
+    } finally {
       navigate({ to: '/' })
-    }, 5000)
+    }
+  }
+
+  const handleLogoutConfirm = async () => {
+    await handleDirectLogout()
   }
 
   const handleHardRefresh = async () => {
@@ -584,7 +591,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className="logout-top-btn"
                 type="button"
                 title="Sair do sistema"
-                onClick={() => setShowLogoutConfirm(true)}
+                onClick={handleDirectLogout}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
