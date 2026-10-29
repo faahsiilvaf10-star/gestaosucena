@@ -1,4 +1,3 @@
-import X from 'lucide-react/dist/esm/icons/x.js';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
@@ -49,69 +48,71 @@ export function DailyPipasAlertModal({ enabled }: { enabled: boolean }) {
     return () => clearInterval(interval);
   }, [enabled]);
 
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#1e1e1e] w-[min(90vw,560px)] max-h-[min(82vh,620px)] overflow-y-auto rounded-2xl shadow-2xl animate-in zoom-in-95 fade-in duration-200">
-        <div className="bg-blue-600 p-5 flex items-center relative text-white">
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="comunicado-overlay" role="dialog" aria-modal="true">
+      <div className="comunicado flex flex-col max-h-[90vh]">
+        <img src="/logo.png" alt="Sucena" className="comunicado-logo" />
+
+        <div className="comunicado-titulo">
+          <span className="comunicado-icone" aria-hidden="true">
+            📢
+          </span>
           <div className="min-w-0">
-            <h2 className="text-xl font-bold">Comunicado Diário</h2>
-            <p className="text-blue-100 font-medium mt-1 text-sm">Status dos Caminhões Pipa na Obra</p>
+            <h2 className="m-0 p-0 text-[22px] font-[800] leading-tight text-[#111111]">Comunicado Diário</h2>
+            <p className="text-gray-500 font-semibold text-xs mt-0.5">Status dos Caminhões Pipa na Obra</p>
           </div>
         </div>
 
-        <div className="p-5">
-          <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">
+        <div className="comunicado-conteudo overflow-y-auto custom-scrollbar flex-1">
+          <p className="text-gray-700 text-sm mb-3">
             Abaixo estão listados os Caminhões Pipa que se encontram <strong>dentro da obra</strong> no momento:
           </p>
 
           {loading ? (
             <div className="text-center text-gray-500 py-4 animate-pulse">Carregando informações...</div>
           ) : pipas.length === 0 ? (
-            <div className="bg-gray-100 dark:bg-black/20 text-center p-6 rounded-2xl border border-gray-200 dark:border-white/5">
+            <div className="bg-gray-100 text-center p-6 rounded-2xl border border-gray-200">
               <span className="text-2xl block mb-2">🚛</span>
-              <p className="text-gray-600 dark:text-gray-400 font-medium text-sm">
+              <p className="text-gray-600 font-medium text-sm">
                 Nenhum Caminhão Pipa está dentro da obra neste momento.
               </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1 custom-scrollbar">
               {pipas.map((p, i) => (
-                <div key={p.id || i} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 p-3 rounded-xl">
+                <div key={p.id || i} className="flex items-center justify-between bg-amber-50/60 border border-amber-200/60 p-3 rounded-xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                    <div className="w-8 h-8 bg-[#b8860b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                       {i + 1}
                     </div>
                     <div>
-                      <h4 className="font-bold text-[#1c1d21] dark:text-white text-sm">{p.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">TAG / Placa: {p.plate_tag || 'S/ Placa'}</p>
+                      <h4 className="font-bold text-[#111111] text-sm">{p.name}</h4>
+                      <p className="text-xs text-gray-500 uppercase">TAG / Placa: {p.plate_tag || 'S/ Placa'}</p>
                     </div>
                   </div>
-                  <div className="text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-2 py-1 rounded-full">
+                  <div className="text-[11px] bg-green-100 text-green-700 font-bold px-2 py-1 rounded-full">
                     Dentro
                   </div>
                 </div>
               ))}
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 flex justify-between items-center text-sm">
-                <span className="text-gray-500 dark:text-gray-400 font-medium">Total de pipas dentro:</span>
-                <span className="font-bold text-lg text-blue-600 dark:text-blue-400">{pipas.length}</span>
+              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
+                <span className="text-gray-500 font-medium">Total de pipas dentro:</span>
+                <span className="font-bold text-lg text-[#b8860b]">{pipas.length}</span>
               </div>
             </div>
           )}
+        </div>
 
-          <div className="mt-4 flex justify-end">
+        <div className="comunicado-rodape">
+          <div className="comunicado-acoes justify-end">
             <button 
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors w-full"
+              className="comunicado-botao-entendi w-full sm:w-auto"
             >
-              Ciente
+              Entendi
             </button>
           </div>
         </div>

@@ -211,37 +211,34 @@ function AppMotoristaWrapper() {
       
       {/* MODAL DE COMUNICADO OFICIAL */}
       {announcements.length > 0 && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1A1C20] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-300">
-            {/* Banner/Header decoration */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-            
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <Bell className="w-6 h-6" />
-              </div>
-              <div className="flex-1 mt-1">
-                <h2 className="text-xl font-bold text-[#1c1d21] dark:text-white leading-tight">
-                  {announcements[0].title}
-                </h2>
-                <p className="text-blue-400 text-xs font-semibold mt-1">
-                  COMUNICADO OFICIAL
-                </p>
+        <div className="comunicado-overlay" role="dialog" aria-modal="true">
+          <div className="comunicado flex flex-col max-h-[90vh]">
+            <img src="/logo.png" alt="Sucena" className="comunicado-logo" />
+
+            <div className="comunicado-titulo">
+              <span className="comunicado-icone" aria-hidden="true">
+                📢
+              </span>
+              <h2 className="m-0 p-0 text-[22px] font-[800] leading-tight text-[#111111]">
+                {announcements[0].title || 'Comunicado'}
+              </h2>
+            </div>
+
+            <div className="comunicado-conteudo overflow-y-auto custom-scrollbar flex-1">
+              {announcements[0].body}
+            </div>
+
+            <div className="comunicado-rodape">
+              <div className="comunicado-acoes justify-end">
+                <button 
+                  type="button"
+                  onClick={() => setAnnouncements(prev => prev.slice(1))}
+                  className="comunicado-botao-entendi w-full sm:w-auto"
+                >
+                  Entendi
+                </button>
               </div>
             </div>
-            
-            <div className="bg-black/20 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto custom-scrollbar">
-              <p className="text-[#5f6472] dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                {announcements[0].body}
-              </p>
-            </div>
-            
-            <button 
-              onClick={() => setAnnouncements(prev => prev.slice(1))}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-center shadow-lg"
-            >
-              Estou ciente / Fechar
-            </button>
           </div>
         </div>
       )}

@@ -1025,3 +1025,196 @@ body.signature-active .sig-landscape-overlay .sigCanvas {
 .reminder-card-pulse {
   animation: reminderPulseAnimation 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+
+/* ============================================================
+   COMUNICADO SUCENA — CSS COMPLETO
+   Objetivo: deixar TODOS os comunicados idênticos à imagem
+   aprovada (janela branca, logo sobreposta no topo, Título
+   em negrito, barra dourada, botão Entendi dourado, sem X).
+   ============================================================ */
+
+/* Fundo escuro atrás da janela, com leve desfoque */
+.comunicado-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* A janela do comunicado */
+.comunicado {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.18);
+  overflow: visible; /* permite a logo ficar para fora, por cima da borda */
+  animation: comunicado-entrar 0.35s ease-out both;
+}
+
+@keyframes comunicado-entrar {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* LOGO — pequena, centralizada, sobreposta na borda superior,
+   metade para fora e metade para dentro, SEM fundo retangular.
+   Use a logo original da Sucena, sem recortar nem redesenhar. */
+.comunicado-logo {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 132px; /* tamanho pequeno aprovado — não aumente */
+  max-width: 32%;
+  height: auto;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Cabeçalho com o Título — bem perto da borda de cima,
+   em negrito e bem visível. Sem botão X. */
+.comunicado-titulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 24px 18px; /* espaço em cima para a logo sobreposta */
+  border-bottom: 1px solid #e8e8e8;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800; /* negrito forte */
+  line-height: 1.2;
+  color: #111111;
+}
+
+.comunicado-titulo .comunicado-icone {
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* NUNCA mostrar o X — mesmo que ele ainda exista no HTML antigo */
+.comunicado-fechar,
+.comunicado .btn-fechar,
+.comunicado .close,
+.comunicado [aria-label="Fechar"],
+.comunicado [aria-label="Fechar comunicado"] {
+  display: none !important;
+}
+
+/* Corpo do comunicado — aqui vai o texto, ex.: "Teste" */
+.comunicado-conteudo {
+  padding: 22px 24px;
+  min-height: 96px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: #333333;
+  white-space: pre-wrap;
+}
+
+/* Rodapé: barra de progresso + "Fecha em 12s" + Entendi */
+.comunicado-rodape {
+  padding: 18px 24px 22px;
+  border-top: 1px solid #e8e8e8;
+}
+
+/* Barra de progresso dourada */
+.comunicado-progresso {
+  width: 100%;
+  height: 8px;
+  margin-bottom: 16px;
+  background: #f0e6c8;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.comunicado-progresso-barra {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #b8860b, #ffc400, #ffe082);
+  border-radius: 999px;
+  transform-origin: left center;
+  /* Encolhe em 12 segundos, igual ao "Fecha em 12s" */
+  animation: comunicado-progresso 12s linear forwards;
+}
+
+@keyframes comunicado-progresso {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Linha final: tempo à esquerda, botão à direita */
+.comunicado-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.comunicado-tempo {
+  font-size: 14px;
+  color: #666666;
+}
+
+/* Botão Entendi — dourado, em destaque */
+.comunicado-botao-entendi {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 12px 28px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #d4af37, #b8860b);
+  box-shadow: 0 6px 16px rgba(184, 134, 11, 0.45);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.comunicado-botao-entendi:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.comunicado-botao-entendi:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(184, 134, 11, 0.4);
+}
+
+.comunicado-botao-entendi:focus-visible {
+  outline: 3px solid #ffc400;
+  outline-offset: 2px;
+}
+
+/* Celular */
+@media (max-width: 480px) {
+  .comunicado-overlay { padding: 16px; }
+  .comunicado-logo { width: 112px; }
+  .comunicado-titulo { font-size: 20px; padding: 32px 18px 16px; }
+  .comunicado-conteudo { padding: 18px; }
+  .comunicado-rodape { padding: 16px 18px 18px; }
+  .comunicado-botao-entendi { padding: 11px 22px; }
+}
+
+/* Acessibilidade: sem animação para quem prefere movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .comunicado,
+  .comunicado-progresso-barra {
+    animation: none;
+  }
+}

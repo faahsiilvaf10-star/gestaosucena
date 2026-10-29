@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import X from 'lucide-react/dist/esm/icons/x.js'
-import { useTheme } from '../../contexts/ThemeContext'
 import {
   duracaoParaMs,
   montarSequencia,
@@ -35,7 +33,7 @@ function useCongelado<T>(valor: T): T {
 }
 
 /**
- * Modal de exibição do comunicado.
+ * Modal de exibição do comunicado Sucena.
  *
  * Mídias:
  *  - foto e vídeo aparecem individualmente
@@ -43,7 +41,8 @@ function useCongelado<T>(valor: T): T {
  *    é exibida e a música toca junto, sincronizada. Quando está sozinho
  *    (sem imagem), nada é exibido — apenas a descrição.
  *
- * Fecha automaticamente após `duracao_segundos` e também pelo botão "X".
+ * Fecha automaticamente após `duracao_segundos` ou pelo botão "Entendi".
+ * Sem botão "X".
  */
 export function ComunicadoModal({
   comunicado: comunicadoExterno,
@@ -51,8 +50,6 @@ export function ComunicadoModal({
   onExibir,
   onClose,
 }: Props) {
-  const { isDark } = useTheme()
-
   // Fixa o comunicado na montagem: o polling revalida a lista a cada
   // 15s e devolveria outra referência, reiniciando a contagem.
   const comunicado = useCongelado(comunicadoExterno)
@@ -148,6 +145,7 @@ export function ComunicadoModal({
     }
 
     void tentar()
+
     const id = window.setTimeout(tentar, 350)
 
     const aoInteragir = () => {
@@ -214,13 +212,9 @@ export function ComunicadoModal({
     }
   }, [indice, sequencia.length])
 
-  const progresso = duracaoSegundos > 0
-    ? Math.max(0, Math.min(100, (restante / duracaoSegundos) * 100))
-    : 0
-
   return (
     <div
-      className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="comunicado-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="comunicado-titulo"
@@ -242,43 +236,25 @@ export function ComunicadoModal({
         />
       )}
 
-      <div
-        className={`relative w-full max-w-lg max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col ${
-          isDark ? 'bg-[#1A1B20] border border-white/10' : 'bg-white border border-black/10'
-        }`}
-      >
-        {/* Cabeçalho */}
-        <div
-          className={`flex items-center justify-between px-5 py-4 shrink-0 ${
-            isDark ? 'border-b border-white/10' : 'border-b border-black/10'
-          }`}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-lg" aria-hidden="true">
-              📢
-            </span>
-            <h2
-              id="comunicado-titulo"
-              className={`font-bold text-base ${isDark ? 'text-white' : 'text-[#1c1d21]'}`}
-            >
-              Comunicado
-            </h2>
-          </div>
+      <div className="comunicado flex flex-col max-h-[90vh]">
+        {/* LOGO original Sucena sobreposta no topo */}
+        <img
+          src="/logo.png"
+          alt="Sucena"
+          className="comunicado-logo"
+        />
 
-          <button
-            onClick={() => fechar('manual')}
-            aria-label="Fechar comunicado"
-            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
-              isDark
-                ? 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-                : 'bg-black/5 text-gray-600 hover:bg-black/10 hover:text-[#1c1d21]'
-            }`}
-          >
-            <X size={20} />
-          </button>
+        {/* Cabeçalho com o Título */}
+        <div className="comunicado-titulo">
+          <span className="comunicado-icone" aria-hidden="true">
+            📢
+          </span>
+          <h2 id="comunicado-titulo" className="m-0 p-0 text-[22px] font-[800] leading-tight text-[#111111]">
+            Comunicado
+          </h2>
         </div>
 
-        {/* Mídia visual (fotos, vídeos e vídeos do YouTube) */}
+        {/* Mídia visual (fotos, vídeos e vídeos do YouTube), se houver */}
         {atual && (
           <div className="w-full shrink-0 bg-black/90 flex items-center justify-center overflow-hidden">
             {atual.tipo === 'video' && (
@@ -324,51 +300,38 @@ export function ComunicadoModal({
           </div>
         )}
 
-        {/* Descrição */}
-        <div className="px-5 py-4 overflow-y-auto custom-scrollbar flex-1">
-          <p
-            className={`text-[15px] leading-relaxed whitespace-pre-wrap ${
-              isDark ? 'text-white/90' : 'text-[#1c1d21]'
-            }`}
-          >
-            {comunicado.descricao}
-          </p>
+        {/* Corpo do comunicado */}
+        <div className="comunicado-conteudo overflow-y-auto custom-scrollbar flex-1">
+          {comunicado.descricao}
         </div>
 
-        {/* Rodapé: barra de tempo + botão */}
-        <div
-          className={`px-5 py-4 shrink-0 ${isDark ? 'border-t border-white/10' : 'border-t border-black/10'}`}
-        >
+        {/* Rodapé: barra de progresso dourada + "Fecha em Xs" + botão Entendi */}
+        <div className="comunicado-rodape">
           <div
-            className="h-1 w-full rounded-full overflow-hidden mb-3"
+            className="comunicado-progresso"
             role="progressbar"
             aria-label="Tempo restante para fechar automaticamente"
             aria-valuenow={restante}
             aria-valuemin={0}
             aria-valuemax={duracaoSegundos}
-            style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }}
           >
             <div
-              className="h-full rounded-full transition-[width] duration-300 ease-linear"
+              className="comunicado-progresso-barra"
               style={{
-                width: `${progresso}%`,
-                background: isDark ? '#c9a84c' : '#b8860b',
+                animationDuration: `${duracaoSegundos}s`,
               }}
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <span
-              className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}
-              aria-live="polite"
-            >
+          <div className="comunicado-acoes">
+            <span className="comunicado-tempo" aria-live="polite">
               Fecha em {restante}s
             </span>
 
             <button
+              type="button"
               onClick={() => fechar('manual')}
-              className="px-6 py-2.5 font-bold rounded-xl transition-colors active:scale-95 text-[#1c1d21] dark:text-white"
-              style={{ background: isDark ? '#c9a84c' : '#b8860b' }}
+              className="comunicado-botao-entendi"
             >
               Entendi
             </button>
