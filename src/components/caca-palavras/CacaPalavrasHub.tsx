@@ -419,7 +419,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                           <h3 className="text-base font-black text-slate-900 mt-1">
                             Continuar de onde parou ({partidaSalva.modo === 'busca' ? 'Caça Palavras' : 'Palavras Cruzadas'})
                           </h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium">
                             <span className="font-bold text-emerald-400">
                               Fase {partidaSalva.fase} de {FASES_POR_PARTIDA} (Nível {partidaSalva.nivel})
                             </span>
@@ -430,7 +430,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                             {partidaSalva.estadoFase?.encontradas?.length ? (
                               <>
                                 <span>·</span>
-                                <span className="text-slate-300">
+                                <span className="text-slate-600 font-medium">
                                   {partidaSalva.estadoFase.encontradas.length} palavras feitas
                                 </span>
                               </>
@@ -468,7 +468,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
 
                 {/* Seletor de Modo de Jogo */}
                 <div>
-                  <label className="mb-2.5 block text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  <label className="mb-2.5 block text-xs font-extrabold uppercase tracking-wider text-slate-700">
                     1. Escolha a Modalidade
                   </label>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -481,8 +481,8 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                       }}
                       className={`relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 ${
                         modo === 'busca'
-                          ? 'border-emerald-500/80 bg-gradient-to-br from-emerald-500/20 via-emerald-950/30 to-slate-900/90 shadow-[0_0_25px_-5px_rgba(16,185,129,0.3)] ring-1 ring-emerald-500/40'
-                          : 'border-white/10 bg-slate-900/50 hover:border-white/25 hover:bg-slate-900/80'
+                          ? 'border-emerald-500 bg-emerald-50/90 shadow-md ring-2 ring-emerald-500/30'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80 shadow-xs'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -495,14 +495,14 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                         <div
                           className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
                             modo === 'busca'
-                              ? 'border-emerald-400 bg-emerald-500 text-white'
-                              : 'border-white/20 bg-white/5 text-transparent'
+                              ? 'border-emerald-500 bg-emerald-600 text-white shadow-xs'
+                              : 'border-slate-300 bg-slate-100 text-transparent'
                           }`}
                         >
                           <Check className="h-3.5 w-3.5 stroke-[3]" />
                         </div>
                       </div>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-300">
+                      <p className="mt-2 text-xs leading-relaxed text-slate-700 font-medium">
                         Arraste sobre as letras para encontrar palavras ocultas na horizontal, vertical e diagonal.
                       </p>
                     </button>
@@ -516,8 +516,8 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                       }}
                       className={`relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 ${
                         modo === 'cruzada'
-                          ? 'border-amber-400/80 bg-gradient-to-br from-amber-500/20 via-amber-950/30 to-slate-900/90 shadow-[0_0_25px_-5px_rgba(245,158,11,0.3)] ring-1 ring-amber-400/40'
-                          : 'border-white/10 bg-slate-900/50 hover:border-white/25 hover:bg-slate-900/80'
+                          ? 'border-amber-500 bg-amber-50/90 shadow-md ring-2 ring-amber-500/30'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80 shadow-xs'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -530,14 +530,14 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                         <div
                           className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
                             modo === 'cruzada'
-                              ? 'border-amber-400 bg-amber-500 text-white'
-                              : 'border-white/20 bg-white/5 text-transparent'
+                              ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                              : 'border-slate-300 bg-slate-100 text-transparent'
                           }`}
                         >
                           <Check className="h-3.5 w-3.5 stroke-[3]" />
                         </div>
                       </div>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-300">
+                      <p className="mt-2 text-xs leading-relaxed text-slate-700 font-medium">
                         Preencha as casas cruzando palavras a partir de dicas com teclado físico ou virtual.
                       </p>
                     </button>
@@ -551,7 +551,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                       <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
                         2. Categorias Temáticas (Opcional)
                       </h4>
-                      <p className="text-[0.72rem] text-slate-400">
+                      <p className="text-[0.72rem] text-slate-600 font-medium">
                         {categorias.length === 0
                           ? 'Todas as categorias ativas (sorteio geral aleatório)'
                           : `${categorias.length} categoria${categorias.length > 1 ? 's' : ''} filtrada${categorias.length > 1 ? 's' : ''}`}
@@ -582,13 +582,13 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                           onClick={() => alternarCategoria(categoria)}
                           className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
                             ativa
-                              ? 'border-emerald-400/80 bg-emerald-500/25 text-emerald-100 shadow-[0_0_15px_-3px_rgba(16,185,129,0.35)] scale-[1.02]'
-                              : 'border-white/10 bg-white/[0.04] text-slate-300 hover:border-white/25 hover:bg-white/[0.08] hover:text-white'
+                              ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm scale-[1.02]'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
                           }`}
                         >
                           <span className="text-sm">{emoji}</span>
                           <span>{categoria}</span>
-                          {ativa && <Check className="ml-0.5 h-3 w-3 stroke-[3] text-emerald-400" />}
+                          {ativa && <Check className="ml-0.5 h-3 w-3 stroke-[3] text-white" />}
                         </button>
                       )
                     })}
@@ -735,8 +735,8 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                     }}
                     className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
                       modo === valor
-                        ? 'border-emerald-400/80 bg-emerald-500/20 text-emerald-200 shadow-[0_0_15px_-3px_rgba(16,185,129,0.3)]'
-                        : 'border-white/10 bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
                     {valor === 'busca' ? 'Caça Palavras' : 'Palavras Cruzadas'}
@@ -765,8 +765,8 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                   }}
                   className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
                     rankingModo === filtro.id
-                      ? 'border-amber-400/80 bg-amber-500/20 text-amber-200 shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)]'
-                      : 'border-white/10 bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                      ? 'border-amber-500 bg-amber-50 text-amber-800 shadow-xs'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
                   {filtro.label}
@@ -794,8 +794,8 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
             <p className="mt-1 text-sm font-semibold text-emerald-400">
               +{modalFase.pontos} pontos conquistados
             </p>
-            <div className="my-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
-              <p className="text-xs text-slate-400">Total acumulado na partida</p>
+            <div className="my-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-600 font-medium">Total acumulado na partida</p>
               <p className="text-2xl font-black text-amber-700">{pontosTotais} pts</p>
             </div>
             <button
@@ -826,13 +826,13 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
             >
               <Trophy className="h-7 w-7" />
             </div>
-            <h3 className="text-xl font-black text-white">
+            <h3 className="text-xl font-black text-slate-900">
               {fimDeJogo.venceu ? 'Vitória Completa!' : 'Fim de Jogo'}
             </h3>
             <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">{fimDeJogo.motivo}</p>
-            <div className="my-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
-              <p className="text-3xl font-black tabular-nums text-amber-400">{fimDeJogo.pontos}</p>
-              <p className="text-[0.7rem] text-slate-400">pontos registrados no ranking</p>
+            <div className="my-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-3xl font-black tabular-nums text-amber-700">{fimDeJogo.pontos}</p>
+              <p className="text-[0.7rem] text-slate-600 font-medium">pontos registrados no ranking</p>
             </div>
             <div className="mt-5 flex gap-2">
               <button

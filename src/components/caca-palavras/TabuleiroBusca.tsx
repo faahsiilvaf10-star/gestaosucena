@@ -219,15 +219,21 @@ export function TabuleiroBusca({
             const isOrigemClique = cliqueOrigem?.r === r && cliqueOrigem?.c === c
 
             let estilo =
-              'border-white/10 bg-slate-900/80 text-slate-200 hover:border-emerald-400/40 hover:bg-slate-800'
+              'border-slate-700/60 bg-slate-900 text-slate-100 hover:border-amber-400/50 hover:bg-slate-800'
 
             if (isEncontrada) {
               estilo =
-                'border-emerald-400/90 bg-emerald-500/25 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-0'
+                'border-amber-400 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/80 text-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.7)] ring-1.5 ring-amber-400 z-0'
             } else if (isSelecionada || isOrigemClique) {
               estilo =
-                'border-amber-400 bg-amber-400/35 text-white shadow-[0_0_16px_rgba(245,158,11,0.6)] scale-[1.06] z-10 ring-2 ring-amber-400/50'
+                'border-yellow-300 bg-slate-950 text-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.9)] scale-[1.08] z-10 ring-2 ring-yellow-400'
             }
+
+            const neonStyle = isEncontrada
+              ? { textShadow: '0 0 8px #fef08a, 0 0 16px #fbbf24, 0 0 24px #f59e0b, 0 0 32px #d97706' }
+              : isSelecionada || isOrigemClique
+                ? { textShadow: '0 0 8px #fef9c3, 0 0 14px #fde047, 0 0 20px #eab308' }
+                : undefined
 
             return (
               <button
@@ -239,12 +245,13 @@ export function TabuleiroBusca({
                 onPointerDown={(e) => handlePointerDown(r, c, e)}
                 onPointerEnter={() => handlePointerEnter(r, c)}
                 onClick={() => handleClick(r, c)}
+                style={neonStyle}
                 className={`relative aspect-square flex items-center justify-center rounded-[4px] sm:rounded-lg border text-[clamp(0.65rem,2.8vw,1.15rem)] font-black uppercase transition-transform duration-100 cursor-pointer ${estilo}`}
                 aria-label={`Linha ${r + 1}, Coluna ${c + 1}: Letra ${letra}`}
               >
                 {letra}
                 {isEncontrada && (
-                  <span className="pointer-events-none absolute inset-0 rounded-[4px] sm:rounded-lg bg-emerald-400/10 animate-[pulse-glow_2s_ease-in-out_infinite]" />
+                  <span className="pointer-events-none absolute inset-0 rounded-[4px] sm:rounded-lg bg-amber-400/15 animate-[pulse-glow_2s_ease-in-out_infinite]" />
                 )}
               </button>
             )
@@ -272,26 +279,29 @@ export function ListaPalavras({
             key={colocacao.word}
             className={`rounded-xl border p-2 sm:p-3 transition-all duration-300 ${
               achada
-                ? 'border-emerald-500/50 bg-emerald-500/15 opacity-70'
-                : 'border-white/10 bg-slate-900/70 hover:border-white/25 hover:bg-slate-900/90'
+                ? 'border-amber-400/60 bg-amber-500/15 shadow-[0_0_14px_rgba(245,158,11,0.25)]'
+                : 'border-slate-800 bg-slate-900 shadow-sm hover:border-slate-700 hover:bg-slate-850'
             }`}
           >
             <div className="flex items-center justify-between gap-1.5">
               <span
                 className={`text-xs sm:text-sm font-black tracking-wider truncate ${
-                  achada ? 'text-emerald-300 line-through decoration-2' : 'text-white'
+                  achada ? 'text-amber-300 line-through decoration-2' : 'text-white'
                 }`}
+                style={achada ? { textShadow: '0 0 8px rgba(251, 191, 36, 0.7)' } : undefined}
               >
                 {colocacao.word}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[0.55rem] sm:text-[0.62rem] font-bold uppercase tracking-wider text-slate-700">
+                <span className="rounded-full bg-slate-800 border border-slate-700 px-2 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase tracking-wider text-amber-200">
                   {colocacao.category}
                 </span>
-                {achada && <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 stroke-[3]" />}
+                {achada && <Check className="h-3.5 w-3.5 text-amber-400 stroke-[3]" />}
               </div>
             </div>
-            <p className="mt-1 hidden sm:block text-xs text-slate-600 font-medium leading-snug">{colocacao.clue}</p>
+            <p className="mt-1.5 text-[0.72rem] sm:text-xs text-slate-200 font-medium leading-snug">
+              {colocacao.clue}
+            </p>
           </li>
         )
       })}

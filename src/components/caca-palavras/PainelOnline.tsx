@@ -624,10 +624,10 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
       <div className="space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-xs">
           <Hourglass className="mx-auto mb-2 h-8 w-8 text-amber-400 animate-pulse" />
-          <h3 className="text-lg font-black text-white">
+          <h3 className="text-lg font-black text-slate-900">
             {partida?.host_id === user.id ? 'Aguardando adversário' : 'Conectando ao adversário'}
           </h3>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-600 font-medium">
             {partida?.host_id === user.id
               ? 'Compartilhe o código abaixo com o colega que deseja desafiar.'
               : 'O jogo começa em instantes.'}
@@ -744,7 +744,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
       )}
 
       <div className="space-y-2">
-        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
           <Users className="h-3.5 w-3.5 text-emerald-400" /> Usuários cadastrados online ({jogadoresOnline.length})
         </h4>
         {jogadoresOnline.length === 0 ? (

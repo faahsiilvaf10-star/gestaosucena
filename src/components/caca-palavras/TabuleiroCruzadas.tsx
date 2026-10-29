@@ -359,8 +359,8 @@ export function TabuleiroCruzadas({
               onClick={() => setAbaMobile('H')}
               className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
                 abaMobile === 'H'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-amber-800 font-extrabold shadow-xs border border-amber-300'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Horizontais ({horizontais.length})
@@ -370,8 +370,8 @@ export function TabuleiroCruzadas({
               onClick={() => setAbaMobile('V')}
               className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all ${
                 abaMobile === 'V'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-amber-800 font-extrabold shadow-xs border border-amber-300'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Verticais ({verticais.length})

@@ -498,10 +498,10 @@ export function ArenaDeJogo({
           </span>
         </div>
         <div
-          className={`rounded-xl border p-2 sm:px-3 sm:py-2 transition-colors shadow-inner ${
+          className={`rounded-xl border p-2 sm:px-3 sm:py-2 transition-colors shadow-xs ${
             tempoCritico
-              ? 'border-red-500/70 bg-red-500/20 animate-pulse'
-              : 'border-white/10 bg-slate-900/70'
+              ? 'border-red-300 bg-red-50 animate-pulse'
+              : 'border-slate-200 bg-white'
           }`}
         >
           <span className="block text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-slate-500">Tempo</span>
