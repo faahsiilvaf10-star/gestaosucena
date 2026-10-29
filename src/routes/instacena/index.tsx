@@ -14,7 +14,7 @@ import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import ZoomOut from 'lucide-react/dist/esm/icons/zoom-out.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
@@ -23,6 +23,36 @@ import { getCroppedImg } from '../../lib/cropImage'
 import { StoryViewer } from '../../components/instacena/StoryViewer'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
 import { broadcastInstacenaActivity } from '../../lib/instacenaEvents'
+
+// Helper para formatar o texto "Curtido por..."
+export const formatLikedByText = (post: any, currentUser: any) => {
+  const likes = post.stitched_likes || []
+  if (likes.length === 0) return ''
+
+  const isLikedByMe = post.isLikedByMe
+  const otherLikes = likes.filter((l: any) => l.user_id !== currentUser?.user_id)
+  
+  if (isLikedByMe) {
+    if (otherLikes.length === 0) {
+      return 'Curtido por você'
+    }
+    const firstOther = otherLikes[0]?.social_profiles?.display_name || 'outra pessoa'
+    if (otherLikes.length === 1) {
+      return `Curtido por você e ${firstOther}`
+    }
+    return `Curtido por você e mais ${otherLikes.length} pessoas`
+  }
+
+  const firstUser = likes[0]?.social_profiles?.display_name || '1 pessoa'
+  if (likes.length === 1) {
+    return `Curtido por ${firstUser}`
+  }
+  if (likes.length === 2) {
+    const secondUser = likes[1]?.social_profiles?.display_name || 'outra pessoa'
+    return `Curtido por ${firstUser} e ${secondUser}`
+  }
+  return `Curtido por ${firstUser} e mais ${likes.length - 1} pessoas`
+}
 
 // Helper para renderizar negrito simples com **texto**
 export const renderCaption = (text: string) => {
@@ -88,6 +118,7 @@ function FeedRoute() {
   const [posts, setPosts] = useState<any[]>([])
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [postToDelete, setPostToDelete] = useState<string | null>(null)
+  const [likesModalPost, setLikesModalPost] = useState<any | null>(null)
 
   // Inline Post Editor State
   const [caption, setCaption] = useState('')
@@ -211,6 +242,9 @@ function FeedRoute() {
         if (p.social_comments) {
           p.social_comments.forEach((c: any) => userIds.add(c.user_id))
         }
+        if (p.social_post_likes) {
+          p.social_post_likes.forEach((l: any) => userIds.add(l.user_id))
+        }
       })
       
       const { data: profilesData } = await supabase
@@ -247,6 +281,10 @@ function FeedRoute() {
       const stitchedPosts = postsData.map(post => {
         const comments = post.social_comments || []
         const likes = post.social_post_likes || []
+        const stitchedLikes = likes.map((l: any) => ({
+          ...l,
+          social_profiles: profileMap[l.user_id] || null
+        }))
         
         return {
           ...post,
@@ -254,6 +292,7 @@ function FeedRoute() {
           comments_count: comments.length,
           likes_count: likes.length,
           isLikedByMe: userProfile ? likes.some((l: any) => l.user_id === userProfile.user_id) : false,
+          stitched_likes: stitchedLikes,
           stitched_comments: comments.map((c: any) => ({
             ...c,
             social_profiles: profileMap[c.user_id] || null
@@ -358,14 +397,33 @@ function FeedRoute() {
     // Atualização Otimista
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
+        const currentLikes = p.stitched_likes || []
+        const nextLikes = isLiked
+          ? currentLikes.filter((l: any) => l.user_id !== currentUser.user_id)
+          : [...currentLikes, { user_id: currentUser.user_id, social_profiles: currentUser }]
         return {
           ...p,
           isLikedByMe: !isLiked,
-          likes_count: p.likes_count + (isLiked ? -1 : 1)
+          likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)),
+          stitched_likes: nextLikes
         }
       }
       return p
     }))
+
+    setLikesModalPost((prev: any) => {
+      if (!prev || prev.id !== postId) return prev
+      const currentLikes = prev.stitched_likes || []
+      const nextLikes = isLiked
+        ? currentLikes.filter((l: any) => l.user_id !== currentUser.user_id)
+        : [...currentLikes, { user_id: currentUser.user_id, social_profiles: currentUser }]
+      return {
+        ...prev,
+        likes_count: Math.max(0, prev.likes_count + (isLiked ? -1 : 1)),
+        isLikedByMe: !isLiked,
+        stitched_likes: nextLikes
+      }
+    })
 
     if (isLiked) {
       await supabase.from('social_post_likes').delete().eq('post_id', postId).eq('user_id', currentUser.user_id)
@@ -1022,12 +1080,49 @@ function FeedRoute() {
 
               {/* Post Actions & Likes */}
               <div className="flex flex-col gap-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-gray-500">
-                    <Heart size={16} className={post.isLikedByMe ? "fill-red-500 text-red-500" : "fill-gray-500 text-gray-500"} />
-                    <span className="text-[14px]">{post.likes_count}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => post.likes_count > 0 && setLikesModalPost(post)}
+                      disabled={post.likes_count === 0}
+                      className={`flex items-center gap-1.5 transition-all ${
+                        post.likes_count > 0
+                          ? 'cursor-pointer hover:opacity-85 active:scale-95 group'
+                          : 'cursor-default'
+                      }`}
+                      title={post.likes_count > 0 ? "Ver pessoas que curtiram" : ""}
+                    >
+                      <div className={`flex items-center justify-center w-5 h-5 rounded-full transition-transform ${
+                        post.likes_count > 0 ? 'bg-red-500 text-white shadow-xs group-hover:scale-110' : 'bg-gray-400 text-white'
+                      }`}>
+                        <Heart size={11} className="fill-white" />
+                      </div>
+                      <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 group-hover:underline">
+                        {post.likes_count}
+                      </span>
+                    </button>
+
+                    {post.likes_count > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setLikesModalPost(post)}
+                        className="text-[13px] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:underline transition-colors cursor-pointer text-left font-medium"
+                      >
+                        {formatLikedByText(post, currentUser)}
+                      </button>
+                    )}
                   </div>
-                  <span className="text-[14px] text-gray-500 hover:underline cursor-pointer">{post.comments_count} comentários</span>
+
+                  <span 
+                    onClick={() => {
+                      const input = document.getElementById(`comment-input-${post.id}`)
+                      if (input) input.focus()
+                    }}
+                    className="text-[14px] text-gray-500 hover:underline cursor-pointer"
+                  >
+                    {post.comments_count} comentários
+                  </span>
                 </div>
                 
                 <div className="border-t border-black/10 dark:border-white/10 pt-2 flex items-center justify-between px-2">
@@ -1138,6 +1233,89 @@ function FeedRoute() {
           ))
         )}
       </div>
+
+      {/* Modal de Pessoas que Curtiram */}
+      {likesModalPost && (
+        <div 
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+          onClick={(e) => { if (e.target === e.currentTarget) setLikesModalPost(null) }}
+        >
+          <div className="bg-white dark:bg-[#262626] rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 flex items-center justify-center">
+                  <Heart size={14} className="fill-red-500" />
+                </div>
+                <h3 className="font-black text-base text-gray-900 dark:text-white">
+                  Curtidas ({likesModalPost.likes_count})
+                </h3>
+              </div>
+              <button 
+                onClick={() => setLikesModalPost(null)}
+                className="p-1.5 rounded-full text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                title="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Lista de Usuários que Curtiram */}
+            <div className="overflow-y-auto p-2 divide-y divide-black/5 dark:divide-white/5">
+              {(likesModalPost.stitched_likes || []).length === 0 ? (
+                <div className="py-8 text-center text-sm text-gray-500">
+                  Nenhuma curtida encontrada.
+                </div>
+              ) : (
+                (likesModalPost.stitched_likes || []).map((like: any) => {
+                  const profile = like.social_profiles
+                  const isMe = like.user_id === currentUser?.user_id
+                  const displayName = profile?.display_name || (isMe ? currentUser?.display_name : 'Colaborador') || 'Colaborador'
+                  const username = profile?.username || (isMe ? currentUser?.username : '') || ''
+                  const avatarUrl = profile?.avatar_url || (isMe ? currentUser?.avatar_url : '')
+
+                  return (
+                    <div key={like.user_id} className="flex items-center justify-between p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
+                      <Link
+                        to={username ? `/instacena/${username}` : '#'}
+                        onClick={() => setLikesModalPost(null)}
+                        className="flex items-center gap-3 flex-1 min-w-0 group"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 border border-black/10 dark:border-white/10 shrink-0">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-black text-sm text-gray-600 dark:text-gray-300 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200">
+                              {displayName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-blue-500 transition-colors flex items-center gap-1">
+                            {displayName}
+                            {isAdmin(displayName) && <VerifiedBadge size={13} />}
+                            {isMe && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-black/10 dark:bg-white/10 rounded-full text-gray-700 dark:text-gray-300">
+                                Você
+                              </span>
+                            )}
+                          </span>
+                          {username && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{username}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                      <Heart size={16} className="fill-red-500 text-red-500 shrink-0 ml-2" />
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {postToDelete && (
