@@ -622,9 +622,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {/* Chat Sidebar Overlay */}
       {currentUser.id && <ChatSidebar currentUserId={currentUser.id} />}
 
-      {/* Floating Chat Windows */}
+            {/* Floating Chat Windows */}
       <div 
-        className={`fixed bottom-[40px] z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[324px] md:right-[374px]' : 'right-[24px]' }`}
+        className={`fixed bottom-6 z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[392px]' : 'right-[92px]' } max-md:right-3 max-md:bottom-24`}
       >
         {currentUser.id && activeChats.map(chatId => (
           <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />

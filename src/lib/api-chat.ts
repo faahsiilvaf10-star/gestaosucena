@@ -208,3 +208,99 @@ export async function clearConversation(conversationId: string, userId: string) 
     throw error
   }
 }
+
+
+export async function getUnreadMessagesData(currentUserId: string): Promise<{
+  totalUnread: number
+  unreadByConversation: Record<string, number>
+  unreadConversationsCount: number
+}> {
+  if (!currentUserId) {
+    return { totalUnread: 0, unreadByConversation: {}, unreadConversationsCount: 0 }
+  }
+
+  try {
+    const { data: participations, error: partError } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id, last_read_at, cleared_at, last_read_message_id')
+      .eq('user_id', currentUserId)
+
+    if (partError || !participations || participations.length === 0) {
+      return { totalUnread: 0, unreadByConversation: {}, unreadConversationsCount: 0 }
+    }
+
+    const convIds = participations.map(p => p.conversation_id)
+
+    // Only messages from others (sender_id != currentUserId)
+    const { data: messages, error: msgError } = await supabase
+      .from('messages')
+      .select('id, conversation_id, sender_id, created_at, status')
+      .in('conversation_id', convIds)
+      .neq('sender_id', currentUserId)
+      .neq('status', 'read')
+
+    if (msgError || !messages) {
+      return { totalUnread: 0, unreadByConversation: {}, unreadConversationsCount: 0 }
+    }
+
+    const unreadByConversation: Record<string, number> = {}
+    let totalUnread = 0
+
+    const partMap = new Map()
+    participations.forEach(p => partMap.set(p.conversation_id, p))
+
+    messages.forEach(msg => {
+      const p = partMap.get(msg.conversation_id)
+      if (!p) return
+
+      // Exclude messages before user cleared conversation
+      if (p.cleared_at && new Date(msg.created_at).getTime() <= new Date(p.cleared_at).getTime()) {
+        return
+      }
+
+      // Exclude messages at or before user's last_read_at
+      if (p.last_read_at && new Date(msg.created_at).getTime() <= new Date(p.last_read_at).getTime()) {
+        return
+      }
+
+      // Exclude last read message ID
+      if (p.last_read_message_id && msg.id === p.last_read_message_id) {
+        return
+      }
+
+      unreadByConversation[msg.conversation_id] = (unreadByConversation[msg.conversation_id] || 0) + 1
+      totalUnread++
+    })
+
+    const unreadConversationsCount = Object.keys(unreadByConversation).length
+
+    return { totalUnread, unreadByConversation, unreadConversationsCount }
+  } catch (err) {
+    console.error('Error fetching unread messages count:', err)
+    return { totalUnread: 0, unreadByConversation: {}, unreadConversationsCount: 0 }
+  }
+}
+
+export async function markConversationAsRead(conversationId: string, currentUserId: string) {
+  if (!conversationId || !currentUserId) return
+
+  const now = new Date().toISOString()
+  try {
+    // 1. Update participant last_read_at
+    await supabase
+      .from('conversation_participants')
+      .update({ last_read_at: now })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', currentUserId)
+
+    // 2. Mark messages received from others in this conversation as read
+    await supabase
+      .from('messages')
+      .update({ status: 'read' })
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', currentUserId)
+      .neq('status', 'read')
+  } catch (err) {
+    console.error('Error marking conversation as read:', err)
+  }
+}

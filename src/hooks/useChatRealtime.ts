@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useChat } from '../contexts/ChatContext'
-import { Message } from '../lib/api-chat'
+import { Message, getUnreadMessagesData } from '../lib/api-chat'
 
 export function useChatRealtime(currentUserId?: string) {
   const { setUnreadCountGlobally, activeChats } = useChat()
@@ -11,37 +11,29 @@ export function useChatRealtime(currentUserId?: string) {
     activeChatsRef.current = activeChats
   }, [activeChats])
 
+  const refreshUnreadCount = useCallback(async () => {
+    if (!currentUserId) return
+    try {
+      const data = await getUnreadMessagesData(currentUserId)
+      setUnreadCountGlobally(data.totalUnread)
+    } catch (err) {
+      console.error('Erro ao atualizar contagem de mensagens nao lidas:', err)
+    }
+  }, [currentUserId, setUnreadCountGlobally])
+
   useEffect(() => {
     if (!currentUserId) return
 
-    // Busca contagem inicial de não lidas
-    const fetchUnreadCount = async () => {
-      // Para saber as não lidas, pegamos as mensagens de conversas do usuário
-      // onde a mensagem.id > conversation_participants.last_read_message_id
-      // (Isso requereria uma query complexa. Para simplificar no frontend ou faremos uma RPC)
-      // Como não criamos RPC no script SQL ainda, vamos fazer uma query aproximada
-      
-      const { data: participations } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id, last_read_at')
-        .eq('user_id', currentUserId)
+    // Busca contagem inicial real de nao lidas vindas de outros usuarios
+    refreshUnreadCount()
 
-      if (!participations || participations.length === 0) return
-
-      const convIds = participations.map(p => p.conversation_id)
-      
-      // Busca mensagens nessas conversas criadas DEPOIS do last_read_at, que NÃO SÃO nossas
-      let totalUnread = 0
-      
-      // Usando for loop para simplificar a lógica no frontend (embora RPC seja mais performático)
-      // No mundo real, usaríamos supabase.rpc('get_unread_count', { uid: currentUserId })
-      // Vamos tentar manter 0 por enquanto e contar conforme chegam, 
-      // mas se o backend estiver disponível, seria a query acima
+    // Ouve eventos de leitura locais para recalcular
+    const handleLocalRead = () => {
+      refreshUnreadCount()
     }
+    window.addEventListener('hydro_chat_read', handleLocalRead)
 
-    fetchUnreadCount()
-
-    // Inscreve-se nas mensagens novas direcionadas às minhas conversas
+    // Inscreve-se nas mensagens novas direcionadas as minhas conversas
     const channelName = `chat_messages_updates_${currentUserId}_${Date.now()}_${Math.random()}`
     const messagesChannel = supabase.channel(channelName)
       .on(
@@ -54,12 +46,12 @@ export function useChatRealtime(currentUserId?: string) {
         (payload) => {
           const newMessage = payload.new as Message
           
-          // Verifica se eu sou o remetente. Se sim, não é não-lida.
-          if (newMessage.sender_id === currentUserId) return
+          // REGRA DE OURO: So faz contagem se ALGUEM enviar mensagem para mim.
+          // Se eu sou o remetente, descarta imediatamente.
+          if (!newMessage || newMessage.sender_id === currentUserId) return
           
-          // Se eu estiver com a conversa aberta, marca como lida imediatamente
+          // Se eu estiver com a conversa aberta na tela e a janela visivel, marca como lida
           if (activeChatsRef.current.includes(newMessage.conversation_id) && document.visibilityState === 'visible') {
-            // Marca como visualizada
             supabase.from('messages')
               .update({ status: 'read' })
               .eq('id', newMessage.id)
@@ -71,16 +63,19 @@ export function useChatRealtime(currentUserId?: string) {
               .eq('user_id', currentUserId)
               .then()
           } else {
-            if (!activeChatsRef.current.includes(newMessage.conversation_id)) {
-              setUnreadCountGlobally((prev: number) => prev + 1)
-            }  // Tocar som opcional aqui
+            // Conversa nao esta ativa: incrementa contador de nao lidas
+            setUnreadCountGlobally((prev: number) => prev + 1)
           }
+
+          // Dispara evento para atualizar listas e conversas em tempo real
+          window.dispatchEvent(new CustomEvent('hydro_chat_new_message', { detail: newMessage }))
         }
       )
       .subscribe()
 
     return () => {
+      window.removeEventListener('hydro_chat_read', handleLocalRead)
       supabase.removeChannel(messagesChannel)
     }
-  }, [currentUserId, setUnreadCountGlobally])
+  }, [currentUserId, setUnreadCountGlobally, refreshUnreadCount])
 }
