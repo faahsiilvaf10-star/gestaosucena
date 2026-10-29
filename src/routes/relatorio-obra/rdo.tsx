@@ -102,8 +102,7 @@ function RDOPage() {
       
       const { data: eData, error: eError } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo')
-        .eq('status', 'ATIVO');
+        .select('id, nome, cargo');
 
       if (eError) throw eError;
       
