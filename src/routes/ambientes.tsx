@@ -108,15 +108,6 @@ function AmbientesComponent() {
       router.preloadRoute({ to: '/dashboard' }).catch(() => {})
     } catch (_) {}
 
-    // Tocar som de entrada ao iniciar a transição para o Dashboard
-    try {
-      if (typeof window !== 'undefined') {
-        const audio = new Audio('/Som_entrada.mp3')
-        audio.volume = 0.85
-        audio.play().catch(err => console.warn('Autoplay bloqueado:', err))
-      }
-    } catch (err) {}
-
     setShowTransition(true)
   }
 
