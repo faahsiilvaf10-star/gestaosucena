@@ -1,3 +1,4 @@
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import MoreVertical from 'lucide-react/dist/esm/icons/ellipsis-vertical.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
@@ -19,7 +20,21 @@ function formatLastSeen(dateStr?: string | null) {
   if (!dateStr) return 'Offline'
   try {
     const d = new Date(dateStr)
-    return 'Visto ' + formatDistanceToNow(d, { addSuffix: true, locale: localePtBr })
+    if (isNaN(d.getTime())) return 'Offline'
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    if (diffMs < 60_000) return 'Visto agora há pouco'
+    if (diffMs < 3600_000) {
+      const minutes = Math.floor(diffMs / 60_000)
+      return `Visto há ${minutes} min`
+    }
+    if (isToday(d)) {
+      return `Visto hoje às ${format(d, 'HH:mm')}`
+    }
+    if (isYesterday(d)) {
+      return `Visto ontem às ${format(d, 'HH:mm')}`
+    }
+    return `Visto em ${format(d, "dd/MM 'às' HH:mm")}`
   } catch(e) {
     return 'Offline'
   }
@@ -171,11 +186,15 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
     }
   })
 
-  const handleClearConversation = async () => {
-    if (confirm('Tem certeza que deseja limpar as mensagens desta conversa da sua tela?')) {
-      await clearConversation(conversationId, currentUserId)
-      setMessages([])
-      setShowOptions(false)
+  const handleDeleteConversation = async () => {
+    if (confirm('Tem certeza que deseja excluir esta conversa? As mensagens anteriores serão limpas da sua tela.')) {
+      try {
+        await clearConversation(conversationId, currentUserId)
+        closeChat(conversationId)
+        window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId } }))
+      } catch (err) {
+        console.error('Erro ao excluir conversa:', err)
+      }
     }
   }
 
@@ -229,7 +248,16 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
               {contactName}
               {isAdmin(contactName, contactRole) && <VerifiedBadge />}
             </span>
-            <span className={`text-[10px] truncate ${contactStatus === 'Online' ? 'text-[#D6A72B]' : 'text-gray-500'}`}>{contactStatus}</span>
+            {otherUser?.isOnline ? (
+              <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Online
+              </span>
+            ) : (
+              <span className={`text-[10px] truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {contactStatus}
+              </span>
+            )}
           </div>
         </div>
 
@@ -250,12 +278,13 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
           </button>
           
           {showOptions && (
-            <div className={`absolute top-10 right-0 w-36 rounded-lg shadow-xl overflow-hidden z-50 border ${isDark ? 'bg-[#15161A] border-white/10' : 'bg-white border-gray-100'}`}>
+            <div className={`absolute top-10 right-0 w-44 rounded-xl shadow-xl overflow-hidden z-50 border ${isDark ? 'bg-[#15161A] border-white/10' : 'bg-white border-gray-100'}`}>
               <button 
-                onClick={handleClearConversation}
-                className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-gray-50 text-gray-900'}`}
+                onClick={handleDeleteConversation}
+                className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center gap-2 transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium`}
               >
-                Limpar conversa
+                <Trash2 size={14} />
+                Excluir conversa
               </button>
             </div>
           )}

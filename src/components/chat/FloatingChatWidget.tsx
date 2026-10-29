@@ -3,12 +3,16 @@ import X from 'lucide-react/dist/esm/icons/x.js'
 import Search from 'lucide-react/dist/esm/icons/search.js'
 import User from 'lucide-react/dist/esm/icons/user.js'
 import Users from 'lucide-react/dist/esm/icons/users.js'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js'
+import Clock from 'lucide-react/dist/esm/icons/clock.js'
 import { format, isToday, isYesterday } from 'date-fns'
+import { ptBR } from 'date-fns/locale/pt-BR'
 import { useChat } from '../../contexts/ChatContext'
 import { useUsersPresence } from '../../hooks/useUsersPresence'
 import {
   getConversations,
   getOrCreateDirectConversation,
+  clearConversation,
   getUnreadMessagesData,
   markConversationAsRead
 } from '../../lib/api-chat'
@@ -52,11 +56,36 @@ function formatConvTime(dateStr?: string | null): string {
   if (!dateStr) return ''
   try {
     const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return ''
     if (isToday(d)) return format(d, 'HH:mm')
     if (isYesterday(d)) return 'Ontem'
     return format(d, 'dd/MM')
   } catch {
     return ''
+  }
+}
+
+export function formatLastSeen(dateStr?: string | null): string {
+  if (!dateStr) return 'Offline'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return 'Offline'
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    if (diffMs < 60_000) return 'Visto agora há pouco'
+    if (diffMs < 3600_000) {
+      const minutes = Math.floor(diffMs / 60_000)
+      return `Visto há ${minutes} min`
+    }
+    if (isToday(d)) {
+      return `Visto hoje às ${format(d, 'HH:mm')}`
+    }
+    if (isYesterday(d)) {
+      return `Visto ontem às ${format(d, 'HH:mm')}`
+    }
+    return `Visto em ${format(d, "dd/MM 'às' HH:mm", { locale: ptBR })}`
+  } catch {
+    return 'Offline'
   }
 }
 
@@ -75,7 +104,7 @@ interface FormattedConversation {
 }
 
 export function FloatingChatWidget({ currentUserId }: { currentUserId: string }) {
-  const { isSidebarOpen, setIsSidebarOpen, openChat, unreadCountGlobally, setUnreadCountGlobally } = useChat()
+  const { isSidebarOpen, setIsSidebarOpen, openChat, closeChat, unreadCountGlobally, setUnreadCountGlobally } = useChat()
   const { data: usersMap } = useUsersPresence()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -237,6 +266,25 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
     }
   }
 
+  // Opção para excluir conversa
+  const handleDeleteConversation = async (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation()
+    if (!window.confirm('Tem certeza que deseja excluir esta conversa? As mensagens anteriores serão limpas para você.')) {
+      return
+    }
+
+    try {
+      await clearConversation(convId, currentUserId)
+      setConversations(prev => prev.filter(c => c.id !== convId))
+      closeChat(convId)
+      window.dispatchEvent(new CustomEvent('hydro_chat_read', { detail: { conversationId: convId } }))
+      await loadChatData()
+    } catch (err: any) {
+      console.error('Erro ao excluir conversa:', err)
+      alert('Erro ao excluir conversa: ' + (err.message || 'Erro desconhecido'))
+    }
+  }
+
   // Lista de colegas da equipe (para busca ou aba equipe)
   const teamUsers = usersMap
     ? Object.values(usersMap)
@@ -263,7 +311,7 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
           className="fixed bottom-[90px] right-6 z-[120] w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] bg-white rounded-[26px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200"
           style={{ fontFamily: 'inherit' }}
         >
-          {/* CABECALHO AZUL MESSENGER */}
+          {/* CABECALHO AZUL MESSENGER - CHAT EQUIPE SUCENA */}
           <div className="bg-[#0084ff] px-4 py-3.5 flex items-center justify-between text-white shrink-0 select-none shadow-sm">
             <div className="flex items-center gap-3 overflow-hidden">
               {/* Avatar com circulo branco e bolinha verde online */}
@@ -277,7 +325,7 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
 
               <div className="min-w-0">
                 <h3 className="font-bold text-[15px] leading-tight text-white tracking-tight truncate">
-                  Chat — Equipe Hydro
+                  Chat — Equipe Sucena
                 </h3>
                 <p className="text-[12px] text-white/90 leading-tight mt-0.5 font-medium truncate">
                   {unreadConversationsCount > 0
@@ -351,65 +399,95 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
               </div>
             ) : activeTab === 'conversas' ? (
               filteredConversations.length > 0 ? (
-                filteredConversations.map(conv => (
-                  <div
-                    key={conv.id}
-                    onClick={() => handleOpenConversation(conv.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                  >
-                    {/* Avatar colorido com iniciais ou foto */}
-                    <div className="relative shrink-0">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm overflow-hidden"
-                        style={{ backgroundColor: conv.avatarColor }}
-                      >
-                        {conv.avatarUrl ? (
-                          <img
-                            src={conv.avatarUrl}
-                            alt={conv.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{conv.initials}</span>
-                        )}
-                      </div>
-                      {conv.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#22c55e] border-2 border-white shadow-sm" />
-                      )}
-                    </div>
+                filteredConversations.map(conv => {
+                  const targetUser = conv.targetUserId && usersMap ? usersMap[conv.targetUserId] : null
+                  const isOnline = Boolean(targetUser?.isOnline)
+                  const lastSeenFormatted = targetUser ? formatLastSeen(targetUser.lastSeen || targetUser._presenceRaw?.last_heartbeat) : ''
 
-                    {/* Conteudo: Nome, Mensagem, Hora e Badge */}
-                    <div className="flex-1 min-w-0 pr-1">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <p className="font-semibold text-[14px] text-gray-900 truncate">
-                          {conv.title}
-                        </p>
-                        <span className="text-[11.5px] text-gray-400 shrink-0 ml-2">
-                          {conv.lastMessageTime}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <p
-                          className={`text-[13px] truncate ${
-                            conv.unreadCount > 0
-                              ? 'text-gray-900 font-medium'
-                              : 'text-gray-500'
-                          }`}
+                  return (
+                    <div
+                      key={conv.id}
+                      onClick={() => handleOpenConversation(conv.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group relative"
+                    >
+                      {/* Avatar colorido com iniciais ou foto */}
+                      <div className="relative shrink-0">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm overflow-hidden"
+                          style={{ backgroundColor: conv.avatarColor }}
                         >
-                          {conv.lastMessageText || 'Toque para conversar'}
-                        </p>
-
-                        {/* Badge vermelha individual de nao lidas da conversa */}
-                        {conv.unreadCount > 0 && (
-                          <span className="w-5 h-5 rounded-full bg-[#fa3e3e] text-white text-[10.5px] font-bold flex items-center justify-center shrink-0 shadow-sm animate-in zoom-in-75">
-                            {conv.unreadCount}
-                          </span>
+                          {conv.avatarUrl ? (
+                            <img
+                              src={conv.avatarUrl}
+                              alt={conv.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{conv.initials}</span>
+                          )}
+                        </div>
+                        {isOnline && (
+                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#22c55e] border-2 border-white shadow-sm" />
                         )}
                       </div>
+
+                      {/* Conteudo: Nome, Status em tempo real, Mensagem, Hora, Badge e Opcao Excluir */}
+                      <div className="flex-1 min-w-0 pr-1">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                            <p className="font-semibold text-[14px] text-gray-900 truncate">
+                              {conv.title}
+                            </p>
+                            {isOnline ? (
+                              <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Online
+                              </span>
+                            ) : lastSeenFormatted && lastSeenFormatted !== 'Offline' ? (
+                              <span className="text-[10px] text-gray-400 font-normal shrink-0 truncate max-w-[120px]" title={lastSeenFormatted}>
+                                • {lastSeenFormatted.replace('Visto ', '')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <span className="text-[11.5px] text-gray-400 shrink-0">
+                            {conv.lastMessageTime}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <p
+                            className={`text-[13px] truncate ${
+                              conv.unreadCount > 0
+                                ? 'text-gray-900 font-semibold'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {conv.lastMessageText || 'Toque para conversar'}
+                          </p>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* Badge vermelha individual de nao lidas da conversa */}
+                            {conv.unreadCount > 0 && (
+                              <span className="w-5 h-5 rounded-full bg-[#fa3e3e] text-white text-[10.5px] font-bold flex items-center justify-center shrink-0 shadow-sm animate-in zoom-in-75">
+                                {conv.unreadCount}
+                              </span>
+                            )}
+
+                            {/* BOTAO PARA EXCLUIR CONVERSA */}
+                            <button
+                              onClick={(e) => handleDeleteConversation(e, conv.id)}
+                              className="p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                              title="Excluir conversa"
+                              aria-label="Excluir conversa"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <div className="p-8 text-center">
                   <p className="text-sm text-gray-500 mb-2">
@@ -426,10 +504,13 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
                 </div>
               )
             ) : (
-              /* ABA DA EQUIPE / CONTATOS */
+              /* ABA DA EQUIPE / CONTATOS - MOSTRA ONLINE EM TEMPO REAL E ULTIMA VEZ VISTO */
               filteredTeamUsers.map((user: any) => {
                 const initials = getInitials(user.name)
                 const avatarColor = getAvatarColor(initials)
+                const isOnline = Boolean(user.isOnline)
+                const lastSeenFormatted = formatLastSeen(user.lastSeen || user._presenceRaw?.last_heartbeat)
+
                 return (
                   <div
                     key={user.id}
@@ -451,18 +532,35 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
                           <span>{initials}</span>
                         )}
                       </div>
-                      {user.isOnline && (
+                      {isOnline && (
                         <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#22c55e] border-2 border-white shadow-sm" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[14px] text-gray-900 truncate">
-                        {user.name}
-                      </p>
-                      <p className="text-[12px] text-gray-400 truncate">
-                        {user.isOnline ? 'Online agora' : user.role || 'Colega de Equipe'}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-[14px] text-gray-900 truncate">
+                          {user.name}
+                        </p>
+                        {user.role && (
+                          <span className="text-[11px] text-gray-400 truncate max-w-[120px] ml-2">
+                            {user.role}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {isOnline ? (
+                          <span className="text-[12px] text-emerald-600 font-semibold flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Online agora
+                          </span>
+                        ) : (
+                          <span className="text-[11.5px] text-gray-500 flex items-center gap-1">
+                            <Clock size={12} className="text-gray-400 shrink-0" />
+                            {lastSeenFormatted}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -477,8 +575,8 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="relative w-14 h-14 rounded-full bg-gradient-to-tr from-[#0062ff] via-[#0084ff] to-[#00c6ff] border-2 border-black/80 shadow-[0_8px_25px_rgba(0,100,255,0.45)] flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none"
-          aria-label="Chat — Equipe Hydro"
-          title="Chat — Equipe Hydro"
+          aria-label="Chat — Equipe Sucena"
+          title="Chat — Equipe Sucena"
         >
           {/* Logo do Messenger com o raio vazado */}
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-white drop-shadow-sm">
