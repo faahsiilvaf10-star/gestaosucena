@@ -53,11 +53,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
-      return localStorage.getItem('hydro_sidebar_collapsed') === 'true'
+      const stored = localStorage.getItem('hydro_sidebar_collapsed')
+      if (stored !== null) return stored === 'true'
+      return window.innerWidth <= 900
     } catch {
       return false
     }
   })
+
+  // Fecha a barra lateral automaticamente no mobile ao navegar
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      setIsSidebarCollapsed(true)
+    }
+  }, [location.pathname])
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
   const isDesvios = location.pathname.startsWith('/seguranca/desvios')
   const [searchQuery, setSearchQuery] = useState('')
@@ -632,7 +641,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
             {/* Floating Chat Windows */}
       <div 
-        className={`fixed bottom-6 z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[392px]' : 'right-[92px]' } max-md:right-3 max-md:bottom-24`}
+        className={`fixed bottom-6 z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[392px]' : 'right-[92px]' } max-md:right-2 max-md:bottom-[74px]`}
       >
         {currentUser.id && activeChats.map(chatId => (
           <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />

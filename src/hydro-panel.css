@@ -1613,7 +1613,7 @@ table {
     user-select: none !important;
     -webkit-tap-highlight-color: transparent !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-    margin: 0 !important;
+    margin: 0 0 0 48px !important;
     box-sizing: border-box !important;
   }
 
@@ -1644,7 +1644,7 @@ table {
     gap: 10px !important;
     width: 100% !important;
     min-height: 48px !important;
-    padding-left: 56px !important; /* Espaço para o botão amarelo flutuante de expandir a barra */
+    padding-left: 0 !important; /* Espaço garantido via margin no botão */
     overflow: visible !important;
     box-sizing: border-box !important;
   }

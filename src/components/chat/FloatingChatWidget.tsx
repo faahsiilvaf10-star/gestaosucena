@@ -338,7 +338,7 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
       {isSidebarOpen && (
         <div
           ref={popupRef}
-          className="fixed bottom-[90px] right-6 z-[120] w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] bg-white rounded-[26px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200"
+          className="fixed bottom-[90px] right-6 max-md:bottom-[136px] max-md:right-3 max-md:w-[calc(100vw-24px)] max-md:max-h-[calc(100dvh-155px)] z-[120] w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] bg-white rounded-[26px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200"
           style={{ fontFamily: 'inherit' }}
         >
           {/* CABECALHO AZUL MESSENGER - CHAT EQUIPE SUCENA */}
@@ -601,10 +601,10 @@ export function FloatingChatWidget({ currentUserId }: { currentUserId: string })
       )}
 
       {/* BOTAO FLUTUANTE ESTILO MESSENGER (CANTO INFERIOR DIREITO) */}
-      <div className="fixed bottom-6 right-6 z-[120]">
+      <div className="fixed bottom-6 right-6 max-md:bottom-[74px] max-md:right-3.5 z-[120]">
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="relative w-14 h-14 rounded-full bg-gradient-to-tr from-[#0062ff] via-[#0084ff] to-[#00c6ff] border-2 border-black/80 shadow-[0_8px_25px_rgba(0,100,255,0.45)] flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none"
+          className="relative w-14 h-14 max-md:w-12 max-md:h-12 rounded-full bg-gradient-to-tr from-[#0062ff] via-[#0084ff] to-[#00c6ff] border-2 border-black/80 shadow-[0_8px_25px_rgba(0,100,255,0.45)] flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none"
           aria-label="Chat — Equipe Sucena"
           title="Chat — Equipe Sucena"
         >

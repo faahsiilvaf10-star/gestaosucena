@@ -27,6 +27,14 @@ import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
 import { CampanhaComunicadoModal } from "../components/seguranca/CampanhaComunicadoModal";
 
 function RootContent() {
+  // Registra Service Worker para suporte PWA Standalone
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.warn('PWA ServiceWorker registration error:', err);
+      });
+    }
+  }, []);
   const { isDark } = useTheme()
   const router = useRouter()
   const path = router.state.location.pathname
@@ -106,20 +114,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "Sucena Empreendimentos" },
-      { name: "description", content: "Designing seamless digital interactions by focusing on the unique nuances which bring systems to life." },
+      { name: "description", content: "Sistema de Gestão Operacional Sucena Empreendimentos" },
+      { name: "theme-color", content: "#D6A72B" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Sucena" },
+      { name: "application-name", content: "Sucena" },
       { property: "og:title", content: "Sucena Empreendimentos" },
-      { property: "og:description", content: "A creative, fullstack, and founder portfolio." },
+      { property: "og:description", content: "Sistema de Gestão Operacional Sucena Empreendimentos" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", href: "/sucenaicon.ico" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-            { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
