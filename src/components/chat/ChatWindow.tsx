@@ -228,7 +228,7 @@ export function ChatWindow({ currentUserId, conversationId }: { currentUserId: s
   }
 
   return (
-    <div className={`pointer-events-auto shadow-2xl flex flex-col transition-all duration-300 rounded-t-xl ${isDark ? 'bg-[#111216] border border-white/10' : 'bg-white border border-black/10'}`} style={{ width: '330px', height: '450px', maxHeight: 'calc(100vh - 100px)' }}>
+    <div className={`pointer-events-auto shadow-2xl flex flex-col transition-all duration-300 rounded-t-xl ${isDark ? 'bg-[#111216] border border-white/10' : 'bg-white border border-black/10'}`} style={{ width: '360px', maxWidth: 'calc(100vw - 24px)', height: '460px', maxHeight: 'calc(100vh - 100px)' }}>
       <div className="flex flex-col h-full w-full overflow-hidden relative rounded-t-xl">
         {/* HEADER */}
       <div className={`h-[52px] shrink-0 px-3 flex items-center justify-between border-b z-20 shadow-sm ${isDark ? 'border-white/5 bg-[#1A1B20]' : 'border-black/5 bg-gray-50'}`}>

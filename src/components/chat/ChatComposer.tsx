@@ -25,6 +25,16 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-ajuste de altura da caixa de texto sem barra de rolagem indesejada
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const newHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 22), 120)
+      textareaRef.current.style.height = `${newHeight}px`
+    }
+  }, [inputText])
   
   // Áudio
   const [isRecording, setIsRecording] = useState(false)
@@ -184,10 +194,10 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
   }
 
   return (
-    <div className={`relative shrink-0 p-3 flex items-end gap-2 border-t z-10 ${isDark ? 'border-white/5 bg-[#111216]' : 'border-black/5 bg-[#f0f2f5]'}`}>
+    <div className={`relative shrink-0 p-2 sm:p-2.5 flex items-end gap-1.5 border-t z-10 ${isDark ? 'border-white/5 bg-[#111216]' : 'border-black/5 bg-[#f0f2f5]'}`}>
       {/* EMOJI PICKER MODAL */}
       {showEmojiPicker && (
-        <div className="absolute bottom-16 left-2 z-50 shadow-xl rounded-lg overflow-hidden">
+        <div className="absolute bottom-14 left-2 z-50 shadow-xl rounded-lg overflow-hidden">
           <EmojiPicker 
             onEmojiClick={onEmojiClick}
             theme={isDark ? Theme.DARK : Theme.LIGHT}
@@ -199,18 +209,18 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
 
       {isRecording ? (
         // MODO GRAVAÇÃO DE ÁUDIO
-        <div className="flex-1 flex items-center justify-between min-h-[44px] px-2 bg-red-500/10 rounded-xl">
+        <div className="flex-1 flex items-center justify-between min-h-[40px] px-3 bg-red-500/10 rounded-xl">
           <div className="flex items-center gap-3 text-red-500 animate-pulse">
             <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="font-mono font-medium">{formatTime(recordingTime)}</span>
+            <span className="font-mono font-medium text-sm">{formatTime(recordingTime)}</span>
           </div>
           
           <div className="flex items-center gap-2">
-            <button onClick={() => stopRecording(true)} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
-              <span className="text-sm">Cancelar</span>
+            <button onClick={() => stopRecording(true)} className="p-1.5 text-gray-500 hover:text-red-500 transition-colors">
+              <span className="text-xs font-medium">Cancelar</span>
             </button>
             <button onClick={() => stopRecording(false)} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-              <Send size={18} className="ml-0.5" />
+              <Send size={16} className="ml-0.5" />
             </button>
           </div>
         </div>
@@ -218,18 +228,22 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
         // MODO NORMAL DE TEXTO
         <>
           <button 
+            type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? (showEmojiPicker ? 'text-[#D6A72B] bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5') : (showEmojiPicker ? 'text-yellow-600 bg-gray-200' : 'text-gray-500 hover:bg-gray-200')}`}
+            className={`p-2 shrink-0 rounded-full transition-colors ${isDark ? (showEmojiPicker ? 'text-[#D6A72B] bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5') : (showEmojiPicker ? 'text-yellow-600 bg-gray-200' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200')}`}
+            title="Inserir emoji"
           >
-            <Smile size={22} />
+            <Smile size={18} />
           </button>
           
           <button 
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`p-3 shrink-0 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200'} ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+            className={`p-2 shrink-0 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'} ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+            title="Anexar arquivo ou foto"
           >
-            <Paperclip size={22} />
+            <Paperclip size={18} />
           </button>
           <input 
             type="file" 
@@ -239,23 +253,31 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
             className="hidden" 
           />
           
-          <div className={`flex-1 rounded-xl overflow-hidden min-h-[44px] flex items-center shadow-sm ${isDark ? 'bg-[#15161A] focus-within:border-[#D6A72B]/50 border border-transparent' : 'bg-white border-transparent focus-within:border-gray-300'}`}>
+          <div className={`flex-1 min-w-0 rounded-2xl flex items-center px-3.5 py-1.5 border transition-colors shadow-2xs ${isDark ? 'bg-[#18191E] border-white/10 focus-within:border-[#D6A72B]/60' : 'bg-white border-gray-300 focus-within:border-gray-400'}`}>
             <textarea
+              ref={textareaRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Digite uma mensagem"
-              className="w-full bg-transparent px-4 py-2.5 outline-none resize-none max-h-32 text-[15px] custom-scrollbar"
+              placeholder="Digite uma mensagem..."
               rows={1}
-              style={{ minHeight: '44px', lineHeight: '1.4', fontFamily: '"Inter", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif' }}
+              className="w-full bg-transparent outline-none resize-none text-[14px] leading-snug text-gray-900 dark:text-gray-100 placeholder:text-gray-400 overflow-y-auto"
+              style={{
+                minHeight: '22px',
+                maxHeight: '120px',
+                fontFamily: '"Inter", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+                scrollbarWidth: 'none',
+              }}
             />
           </div>
           
           <button 
+            type="button"
             onClick={inputText ? handleSendText : startRecording}
-            className={`p-3 shrink-0 rounded-full transition-all ${ inputText ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-[#1c1d21] dark:text-white hover:bg-[#008f6f]') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200') }`}
+            className={`p-2 shrink-0 rounded-full transition-all shadow-xs ${ inputText ? (isDark ? 'bg-[#D6A72B] text-black hover:bg-[#E2BB57]' : 'bg-[#00a884] text-white hover:bg-[#008f6f]') : (isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200') }`}
+            title={inputText ? 'Enviar mensagem' : 'Gravar áudio'}
           >
-            {inputText ? <Send size={20} className="ml-1" /> : <Mic size={22} />}
+            {inputText ? <Send size={16} className="ml-0.5" /> : <Mic size={18} />}
           </button>
         </>
       )}
