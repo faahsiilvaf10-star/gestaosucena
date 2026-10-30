@@ -45,7 +45,7 @@ ipcMain.on('launch-app', () => {
     titleBarOverlay: {
       color: '#0B0B0C', // Cor preta idêntica à barra e sidebar para botões visíveis
       symbolColor: '#ffffff', // Cor dos botões de fechar/minimizar
-      height: 18
+      height: 24
     },
     icon: path.join(__dirname, '../public/logo.png'),
     webPreferences: {

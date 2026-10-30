@@ -401,7 +401,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           top: 0, 
           left: 0, 
           right: 0, 
-          height: 18, 
+          height: 24, 
           backgroundColor: '#0B0B0C',
           border: 'none',
           zIndex: 9998,
