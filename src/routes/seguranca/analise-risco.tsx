@@ -290,9 +290,10 @@ export function AnaliseRiscoComponent() {
   const excluirItem = async (id: string, nome: string) => {
     if (!confirmExcluir[id]) {
       setConfirmExcluir({ [id]: true })
+      toast.warning('Clique novamente em "Confirmar exclusão?" para apagar definitivamente.')
       setTimeout(() => {
         setConfirmExcluir((curr) => ({ ...curr, [id]: false }))
-      }, 4000)
+      }, 5000)
       return
     }
 
@@ -305,8 +306,13 @@ export function AnaliseRiscoComponent() {
     setAnalises(listaAtualizada)
     setConfirmExcluir((curr) => ({ ...curr, [id]: false }))
 
-    await salvarAnalisesRisco(listaAtualizada, env)
-    showToast(`Arquivo excluído: ${nome}`)
+    const ok = await salvarAnalisesRisco(listaAtualizada, env)
+    if (ok) {
+      toast.success(`Análise de risco excluída com sucesso!`)
+      showToast(`Arquivo excluído: ${nome}`)
+    } else {
+      toast.error('Erro ao salvar exclusão no banco.')
+    }
   }
 
   // Fechar Análise de Risco (Apenas Técnico de Segurança)

@@ -323,24 +323,13 @@ export async function salvarIndicadoresStore(
   }
 
   try {
-    const { data: existing } = await supabase
+    const { error } = await supabase
       .from('global_settings')
-      .select('id')
-      .eq('key', dbKey)
-      .maybeSingle()
-
-    if (existing) {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ value: store })
-        .eq('key', dbKey)
-      return !error
-    } else {
-      const { error } = await supabase
-        .from('global_settings')
-        .insert({ key: dbKey, value: store })
-      return !error
-    }
+      .upsert(
+        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      )
+    return !error
   } catch (err) {
     console.warn('[Indicadores] Erro ao persistir no Supabase:', err)
     return false

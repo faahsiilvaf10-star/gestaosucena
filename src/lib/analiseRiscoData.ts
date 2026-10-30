@@ -96,8 +96,8 @@ export async function carregarAnalisesRisco(env = 'barcarena'): Promise<AnaliseR
       .eq('key', dbKey)
       .maybeSingle()
 
-    if (!error && data?.value && Array.isArray(data.value)) {
-      const lista = data.value as AnaliseRiscoItem[]
+    if (!error && data) {
+      const lista = Array.isArray(data.value) ? (data.value as AnaliseRiscoItem[]) : []
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(LS_KEY_ANALISE_RISCO, JSON.stringify(lista))
@@ -142,24 +142,13 @@ export async function salvarAnalisesRisco(
   }
 
   try {
-    const { data: existing } = await supabase
+    const { error } = await supabase
       .from('global_settings')
-      .select('id')
-      .eq('key', dbKey)
-      .maybeSingle()
-
-    if (existing) {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ value: lista, updated_at: new Date().toISOString() })
-        .eq('key', dbKey)
-      return !error
-    } else {
-      const { error } = await supabase
-        .from('global_settings')
-        .insert({ key: dbKey, value: lista, updated_at: new Date().toISOString() })
-      return !error
-    }
+      .upsert(
+        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      )
+    return !error
   } catch (err) {
     console.warn('[Análise de Risco] Erro ao persistir no Supabase:', err)
     return false

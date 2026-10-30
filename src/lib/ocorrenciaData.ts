@@ -75,11 +75,11 @@ export async function carregarArquivosOcorrencia(env = 'barcarena'): Promise<Oco
       .eq('key', dbKey)
       .maybeSingle()
 
-    if (!error && data?.value && Array.isArray(data.value)) {
-      const lista = data.value as OcorrenciaArquivo[]
+    if (!error && data) {
+      const lista = Array.isArray(data.value) ? (data.value as OcorrenciaItem[]) : []
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(LS_KEY_OCORRENCIAS, JSON.stringify(lista))
+          localStorage.setItem(LS_KEY_OCORRENCIA, JSON.stringify(lista))
         } catch (_) {}
       }
       return lista
@@ -121,24 +121,13 @@ export async function salvarArquivosOcorrencia(
   }
 
   try {
-    const { data: existing } = await supabase
+    const { error } = await supabase
       .from('global_settings')
-      .select('id')
-      .eq('key', dbKey)
-      .maybeSingle()
-
-    if (existing) {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ value: novos })
-        .eq('key', dbKey)
-      return !error
-    } else {
-      const { error } = await supabase
-        .from('global_settings')
-        .insert({ key: dbKey, value: novos })
-      return !error
-    }
+      .upsert(
+        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      )
+    return !error
   } catch (err) {
     console.warn('[Ocorrência] Erro ao persistir no Supabase:', err)
     return false

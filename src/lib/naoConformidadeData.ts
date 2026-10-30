@@ -112,11 +112,11 @@ export async function carregarNCs(env = 'barcarena'): Promise<NaoConformidadeIte
       .eq('key', dbKey)
       .maybeSingle()
 
-    if (!error && data?.value && Array.isArray(data.value)) {
-      const lista = data.value as NaoConformidadeItem[]
+    if (!error && data) {
+      const lista = Array.isArray(data.value) ? (data.value as NaoConformidadeItem[]) : []
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(LS_KEY_NC, JSON.stringify(lista))
+          localStorage.setItem(LS_KEY_NAO_CONFORMIDADE, JSON.stringify(lista))
         } catch (_) {}
       }
       return lista
@@ -158,24 +158,13 @@ export async function salvarNCs(
   }
 
   try {
-    const { data: existing } = await supabase
+    const { error } = await supabase
       .from('global_settings')
-      .select('id')
-      .eq('key', dbKey)
-      .maybeSingle()
-
-    if (existing) {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ value: novos })
-        .eq('key', dbKey)
-      return !error
-    } else {
-      const { error } = await supabase
-        .from('global_settings')
-        .insert({ key: dbKey, value: novos })
-      return !error
-    }
+      .upsert(
+        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      )
+    return !error
   } catch (err) {
     console.warn('[NC] Erro ao persistir no Supabase:', err)
     return false
