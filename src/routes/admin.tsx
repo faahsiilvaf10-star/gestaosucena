@@ -1864,6 +1864,121 @@ function AdminRoute() {
               </div>
             </div>
 
+            {/* Nova Seção: Notificações de Inspeção de Canteiro */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <HardHat size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Inspeção de Canteiro
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Disparos automáticos no grupo do WhatsApp para novas inspeções agendadas, alerta às 07:00 da manhã no dia da inspeção, e aviso em tempo real a cada item corrigido.
+              </p>
+
+              <div className="space-y-4">
+                {/* Agendamento */}
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        inspecaoCanteiro: {
+                          ...prev.inspecaoCanteiro!,
+                          enabled_agendamento: !(prev.inspecaoCanteiro?.enabled_agendamento ?? true)
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Notificar no grupo ao salvar/agendar nova inspeção</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia data, local, responsável e pontos de atenção assim que for salva</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                {/* Dia da Inspeção às 07:00 */}
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        inspecaoCanteiro: {
+                          ...prev.inspecaoCanteiro!,
+                          enabled_dia_inspecao_0700: !(prev.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true)
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Aviso matinal às 07:00 no dia da inspeção</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Dispara mensagem às 07h relembrando os pontos pendentes para a fiscalização</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                {/* Correção de Item */}
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        inspecaoCanteiro: {
+                          ...prev.inspecaoCanteiro!,
+                          enabled_correcao_item: !(prev.inspecaoCanteiro?.enabled_correcao_item ?? true)
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Notificar a cada correção de item salva</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia o item corrigido, quem realizou e o que foi feito na hora</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                {/* Grupo específico */}
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para notificações de Inspeção de Canteiro</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.inspecaoCanteiro?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        inspecaoCanteiro: {
+                          ...prev.inspecaoCanteiro!,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Se deixar em branco, será utilizado o Grupo Geral do WhatsApp.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Nova Seção: Modelos de Mensagens (Templates) */}
             <div className="mt-12 pt-8 border-t border-white/10">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
@@ -1895,7 +2010,10 @@ function AdminRoute() {
                     { key: 'asoVencendo', label: 'ASO Vencendo' },
                     { key: 'relatorioDiarioEquipamentos', label: 'Relatório Equipamentos' },
                     { key: 'estoqueMinimo', label: 'Estoque Mínimo' },
-                    { key: 'estoqueAlteracao', label: 'Alteração de Estoque' }
+                    { key: 'estoqueAlteracao', label: 'Alteração de Estoque' },
+                    { key: 'inspecaoCanteiroAgendada', label: 'Inspeção Canteiro (Agendada)' },
+                    { key: 'inspecaoCanteiroDia', label: 'Inspeção Canteiro (Dia às 07h)' },
+                    { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -1939,6 +2057,9 @@ function AdminRoute() {
                     {selectedTemplate === 'relatorioDiarioEquipamentos' && '{data}, {hora}, {quantidade_operando}, {quantidade_manutencao}, {lista_manutencao}'}
                     {selectedTemplate === 'estoqueMinimo' && '{produto}, {codigo}, {localizacao}, {quantidade_atual}, {estoque_minimo}, {unidade}'}
                     {selectedTemplate === 'estoqueAlteracao' && '{responsavel}, {produto}, {codigo}, {quantidade_anterior}, {nova_quantidade}, {unidade}, {diferenca}'}
+                    {selectedTemplate === 'inspecaoCanteiroAgendada' && '{data_inspecao}, {prazo}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {lista_itens}'}
+                    {selectedTemplate === 'inspecaoCanteiroDia' && '{data_inspecao}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {total_corrigidos}, {total_pendentes}, {lista_pendencias}'}
+                    {selectedTemplate === 'inspecaoCanteiroCorrecao' && '{titulo_item}, {categoria}, {prioridade}, {local}, {prazo}, {o_que_foi_feito}, {usuario}, {data_correcao}, {total_corrigidos}, {total_pontos}, {porcentagem}'}
                   </div>
                 </div>
               </div>

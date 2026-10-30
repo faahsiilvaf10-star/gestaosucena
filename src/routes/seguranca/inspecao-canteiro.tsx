@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { notificarInspecaoAgendada, notificarItemCorrigido } from '@/lib/inspecaoCanteiroWhatsapp'
 
 export const Route = createFileRoute('/seguranca/inspecao-canteiro')({
   component: InspecaoCanteiroPage,
@@ -360,6 +361,8 @@ function InspecaoCanteiroPage() {
 
     const novasInspecoes = [novoRegistro, ...inspecoes]
     persistirInspecoes(novasInspecoes)
+    // Disparo imediato de notificação no grupo do WhatsApp
+    void notificarInspecaoAgendada(novoRegistro)
 
     // Resetar formulário
     setItems([
@@ -486,6 +489,13 @@ function InspecaoCanteiroPage() {
         return copy
       })
       toast.success('✅ Correção salva! Ponto CORRIGIDO — relatório atualizado')
+
+      // Disparar aviso no grupo do WhatsApp para este item corrigido
+      const regAlvo = novasInspecoes.find((r) => r.itens.some((p) => p.uid === uid))
+      const pontoAlvo = regAlvo?.itens.find((p) => p.uid === uid)
+      if (regAlvo && pontoAlvo) {
+        void notificarItemCorrigido(pontoAlvo, regAlvo, currentUserName || 'Colaborador')
+      }
     }
   }
 

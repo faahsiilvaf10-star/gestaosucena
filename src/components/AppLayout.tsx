@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { EquipmentAnnouncementModal } from './EquipmentAnnouncementModal'
 import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
+import { CanteiroAlertManager } from './CanteiroAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { InstacenaNotificationPopup } from './instacena/InstacenaNotificationPopup'
@@ -382,6 +383,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <AppUpdateNotification />
       <DailyPipasAlertModal enabled={Boolean(currentUser.id)} />
       <DdsAlertManager />
+      <CanteiroAlertManager />
       {currentUser.id && (
         <>
           <UserOnlineNotification currentUserId={currentUser.id} />

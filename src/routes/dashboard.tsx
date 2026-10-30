@@ -18,6 +18,8 @@ import { DdsUploadModal } from '../components/DdsUploadModal'
 import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
 import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
+import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
+import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import '../hydro-panel.css'
 
@@ -1540,6 +1542,9 @@ function DashboardComponent() {
           <h2>Widgets Operacionais</h2>
         </div>
 
+        {/* Banner de Aviso de Inspeção do Canteiro */}
+        <DashboardInspecaoCanteiroBanner />
+
         {/* Permissão de Trabalho Alert */}
         {expiringPTs.length > 0 && (
           <div
@@ -1577,6 +1582,7 @@ function DashboardComponent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
+            <DashboardInspecaoCanteiroWidget />
           </div>
           <div style={{ minHeight: '380px' }}>
             <RecentActivitiesWidget />

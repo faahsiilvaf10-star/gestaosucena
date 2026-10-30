@@ -215,7 +215,17 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  // Inspeção de Canteiro
+  inspecaoCanteiro?: {
+    enabled_agendamento: boolean;
+    enabled_dia_inspecao_0700: boolean;
+    enabled_correcao_item: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
+    inspecaoCanteiroAgendada?: string;
+    inspecaoCanteiroDia?: string;
+    inspecaoCanteiroCorrecao?: string;
     ddsHoje: string;
     ddsAmanha: string;
     lembreteHoje: string;
@@ -302,6 +312,13 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: false,
     specificGroupId: "",
   },
+  // Inspeção de Canteiro
+  inspecaoCanteiro: {
+    enabled_agendamento: true,
+    enabled_dia_inspecao_0700: true,
+    enabled_correcao_item: true,
+    specificGroupId: "",
+  },
   messageTemplates: {
     ddsHoje:
       "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
@@ -346,6 +363,12 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "⚠️ *ALERTA: ESTOQUE MÍNIMO* ⚠️\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📍 *Localização:* {localizacao}\n\n🔴 *Quantidade atual:* {quantidade_atual} {unidade}\n📉 *Estoque mínimo:* {estoque_minimo} {unidade}\n\n_Reponha o estoque o mais rápido possível._\n\n_Mensagem automática - Sucena_",
     estoqueAlteracao:
       "📝 *ALTERAÇÃO DE ESTOQUE*\n\n👤 *Responsável:* {responsavel}\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n\n🔄 *Quantidade anterior:* {quantidade_anterior} {unidade}\n➡️ *Nova quantidade:* {nova_quantidade} {unidade}\n📝 *Diferença:* {diferenca} {unidade}\n\n_Mensagem automática - Sucena_",
+    inspecaoCanteiroAgendada:
+      "🏗️ *NOVA INSPEÇÃO DE CANTEIRO AGENDADA* 🏗️\n\n📅 *Data da Inspeção:* {data_inspecao}\n📍 *Local / Frente:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n⏳ *Prazo Final:* {prazo}\n\n⚠️ *Pontos de Atenção ({total_pontos}):*\n{lista_itens}\n\n_Mensagem automática - Sucena Segurança_",
+    inspecaoCanteiroDia:
+      "🚨 *HOJE É DIA DE INSPEÇÃO DE CANTEIRO (07:00)* 🚨\n\n📅 *Data:* {data_inspecao} (Hoje)\n📍 *Local:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n\n📊 *Situação Atual:*\n• Total de pontos: {total_pontos}\n• ✅ Corrigidos: {total_corrigidos}\n• ⏳ Pendentes: {total_pendentes}\n\n{lista_pendencias}\n\n_Favor verificar os pontos pendentes antes da fiscalização.\n_Mensagem automática - Sucena Segurança_",
+    inspecaoCanteiroCorrecao:
+      "✅ *ITEM DE INSPEÇÃO DE CANTEIRO CORRIGIDO*\n\n🏗️ *Ponto:* {titulo_item}\n📂 *Categoria:* {categoria}\n🚨 *Prioridade:* {prioridade}\n📍 *Local:* {local}\n📅 *Prazo:* {prazo}\n\n🛠️ *O que foi feito na correção:*\n{o_que_foi_feito}\n\n👤 *Atualizado por:* {usuario}\n🕒 *Concluído em:* {data_correcao}\n📊 *Progresso da Inspeção:* {total_corrigidos}/{total_pontos} itens corrigidos ({porcentagem}%)\n\n_Mensagem automática - Sucena Segurança_",
   },
 };
 
