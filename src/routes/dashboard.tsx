@@ -22,6 +22,7 @@ import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecao
 import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
 import { DashboardDesviosWidget } from '../components/DashboardDesviosWidget'
 import { DashboardDesviosBanner } from '../components/DashboardDesviosBanner'
+import { DashboardCampanhaMesWidget } from '../components/DashboardCampanhaMesWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import '../hydro-panel.css'
 
@@ -1585,6 +1586,7 @@ function DashboardComponent() {
         {/* Widgets Inferiores */}
         <div className="hydro-bottom-widgets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <DashboardCampanhaMesWidget />
             <DashboardDesviosWidget />
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />

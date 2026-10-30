@@ -1953,6 +1953,51 @@ function AdminRoute() {
                   </span>
                 </div>
 
+                {/* Campanhas de Segurança */}
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-semibold text-sm">Campanhas de Segurança (Mensal — Dia 01)</h4>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Disparo automático no grupo no dia 01 de cada mês com o tema de conscientização e arte oficial.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setWhatsappSettings(prev => ({
+                        ...prev,
+                        campanhasSeguranca: {
+                          ...prev.campanhasSeguranca,
+                          enabled: !(prev.campanhasSeguranca?.enabled ?? true),
+                          specificGroupId: prev.campanhasSeguranca?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.campanhasSeguranca?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.campanhasSeguranca?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para Campanhas de Segurança</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.campanhasSeguranca?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        campanhasSeguranca: {
+                          ...prev.campanhasSeguranca,
+                          enabled: prev.campanhasSeguranca?.enabled ?? true,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                    />
+                  </div>
+                </div>
+
                 {/* Grupo específico */}
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
@@ -2014,7 +2059,8 @@ function AdminRoute() {
                     { key: 'inspecaoCanteiroAgendada', label: 'Inspeção Canteiro (Agendada)' },
                     { key: 'inspecaoCanteiroDia', label: 'Inspeção Canteiro (Dia às 07h)' },
                     { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' },
-                    { key: 'desvioRegistrado', label: 'Desvio de Segurança' }
+                    { key: 'desvioRegistrado', label: 'Desvio de Segurança' },
+                    { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2062,6 +2108,7 @@ function AdminRoute() {
                     {selectedTemplate === 'inspecaoCanteiroDia' && '{data_inspecao}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {total_corrigidos}, {total_pendentes}, {lista_pendencias}'}
                     {selectedTemplate === 'inspecaoCanteiroCorrecao' && '{titulo_item}, {categoria}, {prioridade}, {local}, {prazo}, {o_que_foi_feito}, {usuario}, {data_correcao}, {total_corrigidos}, {total_pontos}, {porcentagem}'}
                     {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
+                    {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
                   </div>
                 </div>
               </div>

@@ -216,6 +216,10 @@ export type WhatsappSettings = {
     specificGroupId: string;
   };
   // Inspeção de Canteiro
+  campanhasSeguranca?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   desviosSeguranca?: {
     enabled: boolean;
     specificGroupId: string;
@@ -227,6 +231,7 @@ export type WhatsappSettings = {
     specificGroupId: string;
   };
   messageTemplates?: {
+    campanhaSegurancaMes?: string;
     desvioRegistrado?: string;
     inspecaoCanteiroAgendada?: string;
     inspecaoCanteiroDia?: string;
@@ -318,6 +323,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
     specificGroupId: "",
   },
   // Inspeção de Canteiro
+  campanhasSeguranca: {
+    enabled: true,
+    specificGroupId: "",
+  },
   desviosSeguranca: {
     enabled: true,
     specificGroupId: "",
@@ -372,7 +381,9 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "⚠️ *ALERTA: ESTOQUE MÍNIMO* ⚠️\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📍 *Localização:* {localizacao}\n\n🔴 *Quantidade atual:* {quantidade_atual} {unidade}\n📉 *Estoque mínimo:* {estoque_minimo} {unidade}\n\n_Reponha o estoque o mais rápido possível._\n\n_Mensagem automática - Sucena_",
     estoqueAlteracao:
       "📝 *ALTERAÇÃO DE ESTOQUE*\n\n👤 *Responsável:* {responsavel}\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n\n🔄 *Quantidade anterior:* {quantidade_anterior} {unidade}\n➡️ *Nova quantidade:* {nova_quantidade} {unidade}\n📝 *Diferença:* {diferenca} {unidade}\n\n_Mensagem automática - Sucena_",
-        desvioRegistrado:
+        campanhaSegurancaMes:
+      "🎗️ *CAMPANHA DO MÊS: {campanha_nome} ({mes_nome})* 🎗️\n\n💡 *Conscientização:* {tema}\n\n📝 *Sobre a campanha:*\n{descricao}\n\n📢 *Mensagem:* \"{frase}\"\n\n_Mensagem automática de Segurança do Trabalho - Sucena / Hydro Reabilitação_",
+    desvioRegistrado:
       "⚠️ *NOVO DESVIO DE SEGURANÇA REGISTRADO* ⚠️\n\n📌 *Título:* {titulo}\n📝 *Descrição:* {descricao}\n🚨 *Prioridade:* {prioridade}\n⚠️ *Risco:* {risco} ({gravidade})\n📂 *Categoria:* {categoria}\n📍 *Local:* {local} {area}\n\n👷 *Técnico Responsável:* {tecnico}\n👥 *Pessoas Responsáveis:* {responsaveis}\n🏢 *Empresa/Equipe:* {empresa}\n⏰ *Data Limite para Correção:* {previsao}\n\n💡 *Instrução / Sugestão:* {sugestao}\n\n_Mensagem automática - Sucena Segurança_",
     inspecaoCanteiroAgendada:
       "🏗️ *NOVA INSPEÇÃO DE CANTEIRO AGENDADA* 🏗️\n\n📅 *Data da Inspeção:* {data_inspecao}\n📍 *Local / Frente:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n⏳ *Prazo Final:* {prazo}\n\n⚠️ *Pontos de Atenção ({total_pontos}):*\n{lista_itens}\n\n_Mensagem automática - Sucena Segurança_",
