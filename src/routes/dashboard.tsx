@@ -16,7 +16,7 @@ import {
   MovementRecord,
 } from '../lib/equipamentos/locationStatus'
 import { DdsUploadModal } from '../components/DdsUploadModal'
-import { AlertaInspecaoMensal } from '../components/seguranca/AlertaInspecaoMensal'
+import { DashboardCintasBanner } from '../components/DashboardCintasBanner'
 import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
@@ -1556,6 +1556,9 @@ function DashboardComponent() {
 
         {/* Banner de Aviso de Análise de Risco (Vencendo ou Vencida) */}
         <DashboardAnaliseRiscoBanner />
+
+        {/* Banner de Inspeção Mensal de Cintas de Elevação (Cor Proibida do Mês) */}
+        <DashboardCintasBanner />
 
         {/* Permissão de Trabalho Alert */}
         {expiringPTs.length > 0 && (

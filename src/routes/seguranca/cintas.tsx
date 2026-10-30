@@ -27,6 +27,12 @@ import { Label } from '@/components/ui/label'
 import { useCintasStore } from '../../store/cintasStore'
 import { AlertaInspecaoMensal } from '../../components/seguranca/AlertaInspecaoMensal'
 import { DateInput } from '../../components/ui/DateInput'
+import {
+  mesesInspecao,
+  colorConfigs,
+  getMesInspecaoAtual,
+  type CorCinta,
+} from '../../lib/cintasConfig'
 
 export const Route = createFileRoute('/seguranca/cintas')({
   component: VistoriaCintas,
@@ -39,21 +45,6 @@ const colorMap: Record<string, string> = {
   'Verde': 'bg-green-500',
 }
 
-const mesesInspecao = [
-  { label: 'janeiro de 2026', cor: 'Vermelho' },
-  { label: 'fevereiro de 2026', cor: 'Azul' },
-  { label: 'março de 2026', cor: 'Amarelo' },
-  { label: 'abril de 2026', cor: 'Verde' },
-  { label: 'maio de 2026', cor: 'Vermelho' },
-  { label: 'junho de 2026', cor: 'Azul' },
-  { label: 'julho de 2026', cor: 'Amarelo' },
-  { label: 'agosto de 2026', cor: 'Verde' },
-  { label: 'setembro de 2026', cor: 'Vermelho' },
-  { label: 'outubro de 2026', cor: 'Azul' },
-  { label: 'novembro de 2026', cor: 'Amarelo' },
-  { label: 'dezembro de 2026', cor: 'Verde' },
-]
-
 function VistoriaCintas() {
   const { cintas, historico, inspecionarCinta, fetchCintas, hasHydrated } = useCintasStore()
   const [editingCinta, setEditingCinta] = useState<any | null>(null)
@@ -62,7 +53,8 @@ function VistoriaCintas() {
     if (!hasHydrated) fetchCintas()
   }, [hasHydrated, fetchCintas])
 
-  const [mesFiltro, setMesFiltro] = useState('setembro de 2026')
+  const mesAtualInfo = getMesInspecaoAtual()
+  const [mesFiltro, setMesFiltro] = useState(mesAtualInfo.label)
   const [corFiltro, setCorFiltro] = useState('Todas')
 
   // Pagination state
@@ -174,9 +166,14 @@ function VistoriaCintas() {
   }
 
   // Derived state
-  const corDoMes = mesesInspecao.find((m) => m.label === mesFiltro)?.cor || 'Vermelho'
-  const pendentesCount = cintas.filter(
-    (c) => c.cor === corDoMes && c.status !== 'Inspecionada'
+  const corDoMes = mesesInspecao.find((m) => m.label.toLowerCase() === mesFiltro.toLowerCase())?.cor || mesAtualInfo.cor
+  const activeColorConfig = colorConfigs[corDoMes as CorCinta]
+  const cintasMesAtivo = cintas.filter((c) => c.cor === corDoMes)
+  const pendentesCount = cintasMesAtivo.filter(
+    (c) => c.status !== 'Inspecionada'
+  ).length
+  const semFotoCount = cintasMesAtivo.filter(
+    (c) => c.status === 'Inspecionada' && !c.foto
   ).length
 
   const filteredCintas = cintas.filter((c) => {
@@ -233,25 +230,40 @@ function VistoriaCintas() {
 
         <div className="flex justify-between items-center relative z-10">
           <div className="flex items-center space-x-4">
-            <div className={`w-6 h-6 rounded-full ${colorMap[corDoMes]}`}></div>
+            <div className={`w-7 h-7 rounded-full ${colorMap[corDoMes]} shadow-sm ring-4 ring-white/10 shrink-0`}></div>
             <div>
               <h2 className="text-lg font-medium text-[#1c1d21] dark:text-white">
                 Mês de Inspeção:{' '}
                 {mesFiltro.charAt(0).toUpperCase() + mesFiltro.slice(1)}
               </h2>
-              <p className="text-sm text-[#5f6472] dark:text-gray-300 dark:text-gray-400">
-                Cor do mês:{' '}
-                <span className="text-[#1c1d21] dark:text-white font-medium">{corDoMes}</span> -
-                Inspeção no dia 01
+              <p className="text-sm text-[#5f6472] dark:text-gray-300 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
+                <span>Cor proibida / Inspeção do mês:</span>
+                <span
+                  className="font-bold px-2 py-0.5 rounded text-white inline-flex items-center gap-1 text-xs shadow-xs"
+                  style={{ backgroundColor: activeColorConfig?.accentHex || '#3b82f6' }}
+                >
+                  {corDoMes}
+                </span>
+                <span>— Inspeção obrigatória das cintas desta cor</span>
               </p>
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className="bg-black/30 dark:bg-black/50 text-[#5f6472] dark:text-gray-200 dark:text-gray-300 border-white/20 dark:border-white/10 rounded-full px-4 py-1 font-normal"
-          >
-            {pendentesCount} pendente(s)
-          </Badge>
+          <div className="flex items-center gap-2">
+            {semFotoCount > 0 && (
+              <Badge
+                variant="outline"
+                className="bg-amber-500/20 text-amber-200 border-amber-500/30 rounded-full px-3 py-1 text-xs font-medium"
+              >
+                {semFotoCount} sem foto
+              </Badge>
+            )}
+            <Badge
+              variant="outline"
+              className="bg-black/30 dark:bg-black/50 text-[#5f6472] dark:text-gray-200 dark:text-gray-300 border-white/20 dark:border-white/10 rounded-full px-4 py-1 font-normal"
+            >
+              {pendentesCount} pendente(s)
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -347,23 +359,37 @@ function VistoriaCintas() {
                 </tr>
               ) : (
                 filteredCintas.map((cinta) => {
-                  const bgRowClass =
-                    cinta.cor === 'Vermelho'
-                      ? 'bg-red-50/50 dark:bg-[#404040]/30'
-                      : 'bg-transparent'
+                  const isCorDoMes = cinta.cor === corDoMes
+                  const rowConfig = colorConfigs[cinta.cor as CorCinta]
+                  const bgRowClass = isCorDoMes
+                    ? `${rowConfig?.bgLight || 'bg-blue-50/70'} ${rowConfig?.bgDark || 'dark:bg-blue-950/25'} border-l-4 ${rowConfig?.borderClass || 'border-l-blue-500'}`
+                    : 'bg-transparent'
                   const isPendente = cinta.status === 'Pendente'
 
                   return (
                     <tr
                       key={cinta.id}
-                      className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${bgRowClass}`}
+                      className={`hover:bg-gray-50/80 dark:hover:bg-white/5 transition-colors ${bgRowClass}`}
                     >
                       <td className="px-6 py-4">
-                        <div
-                          className={`w-4 h-4 rounded-full ${colorMap[cinta.cor]}`}
-                        ></div>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-4 h-4 rounded-full ${colorMap[cinta.cor]} shrink-0`}
+                          ></div>
+                          {isCorDoMes && (
+                            <span
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs"
+                              style={{
+                                backgroundColor: `${rowConfig?.accentHex}20`,
+                                color: rowConfig?.accentHex,
+                              }}
+                            >
+                              COR DO MÊS
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-mono text-xs">
+                      <td className="px-6 py-4 text-gray-900 dark:text-gray-200 font-mono text-xs font-semibold">
                         {cinta.tag}
                       </td>
                       <td className="px-6 py-4 text-gray-900 dark:text-gray-300">
@@ -384,7 +410,7 @@ function VistoriaCintas() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-400 font-mono text-xs">
                         {cinta.inspecionadaEm || '—'}
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
@@ -412,15 +438,45 @@ function VistoriaCintas() {
                                   +{count - 1}
                                 </span>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(cinta)}
+                                className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 p-1 transition-colors"
+                                title="Gerenciar fotos"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           )
-                        })() : '—'}
+                        })() : (
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(cinta)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 border border-blue-200 dark:border-blue-500/30 transition-all shadow-2xs"
+                            title="Clique para adicionar foto da cinta"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            Adicionar foto
+                          </button>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {cinta.cor === corDoMes && (
+                        {isCorDoMes ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleEdit(cinta)}
+                            className="h-8 px-3 text-xs font-semibold rounded-lg shadow-xs transition-transform active:scale-95 text-white"
+                            style={{
+                              backgroundColor: rowConfig?.accentHex || '#3b82f6',
+                            }}
+                          >
+                            <Edit className="w-3.5 h-3.5 mr-1" />
+                            {cinta.status === 'Inspecionada' ? 'Editar / Foto' : 'Inspecionar'}
+                          </Button>
+                        ) : (
                           <button
                             onClick={() => handleEdit(cinta)}
-                            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center justify-end w-full space-x-1"
+                            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors inline-flex items-center justify-end space-x-1 text-xs"
                           >
                             <Edit className="w-3 h-3" />
                             <span>Editar</span>

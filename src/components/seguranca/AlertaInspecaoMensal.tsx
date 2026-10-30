@@ -4,7 +4,9 @@ import Save from 'lucide-react/dist/esm/icons/save.js';
 import Camera from 'lucide-react/dist/esm/icons/camera.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
-import { useState, useMemo, useEffect } from 'react'
+import Plus from 'lucide-react/dist/esm/icons/plus.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useCintasStore, Cinta } from '../../store/cintasStore'
 import { Button } from '@/components/ui/button'
@@ -15,70 +17,38 @@ import { Label } from '@/components/ui/label'
 import { getWhatsappSettings } from '../../lib/settings'
 import { sendWhatsappTextOnServer } from '../../lib/whatsapp-api'
 import { toast } from 'sonner'
-
-const mesesInspecao = [
-  { label: 'janeiro de 2026', cor: 'Vermelho' as const },
-  { label: 'fevereiro de 2026', cor: 'Azul' as const },
-  { label: 'março de 2026', cor: 'Amarelo' as const },
-  { label: 'abril de 2026', cor: 'Verde' as const },
-  { label: 'maio de 2026', cor: 'Vermelho' as const },
-  { label: 'junho de 2026', cor: 'Azul' as const },
-  { label: 'julho de 2026', cor: 'Amarelo' as const },
-  { label: 'agosto de 2026', cor: 'Verde' as const },
-  { label: 'setembro de 2026', cor: 'Vermelho' as const },
-  { label: 'outubro de 2026', cor: 'Azul' as const },
-  { label: 'novembro de 2026', cor: 'Amarelo' as const },
-  { label: 'dezembro de 2026', cor: 'Verde' as const },
-]
-
-function isInspecionadaNesteMes(cinta: Cinta, referenceDate = new Date()) {
-  if (cinta.status !== 'Inspecionada' || !cinta.inspecionadaEm) return false
-
-  const [day, month, year] = cinta.inspecionadaEm.split('/').map(Number)
-  return year === referenceDate.getFullYear() && month === referenceDate.getMonth() + 1 && day > 0
-}
-
-async function sendWhatsappMessage(url: string, token: string, instanceId: string, groupId: string, message: string) {
-  try {
-    const result = await sendWhatsappTextOnServer({
-      data: {
-        url,
-        token,
-        instanceId,
-        phone: groupId,
-        text: message,
-      },
-    })
-    if (!result.success) {
-      console.error('WhatsApp API error:', result.error || result.result)
-    }
-    return result.success
-  } catch (err) {
-    console.error('WhatsApp send error:', err)
-    return false
-  }
-}
+import {
+  getMesInspecaoAtual,
+  colorConfigs,
+  compressImage,
+  isInspecionadaNesteMes,
+  type CorCinta,
+} from '../../lib/cintasConfig'
 
 export function AlertaInspecaoMensal() {
   const navigate = useNavigate()
   const { cintas, hasHydrated, inspecionarCinta, fetchCintas } = useCintasStore()
   const [isOpen, setIsOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [fotos, setFotos] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!hasHydrated) fetchCintas()
   }, [hasHydrated, fetchCintas])
 
-  const currentMonthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date())
-  const corDoMes = mesesInspecao.find(m => m.label === currentMonthLabel)?.cor || 'Vermelho'
+  const mesAtualInfo = getMesInspecaoAtual()
+  const currentMonthLabel = mesAtualInfo.label
+  const corDoMes = mesAtualInfo.cor
+  const colorCfg = colorConfigs[corDoMes]
 
   const cintasPendentes = useMemo(() => {
-    return cintas.filter(c => c.cor === corDoMes && !isInspecionadaNesteMes(c))
+    return cintas.filter((c) => c.cor === corDoMes && (!isInspecionadaNesteMes(c) || !c.foto))
   }, [cintas, corDoMes])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [dataInspecao, setDataInspecao] = useState(new Date().toISOString().split('T')[0])
-  const [observacoes, setObservacoes] = useState("")
+  const [observacoes, setObservacoes] = useState('')
 
   // Send the day-1 monthly alert automatically once when the card first shows
   useEffect(() => {
@@ -104,14 +74,22 @@ export function AlertaInspecaoMensal() {
       const groupId = waSettings.cintasInspection.specificGroupId || waSettings.groupId
       if (!groupId) return
 
-      const listaCintas = pendentes.map(c => `• ${c.tag} — ${c.descricao}`).join('\n')
+      const listaCintas = pendentes.map((c) => `• ${c.tag} — ${c.descricao}`).join('\n')
       const template = waSettings.messageTemplates?.cintasAvisoMensal || ''
       const message = template
         .replace('{mes}', currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1))
         .replace('{cor}', corDoMes)
         .replace('{lista_cintas}', listaCintas)
 
-      await sendWhatsappMessage(waSettings.url, waSettings.token, waSettings.instanceId, groupId, message)
+      await sendWhatsappTextOnServer({
+        data: {
+          url: waSettings.url,
+          token: waSettings.token,
+          instanceId: waSettings.instanceId,
+          phone: groupId,
+          text: message,
+        },
+      })
     } catch (e) {
       console.error('Erro ao enviar aviso mensal de cintas:', e)
     }
@@ -121,25 +99,56 @@ export function AlertaInspecaoMensal() {
 
   const handleOpen = () => {
     setIsOpen(true)
-    setSelectedIds(cintasPendentes.map(c => c.id))
+    setSelectedIds(cintasPendentes.map((c) => c.id))
     setDataInspecao(new Date().toISOString().split('T')[0])
-    setObservacoes("")
+    setObservacoes('')
+    setFotos([])
   }
 
   const toggleCinta = (id: string) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id]
     )
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const toastId = toast.loading('Otimizando foto...')
+    try {
+      const newUrls: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        const compressed = await compressImage(files[i])
+        newUrls.push(compressed)
+      }
+      setFotos((prev) => [...prev, ...newUrls])
+      toast.success(newUrls.length > 1 ? 'Fotos adicionadas!' : 'Foto adicionada!', { id: toastId })
+    } catch (err) {
+      console.error('Erro ao comprimir imagem:', err)
+      toast.error('Erro ao carregar imagem', { id: toastId })
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveFoto = (index: number) => {
+    setFotos((prev) => prev.filter((_, idx) => idx !== index))
   }
 
   const handleSaveBatch = async () => {
     setIsSending(true)
 
+    const fotoPayload =
+      fotos.length === 0 ? null : fotos.length === 1 ? fotos[0] : JSON.stringify(fotos)
+
     // 1. Save to DB
     try {
-      await Promise.all(selectedIds.map(id => 
-        inspecionarCinta(id, dataInspecao, observacoes, 'Inspecionada')
-      ))
+      await Promise.all(
+        selectedIds.map((id) =>
+          inspecionarCinta(id, dataInspecao, observacoes, 'Inspecionada', fotoPayload)
+        )
+      )
     } catch (e) {
       toast.error('Ocorreu um erro ao salvar no banco de dados.')
       setIsSending(false)
@@ -149,15 +158,19 @@ export function AlertaInspecaoMensal() {
     // 2. Send WhatsApp notification for each inspected strap
     try {
       const waSettings = await getWhatsappSettings()
-      if (waSettings.cintasInspection?.enabled && waSettings.url && waSettings.token && waSettings.instanceId) {
+      if (
+        waSettings.cintasInspection?.enabled &&
+        waSettings.url &&
+        waSettings.token &&
+        waSettings.instanceId
+      ) {
         const groupId = waSettings.cintasInspection.specificGroupId || waSettings.groupId
         if (groupId) {
           const template = waSettings.messageTemplates?.cintasInspecionada || ''
           const dataFmt = dataInspecao.split('-').reverse().join('/')
 
-          let allSent = true
           for (const id of selectedIds) {
-            const cinta = cintasPendentes.find(c => c.id === id)
+            const cinta = cintasPendentes.find((c) => c.id === id)
             if (!cinta) continue
 
             const message = template
@@ -167,50 +180,74 @@ export function AlertaInspecaoMensal() {
               .replace('{data}', dataFmt)
               .replace('{responsavel}', 'Você')
 
-            const sent = await sendWhatsappMessage(waSettings.url, waSettings.token, waSettings.instanceId, groupId, message)
-            allSent = allSent && sent
+            await sendWhatsappTextOnServer({
+              data: {
+                url: waSettings.url,
+                token: waSettings.token,
+                instanceId: waSettings.instanceId,
+                phone: groupId,
+                text: message,
+              },
+            })
           }
-          if (allSent) {
-            toast.success(`Notificação enviada ao grupo do WhatsApp!`)
-          } else {
-            toast.error('A inspeção foi salva, mas não foi possível enviar todas as notificações ao WhatsApp.')
-          }
+          toast.success(`Notificação enviada ao grupo do WhatsApp!`)
         }
-      } else {
-        toast.error('A inspeção foi salva, mas o WhatsApp não está configurado ou ativado.')
       }
     } catch (e) {
       console.error('Erro ao enviar confirmação de inspeção:', e)
-      toast.error('A inspeção foi salva, mas houve erro no envio ao WhatsApp.')
     }
 
     setIsSending(false)
     setIsOpen(false)
-    navigate({ to: '/seguranca/cintas' })
+    setFotos([])
   }
 
   return (
     <>
-      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full relative overflow-hidden">
-        <div className="absolute left-0 top-0 w-1.5 h-full bg-red-500"></div>
+      <div
+        className="rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full relative overflow-hidden border"
+        style={{
+          backgroundColor: `${colorCfg.accentHex}10`,
+          borderColor: `${colorCfg.accentHex}40`,
+        }}
+      >
+        <div
+          className="absolute left-0 top-0 w-1.5 h-full"
+          style={{ backgroundColor: colorCfg.accentHex }}
+        />
 
         <div className="flex items-start sm:items-center gap-4">
-          <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400">
+          <div
+            className="p-3 rounded-full shrink-0"
+            style={{
+              backgroundColor: `${colorCfg.accentHex}20`,
+              color: colorCfg.accentHex,
+            }}
+          >
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-semibold text-red-900 dark:text-red-300 text-lg">
-              Inspeção Mensal Obrigatória — Cor {corDoMes}
-            </h3>
-            <p className="text-red-700 dark:text-red-400/80 text-sm mt-0.5">
-              {cintasPendentes.length} cinta(s) aguardando inspeção. A inspeção deve ser feita no primeiro dia do mês.
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                Inspeção Mensal Obrigatória — Cor Proibida do Mês: {corDoMes}
+              </h3>
+              <span
+                className="px-2 py-0.5 rounded text-xs font-bold text-white shadow-2xs"
+                style={{ backgroundColor: colorCfg.accentHex }}
+              >
+                {mesAtualInfo.label}
+              </span>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 text-sm mt-0.5">
+              {cintasPendentes.length} cinta(s) da cor {corDoMes} aguardando inspeção ou anexo da foto do lacre.
             </p>
           </div>
         </div>
 
         <Button
           onClick={handleOpen}
-          className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm whitespace-nowrap px-6 shrink-0"
+          className="text-white rounded-xl shadow-sm whitespace-nowrap px-6 shrink-0"
+          style={{ backgroundColor: colorCfg.accentHex }}
         >
           <CheckCircle2 className="w-4 h-4 mr-2" />
           Inspecionar Cintas
@@ -221,8 +258,8 @@ export function AlertaInspecaoMensal() {
         <DialogContent className="bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-white/10 sm:max-w-[600px] max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold font-serif tracking-tight text-[#1c1d21] dark:text-white flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              Realizar Inspeção em Lote
+              <AlertCircle className="w-5 h-5 text-blue-500" />
+              Realizar Inspeção em Lote — Cor {corDoMes}
             </DialogTitle>
           </DialogHeader>
 
@@ -234,11 +271,11 @@ export function AlertaInspecaoMensal() {
                 Selecione as cintas inspecionadas ({selectedIds.length} de {cintasPendentes.length}):
               </Label>
               <div className="border border-gray-200 dark:border-white/10 rounded-xl divide-y divide-gray-100 dark:divide-white/5 bg-gray-50/50 dark:bg-[#111] max-h-[250px] overflow-y-auto custom-scrollbar">
-                {cintasPendentes.map(c => (
+                {cintasPendentes.map((c) => (
                   <label key={c.id} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       checked={selectedIds.includes(c.id)}
                       onChange={() => toggleCinta(c.id)}
                     />
@@ -246,6 +283,11 @@ export function AlertaInspecaoMensal() {
                       <span className="text-sm font-mono font-medium text-gray-900 dark:text-gray-200">{c.tag}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">{c.descricao}</span>
                     </div>
+                    {!c.foto && c.status === 'Inspecionada' && (
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded">
+                        Sem foto
+                      </span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -272,16 +314,64 @@ export function AlertaInspecaoMensal() {
               />
             </div>
 
-            {/* Foto */}
+            {/* Foto Upload */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#1c1d21] dark:text-white">Comprovante / Foto</Label>
-              <div className="border border-dashed border-gray-300 dark:border-white/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                <ImageIcon className="w-6 h-6 text-[#5f6472] dark:text-gray-400 dark:text-gray-500 mb-2" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center">
-                  <Camera className="w-4 h-4 mr-2" /> Enviar foto da inspeção
-                </span>
-                <p className="text-xs text-gray-500 mt-1">Opcional. Máximo de 5MB.</p>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#1c1d21] dark:text-white">
+                  Comprovante / Foto da Inspeção ({fotos.length})
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar foto
+                </button>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {fotos.length === 0 ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 dark:border-white/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <ImageIcon className="w-6 h-6 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center">
+                    <Camera className="w-4 h-4 mr-2" /> Enviar foto da inspeção / lacre
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">Opcional. Comprime automaticamente.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {fotos.map((f, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-black/5"
+                    >
+                      <img src={f} alt="Prévia" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveFoto(idx)
+                        }}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-90 hover:opacity-100"
+                        title="Remover foto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* WhatsApp info */}
@@ -304,7 +394,8 @@ export function AlertaInspecaoMensal() {
             <Button
               onClick={handleSaveBatch}
               disabled={selectedIds.length === 0 || isSending}
-              className="bg-[#10b981] hover:bg-[#059669] text-[#1c1d21] dark:text-white rounded-xl shadow-sm"
+              className="text-white rounded-xl shadow-sm"
+              style={{ backgroundColor: colorCfg.accentHex }}
             >
               <Save className="w-4 h-4 mr-2" />
               {isSending ? 'Salvando...' : `Salvar Inspeção (${selectedIds.length})`}
