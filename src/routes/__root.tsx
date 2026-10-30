@@ -24,6 +24,7 @@ import { NotificationProvider } from "../context/NotificationContext";
 import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
 import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
+import { CampanhaComunicadoModal } from "../components/seguranca/CampanhaComunicadoModal";
 
 function RootContent() {
   const { isDark } = useTheme()
@@ -54,6 +55,8 @@ function RootContent() {
       )}
       {/* Comunicados: exibidos em qualquer rota, inclusive após o login */}
       <ComunicadoViewer />
+      {/* Modal de Conscientização da Campanha de Segurança do Mês */}
+      <CampanhaComunicadoModal />
       <Toaster position="bottom-left" theme="light" />
     </div>
   )
