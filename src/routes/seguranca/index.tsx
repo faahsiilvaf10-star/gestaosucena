@@ -29,7 +29,7 @@ function SegurancaComponent() {
     { title: "Inspeção\nExtintores", icon: Flame },
     { title: "Campanhas", icon: Heart },
     { title: "Matriz\nResponsabilidade", icon: Grid3X3 },
-    { title: "Controle de\nTreinamento", icon: GraduationCap },
+    { title: "Controle de\nTreinamento", icon: GraduationCap, href: "/seguranca/controle-treinamento" },
   ];
 
   return (
