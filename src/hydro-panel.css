@@ -856,9 +856,26 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 
 .topbar-container,
 .topbar-wrapper {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05) !important;
   padding: 38px 28px 14px 28px !important;
   width: 100% !important;
   box-sizing: border-box !important;
+}
+
+html.dark .topbar-container,
+html.dark .topbar-wrapper,
+.dark .topbar-container,
+.dark .topbar-wrapper {
+  background: rgba(11, 11, 12, 0.95) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4) !important;
 }
 @media (max-width: 900px) {
   .topbar-container,
