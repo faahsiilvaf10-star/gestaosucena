@@ -401,9 +401,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           top: 0, 
           left: 0, 
           right: 0, 
-          height: 28, 
+          height: 18, 
           backgroundColor: '#0B0B0C',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          border: 'none',
           zIndex: 9998,
           // @ts-ignore — Electron-specific CSS property
           WebkitAppRegion: 'drag',

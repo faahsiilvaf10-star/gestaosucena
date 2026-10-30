@@ -857,7 +857,7 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 .topbar-container,
 .topbar-wrapper {
   position: sticky !important;
-  top: 28px !important;
+  top: 18px !important;
   z-index: 50 !important;
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(16px) saturate(180%) !important;
