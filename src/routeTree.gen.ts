@@ -65,6 +65,7 @@ import { Route as SegurancaControleTreinamentoRouteImport } from './routes/segur
 import { Route as SegurancaDdsRouteImport } from './routes/seguranca/dds'
 import { Route as SegurancaDesviosRouteImport } from './routes/seguranca/desvios'
 import { Route as SegurancaHomologadosRouteImport } from './routes/seguranca/homologados'
+import { Route as SegurancaIndicadoresRouteImport } from './routes/seguranca/indicadores'
 import { Route as SegurancaInspecaoCanteiroRouteImport } from './routes/seguranca/inspecao-canteiro'
 import { Route as SegurancaMatrizResponsabilidadeRouteImport } from './routes/seguranca/matriz-responsabilidade'
 import { Route as SegurancaNaoConformidadeRouteImport } from './routes/seguranca/nao-conformidade'
@@ -363,6 +364,11 @@ const SegurancaHomologadosRoute = SegurancaHomologadosRouteImport.update({
   path: '/homologados',
   getParentRoute: () => SegurancaRoute,
 } as any)
+const SegurancaIndicadoresRoute = SegurancaIndicadoresRouteImport.update({
+  id: '/indicadores',
+  path: '/indicadores',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const SegurancaInspecaoCanteiroRoute =
   SegurancaInspecaoCanteiroRouteImport.update({
     id: '/inspecao-canteiro',
@@ -479,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
+  '/seguranca/indicadores': typeof SegurancaIndicadoresRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
@@ -543,6 +550,7 @@ export interface FileRoutesByTo {
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
+  '/seguranca/indicadores': typeof SegurancaIndicadoresRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
@@ -614,6 +622,7 @@ export interface FileRoutesById {
   '/seguranca/dds': typeof SegurancaDdsRoute
   '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
+  '/seguranca/indicadores': typeof SegurancaIndicadoresRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
@@ -686,6 +695,7 @@ export interface FileRouteTypes {
     | '/seguranca/dds'
     | '/seguranca/desvios'
     | '/seguranca/homologados'
+    | '/seguranca/indicadores'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
     | '/seguranca/nao-conformidade'
@@ -750,6 +760,7 @@ export interface FileRouteTypes {
     | '/seguranca/dds'
     | '/seguranca/desvios'
     | '/seguranca/homologados'
+    | '/seguranca/indicadores'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
     | '/seguranca/nao-conformidade'
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/seguranca/dds'
     | '/seguranca/desvios'
     | '/seguranca/homologados'
+    | '/seguranca/indicadores'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
     | '/seguranca/nao-conformidade'
@@ -1261,6 +1273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaHomologadosRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/indicadores': {
+      id: '/seguranca/indicadores'
+      path: '/indicadores'
+      fullPath: '/seguranca/indicadores'
+      preLoaderRoute: typeof SegurancaIndicadoresRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/seguranca/inspecao-canteiro': {
       id: '/seguranca/inspecao-canteiro'
       path: '/inspecao-canteiro'
@@ -1470,6 +1489,7 @@ interface SegurancaRouteChildren {
   SegurancaDdsRoute: typeof SegurancaDdsRoute
   SegurancaDesviosRoute: typeof SegurancaDesviosRoute
   SegurancaHomologadosRoute: typeof SegurancaHomologadosRoute
+  SegurancaIndicadoresRoute: typeof SegurancaIndicadoresRoute
   SegurancaInspecaoCanteiroRoute: typeof SegurancaInspecaoCanteiroRoute
   SegurancaMatrizResponsabilidadeRoute: typeof SegurancaMatrizResponsabilidadeRoute
   SegurancaNaoConformidadeRoute: typeof SegurancaNaoConformidadeRoute
@@ -1487,6 +1507,7 @@ const SegurancaRouteChildren: SegurancaRouteChildren = {
   SegurancaDdsRoute: SegurancaDdsRoute,
   SegurancaDesviosRoute: SegurancaDesviosRoute,
   SegurancaHomologadosRoute: SegurancaHomologadosRoute,
+  SegurancaIndicadoresRoute: SegurancaIndicadoresRoute,
   SegurancaInspecaoCanteiroRoute: SegurancaInspecaoCanteiroRoute,
   SegurancaMatrizResponsabilidadeRoute: SegurancaMatrizResponsabilidadeRoute,
   SegurancaNaoConformidadeRoute: SegurancaNaoConformidadeRoute,

@@ -13,6 +13,7 @@ import ListTodo from 'lucide-react/dist/esm/icons/list-todo.js';
 import FileWarning from 'lucide-react/dist/esm/icons/file-warning.js';
 import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
+import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/seguranca/')({
@@ -36,6 +37,7 @@ function SegurancaComponent() {
     { title: "Não\nConformidade", icon: FileWarning, href: "/seguranca/nao-conformidade" },
     { title: "Check\nList", icon: ClipboardCheck, href: "/seguranca/checklist" },
     { title: "Relatório de\nOcorrência", icon: FileText, href: "/seguranca/relatorio-ocorrencia" },
+    { title: "Indicadores", icon: BarChart3, href: "/seguranca/indicadores" },
   ];
 
   return (
