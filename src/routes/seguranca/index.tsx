@@ -28,7 +28,7 @@ function SegurancaComponent() {
     { title: "Requisição", icon: ShieldCheck, href: "/almoxarifado/requisicoes" },
     { title: "Inspeção\nExtintores", icon: Flame },
     { title: "Campanhas", icon: Heart, href: "/seguranca/campanhas" },
-    { title: "Matriz\nResponsabilidade", icon: Grid3X3 },
+    { title: "Matriz\nResponsabilidade", icon: Grid3X3, href: "/seguranca/matriz-responsabilidade" },
     { title: "Controle de\nTreinamento", icon: GraduationCap, href: "/seguranca/controle-treinamento" },
   ];
 

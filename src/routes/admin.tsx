@@ -1998,6 +1998,59 @@ function AdminRoute() {
                   </div>
                 </div>
 
+                {/* Matriz de Responsabilidades */}
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        matrizResponsabilidade: {
+                          ...prev.matrizResponsabilidade,
+                          enabled: !(prev.matrizResponsabilidade?.enabled ?? true),
+                          specificGroupId: prev.matrizResponsabilidade?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <h4 className="font-semibold text-sm">Lembrete da Matriz de Responsabilidades (Faltando 10 dias)</h4>
+                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Disparo automático no WhatsApp faltando 10 dias para acabar o mês com resumo de quem já concluiu e quem falta concluir as atividades da matriz.
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para Lembrete da Matriz de Responsabilidades</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.matrizResponsabilidade?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        matrizResponsabilidade: {
+                          ...prev.matrizResponsabilidade,
+                          enabled: prev.matrizResponsabilidade?.enabled ?? true,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Se deixar em branco, será utilizado o Grupo Geral do WhatsApp.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Grupo específico */}
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
@@ -2060,7 +2113,8 @@ function AdminRoute() {
                     { key: 'inspecaoCanteiroDia', label: 'Inspeção Canteiro (Dia às 07h)' },
                     { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' },
                     { key: 'desvioRegistrado', label: 'Desvio de Segurança' },
-                    { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' }
+                    { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' },
+                    { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2109,6 +2163,7 @@ function AdminRoute() {
                     {selectedTemplate === 'inspecaoCanteiroCorrecao' && '{titulo_item}, {categoria}, {prioridade}, {local}, {prazo}, {o_que_foi_feito}, {usuario}, {data_correcao}, {total_corrigidos}, {total_pontos}, {porcentagem}'}
                     {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
                     {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
+                    {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
                   </div>
                 </div>
               </div>
