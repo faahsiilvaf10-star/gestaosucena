@@ -10,6 +10,7 @@ export interface PlanoAcaoItem {
   referencia?: string
   acao: string
   responsavel: string
+  responsavelCargo?: string
   dataAbertura: string // YYYY-MM-DD
   prazo: string // YYYY-MM-DD
   prioridade: PrioridadePlano
@@ -20,6 +21,14 @@ export interface PlanoAcaoItem {
   concluidoEm?: string // YYYY-MM-DD
   criadoEm?: string
   atualizadoEm?: string
+}
+
+export interface ColaboradorRH {
+  id: string
+  nome: string
+  cargo: string
+  matricula?: string
+  status?: string
 }
 
 export const ORIGENS_PLANO: OrigemPlano[] = [
@@ -153,7 +162,7 @@ export function gerarTextoRelatorio(registros: PlanoAcaoItem[]): string {
         ? ` — Concluída em ${fmtData(r.concluidoEm)}. O que foi feito: ${r.feito || ''}`
         : ''
     linhas.push(
-      `${i + 1}. [${st}] [${r.prioridade}] [${r.origem}] ${r.acao} — Responsável: ${r.responsavel} — Prazo: ${fmtData(r.prazo)} (${pi.texto})${concStr}`
+      `${i + 1}. [${st}] [${r.prioridade}] [${r.origem}] ${r.acao} — Responsável: ${r.responsavel}${r.responsavelCargo ? ` (${r.responsavelCargo})` : ''} — Prazo: ${fmtData(r.prazo)} (${pi.texto})${concStr}`
     )
   })
 
@@ -288,4 +297,39 @@ export async function salvarPlanosAcao(
     console.warn('[PlanoAcao] Erro ao persistir no Supabase:', err)
     return false
   }
+}
+
+/**
+ * Carrega a lista do efetivo ativo no RH (rh_efetivo) para seleção de responsáveis
+ */
+export async function carregarColaboradoresAtivosRH(): Promise<ColaboradorRH[]> {
+  try {
+    const { data, error } = await supabase
+      .from('rh_efetivo')
+      .select('id, nome, cargo, status, matricula')
+      .order('nome', { ascending: true })
+
+    if (!error && Array.isArray(data)) {
+      const list: ColaboradorRH[] = []
+      const ids = new Set<string>()
+
+      for (const item of data) {
+        const s = (item.status || '').toUpperCase().trim()
+        if (s === 'INATIVO' || s === 'DEMITIDO' || s === 'DESLIGADO') continue
+        if (!item.nome || !item.id || ids.has(item.id)) continue
+        ids.add(item.id)
+        list.push({
+          id: item.id,
+          nome: item.nome.trim(),
+          cargo: item.cargo?.trim() || 'Colaborador',
+          matricula: item.matricula,
+          status: item.status,
+        })
+      }
+      return list
+    }
+  } catch (err) {
+    console.warn('[PlanoAcao] Erro ao carregar colaboradores do RH:', err)
+  }
+  return []
 }

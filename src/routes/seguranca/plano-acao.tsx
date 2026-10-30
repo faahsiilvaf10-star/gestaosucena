@@ -5,6 +5,7 @@ import {
   type PrioridadePlano,
   type StatusPlano,
   type OrigemPlano,
+  type ColaboradorRH,
   ORIGENS_PLANO,
   PRIORIDADES_PLANO,
   hojeISO,
@@ -17,10 +18,11 @@ import {
   comprimirImagem,
   carregarPlanosAcao,
   salvarPlanosAcao,
+  carregarColaboradoresAtivosRH,
   getDbKeyPlano,
 } from '../../lib/planoAcaoData'
 import { supabase } from '../../lib/supabase'
-import { ArrowLeft, CheckCircle2, Cloud } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Cloud, Search, Users, Check } from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/plano-acao')({
   component: PlanoAcaoComponent,
@@ -31,6 +33,13 @@ export function PlanoAcaoComponent() {
   const [carregando, setCarregando] = useState(true)
   const [filtroAtual, setFiltroAtual] = useState<string>('Todos')
   const [buscaTexto, setBuscaTexto] = useState<string>('')
+
+  // Colaboradores RH
+  const [colaboradoresRH, setColaboradoresRH] = useState<ColaboradorRH[]>([])
+  const [carregandoRH, setCarregandoRH] = useState(true)
+  const [responsavelDropdownOpen, setResponsavelDropdownOpen] = useState(false)
+  const [responsavelCargo, setResponsavelCargo] = useState<string>('')
+  const responsavelBoxRef = useRef<HTMLDivElement>(null)
 
   // Form states
   const [origem, setOrigem] = useState<string>('')
@@ -69,24 +78,47 @@ export function PlanoAcaoComponent() {
     }, 3200)
   }
 
-  // Load initial data
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        responsavelBoxRef.current &&
+        !responsavelBoxRef.current.contains(e.target as Node)
+      ) {
+        setResponsavelDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Load initial data and RH collaborators
   useEffect(() => {
     let isMounted = true
+
     const carregar = async () => {
       try {
-        const dados = await carregarPlanosAcao()
+        const [dados, rh] = await Promise.all([
+          carregarPlanosAcao(),
+          carregarColaboradoresAtivosRH(),
+        ])
         if (isMounted) {
           setRegistros(dados)
+          setColaboradoresRH(rh)
           setCarregando(false)
+          setCarregandoRH(false)
         }
       } catch (err) {
         console.error('Erro ao carregar planos de ação:', err)
-        if (isMounted) setCarregando(false)
+        if (isMounted) {
+          setCarregando(false)
+          setCarregandoRH(false)
+        }
       }
     }
     carregar()
 
-    // Realtime sync
+    // Realtime sync for planos de ação
     const dbKey = getDbKeyPlano()
     const channel = supabase
       .channel(`rt_${dbKey}`)
@@ -106,11 +138,37 @@ export function PlanoAcaoComponent() {
       )
       .subscribe()
 
+    // Realtime sync for rh_efetivo
+    const rhChannel = supabase
+      .channel('rt_rh_plano_acao')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rh_efetivo' },
+        async () => {
+          const rhAtualizado = await carregarColaboradoresAtivosRH()
+          if (isMounted) setColaboradoresRH(rhAtualizado)
+        }
+      )
+      .subscribe()
+
     return () => {
       isMounted = false
       supabase.removeChannel(channel)
+      supabase.removeChannel(rhChannel)
     }
   }, [])
+
+  // Filter collaborators for responsible field
+  const colaboradoresFiltradosResp = useMemo(() => {
+    const q = responsavel.trim().toLowerCase()
+    if (!q) return colaboradoresRH.slice(0, 35)
+    return colaboradoresRH.filter(
+      (c) =>
+        c.nome.toLowerCase().includes(q) ||
+        c.cargo.toLowerCase().includes(q) ||
+        (c.matricula && c.matricula.toLowerCase().includes(q))
+    )
+  }, [colaboradoresRH, responsavel])
 
   // Persist helper
   const atualizarRegistros = async (novos: PlanoAcaoItem[]) => {
@@ -133,7 +191,7 @@ export function PlanoAcaoComponent() {
       novosInvalidos.acao = true
     }
     if (!responsavel.trim()) {
-      erros.push('• Responsável: informe quem vai executar a ação.')
+      erros.push('• Responsável: selecione ou informe quem vai executar a ação a partir do RH.')
       novosInvalidos.responsavel = true
     }
     if (!prazo) {
@@ -157,6 +215,7 @@ export function PlanoAcaoComponent() {
       referencia: referencia.trim(),
       acao: acao.trim(),
       responsavel: responsavel.trim(),
+      responsavelCargo: responsavelCargo.trim() || undefined,
       dataAbertura: dataAbertura || hojeISO(),
       prazo,
       prioridade: prioridadeSel,
@@ -185,6 +244,8 @@ export function PlanoAcaoComponent() {
     setReferencia('')
     setAcao('')
     setResponsavel('')
+    setResponsavelCargo('')
+    setResponsavelDropdownOpen(false)
     setDataAbertura(hojeISO())
     setPrazo('')
     setPrioridadeSel('Média')
@@ -198,6 +259,8 @@ export function PlanoAcaoComponent() {
     setReferencia('')
     setAcao('')
     setResponsavel('')
+    setResponsavelCargo('')
+    setResponsavelDropdownOpen(false)
     setDataAbertura(hojeISO())
     setPrazo('')
     setPrioridadeSel('Média')
@@ -358,7 +421,7 @@ export function PlanoAcaoComponent() {
       if (filtroAtual === 'Vencidos' && !venc) return false
 
       if (q) {
-        const full = `${r.origem} ${r.referencia || ''} ${r.acao} ${r.responsavel} ${r.observacoes || ''}`.toLowerCase()
+        const full = `${r.origem} ${r.referencia || ''} ${r.acao} ${r.responsavel} ${r.responsavelCargo || ''} ${r.observacoes || ''}`.toLowerCase()
         if (!full.includes(q)) return false
       }
 
@@ -917,22 +980,84 @@ export function PlanoAcaoComponent() {
           </div>
 
           <div className="grid3">
-            <div>
-              <label htmlFor="responsavel">RESPONSÁVEL *</label>
-              <input
-                id="responsavel"
-                type="text"
-                value={responsavel}
-                onChange={(e) => {
-                  setResponsavel(e.target.value)
-                  if (invalidCampos.responsavel) {
-                    setInvalidCampos((prev) => ({ ...prev, responsavel: false }))
-                  }
-                }}
-                className={invalidCampos.responsavel ? 'invalid-campo' : ''}
-                placeholder="Nome do responsável pela ação"
-              />
+            {/* Responsável com busca no efetivo do RH */}
+            <div className="relative z-30" ref={responsavelBoxRef}>
+              <label htmlFor="responsavel">RESPONSÁVEL (EFETIVO RH) *</label>
+              <div className="relative">
+                <input
+                  id="responsavel"
+                  type="text"
+                  value={responsavel}
+                  onFocus={() => setResponsavelDropdownOpen(true)}
+                  onChange={(e) => {
+                    setResponsavel(e.target.value)
+                    setResponsavelCargo('')
+                    setResponsavelDropdownOpen(true)
+                    if (invalidCampos.responsavel) {
+                      setInvalidCampos((prev) => ({ ...prev, responsavel: false }))
+                    }
+                  }}
+                  className={invalidCampos.responsavel ? 'invalid-campo pr-9' : 'pr-9'}
+                  placeholder="Buscar colaborador ativo no RH..."
+                  autoComplete="off"
+                />
+                <Search className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
+              </div>
+
+              {responsavelCargo && (
+                <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+                  <span className="text-blue-600 font-extrabold">✓ Efetivo RH:</span>
+                  <span className="font-semibold text-gray-800 truncate">{responsavelCargo}</span>
+                </div>
+              )}
+
+              {/* Dropdown de Colaboradores do RH */}
+              {responsavelDropdownOpen && (
+                <div className="absolute z-50 left-0 w-80 sm:w-96 max-w-[92vw] mt-1 bg-white border-2 border-[#111827] rounded-xl shadow-2xl max-h-64 overflow-y-auto">
+                  <div className="p-2 text-[11px] font-extrabold text-gray-700 uppercase tracking-wider bg-amber-50 border-b border-amber-200 flex items-center justify-between sticky top-0 z-10">
+                    <span>👥 Colaboradores Ativos no RH ({colaboradoresFiltradosResp.length})</span>
+                    {carregandoRH && (
+                      <span className="text-amber-700 animate-pulse font-bold">Carregando...</span>
+                    )}
+                  </div>
+                  {colaboradoresFiltradosResp.length === 0 ? (
+                    <div className="p-3 text-xs text-gray-600 text-center font-medium">
+                      Nenhum colaborador encontrado com esse termo.
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        Você pode digitar o nome livremente no campo acima.
+                      </div>
+                    </div>
+                  ) : (
+                    colaboradoresFiltradosResp.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setResponsavel(c.nome)
+                          setResponsavelCargo(c.cargo)
+                          setResponsavelDropdownOpen(false)
+                          if (invalidCampos.responsavel) {
+                            setInvalidCampos((prev) => ({ ...prev, responsavel: false }))
+                          }
+                        }}
+                        className="w-full text-left px-3 py-2.5 hover:bg-amber-100/80 border-b border-gray-100 last:border-0 transition flex flex-col items-start gap-0.5 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="text-sm font-bold text-black truncate">{c.nome}</span>
+                          <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                            ATIVO
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-700 font-semibold truncate w-full">
+                          {c.cargo} {c.matricula ? `• Matrícula: ${c.matricula}` : ''}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
+
             <div>
               <label htmlFor="dataAbertura">DATA DE ABERTURA</label>
               <input
@@ -1078,7 +1203,7 @@ export function PlanoAcaoComponent() {
         <div style={{ marginTop: '10px', marginBottom: '8px' }}>
           <input
             type="text"
-            placeholder="🔍 Buscar por ação, responsável, origem ou referência..."
+            placeholder="🔍 Buscar por ação, responsável, cargo, origem ou referência..."
             value={buscaTexto}
             onChange={(e) => setBuscaTexto(e.target.value)}
             style={{ fontWeight: 600, fontSize: '14.5px' }}
@@ -1150,8 +1275,12 @@ export function PlanoAcaoComponent() {
                   <h3 style={{ marginTop: '8px' }}>{r.acao}</h3>
 
                   <div className="meta">
-                    👤 <b>Responsável:</b> {r.responsavel} &nbsp;•&nbsp; 📅 <b>Abertura:</b>{' '}
-                    {fmtData(r.dataAbertura)} &nbsp;•&nbsp; ⏰ <b>Prazo:</b> {fmtData(r.prazo)}
+                    👤 <b>Responsável:</b> {r.responsavel}
+                    {r.responsavelCargo && (
+                      <span className="text-gray-600 font-semibold"> ({r.responsavelCargo})</span>
+                    )}{' '}
+                    &nbsp;•&nbsp; 📅 <b>Abertura:</b> {fmtData(r.dataAbertura)} &nbsp;•&nbsp; ⏰{' '}
+                    <b>Prazo:</b> {fmtData(r.prazo)}
                     {r.referencia && (
                       <>
                         {' '}
