@@ -1,12 +1,41 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { ArrowLeft, TriangleAlert, ShieldAlert, CheckCircle2, AlertTriangle, Clock, Printer, Copy, RotateCcw, Trash2, Camera, User, Calendar, MapPin, Tag } from 'lucide-react'
+import { isAdmin } from '@/components/ui/VerifiedBadge'
+import { notificarDesvioRegistrado } from '@/lib/desviosWhatsapp'
+import {
+  ArrowLeft,
+  TriangleAlert,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  Printer,
+  Copy,
+  RotateCcw,
+  Trash2,
+  Camera,
+  User,
+  Calendar,
+  MapPin,
+  Lock,
+  Plus,
+  X,
+  Search,
+  ExternalLink,
+} from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/desvios')({
   component: DesviosPage,
 })
+
+export interface ColaboradorRH {
+  id: string
+  nome: string
+  cargo: string
+  matricula?: string
+  source: 'rh' | 'system'
+}
 
 export interface DesvioRegistro {
   uid: string
@@ -24,10 +53,12 @@ export interface DesvioRegistro {
   previsao: string
   sugestao: string
   respCorrecao: string
+  respCorrecaoList?: string[]
   empresa: string
   comentarios: string
   statusFluxo: string
   foto: string
+  fotos: string[]
   corrigido: boolean
   correcaoTexto: string
   fotoCorrecao: string
@@ -78,7 +109,8 @@ function isVencido(d: DesvioRegistro): boolean {
 
 function DesviosPage() {
   const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
-  const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || 'Técnico de Segurança' : 'Técnico de Segurança'
+  const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+  const currentUserRole = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_role') || '' : ''
   const storageKey = `desvios_seguranca_${currentEnv}`
   const auditKey = `desvios_seguranca_audit_${currentEnv}`
 
@@ -88,7 +120,10 @@ function DesviosPage() {
   const [descricao, setDescricao] = useState('')
   const [local, setLocal] = useState('')
   const [area, setArea] = useState('')
-  const [fotoDesvio, setFotoDesvio] = useState('')
+
+  // Suporte a múltiplas fotos no desvio
+  const [fotosDesvio, setFotosDesvio] = useState<string[]>([])
+  const [modalFoto, setModalFoto] = useState<string | null>(null)
 
   const [sugestao, setSugestao] = useState('')
   const [etiqueta, setEtiqueta] = useState('Selecionar etiquetas...')
@@ -96,8 +131,16 @@ function DesviosPage() {
   const [risco, setRisco] = useState('Queda de altura')
   const [gravidade, setGravidade] = useState('Alto — pode causar acidente grave')
 
+  // Técnico de Segurança (selecionado do RH)
   const [tecnico, setTecnico] = useState(currentUserName)
-  const [respCorrecao, setRespCorrecao] = useState('')
+  const [tecnicoBusca, setTecnicoBusca] = useState('')
+  const [tecnicoDropdownOpen, setTecnicoDropdownOpen] = useState(false)
+
+  // Pessoas Responsáveis (múltipla seleção do RH)
+  const [responsaveisSel, setResponsaveisSel] = useState<string[]>([])
+  const [respBusca, setRespBusca] = useState('')
+  const [respDropdownOpen, setRespDropdownOpen] = useState(false)
+
   const [empresa, setEmpresa] = useState('')
   const [prioridadeSel, setPrioridadeSel] = useState('Alta')
   const [previsao, setPrevisao] = useState(() => {
@@ -107,8 +150,8 @@ function DesviosPage() {
   const [dataRegistro, setDataRegistro] = useState(() => hojeISO())
   const [comentarios, setComentarios] = useState('')
 
-  // Lista de Usuários do Sistema para autocompletar Responsável
-  const [systemUsers, setSystemUsers] = useState<string[]>([])
+  // Colaboradores do RH e Usuários do Sistema
+  const [colaboradoresRH, setColaboradoresRH] = useState<ColaboradorRH[]>([])
 
   // Validação & Feedbacks
   const [invalidFields, setInvalidFields] = useState<Record<string, boolean>>({})
@@ -122,11 +165,68 @@ function DesviosPage() {
   // Rascunhos de correção por desvio: { [uid]: { foto: string, texto: string, erro?: string, info?: string } }
   const [correcaoDraft, setCorrecaoDraft] = useState<Record<string, { foto: string; texto: string; erro?: string; info?: string }>>({})
 
-  // Carregar dados do Supabase
+  // Permissão para alterar Status: apenas Técnico de Segurança ou Administrador
+  const isTecnicoSeguranca = useMemo(() => {
+    const roleLower = currentUserRole.toLowerCase()
+    const nameLower = currentUserName.toLowerCase()
+    const tecLower = tecnico.toLowerCase()
+    return (
+      isAdmin(currentUserName, currentUserRole) ||
+      roleLower.includes('seguran') ||
+      roleLower.includes('tst') ||
+      roleLower.includes('tec') ||
+      (tecLower && nameLower === tecLower)
+    )
+  }, [currentUserName, currentUserRole, tecnico])
+
+  // Carregar dados do Supabase e Colaboradores do RH
   useEffect(() => {
     const carregar = async () => {
       try {
-        // 1. Desvios
+        // 1. Colaboradores do RH e Usuários
+        const [sysRes, rhRes] = await Promise.all([
+          supabase.rpc('get_system_users'),
+          supabase.from('rh_efetivo').select('id, nome, cargo, status, matricula'),
+        ])
+
+        const list: ColaboradorRH[] = []
+        const ids = new Set<string>()
+
+        ;(sysRes.data || []).forEach((u: any) => {
+          if (u.id && u.nome) {
+            ids.add(u.id)
+            list.push({
+              id: u.id,
+              nome: u.nome.trim(),
+              cargo: u.cargo || 'Usuário do Sistema',
+              source: 'system',
+            })
+          }
+        })
+
+        ;(rhRes.data || []).forEach((e: any) => {
+          const s = (e.status || '').toUpperCase().trim()
+          if (s === 'INATIVO' || s === 'DEMITIDO' || s === 'DESLIGADO') return
+          if (e.id && e.nome && !ids.has(e.id)) {
+            list.push({
+              id: e.id,
+              nome: e.nome.trim(),
+              cargo: e.cargo || 'Efetivo RH',
+              matricula: e.matricula,
+              source: 'rh',
+            })
+          }
+        })
+
+        list.sort((a, b) => a.nome.localeCompare(b.nome))
+        setColaboradoresRH(list)
+
+        // Se o técnico atual ainda não estiver definido, sugere o usuário logado
+        if (!tecnico && currentUserName) {
+          setTecnico(currentUserName)
+        }
+
+        // 2. Desvios
         const { data: dbData } = await supabase
           .from('global_settings')
           .select('value')
@@ -135,13 +235,20 @@ function DesviosPage() {
 
         if (dbData?.value) {
           const parsed = typeof dbData.value === 'string' ? JSON.parse(dbData.value) : dbData.value
-          if (Array.isArray(parsed)) setDesvios(parsed)
+          if (Array.isArray(parsed)) {
+            // Garantir que todos tenham array de fotos
+            const normalizados = parsed.map((d: any) => ({
+              ...d,
+              fotos: Array.isArray(d.fotos) ? d.fotos : d.foto ? [d.foto] : [],
+            }))
+            setDesvios(normalizados)
+          }
         } else {
           const localStr = localStorage.getItem(storageKey)
           if (localStr) setDesvios(JSON.parse(localStr))
         }
 
-        // 2. Auditoria
+        // 3. Auditoria
         const { data: dbAudit } = await supabase
           .from('global_settings')
           .select('value')
@@ -154,13 +261,6 @@ function DesviosPage() {
         } else {
           const localA = localStorage.getItem(auditKey)
           if (localA) setAuditList(JSON.parse(localA))
-        }
-
-        // 3. Usuários do sistema
-        const { data: uData } = await supabase.rpc('get_system_users')
-        if (Array.isArray(uData)) {
-          const names = uData.map((u: any) => u.nome || u.name).filter(Boolean)
-          setSystemUsers(names)
         }
       } catch (err) {
         console.warn('[Desvios] Erro ao carregar dados:', err)
@@ -177,7 +277,11 @@ function DesviosPage() {
         { event: '*', schema: 'public', table: 'global_settings', filter: `key=eq.${storageKey}` },
         (payload: any) => {
           if (payload?.new?.value && Array.isArray(payload.new.value)) {
-            setDesvios(payload.new.value)
+            const normalizados = payload.new.value.map((d: any) => ({
+              ...d,
+              fotos: Array.isArray(d.fotos) ? d.fotos : d.foto ? [d.foto] : [],
+            }))
+            setDesvios(normalizados)
           }
         }
       )
@@ -195,7 +299,7 @@ function DesviosPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [storageKey, auditKey])
+  }, [storageKey, auditKey, currentUserName])
 
   // Persistência com Supabase
   const persistirDesvios = async (novos: DesvioRegistro[]) => {
@@ -258,18 +362,48 @@ function DesviosPage() {
     } catch (_) {}
   }
 
-  // Upload da foto do desvio
-  const handleFotoDesvioUpload = (ev: React.ChangeEvent<HTMLInputElement>) => {
-    const file = ev.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const res = e.target?.result as string
-      setFotoDesvio(res)
-      toast.success('📷 Foto do desvio anexada!')
-    }
-    reader.readAsDataURL(file)
+  // Upload de Múltiplas Fotos
+  const handleFotosDesvioUpload = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const files = ev.target.files
+    if (!files || files.length === 0) return
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const res = e.target?.result as string
+        if (res) {
+          setFotosDesvio((prev) => [...prev, res])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+
+    toast.success(`${files.length} foto(s) selecionada(s)!`)
+    ev.target.value = ''
   }
+
+  const handleRemoverFotoDesvio = (index: number) => {
+    setFotosDesvio((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // Filtros de colaboradores para busca
+  const colaboradoresFiltradosTecnico = useMemo(() => {
+    if (!tecnicoBusca.trim()) return colaboradoresRH.slice(0, 30)
+    const q = tecnicoBusca.toLowerCase()
+    return colaboradoresRH.filter(
+      (c) => c.nome.toLowerCase().includes(q) || c.cargo.toLowerCase().includes(q)
+    )
+  }, [colaboradoresRH, tecnicoBusca])
+
+  const colaboradoresFiltradosResp = useMemo(() => {
+    if (!respBusca.trim()) return colaboradoresRH.slice(0, 30)
+    const q = respBusca.toLowerCase()
+    return colaboradoresRH.filter(
+      (c) =>
+        !responsaveisSel.includes(c.nome) &&
+        (c.nome.toLowerCase().includes(q) || c.cargo.toLowerCase().includes(q))
+    )
+  }, [colaboradoresRH, respBusca, responsaveisSel])
 
   // Salvar Novo Desvio
   const handleSalvarDesvio = () => {
@@ -314,6 +448,8 @@ function DesviosPage() {
       return
     }
 
+    const respStr = responsaveisSel.length > 0 ? responsaveisSel.join(', ') : 'A definir'
+
     const novoRec: DesvioRegistro = {
       uid: `d${Date.now()}`,
       dataRegistro,
@@ -329,11 +465,13 @@ function DesviosPage() {
       gravidade,
       previsao,
       sugestao: sugestao.trim(),
-      respCorrecao: respCorrecao.trim(),
+      respCorrecao: respStr,
+      respCorrecaoList: responsaveisSel,
       empresa: empresa.trim(),
       comentarios: comentarios.trim(),
       statusFluxo: statusSel,
-      foto: fotoDesvio,
+      foto: fotosDesvio[0] || '',
+      fotos: fotosDesvio,
       corrigido: false,
       correcaoTexto: '',
       fotoCorrecao: '',
@@ -343,30 +481,34 @@ function DesviosPage() {
 
     const atualizados = [novoRec, ...desvios]
     persistirDesvios(atualizados)
+
     logAudit(
       novoRec.tecnico,
       `Desvio registrado — ⏳ PENDENTE (status: ${novoRec.statusFluxo})`,
-      `${novoRec.titulo} • ${novoRec.local} • Data limite: ${fmtDateBr(novoRec.previsao)}`
+      `${novoRec.titulo} • ${novoRec.local} • Data limite: ${fmtDateBr(novoRec.previsao)} • Resp: ${respStr}`
     )
+
+    // Disparo imediato para o grupo do WhatsApp com detalhes e fotos anexadas
+    void notificarDesvioRegistrado(novoRec, novoRec.fotos)
 
     // Resetar campos do formulário
     setTitulo('')
     setDescricao('')
     setSugestao('')
-    setRespCorrecao('')
+    setResponsaveisSel([])
     setEmpresa('')
     setArea('')
     setComentarios('')
-    setFotoDesvio('')
+    setFotosDesvio([])
     setInvalidFields({})
 
     setSaveFeedback({
-      msg: `✅ DESVIO SALVO NO HISTÓRICO!\nEle ficou registrado abaixo como ⏳ PENDENTE, com data limite para corrigir até ${fmtDateBr(
+      msg: `✅ DESVIO SALVO NO HISTÓRICO E ENVIADO AO WHATSAPP!\nEle ficou registrado abaixo como ⏳ PENDENTE, com data limite para corrigir até ${fmtDateBr(
         novoRec.previsao
-      )}, e entrou na tabela Histórico.\nEle só vira ✅ CORRIGIDO depois de preencher a correção, enviar a foto da correção e clicar em Salvar correção no próprio desvio.`,
+      )}, e notificado ao grupo com os responsáveis e ${novoRec.fotos.length} foto(s).\nEle só vira ✅ CORRIGIDO após qualquer usuário preencher a correção, anexar a foto e clicar em Salvar correção no card correspondente.`,
       tipo: 'ok',
     })
-    toast.success(`✅ Desvio salvo — ⏳ PENDENTE até ${fmtDateBr(novoRec.previsao)}`)
+    toast.success(`✅ Desvio salvo e enviado ao WhatsApp — ⏳ PENDENTE até ${fmtDateBr(novoRec.previsao)}`)
 
     setTimeout(() => {
       const el = document.getElementById('historicoSection')
@@ -381,10 +523,10 @@ function DesviosPage() {
     setLocal('')
     setArea('')
     setSugestao('')
-    setRespCorrecao('')
+    setResponsaveisSel([])
     setEmpresa('')
     setComentarios('')
-    setFotoDesvio('')
+    setFotosDesvio([])
     setInvalidFields({})
     setSaveFeedback(null)
     toast.info('Formulário limpo!')
@@ -411,7 +553,7 @@ function DesviosPage() {
     reader.readAsDataURL(file)
   }
 
-  // Salvar Correção do Desvio (Exige Foto + Texto)
+  // Salvar Correção do Desvio (Qualquer pessoa pode salvar a correção!)
   const handleSalvarCorrecao = (uid: string) => {
     const draft = correcaoDraft[uid] || { foto: '', texto: '' }
     const foto = draft.foto?.trim()
@@ -435,6 +577,8 @@ function DesviosPage() {
     }
 
     const agoraStr = new Date().toLocaleString('pt-BR')
+    const quemSalvou = currentUserName || 'Colaborador'
+
     const atualizados = desvios.map((d) => {
       if (d.uid === uid) {
         return {
@@ -453,9 +597,9 @@ function DesviosPage() {
 
     const desvioAlvo = desvios.find((d) => d.uid === uid)
     logAudit(
-      desvioAlvo?.respCorrecao || desvioAlvo?.tecnico || currentUserName,
+      quemSalvou,
       'Correção salva — ✅ CORRIGIDO',
-      `${desvioAlvo?.titulo} • ${texto}`
+      `${desvioAlvo?.titulo} • Realizado por: ${quemSalvou} • ${texto}`
     )
 
     setCorrecaoDraft((prev) => {
@@ -493,7 +637,7 @@ function DesviosPage() {
     })
 
     persistirDesvios(atualizados)
-    logAudit(alvo.tecnico || currentUserName, 'Desvio reaberto — voltou para ⏳ PENDENTE', alvo.titulo)
+    logAudit(currentUserName || alvo.tecnico, 'Desvio reaberto — voltou para ⏳ PENDENTE', alvo.titulo)
     toast.info('↩️ Desvio voltou para ⏳ PENDENTE')
   }
 
@@ -505,7 +649,7 @@ function DesviosPage() {
     const atualizados = desvios.filter((d) => d.uid !== uid)
     persistirDesvios(atualizados)
     if (alvo) {
-      logAudit(alvo.tecnico || currentUserName, 'Desvio excluído', alvo.titulo)
+      logAudit(currentUserName || alvo.tecnico, 'Desvio excluído', alvo.titulo)
     }
     toast.success('Desvio excluído — relatório atualizado')
   }
@@ -552,15 +696,17 @@ function DesviosPage() {
 
     desvios.forEach((d, i) => {
       const statusStr = d.corrigido ? 'CORRIGIDO' : isVencido(d) ? 'VENCIDO/PENDENTE' : 'PENDENTE'
+      const fotosQtd = (d.fotos || (d.foto ? [d.foto] : [])).length
       lines.push(`${i + 1}. ${d.titulo} [${statusStr}]`)
       lines.push(`   Prioridade: ${d.prioridade} • Risco: ${d.risco} • Categoria: ${d.categoria}`)
       lines.push(`   Local: ${d.local} • Registro: ${fmtDateBr(d.dataRegistro)} • Técnico: ${d.tecnico}`)
+      lines.push(`   Responsáveis: ${d.respCorrecao || 'A definir'}`)
       lines.push(`   ${previsaoTxt(d)}`)
       lines.push(`   Desvio: ${d.descricao}`)
       if (d.sugestao) lines.push(`   Instrução/Sugestão: ${d.sugestao}`)
       if (d.correcaoTexto) lines.push(`   Correção realizada: ${d.correcaoTexto}`)
       if (d.dataCorrecao) lines.push(`   Corrigido em: ${d.dataCorrecao}`)
-      lines.push(`   Foto do desvio: ${d.foto ? 'anexada' : 'não anexada'} • Foto da correção: ${d.fotoCorrecao ? 'anexada' : 'não anexada'}`)
+      lines.push(`   Fotos do desvio: ${fotosQtd} foto(s) • Foto da correção: ${d.fotoCorrecao ? 'anexada' : 'não anexada'}`)
       lines.push('')
     })
 
@@ -587,9 +733,9 @@ function DesviosPage() {
     h1 { font-size: 24px; font-weight: 900; margin-bottom: 4px; }
     p { font-size: 14px; margin-top: 4px; }
     .rel-item { border-top: 1px solid #ccc; padding: 14px 0; font-size: 13px; line-height: 1.5; }
-    .fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    .fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
     .foto-box { border: 1px solid #999; padding: 8px; border-radius: 8px; }
-    .foto-box img { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; }
+    .foto-box img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; }
     .semfoto { padding: 30px; background: #eee; text-align: center; border-radius: 6px; }
   </style>
 </head>
@@ -633,9 +779,7 @@ function DesviosPage() {
           <TriangleAlert className="w-8 h-8 text-amber-500 inline" /> Desvios de Segurança
         </h1>
         <p className="text-sm font-semibold text-gray-800 mt-1.5 leading-relaxed max-w-4xl">
-          Tela <strong>Novo Desvio</strong> em paisagem e cor clara: o <strong>Técnico de Segurança</strong> registra o desvio com{' '}
-          <strong>prioridade</strong> e <strong>risco</strong>, dá a <strong>sugestão de correção</strong> e anexa a <strong>foto</strong>. Ao salvar, ele entra no{' '}
-          <strong>histórico</strong> como <strong>⏳ PENDENTE</strong>, com <strong>data limite (previsão) para corrigir</strong> — e só vira corrigido depois da foto da correção + o que foi feito + Salvar correção.
+          Tela <strong>Novo Desvio</strong>: selecione o <strong>Técnico de Segurança</strong> e as <strong>Pessoas Responsáveis</strong> a partir do efetivo atual do RH. Ao salvar, os dados e as fotos são enviados imediatamente ao <strong>grupo de WhatsApp</strong>. O <strong>status</strong> só pode ser alterado pelo Técnico de Segurança, enquanto <strong>qualquer colaborador</strong> pode registrar a correção do desvio.
         </p>
       </div>
 
@@ -657,23 +801,34 @@ function DesviosPage() {
             <h2 className="text-2xl font-serif font-bold text-black tracking-tight">Novo Desvio</h2>
           </div>
 
-          {/* Pílulas de Status */}
+          {/* Pílulas de Status (Permissão: apenas Técnico de Segurança) */}
           <div className="flex items-center gap-2 flex-wrap">
+            {!isTecnicoSeguranca && (
+              <span className="text-[11px] font-bold text-amber-900 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3 text-amber-700" /> Status restrito ao Técnico
+              </span>
+            )}
             {['Aberto', 'Em Tratamento', 'Em Análise', 'Corrigido', 'Cancelado'].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => {
+                  if (!isTecnicoSeguranca) {
+                    toast.warning('Apenas o Técnico de Segurança responsável pode alterar o status do desvio.')
+                    return
+                  }
                   setStatusSel(s)
                   if (s === 'Corrigido') {
                     toast.info('O desvio só vira CORRIGIDO após foto + correção + Salvar correção no histórico')
                   }
                 }}
+                disabled={!isTecnicoSeguranca}
                 className={`text-xs font-black px-4 py-2 rounded-full border transition ${
                   statusSel === s
                     ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
                     : 'bg-white border-gray-400 text-black hover:border-black'
-                }`}
+                } ${!isTecnicoSeguranca ? 'opacity-60 cursor-not-allowed' : ''}`}
+                title={!isTecnicoSeguranca ? 'Apenas o Técnico de Segurança pode alterar o status' : ''}
               >
                 {s}
               </button>
@@ -716,7 +871,7 @@ function DesviosPage() {
                   if (invalidFields.descricao) setInvalidFields((p) => ({ ...p, descricao: false }))
                 }}
                 placeholder="Descreva o desvio detalhadamente..."
-                rows={5}
+                rows={4}
                 className={`w-full border-1.5 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-3 ${
                   invalidFields.descricao ? 'border-red-600 bg-red-50' : 'border-gray-400 focus:border-amber-500'
                 }`}
@@ -749,37 +904,49 @@ function DesviosPage() {
                 className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-3"
               />
 
+              {/* MÚLTIPLAS FOTOS DO DESVIO */}
               <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
-                Anexos — foto do desvio
+                Anexos — fotos do desvio ({fotosDesvio.length})
               </label>
 
-              {fotoDesvio ? (
-                <div className="relative rounded-xl overflow-hidden border-2 border-amber-400 group">
-                  <img src={fotoDesvio} alt="Foto do desvio" className="w-full h-44 object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                    <label className="px-3 py-1.5 bg-white text-black text-xs font-bold rounded-lg cursor-pointer hover:bg-gray-100">
-                      Substituir Foto
-                      <input type="file" accept="image/*" capture="environment" onChange={handleFotoDesvioUpload} className="hidden" />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setFotoDesvio('')}
-                      className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700"
-                    >
-                      Remover
-                    </button>
-                  </div>
+              {fotosDesvio.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-2 max-h-48 overflow-y-auto pr-1">
+                  {fotosDesvio.map((f, idx) => (
+                    <div key={idx} className="relative rounded-lg overflow-hidden border border-gray-300 group">
+                      <img src={f} alt={`Foto ${idx + 1}`} className="w-full h-20 object-cover cursor-pointer" onClick={() => setModalFoto(f)} />
+                      <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        #{idx + 1}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoverFotoDesvio(idx)}
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition hover:bg-red-700"
+                        title="Remover foto"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 hover:bg-amber-50/50 rounded-xl p-4 text-center cursor-pointer block transition">
-                  <input type="file" accept="image/*" capture="environment" onChange={handleFotoDesvioUpload} className="hidden" />
-                  <Camera className="w-6 h-6 text-gray-700 mx-auto mb-1" />
-                  <span className="block text-xs font-black text-black">+ Adicionar Anexo</span>
-                  <span className="block text-[11px] font-semibold text-gray-600 mt-0.5 leading-snug">
-                    Clique para tirar foto ou anexar a imagem do desvio. Ela aparece aqui na hora.
-                  </span>
-                </label>
               )}
+
+              <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 hover:bg-amber-50/50 rounded-xl p-3 text-center cursor-pointer block transition">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  capture="environment"
+                  onChange={handleFotosDesvioUpload}
+                  className="hidden"
+                />
+                <Camera className="w-5 h-5 text-gray-700 mx-auto mb-1" />
+                <span className="block text-xs font-black text-black">
+                  {fotosDesvio.length > 0 ? '+ Adicionar mais fotos' : '📷 + Adicionar Anexos'}
+                </span>
+                <span className="block text-[11px] font-semibold text-gray-600 mt-0.5 leading-snug">
+                  Tire foto ou anexe várias imagens. Elas vão juntas no WhatsApp!
+                </span>
+              </label>
             </div>
           </div>
 
@@ -797,7 +964,7 @@ function DesviosPage() {
                 value={sugestao}
                 onChange={(e) => setSugestao(e.target.value)}
                 placeholder="Instruções para correção... Ex.: Instalar linha de vida, isolar a área e orientar a equipe no DDS..."
-                rows={5}
+                rows={4}
                 className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-3"
               />
 
@@ -895,7 +1062,7 @@ function DesviosPage() {
               </label>
               <textarea
                 disabled
-                rows={5}
+                rows={4}
                 placeholder="Descreva a correção efetuada... (preenchido depois, no desvio salvo no histórico)"
                 className="w-full border-1.5 border-dashed border-gray-300 rounded-xl px-3 py-2 text-sm font-semibold text-gray-500 bg-gray-50 mb-3"
               />
@@ -915,50 +1082,154 @@ function DesviosPage() {
                 ⏳ <strong>Como funciona:</strong> ao salvar, este desvio fica <strong>PENDENTE</strong>. A correção é feita{' '}
                 <strong>no próprio desvio, no Histórico de Desvios abaixo</strong>: <strong>1)</strong> enviar a foto da correção,{' '}
                 <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
-                <strong>💾 Salvar correção</strong>. Só aí ele vira ✅ CORRIGIDO — escolher “Corrigido” no status acima não corrige sozinho.
+                <strong>💾 Salvar correção</strong>. <em>Qualquer pessoa pode salvar a correção!</em>
               </div>
             </div>
           </div>
 
-          {/* COLUNA 4: RESPONSÁVEL / PRAZO */}
+          {/* COLUNA 4: RESPONSÁVEL / PRAZO (INTEGRADO AO RH) */}
           <div className="bg-white border-1.5 border-gray-200 rounded-2xl p-4 flex flex-col justify-between h-full">
             <div>
               <h3 className="font-serif text-lg font-bold text-black flex items-center gap-2 mb-3">
                 <span className="text-blue-600 font-sans text-base">👤</span> Responsável / Prazo
               </h3>
 
-              <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
-                Técnico de Segurança que registrou *
-              </label>
-              <input
-                type="text"
-                value={tecnico}
-                onChange={(e) => {
-                  setTecnico(e.target.value)
-                  if (invalidFields.tecnico) setInvalidFields((p) => ({ ...p, tecnico: false }))
-                }}
-                placeholder="Ex.: Nome do técnico que registrou"
-                className={`w-full border-1.5 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-3 ${
-                  invalidFields.tecnico ? 'border-red-600 bg-red-50' : 'border-gray-400 focus:border-amber-500'
-                }`}
-              />
+              {/* TÉCNICO DE SEGURANÇA QUE REGISTROU (Busca no RH) */}
+              <div className="relative mb-3">
+                <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
+                  Técnico de Segurança que registrou * (Efetivo RH)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tecnico}
+                    onFocus={() => setTecnicoDropdownOpen(true)}
+                    onChange={(e) => {
+                      setTecnico(e.target.value)
+                      setTecnicoBusca(e.target.value)
+                      setTecnicoDropdownOpen(true)
+                      if (invalidFields.tecnico) setInvalidFields((p) => ({ ...p, tecnico: false }))
+                    }}
+                    placeholder="Buscar colaborador no RH..."
+                    className={`w-full border-1.5 rounded-xl px-3.5 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white ${
+                      invalidFields.tecnico ? 'border-red-600 bg-red-50' : 'border-gray-400 focus:border-amber-500'
+                    }`}
+                  />
+                  <Search className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                </div>
 
-              <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
-                Pessoas Responsáveis
-              </label>
-              <input
-                type="text"
-                list="system-users-list"
-                value={respCorrecao}
-                onChange={(e) => setRespCorrecao(e.target.value)}
-                placeholder="Selecionar usuários... 🔍"
-                className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-3"
-              />
-              <datalist id="system-users-list">
-                {systemUsers.map((name, i) => (
-                  <option key={i} value={name} />
-                ))}
-              </datalist>
+                {tecnicoDropdownOpen && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                    <div className="p-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200">
+                      Colaboradores Ativos no RH ({colaboradoresFiltradosTecnico.length})
+                    </div>
+                    {colaboradoresFiltradosTecnico.length === 0 ? (
+                      <div className="p-3 text-xs text-gray-500 text-center">Nenhum colaborador encontrado</div>
+                    ) : (
+                      colaboradoresFiltradosTecnico.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setTecnico(c.nome)
+                            setTecnicoBusca('')
+                            setTecnicoDropdownOpen(false)
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-amber-50 border-b border-gray-100 last:border-0 transition"
+                        >
+                          <div className="text-xs font-black text-black">{c.nome}</div>
+                          <div className="text-[11px] font-semibold text-gray-600">{c.cargo}</div>
+                        </button>
+                      ))
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setTecnicoDropdownOpen(false)}
+                      className="w-full py-1 text-center text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200"
+                    >
+                      Fechar Lista
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* PESSOAS RESPONSÁVEIS (Múltipla Seleção do RH) */}
+              <div className="relative mb-3">
+                <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
+                  Pessoas Responsáveis (Selecione um ou mais no RH)
+                </label>
+
+                {/* Chips dos Selecionados */}
+                {responsaveisSel.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {responsaveisSel.map((nome) => (
+                      <span
+                        key={nome}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-950 rounded-full text-xs font-bold"
+                      >
+                        <User className="w-3 h-3 text-blue-600" />
+                        {nome}
+                        <button
+                          type="button"
+                          onClick={() => setResponsaveisSel((prev) => prev.filter((n) => n !== nome))}
+                          className="hover:text-red-600 ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={respBusca}
+                    onFocus={() => setRespDropdownOpen(true)}
+                    onChange={(e) => {
+                      setRespBusca(e.target.value)
+                      setRespDropdownOpen(true)
+                    }}
+                    placeholder="+ Adicionar colaborador responsável..."
+                    className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white"
+                  />
+                  <Search className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                </div>
+
+                {respDropdownOpen && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                    <div className="p-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200">
+                      Efetivo RH ({colaboradoresFiltradosResp.length})
+                    </div>
+                    {colaboradoresFiltradosResp.length === 0 ? (
+                      <div className="p-3 text-xs text-gray-500 text-center">Nenhum colaborador disponível</div>
+                    ) : (
+                      colaboradoresFiltradosResp.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setResponsaveisSel((prev) => [...prev, c.nome])
+                            setRespBusca('')
+                            setRespDropdownOpen(false)
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition"
+                        >
+                          <div className="text-xs font-black text-black">{c.nome}</div>
+                          <div className="text-[11px] font-semibold text-gray-600">{c.cargo}</div>
+                        </button>
+                      ))
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setRespDropdownOpen(false)}
+                      className="w-full py-1 text-center text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200"
+                    >
+                      Fechar Lista
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
                 Empresa / Equipe envolvida
@@ -1086,7 +1357,7 @@ function DesviosPage() {
             onClick={handleSalvarDesvio}
             className="px-6 py-3 bg-gray-900 hover:bg-black text-white text-sm font-black rounded-xl transition shadow-md"
           >
-            💾 Salvar desvio no histórico
+            💾 Salvar desvio no histórico e notificar WhatsApp
           </button>
 
           <button
@@ -1179,6 +1450,7 @@ function DesviosPage() {
               const draft = correcaoDraft[d.uid] || { foto: '', texto: '' }
               const fotoDepois = d.corrigido ? d.fotoCorrecao : draft.foto
               const textoCorr = d.corrigido ? d.correcaoTexto : draft.texto
+              const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
 
               return (
                 <div
@@ -1256,7 +1528,11 @@ function DesviosPage() {
                           <span> • 📅 Registrado em {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong></span>
                         </div>
                         <div className="font-bold text-gray-950">{previsaoTxt(d)}</div>
-                        {d.respCorrecao && <div>👷 Responsável pela correção: <strong>{d.respCorrecao}</strong></div>}
+                        {d.respCorrecao && (
+                          <div>
+                            👷 <strong>Responsáveis pela correção:</strong> {d.respCorrecao}
+                          </div>
+                        )}
                         {d.empresa && <div>🏢 Empresa/equipe: <strong>{d.empresa}</strong></div>}
                         {d.comentarios && <div>💬 Comentários: <em>{d.comentarios}</em></div>}
                         <div className="text-[11px] text-gray-500">Salvo em {d.salvoEm}</div>
@@ -1289,13 +1565,23 @@ function DesviosPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                         <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
                           <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            📷 Antes — foto do desvio
+                            📷 Antes — fotos do desvio ({listaFotosDesvio.length})
                           </span>
-                          {d.foto ? (
-                            <img src={d.foto} alt="Antes" className="w-full h-44 object-cover rounded-lg" />
+                          {listaFotosDesvio.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {listaFotosDesvio.map((f, idx) => (
+                                <img
+                                  key={idx}
+                                  src={f}
+                                  alt={`Antes #${idx + 1}`}
+                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                  onClick={() => setModalFoto(f)}
+                                />
+                              ))}
+                            </div>
                           ) : (
-                            <div className="h-44 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
-                              Sem foto do desvio
+                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                              Sem fotos do desvio
                             </div>
                           )}
                         </div>
@@ -1305,9 +1591,14 @@ function DesviosPage() {
                             ✅ Depois — foto da correção
                           </span>
                           {d.fotoCorrecao ? (
-                            <img src={d.fotoCorrecao} alt="Depois" className="w-full h-44 object-cover rounded-lg" />
+                            <img
+                              src={d.fotoCorrecao}
+                              alt="Depois"
+                              className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                              onClick={() => setModalFoto(d.fotoCorrecao)}
+                            />
                           ) : (
-                            <div className="h-44 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
                               Sem foto da correção
                             </div>
                           )}
@@ -1331,19 +1622,29 @@ function DesviosPage() {
                       <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-950 mb-3">
                         ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a foto da correção,{' '}
                         <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
-                        <strong>💾 Salvar correção</strong>.
+                        <strong>💾 Salvar correção</strong>. <em>(Qualquer pessoa pode salvar a correção)</em>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                         <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
                           <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            📷 Antes — foto do desvio
+                            📷 Antes — fotos do desvio ({listaFotosDesvio.length})
                           </span>
-                          {d.foto ? (
-                            <img src={d.foto} alt="Antes" className="w-full h-44 object-cover rounded-lg" />
+                          {listaFotosDesvio.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {listaFotosDesvio.map((f, idx) => (
+                                <img
+                                  key={idx}
+                                  src={f}
+                                  alt={`Antes #${idx + 1}`}
+                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                  onClick={() => setModalFoto(f)}
+                                />
+                              ))}
+                            </div>
                           ) : (
-                            <div className="h-44 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
-                              Sem foto do desvio
+                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                              Sem fotos do desvio
                             </div>
                           )}
                         </div>
@@ -1353,9 +1654,14 @@ function DesviosPage() {
                             ✅ Depois — foto da correção *
                           </span>
                           {fotoDepois ? (
-                            <img src={fotoDepois} alt="Depois" className="w-full h-36 object-cover rounded-lg mb-2" />
+                            <img
+                              src={fotoDepois}
+                              alt="Depois"
+                              className="w-full h-32 object-cover rounded-lg mb-2 cursor-pointer hover:opacity-90 transition"
+                              onClick={() => setModalFoto(fotoDepois)}
+                            />
                           ) : (
-                            <div className="h-36 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
+                            <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
                               Nenhuma foto da correção ainda
                             </div>
                           )}
@@ -1482,54 +1788,84 @@ function DesviosPage() {
                 Por risco: {Object.keys(relStats.porRisco).map((k) => `${k}: ${relStats.porRisco[k]}`).join(' • ')}
               </div>
 
-              {desvios.map((d, i) => (
-                <div key={d.uid} className="p-3 border-t border-gray-200 text-xs font-semibold">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <strong className="font-black text-black">{i + 1}. {d.titulo}</strong>
-                    <span
-                      className={`font-black uppercase px-2 py-0.5 rounded text-[10px] ${
-                        d.corrigido ? 'bg-green-100 text-green-800' : isVencido(d) ? 'bg-rose-100 text-rose-900' : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {d.corrigido ? 'CORRIGIDO' : isVencido(d) ? 'VENCIDO / PENDENTE' : 'PENDENTE'}
-                    </span>
-                  </div>
+              {desvios.map((d, i) => {
+                const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
 
-                  <div className="text-gray-700 space-y-0.5">
-                    <div>Prioridade: <strong>{d.prioridade}</strong> • Risco: <strong>{d.risco}</strong> • Categoria: <strong>{d.categoria}</strong></div>
-                    <div>Local: <strong>{d.local}</strong> • Registrado: {fmtDateBr(d.dataRegistro)} por {d.tecnico}</div>
-                    <div className="font-bold text-black">{previsaoTxt(d)}</div>
-                    <div>Desvio: {d.descricao}</div>
-                    {d.sugestao && <div>Instrução / Sugestão: {d.sugestao}</div>}
-                    {d.correcaoTexto && <div>Correção realizada: <strong>{d.correcaoTexto}</strong></div>}
-                    {d.dataCorrecao && <div className="text-green-800">Corrigido em: {d.dataCorrecao}</div>}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-2 max-w-md">
-                    <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                      <span className="block text-[10px] font-black uppercase text-black mb-1">Antes</span>
-                      {d.foto ? (
-                        <img src={d.foto} alt="Antes" className="w-full h-28 object-cover rounded" />
-                      ) : (
-                        <div className="h-28 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
-                          Sem foto
-                        </div>
-                      )}
+                return (
+                  <div key={d.uid} className="p-3 border-t border-gray-200 text-xs font-semibold">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <strong className="font-black text-black">
+                        {i + 1}. {d.titulo}
+                      </strong>
+                      <span
+                        className={`font-black uppercase px-2 py-0.5 rounded text-[10px] ${
+                          d.corrigido ? 'bg-green-100 text-green-800' : isVencido(d) ? 'bg-rose-100 text-rose-900' : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {d.corrigido ? 'CORRIGIDO' : isVencido(d) ? 'VENCIDO / PENDENTE' : 'PENDENTE'}
+                      </span>
                     </div>
 
-                    <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                      <span className="block text-[10px] font-black uppercase text-black mb-1">Depois</span>
-                      {d.fotoCorrecao ? (
-                        <img src={d.fotoCorrecao} alt="Depois" className="w-full h-28 object-cover rounded" />
-                      ) : (
-                        <div className="h-28 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
-                          Sem foto da correção
-                        </div>
-                      )}
+                    <div className="text-gray-700 space-y-0.5">
+                      <div>
+                        Prioridade: <strong>{d.prioridade}</strong> • Risco: <strong>{d.risco}</strong> • Categoria: <strong>{d.categoria}</strong>
+                      </div>
+                      <div>
+                        Local: <strong>{d.local}</strong> • Registrado: {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong>
+                      </div>
+                      <div>
+                        Responsáveis: <strong>{d.respCorrecao || 'A definir'}</strong>
+                      </div>
+                      <div className="font-bold text-black">{previsaoTxt(d)}</div>
+                      <div>Desvio: {d.descricao}</div>
+                      {d.sugestao && <div>Instrução / Sugestão: {d.sugestao}</div>}
+                      {d.correcaoTexto && <div>Correção realizada: <strong>{d.correcaoTexto}</strong></div>}
+                      {d.dataCorrecao && <div className="text-green-800">Corrigido em: {d.dataCorrecao}</div>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-2 max-w-xl">
+                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                        <span className="block text-[10px] font-black uppercase text-black mb-1">
+                          Antes ({listaFotosDesvio.length})
+                        </span>
+                        {listaFotosDesvio.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {listaFotosDesvio.map((f, idx) => (
+                              <img
+                                key={idx}
+                                src={f}
+                                alt={`Antes #${idx + 1}`}
+                                className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
+                                onClick={() => setModalFoto(f)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
+                            Sem fotos
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                        <span className="block text-[10px] font-black uppercase text-black mb-1">Depois</span>
+                        {d.fotoCorrecao ? (
+                          <img
+                            src={d.fotoCorrecao}
+                            alt="Depois"
+                            className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
+                            onClick={() => setModalFoto(d.fotoCorrecao)}
+                          />
+                        ) : (
+                          <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
+                            Sem foto da correção
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -1554,9 +1890,27 @@ function DesviosPage() {
         </div>
       </section>
 
+      {/* Modal para expansão de foto */}
+      {modalFoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setModalFoto(null)}
+        >
+          <div className="relative max-w-2xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <img src={modalFoto} alt="Foto ampliada" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
+            <button
+              onClick={() => setModalFoto(null)}
+              className="mt-3 w-full py-2 bg-gray-950 text-white font-bold text-xs rounded-xl hover:bg-black transition"
+            >
+              Fechar Foto
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Rodapé da Página */}
       <footer className="mt-8 text-center text-xs font-semibold text-gray-600">
-        Hydro Reabilitação — Segurança • Desvios • Dados salvos no banco de dados e sincronizados em tempo real.
+        Hydro Reabilitação — Segurança • Desvios • Integrado ao RH e notificações automáticas no WhatsApp.
       </footer>
     </div>
   )

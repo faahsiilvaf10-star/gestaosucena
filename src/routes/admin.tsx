@@ -2013,7 +2013,8 @@ function AdminRoute() {
                     { key: 'estoqueAlteracao', label: 'Alteração de Estoque' },
                     { key: 'inspecaoCanteiroAgendada', label: 'Inspeção Canteiro (Agendada)' },
                     { key: 'inspecaoCanteiroDia', label: 'Inspeção Canteiro (Dia às 07h)' },
-                    { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' }
+                    { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' },
+                    { key: 'desvioRegistrado', label: 'Desvio de Segurança' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2060,6 +2061,7 @@ function AdminRoute() {
                     {selectedTemplate === 'inspecaoCanteiroAgendada' && '{data_inspecao}, {prazo}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {lista_itens}'}
                     {selectedTemplate === 'inspecaoCanteiroDia' && '{data_inspecao}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {total_corrigidos}, {total_pendentes}, {lista_pendencias}'}
                     {selectedTemplate === 'inspecaoCanteiroCorrecao' && '{titulo_item}, {categoria}, {prioridade}, {local}, {prazo}, {o_que_foi_feito}, {usuario}, {data_correcao}, {total_corrigidos}, {total_pontos}, {porcentagem}'}
+                    {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
                   </div>
                 </div>
               </div>
