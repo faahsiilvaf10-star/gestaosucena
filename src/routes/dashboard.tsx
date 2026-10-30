@@ -20,6 +20,8 @@ import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidg
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
 import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
+import { DashboardDesviosWidget } from '../components/DashboardDesviosWidget'
+import { DashboardDesviosBanner } from '../components/DashboardDesviosBanner'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import '../hydro-panel.css'
 
@@ -1545,6 +1547,9 @@ function DashboardComponent() {
         {/* Banner de Aviso de Inspeção do Canteiro */}
         <DashboardInspecaoCanteiroBanner />
 
+        {/* Banner de Aviso de Desvios de Segurança em Aberto */}
+        <DashboardDesviosBanner />
+
         {/* Permissão de Trabalho Alert */}
         {expiringPTs.length > 0 && (
           <div
@@ -1580,6 +1585,7 @@ function DashboardComponent() {
         {/* Widgets Inferiores */}
         <div className="hydro-bottom-widgets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <DashboardDesviosWidget />
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
             <DashboardInspecaoCanteiroWidget />
