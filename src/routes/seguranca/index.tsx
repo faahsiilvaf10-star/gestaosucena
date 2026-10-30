@@ -45,25 +45,25 @@ function SegurancaComponent() {
   ];
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-4 custom-scrollbar bg-transparent">
-      <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start mt-0">
-        <div className="flex flex-col items-center justify-center mb-2.5 mt-0 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
+    <div className="flex flex-col h-full overflow-y-auto pt-10 sm:pt-14 lg:pt-16 pb-8 custom-scrollbar bg-transparent px-4 sm:px-6">
+      <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start">
+        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-500 w-full">
           <h1 
             className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center font-bold"
-            style={{ fontSize: 'clamp(24px, 4vw, 36px)', lineHeight: '1.1' }}
+            style={{ fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: '1.2' }}
           >
             Segurança
           </h1>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3 lg:gap-3.5 w-full animate-in fade-in zoom-in-95 duration-700">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-4.5 w-full animate-in fade-in zoom-in-95 duration-700">
           {modulos.map((modulo, idx) => {
             const cardContent = (
               <>
-                <div className="mb-1.5 transition-transform duration-300 group-hover:scale-110 z-10 shrink-0">
-                  <modulo.icon className="w-6 h-6 sm:w-7 sm:h-7 text-current opacity-90" strokeWidth={1.5} />
+                <div className="mb-2 sm:mb-2.5 transition-transform duration-300 group-hover:scale-110 z-10 shrink-0">
+                  <modulo.icon className="w-7 h-7 sm:w-8 sm:h-8 text-current opacity-90" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-xs sm:text-[13px] tracking-tight font-medium text-center whitespace-pre-line leading-tight z-10 text-current">
+                <h3 className="text-xs sm:text-[13px] lg:text-[14px] tracking-tight font-medium text-center whitespace-pre-line leading-snug z-10 text-current">
                   {modulo.title}
                 </h3>
               </>
@@ -74,7 +74,7 @@ function SegurancaComponent() {
                 <Link 
                   key={idx}
                   to={modulo.href as any}
-                  className="group relative flex flex-col items-center justify-center px-2 py-3 sm:py-3.5 h-[96px] sm:h-[104px] lg:h-[110px] rounded-2xl sm:rounded-[22px] liquid-card-effect transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  className="group relative flex flex-col items-center justify-center px-3 py-4 sm:py-5 h-[120px] sm:h-[130px] lg:h-[138px] rounded-2xl sm:rounded-[24px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   {cardContent}
                 </Link>
@@ -85,7 +85,7 @@ function SegurancaComponent() {
               <button 
                 key={idx}
                 type="button"
-                className="group relative flex flex-col items-center justify-center px-2 py-3 sm:py-3.5 h-[96px] sm:h-[104px] lg:h-[110px] rounded-2xl sm:rounded-[22px] liquid-card-effect transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 w-full"
+                className="group relative flex flex-col items-center justify-center px-3 py-4 sm:py-5 h-[120px] sm:h-[130px] lg:h-[138px] rounded-2xl sm:rounded-[24px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full"
               >
                 {cardContent}
               </button>
