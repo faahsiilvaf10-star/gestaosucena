@@ -45,51 +45,53 @@ function SegurancaComponent() {
   ];
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 custom-scrollbar bg-transparent">
-      <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start mt-2">
-        <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
+    <div className="flex flex-col h-full overflow-y-auto pb-4 custom-scrollbar bg-transparent">
+      <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start mt-0">
+        <div className="flex flex-col items-center justify-center mb-2.5 mt-0 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1 
-            className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center"
-            style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}
+            className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center font-bold"
+            style={{ fontSize: 'clamp(24px, 4vw, 36px)', lineHeight: '1.1' }}
           >
             Segurança
           </h1>
         </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full animate-in fade-in zoom-in-95 duration-700">
-        {modulos.map((modulo, idx) => {
-          if (modulo.href) {
-            return (
-              <Link 
-                key={idx}
-                to={modulo.href as any}
-                className="group relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-              >
-                <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
-                  <modulo.icon className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3 lg:gap-3.5 w-full animate-in fade-in zoom-in-95 duration-700">
+          {modulos.map((modulo, idx) => {
+            const cardContent = (
+              <>
+                <div className="mb-1.5 transition-transform duration-300 group-hover:scale-110 z-10 shrink-0">
+                  <modulo.icon className="w-6 h-6 sm:w-7 sm:h-7 text-current opacity-90" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-xl tracking-wide font-medium text-center whitespace-pre-line leading-tight z-10 text-current">
+                <h3 className="text-xs sm:text-[13px] tracking-tight font-medium text-center whitespace-pre-line leading-tight z-10 text-current">
                   {modulo.title}
                 </h3>
-              </Link>
+              </>
             )
-          }
 
-          return (
-            <button 
-              key={idx}
-              className="group relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full"
-            >
-              <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
-                <modulo.icon className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-xl tracking-wide font-medium text-center whitespace-pre-line leading-tight z-10 text-current">
-                {modulo.title}
-              </h3>
-            </button>
-          )
-        })}
-      </div>
+            if (modulo.href) {
+              return (
+                <Link 
+                  key={idx}
+                  to={modulo.href as any}
+                  className="group relative flex flex-col items-center justify-center px-2 py-3 sm:py-3.5 h-[96px] sm:h-[104px] lg:h-[110px] rounded-2xl sm:rounded-[22px] liquid-card-effect transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  {cardContent}
+                </Link>
+              )
+            }
+
+            return (
+              <button 
+                key={idx}
+                type="button"
+                className="group relative flex flex-col items-center justify-center px-2 py-3 sm:py-3.5 h-[96px] sm:h-[104px] lg:h-[110px] rounded-2xl sm:rounded-[22px] liquid-card-effect transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 w-full"
+              >
+                {cardContent}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
