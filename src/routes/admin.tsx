@@ -28,6 +28,7 @@ import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import Mail from 'lucide-react/dist/esm/icons/mail.js';
 import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
+import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'

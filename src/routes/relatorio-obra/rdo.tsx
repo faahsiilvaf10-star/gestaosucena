@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useMonthlyColors } from '../../hooks/useMonthlyColors'
 import { type RdoAtividade, getSubItens } from '@/components/rdo/ActivityCard'
+import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
 import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
 
 const COLOR_NAMES: Record<string, string> = {
