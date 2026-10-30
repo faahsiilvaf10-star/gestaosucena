@@ -60,6 +60,7 @@ import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-p
 import { Route as SegurancaIndexRouteImport } from './routes/seguranca/index'
 import { Route as SegurancaCintasRouteImport } from './routes/seguranca/cintas'
 import { Route as SegurancaDdsRouteImport } from './routes/seguranca/dds'
+import { Route as SegurancaDesviosRouteImport } from './routes/seguranca/desvios'
 import { Route as SegurancaHomologadosRouteImport } from './routes/seguranca/homologados'
 import { Route as SegurancaInspecaoCanteiroRouteImport } from './routes/seguranca/inspecao-canteiro'
 import { Route as SegurancaPosChuvaRouteImport } from './routes/seguranca/pos-chuva'
@@ -329,6 +330,11 @@ const SegurancaDdsRoute = SegurancaDdsRouteImport.update({
   path: '/dds',
   getParentRoute: () => SegurancaRoute,
 } as any)
+const SegurancaDesviosRoute = SegurancaDesviosRouteImport.update({
+  id: '/desvios',
+  path: '/desvios',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const SegurancaHomologadosRoute = SegurancaHomologadosRouteImport.update({
   id: '/homologados',
   path: '/homologados',
@@ -422,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
+  '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
+  '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
+  '/seguranca/desvios': typeof SegurancaDesviosRoute
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
@@ -605,6 +614,7 @@ export interface FileRouteTypes {
     | '/rh/relatorio-presenca'
     | '/seguranca/cintas'
     | '/seguranca/dds'
+    | '/seguranca/desvios'
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/pos-chuva'
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/rh/relatorio-presenca'
     | '/seguranca/cintas'
     | '/seguranca/dds'
+    | '/seguranca/desvios'
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/pos-chuva'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/rh/relatorio-presenca'
     | '/seguranca/cintas'
     | '/seguranca/dds'
+    | '/seguranca/desvios'
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/pos-chuva'
@@ -1126,6 +1138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaDdsRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/desvios': {
+      id: '/seguranca/desvios'
+      path: '/desvios'
+      fullPath: '/seguranca/desvios'
+      preLoaderRoute: typeof SegurancaDesviosRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/seguranca/homologados': {
       id: '/seguranca/homologados'
       path: '/homologados'
@@ -1309,6 +1328,7 @@ const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 interface SegurancaRouteChildren {
   SegurancaCintasRoute: typeof SegurancaCintasRoute
   SegurancaDdsRoute: typeof SegurancaDdsRoute
+  SegurancaDesviosRoute: typeof SegurancaDesviosRoute
   SegurancaHomologadosRoute: typeof SegurancaHomologadosRoute
   SegurancaInspecaoCanteiroRoute: typeof SegurancaInspecaoCanteiroRoute
   SegurancaPosChuvaRoute: typeof SegurancaPosChuvaRoute
@@ -1318,6 +1338,7 @@ interface SegurancaRouteChildren {
 const SegurancaRouteChildren: SegurancaRouteChildren = {
   SegurancaCintasRoute: SegurancaCintasRoute,
   SegurancaDdsRoute: SegurancaDdsRoute,
+  SegurancaDesviosRoute: SegurancaDesviosRoute,
   SegurancaHomologadosRoute: SegurancaHomologadosRoute,
   SegurancaInspecaoCanteiroRoute: SegurancaInspecaoCanteiroRoute,
   SegurancaPosChuvaRoute: SegurancaPosChuvaRoute,

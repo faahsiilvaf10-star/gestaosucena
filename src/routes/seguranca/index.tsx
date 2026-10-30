@@ -24,7 +24,7 @@ function SegurancaComponent() {
     { title: "Vistoria Cintas", icon: Link2, href: "/seguranca/cintas" },
     { title: "Inspeção\nde Canteiro", icon: HardHat, href: "/seguranca/inspecao-canteiro" },
     { title: "Pós Chuva", icon: Droplets, href: "/seguranca/pos-chuva" },
-    { title: "Desvios", icon: TriangleAlert },
+    { title: "Desvios", icon: TriangleAlert, href: "/seguranca/desvios" },
     { title: "Requisição", icon: ShieldCheck, href: "/almoxarifado/requisicoes" },
     { title: "Inspeção\nExtintores", icon: Flame },
     { title: "Campanhas", icon: Heart },
