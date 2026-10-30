@@ -324,24 +324,26 @@ export function DashboardDesviosWidget() {
       </div>
 
       {/* Modal para expansão de foto */}
-      {fotoModal && (
+      {fotoModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
+          style={{ zIndex: 9999999 }}
           onClick={() => setFotoModal(null)}
         >
-          <div className="relative max-w-xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
               <span className="text-xs font-black text-gray-900 uppercase">Foto do Desvio</span>
               <button
                 onClick={() => setFotoModal(null)}
-                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition"
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition cursor-pointer"
               >
                 <X className="w-4 h-4 text-gray-700" />
               </button>
             </div>
             <img src={fotoModal} alt="Foto ampliada" className="max-w-full max-h-[75vh] object-contain rounded-xl mx-auto" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

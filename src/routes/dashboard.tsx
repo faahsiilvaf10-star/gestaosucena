@@ -2,6 +2,7 @@ import React from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -1628,12 +1629,13 @@ function DashboardComponent() {
         }}
       />
 
-      {expandedImage && (
+      {expandedImage && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4 cursor-zoom-out animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+          style={{ zIndex: 9999999 }}
           onClick={() => setExpandedImage(null)}
         >
-          <div className="relative max-w-[92vw] max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-[92vw] max-h-[90vh] flex items-center justify-center cursor-default" onClick={(e) => e.stopPropagation()}>
             <img
               src={expandedImage}
               alt="Foto do DDS Ampliada"
@@ -1649,7 +1651,8 @@ function DashboardComponent() {
               </svg>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {showBirthdayModal && aniversariantesHoje.length > 0 && (

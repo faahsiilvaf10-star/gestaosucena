@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { isAdmin } from '@/components/ui/VerifiedBadge'
@@ -1900,21 +1901,23 @@ function DesviosPage() {
       </section>
 
       {/* Modal para expansão de foto */}
-      {modalFoto && (
+      {modalFoto && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+          style={{ zIndex: 9999999 }}
           onClick={() => setModalFoto(null)}
         >
-          <div className="relative max-w-2xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-2xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
             <img src={modalFoto} alt="Foto ampliada" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
             <button
               onClick={() => setModalFoto(null)}
-              className="mt-3 w-full py-2 bg-gray-950 text-white font-bold text-xs rounded-xl hover:bg-black transition"
+              className="mt-3 w-full py-2 bg-gray-950 text-white font-bold text-xs rounded-xl hover:bg-black transition cursor-pointer"
             >
               Fechar Foto
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Rodapé da Página */}

@@ -332,21 +332,23 @@ export function DashboardInspecaoCanteiroWidget() {
       </div>
 
       {/* Modal para expansão de foto */}
-      {fotoModal && (
+      {fotoModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
+          style={{ zIndex: 9999999 }}
           onClick={() => setFotoModal(null)}
         >
-          <div className="relative max-w-xl max-h-[90vh] bg-white rounded-xl p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-xl max-h-[90vh] bg-white rounded-xl p-2 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
             <img src={fotoModal} alt="Foto ampliada" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
             <button
               onClick={() => setFotoModal(null)}
-              className="mt-2 w-full py-2 bg-gray-900 text-white font-bold text-xs rounded-lg hover:bg-black transition"
+              className="mt-2 w-full py-2 bg-gray-900 text-white font-bold text-xs rounded-lg hover:bg-black transition cursor-pointer"
             >
               Fechar Foto
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

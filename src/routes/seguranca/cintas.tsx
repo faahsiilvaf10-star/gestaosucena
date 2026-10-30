@@ -13,6 +13,7 @@ import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import X from 'lucide-react/dist/esm/icons/x.js'
 import Maximize2 from 'lucide-react/dist/esm/icons/maximize-2.js'
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js'
@@ -801,16 +802,17 @@ function VistoriaCintas() {
         </DialogContent>
       </Dialog>
       {/* Modal de Expansão de Foto (Lightbox) */}
-      {expandedImage && (
+      {expandedImage && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in"
+          className="fixed inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in cursor-zoom-out"
+          style={{ zIndex: 9999999 }}
           onClick={() => setExpandedImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center cursor-default" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setExpandedImage(null)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
               title="Fechar (Esc)"
             >
               <X className="w-6 h-6" />
@@ -819,10 +821,10 @@ function VistoriaCintas() {
               src={expandedImage}
               alt="Foto ampliada da cinta"
               className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/10"
-              onClick={(e) => e.stopPropagation()}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

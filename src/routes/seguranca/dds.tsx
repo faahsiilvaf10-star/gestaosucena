@@ -17,6 +17,7 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase.js';
 import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import { createPortal } from 'react-dom';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -1020,14 +1021,16 @@ function DDSSchedulePage() {
       />
 
       {/* Expanded Image Modal */}
-      {expandedImage && (
+      {expandedImage && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[99999] p-4 cursor-zoom-out"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+          style={{ zIndex: 9999999 }}
           onClick={() => setExpandedImage(null)}
         >
           <img src={expandedImage} alt="Foto do DDS Expandida" className="max-w-[85vw] max-h-[80vh] object-contain rounded-lg shadow-2xl" />
           <button 
             className="absolute top-6 right-6 text-white p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full transition-colors cursor-pointer border border-white/10 shadow-lg"
+            style={{ zIndex: 10000000 }}
             onClick={(e) => {
               e.stopPropagation()
               setExpandedImage(null)
@@ -1035,7 +1038,8 @@ function DDSSchedulePage() {
           >
             <X size={24} />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

@@ -418,9 +418,10 @@ function CampanhasPage() {
       {/* =========================================================================
           MODAL DETALHADO / AMPLIAR ARTE
          ========================================================================= */}
-      {modalMes && (
+      {modalMes && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+          style={{ zIndex: 9999999 }}
           onClick={() => setModalMes(null)}
         >
           <div
