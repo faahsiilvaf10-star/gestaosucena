@@ -1590,9 +1590,9 @@ function DashboardComponent() {
             <DashboardMatrizWidget />
             <DashboardCampanhaMesWidget />
             <DashboardDesviosWidget />
+            <DashboardInspecaoCanteiroWidget />
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
-            <DashboardInspecaoCanteiroWidget />
           </div>
           <div style={{ minHeight: '380px' }}>
             <RecentActivitiesWidget />
