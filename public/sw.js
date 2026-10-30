@@ -1,5 +1,5 @@
 // Sucena Empreendimentos - PWA Service Worker
-const CACHE_NAME = 'sucena-pwa-v1';
+const CACHE_NAME = 'sucena-pwa-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -46,3 +46,4 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
