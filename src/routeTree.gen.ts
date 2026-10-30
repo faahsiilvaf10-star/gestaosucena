@@ -59,6 +59,7 @@ import { Route as RhListaPresencaRouteImport } from './routes/rh/lista-presenca'
 import { Route as RhRelatorioPresencaRouteImport } from './routes/rh/relatorio-presenca'
 import { Route as SegurancaIndexRouteImport } from './routes/seguranca/index'
 import { Route as SegurancaCampanhasRouteImport } from './routes/seguranca/campanhas'
+import { Route as SegurancaChecklistRouteImport } from './routes/seguranca/checklist'
 import { Route as SegurancaCintasRouteImport } from './routes/seguranca/cintas'
 import { Route as SegurancaControleTreinamentoRouteImport } from './routes/seguranca/controle-treinamento'
 import { Route as SegurancaDdsRouteImport } from './routes/seguranca/dds'
@@ -330,6 +331,11 @@ const SegurancaCampanhasRoute = SegurancaCampanhasRouteImport.update({
   path: '/campanhas',
   getParentRoute: () => SegurancaRoute,
 } as any)
+const SegurancaChecklistRoute = SegurancaChecklistRouteImport.update({
+  id: '/checklist',
+  path: '/checklist',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const SegurancaCintasRoute = SegurancaCintasRouteImport.update({
   id: '/cintas',
   path: '/cintas',
@@ -460,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/campanhas': typeof SegurancaCampanhasRoute
+  '/seguranca/checklist': typeof SegurancaChecklistRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/controle-treinamento': typeof SegurancaControleTreinamentoRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/campanhas': typeof SegurancaCampanhasRoute
+  '/seguranca/checklist': typeof SegurancaChecklistRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/controle-treinamento': typeof SegurancaControleTreinamentoRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
@@ -591,6 +599,7 @@ export interface FileRoutesById {
   '/rh/lista-presenca': typeof RhListaPresencaRoute
   '/rh/relatorio-presenca': typeof RhRelatorioPresencaRoute
   '/seguranca/campanhas': typeof SegurancaCampanhasRoute
+  '/seguranca/checklist': typeof SegurancaChecklistRoute
   '/seguranca/cintas': typeof SegurancaCintasRoute
   '/seguranca/controle-treinamento': typeof SegurancaControleTreinamentoRoute
   '/seguranca/dds': typeof SegurancaDdsRoute
@@ -661,6 +670,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/seguranca/campanhas'
+    | '/seguranca/checklist'
     | '/seguranca/cintas'
     | '/seguranca/controle-treinamento'
     | '/seguranca/dds'
@@ -723,6 +733,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/seguranca/campanhas'
+    | '/seguranca/checklist'
     | '/seguranca/cintas'
     | '/seguranca/controle-treinamento'
     | '/seguranca/dds'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/rh/lista-presenca'
     | '/rh/relatorio-presenca'
     | '/seguranca/campanhas'
+    | '/seguranca/checklist'
     | '/seguranca/cintas'
     | '/seguranca/controle-treinamento'
     | '/seguranca/dds'
@@ -1194,6 +1206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaCampanhasRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/checklist': {
+      id: '/seguranca/checklist'
+      path: '/checklist'
+      fullPath: '/seguranca/checklist'
+      preLoaderRoute: typeof SegurancaChecklistRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/seguranca/cintas': {
       id: '/seguranca/cintas'
       path: '/cintas'
@@ -1425,6 +1444,7 @@ const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 
 interface SegurancaRouteChildren {
   SegurancaCampanhasRoute: typeof SegurancaCampanhasRoute
+  SegurancaChecklistRoute: typeof SegurancaChecklistRoute
   SegurancaCintasRoute: typeof SegurancaCintasRoute
   SegurancaControleTreinamentoRoute: typeof SegurancaControleTreinamentoRoute
   SegurancaDdsRoute: typeof SegurancaDdsRoute
@@ -1440,6 +1460,7 @@ interface SegurancaRouteChildren {
 
 const SegurancaRouteChildren: SegurancaRouteChildren = {
   SegurancaCampanhasRoute: SegurancaCampanhasRoute,
+  SegurancaChecklistRoute: SegurancaChecklistRoute,
   SegurancaCintasRoute: SegurancaCintasRoute,
   SegurancaControleTreinamentoRoute: SegurancaControleTreinamentoRoute,
   SegurancaDdsRoute: SegurancaDdsRoute,

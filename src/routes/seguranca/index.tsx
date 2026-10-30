@@ -12,6 +12,7 @@ import Grid3X3 from 'lucide-react/dist/esm/icons/grid-3x3.js';
 import GraduationCap from 'lucide-react/dist/esm/icons/graduation-cap.js';
 import ListTodo from 'lucide-react/dist/esm/icons/list-todo.js';
 import FileWarning from 'lucide-react/dist/esm/icons/file-warning.js';
+import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/seguranca/')({
@@ -34,6 +35,7 @@ function SegurancaComponent() {
     { title: "Controle de\nTreinamento", icon: GraduationCap, href: "/seguranca/controle-treinamento" },
     { title: "Plano de\nAção", icon: ListTodo, href: "/seguranca/plano-acao" },
     { title: "Não\nConformidade", icon: FileWarning, href: "/seguranca/nao-conformidade" },
+    { title: "Check\nList", icon: ClipboardCheck, href: "/seguranca/checklist" },
   ];
 
   return (
