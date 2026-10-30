@@ -1032,6 +1032,15 @@ body.signature-active .sig-landscape-overlay .sigCanvas {
    Objetivo: deixar TODOS os comunicados idênticos à imagem
    aprovada (janela branca, logo sobreposta no topo, Título
    em negrito, barra dourada, botão Entendi dourado, sem X).
+   Como usar no Antigravity:
+   1. Cole este arquivo inteiro no CSS global do projeto
+      (ou importe no componente de comunicado).
+   2. Aplique as classes abaixo em TODOS os comunicados,
+      não só neste exemplo — inclusive os já existentes.
+   3. Remova o botão X de fechar de todos os comunicados.
+      O fechamento é só pelo botão "Entendi" ou pelo tempo.
+   4. Não altere login, rotas, dados ou autenticação.
+      Só o visual do comunicado muda.
    ============================================================ */
 
 /* Fundo escuro atrás da janela, com leve desfoque */
@@ -1080,7 +1089,18 @@ body.signature-active .sig-landscape-overlay .sigCanvas {
   height: auto;
   display: block;
   background: transparent;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  /* Borda branca certinha em volta da logo, para ela não ficar
+     apagada / sumir no fundo escuro atrás da janela.
+     É um contorno branco (sticker), não um fundo retangular:
+     o branco segue só o desenho das letras, e a logo fica
+     nítida mesmo com metade para fora da janela. */
+  filter:
+    drop-shadow(2px 0 0 #ffffff)
+    drop-shadow(-2px 0 0 #ffffff)
+    drop-shadow(0 2px 0 #ffffff)
+    drop-shadow(0 -2px 0 #ffffff)
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  opacity: 1;
   pointer-events: none;
   z-index: 2;
 }
