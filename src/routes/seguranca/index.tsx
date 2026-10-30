@@ -22,7 +22,7 @@ function SegurancaComponent() {
     { title: "Permissão\nde Trabalho", icon: Folder, href: "/permissao-trabalho" },
     { title: "Homologados", icon: BadgeCheck, href: "/seguranca/homologados" },
     { title: "Vistoria Cintas", icon: Link2, href: "/seguranca/cintas" },
-    { title: "Inspeção\nde Canteiro", icon: HardHat },
+    { title: "Inspeção\nde Canteiro", icon: HardHat, href: "/seguranca/inspecao-canteiro" },
     { title: "Pós Chuva", icon: Droplets },
     { title: "Desvios", icon: TriangleAlert },
     { title: "Requisição", icon: ShieldCheck, href: "/almoxarifado/requisicoes" },
