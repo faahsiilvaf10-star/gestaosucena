@@ -15,6 +15,7 @@ import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
+import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/seguranca/')({
@@ -40,6 +41,7 @@ function SegurancaComponent() {
     { title: "Relatório de\nOcorrência", icon: FileText, href: "/seguranca/relatorio-ocorrencia" },
     { title: "Indicadores", icon: BarChart3, href: "/seguranca/indicadores" },
     { title: "Análise de\nRisco", icon: ShieldAlert, href: "/seguranca/analise-risco" },
+    { title: "Programa de\nNovatos", icon: UserPlus, href: "/seguranca/programa-novatos" },
   ];
 
   return (
