@@ -5,7 +5,6 @@ import Link2 from 'lucide-react/dist/esm/icons/link-2.js';
 import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
 import Droplets from 'lucide-react/dist/esm/icons/droplets.js';
 import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.js';
-import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import Flame from 'lucide-react/dist/esm/icons/flame.js';
 import Heart from 'lucide-react/dist/esm/icons/heart.js';
 import Grid3X3 from 'lucide-react/dist/esm/icons/grid-3x3.js';
@@ -28,7 +27,6 @@ function SegurancaComponent() {
     { title: "Inspeção\nde Canteiro", icon: HardHat, href: "/seguranca/inspecao-canteiro" },
     { title: "Pós Chuva", icon: Droplets, href: "/seguranca/pos-chuva" },
     { title: "Desvios", icon: TriangleAlert, href: "/seguranca/desvios" },
-    { title: "Requisição", icon: ShieldCheck, href: "/almoxarifado/requisicoes" },
     { title: "Inspeção\nExtintores", icon: Flame },
     { title: "Campanhas", icon: Heart, href: "/seguranca/campanhas" },
     { title: "Matriz\nResponsabilidade", icon: Grid3X3, href: "/seguranca/matriz-responsabilidade" },
