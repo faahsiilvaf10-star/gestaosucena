@@ -857,14 +857,14 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 .topbar-container,
 .topbar-wrapper {
   position: sticky !important;
-  top: 0 !important;
+  top: 28px !important;
   z-index: 50 !important;
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(16px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05) !important;
-  padding: 38px 28px 14px 28px !important;
+  padding: 14px 28px 14px 28px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
@@ -1807,3 +1807,15 @@ table {
 .fleet-eq-pill.blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(37,99,235,.18)}
 .fleet-eq-pill.orange{background:#FFF3E4;color:#EA580C;border:1px solid rgba(234,88,12,.2)}
 .kpi-absent-names{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.35;color:var(--ink2)}
+
+
+@media (max-width: 768px) {
+  .electron-titlebar {
+    display: none !important;
+  }
+  .topbar-container,
+  .topbar-wrapper {
+    top: 0 !important;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 10px 14px !important;
+  }
+}

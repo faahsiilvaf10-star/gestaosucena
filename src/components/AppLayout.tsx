@@ -395,12 +395,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
       
       {/* Draggable title bar for Electron .exe — allows moving the window */}
       <div 
+        className="electron-titlebar" 
         style={{ 
           position: 'fixed', 
           top: 0, 
           left: 0, 
           right: 0, 
           height: 28, 
+          backgroundColor: '#0B0B0C',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           zIndex: 9998,
           // @ts-ignore — Electron-specific CSS property
           WebkitAppRegion: 'drag',

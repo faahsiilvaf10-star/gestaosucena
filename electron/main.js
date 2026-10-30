@@ -43,7 +43,7 @@ ipcMain.on('launch-app', () => {
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#00000000', // Transparente para o glass aparecer
+      color: '#0B0B0C', // Cor preta idêntica à barra e sidebar para botões visíveis
       symbolColor: '#ffffff', // Cor dos botões de fechar/minimizar
       height: 28
     },
