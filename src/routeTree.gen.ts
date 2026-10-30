@@ -66,6 +66,7 @@ import { Route as SegurancaDesviosRouteImport } from './routes/seguranca/desvios
 import { Route as SegurancaHomologadosRouteImport } from './routes/seguranca/homologados'
 import { Route as SegurancaInspecaoCanteiroRouteImport } from './routes/seguranca/inspecao-canteiro'
 import { Route as SegurancaMatrizResponsabilidadeRouteImport } from './routes/seguranca/matriz-responsabilidade'
+import { Route as SegurancaPlanoAcaoRouteImport } from './routes/seguranca/plano-acao'
 import { Route as SegurancaPosChuvaRouteImport } from './routes/seguranca/pos-chuva'
 import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
 import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado/pedidos/$id'
@@ -366,6 +367,11 @@ const SegurancaMatrizResponsabilidadeRoute =
     path: '/matriz-responsabilidade',
     getParentRoute: () => SegurancaRoute,
   } as any)
+const SegurancaPlanoAcaoRoute = SegurancaPlanoAcaoRouteImport.update({
+  id: '/plano-acao',
+  path: '/plano-acao',
+  getParentRoute: () => SegurancaRoute,
+} as any)
 const SegurancaPosChuvaRoute = SegurancaPosChuvaRouteImport.update({
   id: '/pos-chuva',
   path: '/pos-chuva',
@@ -454,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
+  '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
@@ -514,6 +521,7 @@ export interface FileRoutesByTo {
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
+  '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/documentos': typeof DocumentosIndexRoute
@@ -581,6 +589,7 @@ export interface FileRoutesById {
   '/seguranca/homologados': typeof SegurancaHomologadosRoute
   '/seguranca/inspecao-canteiro': typeof SegurancaInspecaoCanteiroRoute
   '/seguranca/matriz-responsabilidade': typeof SegurancaMatrizResponsabilidadeRoute
+  '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
@@ -649,6 +658,7 @@ export interface FileRouteTypes {
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
+    | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
     | '/almoxarifado/'
     | '/documentos/'
@@ -709,6 +719,7 @@ export interface FileRouteTypes {
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
+    | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
     | '/almoxarifado'
     | '/documentos'
@@ -775,6 +786,7 @@ export interface FileRouteTypes {
     | '/seguranca/homologados'
     | '/seguranca/inspecao-canteiro'
     | '/seguranca/matriz-responsabilidade'
+    | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
     | '/almoxarifado/'
     | '/documentos/'
@@ -1218,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaMatrizResponsabilidadeRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/plano-acao': {
+      id: '/seguranca/plano-acao'
+      path: '/plano-acao'
+      fullPath: '/seguranca/plano-acao'
+      preLoaderRoute: typeof SegurancaPlanoAcaoRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/seguranca/pos-chuva': {
       id: '/seguranca/pos-chuva'
       path: '/pos-chuva'
@@ -1393,6 +1412,7 @@ interface SegurancaRouteChildren {
   SegurancaHomologadosRoute: typeof SegurancaHomologadosRoute
   SegurancaInspecaoCanteiroRoute: typeof SegurancaInspecaoCanteiroRoute
   SegurancaMatrizResponsabilidadeRoute: typeof SegurancaMatrizResponsabilidadeRoute
+  SegurancaPlanoAcaoRoute: typeof SegurancaPlanoAcaoRoute
   SegurancaPosChuvaRoute: typeof SegurancaPosChuvaRoute
   SegurancaIndexRoute: typeof SegurancaIndexRoute
 }
@@ -1406,6 +1426,7 @@ const SegurancaRouteChildren: SegurancaRouteChildren = {
   SegurancaHomologadosRoute: SegurancaHomologadosRoute,
   SegurancaInspecaoCanteiroRoute: SegurancaInspecaoCanteiroRoute,
   SegurancaMatrizResponsabilidadeRoute: SegurancaMatrizResponsabilidadeRoute,
+  SegurancaPlanoAcaoRoute: SegurancaPlanoAcaoRoute,
   SegurancaPosChuvaRoute: SegurancaPosChuvaRoute,
   SegurancaIndexRoute: SegurancaIndexRoute,
 }

@@ -10,6 +10,7 @@ import Flame from 'lucide-react/dist/esm/icons/flame.js';
 import Heart from 'lucide-react/dist/esm/icons/heart.js';
 import Grid3X3 from 'lucide-react/dist/esm/icons/grid-3x3.js';
 import GraduationCap from 'lucide-react/dist/esm/icons/graduation-cap.js';
+import ListTodo from 'lucide-react/dist/esm/icons/list-todo.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/seguranca/')({
@@ -30,6 +31,7 @@ function SegurancaComponent() {
     { title: "Campanhas", icon: Heart, href: "/seguranca/campanhas" },
     { title: "Matriz\nResponsabilidade", icon: Grid3X3, href: "/seguranca/matriz-responsabilidade" },
     { title: "Controle de\nTreinamento", icon: GraduationCap, href: "/seguranca/controle-treinamento" },
+    { title: "Plano de\nAção", icon: ListTodo, href: "/seguranca/plano-acao" },
   ];
 
   return (
