@@ -1639,3 +1639,4 @@ export function IndicadoresComponent() {
   )
 }
 export default IndicadoresComponent
+

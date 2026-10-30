@@ -102,3 +102,4 @@ describe('indicadoresData utils', () => {
     expect(report).toContain('DENTRO DA META')
   })
 })
+

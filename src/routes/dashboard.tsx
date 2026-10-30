@@ -22,6 +22,7 @@ import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecao
 import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
 import { DashboardDesviosWidget } from '../components/DashboardDesviosWidget'
 import { DashboardDesviosBanner } from '../components/DashboardDesviosBanner'
+import { DashboardAnaliseRiscoBanner } from '../components/DashboardAnaliseRiscoBanner'
 import { DashboardCampanhaMesWidget } from '../components/DashboardCampanhaMesWidget'
 import { DashboardMatrizWidget } from '../components/DashboardMatrizWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
@@ -1551,6 +1552,9 @@ function DashboardComponent() {
 
         {/* Banner de Aviso de Desvios de Segurança em Aberto */}
         <DashboardDesviosBanner />
+
+        {/* Banner de Aviso de Análise de Risco (Vencendo ou Vencida) */}
+        <DashboardAnaliseRiscoBanner />
 
         {/* Permissão de Trabalho Alert */}
         {expiringPTs.length > 0 && (

@@ -346,3 +346,4 @@ export async function salvarIndicadoresStore(
     return false
   }
 }
+

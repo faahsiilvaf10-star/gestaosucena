@@ -234,7 +234,14 @@ export type WhatsappSettings = {
     enabled_correcao_item: boolean;
     specificGroupId: string;
   };
+  analiseRisco?: {
+    enabled_5_dias: boolean;
+    enabled_dia_vencimento: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
+    analiseRiscoVencendo5Dias?: string;
+    analiseRiscoVencendoHoje?: string;
     campanhaSegurancaMes?: string;
     matrizResponsabilidadeLembrete?: string;
     desvioRegistrado?: string;
@@ -346,7 +353,16 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled_correcao_item: true,
     specificGroupId: "",
   },
+  analiseRisco: {
+    enabled_5_dias: true,
+    enabled_dia_vencimento: true,
+    specificGroupId: "",
+  },
   messageTemplates: {
+    analiseRiscoVencendo5Dias:
+      "⏳ *AVISO: ANÁLISE DE RISCO VENCENDO EM 5 DIAS* ⏳\n\n📋 *Título:* {titulo}\n📍 *Atividade / Local:* {local}\n📅 *Válida até:* {data_validade}\n⏳ *Prazo:* Faltam 5 dias para o vencimento!\n\n⚠️ _Por favor, providencie a elaboração da nova Análise de Risco com antecedência._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
+    analiseRiscoVencendoHoje:
+      "🚨 *ATENÇÃO: ANÁLISE DE RISCO VENCE HOJE* 🚨\n\n📋 *Título:* {titulo}\n📍 *Atividade / Local:* {local}\n📅 *Data de Vencimento:* {data_validade} (HOJE)\n\n⚠️ _A validade desta Análise de Risco expira hoje. O Técnico de Segurança deve emitir a nova análise e fechar a anterior._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     ddsHoje:
       "🎤 *Lembrete DDS - Hoje*\n\n👤 *Palestrante:* {palestrante}\n📅 *Data:* {data} (hoje)\n📋 {tema}\n\n_Mensagem automática - Sucena_",
     ddsAmanha:

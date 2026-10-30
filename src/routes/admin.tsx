@@ -2051,6 +2051,75 @@ function AdminRoute() {
                   </div>
                 </div>
 
+                {/* Análise de Risco */}
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-semibold text-sm">Análise de Risco (Alertas de Validade)</h4>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Disparo automático no WhatsApp quando faltar 5 dias para vencer e no dia do vencimento. Fechamento restrito ao Técnico de Segurança.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold">Notificar quando faltar 5 dias para vencer:</span>
+                      <button
+                        type="button"
+                        onClick={() => setWhatsappSettings(prev => ({
+                          ...prev,
+                          analiseRisco: {
+                            ...prev.analiseRisco!,
+                            enabled_5_dias: !(prev.analiseRisco?.enabled_5_dias ?? true)
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.analiseRisco?.enabled_5_dias ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.analiseRisco?.enabled_5_dias ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold">Notificar no dia do vencimento:</span>
+                      <button
+                        type="button"
+                        onClick={() => setWhatsappSettings(prev => ({
+                          ...prev,
+                          analiseRisco: {
+                            ...prev.analiseRisco!,
+                            enabled_dia_vencimento: !(prev.analiseRisco?.enabled_dia_vencimento ?? true)
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.analiseRisco?.enabled_dia_vencimento ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.analiseRisco?.enabled_dia_vencimento ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo para Análise de Risco</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.analiseRisco?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        analiseRisco: {
+                          enabled_5_dias: prev.analiseRisco?.enabled_5_dias ?? true,
+                          enabled_dia_vencimento: prev.analiseRisco?.enabled_dia_vencimento ?? true,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                    />
+                  </div>
+                </div>
+
                 {/* Grupo específico */}
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
@@ -2114,7 +2183,9 @@ function AdminRoute() {
                     { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' },
                     { key: 'desvioRegistrado', label: 'Desvio de Segurança' },
                     { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' },
-                    { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' }
+                    { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' },
+                    { key: 'analiseRiscoVencendo5Dias', label: 'Análise de Risco (5 Dias)' },
+                    { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2164,6 +2235,7 @@ function AdminRoute() {
                     {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
                     {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
                     {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
+                    {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
                   </div>
                 </div>
               </div>
