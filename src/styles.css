@@ -1,7 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark-mode-disabled, .dark-mode-disabled *));
 
 
 /* ============================================================
@@ -243,78 +243,59 @@
     color-scheme: light;
   }
 
+  /* Força color-scheme light global em todos os elementos */
+  :root, html, body {
+    color-scheme: light !important;
+  }
+
   .dark {
-    --theme-bg: hsl(0 0% 4%);
+    --theme-bg: #eef0f4;
     --theme-bg-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(135deg, #0b0b0e 0%, #111114 45%, #15120e 100%);
-    --theme-surface: hsl(0 0% 8%);
-    --theme-card: hsl(0 0% 8%);
-    --theme-popover: hsl(0 0% 8%);
-    --theme-card-foreground: #ffffff;
-    --theme-popover-foreground: #ffffff;
+      linear-gradient(rgba(120, 130, 160, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 130, 160, 0.07) 1px, transparent 1px),
+      linear-gradient(135deg, #e4e8f1 0%, #eceef4 45%, #f7ece2 100%);
+    --theme-surface: #f3f1ed;
+    --theme-card: #fbfaf8;
+    --theme-popover: #ffffff;
+    --theme-card-foreground: #1c1d21;
+    --theme-popover-foreground: #1c1d21;
 
-    --theme-text-primary: #ffffff;
-    --theme-foreground: #ffffff;
-    --theme-muted: hsl(0 0% 65%);
-    --theme-muted-foreground: hsl(0 0% 65%);
+    --theme-text-primary: #1c1d21;
+    --theme-foreground: #1c1d21;
+    --theme-muted: #5f6472;
+    --theme-muted-foreground: #5f6472;
 
-    --theme-stroke: hsl(0 0% 12%);
-    --theme-border: hsl(0 0% 12%);
-    --theme-input: hsl(0 0% 20%);
+    --theme-stroke: #dfe1e8;
+    --theme-border: #dfe1e8;
+    --theme-input: #d5d8e0;
     --theme-ring: #c9a84c;
-    --theme-outline: hsl(0 0% 30%);
+    --theme-outline: #c9a84c;
 
-    --theme-background: hsl(0 0% 4%);
-    --theme-secondary: hsl(0 0% 14%);
-    --theme-secondary-foreground: #ffffff;
-    --theme-destructive: #ff3848;
-    --theme-destructive-foreground: hsl(0 0% 4%);
+    --theme-background: #eef0f4;
+    --theme-secondary: #e7e8ee;
+    --theme-secondary-foreground: #26282f;
+    --theme-destructive: #d03d4c;
+    --theme-destructive-foreground: #ffffff;
 
-    --theme-accent: hsl(0 0% 96%);
-    --theme-accent-foreground: hsl(0 0% 4%);
-    --theme-primary: hsl(0 0% 96%);
-    --theme-primary-foreground: hsl(0 0% 4%);
+    --theme-accent: #26282f;
+    --theme-accent-foreground: #f7f7f5;
+    --theme-primary: #26282f;
+    --theme-primary-foreground: #f7f7f5;
 
-    --theme-sidebar: hsl(0 0% 8%);
-    --theme-sidebar-foreground: #ffffff;
-    --theme-sidebar-primary: hsl(0 0% 96%);
-    --theme-sidebar-primary-foreground: hsl(0 0% 4%);
-    --theme-sidebar-accent: hsl(0 0% 14%);
-    --theme-sidebar-accent-foreground: #ffffff;
-    --theme-sidebar-border: hsl(0 0% 12%);
+    --theme-sidebar: #f3f1ed;
+    --theme-sidebar-foreground: #1c1d21;
+    --theme-sidebar-primary: #26282f;
+    --theme-sidebar-primary-foreground: #f7f7f5;
+    --theme-sidebar-accent: #e7e8ee;
+    --theme-sidebar-accent-foreground: #1c1d21;
+    --theme-sidebar-border: #dfe1e8;
     --theme-sidebar-ring: #c9a84c;
 
-    /* Elementos nativos do browser no esquema escuro */
-    color-scheme: dark;
+    color-scheme: light !important;
   }
 
   .dark body {
-    color: #ffffff !important;
-  }
-
-  /* ============================================================
-     TEMA ESCURO — FONTES BRANCAS
-     Garante que todas as fontes em tom azul fiquem brancas no tema escuro.
-     ============================================================ */
-  .dark [class*="text-blue-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
-  .dark [class*="text-sky-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
-  .dark [class*="text-cyan-"]:not([class*="dark:text-emerald"]):not([class*="dark:text-red"]):not([class*="dark:text-amber"]):not([class*="dark:text-orange"]):not([class*="dark:text-yellow"]):not([class*="dark:text-green"]),
-  .dark [class*="text-[#07173f]"],
-  .dark [class*="text-[#123c82]"],
-  .dark [class*="text-[#31517e]"],
-  .dark [class*="text-[#23385c]"],
-  .dark [class*="text-[#53698e]"] {
-    color: #ffffff !important;
-  }
-
-  /* Diálogos, títulos e modais no tema escuro sempre com cor branca */
-  .dark dialog,
-  .dark [role="dialog"],
-  .dark [data-radix-popper-content-wrapper],
-  .dark .dialog-content {
-    color: #ffffff !important;
+    color: #1c1d21 !important;
   }
 
   /* ============================================================
@@ -495,15 +476,9 @@
   border: 1px solid rgba(30, 35, 50, 0.06);
 }
 
-.dark .bg-glass {
-  background: rgba(10, 10, 12, 0.75);
-  border-color: rgba(255, 255, 255, 0.05);
-}
+.dark .bg-glass { background: rgba(251, 250, 248, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
-.dark .card-glass {
-  background: rgba(20, 20, 22, 0.5);
-  border-color: rgba(255, 255, 255, 0.03);
-}
+.dark .card-glass { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 
 /* Mobile: reduz blur para melhor performance */
 @media (max-width: 767px) {
@@ -513,11 +488,7 @@
     -webkit-backdrop-filter: blur(8px);
   }
 
-  .dark .bg-glass {
-    background: rgba(10, 10, 12, 0.88);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
+  .dark .bg-glass { background: rgba(251, 250, 248, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
   .card-glass {
     background: rgba(255, 255, 255, 0.82);
@@ -525,11 +496,7 @@
     -webkit-backdrop-filter: blur(6px);
   }
 
-  .dark .card-glass {
-    background: rgba(20, 20, 22, 0.82);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
+  .dark .card-glass { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 }
 
 /* ============================================================
@@ -581,12 +548,7 @@
   background-clip: text;
 }
 
-.dark .text-gradient {
-  background: linear-gradient(90deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+.dark .text-gradient { background: linear-gradient(90deg, #1c1d21 0%, rgba(28, 29, 33, 0.7) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 /* Título de página responsivo */
 .page-title {

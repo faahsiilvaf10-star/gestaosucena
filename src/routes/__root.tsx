@@ -33,7 +33,7 @@ function RootContent() {
   const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes') || path.startsWith('/admin')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
-    <div className={`min-h-screen ${isDark ? 'text-white' : 'text-[#1c1d21]'}`}>
+    <div className="min-h-screen text-[#1c1d21]">
       <DailySessionWatcher />
       <GlobalBackground />
       {isAppRoute ? (
@@ -54,7 +54,7 @@ function RootContent() {
       )}
       {/* Comunicados: exibidos em qualquer rota, inclusive após o login */}
       <ComunicadoViewer />
-      <Toaster position="bottom-left" theme={isDark ? "dark" : "light"} />
+      <Toaster position="bottom-left" theme="light" />
     </div>
   )
 }
@@ -127,7 +127,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className="light" style={{ colorScheme: 'light' }} suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Aplica a classe do tema antes do primeiro paint (evita flash) */}
