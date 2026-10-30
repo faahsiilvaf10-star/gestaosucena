@@ -12,7 +12,11 @@ import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.js';
 import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import X from 'lucide-react/dist/esm/icons/x.js'
+import Maximize2 from 'lucide-react/dist/esm/icons/maximize-2.js'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js'
+import toast from 'react-hot-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -67,6 +71,9 @@ function VistoriaCintas() {
   // Form state
   const [dataInspecao, setDataInspecao] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [fotos, setFotos] = useState<string[]>([])
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleEdit = (cinta: any) => {
     setEditingCinta(cinta)
@@ -76,16 +83,92 @@ function VistoriaCintas() {
         : new Date().toISOString().split('T')[0]
     )
     setObservacoes('')
+    // Carrega fotos existentes: se houver array JSON ou string única
+    let initialFotos: string[] = []
+    if (cinta.foto) {
+      try {
+        const parsed = JSON.parse(cinta.foto)
+        if (Array.isArray(parsed)) initialFotos = parsed
+        else initialFotos = [cinta.foto]
+      } catch {
+        initialFotos = [cinta.foto]
+      }
+    }
+    setFotos(initialFotos)
+  }
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const maxDim = 1200
+          let width = img.width
+          let height = img.height
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', 0.82))
+        }
+        img.onerror = (err) => reject(err)
+      }
+      reader.onerror = (err) => reject(err)
+    })
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const toastId = toast.loading('Processando foto...')
+    try {
+      const newUrls: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        const compressed = await compressImage(files[i])
+        newUrls.push(compressed)
+      }
+      setFotos((prev) => [...prev, ...newUrls])
+      toast.success(newUrls.length > 1 ? 'Fotos adicionadas!' : 'Foto adicionada!', { id: toastId })
+    } catch (err) {
+      console.error('Erro ao carregar foto:', err)
+      toast.error('Erro ao carregar imagem', { id: toastId })
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveFoto = (indexToRemove: number) => {
+    setFotos((prev) => prev.filter((_, idx) => idx !== indexToRemove))
   }
 
   const handleSave = async (novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => {
     if (!editingCinta) return
     try {
-      await inspecionarCinta(editingCinta.id, dataInspecao, observacoes, novoStatus)
+      const fotoPayload = fotos.length === 0 ? null : (fotos.length === 1 ? fotos[0] : JSON.stringify(fotos))
+      await inspecionarCinta(editingCinta.id, dataInspecao, observacoes, novoStatus, fotoPayload)
       setEditingCinta(null)
+      setFotos([])
       setHistoryPage(1)
+      toast.success('Inspeção registrada com sucesso!')
     } catch (e) {
       console.error('Erro ao salvar inspeção:', e)
+      toast.error('Erro ao salvar inspeção')
     }
   }
 
@@ -304,7 +387,33 @@ function VistoriaCintas() {
                         {cinta.inspecionadaEm || '—'}
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                        {cinta.foto ? <Camera className="w-4 h-4" /> : '—'}
+                        {cinta.foto ? (() => {
+                          let firstImg = cinta.foto
+                          let count = 1
+                          try {
+                            const p = JSON.parse(cinta.foto)
+                            if (Array.isArray(p) && p.length > 0) {
+                              firstImg = p[0]
+                              count = p.length
+                            }
+                          } catch {}
+                          return (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={firstImg}
+                                alt="Foto cinta"
+                                onClick={() => setExpandedImage(firstImg)}
+                                className="w-9 h-9 rounded-lg object-cover cursor-pointer border border-gray-200 dark:border-white/10 hover:scale-105 transition-transform shadow-xs"
+                                title="Clique para expandir"
+                              />
+                              {count > 1 && (
+                                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                                  +{count - 1}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        })() : '—'}
                       </td>
                       <td className="px-6 py-4 text-right">
                         {cinta.cor === corDoMes && (
@@ -425,7 +534,33 @@ function VistoriaCintas() {
                       {h.observacoes || '—'}
                     </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                      {h.foto ? <Camera className="w-4 h-4" /> : '—'}
+                      {h.foto ? (() => {
+                        let firstImg = h.foto
+                        let count = 1
+                        try {
+                          const p = JSON.parse(h.foto)
+                          if (Array.isArray(p) && p.length > 0) {
+                            firstImg = p[0]
+                            count = p.length
+                          }
+                        } catch {}
+                        return (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={firstImg}
+                              alt="Foto histórico"
+                              onClick={() => setExpandedImage(firstImg)}
+                              className="w-9 h-9 rounded-lg object-cover cursor-pointer border border-gray-200 dark:border-white/10 hover:scale-105 transition-transform shadow-xs"
+                              title="Clique para expandir"
+                            />
+                            {count > 1 && (
+                              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                                +{count - 1}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })() : '—'}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button className="text-[#5f6472] dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
@@ -543,17 +678,99 @@ function VistoriaCintas() {
                 />
               </div>
 
-              {/* Foto */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#1c1d21] dark:text-white">
-                  Foto da Cinta
-                </Label>
-                <div className="border border-dashed border-gray-300 dark:border-white/20 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                  <ImageIcon className="w-6 h-6 text-[#5f6472] dark:text-gray-400 dark:text-gray-500 mb-2" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center">
-                    <Camera className="w-4 h-4 mr-2" /> Enviar foto da cinta
-                  </span>
+              {/* Foto da Cinta */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-[#1c1d21] dark:text-white">
+                    Foto da Cinta {fotos.length > 0 && `(${fotos.length})`}
+                  </Label>
+                  {fotos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar mais
+                    </button>
+                  )}
                 </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                {/* Galeria de Fotos Adicionadas */}
+                {fotos.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {fotos.map((foto, index) => (
+                      <div
+                        key={index}
+                        className="group relative aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-black/5 shadow-xs"
+                      >
+                        <img
+                          src={foto}
+                          alt={`Foto cinta ${index + 1}`}
+                          className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                          onClick={() => setExpandedImage(foto)}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedImage(foto)
+                            }}
+                            className="p-1.5 rounded-full bg-white/90 text-gray-900 hover:bg-white transition-transform hover:scale-110 pointer-events-auto"
+                            title="Expandir foto"
+                          >
+                            <Maximize2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveFoto(index)
+                            }}
+                            className="p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-transform hover:scale-110 pointer-events-auto"
+                            title="Remover foto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Botão de adicionar mais fotos na própria grade */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-xl border border-dashed border-gray-300 dark:border-white/20 flex flex-col items-center justify-center text-gray-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-6 h-6 mb-1" />
+                      <span className="text-xs font-semibold">Adicionar</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Área vazia para adicionar primeira foto */
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border border-dashed border-gray-300 dark:border-white/20 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/10 dark:hover:bg-white/5 transition-all group"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:scale-110 transition-all mb-2">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-emerald-600 transition-colors">
+                      Clique para adicionar foto da cinta
+                    </span>
+                    <span className="text-xs text-gray-400 mt-0.5">
+                      PNG, JPG ou foto direta da câmera
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Status Actions */}
@@ -583,6 +800,30 @@ function VistoriaCintas() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Modal de Expansão de Foto (Lightbox) */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setExpandedImage(null)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+              title="Fechar (Esc)"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={expandedImage}
+              alt="Foto ampliada da cinta"
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -31,7 +31,13 @@ interface CintasState {
   isLoading: boolean
   setHasHydrated: (hasHydrated: boolean) => void
   fetchCintas: () => Promise<void>
-  inspecionarCinta: (id: string, dataInspecao: string, observacoes: string, novoStatus: 'Inspecionada' | 'Não é mês de inspeção') => Promise<void>
+  inspecionarCinta: (
+    id: string,
+    dataInspecao: string,
+    observacoes: string,
+    novoStatus: 'Inspecionada' | 'Não é mês de inspeção',
+    foto?: string | null
+  ) => Promise<void>
 }
 
 export const useCintasStore = create<CintasState>()((set, get) => ({
@@ -65,7 +71,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
         cor: c.cor,
         status: c.status,
         inspecionadaEm: c.inspecionada_em,
-        foto: c.foto
+        foto: c.foto || null
       }))
 
       set({
@@ -80,7 +86,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
     }
   },
 
-  inspecionarCinta: async (id, dataInspecao, observacoes, novoStatus) => {
+  inspecionarCinta: async (id, dataInspecao, observacoes, novoStatus, foto = null) => {
     const state = get()
     const cintaToEdit = state.cintas.find(c => c.id === id)
     if (!cintaToEdit) return
@@ -99,6 +105,8 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
       // ignore
     }
 
+    const fotoFinal = foto !== undefined ? foto : cintaToEdit.foto || null
+
     const novoHistorico = {
       cinta_id: id,
       tag: cintaToEdit.tag,
@@ -108,7 +116,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
       status: novoStatus === 'Inspecionada' ? 'Inspecionada' : 'Cancelada',
       inspetor: inspetor,
       observacoes: observacoes || null,
-      foto: null
+      foto: fotoFinal
     }
 
     try {
@@ -126,7 +134,8 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
         .from('seguranca_cintas')
         .update({ 
           status: novoStatus, 
-          inspecionada_em: novaDataFmt 
+          inspecionada_em: novaDataFmt,
+          foto: fotoFinal
         })
         .eq('id', id)
       
@@ -134,7 +143,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
 
       // Update Local State
       set((state) => ({
-        cintas: state.cintas.map(c => c.id === id ? { ...c, status: novoStatus, inspecionadaEm: novaDataFmt } : c),
+        cintas: state.cintas.map(c => c.id === id ? { ...c, status: novoStatus, inspecionadaEm: novaDataFmt, foto: fotoFinal } : c),
         historico: [insertedHistorico as HistoricoInspecao, ...state.historico]
       }))
 
