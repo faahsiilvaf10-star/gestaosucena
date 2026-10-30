@@ -757,7 +757,7 @@ function DesviosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-28 pt-4 px-3 sm:px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-28 pt-3 px-1 sm:px-2 w-full max-w-none">
       {/* Topo / Migalha de Pão */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2 text-sm text-gray-700 font-semibold">

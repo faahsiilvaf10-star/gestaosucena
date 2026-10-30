@@ -58,6 +58,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   })
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+  const isDesvios = location.pathname.startsWith('/seguranca/desvios')
   const [searchQuery, setSearchQuery] = useState('')
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -613,8 +614,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {isDashboard ? (
           children
         ) : (
-          <div className="px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto">
-            {location.pathname.split('/').filter(Boolean).length >= 2 && (
+          <div className={isDesvios ? "px-2 sm:px-3 md:px-4 w-full max-w-full" : "px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto"}>
+            {location.pathname.split('/').filter(Boolean).length >= 2 && !isDesvios && (
               <div className="pt-2 pb-4">
                 <BackButton />
               </div>
