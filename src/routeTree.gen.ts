@@ -70,6 +70,7 @@ import { Route as SegurancaMatrizResponsabilidadeRouteImport } from './routes/se
 import { Route as SegurancaNaoConformidadeRouteImport } from './routes/seguranca/nao-conformidade'
 import { Route as SegurancaPlanoAcaoRouteImport } from './routes/seguranca/plano-acao'
 import { Route as SegurancaPosChuvaRouteImport } from './routes/seguranca/pos-chuva'
+import { Route as SegurancaRelatorioOcorrenciaRouteImport } from './routes/seguranca/relatorio-ocorrencia'
 import { Route as AlmoxarifadoPedidosIndexRouteImport } from './routes/almoxarifado/pedidos/index'
 import { Route as AlmoxarifadoPedidosIdRouteImport } from './routes/almoxarifado/pedidos/$id'
 import { Route as AlmoxarifadoPedidosNovoRouteImport } from './routes/almoxarifado/pedidos/novo'
@@ -390,6 +391,12 @@ const SegurancaPosChuvaRoute = SegurancaPosChuvaRouteImport.update({
   path: '/pos-chuva',
   getParentRoute: () => SegurancaRoute,
 } as any)
+const SegurancaRelatorioOcorrenciaRoute =
+  SegurancaRelatorioOcorrenciaRouteImport.update({
+    id: '/relatorio-ocorrencia',
+    path: '/relatorio-ocorrencia',
+    getParentRoute: () => SegurancaRoute,
+  } as any)
 const AlmoxarifadoPedidosIndexRoute =
   AlmoxarifadoPedidosIndexRouteImport.update({
     id: '/pedidos/',
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
   '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
+  '/seguranca/relatorio-ocorrencia': typeof SegurancaRelatorioOcorrenciaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
@@ -540,6 +548,7 @@ export interface FileRoutesByTo {
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
   '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
+  '/seguranca/relatorio-ocorrencia': typeof SegurancaRelatorioOcorrenciaRoute
   '/almoxarifado': typeof AlmoxarifadoIndexRoute
   '/documentos': typeof DocumentosIndexRoute
   '/equipamentos': typeof EquipamentosIndexRoute
@@ -610,6 +619,7 @@ export interface FileRoutesById {
   '/seguranca/nao-conformidade': typeof SegurancaNaoConformidadeRoute
   '/seguranca/plano-acao': typeof SegurancaPlanoAcaoRoute
   '/seguranca/pos-chuva': typeof SegurancaPosChuvaRoute
+  '/seguranca/relatorio-ocorrencia': typeof SegurancaRelatorioOcorrenciaRoute
   '/almoxarifado/': typeof AlmoxarifadoIndexRoute
   '/documentos/': typeof DocumentosIndexRoute
   '/equipamentos/': typeof EquipamentosIndexRoute
@@ -681,6 +691,7 @@ export interface FileRouteTypes {
     | '/seguranca/nao-conformidade'
     | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
+    | '/seguranca/relatorio-ocorrencia'
     | '/almoxarifado/'
     | '/documentos/'
     | '/equipamentos/'
@@ -744,6 +755,7 @@ export interface FileRouteTypes {
     | '/seguranca/nao-conformidade'
     | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
+    | '/seguranca/relatorio-ocorrencia'
     | '/almoxarifado'
     | '/documentos'
     | '/equipamentos'
@@ -813,6 +825,7 @@ export interface FileRouteTypes {
     | '/seguranca/nao-conformidade'
     | '/seguranca/plano-acao'
     | '/seguranca/pos-chuva'
+    | '/seguranca/relatorio-ocorrencia'
     | '/almoxarifado/'
     | '/documentos/'
     | '/equipamentos/'
@@ -1283,6 +1296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SegurancaPosChuvaRouteImport
       parentRoute: typeof SegurancaRoute
     }
+    '/seguranca/relatorio-ocorrencia': {
+      id: '/seguranca/relatorio-ocorrencia'
+      path: '/relatorio-ocorrencia'
+      fullPath: '/seguranca/relatorio-ocorrencia'
+      preLoaderRoute: typeof SegurancaRelatorioOcorrenciaRouteImport
+      parentRoute: typeof SegurancaRoute
+    }
     '/almoxarifado/pedidos/': {
       id: '/almoxarifado/pedidos/'
       path: '/pedidos'
@@ -1455,6 +1475,7 @@ interface SegurancaRouteChildren {
   SegurancaNaoConformidadeRoute: typeof SegurancaNaoConformidadeRoute
   SegurancaPlanoAcaoRoute: typeof SegurancaPlanoAcaoRoute
   SegurancaPosChuvaRoute: typeof SegurancaPosChuvaRoute
+  SegurancaRelatorioOcorrenciaRoute: typeof SegurancaRelatorioOcorrenciaRoute
   SegurancaIndexRoute: typeof SegurancaIndexRoute
 }
 
@@ -1471,6 +1492,7 @@ const SegurancaRouteChildren: SegurancaRouteChildren = {
   SegurancaNaoConformidadeRoute: SegurancaNaoConformidadeRoute,
   SegurancaPlanoAcaoRoute: SegurancaPlanoAcaoRoute,
   SegurancaPosChuvaRoute: SegurancaPosChuvaRoute,
+  SegurancaRelatorioOcorrenciaRoute: SegurancaRelatorioOcorrenciaRoute,
   SegurancaIndexRoute: SegurancaIndexRoute,
 }
 
