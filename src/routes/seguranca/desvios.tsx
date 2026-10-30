@@ -773,14 +773,23 @@ function DesviosPage() {
         </span>
       </div>
 
-      {/* Título Principal */}
-      <div className="mb-6">
-        <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight flex items-center gap-2.5">
-          <TriangleAlert className="w-8 h-8 text-amber-500 inline" /> Desvios de Segurança
-        </h1>
-        <p className="text-sm font-semibold text-gray-800 mt-1.5 leading-relaxed max-w-4xl">
-          Tela <strong>Novo Desvio</strong>: selecione o <strong>Técnico de Segurança</strong> e as <strong>Pessoas Responsáveis</strong> a partir do efetivo atual do RH. Ao salvar, os dados e as fotos são enviados imediatamente ao <strong>grupo de WhatsApp</strong>. O <strong>status</strong> só pode ser alterado pelo Técnico de Segurança, enquanto <strong>qualquer colaborador</strong> pode registrar a correção do desvio.
-        </p>
+      {/* Título Principal com Ilustração do Trabalhador EPI no Lado Esquerdo */}
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 bg-white border border-gray-200/80 rounded-3xl p-4 sm:p-5 shadow-xs">
+        <div className="shrink-0 flex items-center justify-center">
+          <img
+            src="/trabalhador-epi-direita-v2.gif"
+            alt="Trabalhador com EPI"
+            className="w-32 sm:w-40 md:w-48 h-auto object-contain rounded-2xl drop-shadow-sm select-none"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-950 tracking-tight flex items-center gap-2.5">
+            <TriangleAlert className="w-7 h-7 sm:w-8 sm:h-8 text-amber-500 inline shrink-0" /> Desvios de Segurança
+          </h1>
+          <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-2 leading-relaxed max-w-4xl">
+            Tela <strong>Novo Desvio</strong>: selecione o <strong>Técnico de Segurança</strong> e as <strong>Pessoas Responsáveis</strong> a partir do efetivo atual do RH. Ao salvar, os dados e as fotos são enviados imediatamente ao <strong>grupo de WhatsApp</strong>. O <strong>status</strong> só pode ser alterado pelo Técnico de Segurança, enquanto <strong>qualquer colaborador</strong> pode registrar a correção do desvio.
+          </p>
+        </div>
       </div>
 
       {/* ==========================================================
