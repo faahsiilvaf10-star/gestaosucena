@@ -111,5 +111,26 @@ describe('Matriz de Responsabilidades - Regras e Definições', () => {
     expect(getMesKey(d)).toBe('2026-10')
     expect(getMesNome(d)).toBe('Outubro')
   })
+
+  it('suporta duplicação de matriz e cálculo de métricas com cargos customizados', () => {
+    const cargoBase = CARGOS_MATRIZ[0]
+    const cargoDuplicado = {
+      ...cargoBase,
+      id: 'preposto_duplicado_' + Date.now(),
+      nome: 'Líder de Frente (Duplicado)',
+      icone: '🏗️',
+      cor: '#eab308',
+      custom: true,
+    }
+
+    const listaComDuplicado = [...CARGOS_MATRIZ, cargoDuplicado]
+    const estado = criarEstadoInicial()
+    estado[cargoDuplicado.id] = cargoDuplicado.atividades.map((n) => ({ nome: n, marks: 1 }))
+
+    const metricas = getMetricasGerais(estado, listaComDuplicado)
+    expect(metricas.totalCargos).toBe(7)
+    expect(metricas.ativTotal).toBe(28 + cargoDuplicado.atividades.length)
+    expect(metricas.marcTotal).toBe(cargoDuplicado.atividades.length * 1)
+  })
 })
 

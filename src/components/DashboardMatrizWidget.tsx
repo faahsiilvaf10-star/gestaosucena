@@ -27,6 +27,7 @@ function normalizarCargoParaMatriz(cargoColab: string): string | null {
 export function DashboardMatrizWidget() {
   const [mesKey] = useState<string>(() => getMesKey())
   const [atividadesPorCargo, setAtividadesPorCargo] = useState<Record<string, AtividadeMatriz[]>>({})
+  const [cargos, setCargos] = useState<any[]>(CARGOS_MATRIZ)
   const [nomesPorCargo, setNomesPorCargo] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -47,11 +48,13 @@ export function DashboardMatrizWidget() {
 
         if (!mounted) return
 
+        const listaCargos = matrizDb.cargos && matrizDb.cargos.length > 0 ? matrizDb.cargos : CARGOS_MATRIZ
+        setCargos(listaCargos)
         setAtividadesPorCargo(matrizDb.atividadesPorCargo || {})
 
         // Mapa de nomes do RH
         const mapa: Record<string, string[]> = {}
-        for (const c of CARGOS_MATRIZ) {
+        for (const c of listaCargos) {
           mapa[c.nome] = []
         }
 
@@ -98,7 +101,7 @@ export function DashboardMatrizWidget() {
   }, [mesKey, env])
 
   const metricas = useMemo(() => {
-    return getMetricasGerais(atividadesPorCargo)
+    return getMetricasGerais(atividadesPorCargo, cargos)
   }, [atividadesPorCargo])
 
   return (
@@ -171,7 +174,7 @@ export function DashboardMatrizWidget() {
 
         {/* Lista dos 6 Cargos com Status */}
         <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
-          {CARGOS_MATRIZ.map((c) => {
+          {cargos.map((c) => {
             const ativs = atividadesPorCargo[c.id] || []
             const m = getMetricasCargo(c, ativs)
             const nomes = nomesPorCargo[c.nome] || []

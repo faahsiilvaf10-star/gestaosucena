@@ -278,7 +278,8 @@ export function getMetricasCargo(
  * Métricas Gerais de todos os Cargos
  */
 export function getMetricasGerais(
-  atividadesPorCargo: Record<string, AtividadeMatriz[]>
+  atividadesPorCargo: Record<string, AtividadeMatriz[]>,
+  cargosList: CargoMatrizDef[] = CARGOS_MATRIZ
 ) {
   let ativTotal = 0
   let marcTotal = 0
@@ -286,7 +287,7 @@ export function getMetricasGerais(
   let feitasTotal = 0
   let cargosConcluidos = 0
 
-  for (const cargo of CARGOS_MATRIZ) {
+  for (const cargo of cargosList) {
     const m = getMetricasCargo(cargo, atividadesPorCargo[cargo.id])
     ativTotal += m.totalAtividades
     marcTotal += m.marcacoesFeitas
@@ -300,9 +301,9 @@ export function getMetricasGerais(
   const pctGeral = marcMax > 0 ? Math.round((marcTotal / marcMax) * 100) : 0
 
   return {
-    totalCargos: CARGOS_MATRIZ.length,
+    totalCargos: cargosList.length,
     cargosConcluidos,
-    cargosPendentes: CARGOS_MATRIZ.length - cargosConcluidos,
+    cargosPendentes: cargosList.length - cargosConcluidos,
     ativTotal,
     marcTotal,
     marcMax,
