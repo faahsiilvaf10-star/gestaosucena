@@ -623,7 +623,7 @@ function ControleAsoPage() {
                 title="Exportar Relatório Oficial em PDF (com Logo da Sucena)"
               >
                 <FileText className="w-4 h-4" />
-                <span>{isExportingPdf ? 'Gerando...' : '📄 PDF com Logo'}</span>
+                <span>{isExportingPdf ? 'Gerando...' : 'Baixar PDF'}</span>
               </button>
 
               <button
@@ -634,7 +634,7 @@ function ControleAsoPage() {
                 title="Exportar Planilha Excel (.xlsx formatada com Logo)"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span>{isExportingExcel ? 'Exportando...' : '📊 Planilha Excel'}</span>
+                <span>{isExportingExcel ? 'Exportando...' : 'Planilha Excel'}</span>
               </button>
 
               <button
@@ -1325,7 +1325,7 @@ function ControleAsoPage() {
               title="Baixar Relatório Oficial em PDF (A4 Paisagem com Logo da Sucena)"
             >
               <FileText className="w-4 h-4" />
-              <span>{isExportingPdf ? 'Gerando PDF...' : '📄 Baixar PDF com Logo'}</span>
+              <span>{isExportingPdf ? 'Gerando...' : 'Baixar PDF'}</span>
             </button>
 
             <button
@@ -1336,7 +1336,7 @@ function ControleAsoPage() {
               title="Baixar Planilha Excel formatada com Logo da Sucena"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>{isExportingExcel ? 'Exportando Excel...' : '📊 Baixar Planilha Excel'}</span>
+              <span>{isExportingExcel ? 'Exportando...' : 'Planilha Excel'}</span>
             </button>
 
             <button

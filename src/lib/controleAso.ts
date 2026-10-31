@@ -346,7 +346,7 @@ export async function exportarControleAsoPDF(
   doc.setFontSize(7.5)
   doc.setTextColor(100, 116, 139)
   doc.text(
-    `Unidade / Operação: Hydro Reabilitação (Barcarena - PA) • Emitido em: ${emissao} • Validade ASO = Exame mais recente + 1 ano`,
+    `Unidade / Operação: Hydro Reabilitação (Barcarena - PA) | Emitido em: ${emissao} | Validade ASO = Exame mais recente + 1 ano`,
     50,
     23.5
   )
@@ -394,22 +394,27 @@ export async function exportarControleAsoPDF(
   const tableRows = colaboradores.map((c, idx) => {
     const st = statusASO(c)
     const val = validadeDe(c)
-    const hydro = c.matricula_hydro || c.matricula || '—'
+    const hydro = c.matricula_hydro || c.matricula || '-'
     const sucena = c.matricula_sucena ? `\nSucena: ${c.matricula_sucena}` : ''
+
+    let situacaoTexto = 'SEM ASO'
+    if (st.k === 'valido') situacaoTexto = 'VÁLIDO'
+    else if (st.k === 'vencendo') situacaoTexto = 'A VENCER'
+    else if (st.k === 'vencido') situacaoTexto = 'VENCIDO'
 
     return [
       idx + 1,
       hydro + sucena,
       c.nome,
-      c.cargo || '—',
+      c.cargo || '-',
       (c.status || 'Ativo').toUpperCase(),
-      fmtDate(c.data_admissao),
-      fmtDate(c.aso_admissional),
-      fmtDate(c.aso_periodico),
-      fmtDate(c.retorno_ao_trabalho),
-      fmtDate(c.mudanca_de_risco),
-      val ? fmtDate(val) : '—',
-      st.label,
+      fmtDate(c.data_admissao) || '-',
+      fmtDate(c.aso_admissional) || '-',
+      fmtDate(c.aso_periodico) || '-',
+      fmtDate(c.retorno_ao_trabalho) || '-',
+      fmtDate(c.mudanca_de_risco) || '-',
+      val ? fmtDate(val) : '-',
+      situacaoTexto,
     ]
   })
 
@@ -468,13 +473,13 @@ export async function exportarControleAsoPDF(
       // Formatação de cores na coluna Situação (11)
       if (data.section === 'body' && data.column.index === 11) {
         const txt = String(data.cell.raw || '')
-        if (txt.includes('VÁLIDO')) {
+        if (txt === 'VÁLIDO') {
           data.cell.styles.textColor = [22, 101, 52]
           data.cell.styles.fillColor = [220, 252, 231]
-        } else if (txt.includes('A VENCER')) {
+        } else if (txt === 'A VENCER') {
           data.cell.styles.textColor = [154, 52, 18]
           data.cell.styles.fillColor = [254, 243, 199]
-        } else if (txt.includes('VENCIDO')) {
+        } else if (txt === 'VENCIDO') {
           data.cell.styles.textColor = [153, 27, 27]
           data.cell.styles.fillColor = [254, 226, 226]
         } else {
@@ -504,7 +509,7 @@ export async function exportarControleAsoPDF(
       doc.setDrawColor(226, 232, 240)
       doc.line(14, 202, 283, 202)
       doc.text(
-        'Documento Oficial de Controle de Saúde Ocupacional • Sucena Empreendimentos • Conforme NR-7 / PCMSO',
+        'Documento Oficial de Controle de Saúde Ocupacional | Sucena Empreendimentos | Conforme NR-7 / PCMSO',
         14,
         205.5
       )
