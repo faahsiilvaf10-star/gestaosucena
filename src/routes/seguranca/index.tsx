@@ -16,6 +16,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
+import Stethoscope from 'lucide-react/dist/esm/icons/stethoscope.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/seguranca/')({
@@ -42,6 +43,7 @@ function SegurancaComponent() {
     { title: "Indicadores", icon: BarChart3, href: "/seguranca/indicadores" },
     { title: "Análise de\nRisco", icon: ShieldAlert, href: "/seguranca/analise-risco" },
     { title: "Programa de\nNovatos", icon: UserPlus, href: "/seguranca/programa-novatos" },
+    { title: "Controle de\nASO", icon: Stethoscope, href: "/seguranca/controle-aso" },
   ];
 
   return (
