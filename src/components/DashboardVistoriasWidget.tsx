@@ -110,7 +110,7 @@ export function DashboardVistoriasWidget() {
       docs.forEach(doc => {
         if (!doc.expiry) return
         const days = getDaysRemaining(doc.expiry)
-        if (days !== null && days <= 10) {
+        if (days !== null && days <= 20) {
           let priority = 2
           if (days < 0) priority = 0
           else if (days === 0) priority = 1

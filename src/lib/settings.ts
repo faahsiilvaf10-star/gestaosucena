@@ -239,8 +239,13 @@ export type WhatsappSettings = {
     enabled_dia_vencimento: boolean;
     specificGroupId: string;
   };
+  vistoriasEquipamentos?: {
+    enabled_20_dias: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
+    vistoriaEquipamentoVencendo20Dias?: string;
     analiseRiscoVencendoHoje?: string;
     campanhaSegurancaMes?: string;
     matrizResponsabilidadeLembrete?: string;
@@ -358,7 +363,13 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled_dia_vencimento: true,
     specificGroupId: "",
   },
+  vistoriasEquipamentos: {
+    enabled_20_dias: true,
+    specificGroupId: "",
+  },
   messageTemplates: {
+    vistoriaEquipamentoVencendo20Dias:
+      "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     analiseRiscoVencendo5Dias:
       "⏳ *AVISO: ANÁLISE DE RISCO VENCENDO EM 5 DIAS* ⏳\n\n📋 *Título:* {titulo}\n📍 *Atividade / Local:* {local}\n📅 *Válida até:* {data_validade}\n⏳ *Prazo:* Faltam 5 dias para o vencimento!\n\n⚠️ _Por favor, providencie a elaboração da nova Análise de Risco com antecedência._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     analiseRiscoVencendoHoje:

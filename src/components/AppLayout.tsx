@@ -23,6 +23,7 @@ import { DailyPipasAlertModal } from './DailyPipasAlertModal'
 import { DdsAlertManager } from './DdsAlertManager'
 import { CanteiroAlertManager } from './CanteiroAlertManager'
 import { AnaliseRiscoAlertManager } from './AnaliseRiscoAlertManager'
+import { VistoriaEquipamentoAlertManager } from './VistoriaEquipamentoAlertManager'
 import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { InstacenaNotificationPopup } from './instacena/InstacenaNotificationPopup'
@@ -396,6 +397,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <DdsAlertManager />
       <CanteiroAlertManager />
       <AnaliseRiscoAlertManager />
+      <VistoriaEquipamentoAlertManager />
       {currentUser.id && (
         <>
           <UserOnlineNotification currentUserId={currentUser.id} />

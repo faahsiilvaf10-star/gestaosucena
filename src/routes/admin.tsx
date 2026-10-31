@@ -2186,7 +2186,8 @@ function AdminRoute() {
                     { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' },
                     { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' },
                     { key: 'analiseRiscoVencendo5Dias', label: 'Análise de Risco (5 Dias)' },
-                    { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' }
+                    { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' },
+                    { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2237,6 +2238,7 @@ function AdminRoute() {
                     {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
                     {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
                     {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
+                    {selectedTemplate === 'vistoriaEquipamentoVencendo20Dias' && '{equipamento}, {placa_tag}, {tipo_vistoria}, {data_vencimento}, {dias_restantes}'}
                   </div>
                 </div>
               </div>

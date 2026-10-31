@@ -66,7 +66,7 @@ function getDaysRemaining(dateString: string | null | undefined): number | null 
 
 function getStatusInfo(daysRemaining: number | null) {
   if (daysRemaining === null) return { status: 'Sem informação', color: 'default', text: 'Não informado', priority: 4 }
-  if (daysRemaining > 10) return { status: 'Regular', color: 'green', text: 'Regular', priority: 3 }
+  if (daysRemaining > 20) return { status: 'Regular', color: 'green', text: 'Regular', priority: 3 }
   if (daysRemaining >= 1) return { status: 'Próximo', color: 'yellow', text: `Vence em ${daysRemaining} dia${daysRemaining > 1 ? 's' : ''}`, priority: 2 }
   if (daysRemaining === 0) return { status: 'Vence Hoje', color: 'orange', text: 'Vence hoje', priority: 1 }
   return { status: 'Vencido', color: 'red', text: `Vencido há ${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) > 1 ? 's' : ''}`, priority: 0 }
