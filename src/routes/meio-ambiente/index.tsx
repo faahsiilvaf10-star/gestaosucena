@@ -17,12 +17,12 @@ const HUB_ITEMS = [
 
 function MeioAmbienteHub() {
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 custom-scrollbar bg-transparent">
-      <div className="max-w-6xl w-full h-full mx-auto flex flex-col items-center justify-start mt-2">
+    <div className="flex flex-col h-full overflow-y-auto pb-24 custom-scrollbar bg-transparent pt-4 sm:pt-6">
+      <div className="max-w-6xl w-full h-full mx-auto flex flex-col items-center justify-start mt-4 sm:mt-6">
         
         {/* Title */}
-        <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
-          <h1 className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
+        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+          <h1 className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1.25' }}>
             Meio Ambiente
           </h1>
           <p className="text-gray-600 dark:text-white/70 text-sm mt-1 font-medium">Gestão de recursos hídricos e resíduos</p>

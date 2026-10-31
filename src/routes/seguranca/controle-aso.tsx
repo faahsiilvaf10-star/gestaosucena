@@ -526,7 +526,7 @@ function ControleAsoPage() {
   }
 
   return (
-    <div className={`min-h-screen w-full px-3 sm:px-6 lg:px-8 py-6 pb-24 transition-colors ${isDark ? 'bg-[#0f172a] text-white' : 'bg-[#fafafa] text-gray-900'}`}>
+    <div className={`min-h-screen w-full px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-24 transition-colors ${isDark ? 'bg-[#0f172a] text-white' : 'bg-[#fafafa] text-gray-900'}`}>
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Breadcrumb e Navegação */}

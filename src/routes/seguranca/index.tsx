@@ -47,9 +47,9 @@ function SegurancaComponent() {
   ];
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pt-10 sm:pt-14 lg:pt-16 pb-8 custom-scrollbar bg-transparent px-4 sm:px-6">
+    <div className="flex flex-col h-full overflow-y-auto pt-14 sm:pt-18 lg:pt-20 pb-8 custom-scrollbar bg-transparent px-4 sm:px-6">
       <div className="max-w-7xl w-full mx-auto flex flex-col items-center justify-start">
-        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-500 w-full">
+        <div className="flex flex-col items-center justify-center mb-8 sm:mb-10 animate-in fade-in slide-in-from-top-4 duration-500 w-full">
           <h1 
             className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] text-center font-bold"
             style={{ fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: '1.2' }}

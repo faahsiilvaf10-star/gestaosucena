@@ -35,11 +35,11 @@ function EquipamentosHub() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
-      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-2 sm:mt-4">
+    <div className="flex flex-col h-full bg-transparent pt-4 sm:pt-6">
+      <div className="max-w-4xl w-full mx-auto flex flex-col items-center justify-start mt-4 sm:mt-6">
         
         {/* Title */}
-        <div className="flex flex-col items-center justify-center mb-4 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
+        <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 mt-2 animate-in fade-in slide-in-from-top-4 duration-500 w-full px-1">
           <h1
             className="tracking-tight text-[#1c1d21] dark:text-white drop-shadow-md text-center py-1"
             style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: 'normal' }}

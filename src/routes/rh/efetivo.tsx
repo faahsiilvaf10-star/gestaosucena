@@ -590,7 +590,7 @@ function RhEfetivoPage() {
               <Link to="/rh" className="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
                 <ArrowLeft size={24} />
               </Link>
-              <h1 className="tracking-tight" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>Efetivo</h1>
+              <h1 className="tracking-tight" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1.25' }}>Efetivo</h1>
             </div>
             <p className="text-sm text-gray-500 ml-9">Gestão completa de colaboradores ativos da empresa.</p>
           </div>

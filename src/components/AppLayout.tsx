@@ -625,9 +625,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {isDashboard ? (
           children
         ) : (
-          <div className={isDesvios ? "px-2 sm:px-3 md:px-4 w-full max-w-full" : "px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto"}>
+          <div className={isDesvios ? "px-2 sm:px-3 md:px-4 w-full max-w-full pt-6 sm:pt-8 lg:pt-10" : "px-3 sm:px-6 md:px-10 lg:px-14 w-full max-w-7xl mx-auto pt-6 sm:pt-8 lg:pt-10"}>
             {location.pathname.split('/').filter(Boolean).length >= 2 && !isDesvios && (
-              <div className="pt-2 pb-4">
+              <div className="pt-4 sm:pt-6 pb-4 sm:pb-6">
                 <BackButton />
               </div>
             )}

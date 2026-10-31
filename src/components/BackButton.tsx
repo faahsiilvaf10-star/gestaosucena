@@ -30,7 +30,7 @@ export function BackButton({ to, label = 'Voltar' }: BackButtonProps) {
       aria-label={label}
       className="
         inline-flex items-center gap-2
-        mb-4
+        mt-1 sm:mt-2 mb-4 sm:mb-6
         text-sm font-semibold
         text-gray-600 dark:text-white/70
         hover:text-gray-900 dark:hover:text-white
