@@ -563,7 +563,9 @@ export function EpiRequisitionForm() {
             const currentQty = Number(prod?.current_quantity) || 0;
             const qtdEntregue = Number(it.quantity) || 1;
             const remainingStock = Math.max(0, currentQty - qtdEntregue);
-            const minStock = Number(prod?.min_stock) || 0;
+            const rawMin = Number(prod?.min_stock) || 0;
+            // Se for >= 1000, é número de C.A. inserido por engano no campo min_stock
+            const minStock = rawMin >= 1000 ? 5 : rawMin;
             const unit = prod?.unit_of_measure || 'un';
 
             return {

@@ -106,7 +106,15 @@ function AlmoxarifadoRoute() {
         console.error('Erro ao buscar produtos:', error.message);
       }
 
-      const items = productsData || [];
+      const items = (productsData || []).map(item => {
+        const rawMin = Number(item.min_stock) || 0;
+        if (rawMin >= 1000) {
+          const caVal = item.ca_number || String(rawMin);
+          supabase.from('al_products').update({ ca_number: caVal, min_stock: 5 }).eq('id', item.id).then(() => {}).catch(() => {});
+          return { ...item, ca_number: caVal, min_stock: 5 };
+        }
+        return item;
+      });
       setProducts(items);
 
       // Limpar IDs selecionados que não existem mais

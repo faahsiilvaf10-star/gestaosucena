@@ -44,7 +44,8 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
     name: product.name,
     description: product.description || '',
     current_quantity: product.current_quantity,
-    min_stock: product.min_stock,
+    min_stock: Number(product.min_stock) >= 1000 ? 5 : product.min_stock,
+    ca_number: (product as any).ca_number || (Number(product.min_stock) >= 1000 ? String(product.min_stock) : ''),
     category_id: product.category_id || '',
     location: product.location || '',
   })
@@ -82,6 +83,7 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
           description: formData.description,
           current_quantity: formData.current_quantity,
           min_stock: formData.min_stock,
+          ca_number: formData.ca_number || null,
           category_id: formData.category_id || null,
           location: formData.location,
           updated_at: new Date().toISOString()
@@ -253,6 +255,18 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
                   value={formData.min_stock} onChange={handleChange}
                   className="w-full bg-white dark:bg-[#121214] border border-black/10 dark:border-white/10 rounded-lg px-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors"
                 />
+                <p className="text-xs text-gray-500 mt-1">Estoque de segurança para reposição (não inserir C.A. aqui).</p>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">C.A. (Certificado de Aprovação - EPI)</label>
+                <input
+                  type="text" name="ca_number"
+                  value={formData.ca_number} onChange={handleChange}
+                  className="w-full bg-white dark:bg-[#121214] border border-black/10 dark:border-white/10 rounded-lg px-4 py-2.5 outline-none focus:border-[#0866ff] transition-colors"
+                  placeholder="Ex: 48582"
+                />
+                <p className="text-xs text-gray-500 mt-1">Número do C.A. do Ministério do Trabalho para Equipamentos de Proteção.</p>
               </div>
             </div>
 

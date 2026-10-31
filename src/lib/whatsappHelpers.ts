@@ -251,19 +251,21 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
           if (prods && prods.length > 0) {
             const p = prods[0];
             rem = Number(p.current_quantity) || 0;
-            min = Number(p.min_stock) || 0;
+            const rawMin = Number(p.min_stock) || 0;
+            min = rawMin >= 1000 ? 5 : rawMin;
             unit = p.unit_of_measure || 'un';
             isBelow = min > 0 && rem <= min;
           }
         } catch (_) {}
       }
 
+      const safeMin = (min !== undefined && min >= 1000) ? 5 : min;
       return {
         ...it,
         remainingStock: rem,
-        minStock: min,
+        minStock: safeMin,
         unit,
-        isBelowMin: isBelow ?? (min !== undefined && min > 0 && rem !== undefined && rem <= min)
+        isBelowMin: isBelow ?? (safeMin !== undefined && safeMin > 0 && rem !== undefined && rem <= safeMin)
       };
     }));
 
@@ -276,7 +278,7 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
           if (it.remainingStock !== undefined) {
             const isBelow = it.isBelowMin || (it.minStock !== undefined && it.minStock > 0 && it.remainingStock <= it.minStock);
             if (isBelow) {
-              return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit} ⚠️ *(Abaixo do mínimo: ${it.minStock} ${unit})*`;
+              return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit} ⚠️ *(Abaixo do mínimo: ${(it.minStock && it.minStock < 1000) ? it.minStock : 5} ${unit})*`;
             }
             return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit}`;
           }
@@ -292,7 +294,7 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
     let observacaoEstoque = '';
     if (itensAbaixoMinimo.length > 0) {
       const avisos = itensAbaixoMinimo.map(it => 
-        `• *${it.name}:* restam apenas *${it.remainingStock} ${it.unit || 'un'}* no almoxarifado (mínimo: ${it.minStock} ${it.unit || 'un'}). Reposição necessária!`
+        `• *${it.name}:* restam apenas *${it.remainingStock} ${it.unit || 'un'}* no almoxarifado (mínimo: ${(it.minStock && it.minStock < 1000) ? it.minStock : 5} ${it.unit || 'un'}). Reposição necessária!`
       ).join('\n');
       observacaoEstoque = `\n\n⚠️ *OBSERVAÇÃO:* O estoque ultrapassou o mínimo configurado:\n${avisos}`;
     }

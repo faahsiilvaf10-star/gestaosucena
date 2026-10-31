@@ -134,7 +134,7 @@ export function useEpiProducts() {
       }
       
       // Filter the ones belonging to EPI or Uniforme
-      return (data || []).filter(p => {
+      const filtered = (data || []).filter(p => {
          const catName = p.category?.name?.toLowerCase() || ''
          const subCat = p.subcategory?.toLowerCase() || ''
          const pName = p.name?.toLowerCase() || ''
@@ -145,6 +145,17 @@ export function useEpiProducts() {
                 pName.includes('óculos') || pName.includes('oculos') || pName.includes('protetor') ||
                 pName.includes('abafador') || pName.includes('máscara') || pName.includes('mascara') ||
                 pName.includes('perneira') || pName.includes('avental') || pName.includes('colete')
+      })
+
+      // Sanitizar itens onde o C.A. (ex: 48582) foi cadastrado no campo min_stock por engano
+      return filtered.map(p => {
+        const rawMin = Number(p.min_stock) || 0
+        if (rawMin >= 1000) {
+          const caVal = p.ca_number || String(rawMin)
+          supabase.from('al_products').update({ ca_number: caVal, min_stock: 5 }).eq('id', p.id).then(() => {}).catch(() => {})
+          return { ...p, ca_number: caVal, min_stock: 5 }
+        }
+        return p
       })
     }
   })
