@@ -253,6 +253,43 @@ function DashboardComponent() {
     })
   }, [efetivo])
 
+  // Status detalhado e colaboradores por status atual do RH
+  const statusCounts = useMemo(() => {
+    let ativos = 0
+    let ferias = 0
+    let afastados = 0
+    let desligados = 0
+    const feriasList: any[] = []
+    const afastadosList: any[] = []
+    const desligadosList: any[] = []
+
+    ;(efetivo || []).forEach((e: any) => {
+      const s = (e.status || '').toUpperCase().trim()
+      if (s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO' || s === 'REMOVIDO') {
+        desligados++
+        desligadosList.push(e)
+      } else if (s.includes('FERIAS') || s.includes('FÉRIAS')) {
+        ferias++
+        feriasList.push(e)
+      } else if (s.includes('AFASTAD')) {
+        afastados++
+        afastadosList.push(e)
+      } else {
+        ativos++
+      }
+    })
+
+    return {
+      ativos,
+      ferias,
+      afastados,
+      desligados,
+      feriasList,
+      afastadosList,
+      desligadosList,
+    }
+  }, [efetivo])
+
   const totalFuncionarios = activeEmployees.length
 
   const { displayPresentes, displayAusencias, pctPresenca, pctAusencia, isAttendanceSaved } = useMemo(() => {
@@ -322,7 +359,15 @@ function DashboardComponent() {
     return absentEmployees
       .map((emp: any) => {
         const first = (emp.nome || '').trim().split(/\s+/)[0] || ''
-        return first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : ''
+        const cap = first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : ''
+        const s = (emp.status || '').toUpperCase().trim()
+        if (s.includes('FERIAS') || s.includes('FÉRIAS')) {
+          return `${cap} (Férias)`
+        }
+        if (s.includes('AFASTAD')) {
+          return `${cap} (Afastado)`
+        }
+        return cap
       })
       .filter(Boolean)
   }, [attendanceInfo, activeEmployees, totalFuncionarios])
@@ -1063,7 +1108,31 @@ function DashboardComponent() {
       <section className="kpis" aria-label="Indicadores de hoje">
         <article className="kpi">
           <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg></div><span>Total de<br/>funcionários</span></div>
-          <div><div className="kpi-big" data-count={totalFuncionarios}>{totalFuncionarios}</div><div className="kpi-sub">colaboradores no quadro</div><span className="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>+2&nbsp;<span style={{ fontWeight: '600', color: 'var(--muted)' }}>vs. mês anterior</span></span></div>
+          <div>
+            <div className="kpi-big" data-count={totalFuncionarios}>{totalFuncionarios}</div>
+            <div className="kpi-sub">colaboradores no quadro</div>
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                ● {statusCounts.ativos} em operação
+              </span>
+              {statusCounts.ferias > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 cursor-help"
+                  title={`Em férias: ${statusCounts.feriasList.map((x: any) => x.nome).join(', ')}`}
+                >
+                  🌴 {statusCounts.ferias} férias
+                </span>
+              )}
+              {statusCounts.afastados > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 cursor-help"
+                  title={`Afastados: ${statusCounts.afastadosList.map((x: any) => x.nome).join(', ')}`}
+                >
+                  🩹 {statusCounts.afastados} afastados
+                </span>
+              )}
+            </div>
+          </div>
         </article>
 
         <article className="kpi">

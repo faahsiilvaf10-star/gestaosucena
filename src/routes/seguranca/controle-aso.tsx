@@ -42,7 +42,7 @@ function ControleAsoPage() {
   const [colaboradores, setColaboradores] = useState<ColaboradorAso[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'todos' | 'inativos'>('ativos')
+  const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'ferias' | 'afastados' | 'desligados' | 'todos'>('ativos')
   const [filtroSituacao, setFiltroSituacao] = useState<'todos' | 'validos' | 'vencendo' | 'vencidos' | 'sem'>('todos')
   
   // Permissões
@@ -178,11 +178,19 @@ function ControleAsoPage() {
     }
   }, [])
 
-  // Filtragem base (status ativo/inativo)
+  // Filtragem base por status
   const baseFiltrada = useMemo(() => {
     return colaboradores.filter((c) => {
-      if (filtroStatus === 'ativos') return isAtivo(c.status)
-      if (filtroStatus === 'inativos') return !isAtivo(c.status)
+      const s = (c.status || '').toUpperCase().trim()
+      const isDesligado = s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO'
+      const isFerias = s.includes('FERIAS') || s.includes('FÉRIAS')
+      const isAfastado = s.includes('AFASTAD')
+      const isAtivoStatus = !isDesligado && !isFerias && !isAfastado
+
+      if (filtroStatus === 'ativos') return isAtivoStatus
+      if (filtroStatus === 'ferias') return isFerias
+      if (filtroStatus === 'afastados') return isAfastado
+      if (filtroStatus === 'desligados') return isDesligado
       return true
     })
   }, [colaboradores, filtroStatus])
@@ -646,11 +654,13 @@ function ControleAsoPage() {
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value as any)}
-                className="w-full py-2.5 px-3 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
+                className="w-full py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
               >
                 <option value="ativos">Apenas Ativos</option>
+                <option value="ferias">Férias</option>
+                <option value="afastados">Afastados</option>
+                <option value="desligados">Desligados</option>
                 <option value="todos">Todos</option>
-                <option value="inativos">Inativos / Desligados</option>
               </select>
             </div>
           </div>
@@ -839,15 +849,35 @@ function ControleAsoPage() {
                         </td>
 
                         <td className="py-3 px-3 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase ${
-                              ativo
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-                            }`}
-                          >
-                            ● {ativo ? 'ATIVO' : 'INATIVO'}
-                          </span>
+                          {(() => {
+                            const s = (c.status || '').toUpperCase().trim()
+                            if (s.includes('FERIAS') || s.includes('FÉRIAS')) {
+                              return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                                  🌴 FÉRIAS
+                                </span>
+                              )
+                            }
+                            if (s.includes('AFASTAD')) {
+                              return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                                  🩹 AFASTADO
+                                </span>
+                              )
+                            }
+                            if (s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO') {
+                              return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-900">
+                                  ● DESLIGADO
+                                </span>
+                              )
+                            }
+                            return (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                ● ATIVO
+                              </span>
+                            )
+                          })()}
                         </td>
 
                         <td className="py-3 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>

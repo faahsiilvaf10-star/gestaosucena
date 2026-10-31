@@ -59,7 +59,7 @@ function RhEfetivoPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditingAso, setIsEditingAso] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'ATIVO' | 'INATIVO' | 'TODOS'>('ATIVO')
+  const [statusFilter, setStatusFilter] = useState<'ATIVO' | 'FERIAS' | 'AFASTADO' | 'DESLIGADO' | 'TODOS'>('ATIVO')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -562,11 +562,68 @@ function RhEfetivoPage() {
       setIsExporting(false)
     }
   }
+
+  const getStatusBadge = (statusStr: string | null | undefined) => {
+    const s = (statusStr || '').toUpperCase().trim()
+    if (s.includes('FERIAS') || s.includes('FÉRIAS')) {
+      return {
+        bg: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-900',
+        dot: 'bg-blue-500 shadow-[0_0_8px_#3b82f6]',
+        label: 'FÉRIAS',
+      }
+    }
+    if (s.includes('AFASTAD')) {
+      return {
+        bg: 'bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900',
+        dot: 'bg-amber-500 shadow-[0_0_8px_#f59e0b]',
+        label: 'AFASTADO',
+      }
+    }
+    if (s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO') {
+      return {
+        bg: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-900',
+        dot: 'bg-red-500 shadow-[0_0_8px_#ef4444]',
+        label: 'DESLIGADO',
+      }
+    }
+    if (s.includes('EM EFETIVO')) {
+      return {
+        bg: 'bg-[#39ff14]/10 text-[#39ff14] dark:bg-[#39ff14]/20 dark:text-[#39ff14] drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]',
+        dot: 'bg-[#39ff14] shadow-[0_0_8px_#39ff14]',
+        label: 'ATIVO (EM EFETIVO)',
+      }
+    }
+    return {
+      bg: 'bg-[#39ff14]/10 text-[#39ff14] dark:bg-[#39ff14]/20 dark:text-[#39ff14] drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]',
+      dot: 'bg-[#39ff14] shadow-[0_0_8px_#39ff14]',
+      label: 'ATIVO',
+    }
+  }
+
+  const statusCounts = items.reduce(
+    (acc, cur) => {
+      const s = (cur.status || '').toUpperCase().trim()
+      if (s.includes('FERIAS') || s.includes('FÉRIAS')) acc.ferias++
+      else if (s.includes('AFASTAD')) acc.afastados++
+      else if (s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO') acc.desligados++
+      else acc.ativos++
+      return acc
+    },
+    { ativos: 0, ferias: 0, afastados: 0, desligados: 0 }
+  )
+
   const filteredItems = items.filter(item => {
     // Filter by status (case-insensitive)
-    const itemStatus = item.status?.toUpperCase() || ''
-    if (statusFilter === 'ATIVO' && itemStatus !== 'ATIVO' && itemStatus !== 'EFETIVADO') return false
-    if (statusFilter === 'INATIVO' && itemStatus !== 'INATIVO') return false
+    const s = (item.status || '').toUpperCase().trim()
+    const isDesligado = s === 'DESLIGADO' || s === 'INATIVO' || s === 'DEMITIDO'
+    const isFerias = s.includes('FERIAS') || s.includes('FÉRIAS')
+    const isAfastado = s.includes('AFASTAD')
+    const isAtivo = !isDesligado && !isFerias && !isAfastado
+
+    if (statusFilter === 'ATIVO' && !isAtivo) return false
+    if (statusFilter === 'FERIAS' && !isFerias) return false
+    if (statusFilter === 'AFASTADO' && !isAfastado) return false
+    if (statusFilter === 'DESLIGADO' && !isDesligado) return false
     // 'TODOS' shows everything
 
     if (!searchQuery) return true
@@ -644,19 +701,25 @@ function RhEfetivoPage() {
             </div>
             
             <div className="text-sm font-semibold text-gray-500 flex items-center gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
                 <Users size={16} />
-                {filteredItems.length} de {items.length} Colaboradores
+                <span><b>{filteredItems.length}</b> de {items.length} Colaboradores</span>
+                <span className="text-emerald-600 font-bold">• {statusCounts.ativos} Ativos</span>
+                {statusCounts.ferias > 0 && <span className="text-blue-600 font-bold">• {statusCounts.ferias} Férias</span>}
+                {statusCounts.afastados > 0 && <span className="text-amber-600 font-bold">• {statusCounts.afastados} Afastados</span>}
+                {statusCounts.desligados > 0 && <span className="text-red-500 font-bold">• {statusCounts.desligados} Desligados</span>}
               </div>
               {canEdit && (
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as 'ATIVO' | 'INATIVO' | 'TODOS')}
-                  className="bg-white dark:bg-[#2a2a2b] border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-medium outline-none focus:border-[#0866ff]"
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="bg-white dark:bg-[#2a2a2b] border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold outline-none focus:border-[#0866ff]"
                 >
-                  <option value="ATIVO">Apenas Ativos</option>
-                  <option value="INATIVO">Apenas Inativos</option>
-                  <option value="TODOS">Todos</option>
+                  <option value="ATIVO">Apenas Ativos ({statusCounts.ativos})</option>
+                  <option value="FERIAS">Férias ({statusCounts.ferias})</option>
+                  <option value="AFASTADO">Afastados ({statusCounts.afastados})</option>
+                  <option value="DESLIGADO">Desligados ({statusCounts.desligados})</option>
+                  <option value="TODOS">Todos ({items.length})</option>
                 </select>
               )}
             </div>
@@ -709,19 +772,16 @@ function RhEfetivoPage() {
                       
 
 
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${
-                          item.status.toUpperCase() === 'ATIVO' || item.status.toUpperCase() === 'EFETIVADO' 
-                            ? 'bg-[#39ff14]/10 text-[#39ff14] dark:bg-[#39ff14]/20 dark:text-[#39ff14] drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]' 
-                            : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            item.status.toUpperCase() === 'ATIVO' || item.status.toUpperCase() === 'EFETIVADO' 
-                              ? 'bg-[#39ff14] shadow-[0_0_8px_#39ff14]' 
-                              : 'bg-gray-500'
-                          }`}></span>
-                          {item.status.toUpperCase()}
-                        </span>
+                      <td className="p-4 whitespace-nowrap">
+                        {(() => {
+                          const badge = getStatusBadge(item.status)
+                          return (
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${badge.bg}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
+                              {badge.label}
+                            </span>
+                          )
+                        })()}
                       </td>
                     </tr>
                   ))}
@@ -797,22 +857,28 @@ function RhEfetivoPage() {
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</p>
                   {canEdit ? (
                     <select
-                      value={selectedColaborador.status}
+                      value={selectedColaborador.status || 'Ativo'}
                       onChange={(e) => {
                         setSelectedColaborador({...selectedColaborador, status: e.target.value})
                         handleUpdateField(selectedColaborador.id, 'status', e.target.value)
                       }}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-3 py-2 outline-none focus:border-[#0866ff] text-sm font-semibold"
                     >
-                      <option value="ATIVO">Ativo (Em Efetivo)</option>
-                      <option value="INATIVO">Inativo</option>
+                      <option value="Ativo (Em Efetivo)">Ativo (Em Efetivo)</option>
+                      <option value="Ativo">Ativo</option>
+                      <option value="Afastado">Afastado</option>
+                      <option value="Férias">Férias</option>
+                      <option value="Desligado">Desligado</option>
                     </select>
-                  ) : (
-                    <p className={`font-medium text-[15px] ${
-                      selectedColaborador.status === 'ATIVO' ? 'text-green-600' :
-                      selectedColaborador.status === 'INATIVO' ? 'text-red-500' : ''
-                    }`}>{selectedColaborador.status}</p>
-                  )}
+                  ) : (() => {
+                    const badge = getStatusBadge(selectedColaborador.status)
+                    return (
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${badge.bg}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
+                        {badge.label}
+                      </span>
+                    )
+                  })()}
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Matrícula Hydro</p>
