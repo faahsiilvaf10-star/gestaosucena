@@ -104,7 +104,7 @@ export function DashboardVistoriasWidget() {
         { type: 'Laudo Opacidade', expiry: ins.opacity_report_expiry },
         { type: 'Laudo Mecânico', expiry: ins.mechanical_report_expiry },
         { type: 'Plano Manutenção', expiry: ins.maintenance_plan_expiry },
-        { type: 'Tacógrafo', expiry: ins.tachograph_expiry }
+        { type: 'Tacógrafo / ART', expiry: ins.tachograph_expiry }
       ]
 
       docs.forEach(doc => {

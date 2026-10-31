@@ -239,7 +239,7 @@ function VistoriaPage() {
         { type: 'Laudo Opacidade', expiry: ins?.opacity_report_expiry },
         { type: 'Laudo Mecânico', expiry: ins?.mechanical_report_expiry },
         { type: 'Plano Manutenção', expiry: ins?.maintenance_plan_expiry },
-        { type: 'Tacógrafo', expiry: ins?.tachograph_expiry }
+        { type: 'Tacógrafo / ART', expiry: ins?.tachograph_expiry }
       ]
       
       // Type filter
@@ -364,7 +364,7 @@ function VistoriaPage() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowTypeFilter(false)} />
                   <div className={`absolute right-0 top-full mt-2 w-56 rounded-xl shadow-xl border z-50 overflow-hidden py-1 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10'}`}>
-                    {['Todas as vistorias', 'Laudo Opacidade', 'Laudo Mecânico', 'Plano Manutenção', 'Tacógrafo'].map(f => (
+                    {['Todas as vistorias', 'Laudo Opacidade', 'Laudo Mecânico', 'Plano Manutenção', 'Tacógrafo / ART'].map(f => (
                       <button 
                         key={f}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors ${filterType === f ? 'font-bold bg-black/5 dark:bg-white/5' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
@@ -492,7 +492,7 @@ function VistoriaPage() {
                         <div className="h-px bg-black/5 dark:bg-white/5 w-full"></div>
                         
                         <DocRow 
-                          label="Tacógrafo" 
+                          label="Tacógrafo / ART" 
                           currentDate={ins?.tachograph_expiry} 
                           editValue={editData?.tachograph_expiry}
                           isEditing={isEditing}
