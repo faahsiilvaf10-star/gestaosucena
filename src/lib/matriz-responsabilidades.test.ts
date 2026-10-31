@@ -132,5 +132,21 @@ describe('Matriz de Responsabilidades - Regras e Definições', () => {
     expect(metricas.ativTotal).toBe(28 + cargoDuplicado.atividades.length)
     expect(metricas.marcTotal).toBe(cargoDuplicado.atividades.length * 1)
   })
-})
+  it('suporta quantidade dinâmica de caixinhas para marcar como concluído por atividade', () => {
+    const cargo = CARGOS_MATRIZ[1] // Encarregado Geral (3 atividades padrão)
+    // Customiza a primeira atividade para ter 5 caixinhas, segunda com 2 e terceira com 3 (padrão)
+    const ativs = [
+      { nome: 'Atividade 1', marks: 5, total: 5 }, // concluída (5/5)
+      { nome: 'Atividade 2', marks: 1, total: 2 }, // em andamento (1/2)
+      { nome: 'Atividade 3', marks: 0, total: 3 }, // pendente (0/3)
+    ]
 
+    const m = getMetricasCargo(cargo, ativs)
+    expect(m.totalAtividades).toBe(3)
+    expect(m.totalMarcacoesPossiveis).toBe(5 + 2 + 3) // 10 marcações possíveis no total
+    expect(m.marcacoesFeitas).toBe(5 + 1 + 0) // 6 feitas
+    expect(m.concluidas).toBe(1) // Apenas a Atividade 1
+    expect(m.porcentagem).toBe(60) // 6 / 10 = 60%
+    expect(m.isConcluidoTotal).toBe(false)
+  })
+})

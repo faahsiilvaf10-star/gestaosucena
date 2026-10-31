@@ -5,7 +5,8 @@ export const FORMS_URL_MATRIZ =
 
 export interface AtividadeMatriz {
   nome: string
-  marks: number // 0 a 3
+  marks: number // 0 a total (padrão: 3)
+  total?: number // caixinhas para marcar como concluído (padrão: 3)
   pers?: boolean
 }
 
@@ -256,11 +257,14 @@ export function getMetricasCargo(
   cargo: CargoMatrizDef,
   atividades: AtividadeMatriz[] = []
 ) {
-  const list = atividades.length > 0 ? atividades : cargo.atividades.map((n, i) => ({ nome: n, marks: 0, pers: ehPersonalizada(cargo.id, i) }))
+  const list = atividades.length > 0 ? atividades : cargo.atividades.map((n, i) => ({ nome: n, marks: 0, total: 3, pers: ehPersonalizada(cargo.id, i) }))
   const totalAtividades = list.length
-  const totalMarcacoesPossiveis = totalAtividades * 3
-  const marcacoesFeitas = list.reduce((acc, a) => acc + Math.max(0, Math.min(3, a.marks || 0)), 0)
-  const concluidas = list.filter((a) => (a.marks || 0) >= 3).length
+  const totalMarcacoesPossiveis = list.reduce((acc, a) => acc + (a.total ?? 3), 0)
+  const marcacoesFeitas = list.reduce((acc, a) => {
+    const t = a.total ?? 3
+    return acc + Math.max(0, Math.min(t, a.marks || 0))
+  }, 0)
+  const concluidas = list.filter((a) => (a.marks || 0) >= (a.total ?? 3)).length
   const porcentagem = totalMarcacoesPossiveis > 0 ? Math.round((marcacoesFeitas / totalMarcacoesPossiveis) * 100) : 0
   const isConcluidoTotal = totalAtividades > 0 && concluidas === totalAtividades
 

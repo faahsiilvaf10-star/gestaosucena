@@ -79,6 +79,7 @@ export function MatrizResponsabilidadeComponent() {
 
   // Status de Admin
   const [isUserAdmin, setIsUserAdmin] = useState<boolean>(false)
+  const admin = isUserAdmin
 
   // RH section filters
   const [buscaRH, setBuscaRH] = useState<string>('')
@@ -325,15 +326,16 @@ export function MatrizResponsabilidadeComponent() {
     }
   }
 
-  // Marcar bolinha (0 a 3)
+  // Marcar bolinha (0 a totalCaixinhas)
   const handleMarcarBolinha = (cargoId: string, ativIndex: number, dotIndex: number) => {
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     const ativ = { ...lista[ativIndex] }
     if (!ativ) return
 
+    const totalCaixinhas = ativ.total ?? 3
     const alvo = dotIndex + 1
     ativ.marks = ativ.marks === alvo ? dotIndex : alvo
-    ativ.marks = Math.max(0, Math.min(3, ativ.marks))
+    ativ.marks = Math.max(0, Math.min(totalCaixinhas, ativ.marks))
     lista[ativIndex] = ativ
 
     const novoMap = {
@@ -341,13 +343,64 @@ export function MatrizResponsabilidadeComponent() {
       [cargoId]: lista,
     }
 
-    const concluida = ativ.marks >= 3
-    const toastAlerta = concluida ? `✅ Atividade concluída (3/3): ${ativ.nome}` : null
+    const concluida = ativ.marks >= totalCaixinhas
+    const toastAlerta = concluida ? `✅ Atividade concluída (${totalCaixinhas}/${totalCaixinhas}): ${ativ.nome}` : null
     persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, toastAlerta)
   }
 
-  // Adicionar nova atividade personalizada ao cargo
+  // Alterar quantidade de caixinhas para marcar como concluído (SOMENTE ADMIN)
+  const handleAlterarTotalCaixinhas = (cargoId: string, ativIndex: number, novoTotal: number) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem alterar as caixinhas de conclusão.')
+      return
+    }
+    const totalAjustado = Math.max(1, Math.min(50, Math.round(novoTotal)))
+    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const ativ = { ...lista[ativIndex] }
+    if (!ativ) return
+
+    ativ.total = totalAjustado
+    if ((ativ.marks || 0) > totalAjustado) {
+      ativ.marks = totalAjustado
+    }
+    lista[ativIndex] = ativ
+
+    const novoMap = {
+      ...atividadesPorCargo,
+      [cargoId]: lista,
+    }
+
+    persistirMatriz(
+      novoMap,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `⚙️ Caixinhas atualizadas para ${totalAjustado} em "${ativ.nome}"`
+    )
+  }
+
+  // Definir quantidade manual de caixinhas via prompt (SOMENTE ADMIN)
+  const handleDefinirTotalManual = (cargoId: string, ativIndex: number, totalAtual: number) => {
+    if (!admin) return
+    const input = window.prompt('Defina quantas caixinhas para marcar como concluído:', String(totalAtual))
+    if (input === null) return
+    const num = parseInt(input.trim(), 10)
+    if (isNaN(num) || num < 1) {
+      showToast('⚠️ Informe um número válido maior ou igual a 1')
+      return
+    }
+    handleAlterarTotalCaixinhas(cargoId, ativIndex, num)
+  }
+
+  // Adicionar nova atividade personalizada ao cargo (SOMENTE ADMIN)
   const handleAdicionarAtividade = (cargoId: string) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem adicionar novas atividades.')
+      return
+    }
     const nome = window.prompt('Nome da nova atividade:')
     if (nome === null) return
     const trimmed = nome.trim()
@@ -356,10 +409,20 @@ export function MatrizResponsabilidadeComponent() {
       return
     }
 
+    const inputTotal = window.prompt('Quantidade de caixinhas para marcar como concluído:', '3')
+    let totalNum = 3
+    if (inputTotal !== null) {
+      const parsed = parseInt(inputTotal.trim(), 10)
+      if (!isNaN(parsed) && parsed >= 1) {
+        totalNum = parsed
+      }
+    }
+
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     lista.push({
       nome: trimmed,
       marks: 0,
+      total: totalNum,
       pers: true,
     })
 
@@ -368,11 +431,15 @@ export function MatrizResponsabilidadeComponent() {
       [cargoId]: lista,
     }
 
-    persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, `➕ Atividade adicionada: ${trimmed} (0/3)`)
+    persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, `➕ Atividade adicionada: ${trimmed} (0/${totalNum})`)
   }
 
-  // Excluir atividade
+  // Excluir atividade (SOMENTE ADMIN)
   const handleRemoverAtividade = (cargoId: string, ativIndex: number) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem excluir atividades.')
+      return
+    }
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     const ativ = lista[ativIndex]
     if (!ativ) return
@@ -679,7 +746,8 @@ export function MatrizResponsabilidadeComponent() {
         s += `  Colaborador(es): ${nomes.join(', ')}\n`
       }
       for (const a of ativs) {
-        s += `  [${a.marks || 0}/3] ${a.nome}${a.pers ? ' (personalizada)' : ''}${a.marks >= 3 ? ' — ✅ CONCLUÍDA' : ''}\n`
+        const tot = a.total ?? 3
+        s += `  [${a.marks || 0}/${tot}] ${a.nome}${a.pers ? ' (personalizada)' : ''}${(a.marks || 0) >= tot ? ' — ✅ CONCLUÍDA' : ''}\n`
       }
       s += '\n'
     }
@@ -717,8 +785,9 @@ export function MatrizResponsabilidadeComponent() {
           ${nomes.length ? `Colaborador(es): <b>${nomes.join(', ')}</b><br>` : ''}
           ${ativs
             .map((a) => {
-              const bol = '●'.repeat(a.marks || 0) + '○'.repeat(Math.max(0, 3 - (a.marks || 0)))
-              return `${bol} ${a.marks || 0}/3 — ${a.nome}${a.pers ? ' (personalizada)' : ''}${a.marks >= 3 ? ' — <b>✅ CONCLUÍDA</b>' : ' — ⏳ pendente'}`
+              const tot = a.total ?? 3
+              const bol = '●'.repeat(a.marks || 0) + '○'.repeat(Math.max(0, tot - (a.marks || 0)))
+              return `${bol} ${a.marks || 0}/${tot} — ${a.nome}${a.pers ? ' (personalizada)' : ''}${(a.marks || 0) >= tot ? ' — <b>✅ CONCLUÍDA</b>' : ' — ⏳ pendente'}`
             })
             .join('<br>')}
         </div>
@@ -941,13 +1010,15 @@ export function MatrizResponsabilidadeComponent() {
               >
                 Atividades ({atividadesCargoAtivo.length})
               </h3>
-              <button
-                type="button"
-                onClick={() => handleAdicionarAtividade(cargoAtivo.id)}
-                className="bg-[#16a34a] hover:bg-[#15803d] text-white font-black text-sm rounded-xl px-4 py-2 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Adicionar
-              </button>
+              {admin && (
+                <button
+                  type="button"
+                  onClick={() => handleAdicionarAtividade(cargoAtivo.id)}
+                  className="bg-[#16a34a] hover:bg-[#15803d] text-white font-black text-sm rounded-xl px-4 py-2 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Adicionar
+                </button>
+              )}
             </div>
 
             <div className="divide-y divide-gray-200">
@@ -958,7 +1029,8 @@ export function MatrizResponsabilidadeComponent() {
               ) : (
                 atividadesCargoAtivo.map((ativ, idx) => {
                   const marks = ativ.marks || 0
-                  const isConcluida = marks >= 3
+                  const totalCaixinhas = ativ.total ?? 3
+                  const isConcluida = marks >= totalCaixinhas
 
                   // Colaboradores especificamente atribuídos a esta atividade
                   const colabsDestaAtiv = colaboradoresDoCargoAtivo.filter((c) => {
@@ -973,16 +1045,16 @@ export function MatrizResponsabilidadeComponent() {
                         isConcluida ? 'bg-green-50/60' : 'bg-white hover:bg-gray-50/70'
                       }`}
                     >
-                      {/* 3 Bolinhas Interativas */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {[0, 1, 2].map((k) => {
+                      {/* Bolinhas / Caixinhas Interativas com suporte a quantidade dinâmica */}
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap max-w-[280px]">
+                        {Array.from({ length: totalCaixinhas }, (_, k) => {
                           const isDotOn = k < marks
                           return (
                             <button
                               key={k}
                               type="button"
                               onClick={() => handleMarcarBolinha(cargoAtivo.id, idx, k)}
-                              title={`Marcação ${k + 1} de 3`}
+                              title={`Marcação ${k + 1} de ${totalCaixinhas}`}
                               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-[2.5px] font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
                                 isDotOn
                                   ? 'bg-[#16a34a] border-[#16a34a] text-white shadow-xs'
@@ -993,6 +1065,30 @@ export function MatrizResponsabilidadeComponent() {
                             </button>
                           )
                         })}
+
+                        {/* Botões do Admin para Adicionar / Diminuir Caixinhas */}
+                        {admin && (
+                          <div className="flex items-center gap-1 ml-1 bg-amber-50/90 border border-amber-300 rounded-lg p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => handleAlterarTotalCaixinhas(cargoAtivo.id, idx, totalCaixinhas + 1)}
+                              title="Adicionar mais 1 caixinha de marcação (Admin)"
+                              className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center transition cursor-pointer shadow-xs"
+                            >
+                              +
+                            </button>
+                            {totalCaixinhas > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleAlterarTotalCaixinhas(cargoAtivo.id, idx, totalCaixinhas - 1)}
+                                title="Remover 1 caixinha de marcação (Admin)"
+                                className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-black text-xs flex items-center justify-center transition cursor-pointer"
+                              >
+                                -
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Informações da Atividade */}
@@ -1012,33 +1108,47 @@ export function MatrizResponsabilidadeComponent() {
                           </div>
                         )}
 
-                        <div className="text-xs sm:text-sm font-bold text-gray-800 mt-1">
-                          {marks}/3 marcações
-                          {marks >= 3 ? (
-                            <span className="text-[#15803d] font-black ml-1.5">
+                        <div className="text-xs sm:text-sm font-bold text-gray-800 mt-1 flex items-center flex-wrap gap-1.5">
+                          <span>
+                            {marks}/{totalCaixinhas} marcações
+                          </span>
+                          {admin && (
+                            <button
+                              type="button"
+                              onClick={() => handleDefinirTotalManual(cargoAtivo.id, idx, totalCaixinhas)}
+                              title="Definir quantidade exata de caixinhas (Admin)"
+                              className="text-[11px] text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2 py-0.5 rounded-md font-black transition cursor-pointer shadow-2xs"
+                            >
+                              ⚙️ definir total ({totalCaixinhas})
+                            </button>
+                          )}
+                          {marks >= totalCaixinhas ? (
+                            <span className="text-[#15803d] font-black">
                               — ✅ CONCLUÍDA
                             </span>
                           ) : marks > 0 ? (
-                            <span className="text-gray-900 font-semibold ml-1.5">
-                              — ⏳ em andamento, faltam {3 - marks}
+                            <span className="text-gray-900 font-semibold">
+                              — ⏳ em andamento, faltam {totalCaixinhas - marks}
                             </span>
                           ) : (
-                            <span className="text-gray-600 font-semibold ml-1.5">
+                            <span className="text-gray-600 font-semibold">
                               — ⏳ pendente
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Botão de Excluir */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoverAtividade(cargoAtivo.id, idx)}
-                        title="Excluir esta atividade"
-                        className="w-9 h-9 rounded-full border border-red-300 bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center shrink-0 transition cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {/* Botão de Excluir — SOMENTE ADMIN */}
+                      {admin && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverAtividade(cargoAtivo.id, idx)}
+                          title="Excluir esta atividade (Admin)"
+                          className="w-9 h-9 rounded-full border border-red-300 bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center shrink-0 transition cursor-pointer shadow-2xs"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   )
                 })
@@ -1572,13 +1682,14 @@ export function MatrizResponsabilidadeComponent() {
                     <div className="mt-2 space-y-1 pl-2">
                       {ativs.map((a, idx) => {
                         const marks = a.marks || 0
-                        const bol = '●'.repeat(marks) + '○'.repeat(Math.max(0, 3 - marks))
+                        const tot = a.total ?? 3
+                        const bol = '●'.repeat(marks) + '○'.repeat(Math.max(0, tot - marks))
                         return (
                           <div key={idx} className="text-xs sm:text-sm font-semibold text-gray-800">
-                            <span className="font-mono text-black mr-1">{bol}</span> {marks}/3 —{' '}
+                            <span className="font-mono text-black mr-1">{bol}</span> {marks}/{tot} —{' '}
                             <span className="text-black font-bold">{a.nome}</span>
                             {a.pers && <span className="text-purple-700 italic"> (personalizada)</span>}
-                            {marks >= 3 ? (
+                            {marks >= tot ? (
                               <span className="text-green-700 font-extrabold ml-1">
                                 — ✅ CONCLUÍDA
                               </span>
