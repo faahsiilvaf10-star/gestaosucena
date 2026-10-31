@@ -273,13 +273,9 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
       ? itemsWithStock.map(it => {
           const nome = it.name || 'Desconhecido';
           const qtd = it.quantity;
-          const unit = it.unit || 'un';
+          const unit = (it.unit || 'UN').toUpperCase();
 
           if (it.remainingStock !== undefined) {
-            const isBelow = it.isBelowMin || (it.minStock !== undefined && it.minStock > 0 && it.remainingStock <= it.minStock);
-            if (isBelow) {
-              return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit} ⚠️ *(Abaixo do mínimo: ${(it.minStock && it.minStock < 1000) ? it.minStock : 5} ${unit})*`;
-            }
             return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit}`;
           }
           return `  - ${nome} (${qtd})`;
@@ -294,9 +290,9 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
     let observacaoEstoque = '';
     if (itensAbaixoMinimo.length > 0) {
       const avisos = itensAbaixoMinimo.map(it => 
-        `• *${it.name}:* restam apenas *${it.remainingStock} ${it.unit || 'un'}* no almoxarifado (mínimo: ${(it.minStock && it.minStock < 1000) ? it.minStock : 5} ${it.unit || 'un'}). Reposição necessária!`
+        `• *${it.name}:* restam apenas *${it.remainingStock} ${(it.unit || 'UN').toUpperCase()}* no almoxarifado. Reposição necessária!`
       ).join('\n');
-      observacaoEstoque = `\n\n⚠️ *OBSERVAÇÃO:* O estoque ultrapassou o mínimo configurado:\n${avisos}`;
+      observacaoEstoque = `\n\n⚠️ *OBSERVAÇÃO:* O estoque atingiu o nível de reposição:\n${avisos}`;
     }
 
     let caption = settings.messageTemplates?.requisicaoEpi ||
