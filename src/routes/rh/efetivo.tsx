@@ -107,7 +107,23 @@ function RhEfetivoPage() {
       
       if (error) throw error
       
-      setItems(data || [])
+      const mapped = (data || []).map((row: any) => {
+        const matHydro = row.matricula_hydro || row.matricula || null
+        const rawSucena = row.raw_data && (
+          row.raw_data['MATRICULA SUCENA'] ||
+          row.raw_data['MATRÍCULA SUCENA'] ||
+          row.raw_data['MATRICULA'] ||
+          row.raw_data['MATRÍCULA']
+        )
+        const matSucena = row.matricula_sucena || (rawSucena ? String(rawSucena) : null)
+        return {
+          ...row,
+          matricula: matHydro,
+          matricula_hydro: matHydro,
+          matricula_sucena: matSucena,
+        }
+      })
+      setItems(mapped)
     } catch (err) {
       console.error('Erro ao buscar efetivo:', err)
       toast.error('Erro ao buscar lista de efetivo')
@@ -118,14 +134,15 @@ function RhEfetivoPage() {
 
   const handleUpdateMatricula = async (id: string, newMatricula: string) => {
     try {
+      const val = newMatricula || null
       const { error } = await supabase
         .from('rh_efetivo')
-        .update({ matricula: newMatricula || null })
+        .update({ matricula: val, matricula_hydro: val })
         .eq('id', id)
       
       if (error) throw error
       
-      setItems(prev => prev.map(item => item.id === id ? { ...item, matricula: newMatricula || null } : item))
+      setItems(prev => prev.map(item => item.id === id ? { ...item, matricula: val, matricula_hydro: val } : item))
       toast.success('Matrícula atualizada com sucesso')
     } catch (err) {
       console.error(err)
@@ -136,6 +153,11 @@ function RhEfetivoPage() {
   const handleUpdateField = async (id: string, field: string, value: string | null) => {
     try {
       const payload: any = { [field]: value || null }
+      if (field === 'matricula') {
+        payload.matricula_hydro = value || null
+      } else if (field === 'matricula_hydro') {
+        payload.matricula = value || null
+      }
       
       if (['aso_admissional', 'aso_periodico', 'retorno_ao_trabalho', 'mudanca_de_risco'].includes(field)) {
         const item = items.find(i => i.id === id)
@@ -425,12 +447,13 @@ function RhEfetivoPage() {
     if (!selectedColaborador) return
     setIsSaving(true)
     try {
+      const matHydro = selectedColaborador.matricula_hydro || selectedColaborador.matricula || null
       const payload: any = {
         nome: selectedColaborador.nome,
         cargo: selectedColaborador.cargo,
-        matricula: selectedColaborador.matricula,
-        matricula_hydro: selectedColaborador.matricula_hydro,
-        matricula_sucena: selectedColaborador.matricula_sucena,
+        matricula: matHydro,
+        matricula_hydro: matHydro,
+        matricula_sucena: selectedColaborador.matricula_sucena || null,
         data_admissao: selectedColaborador.data_admissao || selectedColaborador.aso_admissional_2 || null,
         status: selectedColaborador.status,
         setor: selectedColaborador.setor,

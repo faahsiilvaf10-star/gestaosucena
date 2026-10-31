@@ -44,6 +44,7 @@ function ControleAsoPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'ferias' | 'afastados' | 'desligados' | 'todos'>('ativos')
   const [filtroSituacao, setFiltroSituacao] = useState<'todos' | 'validos' | 'vencendo' | 'vencidos' | 'sem'>('todos')
+  const [filtroOrdem, setFiltroOrdem] = useState<'alfabetica' | 'validade'>('alfabetica')
   
   // Permissões
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -130,24 +131,35 @@ function ControleAsoPage() {
 
       if (error) throw error
 
-      const mapeados: ColaboradorAso[] = (data || []).map((row: any) => ({
-        id: row.id,
-        nome: row.nome,
-        cargo: row.cargo || row.funcao || '',
-        status: row.status || 'Ativo',
-        matricula: row.matricula || '',
-        matricula_hydro: row.matricula_hydro || '',
-        matricula_sucena: row.matricula_sucena || '',
-        data_admissao: row.data_admissao || row.aso_admissional_2 || '',
-        setor: row.setor || '',
-        aso_admissional: row.aso_admissional || '',
-        aso_admissional_2: row.aso_admissional_2 || '',
-        aso_periodico: row.aso_periodico || '',
-        retorno_ao_trabalho: row.retorno_ao_trabalho || '',
-        mudanca_de_risco: row.mudanca_de_risco || '',
-        observacao: row.observacao || row.observacoes || '',
-        validade_aso_efetiva: row.validade_aso_efetiva || '',
-      }))
+      const mapeados: ColaboradorAso[] = (data || []).map((row: any) => {
+        const matHydro = row.matricula_hydro || row.matricula || ''
+        const rawSucena = row.raw_data && (
+          row.raw_data['MATRICULA SUCENA'] ||
+          row.raw_data['MATRÍCULA SUCENA'] ||
+          row.raw_data['MATRICULA'] ||
+          row.raw_data['MATRÍCULA']
+        )
+        const matSucena = row.matricula_sucena || (rawSucena ? String(rawSucena) : '')
+
+        return {
+          id: row.id,
+          nome: row.nome,
+          cargo: row.cargo || row.funcao || '',
+          status: row.status || 'Ativo',
+          matricula: matHydro,
+          matricula_hydro: matHydro,
+          matricula_sucena: matSucena,
+          data_admissao: row.data_admissao || row.aso_admissional_2 || '',
+          setor: row.setor || '',
+          aso_admissional: row.aso_admissional || '',
+          aso_admissional_2: row.aso_admissional_2 || '',
+          aso_periodico: row.aso_periodico || '',
+          retorno_ao_trabalho: row.retorno_ao_trabalho || '',
+          mudanca_de_risco: row.mudanca_de_risco || '',
+          observacao: row.observacao || row.observacoes || '',
+          validade_aso_efetiva: row.validade_aso_efetiva || '',
+        }
+      })
 
       setColaboradores(mapeados)
     } catch (err) {
@@ -239,15 +251,18 @@ function ControleAsoPage() {
       return true
     })
 
-    // Ordenação: data de validade mais próxima (ou vencida) primeiro
+    // Ordenação alfabética por padrão (A-Z) ou por validade
     return filtrados.sort((a, b) => {
-      const va = validadeDe(a) || '9999-99-99'
-      const vb = validadeDe(b) || '9999-99-99'
-      if (va < vb) return -1
-      if (va > vb) return 1
-      return a.nome.localeCompare(b.nome)
+      if (filtroOrdem === 'validade') {
+        const va = validadeDe(a) || '9999-99-99'
+        const vb = validadeDe(b) || '9999-99-99'
+        if (va < vb) return -1
+        if (va > vb) return 1
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+      }
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
     })
-  }, [baseFiltrada, filtroSituacao, searchQuery])
+  }, [baseFiltrada, filtroSituacao, searchQuery, filtroOrdem])
 
   // Lista ordenada para o Relatório Automático
   const listaRelatorio = useMemo(() => {
@@ -289,11 +304,13 @@ function ControleAsoPage() {
     if (colab) {
       setIsNovo(false)
       setEditId(colab.id)
+      const matHydro = colab.matricula_hydro || colab.matricula || ''
+      const matSucena = colab.matricula_sucena || ''
       setFormData({
         nome: colab.nome || '',
         status: colab.status || 'Ativo (Em Efetivo)',
-        matriculaHydro: colab.matricula_hydro || '',
-        matriculaSucena: colab.matricula_sucena || '',
+        matriculaHydro: matHydro,
+        matriculaSucena: matSucena,
         admissional: colab.data_admissao ? colab.data_admissao.slice(0, 10) : '',
         setor: colab.setor || 'BARCARENA - PA',
         funcao: colab.cargo || '',
@@ -629,8 +646,8 @@ function ControleAsoPage() {
             </div>
           </div>
 
-          {/* Filtros de Busca e Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Filtros de Busca, Status e Ordenação */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="sm:col-span-2 relative">
               <label className="block text-[11px] font-extrabold tracking-wider uppercase text-gray-500 dark:text-gray-400 mb-1">
                 Buscar por nome, cargo ou matrícula
@@ -661,6 +678,20 @@ function ControleAsoPage() {
                 <option value="afastados">Afastados</option>
                 <option value="desligados">Desligados</option>
                 <option value="todos">Todos</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-extrabold tracking-wider uppercase text-gray-500 dark:text-gray-400 mb-1">
+                Ordenação
+              </label>
+              <select
+                value={filtroOrdem}
+                onChange={(e) => setFiltroOrdem(e.target.value as any)}
+                className="w-full py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
+              >
+                <option value="alfabetica">Ordem Alfabética (A-Z)</option>
+                <option value="validade">Validade ASO (Mais Próximos)</option>
               </select>
             </div>
           </div>
@@ -818,7 +849,14 @@ function ControleAsoPage() {
                         className="hover:bg-amber-50/60 dark:hover:bg-gray-800/60 transition cursor-pointer group"
                       >
                         <td className="py-3 px-3 font-mono text-gray-700 dark:text-gray-300">
-                          {c.matricula_hydro || '—'}
+                          <span className="font-bold text-gray-900 dark:text-white block">
+                            {c.matricula_hydro || c.matricula || '—'}
+                          </span>
+                          {c.matricula_sucena && (
+                            <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 block">
+                              Sucena: {c.matricula_sucena}
+                            </span>
+                          )}
                         </td>
 
                         <td className="py-3 px-3 font-bold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
