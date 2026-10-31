@@ -225,7 +225,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-       <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/50 hover:bg-black rounded-full text-[#1c1d21] dark:text-white transition-colors">
+       <button onClick={onClose} className="absolute top-20 right-4 z-[9999] p-2 bg-black/60 hover:bg-black/90 rounded-full text-white transition-colors shadow-lg">
          <X size={24} />
        </button>
        
@@ -257,7 +257,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
                {activeGroup.user?.avatar_url ? (
                  <img src={activeGroup.user.avatar_url} className="w-full h-full object-cover" />
                ) : (
-                 <div className="w-full h-full flex items-center justify-center text-[#1c1d21] dark:text-white text-xs font-bold">
+                 <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
                    {activeGroup.user?.display_name?.charAt(0) || '?'}
                  </div>
                )}
@@ -271,7 +271,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
            {isMyStory && (
              <button 
                onClick={handleDeleteStory}
-               className="p-2 bg-black/30 hover:bg-red-500/80 rounded-full text-white transition-colors mr-10"
+               className="p-2 bg-black/40 hover:bg-red-500/90 rounded-full text-white transition-colors mr-10 pointer-events-auto shadow-md"
                title="Excluir story"
              >
                <Trash2 size={20} />
@@ -307,7 +307,7 @@ export function StoryViewer({ usersGroups, initialUserIndex, onClose, currentUse
            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center">
              <button 
                onClick={(e) => { e.stopPropagation(); setShowViews(true); setIsPaused(true); if(videoRef.current) videoRef.current.pause(); }}
-               className="flex flex-col items-center gap-1 text-[#1c1d21] dark:text-white hover:opacity-80 transition-opacity"
+               className="flex flex-col items-center gap-1 text-white hover:text-white/80 transition-opacity drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
              >
                <Eye size={24} />
                <span className="text-xs font-bold">{viewsLog.length} {viewsLog.length === 1 ? 'visualização' : 'visualizações'}</span>

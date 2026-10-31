@@ -438,6 +438,7 @@ function FeedRoute() {
         actorAvatar: currentUser.avatar_url,
         actorUsername: currentUser.username,
         targetPostId: postId,
+        targetUserId: targetPost?.user_id,
         mediaUrl: targetPost?.social_post_media?.[0]?.media_url || ''
       })
     }
@@ -479,6 +480,7 @@ function FeedRoute() {
       actorUsername: currentUser.username,
       content: text.trim(),
       targetPostId: postId,
+      targetUserId: targetPost?.user_id,
       mediaUrl: targetPost?.social_post_media?.[0]?.media_url || ''
     })
 
@@ -959,7 +961,7 @@ function FeedRoute() {
                 )}
               </div>
               
-              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-semibold text-[#1c1d21] dark:text-white leading-tight z-10 shadow-sm flex items-center">
+              <span className="absolute bottom-2 left-2 right-2 text-[11px] font-bold text-white leading-tight z-10 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] flex items-center">
                 <span className="truncate">{group.user.display_name || group.user.username || 'Usuário'}</span>
                 {isAdmin(group.user.display_name || group.user.username) && <VerifiedBadge size={12} />}
               </span>

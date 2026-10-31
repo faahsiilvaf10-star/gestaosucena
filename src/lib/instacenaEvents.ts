@@ -10,6 +10,7 @@ export interface InstacenaActivityPayload {
   content?: string
   mediaUrl?: string
   targetPostId?: string
+  targetUserId?: string
   createdAt?: string
 }
 

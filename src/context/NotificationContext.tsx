@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useUsersPresence } from '../hooks/useUsersPresence'
 
@@ -107,7 +107,34 @@ const NotificationContext = createContext<{
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(notificationReducer, initialState)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
   const { data: usersMap } = useUsersPresence()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.id) {
+        setCurrentUser({
+          id: data.user.id,
+          name: data.user.user_metadata?.full_name || '',
+        })
+      }
+    })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id) {
+        setCurrentUser({
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || '',
+        })
+      } else {
+        setCurrentUser(null)
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
 
   const addNotification = useCallback((notif: NotificationItem) => {
     dispatch({ type: 'ADD_NOTIFICATION', payload: notif })
@@ -125,20 +152,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'REMOVE_NOTIFICATION', payload: id })
   }, [])
 
-  // Load persisted notifications on mount
+  // Load persisted notifications on mount and clean up erroneous self-notifications
   useEffect(() => {
     try {
       const stored = localStorage.getItem('hydro_notifications')
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) {
-          dispatch({ type: 'SET_NOTIFICATIONS', payload: parsed })
+          const cleaned = parsed.filter((n: NotificationItem) => {
+            if (currentUser?.id && n.actorId === currentUser.id) return false
+            if (currentUser?.name && n.message?.startsWith(`${currentUser.name} curtiu`)) return false
+            return true
+          })
+          dispatch({ type: 'SET_NOTIFICATIONS', payload: cleaned })
         }
       }
     } catch (e) {
       console.warn('Failed to load notifications:', e)
     }
-  }, [])
+  }, [currentUser])
 
   // Persist notifications
   useEffect(() => {
@@ -177,7 +209,59 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hydro_mention', handleMention as EventListener)
   }, [addNotification])
 
-  // Subscribe to Instacena activities via BroadcastChannel (same as InstacenaNotificationPopup)
+  // Processador central de atividades do Instacena com filtro estrito de destinatário
+  const processInstacenaActivity = useCallback((activity: any) => {
+    if (!activity || !activity.actorId) return
+
+    // 1. NUNCA notificar a si próprio (ações executadas pelo próprio usuário)
+    if (currentUser?.id && activity.actorId === currentUser.id) return
+    if (currentUser?.name && activity.actorName && currentUser.name.trim().toLowerCase() === activity.actorName.trim().toLowerCase()) return
+
+    // 2. Para 'like' e 'comment', SOMENTE o autor do post original deve receber a notificação
+    if (activity.type === 'like' || activity.type === 'comment') {
+      if (activity.targetUserId && currentUser?.id && activity.targetUserId !== currentUser.id) {
+        return
+      }
+    }
+
+    let actionLabel = ''
+    let targetUrl = '/instacena'
+
+    switch (activity.type) {
+      case 'like':
+        actionLabel = 'curtiu sua publicação'
+        break
+      case 'comment':
+        actionLabel = `comentou: "${activity.content || ''}"`
+        break
+      case 'post':
+        actionLabel = 'publicou uma nova foto'
+        break
+      case 'story':
+        actionLabel = 'adicionou um novo story'
+        break
+      default:
+        actionLabel = 'teve atividade no Instacena'
+    }
+
+    addNotification({
+      id: `instacena_${activity.type}_${activity.actorId}_${activity.targetPostId || activity.id || Date.now()}`,
+      type: `instacena_${activity.type}` as NotificationItem['type'],
+      title: 'Instacena',
+      message: `${activity.actorName || 'Alguém'} ${actionLabel}`,
+      actorId: activity.actorId,
+      actorName: activity.actorName,
+      actorAvatar: activity.actorAvatar,
+      actorUsername: activity.actorUsername,
+      targetId: activity.targetPostId,
+      targetUrl,
+      read: false,
+      createdAt: activity.createdAt || new Date().toISOString(),
+      metadata: activity,
+    })
+  }, [currentUser, addNotification])
+
+  // Subscribe to Instacena activities via BroadcastChannel
   useEffect(() => {
     let bc: BroadcastChannel | null = null
 
@@ -185,48 +269,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         bc = new BroadcastChannel('instacena_activity_bus')
         bc.onmessage = (event) => {
-          const activity = event?.data
-          if (!activity || !activity.actorId) return
-
-          // Don't notify about own actions - we need current user ID
-          // This will be filtered by the InstacenaNotificationPopup, but we also filter here
-          // We'll rely on the fact that own actions don't broadcast to self, but just in case:
-
-          let actionLabel = ''
-          let targetUrl = '/instacena'
-
-          switch (activity.type) {
-            case 'like':
-              actionLabel = 'curtiu sua publicação'
-              break
-            case 'comment':
-              actionLabel = `comentou: "${activity.content || ''}"`
-              break
-            case 'post':
-              actionLabel = 'publicou uma nova foto'
-              break
-            case 'story':
-              actionLabel = 'adicionou um novo story'
-              break
-            default:
-              actionLabel = 'teve atividade no Instacena'
-          }
-
-          addNotification({
-            id: `instacena_${activity.type}_${activity.actorId}_${activity.targetPostId || activity.id || Date.now()}`,
-            type: `instacena_${activity.type}` as NotificationItem['type'],
-            title: 'Instacena',
-            message: `${activity.actorName || 'Alguém'} ${actionLabel}`,
-            actorId: activity.actorId,
-            actorName: activity.actorName,
-            actorAvatar: activity.actorAvatar,
-            actorUsername: activity.actorUsername,
-            targetId: activity.targetPostId,
-            targetUrl,
-            read: false,
-            createdAt: activity.createdAt || new Date().toISOString(),
-            metadata: activity,
-          })
+          processInstacenaActivity(event?.data)
         }
       }
     } catch (e) {
@@ -236,54 +279,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       if (bc) bc.close()
     }
-  }, [addNotification])
+  }, [processInstacenaActivity])
 
-  // Also listen for local window events (from InstacenaNotificationPopup)
+  // Also listen for local window events
   useEffect(() => {
     const handleLocalEvent = (e: CustomEvent) => {
-      const activity = e?.detail
-      if (!activity || !activity.actorId) return
-
-      let actionLabel = ''
-      let targetUrl = '/instacena'
-
-      switch (activity.type) {
-        case 'like':
-          actionLabel = 'curtiu sua publicação'
-          break
-        case 'comment':
-          actionLabel = `comentou: "${activity.content || ''}"`
-          break
-        case 'post':
-          actionLabel = 'publicou uma nova foto'
-          break
-        case 'story':
-          actionLabel = 'adicionou um novo story'
-          break
-        default:
-          actionLabel = 'teve atividade no Instacena'
-      }
-
-      addNotification({
-        id: `instacena_${activity.type}_${activity.actorId}_${activity.targetPostId || activity.id || Date.now()}`,
-        type: `instacena_${activity.type}` as NotificationItem['type'],
-        title: 'Instacena',
-        message: `${activity.actorName || 'Alguém'} ${actionLabel}`,
-        actorId: activity.actorId,
-        actorName: activity.actorName,
-        actorAvatar: activity.actorAvatar,
-        actorUsername: activity.actorUsername,
-        targetId: activity.targetPostId,
-        targetUrl,
-        read: false,
-        createdAt: activity.createdAt || new Date().toISOString(),
-        metadata: activity,
-      })
+      processInstacenaActivity(e?.detail)
     }
 
     window.addEventListener('instacena_activity', handleLocalEvent as EventListener)
     return () => window.removeEventListener('instacena_activity', handleLocalEvent as EventListener)
-  }, [addNotification])
+  }, [processInstacenaActivity])
 
   return (
     <NotificationContext.Provider value={{

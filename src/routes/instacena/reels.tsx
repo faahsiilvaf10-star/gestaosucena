@@ -116,6 +116,7 @@ function ReelsRoute() {
         type: 'like',
         actorId: currentUserId,
         targetPostId: post.id,
+        targetUserId: post.user_id,
         mediaUrl: post.social_post_media?.[0]?.media_url || ''
       });
     }

@@ -108,6 +108,13 @@ export function InstacenaNotificationPopup({ currentUserId }: InstacenaNotificat
     // Never notify about own actions
     if (activity.actorId === currentUserId) return
 
+    // For likes and comments, only notify if the current user is the owner of the target post
+    if ((activity.type === 'like' || activity.type === 'comment') && activity.targetUserId) {
+      if (activity.targetUserId !== currentUserId) {
+        return
+      }
+    }
+
     // Deduplication check (8 second window)
     const now = Date.now()
     // Clean up old dedupe keys
@@ -270,6 +277,17 @@ export function InstacenaNotificationPopup({ currentUserId }: InstacenaNotificat
         const l = payload.new
         if (!l || l.user_id === currentUserId) return
 
+        // Verify if current user is the author of the post
+        const { data: post } = await supabase
+          .from('social_posts')
+          .select('user_id')
+          .eq('id', l.post_id)
+          .maybeSingle()
+
+        if (post && post.user_id !== currentUserId) {
+          return
+        }
+
         // Fetch post thumbnail
         let postMedia = ''
         const { data: media } = await supabase
@@ -284,6 +302,7 @@ export function InstacenaNotificationPopup({ currentUserId }: InstacenaNotificat
           type: 'like',
           actorId: l.user_id,
           targetPostId: l.post_id,
+          targetUserId: post?.user_id,
           mediaUrl: postMedia,
           createdAt: l.created_at
         })
@@ -293,6 +312,17 @@ export function InstacenaNotificationPopup({ currentUserId }: InstacenaNotificat
         if (!initializedRef.current) return
         const c = payload.new
         if (!c || c.user_id === currentUserId) return
+
+        // Verify if current user is the author of the post
+        const { data: post } = await supabase
+          .from('social_posts')
+          .select('user_id')
+          .eq('id', c.post_id)
+          .maybeSingle()
+
+        if (post && post.user_id !== currentUserId) {
+          return
+        }
 
         let postMedia = ''
         const { data: media } = await supabase
@@ -308,6 +338,7 @@ export function InstacenaNotificationPopup({ currentUserId }: InstacenaNotificat
           actorId: c.user_id,
           content: c.content || '',
           targetPostId: c.post_id,
+          targetUserId: post?.user_id,
           mediaUrl: postMedia,
           createdAt: c.created_at
         })
