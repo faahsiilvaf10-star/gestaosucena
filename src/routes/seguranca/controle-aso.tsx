@@ -19,6 +19,8 @@ import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle.js'
 import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle.js'
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js'
 import Info from 'lucide-react/dist/esm/icons/info.js'
+import FileText from 'lucide-react/dist/esm/icons/file-text.js'
+import FileSpreadsheet from 'lucide-react/dist/esm/icons/file-spreadsheet.js'
 import {
   ColaboradorAso,
   fmtDate,
@@ -31,6 +33,9 @@ import {
   frasesValidade,
   isAtivo,
   canEditControleAso,
+  exportarControleAsoPDF,
+  exportarControleAsoExcel,
+  gerarHtmlRelatorioAso,
 } from '../../lib/controleAso'
 
 export const Route = createFileRoute('/seguranca/controle-aso')({
@@ -73,6 +78,8 @@ function ControleAsoPage() {
   const [editorFeedback, setEditorFeedback] = useState<{ tipo: 'ok' | 'erro'; msg: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+  const [isExportingExcel, setIsExportingExcel] = useState(false)
 
   const editorRef = useRef<HTMLDivElement>(null)
   const listaRef = useRef<HTMLDivElement>(null)
@@ -495,7 +502,35 @@ function ControleAsoPage() {
     }
   }
 
-  // Imprimir relatório
+  // Exportar Relatório Oficial em PDF (A4 Paisagem com Logo Sucena)
+  const handleExportarPDF = async () => {
+    try {
+      setIsExportingPdf(true)
+      const fileName = await exportarControleAsoPDF(listaRelatorio, stats)
+      toast.success(`PDF "${fileName}" gerado com sucesso!`)
+    } catch (err: any) {
+      console.error('Erro ao gerar PDF do Controle de ASO:', err)
+      toast.error('Erro ao gerar PDF do relatório')
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
+  // Exportar Planilha Excel (.xlsx estilizada com Logo Sucena)
+  const handleExportarExcel = async () => {
+    try {
+      setIsExportingExcel(true)
+      const fileName = await exportarControleAsoExcel(listaRelatorio, stats)
+      toast.success(`Planilha "${fileName}" exportada com sucesso!`)
+    } catch (err: any) {
+      console.error('Erro ao exportar Excel:', err)
+      toast.error('Erro ao exportar planilha Excel')
+    } finally {
+      setIsExportingExcel(false)
+    }
+  }
+
+  // Visualizar e Imprimir relatório com layout executivo e Logo Sucena
   const handleImprimirRelatorio = () => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) {
@@ -503,49 +538,7 @@ function ControleAsoPage() {
       return
     }
 
-    const linhasHtml = listaRelatorio
-      .map((c, i) => {
-        const st = statusASO(c)
-        const v = validadeDe(c)
-        return `
-          <div style="border-top:1px solid #e5e7eb; padding:10px 0; font-size:13px; line-height:1.5;">
-            <b>${i + 1}. ${c.nome}</b> — ${c.cargo || 'Função não informada'}<br>
-            <span>Situação: <b>${st.label}</b> — ${st.txt}</span><br>
-            <span>ASO: ${fmtDate(c.aso_admissional)} | Periódico: ${fmtDate(c.aso_periodico)} | Retorno: ${fmtDate(c.retorno_ao_trabalho)} | Mudança de Risco: ${fmtDate(c.mudanca_de_risco)}</span><br>
-            <span>Validade ASO (Efetiva): <b style="color:#2563eb">${v ? fmtDate(v) : '—'}</b> (base: ${nomeBase(c) || '—'}) • Matrícula Hydro: ${c.matricula_hydro || '—'} • Status: ${c.status || '—'}</span>
-            ${c.observacao ? `<br><span>Observação: ${c.observacao}</span>` : ''}
-          </div>
-        `
-      })
-      .join('')
-
-    const doc = `
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <title>Relatório Automático — Controle de ASO</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 24px; color: #111; }
-          h1 { font-size: 22px; margin-bottom: 4px; }
-          .sub { font-size: 13px; color: #555; margin-bottom: 20px; }
-          .summary { background: #f3f4f6; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
-        </style>
-      </head>
-      <body>
-        <h1>🩺 Relatório Automático — Controle de ASO</h1>
-        <div class="sub">Hydro Reabilitação • Segurança do Trabalho • Gerado em ${new Date().toLocaleString('pt-BR')}</div>
-        <div class="summary">
-          Total: ${baseFiltrada.length} colaboradores • Válidos: ${stats.validos} (${stats.pctValidos}%) • A vencer em 30 dias: ${stats.vencendo} • Vencidos: ${stats.vencidos} • Sem ASO: ${stats.sem}
-        </div>
-        ${linhasHtml}
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `
-
+    const doc = gerarHtmlRelatorioAso(listaRelatorio, stats)
     printWindow.document.write(doc)
     printWindow.document.close()
   }
@@ -621,15 +614,37 @@ function ControleAsoPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-center">
+            <div className="flex items-center gap-2 flex-wrap self-start sm:self-center">
+              <button
+                type="button"
+                disabled={isExportingPdf}
+                onClick={handleExportarPDF}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-red-600 hover:bg-red-700 text-white transition shadow-xs cursor-pointer disabled:opacity-50"
+                title="Exportar Relatório Oficial em PDF (com Logo da Sucena)"
+              >
+                <FileText className="w-4 h-4" />
+                <span>{isExportingPdf ? 'Gerando...' : '📄 PDF com Logo'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isExportingExcel}
+                onClick={handleExportarExcel}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs cursor-pointer disabled:opacity-50"
+                title="Exportar Planilha Excel (.xlsx formatada com Logo)"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>{isExportingExcel ? 'Exportando...' : '📊 Planilha Excel'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleImprimirRelatorio}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs cursor-pointer"
-                title="Exportar ou Imprimir Relatório"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-gray-700 hover:bg-gray-800 text-white dark:bg-gray-800 dark:hover:bg-gray-700 transition shadow-xs cursor-pointer"
+                title="Visualizar e Imprimir Relatório Oficial"
               >
                 <Printer className="w-4 h-4" />
-                <span>⬇ Exportar ASO</span>
+                <span className="hidden sm:inline">Imprimir</span>
               </button>
 
               {canEdit && (
@@ -640,7 +655,7 @@ function ControleAsoPage() {
                   title="Cadastrar novo colaborador"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>➕ Novo colaborador</span>
+                  <span>➕ Novo</span>
                 </button>
               )}
             </div>
@@ -1304,11 +1319,34 @@ function ControleAsoPage() {
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <button
               type="button"
+              disabled={isExportingPdf}
+              onClick={handleExportarPDF}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-red-600 hover:bg-red-700 text-white transition cursor-pointer disabled:opacity-50"
+              title="Baixar Relatório Oficial em PDF (A4 Paisagem com Logo da Sucena)"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{isExportingPdf ? 'Gerando PDF...' : '📄 Baixar PDF com Logo'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isExportingExcel}
+              onClick={handleExportarExcel}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer disabled:opacity-50"
+              title="Baixar Planilha Excel formatada com Logo da Sucena"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>{isExportingExcel ? 'Exportando Excel...' : '📊 Baixar Planilha Excel'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleImprimirRelatorio}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black transition cursor-pointer"
+              title="Visualizar e Imprimir Relatório"
             >
               <Printer className="w-4 h-4" />
-              <span>🖨️ Imprimir / Salvar relatório em PDF</span>
+              <span>🖨️ Imprimir</span>
             </button>
 
             <button

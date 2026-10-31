@@ -91,5 +91,45 @@ describe('Controle de ASO — Utilitários e Regras de Negócio', () => {
       expect(canEditControleAso('Lucas', 'Apontador')).toBe(false)
     })
   })
+
+  describe('Exportação de Relatórios e Logo Sucena', () => {
+    it('possui a logo oficial da Sucena em base64 válida', async () => {
+      const { SUCENA_LOGO_BASE64 } = await import('./controleAso')
+      expect(SUCENA_LOGO_BASE64).toBeDefined()
+      expect(SUCENA_LOGO_BASE64.startsWith('data:image/png;base64,')).toBe(true)
+      expect(SUCENA_LOGO_BASE64.length).toBeGreaterThan(500)
+    })
+
+    it('gera documento HTML completo com logo e indicadores para impressão', async () => {
+      const { gerarHtmlRelatorioAso } = await import('./controleAso')
+      const colaboradores = [
+        {
+          id: '1',
+          nome: 'FABRICIO SILVA',
+          cargo: 'ENCARREGADO GERAL',
+          matricula_hydro: '68964',
+          matricula_sucena: '1635',
+          aso_admissional: '2025-10-21',
+          aso_periodico: '2026-10-15',
+          status: 'Ativo',
+        },
+      ]
+      const stats = {
+        total: 1,
+        validos: 1,
+        vencendo: 0,
+        vencidos: 0,
+        sem: 0,
+        pctValidos: 100,
+      }
+      const html = gerarHtmlRelatorioAso(colaboradores, stats)
+      expect(html).toContain('SUCENA EMPREENDIMENTOS LTDA')
+      expect(html).toContain('RELATÓRIO GERENCIAL — CONTROLE DE ASO')
+      expect(html).toContain('FABRICIO SILVA')
+      expect(html).toContain('68964')
+      expect(html).toContain('Sucena: 1635')
+      expect(html).toContain('data:image/png;base64,')
+    })
+  })
 })
 
