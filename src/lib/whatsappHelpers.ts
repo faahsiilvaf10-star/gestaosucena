@@ -201,7 +201,15 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
   employeeMatricula?: string;
   destinationArea?: string;
   reason?: string;
-  items: Array<{ name: string; quantity: number | string }>;
+  items: Array<{
+    name: string;
+    quantity: number | string;
+    productId?: string;
+    remainingStock?: number;
+    minStock?: number;
+    unit?: string;
+    isBelowMin?: boolean;
+  }>;
   dateStr?: string;
   receiptBase64?: string;
   receiptImageUrl?: string | null;
@@ -223,12 +231,74 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
 
     const { format } = await import('date-fns');
     const dateStr = params.dateStr || format(new Date(), 'dd/MM/yyyy');
-    const itemsList = params.items.length > 0
-      ? params.items.map(it => `  - ${it.name || 'Desconhecido'} (${it.quantity})`).join('\n')
+
+    // Se algum item não tiver o saldo em estoque, busca no banco de dados para garantir precisão
+    const itemsWithStock = await Promise.all(params.items.map(async (it) => {
+      let rem = it.remainingStock;
+      let min = it.minStock;
+      let unit = it.unit || 'un';
+      let isBelow = it.isBelowMin;
+
+      if (rem === undefined && (it.productId || it.name)) {
+        try {
+          let q = supabase.from('al_products').select('id, name, current_quantity, min_stock, unit_of_measure');
+          if (it.productId) {
+            q = q.eq('id', it.productId);
+          } else {
+            q = q.ilike('name', it.name.trim());
+          }
+          const { data: prods } = await q.limit(1);
+          if (prods && prods.length > 0) {
+            const p = prods[0];
+            rem = Number(p.current_quantity) || 0;
+            min = Number(p.min_stock) || 0;
+            unit = p.unit_of_measure || 'un';
+            isBelow = min > 0 && rem <= min;
+          }
+        } catch (_) {}
+      }
+
+      return {
+        ...it,
+        remainingStock: rem,
+        minStock: min,
+        unit,
+        isBelowMin: isBelow ?? (min !== undefined && min > 0 && rem !== undefined && rem <= min)
+      };
+    }));
+
+    const itemsList = itemsWithStock.length > 0
+      ? itemsWithStock.map(it => {
+          const nome = it.name || 'Desconhecido';
+          const qtd = it.quantity;
+          const unit = it.unit || 'un';
+
+          if (it.remainingStock !== undefined) {
+            const isBelow = it.isBelowMin || (it.minStock !== undefined && it.minStock > 0 && it.remainingStock <= it.minStock);
+            if (isBelow) {
+              return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit} ⚠️ *(Abaixo do mínimo: ${it.minStock} ${unit})*`;
+            }
+            return `  - ${nome} (${qtd}) — Restam no estoque: ${it.remainingStock} ${unit}`;
+          }
+          return `  - ${nome} (${qtd})`;
+        }).join('\n')
       : '  - 1 item';
 
+    // Alerta de itens que ultrapassaram o estoque mínimo
+    const itensAbaixoMinimo = itemsWithStock.filter(it => 
+      it.isBelowMin || (it.minStock !== undefined && it.minStock > 0 && it.remainingStock !== undefined && it.remainingStock <= it.minStock)
+    );
+
+    let observacaoEstoque = '';
+    if (itensAbaixoMinimo.length > 0) {
+      const avisos = itensAbaixoMinimo.map(it => 
+        `• *${it.name}:* restam apenas *${it.remainingStock} ${it.unit || 'un'}* no almoxarifado (mínimo: ${it.minStock} ${it.unit || 'un'}). Reposição necessária!`
+      ).join('\n');
+      observacaoEstoque = `\n\n⚠️ *OBSERVAÇÃO:* O estoque ultrapassou o mínimo configurado:\n${avisos}`;
+    }
+
     let caption = settings.messageTemplates?.requisicaoEpi ||
-      '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}';
+      '🦺 *TROCA DE EPI*\n\n📅 *Data:* {data}\n👤 *Funcionário:* {nome}\n💼 *Função:* {cargo}\n🆔 *Matrícula:* {matricula}\n📝 *Motivo:* {motivo}\n✅ *Autorizado por:* {autorizador} ({matricula_autorizador})\n\n*Itens:*\n{itens}{observacao_estoque}';
 
     caption = caption
       .replaceAll('{data}', dateStr)
@@ -240,6 +310,12 @@ export async function sendEpiRequisitionWhatsappNotification(params: {
       .replaceAll('{matricula_autorizador}', params.authorizerMatricula || '-')
       .replaceAll('{area}', params.destinationArea || 'Almoxarifado')
       .replaceAll('{itens}', itemsList);
+
+    if (caption.includes('{observacao_estoque}')) {
+      caption = caption.replaceAll('{observacao_estoque}', observacaoEstoque);
+    } else if (observacaoEstoque) {
+      caption += observacaoEstoque;
+    }
 
     // Se houver recibo como imagem (base64 ou URL pública), tenta enviar com imagem
     let base64ToSend = params.receiptBase64;

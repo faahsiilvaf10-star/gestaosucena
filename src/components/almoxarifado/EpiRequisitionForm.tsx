@@ -560,7 +560,21 @@ export function EpiRequisitionForm() {
           reason,
           items: validItems.map(it => {
             const prod = epiProducts?.find(p => p.id === it.productId);
-            return { name: prod?.name || 'Desconhecido', quantity: it.quantity };
+            const currentQty = Number(prod?.current_quantity) || 0;
+            const qtdEntregue = Number(it.quantity) || 1;
+            const remainingStock = Math.max(0, currentQty - qtdEntregue);
+            const minStock = Number(prod?.min_stock) || 0;
+            const unit = prod?.unit_of_measure || 'un';
+
+            return {
+              productId: it.productId,
+              name: prod?.name || 'Desconhecido',
+              quantity: it.quantity,
+              remainingStock,
+              minStock,
+              unit,
+              isBelowMin: minStock > 0 && remainingStock <= minStock
+            };
           }),
           dateStr,
           receiptBase64,

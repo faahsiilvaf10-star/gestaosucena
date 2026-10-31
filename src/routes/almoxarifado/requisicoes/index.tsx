@@ -39,10 +39,21 @@ function RequisicoesList() {
     setSendingWhatsappId(req.id)
     const toastId = toast.loading(`Enviando requisição de ${req.employee?.nome || 'EPI'} para o WhatsApp...`)
     try {
-      const items = (req.items || []).map((it: any) => ({
-        name: it.product?.name || 'Item',
-        quantity: it.quantity
-      }))
+      const items = (req.items || []).map((it: any) => {
+        const prod = it.product || {};
+        const currentQty = prod.current_quantity !== undefined ? Number(prod.current_quantity) : undefined;
+        const minStock = prod.min_stock !== undefined ? Number(prod.min_stock) : undefined;
+        const unit = prod.unit_of_measure || 'un';
+        return {
+          productId: it.product_id,
+          name: prod.name || 'Item',
+          quantity: it.quantity,
+          remainingStock: currentQty,
+          minStock: minStock,
+          unit: unit,
+          isBelowMin: minStock !== undefined && minStock > 0 && currentQty !== undefined && currentQty <= minStock
+        };
+      })
 
       const dateFormatted = req.requisition_date
         ? format(new Date(req.requisition_date + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })

@@ -2217,7 +2217,7 @@ function AdminRoute() {
                     {selectedTemplate.startsWith('dds') && '{palestrante}, {data}, {tema}'}
                     {selectedTemplate.startsWith('lembrete') && '{titulo}, {descricao}, {data}, {hora}'}
                     {selectedTemplate === 'listaPresenca' && '{data}, {area}, {presentes}, {ausentes}, {total}, {lista_nomes}, {resumo}'}
-                    {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}'}
+                    {selectedTemplate === 'requisicaoEpi' && '{data}, {nome}, {cargo}, {matricula}, {motivo}, {autorizador}, {matricula_autorizador}, {itens}, {observacao_estoque}'}
                     {selectedTemplate === 'anomaliaRegistrada' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {descricao}, {motorista}'}
                     {selectedTemplate === 'anomaliaCorrigida' && '{hora}, {equipamento}, {tag}, {placa}, {anomalia}, {motorista}'}
                     {selectedTemplate === 'statusAlterado' && '{hora}, {equipamento}, {tag}, {placa}, {status}, {motorista}'}
