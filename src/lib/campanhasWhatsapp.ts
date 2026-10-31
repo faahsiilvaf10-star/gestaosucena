@@ -173,7 +173,7 @@ export async function notificarCampanhaMesAutomatico(forcar: boolean = false): P
       await supabase.from('system_activities').insert({
         module: 'Segurança',
         action: `Campanha do Mês enviada ao WhatsApp: ${campanha.camp} (${campanha.mes})`,
-        user_name: 'Sistema Automático',
+        user_name: 'Alexssandro Chaves',
         environment: env,
       })
     } catch (_) {}

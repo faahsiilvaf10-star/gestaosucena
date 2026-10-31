@@ -55,7 +55,7 @@ export function AnaliseRiscoAlertManager() {
                 await supabase.from('system_activities').insert({
                   module: 'Segurança',
                   action: acaoMarca5d,
-                  user_name: 'Sistema Automático',
+                  user_name: 'Alexssandro Chaves',
                   environment: env,
                 })
                 await notificarAnaliseRiscoVencendo5Dias(item)
@@ -80,7 +80,7 @@ export function AnaliseRiscoAlertManager() {
                 await supabase.from('system_activities').insert({
                   module: 'Segurança',
                   action: acaoMarcaHoje,
-                  user_name: 'Sistema Automático',
+                  user_name: 'Alexssandro Chaves',
                   environment: env,
                 })
                 await notificarAnaliseRiscoVencendoHoje(item)

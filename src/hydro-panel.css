@@ -1828,3 +1828,110 @@ table {
     padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 10px 14px !important;
   }
 }
+
+
+/* ========================================================
+   BARRA SUPERIOR AMARELA MOBILE - IDÊNTICA À IMAGEM
+   [ < ] | ⚡ Requisição Rápida
+   ======================================================== */
+.mobile-topbar-yellow {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-topbar-yellow {
+    display: flex !important;
+    align-items: center !important;
+    background: #FFB800 !important;
+    height: 52px !important;
+    padding: 0 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .mobile-topbar-back-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 50% !important;
+    background: #FFFFFF !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    color: #000000 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.15s ease, background-color 0.15s ease !important;
+    padding: 0 !important;
+  }
+
+  .mobile-topbar-back-btn:active {
+    transform: scale(0.92) !important;
+    background: #F3F4F6 !important;
+  }
+
+  .mobile-topbar-back-btn svg {
+    width: 19px !important;
+    height: 19px !important;
+    stroke: #000000 !important;
+    stroke-width: 3 !important;
+    display: block !important;
+  }
+
+  .mobile-topbar-divider {
+    width: 1.5px !important;
+    height: 24px !important;
+    background-color: rgba(0, 0, 0, 0.28) !important;
+    margin: 0 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mobile-topbar-action-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #000000 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    flex: 1 !important;
+    font-family: inherit !important;
+    text-align: left !important;
+  }
+
+  .mobile-topbar-bolt-icon {
+    width: 19px !important;
+    height: 19px !important;
+    fill: #000000 !important;
+    color: #000000 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mobile-topbar-text {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+
+  /* Ocultar a topbar antiga branca/transparente no celular */
+  .topbar-container {
+    display: none !important;
+  }
+
+  /* Ocultar o botão flutuante antigo no celular pois agora fica na barra amarela */
+  .sidebar-toggle {
+    display: none !important;
+  }
+}

@@ -440,6 +440,43 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }}
       >
         {/* Barra superior persistente em todo o sistema */}
+        {/* Barra superior mobile amarela idêntica à imagem de referência: [ < ] | ⚡ Requisição Rápida */}
+        <div className="mobile-topbar-yellow">
+          <button
+            type="button"
+            className="mobile-topbar-back-btn"
+            onClick={() => {
+              if (isDashboard) {
+                setIsSidebarCollapsed((prev) => !prev)
+              } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                window.history.back()
+              } else {
+                navigate({ to: '/dashboard' as any })
+              }
+            }}
+            title={isDashboard ? 'Menu lateral' : 'Voltar'}
+            aria-label={isDashboard ? 'Menu lateral' : 'Voltar'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+
+          <div className="mobile-topbar-divider" />
+
+          <button
+            type="button"
+            className="mobile-topbar-action-btn"
+            onClick={() => navigate({ to: '/almoxarifado/requisicoes/nova' as any })}
+            title="Nova Requisição Rápida"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="mobile-topbar-bolt-icon">
+              <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+            </svg>
+            <span className="mobile-topbar-text">Requisição Rápida</span>
+          </button>
+        </div>
+
         <div className="topbar-container" style={{ width: '100%' }}>
           <header className="topbar">
             {/* Botão Requisição Rápida (visível exclusivamente no mobile / celular) */}

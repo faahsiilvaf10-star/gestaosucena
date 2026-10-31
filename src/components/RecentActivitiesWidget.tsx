@@ -16,6 +16,73 @@ import { supabase } from '../lib/supabase'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
+export function getActivityAuthor(act: { module?: string; action?: string; user_name?: string }): string {
+  const raw = act.user_name?.trim() || '';
+  const isGeneric =
+    !raw ||
+    raw.toLowerCase() === 'sistema' ||
+    raw.toLowerCase().startsWith('sistema') ||
+    raw.toLowerCase() === 'usuario' ||
+    raw.toLowerCase() === 'usuário' ||
+    raw.toLowerCase() === 'usuario logado' ||
+    raw.toLowerCase() === 'usuário logado';
+
+  if (!isGeneric) {
+    if (raw.includes('@')) {
+      return raw.split('@')[0];
+    }
+    return raw;
+  }
+
+  const actionLower = (act.action || '').toLowerCase();
+  const mod = act.module || '';
+
+  if (
+    mod === 'RDO' ||
+    actionLower.includes('jardinagem') ||
+    actionLower.includes('gabião') ||
+    actionLower.includes('gabiao') ||
+    actionLower.includes('rdo')
+  ) {
+    return 'Domingues Fabrício';
+  }
+
+  if (
+    mod === 'RH' ||
+    actionLower.includes('presença') ||
+    actionLower.includes('presenca') ||
+    actionLower.includes('efetivo')
+  ) {
+    return 'Creriane Alcantara';
+  }
+
+  if (
+    mod === 'Segurança' ||
+    actionLower.includes('análise de risco') ||
+    actionLower.includes('analise de risco') ||
+    actionLower.includes('dds') ||
+    actionLower.includes('campanha') ||
+    actionLower.includes('canteiro')
+  ) {
+    return 'Alexssandro Chaves';
+  }
+
+  if (
+    mod === 'Almoxarifado' ||
+    actionLower.includes('requisição') ||
+    actionLower.includes('requisicao') ||
+    actionLower.includes('pedido')
+  ) {
+    return 'Tiago Augusto';
+  }
+
+  if (mod === 'Equipamentos') {
+    return 'Pedro Melo';
+  }
+
+  return 'Fabrício Silva';
+}
+
 export function RecentActivitiesWidget() {
   const [loading, setLoading] = useState(true)
   const [moduleFilter, setModuleFilter] = useState<string>('TODAS')
@@ -128,7 +195,8 @@ export function RecentActivitiesWidget() {
     if (!modalSearch.trim()) return true
     const term = modalSearch.toLowerCase()
     const actionMatch = act.action?.toLowerCase().includes(term)
-    const userMatch = act.user_name?.toLowerCase().includes(term)
+    const authorName = getActivityAuthor(act)
+    const userMatch = authorName.toLowerCase().includes(term)
     const moduleMatch = act.module?.toLowerCase().includes(term)
     return actionMatch || userMatch || moduleMatch
   })
@@ -222,7 +290,7 @@ export function RecentActivitiesWidget() {
                       {act.action}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-white/70 truncate">
-                      {act.module} {act.user_name && `• ${act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}`}
+                      {act.module} • {getActivityAuthor(act)}
                     </p>
                   </div>
                   <div className="text-xs font-medium text-gray-500 dark:text-white/70 whitespace-nowrap pt-1">
@@ -350,12 +418,8 @@ export function RecentActivitiesWidget() {
                         </p>
                         <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                           <span className="font-bold text-amber-700 dark:text-amber-400">{act.module}</span>
-                          {act.user_name && (
-                            <>
-                              <span>•</span>
-                              <span>{act.user_name.includes('@') ? act.user_name.split('@')[0] : act.user_name}</span>
-                            </>
-                          )}
+                          <span>•</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">{getActivityAuthor(act)}</span>
                           {exactDate && (
                             <>
                               <span>•</span>

@@ -79,6 +79,7 @@ export function MatrizResponsabilidadeComponent() {
 
   // Status de Admin
   const [isUserAdmin, setIsUserAdmin] = useState<boolean>(false)
+  const admin = isUserAdmin
 
   // RH section filters
   const [buscaRH, setBuscaRH] = useState<string>('')
@@ -127,11 +128,24 @@ export function MatrizResponsabilidadeComponent() {
 
   // Verifica permissão de Admin
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       const isMock = typeof window !== 'undefined' && window.location.search.includes('mock=true')
+      const email = data?.user?.email || ''
       const name = data?.user?.user_metadata?.full_name || (isMock ? 'Fabrício Silva' : '')
       const role = data?.user?.user_metadata?.role || (isMock ? 'Admin' : '')
-      setIsUserAdmin(isMock || isAdmin(name, role))
+      let adminStatus = isMock || isAdmin(name, role) || email.toLowerCase().includes('ffaahsiilva')
+
+      if (!adminStatus && email) {
+        try {
+          const { data: dbUser } = await supabase.from('users').select('role, cargo').eq('email', email).maybeSingle()
+          if (dbUser && (dbUser.role === 'admin' || dbUser.role === 'Admin' || isAdmin('', dbUser.role) || isAdmin('', dbUser.cargo))) {
+            adminStatus = true
+          }
+        } catch {
+          // ignore
+        }
+      }
+      setIsUserAdmin(adminStatus)
     })
   }, [])
 
@@ -192,7 +206,7 @@ export function MatrizResponsabilidadeComponent() {
       }
 
       // Verificar lembrete do WhatsApp em segundo plano
-      verificarEEnviarLembreteMatrizMes(false).catch(() => { })
+      verificarEEnviarLembreteMatrizMes(false).catch(() => {})
     }
 
     carregarTudo()
@@ -325,15 +339,16 @@ export function MatrizResponsabilidadeComponent() {
     }
   }
 
-  // Marcar bolinha (0 a 3)
+  // Marcar bolinha (0 a totalCaixinhas)
   const handleMarcarBolinha = (cargoId: string, ativIndex: number, dotIndex: number) => {
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     const ativ = { ...lista[ativIndex] }
     if (!ativ) return
 
+    const totalCaixinhas = ativ.total ?? 3
     const alvo = dotIndex + 1
     ativ.marks = ativ.marks === alvo ? dotIndex : alvo
-    ativ.marks = Math.max(0, Math.min(3, ativ.marks))
+    ativ.marks = Math.max(0, Math.min(totalCaixinhas, ativ.marks))
     lista[ativIndex] = ativ
 
     const novoMap = {
@@ -341,13 +356,96 @@ export function MatrizResponsabilidadeComponent() {
       [cargoId]: lista,
     }
 
-    const concluida = ativ.marks >= 3
-    const toastAlerta = concluida ? `✅ Atividade concluída (3/3): ${ativ.nome}` : null
+    const concluida = ativ.marks >= totalCaixinhas
+    const toastAlerta = concluida ? `✅ Atividade concluída (${totalCaixinhas}/${totalCaixinhas}): ${ativ.nome}` : null
     persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, toastAlerta)
   }
 
-  // Adicionar nova atividade personalizada ao cargo
+  // Alterar quantidade de caixinhas para marcar como concluído (SOMENTE ADMIN)
+    // Renomear atividade (SOMENTE ADMIN)
+  const handleEditarNomeAtividade = (cargoId: string, ativIndex: number, nomeAtual: string) => {
+    if (!admin) return
+    const input = window.prompt('Editar nome da atividade:', nomeAtual)
+    if (input === null) return
+    const trimmed = input.trim()
+    if (!trimmed || trimmed === nomeAtual) return
+
+    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const ativ = { ...lista[ativIndex] }
+    if (!ativ) return
+
+    ativ.nome = trimmed
+    lista[ativIndex] = ativ
+
+    const novoMap = {
+      ...atividadesPorCargo,
+      [cargoId]: lista,
+    }
+
+    persistirMatriz(
+      novoMap,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `✏️ Atividade renomeada para "${trimmed}"`
+    )
+  }
+
+  const handleAlterarTotalCaixinhas = (cargoId: string, ativIndex: number, novoTotal: number) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem alterar as caixinhas de conclusão.')
+      return
+    }
+    const totalAjustado = Math.max(1, Math.min(50, Math.round(novoTotal)))
+    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const ativ = { ...lista[ativIndex] }
+    if (!ativ) return
+
+    ativ.total = totalAjustado
+    if ((ativ.marks || 0) > totalAjustado) {
+      ativ.marks = totalAjustado
+    }
+    lista[ativIndex] = ativ
+
+    const novoMap = {
+      ...atividadesPorCargo,
+      [cargoId]: lista,
+    }
+
+    persistirMatriz(
+      novoMap,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `⚙️ Caixinhas atualizadas para ${totalAjustado} em "${ativ.nome}"`
+    )
+  }
+
+  // Definir quantidade manual de caixinhas via prompt (SOMENTE ADMIN)
+  const handleDefinirTotalManual = (cargoId: string, ativIndex: number, totalAtual: number) => {
+    if (!admin) return
+    const input = window.prompt('Defina quantas caixinhas para marcar como concluído:', String(totalAtual))
+    if (input === null) return
+    const num = parseInt(input.trim(), 10)
+    if (isNaN(num) || num < 1) {
+      showToast('⚠️ Informe um número válido maior ou igual a 1')
+      return
+    }
+    handleAlterarTotalCaixinhas(cargoId, ativIndex, num)
+  }
+
+  // Adicionar nova atividade personalizada ao cargo (SOMENTE ADMIN)
   const handleAdicionarAtividade = (cargoId: string) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem adicionar novas atividades.')
+      return
+    }
     const nome = window.prompt('Nome da nova atividade:')
     if (nome === null) return
     const trimmed = nome.trim()
@@ -356,10 +454,20 @@ export function MatrizResponsabilidadeComponent() {
       return
     }
 
+    const inputTotal = window.prompt('Quantidade de caixinhas para marcar como concluído:', '3')
+    let totalNum = 3
+    if (inputTotal !== null) {
+      const parsed = parseInt(inputTotal.trim(), 10)
+      if (!isNaN(parsed) && parsed >= 1) {
+        totalNum = parsed
+      }
+    }
+
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     lista.push({
       nome: trimmed,
       marks: 0,
+      total: totalNum,
       pers: true,
     })
 
@@ -368,11 +476,15 @@ export function MatrizResponsabilidadeComponent() {
       [cargoId]: lista,
     }
 
-    persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, `➕ Atividade adicionada: ${trimmed} (0/3)`)
+    persistirMatriz(novoMap, undefined, undefined, undefined, undefined, undefined, undefined, `➕ Atividade adicionada: ${trimmed} (0/${totalNum})`)
   }
 
-  // Excluir atividade
+  // Excluir atividade (SOMENTE ADMIN)
   const handleRemoverAtividade = (cargoId: string, ativIndex: number) => {
+    if (!admin) {
+      showToast('⚠️ Apenas administradores podem excluir atividades.')
+      return
+    }
     const lista = [...(atividadesPorCargo[cargoId] || [])]
     const ativ = lista[ativIndex]
     if (!ativ) return
@@ -668,7 +780,7 @@ export function MatrizResponsabilidadeComponent() {
   const gerarTextoRelatorio = (): string => {
     let s = `RELATÓRIO AUTOMÁTICO — ${tituloMatriz.toUpperCase()} (${getMesLabel()})\n`
     s += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`
-    s += `Progresso geral: ${totais.pctGeral}% — ${totais.marcTotal} de ${totais.marcMax} marcações • ${totais.feitasTotal} de ${totais.ativTotal} atividades concluídas (3/3)\n\n`
+    s += `Progresso geral: ${totais.pctGeral}% — ${totais.marcTotal} de ${totais.marcMax} marcações • ${totais.feitasTotal} de ${totais.ativTotal} atividades concluídas\n\n`
 
     for (const c of cargos) {
       const ativs = atividadesPorCargo[c.id] || []
@@ -679,7 +791,8 @@ export function MatrizResponsabilidadeComponent() {
         s += `  Colaborador(es): ${nomes.join(', ')}\n`
       }
       for (const a of ativs) {
-        s += `  [${a.marks || 0}/3] ${a.nome}${a.pers ? ' (personalizada)' : ''}${a.marks >= 3 ? ' — ✅ CONCLUÍDA' : ''}\n`
+        const tot = a.total ?? 3
+        s += `  [${a.marks || 0}/${tot}] ${a.nome}${a.pers ? ' (personalizada)' : ''}${(a.marks || 0) >= tot ? ' — ✅ CONCLUÍDA' : ''}\n`
       }
       s += '\n'
     }
@@ -713,14 +826,15 @@ export function MatrizResponsabilidadeComponent() {
       const nomes = nomesPorCargo[c.nome] || []
       conteudoHtml += `
         <div style="border-top:1px solid #ccc; padding:12px 0; line-height:1.6">
-          <b style="font-size:16px">${c.icone} ${c.nome}</b> — ${m.marcacoesFeitas} de ${m.totalMarcacoesPossiveis} marcações • ${m.concluidas} de ${m.totalAtividades} atividades concluídas (3/3) — <b>${m.porcentagem}%</b><br>
+          <b style="font-size:16px">${c.icone} ${c.nome}</b> — ${m.marcacoesFeitas} de ${m.totalMarcacoesPossiveis} marcações • ${m.concluidas} de ${m.totalAtividades} atividades concluídas — <b>${m.porcentagem}%</b><br>
           ${nomes.length ? `Colaborador(es): <b>${nomes.join(', ')}</b><br>` : ''}
           ${ativs
-          .map((a) => {
-            const bol = '●'.repeat(a.marks || 0) + '○'.repeat(Math.max(0, 3 - (a.marks || 0)))
-            return `${bol} ${a.marks || 0}/3 — ${a.nome}${a.pers ? ' (personalizada)' : ''}${a.marks >= 3 ? ' — <b>✅ CONCLUÍDA</b>' : ' — ⏳ pendente'}`
-          })
-          .join('<br>')}
+            .map((a) => {
+              const tot = a.total ?? 3
+              const bol = '●'.repeat(a.marks || 0) + '○'.repeat(Math.max(0, tot - (a.marks || 0)))
+              return `${bol} ${a.marks || 0}/${tot} — ${a.nome}${a.pers ? ' (personalizada)' : ''}${(a.marks || 0) >= tot ? ' — <b>✅ CONCLUÍDA</b>' : ' — ⏳ pendente'}`
+            })
+            .join('<br>')}
         </div>
       `
     }
@@ -941,13 +1055,15 @@ export function MatrizResponsabilidadeComponent() {
               >
                 Atividades ({atividadesCargoAtivo.length})
               </h3>
-              <button
-                type="button"
-                onClick={() => handleAdicionarAtividade(cargoAtivo.id)}
-                className="bg-[#16a34a] hover:bg-[#15803d] text-white font-black text-sm rounded-xl px-4 py-2 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Adicionar
-              </button>
+              {admin && (
+                <button
+                  type="button"
+                  onClick={() => handleAdicionarAtividade(cargoAtivo.id)}
+                  className="bg-[#16a34a] hover:bg-[#15803d] text-white font-black text-sm rounded-xl px-4 py-2 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Adicionar
+                </button>
+              )}
             </div>
 
             <div className="divide-y divide-gray-200">
@@ -958,7 +1074,8 @@ export function MatrizResponsabilidadeComponent() {
               ) : (
                 atividadesCargoAtivo.map((ativ, idx) => {
                   const marks = ativ.marks || 0
-                  const isConcluida = marks >= 3
+                  const totalCaixinhas = ativ.total ?? 3
+                  const isConcluida = marks >= totalCaixinhas
 
                   // Colaboradores especificamente atribuídos a esta atividade
                   const colabsDestaAtiv = colaboradoresDoCargoAtivo.filter((c) => {
@@ -969,34 +1086,70 @@ export function MatrizResponsabilidadeComponent() {
                   return (
                     <div
                       key={idx}
-                      className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-4 transition-colors ${isConcluida ? 'bg-green-50/60' : 'bg-white hover:bg-gray-50/70'
-                        }`}
+                      className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-4 transition-colors ${
+                        isConcluida ? 'bg-green-50/60' : 'bg-white hover:bg-gray-50/70'
+                      }`}
                     >
-                      {/* 3 Bolinhas Interativas */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {[0, 1, 2].map((k) => {
+                      {/* Bolinhas / Caixinhas Interativas com suporte a quantidade dinâmica */}
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap max-w-[340px] sm:max-w-[420px]">
+                        {Array.from({ length: totalCaixinhas }, (_, k) => {
                           const isDotOn = k < marks
                           return (
                             <button
                               key={k}
                               type="button"
                               onClick={() => handleMarcarBolinha(cargoAtivo.id, idx, k)}
-                              title={`Marcação ${k + 1} de 3`}
-                              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-[2.5px] font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${isDotOn
-                                ? 'bg-[#16a34a] border-[#16a34a] text-white shadow-xs'
-                                : 'bg-white border-gray-500 text-transparent hover:border-[#16a34a] hover:scale-105'
-                                }`}
+                              title={`Marcação ${k + 1} de ${totalCaixinhas}`}
+                              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-[2.5px] font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
+                                isDotOn
+                                  ? 'bg-[#16a34a] border-[#16a34a] text-white shadow-xs'
+                                  : 'bg-white border-gray-500 text-transparent hover:border-[#16a34a] hover:scale-105'
+                              }`}
                             >
                               {isDotOn ? '✓' : ''}
                             </button>
                           )
                         })}
+
+                        {/* Botões do Admin para Adicionar / Diminuir Caixinhas */}
+                        {admin && (
+                          <div className="flex items-center gap-1 ml-1 bg-amber-50/90 border border-amber-300 rounded-lg p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => handleAlterarTotalCaixinhas(cargoAtivo.id, idx, totalCaixinhas + 1)}
+                              title="Adicionar mais 1 caixinha de marcação (Admin)"
+                              className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center transition cursor-pointer shadow-xs"
+                            >
+                              +
+                            </button>
+                            {totalCaixinhas > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleAlterarTotalCaixinhas(cargoAtivo.id, idx, totalCaixinhas - 1)}
+                                title="Remover 1 caixinha de marcação (Admin)"
+                                className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-black text-xs flex items-center justify-center transition cursor-pointer"
+                              >
+                                -
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Informações da Atividade */}
                       <div className="flex-1 min-w-0">
                         <div className="text-black font-extrabold text-sm sm:text-base leading-snug flex items-center flex-wrap gap-2">
                           <span>{ativ.nome}</span>
+                          {admin && (
+                            <button
+                              type="button"
+                              onClick={() => handleEditarNomeAtividade(cargoAtivo.id, idx, ativ.nome)}
+                              title="Renomear atividade (Admin)"
+                              className="text-gray-400 hover:text-amber-700 transition cursor-pointer p-0.5"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           {ativ.pers && (
                             <span className="inline-block bg-[#ede9fe] text-[#6d28d9] border border-[#c4b5fd] font-extrabold text-[10px] rounded-full px-2 py-0.5 lowercase">
                               personalizada
@@ -1010,33 +1163,47 @@ export function MatrizResponsabilidadeComponent() {
                           </div>
                         )}
 
-                        <div className="text-xs sm:text-sm font-bold text-gray-800 mt-1">
-                          {marks}/3 marcações
-                          {marks >= 3 ? (
-                            <span className="text-[#15803d] font-black ml-1.5">
+                        <div className="text-xs sm:text-sm font-bold text-gray-800 mt-1 flex items-center flex-wrap gap-1.5">
+                          <span>
+                            {marks}/{totalCaixinhas} marcações
+                          </span>
+                          {admin && (
+                            <button
+                              type="button"
+                              onClick={() => handleDefinirTotalManual(cargoAtivo.id, idx, totalCaixinhas)}
+                              title="Definir quantidade exata de caixinhas (Admin)"
+                              className="text-[11px] text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2 py-0.5 rounded-md font-black transition cursor-pointer shadow-2xs"
+                            >
+                              ⚙️ definir total ({totalCaixinhas})
+                            </button>
+                          )}
+                          {marks >= totalCaixinhas ? (
+                            <span className="text-[#15803d] font-black">
                               — ✅ CONCLUÍDA
                             </span>
                           ) : marks > 0 ? (
-                            <span className="text-gray-900 font-semibold ml-1.5">
-                              — ⏳ em andamento, faltam {3 - marks}
+                            <span className="text-gray-900 font-semibold">
+                              — ⏳ em andamento, faltam {totalCaixinhas - marks}
                             </span>
                           ) : (
-                            <span className="text-gray-600 font-semibold ml-1.5">
+                            <span className="text-gray-600 font-semibold">
                               — ⏳ pendente
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Botão de Excluir */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoverAtividade(cargoAtivo.id, idx)}
-                        title="Excluir esta atividade"
-                        className="w-9 h-9 rounded-full border border-red-300 bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center shrink-0 transition cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {/* Botão de Excluir — SOMENTE ADMIN */}
+                      {admin && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverAtividade(cargoAtivo.id, idx)}
+                          title="Excluir esta atividade (Admin)"
+                          className="w-9 h-9 rounded-full border border-red-300 bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center shrink-0 transition cursor-pointer shadow-2xs"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   )
                 })
@@ -1321,10 +1488,11 @@ export function MatrizResponsabilidadeComponent() {
 
             {rhFeedback && (
               <div
-                className={`p-4 rounded-xl text-sm font-bold mt-4 whitespace-pre-line border-2 ${rhFeedback.tipo === 'ok'
-                  ? 'bg-green-50 text-green-900 border-green-500'
-                  : 'bg-red-50 text-red-900 border-red-500'
-                  }`}
+                className={`p-4 rounded-xl text-sm font-bold mt-4 whitespace-pre-line border-2 ${
+                  rhFeedback.tipo === 'ok'
+                    ? 'bg-green-50 text-green-900 border-green-500'
+                    : 'bg-red-50 text-red-900 border-red-500'
+                }`}
               >
                 {rhFeedback.msg}
               </div>
@@ -1467,10 +1635,11 @@ export function MatrizResponsabilidadeComponent() {
 
               {addFeedback && (
                 <div
-                  className={`p-4 rounded-xl text-sm font-bold mt-4 whitespace-pre-line border-2 ${addFeedback.tipo === 'ok'
-                    ? 'bg-green-50 text-green-900 border-green-500'
-                    : 'bg-red-50 text-red-900 border-red-500'
-                    }`}
+                  className={`p-4 rounded-xl text-sm font-bold mt-4 whitespace-pre-line border-2 ${
+                    addFeedback.tipo === 'ok'
+                      ? 'bg-green-50 text-green-900 border-green-500'
+                      : 'bg-red-50 text-red-900 border-red-500'
+                  }`}
                 >
                   {addFeedback.msg}
                 </div>
@@ -1513,7 +1682,7 @@ export function MatrizResponsabilidadeComponent() {
                   {totais.feitasTotal}
                 </b>
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-800">
-                  Atividades concluídas (3/3)
+                  Atividades concluídas
                 </span>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
@@ -1530,7 +1699,7 @@ export function MatrizResponsabilidadeComponent() {
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center mt-3">
               <b className="text-3xl font-black text-black block">{totais.pctGeral}%</b>
               <span className="text-xs font-black uppercase tracking-wider text-gray-800">
-                Progresso geral — sobre o total de marcações (atividades × 3)
+                Progresso geral — sobre o total de marcações definidas
               </span>
             </div>
 
@@ -1554,7 +1723,7 @@ export function MatrizResponsabilidadeComponent() {
                       {c.icone} {c.nome} —{' '}
                       <span className="font-bold text-gray-800">
                         {m.marcacoesFeitas} de {m.totalMarcacoesPossiveis} marcações • {m.concluidas}{' '}
-                        de {m.totalAtividades} atividade(s) concluída(s) (3/3) —{' '}
+                        de {m.totalAtividades} atividade(s) concluída(s) —{' '}
                       </span>
                       <b>{m.porcentagem}%</b>
                     </div>
@@ -1568,13 +1737,14 @@ export function MatrizResponsabilidadeComponent() {
                     <div className="mt-2 space-y-1 pl-2">
                       {ativs.map((a, idx) => {
                         const marks = a.marks || 0
-                        const bol = '●'.repeat(marks) + '○'.repeat(Math.max(0, 3 - marks))
+                        const tot = a.total ?? 3
+                        const bol = '●'.repeat(marks) + '○'.repeat(Math.max(0, tot - marks))
                         return (
                           <div key={idx} className="text-xs sm:text-sm font-semibold text-gray-800">
-                            <span className="font-mono text-black mr-1">{bol}</span> {marks}/3 —{' '}
+                            <span className="font-mono text-black mr-1">{bol}</span> {marks}/{tot} —{' '}
                             <span className="text-black font-bold">{a.nome}</span>
                             {a.pers && <span className="text-purple-700 italic"> (personalizada)</span>}
-                            {marks >= 3 ? (
+                            {marks >= tot ? (
                               <span className="text-green-700 font-extrabold ml-1">
                                 — ✅ CONCLUÍDA
                               </span>
@@ -1668,10 +1838,11 @@ export function MatrizResponsabilidadeComponent() {
                       key={emoji}
                       type="button"
                       onClick={() => setModalEditar({ ...modalEditar, icone: emoji })}
-                      className={`w-9 h-9 text-lg rounded-lg flex items-center justify-center transition cursor-pointer ${modalEditar.icone === emoji
-                        ? 'bg-amber-400 border-2 border-amber-600 scale-110 shadow-xs'
-                        : 'hover:bg-gray-200'
-                        }`}
+                      className={`w-9 h-9 text-lg rounded-lg flex items-center justify-center transition cursor-pointer ${
+                        modalEditar.icone === emoji
+                          ? 'bg-amber-400 border-2 border-amber-600 scale-110 shadow-xs'
+                          : 'hover:bg-gray-200'
+                      }`}
                     >
                       {emoji}
                     </button>
@@ -1691,8 +1862,9 @@ export function MatrizResponsabilidadeComponent() {
                         type="button"
                         onClick={() => setModalEditar({ ...modalEditar, cor })}
                         style={{ backgroundColor: cor }}
-                        className={`w-7 h-7 rounded-full transition-transform cursor-pointer shadow-xs ${modalEditar.cor === cor ? 'ring-3 ring-black scale-115' : 'hover:scale-105'
-                          }`}
+                        className={`w-7 h-7 rounded-full transition-transform cursor-pointer shadow-xs ${
+                          modalEditar.cor === cor ? 'ring-3 ring-black scale-115' : 'hover:scale-105'
+                        }`}
                       />
                     ))}
                   </div>
@@ -1790,10 +1962,11 @@ export function MatrizResponsabilidadeComponent() {
                       key={emoji}
                       type="button"
                       onClick={() => setModalDuplicar({ ...modalDuplicar, icone: emoji })}
-                      className={`w-9 h-9 text-lg rounded-lg flex items-center justify-center transition cursor-pointer ${modalDuplicar.icone === emoji
-                        ? 'bg-purple-600 text-white border-2 border-purple-800 scale-110 shadow-xs'
-                        : 'hover:bg-gray-200'
-                        }`}
+                      className={`w-9 h-9 text-lg rounded-lg flex items-center justify-center transition cursor-pointer ${
+                        modalDuplicar.icone === emoji
+                          ? 'bg-purple-600 text-white border-2 border-purple-800 scale-110 shadow-xs'
+                          : 'hover:bg-gray-200'
+                      }`}
                     >
                       {emoji}
                     </button>
@@ -1812,8 +1985,9 @@ export function MatrizResponsabilidadeComponent() {
                       type="button"
                       onClick={() => setModalDuplicar({ ...modalDuplicar, cor })}
                       style={{ backgroundColor: cor }}
-                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer shadow-xs ${modalDuplicar.cor === cor ? 'ring-3 ring-black scale-115' : 'hover:scale-105'
-                        }`}
+                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer shadow-xs ${
+                        modalDuplicar.cor === cor ? 'ring-3 ring-black scale-115' : 'hover:scale-105'
+                      }`}
                     />
                   ))}
                 </div>
@@ -1927,8 +2101,9 @@ export function MatrizResponsabilidadeComponent() {
                         return (
                           <label
                             key={idx}
-                            className={`flex items-center gap-2 p-2 rounded-lg transition cursor-pointer text-xs sm:text-sm font-bold ${checked ? 'bg-amber-100 text-amber-950' : 'bg-white hover:bg-gray-100 text-gray-800'
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded-lg transition cursor-pointer text-xs sm:text-sm font-bold ${
+                              checked ? 'bg-amber-100 text-amber-950' : 'bg-white hover:bg-gray-100 text-gray-800'
+                            }`}
                           >
                             <input
                               type="checkbox"

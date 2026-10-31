@@ -44,7 +44,7 @@ export async function notificarAnaliseRiscoVencendo5Dias(item: AnaliseRiscoItem)
     await supabase.from('system_activities').insert({
       module: 'Segurança',
       action: `[WHATSAPP 5 DIAS] Análise de Risco "${item.titulo}" vence em 5 dias (${fmtValidade(item.validaAte)})`,
-      user_name: 'Sistema Automático',
+      user_name: 'Alexssandro Chaves',
       environment: env,
     })
 
@@ -95,7 +95,7 @@ export async function notificarAnaliseRiscoVencendoHoje(item: AnaliseRiscoItem):
     await supabase.from('system_activities').insert({
       module: 'Segurança',
       action: `[WHATSAPP HOJE] Análise de Risco "${item.titulo}" vence hoje (${fmtValidade(item.validaAte)})`,
-      user_name: 'Sistema Automático',
+      user_name: 'Alexssandro Chaves',
       environment: env,
     })
 

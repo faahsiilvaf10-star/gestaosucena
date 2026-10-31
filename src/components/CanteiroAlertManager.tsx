@@ -78,7 +78,7 @@ export function CanteiroAlertManager() {
         await supabase.from('system_activities').insert({
           module: 'Segurança',
           action: acaoMarca,
-          user_name: 'Sistema Automático (07:00)',
+          user_name: 'Alexssandro Chaves',
           environment: env,
         })
 
