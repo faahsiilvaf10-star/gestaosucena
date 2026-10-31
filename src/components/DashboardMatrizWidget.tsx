@@ -42,7 +42,7 @@ export function DashboardMatrizWidget() {
           carregarDadosMatriz(mesKey, env),
           supabase
             .from('rh_efetivo')
-            .select('nome, cargo, status')
+            .select('id, nome, cargo, status')
             .order('nome', { ascending: true }),
         ])
 
@@ -52,32 +52,95 @@ export function DashboardMatrizWidget() {
         setCargos(listaCargos)
         setAtividadesPorCargo(matrizDb.atividadesPorCargo || {})
 
-        // Mapa de nomes do RH
+        const atribuicoesManual = matrizDb.atribuicoesManual || {}
+        const atribuicoesAtividades = matrizDb.atribuicoesAtividades || {}
+
+        // Mapa de nomes de colaboradores por cargo
         const mapa: Record<string, string[]> = {}
         for (const c of listaCargos) {
           mapa[c.nome] = []
         }
 
+        // Identifica o cargo do colaborador seguindo as atribuições da Matriz
+        const resolverCargoDoColaborador = (colab: { id?: string; nome: string; cargo?: string }) => {
+          // 1. Atribuição manual direta na Matriz (por ID ou Nome)
+          const manualCargoId = (colab.id && atribuicoesManual[colab.id]) || atribuicoesManual[colab.nome]
+          if (manualCargoId) {
+            const found = listaCargos.find((c) => c.id === manualCargoId)
+            if (found) return found
+          }
+
+          // 2. Atribuição de atividades específicas
+          const ativs = (colab.id && atribuicoesAtividades[colab.id]) || atribuicoesAtividades[colab.nome]
+          if (ativs && ativs.length > 0) {
+            for (const c of listaCargos) {
+              const ativsDoCargo = (matrizDb.atividadesPorCargo && matrizDb.atividadesPorCargo[c.id])
+                ? matrizDb.atividadesPorCargo[c.id].map((a: any) => a.nome)
+                : c.atividades
+              if (ativs.some((a: string) => ativsDoCargo.includes(a))) {
+                return c
+              }
+            }
+          }
+
+          // 3. Correspondência direta de nome do cargo
+          if (colab.cargo) {
+            const direto = listaCargos.find((c) => c.nome.toLowerCase() === colab.cargo!.toLowerCase())
+            if (direto) return direto
+
+            // 4. Normalização clássica
+            const norm = normalizarCargoParaMatriz(colab.cargo)
+            if (norm) {
+              const found = listaCargos.find((c) => c.nome.toLowerCase() === norm.toLowerCase())
+              if (found) return found
+            }
+          }
+
+          return null
+        }
+
+        // 1. Colaboradores do RH Efetivo
         if (rhRes.data && Array.isArray(rhRes.data)) {
           for (const item of rhRes.data) {
             const statusUpper = (item.status || '').toUpperCase().trim()
             if (statusUpper === 'INATIVO' || statusUpper === 'DEMITIDO' || statusUpper === 'DESLIGADO') continue
-            if (!item.nome || !item.cargo) continue
+            if (!item.nome) continue
 
-            const cargoMatriz = normalizarCargoParaMatriz(item.cargo)
-            if (cargoMatriz && mapa[cargoMatriz]) {
-              if (!mapa[cargoMatriz].includes(item.nome.trim())) {
-                mapa[cargoMatriz].push(item.nome.trim())
+            const targetCargo = resolverCargoDoColaborador(item)
+            if (targetCargo && mapa[targetCargo.nome]) {
+              const nomeTrim = item.nome.trim()
+              if (!mapa[targetCargo.nome].includes(nomeTrim)) {
+                mapa[targetCargo.nome].push(nomeTrim)
               }
             }
           }
         }
 
-        // Se houver colaboradores adicionados na matriz
-        if (matrizDb.customColaboradores) {
+        // 2. Colaboradores adicionados manualmente na matriz
+        if (matrizDb.customColaboradores && Array.isArray(matrizDb.customColaboradores)) {
           for (const custom of matrizDb.customColaboradores) {
-            if (mapa[custom.cargo] && !mapa[custom.cargo].includes(custom.nome)) {
-              mapa[custom.cargo].push(custom.nome)
+            if (!custom.nome) continue
+            const targetCargo = resolverCargoDoColaborador(custom)
+            if (targetCargo && mapa[targetCargo.nome]) {
+              const nomeTrim = custom.nome.trim()
+              if (!mapa[targetCargo.nome].includes(nomeTrim)) {
+                mapa[targetCargo.nome].push(nomeTrim)
+              }
+            }
+          }
+        }
+
+        // 3. Garantir que nomes adicionais mapeados diretamente entrem no mapa (ignorando UUIDs/IDs técnicos)
+        for (const [colabKey, cargoId] of Object.entries(atribuicoesManual)) {
+          const targetCargo = listaCargos.find((c) => c.id === cargoId)
+          if (targetCargo && mapa[targetCargo.nome]) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(colabKey) || colabKey.includes('-')
+            const isTechId = isUuid || !isNaN(Number(colabKey)) || colabKey.startsWith('custom_')
+            if (!isTechId && colabKey.trim().length > 2) {
+              const nomeTrim = colabKey.trim()
+              if (!mapa[targetCargo.nome].includes(nomeTrim)) {
+                mapa[targetCargo.nome].push(nomeTrim)
+              }
             }
           }
         }
@@ -102,7 +165,7 @@ export function DashboardMatrizWidget() {
 
   const metricas = useMemo(() => {
     return getMetricasGerais(atividadesPorCargo, cargos)
-  }, [atividadesPorCargo])
+  }, [atividadesPorCargo, cargos])
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs flex flex-col justify-between">

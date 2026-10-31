@@ -188,7 +188,7 @@ export async function carregarDadosMatriz(
       const val = data.value as MatrizDbRecord
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(localKey, JSON.stringify(val.atividadesPorCargo))
+          localStorage.setItem(localKey, JSON.stringify(val))
         } catch (_) {}
       }
       return val
@@ -203,8 +203,13 @@ export async function carregarDadosMatriz(
       const local = localStorage.getItem(localKey)
       if (local) {
         const parsed = JSON.parse(local)
-        return {
-          atividadesPorCargo: parsed,
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.atividadesPorCargo) {
+            return parsed as MatrizDbRecord
+          }
+          return {
+            atividadesPorCargo: parsed,
+          }
         }
       }
     } catch (_) {}
@@ -230,7 +235,7 @@ export async function salvarDadosMatriz(
   // Salvar localmente primeiro para resposta instantânea
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(localKey, JSON.stringify(dados.atividadesPorCargo))
+      localStorage.setItem(localKey, JSON.stringify(dados))
     } catch (_) {}
   }
 
