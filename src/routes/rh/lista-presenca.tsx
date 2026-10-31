@@ -802,9 +802,11 @@ function RhListaPresencaPage() {
       
       const { logActivity } = await import('../../lib/logActivity');
       const dateObj = new Date(attendanceDate + 'T12:00:00');
+      const localUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null;
       await logActivity({
         module: 'RH',
-        action: `Lista de presença salva para a data ${dateObj.toLocaleDateString('pt-BR')} (Área: ${activeTab})`
+        action: `Lista de presença salva para a data ${dateObj.toLocaleDateString('pt-BR')} (Área: ${activeTab})`,
+        user_name: localUserName || 'Fabrício Silva'
       });
 
       // Dispara envio automático no WhatsApp se estiver habilitado

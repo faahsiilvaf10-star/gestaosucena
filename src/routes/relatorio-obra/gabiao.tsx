@@ -196,9 +196,11 @@ function GabiaoPage() {
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
       
+      const localUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null;
       await logActivity({
         module: 'RDO',
-        action: `Relatório de Gabião salvo para ${formatDateDisplay(selectedDate)}`
+        action: `Relatório de Gabião salvo para ${formatDateDisplay(selectedDate)}`,
+        user_name: localUserName || 'Fabrício Silva'
       });
     } catch (e) {}
     

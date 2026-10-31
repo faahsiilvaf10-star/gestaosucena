@@ -304,9 +304,11 @@ function JardinagemPage() {
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
       
+      const localUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null;
       await logActivity({
         module: 'RDO',
-        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Roçagem ciclo: ${formatM2(cycleTotal)} m²)`
+        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Roçagem ciclo: ${formatM2(cycleTotal)} m²)`,
+        user_name: localUserName || 'Fabrício Silva'
       });
     } catch (e) {}
     

@@ -25,7 +25,8 @@ export function getActivityAuthor(act: { module?: string; action?: string; user_
     raw.toLowerCase() === 'usuario' ||
     raw.toLowerCase() === 'usuário' ||
     raw.toLowerCase() === 'usuario logado' ||
-    raw.toLowerCase() === 'usuário logado';
+    raw.toLowerCase() === 'usuário logado' ||
+    raw.toLowerCase().includes('domingues');
 
   if (!isGeneric) {
     if (raw.includes('@')) {
@@ -34,52 +35,20 @@ export function getActivityAuthor(act: { module?: string; action?: string; user_
     return raw;
   }
 
-  const actionLower = (act.action || '').toLowerCase();
+  // Tenta obter o usuário logado ativo no sistema
+  if (typeof window !== 'undefined') {
+    const activeUser = localStorage.getItem('sucena_user_name');
+    if (activeUser && activeUser.trim() && !activeUser.toLowerCase().includes('usuario')) {
+      return activeUser.trim();
+    }
+  }
+
   const mod = act.module || '';
-
-  if (
-    mod === 'RDO' ||
-    actionLower.includes('jardinagem') ||
-    actionLower.includes('gabião') ||
-    actionLower.includes('gabiao') ||
-    actionLower.includes('rdo')
-  ) {
-    return 'Domingues Fabrício';
-  }
-
-  if (
-    mod === 'RH' ||
-    actionLower.includes('presença') ||
-    actionLower.includes('presenca') ||
-    actionLower.includes('efetivo')
-  ) {
-    return 'Creriane Alcantara';
-  }
-
-  if (
-    mod === 'Segurança' ||
-    actionLower.includes('análise de risco') ||
-    actionLower.includes('analise de risco') ||
-    actionLower.includes('dds') ||
-    actionLower.includes('campanha') ||
-    actionLower.includes('canteiro')
-  ) {
+  if (mod === 'Segurança') {
     return 'Alexssandro Chaves';
   }
 
-  if (
-    mod === 'Almoxarifado' ||
-    actionLower.includes('requisição') ||
-    actionLower.includes('requisicao') ||
-    actionLower.includes('pedido')
-  ) {
-    return 'Tiago Augusto';
-  }
-
-  if (mod === 'Equipamentos') {
-    return 'Pedro Melo';
-  }
-
+  // Para RDO (Gabião, Jardinagem), RH e demais módulos operados pelo usuário: Fabrício Silva
   return 'Fabrício Silva';
 }
 

@@ -44,10 +44,7 @@ export async function logActivity({ module, action, description, user_name }: Lo
 
       // Se ainda assim não identificou, aplica o responsável padrão do módulo
       if (!resolvedUserName || resolvedUserName.toLowerCase() === 'sistema') {
-        if (module === 'RDO') resolvedUserName = 'Domingues Fabrício';
-        else if (module === 'RH') resolvedUserName = 'Creriane Alcantara';
-        else if (module === 'Segurança') resolvedUserName = 'Alexssandro Chaves';
-        else if (module === 'Almoxarifado') resolvedUserName = 'Tiago Augusto';
+        if (module === 'Segurança') resolvedUserName = 'Alexssandro Chaves';
         else resolvedUserName = 'Fabrício Silva';
       }
     }
