@@ -3,7 +3,7 @@ import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import ListChecks from 'lucide-react/dist/esm/icons/list-checks.js';
 import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { isAdmin } from '../../components/ui/VerifiedBadge'
@@ -22,7 +22,14 @@ const HUB_ITEMS = [
 ]
 
 function EquipamentosHub() {
+  const navigate = useNavigate()
   const [isUserAdmin, setIsUserAdmin] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      navigate({ to: ('/equipamentos/todos' + window.location.search) as any })
+    }
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {

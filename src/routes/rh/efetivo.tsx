@@ -113,6 +113,30 @@ function RhEfetivoPage() {
     fetchEfetivo()
   }, [])
 
+  // Auto-abre modal com todas as informações quando vier da busca global
+  useEffect(() => {
+    if (items.length === 0) return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const targetId = params.get('id')
+      const targetName = params.get('colaborador') || params.get('busca')
+      if (targetId) {
+        const found = items.find(i => i.id === targetId)
+        if (found) {
+          setSelectedColaborador(found)
+        }
+      } else if (targetName) {
+        const cleanTarget = targetName.toLowerCase().trim()
+        const found = items.find(i => i.nome.toLowerCase().includes(cleanTarget))
+        if (found) {
+          setSelectedColaborador(found)
+        }
+      }
+    } catch (e) {
+      console.warn('[RhEfetivo] Erro ao ler query params:', e)
+    }
+  }, [items])
+
   const fetchEfetivo = async () => {
     try {
       setLoading(true)
