@@ -39,6 +39,7 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
   const [imageUrl, setImageUrl] = useState('');
   const [active, setActive] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,9 +85,8 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
     setIsCreating(false);
   };
 
-  // Handle local image file upload
-  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Processamento e Upload de Imagem (com Storage + Otimização Canvas resiliente)
+  const handleImageFile = async (file: File) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -112,26 +112,69 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
           .getPublicUrl(filePath);
 
         setImageUrl(publicUrl);
-        toast.success('Imagem carregada com sucesso!');
+        toast.success('Foto enviada com sucesso!');
         setUploadingImage(false);
         return;
       }
     } catch (err) {
-      console.warn('[SafetyBannerModal] Falha no storage, convertendo para base64:', err);
+      console.warn('[SafetyBannerModal] Storage retornou erro, gerando fallback otimizado:', err);
     }
 
-    // 2. Fallback resiliente: Converte para Base64 Data URL (funciona sempre)
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(reader.result as string);
-      toast.success('Imagem carregada localmente!');
+    // 2. Fallback resiliente com Canvas para não estourar memória
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 1280;
+          const MAX_HEIGHT = 720;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+            if (width / height > MAX_WIDTH / MAX_HEIGHT) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            } else {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setImageUrl(dataUrl);
+            toast.success('Foto carregada com sucesso!');
+            setUploadingImage(false);
+            return;
+          }
+          setImageUrl(reader.result as string);
+          setUploadingImage(false);
+        };
+        img.onerror = () => {
+          setImageUrl(reader.result as string);
+          setUploadingImage(false);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        toast.error('Erro ao ler o arquivo de imagem.');
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (_) {
       setUploadingImage(false);
-    };
-    reader.onerror = () => {
-      toast.error('Erro ao ler a imagem.');
-      setUploadingImage(false);
-    };
-    reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageFile(file);
   };
 
   // Save current banner form
@@ -338,19 +381,42 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
                 </div>
               </div>
 
-              {/* Upload da Foto */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold">Foto / Imagem do Banner</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={e => setImageUrl(e.target.value)}
-                    placeholder="URL da imagem ou clique em Enviar Foto..."
-                    className={`flex-1 px-3.5 py-2.5 rounded-lg border text-xs outline-none ${
-                      isDark ? 'bg-black/30 border-white/10 text-white' : 'bg-gray-50 border-gray-200 text-black'
-                    }`}
-                  />
+              {/* Upload da Foto do Banner com Card Destacado */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                    <ImageIcon size={16} className="text-[#D6A72B]" />
+                    Foto / Imagem do Banner
+                  </label>
+                  {imageUrl && imageUrl !== '/safety-helmet.webp' && (
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl('/safety-helmet.webp')}
+                      className="text-[11px] text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 font-medium underline cursor-pointer"
+                    >
+                      Restaurar foto padrão (Capacete)
+                    </button>
+                  )}
+                </div>
+
+                {/* Dropzone e Botão de Upload em Alto Contraste */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageFile(file);
+                  }}
+                  className={`relative p-4 rounded-2xl border-2 border-dashed transition-all flex flex-col sm:flex-row items-center gap-4 ${
+                    isDragging
+                      ? 'border-[#D6A72B] bg-[#D6A72B]/10'
+                      : isDark
+                      ? 'border-white/20 bg-white/5 hover:border-white/35'
+                      : 'border-amber-400 bg-amber-50/60 hover:border-amber-500'
+                  }`}
+                >
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -358,19 +424,57 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
                     accept="image/*"
                     className="hidden"
                   />
+
+                  {/* Thumbnail de Preview */}
+                  <div className="w-20 h-14 rounded-xl overflow-hidden bg-black/40 shrink-0 relative border border-black/10 dark:border-white/10 shadow-xs">
+                    <img
+                      src={imageUrl || '/safety-helmet.webp'}
+                      alt="Preview da foto do banner"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Instruções */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="text-xs font-extrabold text-gray-900 dark:text-white">
+                      {uploadingImage ? 'Processando e enviando imagem...' : 'Escolha uma foto do seu computador ou celular'}
+                    </div>
+                    <div className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">
+                      Arraste e solte aqui ou clique no botão ao lado • JPG, PNG, WEBP (1200x600)
+                    </div>
+                  </div>
+
+                  {/* Botão de Upload Dourado / Alto Contraste */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingImage}
-                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors shrink-0"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-[#D6A72B] hover:bg-[#b88c1f] text-black transition-all shadow-md active:scale-95 cursor-pointer shrink-0 disabled:opacity-50"
                   >
-                    <UploadCloud size={14} />
-                    {uploadingImage ? 'Enviando...' : 'Enviar Foto'}
+                    <UploadCloud size={16} />
+                    <span>{uploadingImage ? 'Enviando...' : 'Fazer Upload de Foto'}</span>
                   </button>
                 </div>
-                <p className="text-[11px] text-gray-500">
-                  Dica: imagens horizontais em alta resolução (ex: 1200x600) ficam perfeitas no banner.
-                </p>
+
+                {/* Opção secundária para URL manual */}
+                <div className="pt-1">
+                  <details className="text-xs group">
+                    <summary className="text-[11px] text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 font-medium select-none">
+                      ▸ Ou digitar / colar link de imagem manual
+                    </summary>
+                    <div className="mt-1.5">
+                      <input
+                        type="text"
+                        value={imageUrl}
+                        onChange={e => setImageUrl(e.target.value)}
+                        placeholder="Ex: /safety-helmet.webp ou https://exemplo.com/foto.jpg"
+                        className={`w-full px-3 py-2 rounded-lg border text-xs outline-none ${
+                          isDark ? 'bg-black/30 border-white/10 text-white' : 'bg-gray-50 border-gray-200 text-black'
+                        }`}
+                      />
+                    </div>
+                  </details>
+                </div>
               </div>
 
               {/* Kicker / Badge */}
