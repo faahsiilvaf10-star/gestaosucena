@@ -29,6 +29,8 @@ import Mail from 'lucide-react/dist/esm/icons/mail.js';
 import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import Smartphone from 'lucide-react/dist/esm/icons/smartphone.js';
 import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
+import Palette from 'lucide-react/dist/esm/icons/palette.js';
+import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
 import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
@@ -165,6 +167,39 @@ function AdminRoute() {
     },
     estoqueAlteracao: {
       enabled: false,
+      specificGroupId: ''
+    },
+    inspecaoCanteiro: {
+      enabled_agendamento: true,
+      enabled_dia_inspecao_0700: true,
+      enabled_correcao_item: true,
+      specificGroupId: ''
+    },
+    desviosSeguranca: {
+      enabled: true,
+      specificGroupId: ''
+    },
+    campanhasSeguranca: {
+      enabled: true,
+      specificGroupId: ''
+    },
+    matrizResponsabilidade: {
+      enabled: true,
+      enabled_dia_1: true,
+      enabled_quinta_feira: true,
+      specificGroupId: ''
+    },
+    analiseRisco: {
+      enabled_5_dias: true,
+      enabled_dia_vencimento: true,
+      specificGroupId: ''
+    },
+    vistoriasEquipamentos: {
+      enabled_20_dias: true,
+      specificGroupId: ''
+    },
+    viradaCorDoMes: {
+      enabled: true,
       specificGroupId: ''
     }
   })
@@ -1875,100 +1910,188 @@ function AdminRoute() {
                 Disparos automáticos no grupo do WhatsApp para novas inspeções agendadas, alerta às 07:00 da manhã no dia da inspeção, e aviso em tempo real a cada item corrigido.
               </p>
 
-              <div className="space-y-4">
-                {/* Agendamento */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
-                        ...prev,
-                        inspecaoCanteiro: {
-                          ...prev.inspecaoCanteiro!,
-                          enabled_agendamento: !(prev.inspecaoCanteiro?.enabled_agendamento ?? true)
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                    <div>
-                      <span className="font-semibold text-sm block">Notificar no grupo ao salvar/agendar nova inspeção</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia data, local, responsável e pontos de atenção assim que for salva</span>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  {/* Agendamento */}
+                  <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                          ...prev,
+                          inspecaoCanteiro: {
+                            ...prev.inspecaoCanteiro!,
+                            enabled_agendamento: !(prev.inspecaoCanteiro?.enabled_agendamento ?? true)
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                      <div>
+                        <span className="font-semibold text-sm block">Notificar no grupo ao salvar/agendar nova inspeção</span>
+                        <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia data, local, responsável e pontos de atenção assim que for salva</span>
+                      </div>
                     </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                      {(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'Ativo' : 'Inativo'}
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {(whatsappSettings.inspecaoCanteiro?.enabled_agendamento ?? true) ? 'Ativo' : 'Inativo'}
-                  </span>
+
+                  {/* Dia da Inspeção às 07:00 */}
+                  <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                          ...prev,
+                          inspecaoCanteiro: {
+                            ...prev.inspecaoCanteiro!,
+                            enabled_dia_inspecao_0700: !(prev.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true)
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                      <div>
+                        <span className="font-semibold text-sm block">Aviso matinal às 07:00 no dia da inspeção</span>
+                        <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Dispara mensagem às 07h relembrando os pontos pendentes para a fiscalização</span>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                      {(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+
+                  {/* Correção de Item */}
+                  <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                          ...prev,
+                          inspecaoCanteiro: {
+                            ...prev.inspecaoCanteiro!,
+                            enabled_correcao_item: !(prev.inspecaoCanteiro?.enabled_correcao_item ?? true)
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                      <div>
+                        <span className="font-semibold text-sm block">Notificar a cada correção de item salva</span>
+                        <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia o item corrigido, quem realizou e o que foi feito na hora</span>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                      {(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Dia da Inspeção às 07:00 */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
-                        ...prev,
-                        inspecaoCanteiro: {
-                          ...prev.inspecaoCanteiro!,
-                          enabled_dia_inspecao_0700: !(prev.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true)
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                    <div>
-                      <span className="font-semibold text-sm block">Aviso matinal às 07:00 no dia da inspeção</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Dispara mensagem às 07h relembrando os pontos pendentes para a fiscalização</span>
-                    </div>
-                  </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {(whatsappSettings.inspecaoCanteiro?.enabled_dia_inspecao_0700 ?? true) ? 'Ativo' : 'Inativo'}
-                  </span>
-                </div>
-
-                {/* Correção de Item */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
-                        ...prev,
-                        inspecaoCanteiro: {
-                          ...prev.inspecaoCanteiro!,
-                          enabled_correcao_item: !(prev.inspecaoCanteiro?.enabled_correcao_item ?? true)
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                    <div>
-                      <span className="font-semibold text-sm block">Notificar a cada correção de item salva</span>
-                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Envia o item corrigido, quem realizou e o que foi feito na hora</span>
-                    </div>
-                  </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {(whatsappSettings.inspecaoCanteiro?.enabled_correcao_item ?? true) ? 'Ativo' : 'Inativo'}
-                  </span>
-                </div>
-
-                {/* Campanhas de Segurança */}
+                {/* ID do grupo específico da Inspeção de Canteiro */}
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-semibold text-sm">Campanhas de Segurança (Mensal — Dia 01)</h4>
-                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Disparo automático no grupo no dia 01 de cada mês com o tema de conscientização e arte oficial.
-                      </p>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input
+                      type="text"
+                      value={whatsappSettings.inspecaoCanteiro?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        inspecaoCanteiro: {
+                          ...prev.inspecaoCanteiro!,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, os alertas de inspeção de canteiro serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações de Desvios de Segurança */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <AlertTriangle size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Desvios de Segurança
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia mensagens automáticas e fotos no WhatsApp quando um novo desvio de segurança for registrado na obra pelo Técnico de Segurança.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
                     <button
-                      type="button"
-                      onClick={() => setWhatsappSettings(prev => ({
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        desviosSeguranca: {
+                          enabled: !(prev.desviosSeguranca?.enabled ?? true),
+                          specificGroupId: prev.desviosSeguranca?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.desviosSeguranca?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.desviosSeguranca?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio de Desvios de Segurança</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.desviosSeguranca?.enabled ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.desviosSeguranca?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.desviosSeguranca?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        desviosSeguranca: {
+                          enabled: prev.desviosSeguranca?.enabled ?? true,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, os desvios de segurança registrados serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações de Campanhas de Segurança */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Megaphone size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Campanhas de Segurança (Mensal)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Disparo automático no grupo no dia 01 de cada mês com o tema de conscientização de segurança do trabalho e arte oficial.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
                         ...prev,
                         campanhasSeguranca: {
-                          ...prev.campanhasSeguranca,
                           enabled: !(prev.campanhasSeguranca?.enabled ?? true),
                           specificGroupId: prev.campanhasSeguranca?.specificGroupId || ''
                         }
@@ -1978,28 +2101,49 @@ function AdminRoute() {
                     >
                       <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.campanhasSeguranca?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
                     </button>
+                    <span className="font-semibold text-sm">Ativar envio de Campanhas de Segurança</span>
                   </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.campanhasSeguranca?.enabled ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.campanhasSeguranca?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para Campanhas de Segurança</label>
-                    <input
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
                       type="text"
                       value={whatsappSettings.campanhasSeguranca?.specificGroupId || ''}
                       onChange={e => setWhatsappSettings(prev => ({
                         ...prev,
                         campanhasSeguranca: {
-                          ...prev.campanhasSeguranca,
                           enabled: prev.campanhasSeguranca?.enabled ?? true,
                           specificGroupId: e.target.value
                         }
                       }))}
                       disabled={isWhatsappLocked}
                       className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                      placeholder="Ex: 120363408136247156@g.us"
                     />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, as campanhas mensais de segurança serão enviadas para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Matriz de Responsabilidades */}
+            {/* Nova Seção: Notificações da Matriz de Responsabilidades */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Shield size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações da Matriz de Responsabilidades
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Disparos automáticos no WhatsApp para acompanhamento das metas de segurança: lembrete de fim de mês (10 dias), fechamento oficial com parabenização e orientação (dia 01), e acompanhamento semanal (toda quinta-feira).
+              </p>
+
+              <div className="space-y-6">
                 <div className={`p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -2020,9 +2164,9 @@ function AdminRoute() {
                         <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
                       <div>
-                        <h4 className="font-semibold text-sm">Lembrete da Matriz de Responsabilidades (Faltando 10 dias)</h4>
+                        <h4 className="font-semibold text-sm">Lembrete de Final de Mês (Faltando 10 dias)</h4>
                         <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Disparo automático no WhatsApp faltando 10 dias para acabar o mês com resumo de quem já concluiu e quem falta concluir as atividades da matriz.
+                          Disparo automático faltando 10 dias para acabar o mês com resumo de quem já concluiu e quem falta concluir.
                         </p>
                       </div>
                     </div>
@@ -2053,9 +2197,9 @@ function AdminRoute() {
                           <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled_dia_1 ?? true) ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                         <div>
-                          <p className="text-xs font-semibold">Fechamento do Mês Anterior (Dia 1º)</p>
+                          <p className="text-xs font-semibold">Fechamento Mês Anterior (Dia 1º)</p>
                           <p className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Parabeniza quem concluiu 100% e orienta os pendentes no novo mês.
+                            Parabeniza concluintes e orienta os pendentes.
                           </p>
                         </div>
                       </div>
@@ -2084,9 +2228,9 @@ function AdminRoute() {
                           <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled_quinta_feira ?? true) ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                         <div>
-                          <p className="text-xs font-semibold">Acompanhamento Semanal (Toda Quinta)</p>
+                          <p className="text-xs font-semibold">Acompanhamento Semanal (Quinta)</p>
                           <p className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Mostra quem já concluiu e quem ainda falta concluir na semana.
+                            Status semanal de quem já concluiu e quem falta.
                           </p>
                         </div>
                       </div>
@@ -2099,7 +2243,7 @@ function AdminRoute() {
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para Lembrete da Matriz de Responsabilidades</label>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
                     <input
                       type="text"
                       value={whatsappSettings.matrizResponsabilidade?.specificGroupId || ''}
@@ -2113,31 +2257,37 @@ function AdminRoute() {
                       }))}
                       disabled={isWhatsappLocked}
                       className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                      placeholder="Ex: 120363408136247156@g.us"
                     />
                     <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Se deixar em branco, será utilizado o Grupo Geral do WhatsApp.
+                      Quando preenchido, os relatórios da matriz serão enviados para este grupo específico em vez do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Análise de Risco */}
-                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center justify-between mb-4">
+            {/* Nova Seção: Notificações de Análise de Risco */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <ShieldAlert size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Análise de Risco
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Disparo automático no WhatsApp quando faltar 5 dias para vencer e no dia do vencimento da Análise de Risco.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`p-4 rounded-xl border space-y-4 ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-sm">Análise de Risco (Alertas de Validade)</h4>
-                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Disparo automático no WhatsApp quando faltar 5 dias para vencer e no dia do vencimento. Fechamento restrito ao Técnico de Segurança.
-                      </p>
+                      <span className="font-semibold text-sm block">Notificar faltando 5 dias para vencer</span>
+                      <span className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Avisa com antecedência para emissão da nova análise</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold">Notificar quando faltar 5 dias para vencer:</span>
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => setWhatsappSettings(prev => ({
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
                           ...prev,
                           analiseRisco: {
                             ...prev.analiseRisco!,
@@ -2149,13 +2299,21 @@ function AdminRoute() {
                       >
                         <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.analiseRisco?.enabled_5_dias ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.analiseRisco?.enabled_5_dias ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                        {(whatsappSettings.analiseRisco?.enabled_5_dias ?? true) ? 'Ativo' : 'Inativo'}
+                      </span>
                     </div>
+                  </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold">Notificar no dia do vencimento:</span>
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                    <div>
+                      <span className="font-semibold text-sm block">Notificar no dia do vencimento</span>
+                      <span className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Alerta de encerramento da validade no próprio dia</span>
+                    </div>
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => setWhatsappSettings(prev => ({
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
                           ...prev,
                           analiseRisco: {
                             ...prev.analiseRisco!,
@@ -2167,11 +2325,16 @@ function AdminRoute() {
                       >
                         <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.analiseRisco?.enabled_dia_vencimento ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.analiseRisco?.enabled_dia_vencimento ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                        {(whatsappSettings.analiseRisco?.enabled_dia_vencimento ?? true) ? 'Ativo' : 'Inativo'}
+                      </span>
                     </div>
                   </div>
+                </div>
 
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para Análise de Risco</label>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
                     <input
                       type="text"
                       value={whatsappSettings.analiseRisco?.specificGroupId || ''}
@@ -2185,31 +2348,126 @@ function AdminRoute() {
                       }))}
                       disabled={isWhatsappLocked}
                       className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                      placeholder="Ex: 120363408136247156@g.us"
                     />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, os alertas de Análise de Risco serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Grupo específico */}
+            {/* Nova Seção: Notificações de Vistorias de Equipamentos (20 Dias) */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Wrench size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Vistorias de Equipamentos (20 Dias)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia alertas automáticos no WhatsApp quando vistorias, laudos mecânicos, planos de manutenção ou laudos de opacidade estiverem a 20 dias do vencimento.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        vistoriasEquipamentos: {
+                          enabled_20_dias: !(prev.vistoriasEquipamentos?.enabled_20_dias ?? true),
+                          specificGroupId: prev.vistoriasEquipamentos?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.vistoriasEquipamentos?.enabled_20_dias ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.vistoriasEquipamentos?.enabled_20_dias ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio de Alerta de Vistorias em 20 Dias</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.vistoriasEquipamentos?.enabled_20_dias ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.vistoriasEquipamentos?.enabled_20_dias ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                   <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para notificações de Inspeção de Canteiro</label>
-                    <input
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
                       type="text"
-                      value={whatsappSettings.inspecaoCanteiro?.specificGroupId || ''}
+                      value={whatsappSettings.vistoriasEquipamentos?.specificGroupId || ''}
                       onChange={e => setWhatsappSettings(prev => ({
                         ...prev,
-                        inspecaoCanteiro: {
-                          ...prev.inspecaoCanteiro!,
+                        vistoriasEquipamentos: {
+                          enabled_20_dias: prev.vistoriasEquipamentos?.enabled_20_dias ?? true,
                           specificGroupId: e.target.value
                         }
                       }))}
                       disabled={isWhatsappLocked}
                       className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us (deixe vazio para usar o grupo padrão)"
+                      placeholder="Ex: 120363408136247156@g.us"
                     />
                     <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Se deixar em branco, será utilizado o Grupo Geral do WhatsApp.
+                      Quando preenchido, os alertas de vistorias a vencer serão enviados para este grupo específico em vez do grupo padrão configurado acima.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações de Virada da Cor do Mês (Ferramentas) */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <Palette size={22} className={isDark ? "text-gray-100" : "text-gray-800"} />
+                Notificações de Virada da Cor do Mês (Ferramentas)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia mensagem automática no dia 01 de cada mês informando a nova cor de inspeção válida, a cor anterior proibida e reforçando a troca de etiquetas e os checklists das ferramentas.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        viradaCorDoMes: {
+                          enabled: !(prev.viradaCorDoMes?.enabled ?? true),
+                          specificGroupId: prev.viradaCorDoMes?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.viradaCorDoMes?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.viradaCorDoMes?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="font-semibold text-sm">Ativar envio de Virada da Cor do Mês</span>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.viradaCorDoMes?.enabled ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.viradaCorDoMes?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
+                    <input 
+                      type="text"
+                      value={whatsappSettings.viradaCorDoMes?.specificGroupId || ''}
+                      onChange={e => setWhatsappSettings(prev => ({
+                        ...prev,
+                        viradaCorDoMes: {
+                          enabled: prev.viradaCorDoMes?.enabled ?? true,
+                          specificGroupId: e.target.value
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      placeholder="Ex: 120363408136247156@g.us"
+                    />
+                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Quando preenchido, os avisos de virada de cor serão enviados para este grupo específico em vez do grupo padrão configurado acima.
                     </p>
                   </div>
                 </div>
