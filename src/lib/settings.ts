@@ -243,6 +243,7 @@ export type WhatsappSettings = {
   };
   vistoriasEquipamentos?: {
     enabled_20_dias: boolean;
+    enabled_1_dia?: boolean;
     specificGroupId: string;
   };
   viradaCorDoMes?: {
@@ -252,6 +253,7 @@ export type WhatsappSettings = {
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
+    vistoriaEquipamentoVencendo1Dia?: string;
     viradaCorDoMesFerramentas?: string;
     analiseRiscoVencendoHoje?: string;
     campanhaSegurancaMes?: string;
@@ -384,6 +386,7 @@ const defaultWhatsappSettings: WhatsappSettings = {
   },
   vistoriasEquipamentos: {
     enabled_20_dias: true,
+    enabled_1_dia: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   viradaCorDoMes: {
@@ -393,6 +396,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
   messageTemplates: {
     vistoriaEquipamentoVencendo20Dias:
       "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
+    vistoriaEquipamentoVencendo1Dia:
+      "🚨 *URGENTE: VISTORIA DE EQUIPAMENTO VENCE AMANHÃ (1 DIA)* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento} (AMANHÃ!)\n⏳ *Prazo Restante:* Resta apenas {dias_restantes} dia!\n\n⚠️ _Atenção: O equipamento ficará impedido de operar na obra se a vistoria/laudo expirar sem renovação!_\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     viradaCorDoMesFerramentas:
       "🎨 *ATENÇÃO: VIRADA DA COR DO MÊS - INSPEÇÃO DE FERRAMENTAS ({mes_nome}/{ano})* 🎨\n\n📢 *Atenção Colaboradores, Encarregados e Equipe Operacional!*\nIniciamos um novo mês de trabalho. Conforme o padrão de segurança e controle de qualidade da obra, é obrigatória a atualização das cores das ferramentas:\n\n🟡 *NOVA COR DO MÊS ATUAL (VÁLIDA):* *{cor_atual}*\n🚫 *COR DO MÊS ANTERIOR (PROIBIDA):* *{cor_anterior_proibida}*\n\n🔧 *INSTRUÇÕES OBRIGATÓRIAS:*\n1. *Troca de Etiquetas:* Todas as ferramentas manuais, elétricas, pneumáticas e cintas devem receber a etiqueta/fita com a nova cor (*{cor_atual}*).\n2. *Atenção aos Checklists:* Antes de iniciar qualquer atividade, realize a inspeção minuciosa e preencha o checklist diário do equipamento/ferramenta.\n3. *Bloqueio de Uso:* Qualquer ferramenta com a cor anterior (*{cor_anterior_proibida}*) ou sem a identificação do mês está *PROIBIDA* de ser utilizada na obra até ser inspecionada!\n\n⚠️ _Mais segurança, mais resultados!_\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     analiseRiscoVencendo5Dias:
