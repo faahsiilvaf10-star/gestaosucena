@@ -28,6 +28,7 @@ import { DashboardAnaliseRiscoBanner } from '../components/DashboardAnaliseRisco
 import { DashboardCampanhaMesWidget } from '../components/DashboardCampanhaMesWidget'
 import { DashboardMatrizWidget } from '../components/DashboardMatrizWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
+import { DashboardSafetyBanner } from '../components/DashboardSafetyBanner'
 import '../hydro-panel.css'
 
 export const Route = createFileRoute('/dashboard')({
@@ -1510,15 +1511,7 @@ function DashboardComponent() {
         )}
 
         <div className="side-stack">
-          <section className="safety" aria-label="Segurança em primeiro lugar">
-            <img src="/safety-helmet.webp" alt="Capacete de segurança branco sobre bancada em obra ao pôr do sol"/>
-            <div className="safety-body">
-              <span className="s-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Nossa prioridade</span>
-              <h3>Segurança em primeiro lugar</h3>
-              <p>Trabalhar com segurança é cuidar de você, da sua família e do nosso futuro.</p>
-              <span className="safety-btn">Juntos somos mais fortes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
-            </div>
-          </section>
+          <DashboardSafetyBanner userRole={currentUser?.user_metadata?.role} userName={currentUser?.user_metadata?.full_name} />
 
           <section className="card weather" aria-label="Clima em Barcarena">
             <div className="weather-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Barcarena · PA<span style={{ marginLeft: 'auto', fontWeight: '600', color: 'var(--faint)' }}>{dayNumber} de {monthName.slice(0, 3)}.</span></div>
