@@ -158,8 +158,33 @@ export function DashboardMatrizWidget() {
 
     carregar()
 
+    // Atualização em Tempo Real do Dashboard
+    const handleRtUpdate = () => {
+      if (mounted) carregar()
+    }
+    window.addEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+
+    // Canal Realtime específico para a Matriz (configurações salvas e alterações no efetivo)
+    const channel = supabase
+      .channel(`dash_matriz_widget_rt_${env}_${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings' }, () => {
+        if (mounted) carregar()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rh_efetivo' }, () => {
+        if (mounted) carregar()
+      })
+      .subscribe()
+
+    // Polling de fallback a cada 25 segundos
+    const interval = setInterval(() => {
+      if (mounted) carregar()
+    }, 25000)
+
     return () => {
       mounted = false
+      window.removeEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+      supabase.removeChannel(channel)
+      clearInterval(interval)
     }
   }, [mesKey, env])
 

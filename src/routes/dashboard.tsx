@@ -200,37 +200,144 @@ function DashboardComponent() {
     staleTime: 10 * 1000,
   })
 
-  // Invalida a query quando houver alteração em tempo real em rh_presencas
+  // Sincronização em Tempo Real Global do Dashboard (Auto-refresh instantâneo para qualquer atividade de usuário)
+  const refreshTimerRef = useRef<any>(null)
+  const pendingKeysRef = useRef<Set<string>>(new Set())
+
+  const triggerRefresh = (specificKeys?: string[]) => {
+    if (specificKeys && specificKeys.length > 0) {
+      specificKeys.forEach((k) => pendingKeysRef.current.add(k))
+    } else {
+      pendingKeysRef.current.add('__all__')
+    }
+
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current)
+    }
+
+    refreshTimerRef.current = setTimeout(() => {
+      const keys = Array.from(pendingKeysRef.current)
+      pendingKeysRef.current.clear()
+
+      if (keys.includes('__all__') || keys.length === 0) {
+        queryClient.invalidateQueries()
+      } else {
+        keys.forEach((k) => {
+          queryClient.invalidateQueries({ queryKey: [k] })
+        })
+      }
+
+      // Notifica todos os widgets montados no Dashboard (Matriz, Atividades, Desvios, Vistorias, Banners)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sucena_dashboard_realtime_update'))
+      }
+    }, 150)
+  }
+
   useEffect(() => {
+    // Canal Realtime Supabase Unificado monitorando todas as atividades do sistema
+    const channelName = `dashboard_realtime_sync_${currentEnv}_${Date.now()}`
     const channel = supabase
-      .channel('dashboard-presencas-rt')
+      .channel(channelName)
+      // 1. Presenças de colaboradores (Lista de presença)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rh_presencas' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['presencas_dashboard_hoje'] })
-        }
+        () => triggerRefresh(['presencas_dashboard_hoje'])
       )
+      // 2. Efetivo (novo colaborador, demissão, férias, afastamento, alteração de dados/ASO)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rh_efetivo' },
+        () => triggerRefresh(['efetivo_dashboard', 'presencas_dashboard_hoje'])
+      )
+      // 3. Equipamentos e frota (cadastro, edição, placas, status)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'eq_equipments' },
+        () => triggerRefresh(['equipamentos_frota_dashboard'])
+      )
+      // 4. Movimentações de portaria (saídas/entradas de pipa, máquinas, oficina)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'eq_movements' },
+        () => triggerRefresh(['equipamentos_frota_dashboard'])
+      )
+      // 5. Vistorias, laudos e checklists
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'equipment_inspections' },
+        () => triggerRefresh(['equipamentos_frota_dashboard'])
+      )
+      // 6. DDS agendado / palestrante / tema
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'seguranca_dds' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
-        }
+        () => triggerRefresh(['dds_dashboard'])
       )
+      // 7. Posts do InstaCena / fotos de DDS realizado
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'social_posts' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
-        }
+        () => triggerRefresh(['dds_dashboard'])
       )
+      // 8. Permissões de Trabalho (PTs a vencer)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'permissao_trabalho' },
+        () => triggerRefresh(['expiring_pts'])
+      )
+      // 9. Lembretes e menções ao usuário
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reminders' },
+        () => triggerRefresh(['user_mentioned_reminders'])
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reminder_mentions' },
+        () => triggerRefresh(['user_mentioned_reminders'])
+      )
+      // 10. Atividades recentes registradas por usuários
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'system_activities' },
+        () => triggerRefresh()
+      )
+      // 11. Configurações e cadastros dinâmicos (Matriz de Responsabilidades, Desvios, Inspeção de Canteiro, Banners)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'global_settings' },
+        () => triggerRefresh()
+      )
+      // 12. Produtos e alertas de estoque mínimo
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'al_products' },
+        () => triggerRefresh()
+      )
+      // 13. Cintas de segurança
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'seguranca_cintas' },
+        () => triggerRefresh()
+      )
+      // Broadcasts do sistema disparados por outros clientes
+      .on('broadcast', { event: 'system_activity' }, () => triggerRefresh())
+      .on('broadcast', { event: 'equipment_movement' }, () => triggerRefresh(['equipamentos_frota_dashboard']))
+      .on('broadcast', { event: 'matriz_updated' }, () => triggerRefresh())
       .subscribe()
+
+    // Ouve também evento local disparado na mesma aba
+    const handleLocalUpdate = () => triggerRefresh()
+    window.addEventListener('sucena_local_activity', handleLocalUpdate)
 
     return () => {
       supabase.removeChannel(channel)
+      window.removeEventListener('sucena_local_activity', handleLocalUpdate)
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
     }
-  }, [queryClient])
+  }, [queryClient, currentEnv])
 
   // Buscar efetivo completo do ambiente ativo (Dados reais)
   const { data: efetivo = [] } = useQuery({
@@ -244,7 +351,8 @@ function DashboardComponent() {
       if (error) throw error
       return data || []
     },
-    staleTime: 5 * 60 * 1000,
+    refetchInterval: 20000,
+    staleTime: 5 * 1000,
   })
 
   // Total de colaboradores ativos reais do ambiente selecionado
@@ -380,6 +488,7 @@ function DashboardComponent() {
   // Permissões de Trabalho reais
   const { data: expiringPTs = [] } = useQuery({
     queryKey: ['expiring_pts', currentEnv],
+    refetchInterval: 30000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('permissao_trabalho')
@@ -400,7 +509,7 @@ function DashboardComponent() {
         return diff <= 5
       })
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000,
   })
 
   // DDS do dia real
@@ -592,8 +701,8 @@ function DashboardComponent() {
 
       return reconciled
     },
-    staleTime: 60 * 1000,
-    refetchInterval: 300000,
+    staleTime: 5 * 1000,
+    refetchInterval: 20000,
   })
 
   // Lembretes do dia onde o usuário foi mencionado
@@ -1098,6 +1207,10 @@ function DashboardComponent() {
             <span className="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{datePillString}</span>
             <span className="pill">{weekdayFormatted}</span>
             <span className="pill">{environmentLabel}</span>
+            <span className="pill inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20" title="Dashboard conectado em tempo real: todas as atividades atualizam a tela automaticamente">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Tempo Real Ativo
+            </span>
           </div>
         </div>
         <div className="hero-script" aria-hidden="true">Segurança<br/>é o nosso maior<br/>resultado!</div>

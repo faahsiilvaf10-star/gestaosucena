@@ -76,15 +76,28 @@ export function DashboardVistoriasWidget() {
   useEffect(() => {
     fetchInspections()
 
+    const handleRtUpdate = () => {
+      fetchInspections()
+    }
+    window.addEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+
     const sub = supabase
-      .channel('dash_vistorias')
+      .channel(`dash_vistorias_${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment_inspections' }, () => {
+        fetchInspections()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_equipments' }, () => {
         fetchInspections()
       })
       .subscribe()
 
+    // Polling de fallback a cada 30 segundos
+    const interval = setInterval(fetchInspections, 30000)
+
     return () => {
       sub.unsubscribe()
+      window.removeEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+      clearInterval(interval)
     }
   }, [])
 
