@@ -31,6 +31,7 @@ import { UserOnlineNotification } from './UserOnlineNotification'
 import { NewMessageNotification } from './chat/NewMessageNotification'
 import { InstacenaNotificationPopup } from './instacena/InstacenaNotificationPopup'
 import { MiniWeatherWidget } from './MiniWeatherWidget'
+import { GlobalSearch } from './GlobalSearch'
 import { BackButton } from './BackButton'
 import { AppUpdateNotification } from './AppUpdateNotification'
 import { clearDailySessionExpiry } from '../lib/sessionManager'
@@ -533,21 +534,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </svg>
               <span>Requisição Rápida</span>
             </button>
-            <label className="search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-              <input
-                id="globalSearchInput"
-                type="search"
-                placeholder="Buscar colaboradores, documentos, equipamentos…"
-                aria-label="Buscar no painel"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyDown={handleSearchKeyDown}
-              />
-            </label>
+            <GlobalSearch />
 
             <div className="top-actions" ref={notifRef}>
               <div className="notif-wrap">
