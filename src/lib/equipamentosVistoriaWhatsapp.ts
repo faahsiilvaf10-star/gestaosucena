@@ -67,3 +67,4 @@ export async function notificarVistoriaEquipamento20Dias(params: {
     return false
   }
 }
+

@@ -243,9 +243,14 @@ export type WhatsappSettings = {
     enabled_20_dias: boolean;
     specificGroupId: string;
   };
+  viradaCorDoMes?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
+    viradaCorDoMesFerramentas?: string;
     analiseRiscoVencendoHoje?: string;
     campanhaSegurancaMes?: string;
     matrizResponsabilidadeLembrete?: string;
@@ -367,9 +372,15 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled_20_dias: true,
     specificGroupId: "",
   },
+  viradaCorDoMes: {
+    enabled: true,
+    specificGroupId: "",
+  },
   messageTemplates: {
     vistoriaEquipamentoVencendo20Dias:
       "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
+    viradaCorDoMesFerramentas:
+      "🎨 *ATENÇÃO: VIRADA DA COR DO MÊS - INSPEÇÃO DE FERRAMENTAS ({mes_nome}/{ano})* 🎨\n\n📢 *Atenção Colaboradores, Encarregados e Equipe Operacional!*\nIniciamos um novo mês de trabalho. Conforme o padrão de segurança e controle de qualidade da obra, é obrigatória a atualização das cores das ferramentas:\n\n🟡 *NOVA COR DO MÊS ATUAL (VÁLIDA):* *{cor_atual}*\n🚫 *COR DO MÊS ANTERIOR (PROIBIDA):* *{cor_anterior_proibida}*\n\n🔧 *INSTRUÇÕES OBRIGATÓRIAS:*\n1. *Troca de Etiquetas:* Todas as ferramentas manuais, elétricas, pneumáticas e cintas devem receber a etiqueta/fita com a nova cor (*{cor_atual}*).\n2. *Atenção aos Checklists:* Antes de iniciar qualquer atividade, realize a inspeção minuciosa e preencha o checklist diário do equipamento/ferramenta.\n3. *Bloqueio de Uso:* Qualquer ferramenta com a cor anterior (*{cor_anterior_proibida}*) ou sem a identificação do mês está *PROIBIDA* de ser utilizada na obra até ser inspecionada!\n\n⚠️ _Mais segurança, mais resultados!_\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     analiseRiscoVencendo5Dias:
       "⏳ *AVISO: ANÁLISE DE RISCO VENCENDO EM 5 DIAS* ⏳\n\n📋 *Título:* {titulo}\n📍 *Atividade / Local:* {local}\n📅 *Válida até:* {data_validade}\n⏳ *Prazo:* Faltam 5 dias para o vencimento!\n\n⚠️ _Por favor, providencie a elaboração da nova Análise de Risco com antecedência._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     analiseRiscoVencendoHoje:

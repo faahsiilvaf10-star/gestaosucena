@@ -7,6 +7,8 @@ import { LogoutOverlay } from './LogoutOverlay'
 import { useTheme } from '../contexts/ThemeContext'
 import { MonthlyColorsModal } from './MonthlyColorsModal'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
+import { getMesInspecaoAtual, colorConfigs } from '../lib/cintasConfig'
+import { enviarNotificacaoViradaCorDoMes } from '../lib/corDoMesWhatsapp'
 import { useChat } from '../contexts/ChatContext'
 import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
@@ -34,6 +36,15 @@ import { clearDailySessionExpiry } from '../lib/sessionManager'
 import { useNotifications } from '../context/NotificationContext'
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const mesInspecao = getMesInspecaoAtual()
+  const corConfig = colorConfigs[mesInspecao.cor] || colorConfigs.Amarelo
+
+  useEffect(() => {
+    // Disparo automático de virada da cor do mês no WhatsApp se for dia 1 ou início do mês
+    enviarNotificacaoViradaCorDoMes().catch(err => {
+      console.warn('[AppLayout] Erro na verificação da cor do mês:', err)
+    })
+  }, [])
   const navigate = useNavigate()
   const location = useLocation()
   const { isDark } = useTheme()
@@ -600,22 +611,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className="forbidden-note"
                 role="button"
                 tabIndex={0}
-                title="Cor proibida do mês: Azul"
+                title={`Cor proibida do mês: ${mesInspecao.cor}`}
                 onClick={() => setShowMonthlyColorsModal(true)}
               >
                 <button
                   className="icon-btn forbidden-color"
                   type="button"
-                  aria-label="Cor proibida do mês: azul"
+                  aria-label={`Cor proibida do mês: ${mesInspecao.cor}`}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round" aria-hidden="true" style={{ color: corConfig.accentHex }}>
                     <circle cx="12" cy="12" r="8.2" />
                     <path d="M6.2 6.2 17.8 17.8" />
                   </svg>
                 </button>
-                <div className="forbidden-label" aria-hidden="true">
-                  <small>Cor proibida do mês</small>
-                  <b>Azul</b>
+                <div 
+                  className="forbidden-label" 
+                  aria-hidden="true"
+                  style={{
+                    borderColor: corConfig.accentHex,
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : (mesInspecao.cor === 'Amarelo' ? '#FEFCE8' : mesInspecao.cor === 'Vermelho' ? '#FEF2F2' : mesInspecao.cor === 'Verde' ? '#ECFDF5' : '#EFF6FF')
+                  }}
+                >
+                  <small style={{ color: corConfig.accentHex }}>Cor proibida do mês</small>
+                  <b style={{ color: corConfig.accentHex }}>{mesInspecao.cor}</b>
                 </div>
               </div>
 

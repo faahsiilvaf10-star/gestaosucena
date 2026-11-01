@@ -3,6 +3,7 @@ import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
+import CheckCircle from 'lucide-react/dist/esm/icons/circle-check.js';
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../contexts/ThemeContext'
@@ -60,7 +61,7 @@ export function DashboardVistoriasWidget() {
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry
           )
         `)
-        .eq('environment', env)
+        .or(`environment.eq.${env},environment.is.null`)
         .or('category.neq.Jardinagem,category.is.null')
       if (!error && data) {
         setEquipments(data)
@@ -149,9 +150,31 @@ export function DashboardVistoriasWidget() {
     )
   }
 
-  // Se não houver alertas, não exibe o card no painel
-  if (alerts.length === 0) {
-    return null
+    if (alerts.length === 0) {
+    return (
+      <Card className="flex-1 w-full min-w-0 flex flex-col overflow-hidden shadow-md h-full">
+        <CardHeader className="pb-3 border-b border-border/50">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <ShieldCheck size={14} className="text-green-500" /> 
+              Vistorias de Equipamentos
+            </CardTitle>
+            <Link to="/equipamentos/vistoria" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors">
+              Ver tudo &rarr;
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400 flex items-center justify-center shrink-0">
+            <CheckCircle size={18} />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-[#111] dark:text-white">Todas as vistorias em dia</div>
+            <div className="text-xs text-muted-foreground">Nenhum laudo ou manutenção vencendo nos próximos 20 dias.</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

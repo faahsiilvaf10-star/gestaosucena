@@ -19,6 +19,7 @@ import { DdsUploadModal } from '../components/DdsUploadModal'
 import { DashboardCintasBanner } from '../components/DashboardCintasBanner'
 import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
+import { DashboardVistoriasBanner } from '../components/DashboardVistoriasBanner'
 import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
 import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
 import { DashboardDesviosWidget } from '../components/DashboardDesviosWidget'
@@ -1616,6 +1617,9 @@ function DashboardComponent() {
           </div>
           <h2>Widgets Operacionais</h2>
         </div>
+
+        {/* Banner de Aviso de Vistorias e Laudos de Equipamentos */}
+        <DashboardVistoriasBanner />
 
         {/* Banner de Aviso de Inspeção do Canteiro */}
         <DashboardInspecaoCanteiroBanner />

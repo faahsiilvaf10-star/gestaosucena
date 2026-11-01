@@ -2187,7 +2187,8 @@ function AdminRoute() {
                     { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' },
                     { key: 'analiseRiscoVencendo5Dias', label: 'Análise de Risco (5 Dias)' },
                     { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' },
-                    { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' }
+                    { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' },
+                    { key: 'viradaCorDoMesFerramentas', label: 'Virada Cor do Mês (Ferramentas)' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2239,6 +2240,7 @@ function AdminRoute() {
                     {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
                     {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
                     {selectedTemplate === 'vistoriaEquipamentoVencendo20Dias' && '{equipamento}, {placa_tag}, {tipo_vistoria}, {data_vencimento}, {dias_restantes}'}
+                    {selectedTemplate === 'viradaCorDoMesFerramentas' && '{mes_nome}, {ano}, {cor_atual}, {cor_anterior_proibida}'}
                   </div>
                 </div>
               </div>
