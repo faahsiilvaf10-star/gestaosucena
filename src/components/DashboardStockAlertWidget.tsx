@@ -69,14 +69,23 @@ export function DashboardStockAlertWidget() {
     fetchStockAlerts();
 
     // Inscrição em tempo real para alterações em al_products
-    const channel = supabase.channel('dash_stock_alerts_channel')
+    const handleRtUpdate = () => {
+      fetchStockAlerts();
+    };
+    window.addEventListener('sucena_dashboard_realtime_update', handleRtUpdate);
+
+    const channel = supabase.channel(`dash_stock_alerts_channel_${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'al_products' }, () => {
         fetchStockAlerts();
       })
       .subscribe();
 
+    const interval = setInterval(fetchStockAlerts, 30000);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('sucena_dashboard_realtime_update', handleRtUpdate);
+      clearInterval(interval);
     };
   }, []);
 

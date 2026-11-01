@@ -128,17 +128,31 @@ export function RecentActivitiesWidget() {
   useEffect(() => {
     fetchActivities()
 
-    const channel = supabase.channel('global_system_activities')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_activities' }, () => {
+    // Listener do evento de realtime do Dashboard
+    const handleRtUpdate = () => {
+      fetchActivities()
+    }
+    window.addEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+
+    const channel = supabase.channel(`global_system_activities_${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_activities' }, () => {
         fetchActivities()
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'eq_movements' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eq_movements' }, () => {
+        fetchActivities()
+      })
+      .on('broadcast', { event: 'system_activity' }, () => {
         fetchActivities()
       })
       .subscribe()
 
+    // Fallback polling a cada 20 segundos
+    const interval = setInterval(fetchActivities, 20000)
+
     return () => {
       supabase.removeChannel(channel)
+      window.removeEventListener('sucena_dashboard_realtime_update', handleRtUpdate)
+      clearInterval(interval)
     }
   }, [])
 
