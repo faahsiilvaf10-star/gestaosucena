@@ -82,6 +82,14 @@ function RhEfetivoPage() {
         const finalRole = rpcRole || metaRole
         setUserRole(finalRole)
         
+        const metaName = user.user_metadata?.full_name || user.user_metadata?.name || ''
+        let rpcName = ''
+        if (users) {
+          const currentUserProfile = (users as any[]).find((u: any) => u.id === user.id)
+          rpcName = currentUserProfile?.name || currentUserProfile?.full_name || ''
+        }
+        const finalName = rpcName || metaName
+
         const isAdmin = email === 'ffaahsiilva@gmail.com'
         const roleStr = finalRole.toLowerCase()
         const hasEditRole = (
@@ -90,7 +98,15 @@ function RhEfetivoPage() {
           roleStr.includes('admin') ||
           roleStr.includes('diretor')
         )
-        setCanEdit(isAdmin || hasEditRole)
+
+        // Derick possui liberação total de acesso e edição ao RH
+        const isDerick = 
+          email?.toLowerCase() === 'dericksouza511@gmail.com' ||
+          email?.toLowerCase().includes('derick') ||
+          finalName.toLowerCase().includes('derick') ||
+          user.id === 'a19a50e3-b761-4920-9a8b-f195670d330d'
+
+        setCanEdit(isAdmin || hasEditRole || isDerick)
       }
     }
     fetchUser()

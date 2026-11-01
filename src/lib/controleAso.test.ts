@@ -90,6 +90,12 @@ describe('Controle de ASO — Utilitários e Regras de Negócio', () => {
       expect(canEditControleAso('Danieli Farias', 'Planejador')).toBe(false)
       expect(canEditControleAso('Lucas', 'Apontador')).toBe(false)
     })
+
+    it('permite o usuário Derick editar ASOs e dados do RH', () => {
+      expect(canEditControleAso('Derick Eudes Souza de Jesus', 'Apontador', 'dericksouza511@gmail.com')).toBe(true)
+      expect(canEditControleAso('Derick', 'Apontador')).toBe(true)
+      expect(canEditControleAso('Qualquer Cargo', 'Apontador', 'dericksouza511@gmail.com')).toBe(true)
+    })
   })
 
   describe('Exportação de Relatórios e Logo Sucena', () => {

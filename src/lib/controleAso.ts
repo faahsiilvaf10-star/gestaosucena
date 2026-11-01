@@ -263,6 +263,8 @@ export function isAtivo(status?: string | null): boolean {
  */
 export function canEditControleAso(name?: string | null, role?: string | null, email?: string | null): boolean {
   if (email === 'ffaahsiilva@gmail.com') return true
+  if (email === 'dericksouza511@gmail.com' || (email && email.toLowerCase().includes('derick'))) return true
+  if (name && name.toLowerCase().includes('derick')) return true
   if (isAdmin(name || undefined, role || undefined)) return true
 
   const r = (role || '')
