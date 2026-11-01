@@ -68,3 +68,61 @@ export async function notificarVistoriaEquipamento20Dias(params: {
   }
 }
 
+/**
+ * Dispara notificação no grupo do WhatsApp quando uma vistoria/laudo de equipamento estiver vencendo em 1 dia (amanhã)
+ */
+export async function notificarVistoriaEquipamento1Dia(params: {
+  eqName: string
+  plateTag: string
+  docType: string
+  expiryDate: string
+  daysRemaining: number
+}): Promise<boolean> {
+  try {
+    const settings = await getWhatsappSettings()
+
+    if (settings.vistoriasEquipamentos?.enabled_1_dia === false) {
+      console.info('[Vistoria WhatsApp] Alerta de 1 dia desativado nas configurações.')
+      return false
+    }
+
+    const targetGroup = settings.vistoriasEquipamentos?.specificGroupId || settings.groupId
+    if (!targetGroup || !settings.url || !settings.token) {
+      console.warn('[Vistoria WhatsApp] WhatsApp não configurado para envio.')
+      return false
+    }
+
+    let msg =
+      settings.messageTemplates?.vistoriaEquipamentoVencendo1Dia ||
+      "🚨 *URGENTE: VISTORIA DE EQUIPAMENTO VENCE AMANHÃ (1 DIA)* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento} (AMANHÃ!)\n⏳ *Prazo Restante:* Resta apenas {dias_restantes} dia!\n\n⚠️ _Atenção: O equipamento ficará impedido de operar na obra se a vistoria/laudo expirar sem renovação!_\n_Mensagem automática - Sucena / Hydro Reabilitação_"
+
+    msg = msg.replaceAll('{equipamento}', params.eqName || 'Equipamento')
+    msg = msg.replaceAll('{placa_tag}', params.plateTag || '-')
+    msg = msg.replaceAll('{tipo_vistoria}', params.docType || 'Vistoria Geral')
+    msg = msg.replaceAll('{data_vencimento}', fmtDataBr(params.expiryDate))
+    msg = msg.replaceAll('{dias_restantes}', String(params.daysRemaining))
+
+    await sendWhatsappTextOnServer({
+      data: {
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone: targetGroup,
+        text: msg,
+      },
+    })
+
+    const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+    await supabase.from('system_activities').insert({
+      module: 'Equipamentos',
+      action: `[WHATSAPP 1 DIA] Vistoria ${params.docType} de ${params.eqName} (${params.plateTag}) vence amanhã (${fmtDataBr(params.expiryDate)})`,
+      user_name: 'Sistema Automático',
+      environment: env,
+    })
+
+    return true
+  } catch (err) {
+    console.error('[Vistoria WhatsApp] Erro ao notificar 1 dia:', err)
+    return false
+  }
+}

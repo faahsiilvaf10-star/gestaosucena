@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { getWhatsappSettings } from '../lib/settings'
-import { notificarVistoriaEquipamento20Dias, fmtDataBr } from '../lib/equipamentosVistoriaWhatsapp'
+import { notificarVistoriaEquipamento20Dias, notificarVistoriaEquipamento1Dia, fmtDataBr } from '../lib/equipamentosVistoriaWhatsapp'
 import { format } from 'date-fns'
 
 interface EquipmentInspection {
@@ -108,15 +108,50 @@ export function VistoriaEquipamentoAlertManager() {
               }
               alertasEncontrados.push(itemAlerta)
 
-              // Disparo no WhatsApp quando faltar <= 20 dias (com lock diário anti-duplicação)
-              if (settings.vistoriasEquipamentos?.enabled_20_dias !== false && dias > 0) {
-                const hojeStr = format(new Date(), 'yyyy-MM-dd')
+              const hojeStr = format(new Date(), 'yyyy-MM-dd')
+
+              // 1) Disparo URGENTE no WhatsApp quando faltar exatamente 1 dia (amanhã)
+              if (dias === 1 && settings.vistoriasEquipamentos?.enabled_1_dia !== false) {
+                const chaveLocal1d = `vistoria_alerta_1d_${env}_${eq.id}_${doc.type}_${doc.expiry}_${hojeStr}`
+
+                if (!localStorage.getItem(chaveLocal1d)) {
+                  const acaoMarca1d = `[ALERTA 1 DIA] Vistoria ${doc.type} de ${eq.name} (${eq.plate_tag}) vence amanhã (${doc.expiry})`
+
+                  const { data: jaDisparado1d } = await supabase
+                    .from('system_activities')
+                    .select('id')
+                    .eq('environment', env)
+                    .ilike('action', `%[WHATSAPP 1 DIA] Vistoria ${doc.type} de ${eq.name}%`)
+                    .gte('created_at', `${hojeStr}T00:00:00.000Z`)
+                    .maybeSingle()
+
+                  if (!jaDisparado1d) {
+                    await supabase.from('system_activities').insert({
+                      module: 'Equipamentos',
+                      action: acaoMarca1d,
+                      user_name: 'Sistema Automático',
+                      environment: env,
+                    })
+
+                    await notificarVistoriaEquipamento1Dia({
+                      eqName: eq.name,
+                      plateTag: eq.plate_tag,
+                      docType: doc.type,
+                      expiryDate: doc.expiry,
+                      daysRemaining: dias,
+                    })
+                  }
+                  localStorage.setItem(chaveLocal1d, 'true')
+                }
+              }
+
+              // 2) Disparo de antecedência de 20 dias (quando dias entre 2 e 20)
+              if (dias > 1 && dias <= 20 && settings.vistoriasEquipamentos?.enabled_20_dias !== false) {
                 const chaveLocal20d = `vistoria_alerta_20d_${env}_${eq.id}_${doc.type}_${doc.expiry}_${hojeStr}`
 
                 if (!localStorage.getItem(chaveLocal20d)) {
                   const acaoMarca20d = `[ALERTA 20 DIAS] Vistoria ${doc.type} de ${eq.name} (${eq.plate_tag}) vence em ${dias} dias (${doc.expiry})`
-                  
-                  // Verificar se já foi enviado hoje no banco
+
                   const { data: jaDisparado } = await supabase
                     .from('system_activities')
                     .select('id')
@@ -126,7 +161,6 @@ export function VistoriaEquipamentoAlertManager() {
                     .maybeSingle()
 
                   if (!jaDisparado) {
-                    // Lock preventivo
                     await supabase.from('system_activities').insert({
                       module: 'Equipamentos',
                       action: acaoMarca20d,
