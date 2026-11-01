@@ -239,7 +239,7 @@ export async function searchGlobalDatabase(term: string): Promise<SearchResultIt
           title: c.nome,
           subtitle: `${c.cargo || 'Colaborador'} • Matrícula: ${mat} ${c.status ? `(${c.status})` : ''}`,
           category: 'colaborador',
-          href: `/rh?busca=${encodeURIComponent(c.nome)}`,
+          href: `/rh/efetivo?id=${c.id}&colaborador=${encodeURIComponent(c.nome)}`,
           badge: 'Colaborador',
         })
       })
@@ -252,7 +252,7 @@ export async function searchGlobalDatabase(term: string): Promise<SearchResultIt
           title: `${eq.name} ${eq.plate_tag ? `(${eq.plate_tag})` : ''}`,
           subtitle: `${eq.category || eq.type || 'Equipamento'} • Status: ${eq.status || 'Disponível'}`,
           category: 'equipamento',
-          href: `/equipamentos?busca=${encodeURIComponent(eq.plate_tag || eq.name)}`,
+          href: `/equipamentos/todos?id=${eq.id}&tag=${encodeURIComponent(eq.plate_tag || eq.name)}`,
           badge: 'Equipamento',
         })
       })
@@ -291,3 +291,4 @@ export async function searchGlobalDatabase(term: string): Promise<SearchResultIt
     return []
   }
 }
+

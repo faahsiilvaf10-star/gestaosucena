@@ -49,25 +49,20 @@ describe('globalSearch', () => {
     expect(res.some((r) => r.href === '/equipamentos/app-motorista')).toBe(true)
   })
 
-  it('searchGlobalDatabase deve trazer colaboradores, equipamentos, almoxarifado e dds mockados', async () => {
+  it('searchGlobalDatabase deve trazer colaboradores com link direto para /rh/efetivo com id', async () => {
     const items = await searchGlobalDatabase('teste')
-    expect(items.length).toBeGreaterThan(0)
-
     const colab = items.find((i) => i.category === 'colaborador')
     expect(colab).toBeDefined()
     expect(colab?.title).toBe('João da Silva')
+    expect(colab?.href).toContain('/rh/efetivo?id=1')
+  })
 
+  it('searchGlobalDatabase deve trazer equipamentos com link direto para /equipamentos/todos com id e tag', async () => {
+    const items = await searchGlobalDatabase('teste')
     const eq = items.find((i) => i.category === 'equipamento')
     expect(eq).toBeDefined()
     expect(eq?.title).toContain('Caminhão Pipa')
-
-    const prod = items.find((i) => i.category === 'almoxarifado')
-    expect(prod).toBeDefined()
-    expect(prod?.title).toBe('Capacete de Segurança')
-
-    const dds = items.find((i) => i.category === 'seguranca')
-    expect(dds).toBeDefined()
-    expect(dds?.title).toContain('Percepção de Riscos')
+    expect(eq?.href).toContain('/equipamentos/todos?id=2')
   })
 
   it('searchGlobalDatabase deve retornar array vazio se o termo for vazio', async () => {

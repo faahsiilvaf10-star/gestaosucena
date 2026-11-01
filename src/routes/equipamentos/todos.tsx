@@ -144,6 +144,35 @@ function TodosEquipamentosPage() {
     }
   }, [])
 
+  // Auto-abre modal com todas as informações quando vier da busca global
+  useEffect(() => {
+    if (equipments.length === 0) return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const targetId = params.get('id')
+      const targetTag = params.get('tag') || params.get('placa') || params.get('busca')
+      if (targetId) {
+        const found = equipments.find(e => e.id === targetId)
+        if (found) {
+          setSelectedEq(found)
+          setIsViewModalOpen(true)
+        }
+      } else if (targetTag) {
+        const cleanTarget = targetTag.toLowerCase().trim()
+        const found = equipments.find(e =>
+          (e.plate_tag && e.plate_tag.toLowerCase().includes(cleanTarget)) ||
+          (e.name && e.name.toLowerCase().includes(cleanTarget))
+        )
+        if (found) {
+          setSelectedEq(found)
+          setIsViewModalOpen(true)
+        }
+      }
+    } catch (e) {
+      console.warn('[TodosEquipamentos] Erro ao ler query params:', e)
+    }
+  }, [equipments])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isSaving) {
