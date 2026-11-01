@@ -10,8 +10,10 @@ import Car from 'lucide-react/dist/esm/icons/car.js';
 import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import {
@@ -510,70 +512,165 @@ function TodosEquipamentosPage() {
       </div>
 
       {/* View Modal */}
-      {isViewModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
-          <div className={`relative w-full rounded-3xl p-5 md:p-8 shadow-2xl overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}
-            style={{ maxHeight: 'calc(100dvh - 24px)', maxWidth: 448 }
-          }>
-            <h2 className="text-3xl mb-6">Detalhes</h2>
-            
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-2">Identificação</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <div className="text-[10px] opacity-50 uppercase mb-1">Equipamento</div>
-                    <div className="font-semibold">{selectedEq.name}</div>
-                  </div>
-                  <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <div className="text-[10px] opacity-50 uppercase mb-1">Placa / Tag</div>
-                    <div className="font-mono text-sm whitespace-nowrap tabular-nums">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''}</div>
-                  </div>
-                  <div className={`col-span-2 p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <div className="text-[10px] opacity-50 uppercase mb-1">Tipo</div>
-                    <div className="font-semibold">{selectedEq.type || 'N/A'}</div>
-                  </div>
-                  <div className={`col-span-2 p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <div className="text-[10px] opacity-50 uppercase mb-1">Categoria</div>
-                    <div className="font-semibold">{selectedEq.category || 'N/A'}</div>
-                  </div>
+      {isViewModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop com blur e fade suave */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
+            onClick={() => setIsViewModalOpen(false)} 
+          />
+
+          {/* Modal Card perfeitamente centralizado na viewport */}
+          <div 
+            className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl my-auto animate-in zoom-in-95 duration-200 overflow-y-auto ${
+              isDark 
+                ? 'bg-[#101014] text-white border border-white/10' 
+                : 'bg-white text-gray-900 border border-black/10'
+            }`}
+            style={{ maxHeight: 'min(90vh, calc(100dvh - 32px))' }}
+          >
+            {/* Header com Título e Botão Fechar X */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">
+                  🚜
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Detalhes do Equipamento</h2>
+                  <p className="text-xs opacity-60">Visão completa e situação operacional</p>
                 </div>
               </div>
-
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-2">Situação</h3>
-                <div className={`p-4 rounded-xl space-y-3 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm opacity-70">Status Atual</span>
-                    {getStatusBadge(selectedEq)}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm opacity-70">Última Atualização</span>
-                    <span className="text-sm font-medium">{new Date(selectedEq.updated_at).toLocaleString('pt-BR')}</span>
-                  </div>
-                </div>
-              </div>
-
+              <button
+                type="button"
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fechar"
+                title="Fechar"
+              >
+                <X size={20} />
+              </button>
             </div>
             
-            <button 
-              onClick={() => setIsViewModalOpen(false)}
-              className="mt-6 w-full py-3 rounded-xl bg-black dark:bg-white text-[#1c1d21] dark:text-white dark:text-black font-semibold hover:opacity-90 transition-opacity"
-              style={{ minHeight: 44 }}
-            >
-              Fechar
-            </button>
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-2.5">Identificação</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-black/5'}`}>
+                    <div className="text-[10px] opacity-60 uppercase font-semibold tracking-wider mb-1">Equipamento</div>
+                    <div className="font-bold text-base">{selectedEq.name}</div>
+                  </div>
+                  <div className={`p-3.5 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-black/5'}`}>
+                    <div className="text-[10px] opacity-60 uppercase font-semibold tracking-wider mb-1">Placa / Tag</div>
+                    <div className="font-mono font-bold text-base whitespace-nowrap tabular-nums text-amber-600 dark:text-amber-400">
+                      {selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : 'N/A'}
+                    </div>
+                  </div>
+                  <div className={`col-span-2 p-3.5 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-black/5'}`}>
+                    <div className="text-[10px] opacity-60 uppercase font-semibold tracking-wider mb-1">Tipo de Máquina / Veículo</div>
+                    <div className="font-semibold text-sm">{selectedEq.type || 'N/A'}</div>
+                  </div>
+                  <div className={`col-span-2 p-3.5 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-black/5'}`}>
+                    <div className="text-[10px] opacity-60 uppercase font-semibold tracking-wider mb-1">Categoria Operacional</div>
+                    <div className="font-semibold text-sm">{selectedEq.category || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-2.5">Situação Operacional</h3>
+                <div className={`p-4 rounded-2xl space-y-3 ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-black/5'}`}>
+                  <div className="flex justify-between items-center pb-2 border-b border-black/5 dark:border-white/5">
+                    <span className="text-sm opacity-70 font-medium">Status Atual</span>
+                    <div>{getStatusBadge(selectedEq)}</div>
+                  </div>
+
+                  {isOutside(selectedEq.location_status) && (
+                    <>
+                      <div className="flex justify-between items-start pb-2 border-b border-black/5 dark:border-white/5">
+                        <span className="text-sm opacity-70 font-medium">Motivo da Saída</span>
+                        <span className="text-sm font-semibold text-right max-w-[60%]">
+                          {EXIT_REASONS.find(r => r.value === selectedEq.last_exit_reason)?.label || selectedEq.last_exit_reason || 'Não informado'}
+                        </span>
+                      </div>
+                      {selectedEq.last_exit_description && (
+                        <div className="pb-2 border-b border-black/5 dark:border-white/5">
+                          <span className="text-xs opacity-60 block mb-1">Observações / Destino</span>
+                          <span className="text-sm italic">{selectedEq.last_exit_description}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-xs opacity-60">Última Atualização</span>
+                    <span className="text-xs font-medium opacity-80">{new Date(selectedEq.updated_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-black/10 dark:border-white/10">
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsViewModalOpen(false)
+                  handleOpenEdit(selectedEq)
+                }}
+                className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                  isDark 
+                    ? 'bg-white/10 hover:bg-white/15 text-white' 
+                    : 'bg-black/5 hover:bg-black/10 text-gray-800'
+                }`}
+              >
+                <Pencil size={16} />
+                Editar Dados
+              </button>
+              <button 
+                type="button"
+                onClick={() => setIsViewModalOpen(false)}
+                className="flex-1 py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-black font-bold text-sm transition-all shadow-md active:scale-[0.99]"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Modal */}
-      {isEditModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
-            <h2 className="text-3xl mb-6">Editar Equipamento</h2>
+      {isEditModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
+            onClick={() => !isSaving && setIsEditModalOpen(false)} 
+          />
+          <div 
+            className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl my-auto animate-in zoom-in-95 duration-200 overflow-y-auto ${
+              isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-gray-900 border border-black/10'
+            }`}
+            style={{ maxHeight: 'min(90vh, calc(100dvh - 32px))' }}
+          >
+            <div className="flex items-center justify-between pb-3 mb-5 border-b border-black/10 dark:border-white/10">
+              <h2 className="text-2xl font-bold tracking-tight">Editar Equipamento</h2>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
             
             <div className="space-y-4">
               <div>
@@ -582,7 +679,7 @@ function TodosEquipamentosPage() {
                   type="text"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 />
               </div>
               <div>
@@ -591,7 +688,7 @@ function TodosEquipamentosPage() {
                   type="text"
                   value={editPlate}
                   onChange={e => setEditPlate(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-mono uppercase ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-mono uppercase font-semibold ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 />
               </div>
               <div>
@@ -599,7 +696,7 @@ function TodosEquipamentosPage() {
                 <select
                   value={editCategory}
                   onChange={e => setEditCategory(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none appearance-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 >
                   <option value="Equipamento Pesado">Equipamento Pesado</option>
                   <option value="Leve">Leve</option>
@@ -611,29 +708,56 @@ function TodosEquipamentosPage() {
             
             <div className="flex gap-3 mt-8">
               <button 
+                type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`}
+                disabled={isSaving}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-gray-800'}`}
               >
                 Cancelar
               </button>
               <button 
+                type="button"
                 onClick={handleSaveEdit}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.99]"
               >
-                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Salvar'}
+                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Salvar Alterações'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Add Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
-            <h2 className="text-3xl mb-6">Novo Equipamento</h2>
+      {isAddModalOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
+            onClick={() => !isSaving && setIsAddModalOpen(false)} 
+          />
+          <div 
+            className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl my-auto animate-in zoom-in-95 duration-200 overflow-y-auto ${
+              isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-gray-900 border border-black/10'
+            }`}
+            style={{ maxHeight: 'min(90vh, calc(100dvh - 32px))' }}
+          >
+            <div className="flex items-center justify-between pb-3 mb-5 border-b border-black/10 dark:border-white/10">
+              <h2 className="text-2xl font-bold tracking-tight">Novo Equipamento</h2>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
             
             <div className="space-y-4">
               <div>
@@ -643,7 +767,7 @@ function TodosEquipamentosPage() {
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="Nome do equipamento"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 />
               </div>
               <div>
@@ -653,7 +777,7 @@ function TodosEquipamentosPage() {
                   value={newPlate}
                   onChange={e => setNewPlate(e.target.value)}
                   placeholder="ABC1D23"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none font-mono uppercase ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-mono uppercase font-semibold ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 />
               </div>
               <div>
@@ -663,7 +787,7 @@ function TodosEquipamentosPage() {
                   value={newType}
                   onChange={e => setNewType(e.target.value)}
                   placeholder="Caminhão Pipa"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 />
               </div>
               <div>
@@ -671,7 +795,7 @@ function TodosEquipamentosPage() {
                 <select
                   value={newCategory}
                   onChange={e => setNewCategory(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none appearance-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
                 >
                   <option value="Equipamento Pesado">Equipamento Pesado</option>
                   <option value="Leve">Leve</option>
@@ -683,21 +807,25 @@ function TodosEquipamentosPage() {
             
             <div className="flex gap-3 mt-8">
               <button 
+                type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`}
+                disabled={isSaving}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-gray-800'}`}
               >
                 Cancelar
               </button>
               <button 
+                type="button"
                 onClick={handleSaveNew}
                 disabled={isSaving}
-                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.99]"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Cadastrar'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
