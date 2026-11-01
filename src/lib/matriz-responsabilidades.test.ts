@@ -8,6 +8,7 @@ import {
   getMetricasCargo,
   getMetricasGerais,
   FORMS_URL_MATRIZ,
+  getMasterConfigKey,
   type AtividadeMatriz,
 } from './matrizResponsabilidadesData'
 
@@ -148,5 +149,9 @@ describe('Matriz de Responsabilidades - Regras e Definições', () => {
     expect(m.concluidas).toBe(1) // Apenas a Atividade 1
     expect(m.porcentagem).toBe(60) // 6 / 10 = 60%
     expect(m.isConcluidoTotal).toBe(false)
+  })
+  it('gera chave de master config permanente da equipe', () => {
+    expect(getMasterConfigKey('barcarena')).toBe('matriz_master_config_barcarena')
+    expect(getMasterConfigKey('belem')).toBe('matriz_master_config_belem')
   })
 })

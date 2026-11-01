@@ -7,6 +7,7 @@ import {
   getMesKey,
   getMesNome,
   carregarDadosMatriz,
+  carregarMasterConfigMatriz,
   getMetricasCargo,
 } from './matrizResponsabilidadesData'
 
@@ -31,35 +32,51 @@ function normalizarCargoParaMatriz(cargoColab: string): string | null {
 /**
  * Busca os colaboradores cadastrados no RH e nas atribuições manuais da matriz para associar aos cargos
  */
-async function buscarNomesPorCargo(matrizData?: any): Promise<Record<string, string[]>> {
+async function buscarNomesPorCargo(matrizData?: any, env: string = 'barcarena'): Promise<Record<string, string[]>> {
   const mapa: Record<string, string[]> = {
     'Preposto': [],
+    'preposto': [],
     'Encarregado Geral': [],
+    'enc-geral': [],
     'Encarregado I': [],
+    'enc-1': [],
     'Encarregado II': [],
+    'enc-2': [],
     'Téc. Segurança I': [],
+    'tec-1': [],
     'Téc. Segurança II': [],
+    'tec-2': [],
   }
 
-  // Registra cargos customizados da matriz se existirem
-  if (matrizData?.cargos && Array.isArray(matrizData.cargos)) {
-    for (const c of matrizData.cargos) {
-      if (!mapa[c.nome]) mapa[c.nome] = []
-      if (!mapa[c.id]) mapa[c.id] = []
-    }
+  // Tenta obter as atribuições manuais do matrizData ou da configuração mestre permanente
+  let atribuicoesManual = matrizData?.atribuicoesManual || {}
+  const cargosList = matrizData?.cargos && Array.isArray(matrizData.cargos) ? matrizData.cargos : CARGOS_MATRIZ
+
+  for (const c of cargosList) {
+    if (!mapa[c.nome]) mapa[c.nome] = []
+    if (!mapa[c.id]) mapa[c.id] = []
   }
 
-  // 1. Mapeamento de atribuições manuais salvas na Matriz
-  if (matrizData?.atribuicoesManual && typeof matrizData.atribuicoesManual === 'object') {
-    for (const [colabNomeOuId, cargoId] of Object.entries(matrizData.atribuicoesManual)) {
+  if (Object.keys(atribuicoesManual).length === 0) {
+    try {
+      const master = await carregarMasterConfigMatriz(env)
+      if (master?.atribuicoesManual && Object.keys(master.atribuicoesManual).length > 0) {
+        atribuicoesManual = master.atribuicoesManual
+      }
+    } catch (_) {}
+  }
+
+  // 1. Mapeamento direto de atribuições manuais salvas por Nome
+  if (atribuicoesManual && typeof atribuicoesManual === 'object') {
+    for (const [colabNomeOuId, cargoId] of Object.entries(atribuicoesManual)) {
       if (typeof cargoId !== 'string' || !cargoId) continue
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(colabNomeOuId)
-      if (!isUuid && colabNomeOuId.trim()) {
+      if (!isUuid && colabNomeOuId.trim().length > 2) {
         const nomeTrim = colabNomeOuId.trim()
         if (!mapa[cargoId]) mapa[cargoId] = []
         if (!mapa[cargoId].includes(nomeTrim)) mapa[cargoId].push(nomeTrim)
 
-        const cargoEncontrado = (matrizData.cargos as CargoMatrizDef[] | undefined)?.find(c => c.id === cargoId) || CARGOS_MATRIZ.find(c => c.id === cargoId)
+        const cargoEncontrado = cargosList.find((c: any) => c.id === cargoId)
         if (cargoEncontrado?.nome) {
           if (!mapa[cargoEncontrado.nome]) mapa[cargoEncontrado.nome] = []
           if (!mapa[cargoEncontrado.nome].includes(nomeTrim)) mapa[cargoEncontrado.nome].push(nomeTrim)
@@ -68,7 +85,7 @@ async function buscarNomesPorCargo(matrizData?: any): Promise<Record<string, str
     }
   }
 
-  // 2. Busca do RH Efetivo no Supabase
+  // 2. Busca do RH Efetivo no Supabase para cruzar por ID e por Nome
   try {
     const { data: rhData } = await supabase
       .from('rh_efetivo')
@@ -79,25 +96,35 @@ async function buscarNomesPorCargo(matrizData?: any): Promise<Record<string, str
       for (const e of rhData) {
         const s = (e.status || '').toUpperCase().trim()
         if (s === 'INATIVO' || s === 'DEMITIDO' || s === 'DESLIGADO') continue
-        if (!e.nome || !e.cargo) continue
+        if (!e.nome) continue
+        const nomeTrim = e.nome.trim()
 
-        // Se o colaborador estiver atribuído manualmente por ID
-        if (e.id && matrizData?.atribuicoesManual?.[e.id]) {
-          const cargoId = matrizData.atribuicoesManual[e.id]
-          if (!mapa[cargoId]) mapa[cargoId] = []
-          if (!mapa[cargoId].includes(e.nome.trim())) mapa[cargoId].push(e.nome.trim())
-
-          const cargoEncontrado = (matrizData.cargos as CargoMatrizDef[] | undefined)?.find(c => c.id === cargoId) || CARGOS_MATRIZ.find(c => c.id === cargoId)
-          if (cargoEncontrado?.nome) {
-            if (!mapa[cargoEncontrado.nome]) mapa[cargoEncontrado.nome] = []
-            if (!mapa[cargoEncontrado.nome].includes(e.nome.trim())) mapa[cargoEncontrado.nome].push(e.nome.trim())
-          }
+        // Verifica se há atribuição manual (por ID ou por Nome case-insensitive)
+        let manualCargoId = (e.id && atribuicoesManual[e.id]) || atribuicoesManual[nomeTrim]
+        if (!manualCargoId) {
+          const keyNome = Object.keys(atribuicoesManual).find(k => k.trim().toLowerCase() === nomeTrim.toLowerCase())
+          if (keyNome) manualCargoId = atribuicoesManual[keyNome]
         }
 
-        const normalizado = normalizarCargoParaMatriz(e.cargo)
-        if (normalizado && mapa[normalizado]) {
-          if (!mapa[normalizado].includes(e.nome.trim())) {
-            mapa[normalizado].push(e.nome.trim())
+        if (manualCargoId) {
+          if (!mapa[manualCargoId]) mapa[manualCargoId] = []
+          if (!mapa[manualCargoId].includes(nomeTrim)) mapa[manualCargoId].push(nomeTrim)
+
+          const cargoEncontrado = cargosList.find((c: any) => c.id === manualCargoId)
+          if (cargoEncontrado?.nome) {
+            if (!mapa[cargoEncontrado.nome]) mapa[cargoEncontrado.nome] = []
+            if (!mapa[cargoEncontrado.nome].includes(nomeTrim)) mapa[cargoEncontrado.nome].push(nomeTrim)
+          }
+          continue // Já atribuído manualmente com prioridade máxima
+        }
+
+        // Se não possui atribuição manual, faz fallback pela normalização do cargo original
+        if (e.cargo) {
+          const normalizado = normalizarCargoParaMatriz(e.cargo)
+          if (normalizado && mapa[normalizado]) {
+            if (!mapa[normalizado].includes(nomeTrim)) {
+              mapa[normalizado].push(nomeTrim)
+            }
           }
         }
       }
@@ -113,15 +140,12 @@ async function buscarNomesPorCargo(matrizData?: any): Promise<Record<string, str
  * Obtém os nomes dos colaboradores vinculados a um cargo
  */
 function obterNomesDoCargo(cargo: CargoMatrizDef, mapaNomes: Record<string, string[]>): string {
-  const nomes = mapaNomes[cargo.id] || mapaNomes[cargo.nome] || []
+  const nomes = (mapaNomes[cargo.id] && mapaNomes[cargo.id].length > 0)
+    ? mapaNomes[cargo.id]
+    : (mapaNomes[cargo.nome] || [])
   return nomes.length > 0 ? nomes.join(', ') : 'Colaborador não atribuído'
 }
 
-/**
- * 1. FECHAMENTO DO MÊS ANTERIOR (TODO DIA 1º DO MÊS)
- * Parabeniza os cargos que concluíram 100% no mês anterior e orienta os pendentes
- * a terem mais atenção e comprometimento no novo mês que se inicia.
- */
 export async function verificarEEnviarFechamentoMatrizDia1(forcar: boolean = false): Promise<boolean> {
   if (isDispatchingFechamentoMatriz) {
     return false

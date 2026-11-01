@@ -609,3 +609,4 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
     </div>
   );
 }
+

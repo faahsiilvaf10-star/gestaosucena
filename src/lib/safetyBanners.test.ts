@@ -37,3 +37,4 @@ describe('canManageSafetyBanner', () => {
     expect(first.active).toBe(true);
   });
 });
+
