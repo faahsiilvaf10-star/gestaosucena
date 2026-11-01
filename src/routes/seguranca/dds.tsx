@@ -900,27 +900,31 @@ function DDSSchedulePage() {
                               setPalestranteId(emp.id)
                               setComboboxOpen(false)
                             }}
-                            className="text-black hover:bg-gray-100 cursor-pointer flex items-center justify-between py-2"
+                            className="text-black hover:bg-slate-900 hover:text-white cursor-pointer flex items-center justify-between py-2.5 px-3 rounded-lg group data-[selected=true]:bg-slate-900 data-[selected=true]:text-white transition-colors"
                           >
                             <div className="flex items-center min-w-0 mr-2">
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4 shrink-0 text-blue-600",
+                                  "mr-2 h-4 w-4 shrink-0 text-blue-600 group-data-[selected=true]:text-white group-hover:text-white",
                                   palestranteId === emp.id ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               <div className="truncate">
-                                <span className="font-medium text-sm text-gray-900">{emp.nome}</span>
+                                <span className="font-medium text-sm text-gray-900 group-data-[selected=true]:text-white group-data-[selected=true]:font-bold group-hover:text-white">
+                                  {emp.nome}
+                                </span>
                                 {emp.cargo && (
-                                  <span className="text-gray-500 text-xs ml-1.5 block sm:inline truncate">
+                                  <span className="text-gray-500 group-data-[selected=true]:text-gray-100 group-hover:text-gray-100 text-xs ml-1.5 block sm:inline truncate">
                                     • {emp.cargo}
                                   </span>
                                 )}
                               </div>
                             </div>
                             <span className={cn(
-                              "text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded shrink-0",
-                              emp.source === 'system' ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              "text-[10px] uppercase font-bold px-2 py-0.5 rounded shrink-0 transition-colors",
+                              emp.source === 'system'
+                                ? "bg-blue-50 text-blue-700 border border-blue-200 group-data-[selected=true]:bg-white group-data-[selected=true]:text-blue-900 group-data-[selected=true]:border-transparent group-hover:bg-white group-hover:text-blue-900"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200 group-data-[selected=true]:bg-white group-data-[selected=true]:text-emerald-900 group-data-[selected=true]:border-transparent group-hover:bg-white group-hover:text-emerald-900"
                             )}>
                               {emp.source === 'system' ? 'Sistema' : 'RH'}
                             </span>
