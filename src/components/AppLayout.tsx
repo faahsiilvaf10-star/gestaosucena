@@ -476,7 +476,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           width: typeof window !== 'undefined' && window.innerWidth <= 900 ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
           paddingLeft: isSidebarCollapsed ? (typeof window !== 'undefined' && window.innerWidth <= 900 ? '14px' : '58px') : undefined,
           paddingBottom: 'max(32px, calc(32px + env(safe-area-inset-bottom, 0px)))',
-          transition: 'margin-left .48s cubic-bezier(.45,0,.15,1), width .48s cubic-bezier(.45,0,.15,1), padding-left .48s cubic-bezier(.45,0,.15,1)',
+          transition: 'margin-left .28s cubic-bezier(.16,1,.3,1), width .28s cubic-bezier(.16,1,.3,1), padding-left .28s cubic-bezier(.16,1,.3,1)',
+          willChange: 'margin-left, width, padding-left',
+          transform: 'translateZ(0)',
         }}
       >
         {/* Barra superior persistente em todo o sistema */}

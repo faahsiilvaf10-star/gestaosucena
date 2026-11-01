@@ -45,17 +45,22 @@
   margin-right: -1px;
 }
 
-/* View Transitions */
+/* View Transitions & High FPS compositing (120Hz) */
 .vt-sidebar {
-  view-transition-name: vt-sidebar;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 .vt-main {
-  view-transition-name: vt-main;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.4s;
+  animation-duration: 0.12s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-active-tab::before,

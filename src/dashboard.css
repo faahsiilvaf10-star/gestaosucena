@@ -1081,6 +1081,10 @@ body {
   width: 100% !important;
   height: 100% !important;
   pointer-events: none !important;
+  transform: translateZ(0) !important;
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+  will-change: transform, opacity !important;
   background: linear-gradient(
     115deg,
     transparent 0%,
@@ -1106,18 +1110,18 @@ body {
 
 @keyframes knifeBladeReflex {
   0% {
-    transform: translateX(-150%) skewX(-24deg);
+    transform: translate3d(-150%, 0, 0) skewX(-24deg);
     opacity: 0;
   }
   6% {
     opacity: 1;
   }
   26% {
-    transform: translateX(150%) skewX(-24deg);
+    transform: translate3d(150%, 0, 0) skewX(-24deg);
     opacity: 1;
   }
   27%, 100% {
-    transform: translateX(150%) skewX(-24deg);
+    transform: translate3d(150%, 0, 0) skewX(-24deg);
     opacity: 0;
   }
 }
