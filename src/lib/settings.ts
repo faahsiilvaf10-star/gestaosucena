@@ -287,100 +287,108 @@ export type WhatsappSettings = {
   };
 };
 
+export const WHATSAPP_DEFAULT_GROUPS = {
+  ESTOQUE: "120363406691114696@g.us",
+  LIDERANCA: "120363374999567363@g.us",
+  AVISOS: "120363408136247156@g.us",
+  DESVIOS: "120363409913606942@g.us",
+  MOTORISTAS: "120363402703768386@g.us",
+} as const;
+
 const defaultWhatsappSettings: WhatsappSettings = {
   url: "",
   instanceId: "",
   token: "",
-  groupId: "",
+  groupId: WHATSAPP_DEFAULT_GROUPS.LIDERANCA,
   interval: 30,
   adminPhone: "",
   ddsReminders: {
     enabled_0600: false,
     enabled_1600: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   requisitionAlerts: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
   reminders: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   attendanceAlerts: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   appMotoristaAlerts: {
     enabled: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.MOTORISTAS,
   },
   equipamentosMovimentacao: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.MOTORISTAS,
   },
   cintasInspection: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   purchaseOrders: {
     enabled_group: false,
     enabled_individual: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
   asoVencendo: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.LIDERANCA,
     diasAntecipacao: 20,
   },
   relatorioDiarioEquipamentos: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.MOTORISTAS,
     horaEnvio: "08:00",
   },
   // Alertas de estoque mínimo
   estoqueMinimo: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
   // Notificações de alteração de quantidade
   estoqueAlteracao: {
     enabled: false,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
-  // Inspeção de Canteiro
+  // Matriz de Responsabilidades
   matrizResponsabilidade: {
     enabled: true,
     enabled_dia_1: true,
     enabled_quinta_feira: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.LIDERANCA,
   },
   campanhasSeguranca: {
     enabled: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   desviosSeguranca: {
     enabled: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.DESVIOS,
   },
   inspecaoCanteiro: {
     enabled_agendamento: true,
     enabled_dia_inspecao_0700: true,
     enabled_correcao_item: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   analiseRisco: {
     enabled_5_dias: true,
     enabled_dia_vencimento: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.LIDERANCA,
   },
   vistoriasEquipamentos: {
     enabled_20_dias: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   viradaCorDoMes: {
     enabled: true,
-    specificGroupId: "",
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   messageTemplates: {
     vistoriaEquipamentoVencendo20Dias:

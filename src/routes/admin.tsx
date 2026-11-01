@@ -43,6 +43,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getAllPermissions, saveAllPermissions, AllUsersPermissions, MODULES, AccessLevel } from '../lib/permissions'
 import { AVAILABLE_ENVIRONMENTS, getUserEnvironmentAccess, saveUserEnvironmentAccess, UserEnvironmentAccessMap } from '../lib/environmentAccess'
 import { ComunicadosAdmin } from '../components/admin/ComunicadosAdmin'
+import { WhatsappGroupIdField } from '../components/admin/WhatsappGroupIdField'
 import '../dashboard.css'
 
 // Proxy no servidor para evitar problemas de CORS com a W-API
@@ -135,72 +136,92 @@ function AdminRoute() {
     url: '',
     instanceId: '',
     token: '',
-    groupId: '',
+    groupId: '120363374999567363@g.us', // Grupo de Liderança / Geral
     interval: 30,
     ddsReminders: {
       enabled_0600: false,
       enabled_1600: false,
-      specificGroupId: ''
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     },
     requisitionAlerts: {
       enabled: false,
-      specificGroupId: ''
+      specificGroupId: '120363406691114696@g.us' // Grupo de estoque
     },
     purchaseOrders: {
       enabled_group: false,
       enabled_individual: false,
-      specificGroupId: ''
+      specificGroupId: '120363406691114696@g.us' // Grupo de estoque
     },
     asoVencendo: {
       enabled: false,
-      specificGroupId: '',
+      specificGroupId: '120363374999567363@g.us', // Grupo de Liderança
       diasAntecipacao: 20
     },
     relatorioDiarioEquipamentos: {
       enabled: false,
-      specificGroupId: '',
+      specificGroupId: '120363402703768386@g.us', // Grupo de Motoristas
       horaEnvio: '08:00'
     },
     estoqueMinimo: {
       enabled: false,
-      specificGroupId: ''
+      specificGroupId: '120363406691114696@g.us' // Grupo de estoque
     },
     estoqueAlteracao: {
       enabled: false,
-      specificGroupId: ''
+      specificGroupId: '120363406691114696@g.us' // Grupo de estoque
     },
     inspecaoCanteiro: {
       enabled_agendamento: true,
       enabled_dia_inspecao_0700: true,
       enabled_correcao_item: true,
-      specificGroupId: ''
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     },
     desviosSeguranca: {
       enabled: true,
-      specificGroupId: ''
+      specificGroupId: '120363409913606942@g.us' // Grupo de Desvios
     },
     campanhasSeguranca: {
       enabled: true,
-      specificGroupId: ''
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     },
     matrizResponsabilidade: {
       enabled: true,
       enabled_dia_1: true,
       enabled_quinta_feira: true,
-      specificGroupId: ''
+      specificGroupId: '120363374999567363@g.us' // Grupo de Liderança
     },
     analiseRisco: {
       enabled_5_dias: true,
       enabled_dia_vencimento: true,
-      specificGroupId: ''
+      specificGroupId: '120363374999567363@g.us' // Grupo de Liderança
     },
     vistoriasEquipamentos: {
       enabled_20_dias: true,
-      specificGroupId: ''
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     },
     viradaCorDoMes: {
       enabled: true,
-      specificGroupId: ''
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
+    },
+    appMotoristaAlerts: {
+      enabled: true,
+      specificGroupId: '120363402703768386@g.us' // Grupo de Motoristas
+    },
+    equipamentosMovimentacao: {
+      enabled: false,
+      specificGroupId: '120363402703768386@g.us' // Grupo de Motoristas
+    },
+    cintasInspection: {
+      enabled: false,
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
+    },
+    reminders: {
+      enabled: false,
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
+    },
+    attendanceAlerts: {
+      enabled: false,
+      specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     }
   })
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
@@ -304,7 +325,87 @@ function AdminRoute() {
 
     try {
       const waSettings = await getWhatsappSettings()
-      setWhatsappSettings(waSettings)
+      setWhatsappSettings(prev => ({
+        ...prev,
+        ...waSettings,
+        groupId: waSettings.groupId || '120363374999567363@g.us',
+        ddsReminders: {
+          ...waSettings.ddsReminders,
+          specificGroupId: waSettings.ddsReminders?.specificGroupId || '120363408136247156@g.us'
+        },
+        requisitionAlerts: {
+          ...waSettings.requisitionAlerts,
+          specificGroupId: waSettings.requisitionAlerts?.specificGroupId || '120363406691114696@g.us'
+        },
+        purchaseOrders: {
+          ...waSettings.purchaseOrders,
+          specificGroupId: waSettings.purchaseOrders?.specificGroupId || '120363406691114696@g.us'
+        },
+        asoVencendo: {
+          ...waSettings.asoVencendo,
+          specificGroupId: waSettings.asoVencendo?.specificGroupId || '120363374999567363@g.us'
+        },
+        relatorioDiarioEquipamentos: {
+          ...waSettings.relatorioDiarioEquipamentos,
+          specificGroupId: waSettings.relatorioDiarioEquipamentos?.specificGroupId || '120363402703768386@g.us'
+        },
+        estoqueMinimo: {
+          ...waSettings.estoqueMinimo,
+          specificGroupId: waSettings.estoqueMinimo?.specificGroupId || '120363406691114696@g.us'
+        },
+        estoqueAlteracao: {
+          ...waSettings.estoqueAlteracao,
+          specificGroupId: waSettings.estoqueAlteracao?.specificGroupId || '120363406691114696@g.us'
+        },
+        inspecaoCanteiro: {
+          ...waSettings.inspecaoCanteiro,
+          specificGroupId: waSettings.inspecaoCanteiro?.specificGroupId || '120363408136247156@g.us'
+        },
+        desviosSeguranca: {
+          ...waSettings.desviosSeguranca,
+          specificGroupId: waSettings.desviosSeguranca?.specificGroupId || '120363409913606942@g.us'
+        },
+        campanhasSeguranca: {
+          ...waSettings.campanhasSeguranca,
+          specificGroupId: waSettings.campanhasSeguranca?.specificGroupId || '120363408136247156@g.us'
+        },
+        matrizResponsabilidade: {
+          ...waSettings.matrizResponsabilidade,
+          specificGroupId: waSettings.matrizResponsabilidade?.specificGroupId || '120363374999567363@g.us'
+        },
+        analiseRisco: {
+          ...waSettings.analiseRisco,
+          specificGroupId: waSettings.analiseRisco?.specificGroupId || '120363374999567363@g.us'
+        },
+        vistoriasEquipamentos: {
+          ...waSettings.vistoriasEquipamentos,
+          specificGroupId: waSettings.vistoriasEquipamentos?.specificGroupId || '120363408136247156@g.us'
+        },
+        viradaCorDoMes: {
+          ...waSettings.viradaCorDoMes,
+          specificGroupId: waSettings.viradaCorDoMes?.specificGroupId || '120363408136247156@g.us'
+        },
+        appMotoristaAlerts: {
+          ...waSettings.appMotoristaAlerts,
+          specificGroupId: waSettings.appMotoristaAlerts?.specificGroupId || '120363402703768386@g.us'
+        },
+        equipamentosMovimentacao: {
+          ...waSettings.equipamentosMovimentacao,
+          specificGroupId: waSettings.equipamentosMovimentacao?.specificGroupId || '120363402703768386@g.us'
+        },
+        cintasInspection: {
+          ...waSettings.cintasInspection,
+          specificGroupId: waSettings.cintasInspection?.specificGroupId || '120363408136247156@g.us'
+        },
+        reminders: {
+          ...waSettings.reminders,
+          specificGroupId: waSettings.reminders?.specificGroupId || '120363408136247156@g.us'
+        },
+        attendanceAlerts: {
+          ...waSettings.attendanceAlerts,
+          specificGroupId: waSettings.attendanceAlerts?.specificGroupId || '120363408136247156@g.us'
+        }
+      }))
       if (!waSettings.url && !waSettings.instanceId) {
         setIsWhatsappLocked(false)
       } else {
@@ -1124,17 +1225,16 @@ function AdminRoute() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2">ID do Grupo (opcional)</label>
-              <input 
-                type="text" 
+            <div className="p-4 rounded-xl border border-white/10 bg-black/10">
+              <WhatsappGroupIdField
+                label="ID do Grupo Padrão / Geral (opcional)"
                 value={whatsappSettings.groupId}
-                onChange={e => setWhatsappSettings({...whatsappSettings, groupId: e.target.value})}
+                onChange={val => setWhatsappSettings(prev => ({ ...prev, groupId: val }))}
                 disabled={isWhatsappLocked}
-                className={`w-full px-4 py-3 rounded-xl border outline-none transition-colors ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#25D366]' : 'bg-gray-50 border-gray-200 focus:border-[#25D366]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
                 placeholder="Ex: 120363374999567363@g.us"
+                helpText="Informe o ID do grupo do WhatsApp (formato: ...@g.us). Será usado como grupo padrão para alertas que não tiverem grupo específico configurado."
+                recommendedGroupId="120363374999567363@g.us"
               />
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Informe o ID do grupo do WhatsApp (formato: ...@g.us). Será usado quando a opção "Enviar para grupo" estiver ativa.</p>
             </div>
 
             <div>
@@ -1244,20 +1344,13 @@ function AdminRoute() {
                   <p className={`text-sm mb-4 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     Este grupo receberá <strong>todas as mensagens automáticas relacionadas ao DDS</strong>: lembretes do palestrante, aviso 1 dia antes e a <strong>foto da Lista de Presença</strong> postada no dia. Se deixar em branco, será usado o grupo padrão configurado acima.
                   </p>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.ddsReminders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.ddsReminders?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, ddsReminders: { ...prev.ddsReminders!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os lembretes de DDS serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
                 
                 <p className={`text-xs mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -1294,20 +1387,13 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.appMotoristaAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363406691114696@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas e anomalias serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.appMotoristaAlerts?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, appMotoristaAlerts: { ...prev.appMotoristaAlerts!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas e anomalias serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363402703768386@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -1340,20 +1426,13 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.equipamentosMovimentacao?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, equipamentosMovimentacao: { ...prev.equipamentosMovimentacao!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363406691114696@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas de entrada e saída serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.equipamentosMovimentacao?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, equipamentosMovimentacao: { ...prev.equipamentosMovimentacao!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de entrada e saída de equipamentos serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363402703768386@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -1398,20 +1477,14 @@ function AdminRoute() {
                   <p className={`text-sm mb-4 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     Este grupo receberá o <strong>aviso mensal (dia 1º)</strong> com a lista de cintas pendentes e a <strong>confirmação de cada inspeção registrada</strong>. Se deixar em branco, será usado o grupo padrão configurado acima.
                   </p>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para Cintas</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.cintasInspection?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, cintasInspection: { ...prev.cintasInspection!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, as notificações de cintas serão enviadas para este grupo específico.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    label="ID do grupo específico para Cintas"
+                    value={whatsappSettings.cintasInspection?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, cintasInspection: { ...prev.cintasInspection!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, as notificações de inspeção de cintas serão enviadas para este grupo específico."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
 
                 {/* Templates editáveis */}
@@ -1477,20 +1550,13 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.requisitionAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363406691114696@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.requisitionAlerts?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, requisitionAlerts: { ...prev.requisitionAlerts!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de requisições de almoxarifado/EPI serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363406691114696@g.us"
+                  />
                 </div>
                 
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -1535,20 +1601,13 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.reminders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, reminders: { ...prev.reminders!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.reminders?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, reminders: { ...prev.reminders!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os lembretes gerais serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
                 
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -1584,20 +1643,13 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.attendanceAlerts?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, este alerta será enviado para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.attendanceAlerts?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, attendanceAlerts: { ...prev.attendanceAlerts!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, a lista de presença será enviada para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
                 
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -1648,20 +1700,14 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para Pedidos de Compra (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.purchaseOrders?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Se não preenchido, será enviado para o grupo padrão configurado na seção principal.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    label="ID do grupo específico para Pedidos de Compra (opcional)"
+                    value={whatsappSettings.purchaseOrders?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, purchaseOrders: { ...prev.purchaseOrders!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Se não preenchido, os pedidos de compra serão enviados para o grupo padrão configurado na seção principal."
+                    recommendedGroupId="120363406691114696@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -1717,18 +1763,14 @@ function AdminRoute() {
 
                   <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                     <div>
-                      <label className="block text-xs font-semibold mb-2">ID do grupo para alertas de ASO</label>
-                      <input
-                        type="text"
+                      <WhatsappGroupIdField
+                        label="ID do grupo para alertas de ASO"
                         value={whatsappSettings.asoVencendo?.specificGroupId || ''}
-                        onChange={e => setWhatsappSettings(prev => ({ ...prev, asoVencendo: { ...prev.asoVencendo!, specificGroupId: e.target.value } }))}
+                        onChange={val => setWhatsappSettings(prev => ({ ...prev, asoVencendo: { ...prev.asoVencendo!, specificGroupId: val } }))}
                         disabled={isWhatsappLocked}
-                        className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        placeholder="Ex: 120363408136247156@g.us"
+                        helpText="Grupo que receberá os alertas de ASO vencendo."
+                        recommendedGroupId="120363374999567363@g.us"
                       />
-                      <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Grupo que receberá os alertas de ASO vencendo.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -1783,20 +1825,14 @@ function AdminRoute() {
                   </div>
 
                   <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                    <div>
-                      <label className="block text-xs font-semibold mb-2">ID do grupo para relatório de equipamentos</label>
-                      <input
-                        type="text"
-                        value={whatsappSettings.relatorioDiarioEquipamentos?.specificGroupId || ''}
-                        onChange={e => setWhatsappSettings(prev => ({ ...prev, relatorioDiarioEquipamentos: { ...prev.relatorioDiarioEquipamentos!, specificGroupId: e.target.value } }))}
-                        disabled={isWhatsappLocked}
-                        className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        placeholder="Ex: 120363408136247156@g.us"
-                      />
-                      <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Grupo que receberá o relatório diário de equipamentos.
-                      </p>
-                    </div>
+                    <WhatsappGroupIdField
+                      label="ID do grupo para relatório diário de equipamentos"
+                      value={whatsappSettings.relatorioDiarioEquipamentos?.specificGroupId || ''}
+                      onChange={val => setWhatsappSettings(prev => ({ ...prev, relatorioDiarioEquipamentos: { ...prev.relatorioDiarioEquipamentos!, specificGroupId: val } }))}
+                      disabled={isWhatsappLocked}
+                      helpText="Grupo que receberá o relatório diário de equipamentos."
+                      recommendedGroupId="120363402703768386@g.us"
+                    />
                   </div>
                 </div>
               </div>
@@ -1833,20 +1869,14 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para alertas de estoque mínimo</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.estoqueMinimo?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, estoqueMinimo: { ...prev.estoqueMinimo!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Grupo que receberá os alertas quando o estoque atingir o mínimo. Se deixar em branco, será usado o grupo padrão.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    label="ID do grupo para alertas de estoque mínimo"
+                    value={whatsappSettings.estoqueMinimo?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, estoqueMinimo: { ...prev.estoqueMinimo!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Grupo que receberá os alertas quando o estoque atingir o mínimo. Se deixar em branco, será usado o grupo padrão."
+                    recommendedGroupId="120363406691114696@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -1882,20 +1912,14 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo para notificações de alteração</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.estoqueAlteracao?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({ ...prev, estoqueAlteracao: { ...prev.estoqueAlteracao!, specificGroupId: e.target.value } }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Grupo que receberá as notificações de alteração de estoque. Se deixar em branco, será usado o grupo padrão.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    label="ID do grupo para notificações de alteração de quantidade"
+                    value={whatsappSettings.estoqueAlteracao?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, estoqueAlteracao: { ...prev.estoqueAlteracao!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Grupo que receberá as notificações de alteração de estoque. Se deixar em branco, será usado o grupo padrão."
+                    recommendedGroupId="120363406691114696@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -1993,26 +2017,19 @@ function AdminRoute() {
 
                 {/* ID do grupo específico da Inspeção de Canteiro */}
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.inspecaoCanteiro?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        inspecaoCanteiro: {
-                          ...prev.inspecaoCanteiro!,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas de inspeção de canteiro serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.inspecaoCanteiro?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      inspecaoCanteiro: {
+                        ...prev.inspecaoCanteiro!,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de inspeção de canteiro serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2051,26 +2068,19 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.desviosSeguranca?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        desviosSeguranca: {
-                          enabled: prev.desviosSeguranca?.enabled ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os desvios de segurança registrados serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.desviosSeguranca?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      desviosSeguranca: {
+                        enabled: prev.desviosSeguranca?.enabled ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os desvios de segurança registrados serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363409913606942@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2109,26 +2119,19 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.campanhasSeguranca?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        campanhasSeguranca: {
-                          enabled: prev.campanhasSeguranca?.enabled ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, as campanhas mensais de segurança serão enviadas para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.campanhasSeguranca?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      campanhasSeguranca: {
+                        enabled: prev.campanhasSeguranca?.enabled ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, as campanhas mensais de segurança serão enviadas para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2242,27 +2245,20 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.matrizResponsabilidade?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        matrizResponsabilidade: {
-                          ...prev.matrizResponsabilidade,
-                          enabled: prev.matrizResponsabilidade?.enabled ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os relatórios da matriz serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.matrizResponsabilidade?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      matrizResponsabilidade: {
+                        ...prev.matrizResponsabilidade,
+                        enabled: prev.matrizResponsabilidade?.enabled ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os relatórios da matriz serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363374999567363@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2333,27 +2329,20 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input
-                      type="text"
-                      value={whatsappSettings.analiseRisco?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        analiseRisco: {
-                          enabled_5_dias: prev.analiseRisco?.enabled_5_dias ?? true,
-                          enabled_dia_vencimento: prev.analiseRisco?.enabled_dia_vencimento ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas de Análise de Risco serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.analiseRisco?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      analiseRisco: {
+                        enabled_5_dias: prev.analiseRisco?.enabled_5_dias ?? true,
+                        enabled_dia_vencimento: prev.analiseRisco?.enabled_dia_vencimento ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de Análise de Risco serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363374999567363@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2392,26 +2381,19 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.vistoriasEquipamentos?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        vistoriasEquipamentos: {
-                          enabled_20_dias: prev.vistoriasEquipamentos?.enabled_20_dias ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os alertas de vistorias a vencer serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.vistoriasEquipamentos?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      vistoriasEquipamentos: {
+                        enabled_20_dias: prev.vistoriasEquipamentos?.enabled_20_dias ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de vistorias a vencer serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
               </div>
             </div>
@@ -2450,26 +2432,19 @@ function AdminRoute() {
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2">ID do grupo específico para este alerta (opcional)</label>
-                    <input 
-                      type="text"
-                      value={whatsappSettings.viradaCorDoMes?.specificGroupId || ''}
-                      onChange={e => setWhatsappSettings(prev => ({
-                        ...prev,
-                        viradaCorDoMes: {
-                          enabled: prev.viradaCorDoMes?.enabled ?? true,
-                          specificGroupId: e.target.value
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`w-full px-4 py-3 rounded-lg border outline-none transition-colors text-sm ${isDark ? 'bg-[#0a0a0c] border-white/10 focus:border-[#D6A72B]' : 'bg-white border-gray-300 focus:border-[#D6A72B]'} ${isWhatsappLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      placeholder="Ex: 120363408136247156@g.us"
-                    />
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Quando preenchido, os avisos de virada de cor serão enviados para este grupo específico em vez do grupo padrão configurado acima.
-                    </p>
-                  </div>
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.viradaCorDoMes?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      viradaCorDoMes: {
+                        enabled: prev.viradaCorDoMes?.enabled ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os avisos de virada de cor serão enviados para este grupo específico em vez do grupo padrão configurado acima."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
                 </div>
               </div>
             </div>
