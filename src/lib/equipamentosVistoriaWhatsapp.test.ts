@@ -97,3 +97,4 @@ describe('equipamentosVistoriaWhatsapp', () => {
     expect(sendWhatsappTextOnServer).not.toHaveBeenCalled()
   })
 })
+

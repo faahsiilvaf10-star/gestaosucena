@@ -1,6 +1,6 @@
 import { ModalCacaPalavras } from './caca-palavras/ModalCacaPalavras'
 import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { useNavigate, useLocation } from '@tanstack/react-router'
+import { useNavigate, useLocation, useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AVAILABLE_ENVIRONMENTS } from '../lib/environmentAccess'
 import '../hydro-panel.css'
@@ -209,32 +209,31 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
   })
   const [isPageReady, setIsPageReady] = useState(false)
 
-  // Update sliding white page layer position
+  // Update sliding white page layer position with 120Hz GPU vsync alignment
   const updatePagePosition = (targetEl: HTMLElement | null) => {
     if (!targetEl) return
-    const mobile = typeof window !== 'undefined' && window.innerWidth <= 900
-    if (mobile) {
-      setPageStyle({
-        top: targetEl.offsetTop,
-        left: targetEl.offsetLeft,
-        width: targetEl.offsetWidth,
-        height: targetEl.offsetHeight,
-      })
-      try {
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      } catch (_) {}
-    } else {
-      const extra = 3
-      const inset = 8
-      const sidePad = typeof window !== 'undefined' && window.innerWidth <= 1100 ? 12 : 16
-      setPageStyle({
-        top: targetEl.offsetTop - extra,
-        left: targetEl.offsetLeft + inset,
-        width: targetEl.offsetWidth - inset + sidePad,
-        height: targetEl.offsetHeight + extra * 2,
-      })
-    }
-    setIsPageReady(true)
+    requestAnimationFrame(() => {
+      const mobile = typeof window !== 'undefined' && window.innerWidth <= 900
+      if (mobile) {
+        setPageStyle({
+          top: targetEl.offsetTop,
+          left: targetEl.offsetLeft,
+          width: targetEl.offsetWidth,
+          height: targetEl.offsetHeight,
+        })
+      } else {
+        const extra = 3
+        const inset = 8
+        const sidePad = typeof window !== 'undefined' && window.innerWidth <= 1100 ? 12 : 16
+        setPageStyle({
+          top: targetEl.offsetTop - extra,
+          left: targetEl.offsetLeft + inset,
+          width: targetEl.offsetWidth - inset + sidePad,
+          height: targetEl.offsetHeight + extra * 2,
+        })
+      }
+      setIsPageReady(true)
+    })
   }
 
   useEffect(() => {
@@ -260,7 +259,9 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
     }
 
     if (item.href && path !== item.href) {
-      navigate({ to: item.href as any })
+      React.startTransition(() => {
+        navigate({ to: item.href as any })
+      })
     }
     if (typeof window !== 'undefined' && window.innerWidth <= 900) {
       setIsSidebarCollapsed(true)
@@ -340,6 +341,16 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
                 type="button"
                 className={`nav-item ${isActive ? 'active' : ''}`}
                 onClick={() => handleNavClick(item, idx)}
+                onPointerEnter={() => {
+                  if (item.href && item.href !== '#' && path !== item.href) {
+                    router.preloadRoute({ to: item.href as any }).catch(() => {})
+                  }
+                }}
+                onFocus={() => {
+                  if (item.href && item.href !== '#' && path !== item.href) {
+                    router.preloadRoute({ to: item.href as any }).catch(() => {})
+                  }
+                }}
               >
                 {item.icon}
                 {item.label}
