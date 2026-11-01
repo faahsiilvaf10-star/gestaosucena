@@ -9,6 +9,7 @@ import { MonthlyColorsModal } from './MonthlyColorsModal'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { getMesInspecaoAtual, colorConfigs } from '../lib/cintasConfig'
 import { enviarNotificacaoViradaCorDoMes } from '../lib/corDoMesWhatsapp'
+import { verificarEEnviarTodasNotificacoesMatriz } from '../lib/matrizWhatsapp'
 import { useChat } from '../contexts/ChatContext'
 import { usePresence } from '../hooks/usePresence'
 import { useChatRealtime } from '../hooks/useChatRealtime'
@@ -44,6 +45,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
     enviarNotificacaoViradaCorDoMes().catch(err => {
       console.warn('[AppLayout] Erro na verificação da cor do mês:', err)
     })
+
+    // Disparo automático de notificações da Matriz de Responsabilidade (Dia 1, Quinta-feira, 10 Dias)
+    verificarEEnviarTodasNotificacoesMatriz().catch(err => {
+      console.warn('[AppLayout] Erro na verificação da Matriz WhatsApp:', err)
+    })
+
+    // Checagem periódica a cada 30 minutos em background
+    const timer = setInterval(() => {
+      enviarNotificacaoViradaCorDoMes().catch(() => {})
+      verificarEEnviarTodasNotificacoesMatriz().catch(() => {})
+    }, 30 * 60 * 1000)
+
+    return () => clearInterval(timer)
   }, [])
   const navigate = useNavigate()
   const location = useLocation()

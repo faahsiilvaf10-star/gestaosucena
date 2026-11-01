@@ -10,7 +10,7 @@ import {
   carregarDadosMatriz,
   type AtividadeMatriz,
 } from '../lib/matrizResponsabilidadesData'
-import { verificarEEnviarLembreteMatrizMes } from '../lib/matrizWhatsapp'
+import { verificarEEnviarTodasNotificacoesMatriz } from '../lib/matrizWhatsapp'
 import { CheckCircle2, Clock, ChevronRight, Grid3X3, ArrowRight } from 'lucide-react'
 
 function normalizarCargoParaMatriz(cargoColab: string): string | null {
@@ -148,7 +148,7 @@ export function DashboardMatrizWidget() {
         setNomesPorCargo(mapa)
 
         // Verificar lembrete do WhatsApp em segundo plano
-        verificarEEnviarLembreteMatrizMes(false).catch(() => {})
+        verificarEEnviarTodasNotificacoesMatriz(false).catch(() => {})
       } catch (err) {
         console.warn('[Dashboard Matriz] Erro ao carregar dados:', err)
       } finally {

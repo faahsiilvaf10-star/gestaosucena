@@ -16,7 +16,7 @@ import {
   salvarDadosMatriz,
   ehPersonalizada,
 } from '../../lib/matrizResponsabilidadesData'
-import { verificarEEnviarLembreteMatrizMes } from '../../lib/matrizWhatsapp'
+import { verificarEEnviarTodasNotificacoesMatriz } from '../../lib/matrizWhatsapp'
 import { isAdmin } from '../../components/ui/VerifiedBadge'
 import {
   ArrowLeft,
@@ -206,7 +206,7 @@ export function MatrizResponsabilidadeComponent() {
       }
 
       // Verificar lembrete do WhatsApp em segundo plano
-      verificarEEnviarLembreteMatrizMes(false).catch(() => {})
+      verificarEEnviarTodasNotificacoesMatriz(false).catch(() => {})
     }
 
     carregarTudo()

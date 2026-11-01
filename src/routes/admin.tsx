@@ -2000,32 +2000,101 @@ function AdminRoute() {
                 </div>
 
                 {/* Matriz de Responsabilidades */}
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
-                        ...prev,
-                        matrizResponsabilidade: {
-                          ...prev.matrizResponsabilidade,
-                          enabled: !(prev.matrizResponsabilidade?.enabled ?? true),
-                          specificGroupId: prev.matrizResponsabilidade?.specificGroupId || ''
-                        }
-                      }))}
-                      disabled={isWhatsappLocked}
-                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                    <div>
-                      <h4 className="font-semibold text-sm">Lembrete da Matriz de Responsabilidades (Faltando 10 dias)</h4>
-                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Disparo automático no WhatsApp faltando 10 dias para acabar o mês com resumo de quem já concluiu e quem falta concluir as atividades da matriz.
-                      </p>
+                <div className={`p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                          ...prev,
+                          matrizResponsabilidade: {
+                            ...prev.matrizResponsabilidade,
+                            enabled: !(prev.matrizResponsabilidade?.enabled ?? true),
+                            enabled_dia_1: prev.matrizResponsabilidade?.enabled_dia_1 ?? true,
+                            enabled_quinta_feira: prev.matrizResponsabilidade?.enabled_quinta_feira ?? true,
+                            specificGroupId: prev.matrizResponsabilidade?.specificGroupId || ''
+                          }
+                        }))}
+                        disabled={isWhatsappLocked}
+                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                      <div>
+                        <h4 className="font-semibold text-sm">Lembrete da Matriz de Responsabilidades (Faltando 10 dias)</h4>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Disparo automático no WhatsApp faltando 10 dias para acabar o mês com resumo de quem já concluiu e quem falta concluir as atividades da matriz.
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                      {(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+
+                  {/* Sub-opções: Fechamento Dia 1 e Acompanhamento Toda Quinta */}
+                  <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Dia 1 */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white'}`}>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                            ...prev,
+                            matrizResponsabilidade: {
+                              ...prev.matrizResponsabilidade,
+                              enabled: prev.matrizResponsabilidade?.enabled ?? true,
+                              enabled_dia_1: !(prev.matrizResponsabilidade?.enabled_dia_1 ?? true),
+                              enabled_quinta_feira: prev.matrizResponsabilidade?.enabled_quinta_feira ?? true,
+                              specificGroupId: prev.matrizResponsabilidade?.specificGroupId || ''
+                            }
+                          }))}
+                          disabled={isWhatsappLocked}
+                          className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${(whatsappSettings.matrizResponsabilidade?.enabled_dia_1 ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled_dia_1 ?? true) ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                        <div>
+                          <p className="text-xs font-semibold">Fechamento do Mês Anterior (Dia 1º)</p>
+                          <p className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Parabeniza quem concluiu 100% e orienta os pendentes no novo mês.
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${(whatsappSettings.matrizResponsabilidade?.enabled_dia_1 ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                        {(whatsappSettings.matrizResponsabilidade?.enabled_dia_1 ?? true) ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
+
+                    {/* Toda Quinta-feira */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white'}`}>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                            ...prev,
+                            matrizResponsabilidade: {
+                              ...prev.matrizResponsabilidade,
+                              enabled: prev.matrizResponsabilidade?.enabled ?? true,
+                              enabled_dia_1: prev.matrizResponsabilidade?.enabled_dia_1 ?? true,
+                              enabled_quinta_feira: !(prev.matrizResponsabilidade?.enabled_quinta_feira ?? true),
+                              specificGroupId: prev.matrizResponsabilidade?.specificGroupId || ''
+                            }
+                          }))}
+                          disabled={isWhatsappLocked}
+                          className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${(whatsappSettings.matrizResponsabilidade?.enabled_quinta_feira ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.matrizResponsabilidade?.enabled_quinta_feira ?? true) ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                        <div>
+                          <p className="text-xs font-semibold">Acompanhamento Semanal (Toda Quinta)</p>
+                          <p className={`text-[11px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Mostra quem já concluiu e quem ainda falta concluir na semana.
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${(whatsappSettings.matrizResponsabilidade?.enabled_quinta_feira ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                        {(whatsappSettings.matrizResponsabilidade?.enabled_quinta_feira ?? true) ? 'Ativo' : 'Inativo'}
+                      </span>
                     </div>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? (isDark ? 'bg-white/10 text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
-                    {(whatsappSettings.matrizResponsabilidade?.enabled ?? true) ? 'Ativo' : 'Inativo'}
-                  </span>
                 </div>
 
                 <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
@@ -2185,6 +2254,8 @@ function AdminRoute() {
                     { key: 'desvioRegistrado', label: 'Desvio de Segurança' },
                     { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' },
                     { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' },
+                    { key: 'matrizFechamentoMesAnterior', label: 'Matriz - Fechamento Mês Anterior (Dia 1)' },
+                    { key: 'matrizAcompanhamentoQuintaFeira', label: 'Matriz - Acompanhamento Semanal (Quinta)' },
                     { key: 'analiseRiscoVencendo5Dias', label: 'Análise de Risco (5 Dias)' },
                     { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' },
                     { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' },
@@ -2238,6 +2309,8 @@ function AdminRoute() {
                     {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
                     {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
                     {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
+                    {selectedTemplate === 'matrizFechamentoMesAnterior' && '{mes_anterior_nome}, {ano}, {mes_atual_nome}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
+                    {selectedTemplate === 'matrizAcompanhamentoQuintaFeira' && '{mes_nome}, {ano}, {data}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
                     {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
                     {selectedTemplate === 'vistoriaEquipamentoVencendo20Dias' && '{equipamento}, {placa_tag}, {tipo_vistoria}, {data_vencimento}, {dias_restantes}'}
                     {selectedTemplate === 'viradaCorDoMesFerramentas' && '{mes_nome}, {ano}, {cor_atual}, {cor_anterior_proibida}'}

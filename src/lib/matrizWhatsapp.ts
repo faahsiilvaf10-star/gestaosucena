@@ -3,6 +3,7 @@ import { sendWhatsappTextOnServer } from './whatsapp-api'
 import { supabase } from './supabase'
 import {
   CARGOS_MATRIZ,
+  CargoMatrizDef,
   getMesKey,
   getMesNome,
   carregarDadosMatriz,
@@ -10,9 +11,11 @@ import {
 } from './matrizResponsabilidadesData'
 
 let isDispatchingLembreteMatriz = false
+let isDispatchingFechamentoMatriz = false
+let isDispatchingQuintaMatriz = false
 
 /**
- * Normaliza cargo do colaborador para comparar com os 6 cargos da matriz
+ * Normaliza cargo do colaborador para comparar com os cargos padrão da matriz
  */
 function normalizarCargoParaMatriz(cargoColab: string): string | null {
   const c = cargoColab.toLowerCase().trim()
@@ -26,9 +29,9 @@ function normalizarCargoParaMatriz(cargoColab: string): string | null {
 }
 
 /**
- * Busca os colaboradores cadastrados no RH para associar aos 6 cargos
+ * Busca os colaboradores cadastrados no RH e nas atribuições manuais da matriz para associar aos cargos
  */
-async function buscarNomesPorCargo(): Promise<Record<string, string[]>> {
+async function buscarNomesPorCargo(matrizData?: any): Promise<Record<string, string[]>> {
   const mapa: Record<string, string[]> = {
     'Preposto': [],
     'Encarregado Geral': [],
@@ -38,10 +41,38 @@ async function buscarNomesPorCargo(): Promise<Record<string, string[]>> {
     'Téc. Segurança II': [],
   }
 
+  // Registra cargos customizados da matriz se existirem
+  if (matrizData?.cargos && Array.isArray(matrizData.cargos)) {
+    for (const c of matrizData.cargos) {
+      if (!mapa[c.nome]) mapa[c.nome] = []
+      if (!mapa[c.id]) mapa[c.id] = []
+    }
+  }
+
+  // 1. Mapeamento de atribuições manuais salvas na Matriz
+  if (matrizData?.atribuicoesManual && typeof matrizData.atribuicoesManual === 'object') {
+    for (const [colabNomeOuId, cargoId] of Object.entries(matrizData.atribuicoesManual)) {
+      if (typeof cargoId !== 'string' || !cargoId) continue
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(colabNomeOuId)
+      if (!isUuid && colabNomeOuId.trim()) {
+        const nomeTrim = colabNomeOuId.trim()
+        if (!mapa[cargoId]) mapa[cargoId] = []
+        if (!mapa[cargoId].includes(nomeTrim)) mapa[cargoId].push(nomeTrim)
+
+        const cargoEncontrado = (matrizData.cargos as CargoMatrizDef[] | undefined)?.find(c => c.id === cargoId) || CARGOS_MATRIZ.find(c => c.id === cargoId)
+        if (cargoEncontrado?.nome) {
+          if (!mapa[cargoEncontrado.nome]) mapa[cargoEncontrado.nome] = []
+          if (!mapa[cargoEncontrado.nome].includes(nomeTrim)) mapa[cargoEncontrado.nome].push(nomeTrim)
+        }
+      }
+    }
+  }
+
+  // 2. Busca do RH Efetivo no Supabase
   try {
     const { data: rhData } = await supabase
       .from('rh_efetivo')
-      .select('nome, cargo, status')
+      .select('id, nome, cargo, status')
       .order('nome', { ascending: true })
 
     if (rhData && Array.isArray(rhData)) {
@@ -49,6 +80,19 @@ async function buscarNomesPorCargo(): Promise<Record<string, string[]>> {
         const s = (e.status || '').toUpperCase().trim()
         if (s === 'INATIVO' || s === 'DEMITIDO' || s === 'DESLIGADO') continue
         if (!e.nome || !e.cargo) continue
+
+        // Se o colaborador estiver atribuído manualmente por ID
+        if (e.id && matrizData?.atribuicoesManual?.[e.id]) {
+          const cargoId = matrizData.atribuicoesManual[e.id]
+          if (!mapa[cargoId]) mapa[cargoId] = []
+          if (!mapa[cargoId].includes(e.nome.trim())) mapa[cargoId].push(e.nome.trim())
+
+          const cargoEncontrado = (matrizData.cargos as CargoMatrizDef[] | undefined)?.find(c => c.id === cargoId) || CARGOS_MATRIZ.find(c => c.id === cargoId)
+          if (cargoEncontrado?.nome) {
+            if (!mapa[cargoEncontrado.nome]) mapa[cargoEncontrado.nome] = []
+            if (!mapa[cargoEncontrado.nome].includes(e.nome.trim())) mapa[cargoEncontrado.nome].push(e.nome.trim())
+          }
+        }
 
         const normalizado = normalizarCargoParaMatriz(e.cargo)
         if (normalizado && mapa[normalizado]) {
@@ -66,8 +110,348 @@ async function buscarNomesPorCargo(): Promise<Record<string, string[]>> {
 }
 
 /**
+ * Obtém os nomes dos colaboradores vinculados a um cargo
+ */
+function obterNomesDoCargo(cargo: CargoMatrizDef, mapaNomes: Record<string, string[]>): string {
+  const nomes = mapaNomes[cargo.id] || mapaNomes[cargo.nome] || []
+  return nomes.length > 0 ? nomes.join(', ') : 'Colaborador não atribuído'
+}
+
+/**
+ * 1. FECHAMENTO DO MÊS ANTERIOR (TODO DIA 1º DO MÊS)
+ * Parabeniza os cargos que concluíram 100% no mês anterior e orienta os pendentes
+ * a terem mais atenção e comprometimento no novo mês que se inicia.
+ */
+export async function verificarEEnviarFechamentoMatrizDia1(forcar: boolean = false): Promise<boolean> {
+  if (isDispatchingFechamentoMatriz) {
+    return false
+  }
+
+  const hoje = new Date()
+  const diaDoMes = hoje.getDate()
+
+  // Deve disparar no dia 1 do mês (ou forçado manualmente)
+  if (diaDoMes !== 1 && !forcar) {
+    return false
+  }
+
+  // Mês anterior (fechado)
+  const dataMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1)
+  const mesAnteriorKey = getMesKey(dataMesAnterior)
+  const mesAnteriorNome = getMesNome(dataMesAnterior)
+  const mesAtualNome = getMesNome(hoje)
+  const ano = dataMesAnterior.getFullYear()
+
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  const syncKey = `matriz_whatsapp_fechamento_dia1_${mesAnteriorKey}_${env}`
+  const localLockKey = `matriz_whatsapp_fechamento_dia1_sent_${mesAnteriorKey}_${env}`
+
+  // Trava LocalStorage
+  if (!forcar && typeof window !== 'undefined') {
+    if (localStorage.getItem(localLockKey)) {
+      return false
+    }
+  }
+
+  isDispatchingFechamentoMatriz = true
+
+  try {
+    // Trava Supabase
+    if (!forcar) {
+      const { data: dbLock } = await supabase
+        .from('global_settings')
+        .select('value')
+        .eq('key', syncKey)
+        .maybeSingle()
+
+      if (dbLock?.value && (dbLock.value.enviadoEm || dbLock.value.emProcessamento)) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(localLockKey, 'true')
+        }
+        return false
+      }
+
+      try {
+        await supabase.from('global_settings').upsert({
+          key: syncKey,
+          value: { emProcessamento: true, iniciadoEm: new Date().toISOString() },
+        })
+      } catch (_) {}
+    }
+
+    const settings = await getWhatsappSettings()
+    if (settings.matrizResponsabilidade?.enabled === false || settings.matrizResponsabilidade?.enabled_dia_1 === false) {
+      console.info('[Matriz WhatsApp] Envio de fechamento do dia 1 desativado nas configurações.')
+      return false
+    }
+
+    const targetGroup = settings.matrizResponsabilidade?.specificGroupId || settings.groupId
+    if (!targetGroup || !settings.url || !settings.token) {
+      console.warn('[Matriz WhatsApp] WhatsApp não configurado adequadamente (URL/Token/Grupo ausentes).')
+      return false
+    }
+
+    // Carregar dados da Matriz do mês anterior
+    const matrizData = await carregarDadosMatriz(mesAnteriorKey, env)
+    const mapaNomes = await buscarNomesPorCargo(matrizData)
+    const cargosList: CargoMatrizDef[] = (matrizData.cargos && matrizData.cargos.length > 0)
+      ? matrizData.cargos
+      : CARGOS_MATRIZ
+
+    const concluidosList: string[] = []
+    const pendentesList: string[] = []
+
+    for (const cargo of cargosList) {
+      const atividades = matrizData.atividadesPorCargo[cargo.id] || []
+      const metricas = getMetricasCargo(cargo, atividades)
+      const nomesStr = obterNomesDoCargo(cargo, mapaNomes)
+
+      if (metricas.porcentagem === 100 || metricas.isConcluidoTotal) {
+        concluidosList.push(`• *${cargo.nome}* (${nomesStr}) — *100% Concluído* (${metricas.marcacoesFeitas}/${metricas.totalMarcacoesPossiveis} marcas)`)
+      } else {
+        const ativPendentes = metricas.totalAtividades - metricas.concluidas
+        pendentesList.push(`• *${cargo.nome}* (${nomesStr}) — *${metricas.porcentagem}%* (${metricas.concluidas}/${metricas.totalAtividades} ativ. concluídas • faltam ${ativPendentes})`)
+      }
+    }
+
+    const listaConcluidosFormatada = concluidosList.length > 0
+      ? concluidosList.join('\n')
+      : '_Nenhum cargo concluiu 100% no mês anterior._'
+
+    const listaPendentesFormatada = pendentesList.length > 0
+      ? pendentesList.join('\n')
+      : '_Todos os cargos concluíram 100%! Parabéns à equipe!_'
+
+    let msg =
+      settings.messageTemplates?.matrizFechamentoMesAnterior ||
+      `🏁 *FECHAMENTO DA MATRIZ DE RESPONSABILIDADES ({mes_anterior_nome}/{ano})* 🏁\n\nEncerramos o mês de *{mes_anterior_nome}* e realizamos o fechamento oficial do cumprimento das metas da Matriz de Responsabilidades em Segurança do Trabalho.\n\n📊 *BALANÇO FINAL:*\n• Cargos Concluídos (100%): *{cargos_concluidos}/{total_cargos}*\n• Cargos Pendentes: *{cargos_pendentes}*\n\n🏆 *PARABÉNS AOS CONCLUINTES (100% CUMPRIDO):*\n{lista_concluidos}\n\n👏 _Parabenizamos todos os líderes e colaboradores que atingiram 100% das suas metas no mês de {mes_anterior_nome}, demonstrando responsabilidade, disciplina e compromisso exemplar com a segurança de todos!_\n\n⚠️ *CARGOS COM PENDÊNCIAS:*\n{lista_pendentes}\n\n📢 *ORIENTAÇÃO PARA O MÊS DE {mes_atual_nome}:*\n_Atenção redobrada aos que não concluíram suas atividades no mês anterior. Iniciamos agora um novo mês ({mes_atual_nome})! Contamos com mais dedicação, proatividade e acompanhamento diário das inspeções e evidências para que alcancemos 100% de conformidade neste novo ciclo!_\n\n_Mensagem automática - Sucena / Hydro Reabilitação_`
+
+    msg = msg.replaceAll('{mes_anterior_nome}', mesAnteriorNome)
+    msg = msg.replaceAll('{mes_atual_nome}', mesAtualNome)
+    msg = msg.replaceAll('{ano}', String(ano))
+    msg = msg.replaceAll('{total_cargos}', String(cargosList.length))
+    msg = msg.replaceAll('{cargos_concluidos}', String(concluidosList.length))
+    msg = msg.replaceAll('{cargos_pendentes}', String(pendentesList.length))
+    msg = msg.replaceAll('{lista_concluidos}', listaConcluidosFormatada)
+    msg = msg.replaceAll('{lista_pendentes}', listaPendentesFormatada)
+
+    await sendWhatsappTextOnServer({
+      data: {
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone: targetGroup,
+        text: msg,
+      },
+    })
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(localLockKey, 'true')
+    }
+
+    try {
+      await supabase.from('global_settings').upsert({
+        key: syncKey,
+        value: {
+          enviadoEm: new Date().toISOString(),
+          mesAnteriorKey,
+          concluidos: concluidosList.length,
+          pendentes: pendentesList.length,
+        },
+      })
+    } catch (_) {}
+
+    try {
+      await supabase.from('system_activities').insert({
+        module: 'Segurança',
+        action: 'Fechamento Matriz WhatsApp Dia 1',
+        details: `Fechamento do mês anterior (${mesAnteriorNome}/${ano}) enviado ao WhatsApp da Matriz. Concluídos: ${concluidosList.length}/${cargosList.length}, Pendentes: ${pendentesList.length}.`,
+      })
+    } catch (_) {}
+
+    console.info(`[Matriz WhatsApp] Fechamento do mês anterior (${mesAnteriorKey}) enviado com sucesso!`)
+    return true
+  } catch (err) {
+    console.warn('[Matriz WhatsApp] Falha ao enviar fechamento do dia 1:', err)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(localLockKey)
+    }
+    return false
+  } finally {
+    isDispatchingFechamentoMatriz = false
+  }
+}
+
+/**
+ * 2. ACOMPANHAMENTO SEMANAL (TODA QUINTA-FEIRA)
+ * Mostra no grupo quem já concluiu e quem ainda falta concluir a matriz no mês vigente.
+ */
+export async function verificarEEnviarMatrizQuintaFeira(forcar: boolean = false): Promise<boolean> {
+  if (isDispatchingQuintaMatriz) {
+    return false
+  }
+
+  const hoje = new Date()
+  const diaSemana = hoje.getDay() // 4 = Quinta-feira
+
+  if (diaSemana !== 4 && !forcar) {
+    return false
+  }
+
+  const diaStr = String(hoje.getDate()).padStart(2, '0')
+  const mesNumStr = String(hoje.getMonth() + 1).padStart(2, '0')
+  const anoStr = String(hoje.getFullYear())
+  const dataFormatada = `${diaStr}/${mesNumStr}/${anoStr}`
+  const dataIso = `${anoStr}-${mesNumStr}-${diaStr}`
+
+  const mesAtualKey = getMesKey(hoje)
+  const mesAtualNome = getMesNome(hoje)
+  const ano = hoje.getFullYear()
+
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  const syncKey = `matriz_whatsapp_quinta_${dataIso}_${env}`
+  const localLockKey = `matriz_whatsapp_quinta_sent_${dataIso}_${env}`
+
+  // Trava LocalStorage do dia
+  if (!forcar && typeof window !== 'undefined') {
+    if (localStorage.getItem(localLockKey)) {
+      return false
+    }
+  }
+
+  isDispatchingQuintaMatriz = true
+
+  try {
+    // Trava Supabase do dia
+    if (!forcar) {
+      const { data: dbLock } = await supabase
+        .from('global_settings')
+        .select('value')
+        .eq('key', syncKey)
+        .maybeSingle()
+
+      if (dbLock?.value && (dbLock.value.enviadoEm || dbLock.value.emProcessamento)) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(localLockKey, 'true')
+        }
+        return false
+      }
+
+      try {
+        await supabase.from('global_settings').upsert({
+          key: syncKey,
+          value: { emProcessamento: true, iniciadoEm: new Date().toISOString() },
+        })
+      } catch (_) {}
+    }
+
+    const settings = await getWhatsappSettings()
+    if (settings.matrizResponsabilidade?.enabled === false || settings.matrizResponsabilidade?.enabled_quinta_feira === false) {
+      console.info('[Matriz WhatsApp] Envio de acompanhamento de quinta-feira desativado nas configurações.')
+      return false
+    }
+
+    const targetGroup = settings.matrizResponsabilidade?.specificGroupId || settings.groupId
+    if (!targetGroup || !settings.url || !settings.token) {
+      console.warn('[Matriz WhatsApp] WhatsApp não configurado adequadamente (URL/Token/Grupo ausentes).')
+      return false
+    }
+
+    // Carregar dados da Matriz do mês atual
+    const matrizData = await carregarDadosMatriz(mesAtualKey, env)
+    const mapaNomes = await buscarNomesPorCargo(matrizData)
+    const cargosList: CargoMatrizDef[] = (matrizData.cargos && matrizData.cargos.length > 0)
+      ? matrizData.cargos
+      : CARGOS_MATRIZ
+
+    const concluidosList: string[] = []
+    const pendentesList: string[] = []
+
+    for (const cargo of cargosList) {
+      const atividades = matrizData.atividadesPorCargo[cargo.id] || []
+      const metricas = getMetricasCargo(cargo, atividades)
+      const nomesStr = obterNomesDoCargo(cargo, mapaNomes)
+
+      if (metricas.porcentagem === 100 || metricas.isConcluidoTotal) {
+        concluidosList.push(`• *${cargo.nome}* (${nomesStr}) — *100% Concluído* (${metricas.marcacoesFeitas}/${metricas.totalMarcacoesPossiveis} marcas)`)
+      } else {
+        const ativPendentes = metricas.totalAtividades - metricas.concluidas
+        pendentesList.push(`• *${cargo.nome}* (${nomesStr}) — *${metricas.porcentagem}%* (${metricas.concluidas}/${metricas.totalAtividades} ativ. concluídas • faltam ${ativPendentes})`)
+      }
+    }
+
+    const listaConcluidosFormatada = concluidosList.length > 0
+      ? concluidosList.join('\n')
+      : '_Nenhum cargo concluiu 100% ainda neste mês._'
+
+    const listaPendentesFormatada = pendentesList.length > 0
+      ? pendentesList.join('\n')
+      : '_Todos os cargos já concluíram 100%! Parabéns à equipe!_'
+
+    let msg =
+      settings.messageTemplates?.matrizAcompanhamentoQuintaFeira ||
+      `📅 *ACOMPANHAMENTO SEMANAL: MATRIZ DE RESPONSABILIDADES ({mes_nome}/{ano})* 📅\n\nOlá, equipe! Hoje é quinta-feira ({data}), dia de acompanhamento semanal do preenchimento das atividades da Matriz de Segurança do Trabalho.\n\n📊 *SITUAÇÃO ATUAL DA MATRIZ:*\n• Cargos Concluídos (100%): *{cargos_concluidos}/{total_cargos}*\n• Cargos Pendentes: *{cargos_pendentes}*\n\n✅ *JÁ CONCLUÍDOS (100%):*\n{lista_concluidos}\n\n⏳ *PENDENTES / EM ANDAMENTO:*\n{lista_pendentes}\n\n💡 *LEMBRETE:*\n_Aproveitem os próximos dias para atualizar suas inspeções, registrar as evidências e não acumular atividades para a última hora._\n\n_Mensagem automática - Sucena / Hydro Reabilitação_`
+
+    msg = msg.replaceAll('{mes_nome}', mesAtualNome)
+    msg = msg.replaceAll('{ano}', String(ano))
+    msg = msg.replaceAll('{data}', dataFormatada)
+    msg = msg.replaceAll('{total_cargos}', String(cargosList.length))
+    msg = msg.replaceAll('{cargos_concluidos}', String(concluidosList.length))
+    msg = msg.replaceAll('{cargos_pendentes}', String(pendentesList.length))
+    msg = msg.replaceAll('{lista_concluidos}', listaConcluidosFormatada)
+    msg = msg.replaceAll('{lista_pendentes}', listaPendentesFormatada)
+
+    await sendWhatsappTextOnServer({
+      data: {
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone: targetGroup,
+        text: msg,
+      },
+    })
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(localLockKey, 'true')
+    }
+
+    try {
+      await supabase.from('global_settings').upsert({
+        key: syncKey,
+        value: {
+          enviadoEm: new Date().toISOString(),
+          dataIso,
+          mesAtualKey,
+          concluidos: concluidosList.length,
+          pendentes: pendentesList.length,
+        },
+      })
+    } catch (_) {}
+
+    try {
+      await supabase.from('system_activities').insert({
+        module: 'Segurança',
+        action: 'Acompanhamento Matriz WhatsApp Quinta-feira',
+        details: `Acompanhamento semanal de quinta-feira (${dataFormatada}) enviado ao WhatsApp da Matriz (${mesAtualNome}/${ano}). Concluídos: ${concluidosList.length}/${cargosList.length}, Pendentes: ${pendentesList.length}.`,
+      })
+    } catch (_) {}
+
+    console.info(`[Matriz WhatsApp] Acompanhamento de quinta-feira (${dataIso}) enviado com sucesso!`)
+    return true
+  } catch (err) {
+    console.warn('[Matriz WhatsApp] Falha ao enviar acompanhamento de quinta-feira:', err)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(localLockKey)
+    }
+    return false
+  } finally {
+    isDispatchingQuintaMatriz = false
+  }
+}
+
+/**
+ * 3. LEMBRETE DE 10 DIAS ANTES DO FIM DO MÊS
  * Verifica se faltam 10 dias ou menos para encerrar o mês e dispara o resumo da Matriz no WhatsApp.
- * Possui travas em 3 níveis (Memória, LocalStorage e Supabase) para garantir envio único no ciclo.
  */
 export async function verificarEEnviarLembreteMatrizMes(forcar: boolean = false): Promise<boolean> {
   if (isDispatchingLembreteMatriz) {
@@ -141,19 +525,19 @@ export async function verificarEEnviarLembreteMatrizMes(forcar: boolean = false)
     }
 
     // Carregar dados da Matriz e do RH
-    const [matrizData, nomesRH] = await Promise.all([
-      carregarDadosMatriz(mesKey, env),
-      buscarNomesPorCargo(),
-    ])
+    const matrizData = await carregarDadosMatriz(mesKey, env)
+    const mapaNomes = await buscarNomesPorCargo(matrizData)
+    const cargosList: CargoMatrizDef[] = (matrizData.cargos && matrizData.cargos.length > 0)
+      ? matrizData.cargos
+      : CARGOS_MATRIZ
 
     const concluidosList: string[] = []
     const pendentesList: string[] = []
 
-    for (const cargo of CARGOS_MATRIZ) {
+    for (const cargo of cargosList) {
       const atividades = matrizData.atividadesPorCargo[cargo.id] || []
       const metricas = getMetricasCargo(cargo, atividades)
-      const nomes = nomesRH[cargo.nome] || []
-      const nomesStr = nomes.length > 0 ? nomes.join(', ') : 'Colaborador não atribuído'
+      const nomesStr = obterNomesDoCargo(cargo, mapaNomes)
 
       if (metricas.porcentagem === 100 || metricas.isConcluidoTotal) {
         concluidosList.push(`• *${cargo.nome}* (${nomesStr}) — *100% Concluído* (${metricas.marcacoesFeitas}/${metricas.totalMarcacoesPossiveis} marcas)`)
@@ -178,7 +562,7 @@ export async function verificarEEnviarLembreteMatrizMes(forcar: boolean = false)
     msg = msg.replaceAll('{mes_nome}', getMesNome(hoje))
     msg = msg.replaceAll('{ano}', String(ano))
     msg = msg.replaceAll('{dias_restantes}', String(diasRestantes))
-    msg = msg.replaceAll('{total_cargos}', String(CARGOS_MATRIZ.length))
+    msg = msg.replaceAll('{total_cargos}', String(cargosList.length))
     msg = msg.replaceAll('{cargos_concluidos}', String(concluidosList.length))
     msg = msg.replaceAll('{cargos_pendentes}', String(pendentesList.length))
     msg = msg.replaceAll('{lista_concluidos}', listaConcluidosFormatada)
@@ -219,7 +603,7 @@ export async function verificarEEnviarLembreteMatrizMes(forcar: boolean = false)
       await supabase.from('system_activities').insert({
         module: 'Segurança',
         action: 'Lembrete Matriz WhatsApp',
-        details: `Lembrete de final de mês (${diasRestantes} dias restantes) enviado ao WhatsApp da Matriz de Responsabilidades. Concluídos: ${concluidosList.length}/${CARGOS_MATRIZ.length}.`,
+        details: `Lembrete de final de mês (${diasRestantes} dias restantes) enviado ao WhatsApp da Matriz de Responsabilidades. Concluídos: ${concluidosList.length}/${cargosList.length}.`,
       })
     } catch (_) {}
 
@@ -236,3 +620,27 @@ export async function verificarEEnviarLembreteMatrizMes(forcar: boolean = false)
   }
 }
 
+/**
+ * 4. DISPARADOR GERAL DE VERIFICAÇÃO DA MATRIZ
+ * Executa as 3 rotinas automáticas de verificação da matriz (Dia 1, Toda Quinta e 10 Dias).
+ */
+export async function verificarEEnviarTodasNotificacoesMatriz(forcar: boolean = false): Promise<void> {
+  try {
+    // 1. Fechamento dia 1º
+    await verificarEEnviarFechamentoMatrizDia1(forcar).catch(err => {
+      console.warn('[Matriz WhatsApp] Erro na verificação do dia 1:', err)
+    })
+
+    // 2. Acompanhamento semanal de quinta-feira
+    await verificarEEnviarMatrizQuintaFeira(forcar).catch(err => {
+      console.warn('[Matriz WhatsApp] Erro na verificação de quinta-feira:', err)
+    })
+
+    // 3. Lembrete de fim de mês (10 dias)
+    await verificarEEnviarLembreteMatrizMes(forcar).catch(err => {
+      console.warn('[Matriz WhatsApp] Erro na verificação de 10 dias:', err)
+    })
+  } catch (err) {
+    console.warn('[Matriz WhatsApp] Erro ao verificar notificações da Matriz:', err)
+  }
+}

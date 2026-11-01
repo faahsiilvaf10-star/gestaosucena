@@ -218,6 +218,8 @@ export type WhatsappSettings = {
   // Inspeção de Canteiro
   matrizResponsabilidade?: {
     enabled: boolean;
+    enabled_dia_1?: boolean;
+    enabled_quinta_feira?: boolean;
     specificGroupId: string;
   };
   campanhasSeguranca?: {
@@ -254,6 +256,8 @@ export type WhatsappSettings = {
     analiseRiscoVencendoHoje?: string;
     campanhaSegurancaMes?: string;
     matrizResponsabilidadeLembrete?: string;
+    matrizFechamentoMesAnterior?: string;
+    matrizAcompanhamentoQuintaFeira?: string;
     desvioRegistrado?: string;
     inspecaoCanteiroAgendada?: string;
     inspecaoCanteiroDia?: string;
@@ -347,6 +351,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
   // Inspeção de Canteiro
   matrizResponsabilidade: {
     enabled: true,
+    enabled_dia_1: true,
+    enabled_quinta_feira: true,
     specificGroupId: "",
   },
   campanhasSeguranca: {
@@ -430,6 +436,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "📝 *ALTERAÇÃO DE ESTOQUE*\n\n👤 *Responsável:* {responsavel}\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n\n🔄 *Quantidade anterior:* {quantidade_anterior} {unidade}\n➡️ *Nova quantidade:* {nova_quantidade} {unidade}\n📝 *Diferença:* {diferenca} {unidade}\n\n_Mensagem automática - Sucena_",
             matrizResponsabilidadeLembrete:
       "📋 *LEMBRETE: MATRIZ DE RESPONSABILIDADES ({mes_nome}/{ano})* 📋\n\n⏳ *Faltam {dias_restantes} dia(s) para finalizar o mês!*\nPor favor, verifiquem o preenchimento das atividades do seu cargo na Matriz de Segurança.\n\n📊 *SITUAÇÃO ATUAL:*\n• Cargos Concluídos (100%): *{cargos_concluidos}/{total_cargos}*\n• Cargos Pendentes: *{cargos_pendentes}*\n\n✅ *JÁ PREENCHERAM / CONCLUÍDOS:*\n{lista_concluidos}\n\n⏳ *FALTA PREENCHER / PENDENTES:*\n{lista_pendentes}\n\n🔗 _Acesse o sistema e atualize as atividades da sua função antes do fechamento do mês!_\n_Mensagem automática - Sucena / Hydro Reabilitação_",
+    matrizFechamentoMesAnterior:
+      "🏁 *FECHAMENTO DA MATRIZ DE RESPONSABILIDADES ({mes_anterior_nome}/{ano})* 🏁\n\nEncerramos o mês de *{mes_anterior_nome}* e realizamos o fechamento oficial do cumprimento das metas da Matriz de Responsabilidades em Segurança do Trabalho.\n\n📊 *BALANÇO FINAL:*\n• Cargos Concluídos (100%): *{cargos_concluidos}/{total_cargos}*\n• Cargos Pendentes: *{cargos_pendentes}*\n\n🏆 *PARABÉNS AOS CONCLUINTES (100% CUMPRIDO):*\n{lista_concluidos}\n\n👏 _Parabenizamos todos os líderes e colaboradores que atingiram 100% das suas metas no mês de {mes_anterior_nome}, demonstrando responsabilidade, disciplina e compromisso exemplar com a segurança de todos!_\n\n⚠️ *CARGOS COM PENDÊNCIAS:*\n{lista_pendentes}\n\n📢 *ORIENTAÇÃO PARA O MÊS DE {mes_atual_nome}:*\n_Atenção redobrada aos que não concluíram suas atividades no mês anterior. Iniciamos agora um novo mês ({mes_atual_nome})! Contamos com mais dedicação, proatividade e acompanhamento diário das inspeções e evidências para que alcancemos 100% de conformidade neste novo ciclo!_\n\n_Mensagem automática - Sucena / Hydro Reabilitação_",
+    matrizAcompanhamentoQuintaFeira:
+      "📅 *ACOMPANHAMENTO SEMANAL: MATRIZ DE RESPONSABILIDADES ({mes_nome}/{ano})* 📅\n\nOlá, equipe! Hoje é quinta-feira ({data}), dia de acompanhamento semanal do preenchimento das atividades da Matriz de Segurança do Trabalho.\n\n📊 *SITUAÇÃO ATUAL DA MATRIZ:*\n• Cargos Concluídos (100%): *{cargos_concluidos}/{total_cargos}*\n• Cargos Pendentes: *{cargos_pendentes}*\n\n✅ *JÁ CONCLUÍDOS (100%):*\n{lista_concluidos}\n\n⏳ *PENDENTES / EM ANDAMENTO:*\n{lista_pendentes}\n\n💡 *LEMBRETE:*\n_Aproveitem os próximos dias para atualizar suas inspeções, registrar as evidências e não acumular atividades para a última hora._\n\n_Mensagem automática - Sucena / Hydro Reabilitação_",
     campanhaSegurancaMes:
       "🎗️ *CAMPANHA DO MÊS: {campanha_nome} ({mes_nome})* 🎗️\n\n💡 *Conscientização:* {tema}\n\n📝 *Sobre a campanha:*\n{descricao}\n\n📢 *Mensagem:* \"{frase}\"\n\n_Mensagem automática de Segurança do Trabalho - Sucena / Hydro Reabilitação_",
     desvioRegistrado:
