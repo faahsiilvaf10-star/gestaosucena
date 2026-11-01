@@ -240,7 +240,7 @@ export function DashboardMatrizWidget() {
           {cargos.map((c) => {
             const ativs = atividadesPorCargo[c.id] || []
             const m = getMetricasCargo(c, ativs)
-            const nomes = nomesPorCargo[c.nome] || []
+            const nomes = (nomesPorCargo[c.id] && nomesPorCargo[c.id].length > 0) ? nomesPorCargo[c.id] : (nomesPorCargo[c.nome] || [])
             const isDone = m.isConcluidoTotal || m.porcentagem === 100
 
             return (
