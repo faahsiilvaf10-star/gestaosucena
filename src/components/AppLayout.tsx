@@ -447,8 +447,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
           // @ts-ignore — Electron-specific CSS property
           WebkitAppRegion: 'drag',
           pointerEvents: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }} 
-      />
+      >
+        {/* Logo Sucena prateada com efeito reflexo de faca */}
+        <div className="sucena-topbar-logo-wrapper" title="Sucena Empreendimentos">
+          <img
+            src="/logo-sucena-silver.png"
+            alt="Sucena"
+            className="sucena-topbar-logo-img"
+          />
+          <div className="sucena-topbar-logo-reflex" aria-hidden="true" />
+        </div>
+      </div>
 
       {/* Top Navigation Bar — Windows 11 Liquid Glass */}
 
