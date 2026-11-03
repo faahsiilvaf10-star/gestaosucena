@@ -216,7 +216,7 @@ export function RecentActivitiesWidget() {
 
   return (
     <>
-      <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-full shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
+      <div className="bg-[#fffbeb] dark:bg-[#1c180e] border border-[#fde68a] dark:border-[#854d0e]/30 rounded-3xl p-6 flex flex-col h-auto shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
         <div className="flex items-center justify-between mb-4 relative z-10 gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#5f6472] dark:text-gray-400" />
@@ -249,7 +249,7 @@ export function RecentActivitiesWidget() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 flex-1 relative z-10">
+        <div className="flex flex-col gap-4 relative z-10">
           {loading ? (
             <div className="text-gray-600 dark:text-white/70 text-sm animate-pulse">Carregando atividades...</div>
           ) : filteredActivities.length === 0 ? (

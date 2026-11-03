@@ -1773,7 +1773,7 @@ function DashboardComponent() {
 
 
         {/* Widgets Inferiores */}
-        <div className="hydro-bottom-widgets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
+        <div className="hydro-bottom-widgets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px', alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <DashboardMatrizWidget />
             <DashboardCampanhaMesWidget />
@@ -1782,7 +1782,7 @@ function DashboardComponent() {
             <DashboardStockAlertWidget />
             <DashboardVistoriasWidget />
           </div>
-          <div style={{ minHeight: '380px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <RecentActivitiesWidget />
           </div>
         </div>

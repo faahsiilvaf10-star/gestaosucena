@@ -175,7 +175,7 @@ export function DashboardStockAlertWidget() {
   }
 
   return (
-    <div className="bg-[#fff5f5] dark:bg-[#1a0f12] border border-red-200 dark:border-red-900/40 rounded-3xl p-6 flex flex-col h-full min-h-[400px] shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
+    <div className="bg-[#fff5f5] dark:bg-[#1a0f12] border border-red-200 dark:border-red-900/40 rounded-3xl p-6 flex flex-col h-auto shadow-sm dark:shadow-2xl relative z-10 overflow-hidden transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 relative z-10 gap-2 flex-wrap">
         <div className="flex items-center gap-3">
@@ -261,7 +261,7 @@ export function DashboardStockAlertWidget() {
       </div>
 
       {/* Lista de Itens */}
-      <div className="flex flex-col gap-2.5 flex-1 relative z-10 overflow-y-auto max-h-[380px] custom-scrollbar pr-1">
+      <div className="flex flex-col gap-2.5 relative z-10 overflow-y-auto max-h-[380px] custom-scrollbar pr-1">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-sm text-gray-500 animate-pulse">
             Carregando itens em alerta...
