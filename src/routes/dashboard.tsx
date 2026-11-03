@@ -1527,6 +1527,7 @@ function DashboardComponent() {
 
       {/* 5. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
       <div className="content-grid" style={{ marginTop: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {userMentionedReminders.length > 0 && (
           <section className="card card-pad" aria-label="Lembretes para hoje">
             <div className="card-head">
@@ -1623,6 +1624,9 @@ function DashboardComponent() {
             </div>
           </section>
         )}
+
+          <DashboardCampanhaMesWidget />
+        </div>
 
         <div className="side-stack">
           <DashboardSafetyBanner userRole={currentUser?.user_metadata?.role} userName={currentUser?.user_metadata?.full_name} />
@@ -1780,7 +1784,6 @@ function DashboardComponent() {
           <DashboardVistoriasWidget />
           <RecentActivitiesWidget />
           <DashboardMatrizWidget />
-          <DashboardCampanhaMesWidget />
         </div>
       </section>
 
