@@ -57,28 +57,20 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
         }
 
         playOnlineSound()
-        setNotifications(prev => [...prev, newNotif])
+        setNotifications(prev => {
+          const filtered = prev.filter(n => n.userId !== user.id);
+          return [...filtered.slice(-3), newNotif];
+        });
 
-        const startRemovalTimer = () => {
+        // Fecha sozinho automaticamente apos 10 segundos incondicionalmente
+        setTimeout(() => {
+          setNotifications(prev =>
+            prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
+          );
           setTimeout(() => {
-            setNotifications(prev =>
-              prev.map(n => n.id === notifId ? { ...n, exiting: true } : n)
-            )
-            setTimeout(() => {
-              setNotifications(prev => prev.filter(n => n.id !== notifId))
-            }, 400)
-          }, 10000)
-        }
-
-        if (document.hasFocus()) {
-          startRemovalTimer()
-        } else {
-          const onFocus = () => {
-            window.removeEventListener('focus', onFocus)
-            startRemovalTimer()
-          }
-          window.addEventListener('focus', onFocus)
-        }
+            setNotifications(prev => prev.filter(n => n.id !== notifId));
+          }, 400);
+        }, 10000);
       }
     })
   }, [usersMap, currentUserId])
