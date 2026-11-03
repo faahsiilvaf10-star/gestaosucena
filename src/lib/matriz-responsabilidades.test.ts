@@ -89,17 +89,29 @@ describe('Matriz de Responsabilidades - Regras e Definições', () => {
 
   it('calcula totais gerais somando todos os 6 cargos', () => {
     const estado = criarEstadoInicial()
-    // Preposto conclui 100% (5 * 3 = 15)
-    estado['preposto'] = estado['preposto'].map((a) => ({ ...a, marks: 3 }))
+    // Preposto conclui 100% (meta total = 10)
+    estado['preposto'] = estado['preposto'].map((a) => ({ ...a, marks: a.total ?? 3 }))
 
     const gerais = getMetricasGerais(estado)
     expect(gerais.totalCargos).toBe(6)
     expect(gerais.cargosConcluidos).toBe(1)
     expect(gerais.cargosPendentes).toBe(5)
     expect(gerais.ativTotal).toBe(28)
-    expect(gerais.marcTotal).toBe(15)
-    expect(gerais.marcMax).toBe(84)
-    expect(gerais.pctGeral).toBe(Math.round((15 / 84) * 100)) // 18%
+    expect(gerais.marcTotal).toBe(10) // Preposto com 10 marcas concluídas
+    expect(gerais.marcMax).toBe(83)
+    expect(gerais.pctGeral).toBe(Math.round((10 / 83) * 100))
+  })
+
+  it('Técnico de Segurança possui mínimo do mês de 23 marcações conforme tabela oficial', () => {
+    const tec1 = CARGOS_MATRIZ.find((c) => c.id === 'tec-1')
+    expect(tec1?.total).toBe(23)
+    const estado = criarEstadoInicial()
+    const ativsTec = estado['tec-1']
+    const somaMetas = ativsTec.reduce((acc, a) => acc + (a.total ?? 3), 0)
+    expect(somaMetas).toBe(23)
+    // Evento sem lesão/condição de risco possui meta 12
+    const evento = ativsTec.find((a) => a.nome.includes('Evento sem lesão') && !a.nome.includes('ALTO RISCO'))
+    expect(evento?.total).toBe(12)
   })
 
   it('possui a URL real do Microsoft Forms', () => {

@@ -26,87 +26,148 @@ export interface ColaboradorMatrizRH {
   status?: string
 }
 
+export function getMetaPadraoAtividade(cargoIdOuNome: string, nomeAtividade: string): number {
+  const c = (cargoIdOuNome || '').toLowerCase()
+  const a = (nomeAtividade || '').toLowerCase()
+
+  // Técnico de Segurança (Mínimo do Mês: 23 = 12 + 3 + 3 + 2 + 1 + 1 + 1)
+  if (c.includes('tec') || c.includes('seguran')) {
+    if (a.includes('alto risco')) return 1
+    if (a.includes('woc')) return 1 // WOC contém 'observar', deve ser checado antes de 'observa'
+    if (a.includes('dds')) return 1
+    if (a.includes('coach')) return 2
+    if (a.includes('evento') || a.includes('condi')) return 12
+    if (a.includes('observa')) return 3
+    if (a.includes('inspe')) return 3
+    return 1
+  }
+
+  // Preposto / Gerente (Mínimo do Mês: 10 = 4 + 2 + 2 + 1 + 1)
+  if (c.includes('preposto') || c.includes('gerente')) {
+    if (a.includes('woc')) return 4
+    if (a.includes('dds')) return 2
+    if (a.includes('roda')) return 2
+    if (a.includes('observa')) return 1
+    if (a.includes('inspe')) return 1
+    return 1
+  }
+
+  // Encarregados (Mínimo do Mês: 9 = 3 + 3 + 3)
+  if (c.includes('enc')) {
+    if (a.includes('evento') || a.includes('condi')) return 3
+    if (a.includes('observa')) return 3
+    if (a.includes('inspe')) return 3
+    return 3
+  }
+
+  // Engenheiro de Segurança (Mínimo do Mês: 13 = 3 + 3 + 2 + 1 + 1 + 1 + 1 + 1)
+  if (c.includes('eng') && c.includes('seg')) {
+    if (a.includes('alto risco')) return 1
+    if (a.includes('woc')) return 3
+    if (a.includes('evento') || a.includes('condi')) return 3
+    if (a.includes('inspe')) return 2
+    if (a.includes('dds')) return 1
+    if (a.includes('observa')) return 1
+    if (a.includes('roda')) return 1
+    if (a.includes('coach')) return 1
+    return 1
+  }
+
+  // Engenheiros / Supervisor / Coordenador (Mínimo do Mês: 16 = 5 + 4 + 2 + 2 + 2 + 1)
+  if (c.includes('eng') || c.includes('superv') || c.includes('coord')) {
+    if (a.includes('alto risco')) return 1
+    if (a.includes('woc')) return 5
+    if (a.includes('evento') || a.includes('condi')) return 4
+    if (a.includes('observa')) return 2
+    if (a.includes('inspe')) return 2
+    if (a.includes('coach')) return 2
+    return 2
+  }
+
+  return 3
+}
+
 export const CARGOS_MATRIZ: CargoMatrizDef[] = [
   {
     id: 'preposto',
     nome: 'Preposto',
-    total: 5,
+    total: 10,
     cor: '#3b82f6',
     icone: '🏛️',
     atividades: [
-      'DDS de Liderança',
-      'WOC - Caminhar, Observar e Conversar',
-      'Observação de Tarefas',
-      'Inspeção em HSE',
+      'WOC - Caminhar, Observar e Comunicar',
+      'DDS da liderança (Condução)',
       'Roda de Conversa',
+      'Observação de tarefas',
+      'Inspeção em HSE',
     ],
   },
   {
     id: 'enc-geral',
     nome: 'Encarregado Geral',
-    total: 3,
+    total: 9,
     cor: '#a855f7',
     icone: '⚛️',
     atividades: [
-      'Evento sem Lesão / Condição de Risco',
-      'Observação de Tarefa',
-      'Inspeção de HSE',
+      'Evento sem lesão/Condição de risco',
+      'Observação de tarefas',
+      'Inspeção em HSE',
     ],
   },
   {
     id: 'enc-1',
     nome: 'Encarregado I',
-    total: 3,
+    total: 9,
     cor: '#f97316',
     icone: '⛑️',
     atividades: [
-      'Evento sem Lesão / Condição de Risco',
-      'Observação de Tarefa',
-      'Inspeção de HSE',
+      'Evento sem lesão/Condição de risco',
+      'Observação de tarefas',
+      'Inspeção em HSE',
     ],
   },
   {
     id: 'enc-2',
     nome: 'Encarregado II',
-    total: 3,
+    total: 9,
     cor: '#22c55e',
     icone: '🪖',
     atividades: [
-      'Evento sem Lesão / Condição de Risco',
-      'Observação de Tarefa',
-      'Inspeção de HSE',
+      'Evento sem lesão/Condição de risco',
+      'Observação de tarefas',
+      'Inspeção em HSE',
     ],
   },
   {
     id: 'tec-1',
     nome: 'Téc. Segurança I',
-    total: 7,
+    total: 23,
     cor: '#f43f5e',
     icone: '🛡️',
     atividades: [
-      'DDS da Liderança',
-      'WOC - Caminhar, Observar e Conversar',
-      'Inspeção de HSE',
-      'Evento sem Lesão / Condição de Risco (ALTO RISCO)',
+      'Evento sem lesão/Condição de risco',
+      'Observação de tarefas',
+      'Inspeção em HSE',
       'Coach em HSE',
-      'Observação de Tarefa',
-      'Evento sem Lesão / Condição de Risco',
+      'Evento sem lesão/Condição de risco (ALTO RISCO)',
+      'DDS da liderança (Condução)',
+      'WOC - Caminhar, Observar e Comunicar',
     ],
   },
   {
     id: 'tec-2',
     nome: 'Téc. Segurança II',
-    total: 7,
+    total: 23,
     cor: '#ec4899',
     icone: '🛡️',
     atividades: [
-      'DDS da Liderança',
-      'WOC - Caminhar, Observar e Conversar',
-      'Inspeção de HSE',
-      'Evento sem Lesão / Condição de Risco (ALTO RISCO)',
+      'Evento sem lesão/Condição de risco',
+      'Observação de tarefas',
+      'Inspeção em HSE',
       'Coach em HSE',
-      'Observação de Tarefa',
-      'Evento sem Lesão / Condição de Risco',
+      'Evento sem lesão/Condição de risco (ALTO RISCO)',
+      'DDS da liderança (Condução)',
+      'WOC - Caminhar, Observar e Comunicar',
     ],
   },
 ]
@@ -149,7 +210,7 @@ export function criarEstadoInicial(cargosList: CargoMatrizDef[] = CARGOS_MATRIZ)
     init[cargo.id] = (cargo.atividades || []).map((nome, i) => ({
       nome,
       marks: 0,
-      total: 3,
+      total: getMetaPadraoAtividade(cargo.id || cargo.nome, nome),
       pers: ehPersonalizada(cargo.id, i),
     }))
   }
@@ -341,7 +402,7 @@ export async function carregarDadosMatriz(
       result.atividadesPorCargo[cargo.id] = (cargo.atividades || []).map((nome, i) => ({
         nome,
         marks: 0,
-        total: 3,
+        total: getMetaPadraoAtividade(cargo.id || cargo.nome, nome),
         pers: ehPersonalizada(cargo.id, i),
       }))
       precisouCorrigirAtividades = true
@@ -384,7 +445,7 @@ export async function salvarDadosMatriz(
       atividadesValidadas[c.id] = (c.atividades || []).map((nome, i) => ({
         nome,
         marks: 0,
-        total: 3,
+        total: getMetaPadraoAtividade(c.id || c.nome, nome),
         pers: ehPersonalizada(c.id, i),
       }))
     }
