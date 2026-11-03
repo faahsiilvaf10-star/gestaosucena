@@ -16,17 +16,25 @@ import {
   carregarIndicadoresStore,
   salvarIndicadoresStore,
   getDbKeyIndicadores,
+  obterIndicadoresAutomaticosDoMes,
+  type IndicadoresAutomaticos,
 } from '../../lib/indicadoresData'
 import { supabase } from '../../lib/supabase'
-import { ArrowLeft, Cloud, BarChart3, Printer, Copy, Sparkles, Save, RotateCcw, Calculator, Trash2 } from 'lucide-react'
+import { ArrowLeft, Cloud, BarChart3, Printer, Copy, Sparkles, Save, RotateCcw, Calculator, Trash2, RefreshCw, ExternalLink, Zap, CheckCircle2 } from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/indicadores')({
   component: IndicadoresComponent,
 })
 
 export function IndicadoresComponent() {
+  const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
   const [store, setStore] = useState<IndicadoresStore>({})
   const [carregando, setCarregando] = useState(true)
+  const [sincronizando, setSincronizando] = useState(false)
+
+  // Dados automáticos vindos do banco de dados (vinculados ao sistema)
+  const [autoDadosInput, setAutoDadosInput] = useState<IndicadoresAutomaticos | null>(null)
+  const [autoDadosExibir, setAutoDadosExibir] = useState<IndicadoresAutomaticos | null>(null)
 
   // Meses ativos
   const [mesInput, setMesInput] = useState<string>(mesAtualISO())
@@ -74,15 +82,84 @@ export function IndicadoresComponent() {
     return null
   }
 
+  // Sincroniza dados reais de todos os módulos vinculados ao sistema
+  const sincronizarDadosDoSistema = async (m: string, preencherCampos = true, forceNotice = true) => {
+    try {
+      setSincronizando(true)
+      const res = await obterIndicadoresAutomaticosDoMes(m, currentEnv)
+      setAutoDadosInput(res)
+      if (m === mesExibir) {
+        setAutoDadosExibir(res)
+      }
+
+      if (preencherCampos) {
+        setValoresForm((prev) => {
+          const atualizados = { ...prev }
+          if (res.valores.dds !== null) atualizados.dds = String(res.valores.dds)
+          if (res.valores.acidentes !== null) atualizados.acidentes = String(res.valores.acidentes)
+          if (res.valores.quase !== null) atualizados.quase = String(res.valores.quase)
+          if (res.valores.desvAbertos !== null) atualizados.desvAbertos = String(res.valores.desvAbertos)
+          if (res.valores.desvFechados !== null) atualizados.desvFechados = String(res.valores.desvFechados)
+          if (res.valores.treinVencidos !== null) atualizados.treinVencidos = String(res.valores.treinVencidos)
+          if (res.valores.inspecoes !== null) atualizados.inspecoes = String(res.valores.inspecoes)
+
+          // Se HHT já estiver preenchida, recalcula TF e TG
+          const hhtNum = Number(hht.replace(',', '.'))
+          const diasNum = Number(diasPerdidos.replace(',', '.')) || 0
+          if (!isNaN(hhtNum) && hhtNum > 0 && res.valores.acidentes !== null) {
+            const { tf, tg } = calcularTFTG(hhtNum, res.valores.acidentes, diasNum)
+            atualizados.tf = tf.toFixed(2)
+            atualizados.tg = tg.toFixed(2)
+          }
+
+          return atualizados
+        })
+
+        if (forceNotice) {
+          showToast(`⚡ Dados reais de ${fmtMes(m)} sincronizados com sucesso!`)
+          setFormFeedback({
+            tipo: 'ok',
+            msg: `⚡ DADOS REAIS DO SISTEMA CARREGADOS PARA ${fmtMes(m).toUpperCase()}:\n` +
+              `• DDS Realizadas: ${res.detalhes.ddsFotos} fotos postadas\n` +
+              `• Ocorrências: ${res.detalhes.acidentesAnexos} anexos de acidente e ${res.detalhes.quaseAnexos} quase acidentes\n` +
+              `• Desvios de Segurança: ${res.detalhes.desviosAbertos} abertos e ${res.detalhes.desviosFechados} corrigidos/fechados\n` +
+              `• Controle de Treinamento: ${res.detalhes.treinamentosVencidos} colaborador(es) com NR vencida\n` +
+              `• Inspeções Realizadas: ${res.detalhes.inspecoesTotal} (${res.detalhes.inspecoesCanteiro} canteiro + ${res.detalhes.inspecoesCintas} cintas)`,
+          })
+        }
+      }
+    } catch (err) {
+      console.warn('[Indicadores] Erro ao sincronizar dados do sistema:', err)
+      if (forceNotice) {
+        showToast('Aviso ao sincronizar dados reais do sistema.')
+      }
+    } finally {
+      setSincronizando(false)
+    }
+  }
+
+  // Preenche valor específico vindo do sistema
+  const usarValorEspecifico = (indId: string, val: number | null | undefined) => {
+    if (val === null || val === undefined) return
+    setValoresForm((prev) => ({ ...prev, [indId]: String(val) }))
+    showToast(`⚡ Valor ${val} aplicado em ${indId}`)
+  }
+
   // Preencher campos do form para um mês
-  const preencherFormParaMes = (m: string, currentStore = store) => {
+  const preencherFormParaMes = async (m: string, currentStore = store) => {
     const rec = currentStore[m]
     const novosValores: Record<string, string> = {}
     const novasMetas: Record<string, string> = {}
+    let temSalvo = false
 
     INDICADORES_LISTA.forEach((ind) => {
       const v = rec?.valores?.[ind.id]
-      novosValores[ind.id] = v !== undefined && v !== null ? String(v) : ''
+      if (v !== undefined && v !== null) {
+        novosValores[ind.id] = String(v)
+        temSalvo = true
+      } else {
+        novosValores[ind.id] = ''
+      }
 
       const mVal = rec?.metas?.[ind.id]
       const metaPad = mVal !== undefined && mVal !== null ? mVal : ultimaMeta(ind.id, currentStore) ?? ind.metaPadrao
@@ -92,6 +169,13 @@ export function IndicadoresComponent() {
     setValoresForm(novosValores)
     setMetasForm(novasMetas)
     setInvalidosCampos({})
+
+    // Se o mês ainda não tem valores salvos, busca automaticamente do sistema e pré-preenche!
+    if (!temSalvo) {
+      await sincronizarDadosDoSistema(m, true, false)
+    } else {
+      await sincronizarDadosDoSistema(m, false, false)
+    }
   }
 
   // Carregar dados iniciais e escutar mudanças no Supabase
@@ -118,6 +202,11 @@ export function IndicadoresComponent() {
 
     inicializar()
 
+    // Carregar dados automáticos do mês de exibição
+    obterIndicadoresAutomaticosDoMes(mesExibir, currentEnv)
+      .then((res) => setAutoDadosExibir(res))
+      .catch(() => {})
+
     // Realtime channel
     const dbKey = getDbKeyIndicadores()
     const channel = supabase
@@ -139,9 +228,39 @@ export function IndicadoresComponent() {
       )
       .subscribe()
 
+    // Escuta em tempo real adições de fotos de DDS, cintas e configurações
+    const liveChannel = supabase
+      .channel(`indicadores-live-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'social_posts' },
+        () => {
+          sincronizarDadosDoSistema(mesInput, false, false)
+          obterIndicadoresAutomaticosDoMes(mesExibir, currentEnv).then(setAutoDadosExibir).catch(() => {})
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'seguranca_cintas' },
+        () => {
+          sincronizarDadosDoSistema(mesInput, false, false)
+          obterIndicadoresAutomaticosDoMes(mesExibir, currentEnv).then(setAutoDadosExibir).catch(() => {})
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'seguranca_cintas_historico' },
+        () => {
+          sincronizarDadosDoSistema(mesInput, false, false)
+          obterIndicadoresAutomaticosDoMes(mesExibir, currentEnv).then(setAutoDadosExibir).catch(() => {})
+        }
+      )
+      .subscribe()
+
     return () => {
       isMounted = false
       supabase.removeChannel(channel)
+      supabase.removeChannel(liveChannel)
     }
   }, [])
 
@@ -1082,51 +1201,136 @@ export function IndicadoresComponent() {
                 className="ind-input"
                 value={mesExibir}
                 onChange={(e) => {
-                  if (e.target.value) setMesExibir(e.target.value)
+                  if (e.target.value) {
+                    const novoM = e.target.value
+                    setMesExibir(novoM)
+                    obterIndicadoresAutomaticosDoMes(novoM, currentEnv).then(setAutoDadosExibir).catch(() => {})
+                  }
                 }}
               />
             </div>
           </div>
 
+                    {/* Card de Conexão com o Sistema */}
+          <div className="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/50 border border-amber-200/80 rounded-2xl p-4 mb-5 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                  <h3 className="font-bold text-gray-900 text-sm md:text-base flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-500 fill-amber-400" />
+                    Indicadores Vinculados ao Sistema
+                  </h3>
+                  <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Ao Vivo
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed max-w-3xl">
+                  Cada indicador busca dados reais do sistema: <b>DDS</b> conta fotos postadas; <b>Acidentes e Quase Acidentes</b> contam anexos do Relatório de Ocorrências; <b>Desvios</b> contam abertos e concluídos; <b>Treinamentos</b> contam NRs vencidas; e <b>Inspeções</b> somam canteiro e cintas.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => sincronizarDadosDoSistema(mesInput, true, true)}
+                  disabled={sincronizando}
+                  className="ind-btn ind-btn-yellow text-sm py-2.5 px-4 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-bold"
+                  title="Recalcular contagens reais do banco de dados agora"
+                >
+                  <RefreshCw className={`w-4 h-4 ${sincronizando ? 'animate-spin' : ''}`} />
+                  <span>{sincronizando ? 'Sincronizando...' : '⚡ Puxar dados reais do sistema'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="form-grid">
-            {INDICADORES_LISTA.map((ind) => (
-              <div key={ind.id} className="campo-ind">
-                <b className="titulo">{ind.nome}</b>
-                <span className="dica">{ind.dica}</span>
-                <div className="dupla">
-                  <div>
-                    <label htmlFor={`v-${ind.id}`}>Valor do mês</label>
-                    <input
-                      type="number"
-                      id={`v-${ind.id}`}
-                      className={`ind-input ${invalidosCampos[`v-${ind.id}`] ? 'invalid-campo' : ''}`}
-                      min="0"
-                      step={ind.casas ? 0.01 : 1}
-                      placeholder={`Ex.: ${fmtNum(ind.metaPadrao, ind.casas)}`}
-                      value={valoresForm[ind.id] ?? ''}
-                      onChange={(e) =>
-                        setValoresForm((prev) => ({ ...prev, [ind.id]: e.target.value }))
-                      }
-                    />
+            {INDICADORES_LISTA.map((ind) => {
+              const infoOrigem = autoDadosInput?.origens?.[ind.id]
+              const valorAuto = autoDadosInput?.valores?.[ind.id]
+              const temValorAuto = valorAuto !== null && valorAuto !== undefined
+
+              return (
+                <div key={ind.id} className="campo-ind">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <b className="titulo">{ind.nome}</b>
+                      <span className="dica">{ind.dica}</span>
+                    </div>
+                    {ind.origemRota && (
+                      <Link
+                        to={ind.origemRota}
+                        className="text-[11px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 shrink-0 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded-md transition-colors"
+                        title={`Ir para o módulo de ${ind.nome}`}
+                      >
+                        <span>Módulo</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    )}
                   </div>
-                  <div>
-                    <label htmlFor={`m-${ind.id}`}>Meta do mês</label>
-                    <input
-                      type="number"
-                      id={`m-${ind.id}`}
-                      className={`ind-input ${invalidosCampos[`m-${ind.id}`] ? 'invalid-campo' : ''}`}
-                      min="0"
-                      step={ind.casas ? 0.01 : 1}
-                      placeholder="Meta"
-                      value={metasForm[ind.id] ?? ''}
-                      onChange={(e) =>
-                        setMetasForm((prev) => ({ ...prev, [ind.id]: e.target.value }))
-                      }
-                    />
+
+                  {/* Detalhe da contagem automática no sistema */}
+                  {infoOrigem && (
+                    <div className="my-2 p-2 rounded-lg bg-gray-50/90 border border-gray-200/90 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 truncate text-gray-700">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="font-bold text-gray-900 shrink-0">No sistema:</span>
+                        <span className="truncate text-gray-600" title={infoOrigem.descricaoDetalhada}>
+                          {infoOrigem.rotulo}
+                        </span>
+                      </div>
+                      {temValorAuto && (
+                        <button
+                          type="button"
+                          onClick={() => usarValorEspecifico(ind.id, valorAuto)}
+                          className="text-[11px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 active:scale-95 px-2 py-0.5 rounded transition-all shrink-0 cursor-pointer"
+                          title="Preencher o campo com o valor detectado no sistema"
+                        >
+                          Usar {valorAuto}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="dupla">
+                    <div>
+                      <label htmlFor={`v-${ind.id}`}>Valor do mês</label>
+                      <input
+                        type="number"
+                        id={`v-${ind.id}`}
+                        className={`ind-input ${invalidosCampos[`v-${ind.id}`] ? 'invalid-campo' : ''}`}
+                        min="0"
+                        step={ind.casas ? 0.01 : 1}
+                        placeholder={temValorAuto ? `Sistema: ${valorAuto}` : `Ex.: ${fmtNum(ind.metaPadrao, ind.casas)}`}
+                        value={valoresForm[ind.id] ?? ''}
+                        onChange={(e) =>
+                          setValoresForm((prev) => ({ ...prev, [ind.id]: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`m-${ind.id}`}>Meta do mês</label>
+                      <input
+                        type="number"
+                        id={`m-${ind.id}`}
+                        className={`ind-input ${invalidosCampos[`m-${ind.id}`] ? 'invalid-campo' : ''}`}
+                        min="0"
+                        step={ind.casas ? 0.01 : 1}
+                        placeholder="Meta"
+                        value={metasForm[ind.id] ?? ''}
+                        onChange={(e) =>
+                          setMetasForm((prev) => ({ ...prev, [ind.id]: e.target.value }))
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Calculadora TF / TG */}
@@ -1226,7 +1430,10 @@ export function IndicadoresComponent() {
 
           <div className="cards-grid">
             {INDICADORES_LISTA.map((ind) => {
-              const valor = recExibir?.valores?.[ind.id] ?? null
+              const valorSalvo = recExibir?.valores?.[ind.id] ?? null
+              const valorAuto = autoDadosExibir?.valores?.[ind.id] ?? null
+              const valor = valorSalvo !== null ? valorSalvo : valorAuto
+              const isDoSistemaAoVivo = valorSalvo === null && valorAuto !== null
               const meta =
                 recExibir?.metas?.[ind.id] ??
                 ultimaMeta(ind.id) ??
@@ -1250,10 +1457,18 @@ export function IndicadoresComponent() {
                   : null
 
               const sinalMeta = ind.dir === 'menor' ? '≤' : '≥'
+              const infoOrigem = autoDadosExibir?.origens?.[ind.id]
 
               return (
                 <div key={ind.id} className={`ind-item ${st.cls}`}>
-                  <h3>{ind.nome}</h3>
+                  <div className="flex items-start justify-between gap-1">
+                    <h3>{ind.nome}</h3>
+                    {isDoSistemaAoVivo && (
+                      <span className="badge shrink-0" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #86efac', fontSize: '10px', padding: '2px 6px' }}>
+                        ● Ao vivo
+                      </span>
+                    )}
+                  </div>
                   <p className="desc">{ind.desc}</p>
                   <div className="valor">
                     {valor === null ? '—' : fmtNum(valor, ind.casas)}
@@ -1278,11 +1493,24 @@ export function IndicadoresComponent() {
                     )}
                   </div>
                   <p className="variacao-txt">{variacaoTxt(ind, valor, prevV)}</p>
+
+                  {/* Informação da origem vinculada */}
+                  {infoOrigem && (
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                      <span className="truncate" title={infoOrigem.descricaoDetalhada}>
+                        🔗 {infoOrigem.rotulo}
+                      </span>
+                      {infoOrigem.link && (
+                        <Link to={infoOrigem.link} className="text-amber-700 hover:underline font-bold shrink-0 ml-1">
+                          Ver
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
-          </div>
-        </section>
+          </div></section>
 
         {/* SEÇÃO 3: GRÁFICO CSS DE BARRAS */}
         <section className="ind-card" id="graficoSection">

@@ -76,10 +76,10 @@ export async function carregarArquivosOcorrencia(env = 'barcarena'): Promise<Oco
       .maybeSingle()
 
     if (!error && data) {
-      const lista = Array.isArray(data.value) ? (data.value as OcorrenciaItem[]) : []
+      const lista = Array.isArray(data.value) ? (data.value as OcorrenciaArquivo[]) : []
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(LS_KEY_OCORRENCIA, JSON.stringify(lista))
+          localStorage.setItem(LS_KEY_OCORRENCIAS, JSON.stringify(lista))
         } catch (_) {}
       }
       return lista
@@ -124,7 +124,7 @@ export async function salvarArquivosOcorrencia(
     const { error } = await supabase
       .from('global_settings')
       .upsert(
-        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { key: dbKey, value: novos, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       )
     return !error
@@ -133,4 +133,3 @@ export async function salvarArquivosOcorrencia(
     return false
   }
 }
-
