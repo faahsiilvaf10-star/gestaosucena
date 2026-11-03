@@ -13,6 +13,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
+import { getLogicalAreaForColaborador } from '../../lib/rhAreaHelper'
 import { DateInput } from '../../components/ui/DateInput'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
@@ -343,7 +344,7 @@ function RhEfetivoPage() {
               matricula_hydro: matriculaHydro ? String(matriculaHydro) : null,
               matricula_sucena: matriculaSucena ? String(matriculaSucena) : null,
               status: String(status),
-              setor: setor ? String(setor) : null,
+              setor: getLogicalAreaForColaborador({ setor: setor ? String(setor) : null, cargo: cargo ? String(cargo) : null }),
               aso_admissional_2: admissional,
               aso_admissional: asoAdmissional,
               aso_periodico: asoPeriodico,
@@ -496,7 +497,7 @@ function RhEfetivoPage() {
         matricula_sucena: selectedColaborador.matricula_sucena || null,
         data_admissao: selectedColaborador.data_admissao || selectedColaborador.aso_admissional_2 || null,
         status: selectedColaborador.status,
-        setor: selectedColaborador.setor,
+        setor: getLogicalAreaForColaborador({ setor: selectedColaborador.setor, cargo: selectedColaborador.cargo }),
         aso_admissional: selectedColaborador.aso_admissional,
         aso_admissional_2: selectedColaborador.data_admissao || selectedColaborador.aso_admissional_2 || null,
         aso_periodico: selectedColaborador.aso_periodico,

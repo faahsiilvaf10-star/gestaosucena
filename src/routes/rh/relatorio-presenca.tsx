@@ -8,6 +8,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { getLogicalAreaForColaborador } from '../../lib/rhAreaHelper'
 import { useTheme } from '../../contexts/ThemeContext'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -84,7 +85,7 @@ function RelatorioPresencaPage() {
         .map(p => {
           const emp = efetivoMap.get(p.funcionario_id)
           let area = p.area
-          if (!area || area.toUpperCase().includes('BARCARENA')) area = 'Área Gabião'
+          if (!area || area.toUpperCase().includes('BARCARENA')) area = emp ? getLogicalAreaForColaborador(emp) : 'Área Gabião'
           return {
             id: p.id,
             funcionario_id: p.funcionario_id,

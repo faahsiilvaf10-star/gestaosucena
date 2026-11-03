@@ -18,6 +18,7 @@ import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
 import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
+import { getLogicalAreaForColaborador } from '@/lib/rhAreaHelper'
 import { getWhatsappSettings } from '@/lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { useState, useEffect, useRef } from 'react'
@@ -529,7 +530,7 @@ function RhListaPresencaPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo, setor')
+        .select('id, nome, cargo, setor, status')
         .order('nome', { ascending: true })
       
       if (error) throw error
@@ -537,7 +538,7 @@ function RhListaPresencaPage() {
       // Map efetivo data (used as lookup in fetchPresencas)
       const mappedData: Colaborador[] = (data || []).map(d => ({
         ...d,
-        setor: (!d.setor || d.setor.toUpperCase().includes('BARCARENA')) ? 'Área Gabião' : d.setor,
+        setor: getLogicalAreaForColaborador(d),
         status: 'PRESENTE'
       }))
         
@@ -559,7 +560,7 @@ function RhListaPresencaPage() {
 
       const normalizeArea = (areaName?: string | null) => {
         if (!areaName || areaName.toUpperCase().includes('BARCARENA')) return 'Área Gabião'
-        return areaName
+        return getLogicalAreaForColaborador({ setor: areaName })
       }
 
       // 1. Buscar registros salvos para a data selecionada
@@ -667,16 +668,39 @@ function RhListaPresencaPage() {
           } else if (!isCleared) {
             // HERDA DO DIA ANTERIOR SALVO:
             const prevRows = previousEmployeesByArea.get(area) || []
+            const addedIds = new Set<string>()
+
             prevRows.forEach(d => {
               const emp = efetivoMap.get(d.funcionario_id)
-              nextColaboradores.push({
-                id: d.funcionario_id,
-                nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
-                cargo: emp ? emp.cargo : null,
-                setor: area,
-                status: 'PRESENTE' // Já pré-definidos como presentes para o novo dia
-              })
+              const s = ((emp as any)?.status || '').toUpperCase().trim()
+              if (s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO') {
+                addedIds.add(d.funcionario_id)
+                nextColaboradores.push({
+                  id: d.funcionario_id,
+                  nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
+                  cargo: emp ? emp.cargo : null,
+                  setor: area,
+                  status: 'PRESENTE'
+                })
+              }
             })
+
+            // Garante que TODOS os colaboradores ativos desta área (incluindo novos) estejam presentes na lista
+            currentColaboradores
+              .filter(c => (c.setor || 'Sem Área') === area)
+              .forEach(c => {
+                const s = ((c as any).status || '').toUpperCase().trim()
+                if (!addedIds.has(c.id) && s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO') {
+                  addedIds.add(c.id)
+                  nextColaboradores.push({
+                    id: c.id,
+                    nome: c.nome,
+                    cargo: c.cargo,
+                    setor: area,
+                    status: 'PRESENTE'
+                  })
+                }
+              })
           }
         }
       }
@@ -730,7 +754,7 @@ function RhListaPresencaPage() {
     toast.success('Colaborador removido da lista')
   }
 
-  const handleAddColaborador = (efetivo: Efetivo) => {
+  const handleAddColaborador = async (efetivo: Efetivo) => {
     setColaboradores(prev => {
       const existingIndex = prev.findIndex(c => c.id === efetivo.id)
       
@@ -753,6 +777,16 @@ function RhListaPresencaPage() {
       }
       return [...prev, novoColaborador]
     })
+
+    // Persiste imediatamente a alteração de setor no rh_efetivo para persistência definitiva
+    try {
+      await supabase
+        .from('rh_efetivo')
+        .update({ setor: activeTab })
+        .eq('id', efetivo.id)
+    } catch (err) {
+      console.warn('Erro ao atualizar setor no rh_efetivo:', err)
+    }
     
     toast.success(`${efetivo.nome} adicionado(a) à ${activeTab}`)
   }
@@ -794,6 +828,12 @@ function RhListaPresencaPage() {
           .insert(recordsToInsert)
           
         if (error) throw error;
+
+        // Atualiza permanentemente no rh_efetivo para manter o colaborador fixo nesta área
+        await supabase
+          .from('rh_efetivo')
+          .update({ setor: activeTab })
+          .in('id', funcIds);
       }
       
       setLockedAreas(prev => [...prev, activeTab])
