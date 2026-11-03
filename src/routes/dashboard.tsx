@@ -1773,18 +1773,22 @@ function DashboardComponent() {
 
 
         {/* Widgets Inferiores */}
-        <div className="hydro-bottom-widgets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px', alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <DashboardMatrizWidget />
-            <DashboardCampanhaMesWidget />
-            <DashboardDesviosWidget />
-            <DashboardInspecaoCanteiroWidget />
-            <DashboardStockAlertWidget />
-            <DashboardVistoriasWidget />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <RecentActivitiesWidget />
-          </div>
+        <div 
+          className="hydro-bottom-widgets-grid" 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))', 
+            gap: '20px', 
+            alignItems: 'start' 
+          }}
+        >
+          <DashboardDesviosWidget />
+          <RecentActivitiesWidget />
+          <DashboardInspecaoCanteiroWidget />
+          <DashboardMatrizWidget />
+          <DashboardStockAlertWidget />
+          <DashboardCampanhaMesWidget />
+          <DashboardVistoriasWidget />
         </div>
       </section>
 
