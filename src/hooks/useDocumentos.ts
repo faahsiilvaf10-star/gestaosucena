@@ -34,11 +34,32 @@ export const useDocumentos = (cargoId: string) => {
   });
 };
 
+export const useDocumentosByPrefix = (prefix: string) => {
+  return useQuery({
+    queryKey: ['documentos-prefix', prefix],
+    queryFn: async () => {
+      if (!prefix) return [];
+      const { data, error } = await supabase
+        .from('doc_arquivos')
+        .select('*')
+        .like('cargo_id', `${prefix}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error('Erro ao buscar documentos');
+        throw error;
+      }
+      return data as DocArquivo[];
+    },
+    enabled: !!prefix
+  });
+};
+
 export const useUploadDocumento = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ file, cargoId }: { file: File; cargoId: string }) => {
+    mutationFn: async ({ file, cargoId, fileName }: { file: File; cargoId: string; fileName?: string }) => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error('Usuário não autenticado');
 
@@ -58,7 +79,7 @@ export const useUploadDocumento = () => {
         .from('doc_arquivos')
         .insert([{
           cargo_id: cargoId,
-          file_name: file.name,
+          file_name: fileName || file.name,
           file_path: filePath,
           file_size: file.size,
           file_type: file.type || fileExt || 'unknown',
@@ -70,8 +91,9 @@ export const useUploadDocumento = () => {
       if (dbError) throw dbError;
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['documentos', variables.cargoId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos'] });
+      queryClient.invalidateQueries({ queryKey: ['documentos-prefix'] });
       toast.success('Documento salvo com sucesso!');
     },
     onError: (error) => {
@@ -101,8 +123,9 @@ export const useDeleteDocumento = () => {
 
       if (dbError) throw dbError;
     },
-    onSuccess: (_, doc) => {
-      queryClient.invalidateQueries({ queryKey: ['documentos', doc.cargo_id] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos'] });
+      queryClient.invalidateQueries({ queryKey: ['documentos-prefix'] });
       toast.success('Documento excluído com sucesso!');
     },
     onError: (error) => {

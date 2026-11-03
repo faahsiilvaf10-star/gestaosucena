@@ -5,10 +5,12 @@ import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
+import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { CargoDocsViewer } from '@/components/documentos/CargoDocsViewer';
+import { TransporteDocsViewer } from '@/components/documentos/TransporteDocsViewer';
 
 export const Route = createFileRoute('/documentos/')({
   component: DocumentosIndex,
@@ -22,6 +24,7 @@ const CARGOS = [
   { id: 'rh', name: 'Recursos Humanos', icon: Users },
   { id: 'admin', name: 'Administração', icon: Building2 },
   { id: 'mestre', name: 'Encarregado', icon: Hammer },
+  { id: 'transporte', name: 'Transporte', icon: Truck },
 ];
 
 function DocumentosIndex() {
@@ -57,15 +60,15 @@ function DocumentosIndex() {
         ))}
       </div>
 
-      {selectedCargo && (
+      {selectedCargo?.id === 'transporte' ? (
+        <TransporteDocsViewer onClose={() => setSelectedCargo(null)} />
+      ) : selectedCargo ? (
         <CargoDocsViewer 
           cargoId={selectedCargo.id} 
           cargoName={selectedCargo.name} 
           onClose={() => setSelectedCargo(null)} 
         />
-      )}
+      ) : null}
     </div>
   );
 }
-
-
