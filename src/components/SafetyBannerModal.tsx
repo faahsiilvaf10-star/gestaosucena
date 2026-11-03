@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
@@ -45,6 +46,31 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Trava o scroll de fundo e adiciona listener para tecla ESC
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   // Load banners on open
   useEffect(() => {
@@ -64,6 +90,7 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
 
   // Open edit form for a banner
   const handleStartEdit = (b: SafetyBanner) => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
     setEditingBanner(b);
     setIsCreating(false);
     setKicker(b.kicker);
@@ -77,6 +104,7 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
 
   // Open new banner form
   const handleStartCreate = () => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
     setIsCreating(true);
     setEditingBanner(null);
     setKicker('NOSSA PRIORIDADE');
@@ -292,14 +320,20 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
     if (onUpdated) onUpdated(ordered);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
-        className={`w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh] ${
+        className={`w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] transition-all animate-in zoom-in-95 duration-200 ${
           isDark ? 'bg-[#121316] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
@@ -345,7 +379,7 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div ref={contentRef} className="p-6 overflow-y-auto space-y-6 flex-1">
           {loading ? (
             <div className="py-12 text-center text-sm text-gray-400">Carregando banners...</div>
           ) : isCreating || editingBanner ? (
@@ -783,7 +817,8 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
