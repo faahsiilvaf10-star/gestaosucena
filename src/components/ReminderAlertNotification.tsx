@@ -170,6 +170,9 @@ export function ReminderAlertNotification() {
 
   const handleVisto = async (id: string) => {
     await supabase.from('reminder_notifications').update({ read: true }).eq('id', id)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hydro_reminder_read', { detail: { id } }))
+    }
     dismissNotification(id)
   }
 
@@ -252,6 +255,10 @@ export function ReminderAlertNotification() {
         .from('reminder_notifications')
         .update({ read: true })
         .eq('id', notif.id)
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('hydro_reminder_read', { detail: { id: notif.id } }))
+      }
 
       // Salva no localStorage com timestamp ISO para controle local de snooze
       const targetIso = `${postponeDate}T${time}:00`

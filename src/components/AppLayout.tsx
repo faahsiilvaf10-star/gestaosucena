@@ -334,6 +334,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Helper functions for notifications
   const getNotificationIconStyle = (type: string) => {
     switch (type) {
+      case 'reminder':
+        return { background: 'rgba(214, 167, 43, 0.15)', color: '#D6A72B' }
       case 'mention':
         return { background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }
       case 'instacena_post':
@@ -352,6 +354,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'reminder':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+            <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+          </svg>
+        )
       case 'mention':
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
