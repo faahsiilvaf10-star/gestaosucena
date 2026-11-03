@@ -162,11 +162,11 @@ function AddCollaboratorModal({
         {/* Search & Filter bar */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 space-y-3 bg-black/[0.01] dark:bg-white/[0.01]">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" size={16} />
             <input 
               type="text" 
               placeholder="Buscar por nome, cargo ou matrícula..." 
-              className="w-full bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-9 py-2.5 outline-none focus:border-[#0866ff] focus:ring-2 focus:ring-[#0866ff]/20 transition-all text-[#1c1d21] dark:text-white text-sm"
+              className="w-full bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 rounded-xl pl-11 pr-9 py-2.5 outline-none focus:border-[#0866ff] focus:ring-2 focus:ring-[#0866ff]/20 transition-all text-[#1c1d21] dark:text-white text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus

@@ -748,11 +748,11 @@ function RhEfetivoPage() {
           {/* Toolbar */}
           <div className="p-4 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 dark:bg-white/5">
             <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5f6472] dark:text-gray-400" size={18} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5f6472] dark:text-gray-400 pointer-events-none" size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar por nome, cargo ou matrícula..." 
-                className="w-full bg-white dark:bg-[#2a2a2b] border border-black/10 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 outline-none focus:border-[#0866ff] transition-colors"
+                className="w-full bg-white dark:bg-[#2a2a2b] border border-black/10 dark:border-white/10 rounded-lg pl-11 pr-4 py-2 outline-none focus:border-[#0866ff] transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

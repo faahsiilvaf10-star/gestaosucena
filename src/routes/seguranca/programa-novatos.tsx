@@ -1358,10 +1358,10 @@ export function ProgramaNovatosComponent() {
           {/* Campo de Busca Rápida */}
           <div className="mb-4 max-w-md noprint">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3.5 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                className="nov-input pl-9"
+                className="nov-input pl-11"
                 placeholder="Buscar por nome, matrícula, cargo, setor ou tutor..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}

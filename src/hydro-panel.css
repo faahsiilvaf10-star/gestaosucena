@@ -208,7 +208,7 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
    Interativo: ao passar o mouse a ilustração dá zoom, o card levanta e
    o selo do microfone pula; no card de HOJE, barrinhas de som animadas
    ao lado do selo indicam que é ele quem fala hoje. */
-.dds-row{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,1.4vw,20px)}
+.dds-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,450px),1fr));gap:clamp(14px,1.4vw,20px)}
 .dds-card{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px 16px 16px;box-shadow:var(--shadow);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
 .dds-card:hover,.dds-card:focus-visible{transform:translateY(-3px);border-color:#D8D4C8;box-shadow:0 6px 14px rgba(20,30,55,.06),0 18px 36px rgba(20,30,55,.10)}
 .dds-card:active{transform:scale(.995)}
@@ -226,7 +226,7 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .dds-mic{position:absolute;right:7px;bottom:7px;width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#1A1400;display:grid;place-items:center;box-shadow:0 5px 12px rgba(20,30,55,.28);border:2px solid #fff;transition:transform .3s cubic-bezier(.34,1.5,.4,1)}
 .dds-mic svg{width:15px;height:15px}
 .dds-card:hover .dds-mic{transform:scale(1.14) rotate(-6deg)}
-.dds-main{min-width:0;flex:1}
+.dds-main{min-width:0;flex:1;display:flex !important;flex-direction:column !important;justify-content:center !important;gap:4px}
 .dds-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .dds-label{display:block;font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;line-height:1.2}
 .dds-label.today{color:#EA580C}
@@ -239,17 +239,17 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .dds-waves i:nth-child(1){height:6px}.dds-waves i:nth-child(2){height:13px;animation-delay:.14s}.dds-waves i:nth-child(3){height:9px;animation-delay:.28s}.dds-waves i:nth-child(4){height:14px;animation-delay:.42s}.dds-waves i:nth-child(5){height:7px;animation-delay:.56s}
 @keyframes ddsWave{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
 .dds-waves i{transform-origin:50% 100%}
-.dds-name{display:block;font-size:17.5px;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--ink);margin-top:6px}
-.dds-tema{display:flex;gap:7px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:var(--muted);font-weight:500;margin-top:7px;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;padding:8px 10px}
+.dds-name{display:block;font-size:clamp(15px,1.2vw,17.5px);font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--ink);margin-top:4px;word-break:normal;overflow-wrap:break-word}
+.dds-tema{display:inline-flex;gap:7px;align-items:center;font-size:12.5px;line-height:1.3;color:var(--muted);font-weight:500;margin-top:6px;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;max-width:100%}
 .dds-tema svg{width:15px;height:15px;flex:none;margin-top:1px;color:var(--yellow-dark)}
 .dds-card.today .dds-tema svg{color:#EA580C}
-.dds-tema .dds-tema-text{color:var(--ink2);font-weight:700}
+.dds-tema .dds-tema-text{color:var(--ink2);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} /* dds-tema-text-safe */
 .dds-side{display:flex;align-items:center;flex:none;margin-left:2px}
 .dds-post{flex:none;font-size:13.5px;font-weight:800;color:#1A1400;background:var(--yellow);padding:9px 13px;border-radius:99px;white-space:nowrap;box-shadow:0 5px 12px rgba(230,168,0,.30);transition:transform .2s ease,background .2s ease}
 .dds-card:hover .dds-post{background:#FFD84D}
 .dds-chev{width:18px;height:18px;flex:none;color:#5B6B82;margin-left:10px;transition:transform .25s ease}
 .dds-card:hover .dds-chev{transform:translateX(3px)}
-@media(max-width:900px){.dds-row{grid-template-columns:1fr}}
+@media(max-width:1200px){.dds-row{grid-template-columns:1fr}}
 @media(max-width:560px){.dds-card{padding:13px;gap:12px}.dds-photo{width:84px;height:84px;border-radius:13px}.dds-name{font-size:15.5px}.dds-post{padding:8px 10px;font-size:12.5px}.dds-chev{margin-left:5px}.dds-tema{font-size:12.5px;padding:7px 8px}}
 @media(prefers-reduced-motion:reduce){.dds-waves i,.dds-card.today .dds-photo-badge i{animation:none}.dds-photo img{transition:none}}
 
@@ -1935,4 +1935,18 @@ table {
   .sidebar-toggle {
     display: none !important;
   }
+}
+
+/* COMPACT RESOLUTION ADAPTATIONS */
+@media (max-width: 1400px) {
+  .hero-content { padding: 22px 24px; }
+  .kpi { padding: 16px; }
+  .kpi-big { font-size: clamp(32px, 3.2vw, 40px); }
+  .donut { width: 92px; height: 92px; }
+}
+
+@media (max-width: 1200px) {
+  .main { padding: 18px 20px 24px; }
+  .dds-card { padding: 14px 16px; gap: 14px; }
+  .dds-photo { width: 100px; height: 100px; }
 }

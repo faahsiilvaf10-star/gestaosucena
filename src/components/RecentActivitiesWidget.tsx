@@ -343,13 +343,13 @@ export function RecentActivitiesWidget() {
             {/* Barra de Filtro e Busca */}
             <div className="p-4 sm:px-6 border-b border-gray-100 dark:border-white/10 bg-gray-50/40 dark:bg-transparent flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Buscar por descrição, usuário ou módulo..."
                   value={modalSearch}
                   onChange={(e) => setModalSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-amber-500 text-gray-900 dark:text-white placeholder-gray-400 transition-colors"
+                  className="w-full pl-11 pr-3 py-2 text-sm bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-amber-500 text-gray-900 dark:text-white placeholder-gray-400 transition-colors"
                 />
               </div>
               <select

@@ -721,11 +721,11 @@ export function EpiRequisitionForm() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4">
           <h3 className="text-xl font-bold">EPI e Materiais</h3>
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="search"
               placeholder="Procurar EPI ou material..."
-              className="pl-9 bg-muted/50"
+              className="pl-11 bg-muted/50"
               value={searchEpiTerm}
               onChange={e => setSearchEpiTerm(e.target.value)}
             />

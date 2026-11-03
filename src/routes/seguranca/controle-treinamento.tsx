@@ -786,12 +786,12 @@ function ControleTreinamentoPage() {
             <div className="flex-1 min-w-[240px]">
               <label htmlFor="buscaRH">Buscar colaborador efetivado</label>
               <div className="relative">
-                <Search className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id="buscaRH"
                   value={buscaRH}
                   onChange={(e) => setBuscaRH(e.target.value)}
-                  className="pl-9"
+                  className="w-full pl-11 pr-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs sm:text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
                   placeholder="Buscar por nome, cargo, matrícula ou setor..."
                 />
               </div>

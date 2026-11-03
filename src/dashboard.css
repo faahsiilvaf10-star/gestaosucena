@@ -748,9 +748,11 @@ body {
 
 .dds-main {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
+  flex: 1;
 }
 
 .dds-label {
