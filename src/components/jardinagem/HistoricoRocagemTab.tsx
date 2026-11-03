@@ -15,11 +15,16 @@ import {
   RocagemEntry,
   RocagemCycle,
   formatM2,
-  getAvailableCycles
+  getAvailableCycles,
+  JardinagemActivityType,
+  JARDINAGEM_ACTIVITIES,
+  AllJardinagemRecords
 } from '../../lib/jardinagemRocagem'
 
 interface HistoricoRocagemTabProps {
-  records: RocagemEntry[]
+  records?: RocagemEntry[]
+  allRecords?: AllJardinagemRecords
+  initialActivity?: JardinagemActivityType
   loading: boolean
   onSelectDate: (date: string) => void
   onRefresh: () => void
@@ -27,39 +32,95 @@ interface HistoricoRocagemTabProps {
 
 export function HistoricoRocagemTab({
   records,
+  allRecords,
+  initialActivity = 'rocagem',
   loading,
   onSelectDate,
   onRefresh
 }: HistoricoRocagemTabProps) {
+  const [selectedActivity, setSelectedActivity] = useState<JardinagemActivityType>(initialActivity);
+
+  useEffect(() => {
+    if (initialActivity) {
+      setSelectedActivity(initialActivity);
+    }
+  }, [initialActivity]);
+
+  const activeRecords = useMemo(() => {
+    if (allRecords) {
+      if (selectedActivity === 'limpeza_manual') return allRecords.limpezaManual || [];
+      if (selectedActivity === 'limpeza_soprador') return allRecords.limpezaSoprador || [];
+      return allRecords.rocagem || [];
+    }
+    return records || [];
+  }, [allRecords, records, selectedActivity]);
+
+  const combinedRecordsForCycles = useMemo(() => {
+    if (allRecords) {
+      return [
+        ...(allRecords.rocagem || []),
+        ...(allRecords.limpezaManual || []),
+        ...(allRecords.limpezaSoprador || [])
+      ];
+    }
+    return records || [];
+  }, [allRecords, records]);
+
   // Lista de ciclos disponíveis
   const availableCycles = useMemo(() => {
-    return getAvailableCycles(records)
-  }, [records])
+    return getAvailableCycles(combinedRecordsForCycles);
+  }, [combinedRecordsForCycles]);
 
   // Ciclo selecionado (padrão é o mais recente)
   const [selectedCycleId, setSelectedCycleId] = useState<string>(() => {
-    return availableCycles[0]?.id || ''
-  })
+    return availableCycles[0]?.id || '';
+  });
 
   // Se o ciclo selecionado não existir mais, volta pro primeiro
   const currentCycle = useMemo(() => {
-    const found = availableCycles.find(c => c.id === selectedCycleId)
-    return found || availableCycles[0]
-  }, [availableCycles, selectedCycleId])
+    const found = availableCycles.find(c => c.id === selectedCycleId);
+    return found || availableCycles[0];
+  }, [availableCycles, selectedCycleId]);
 
-  const [viewMode, setViewMode] = useState<'faixa-berma' | 'cronologica' | 'matriz'>('faixa-berma')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedFaixaFilter, setSelectedFaixaFilter] = useState<string>('todas')
-  const [copied, setCopied] = useState(false)
+  const [viewMode, setViewMode] = useState<'faixa-berma' | 'cronologica' | 'matriz'>('faixa-berma');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFaixaFilter, setSelectedFaixaFilter] = useState<string>('todas');
+  const [copied, setCopied] = useState(false);
+
+  // Totais das 3 atividades no ciclo atual para os badges do seletor
+  const activityTotals = useMemo(() => {
+    if (!currentCycle) {
+      return { rocagem: 0, limpeza_manual: 0, limpeza_soprador: 0 };
+    }
+    const sumInCycle = (list: RocagemEntry[]) =>
+      list
+        .filter(r => r.date >= currentCycle.startDate && r.date <= currentCycle.endDate)
+        .reduce((sum, r) => sum + r.value, 0);
+
+    if (allRecords) {
+      return {
+        rocagem: sumInCycle(allRecords.rocagem || []),
+        limpeza_manual: sumInCycle(allRecords.limpezaManual || []),
+        limpeza_soprador: sumInCycle(allRecords.limpezaSoprador || [])
+      };
+    }
+    return {
+      rocagem: sumInCycle(records || []),
+      limpeza_manual: 0,
+      limpeza_soprador: 0
+    };
+  }, [currentCycle, allRecords, records]);
+
+  const currentActivityConfig = JARDINAGEM_ACTIVITIES[selectedActivity] || JARDINAGEM_ACTIVITIES.rocagem;
 
   // Registros pertencentes ao ciclo atual
   const cycleRecords = useMemo(() => {
-    if (!currentCycle) return []
-    return records
+    if (!currentCycle) return [];
+    return activeRecords
       .filter(r => r.date >= currentCycle.startDate && r.date <= currentCycle.endDate)
       // Ordenação rigorosamente na data crescente
-      .sort((a, b) => a.date.localeCompare(b.date))
-  }, [records, currentCycle])
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [activeRecords, currentCycle]);
 
   // Registros filtrados pela busca
   const filteredRecords = useMemo(() => {
@@ -154,7 +215,7 @@ export function HistoricoRocagemTab({
   const handleCopyReport = () => {
     if (!currentCycle) return
 
-    let text = `🌱 *HISTÓRICO DE ROÇAGEM - PERÍODO ${currentCycle.label.toUpperCase()}*\n`
+    let text = `🌱 *HISTÓRICO DE ${currentActivityConfig.name.toUpperCase()} - PERÍODO ${currentCycle.label.toUpperCase()}*\n`
     text += `📊 Total do Período: ${formatM2(totalGeralM2)} m²\n`
     text += `📅 Dias Trabalhados: ${diasUnicos} dias | Lançamentos: ${cycleRecords.length}\n\n`
 
@@ -176,7 +237,7 @@ export function HistoricoRocagemTab({
 
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
-      toast.success('Relatório de roçagem copiado com sucesso!')
+      toast.success(`Relatório de ${currentActivityConfig.name.toLowerCase()} copiado com sucesso!`)
       setTimeout(() => setCopied(false), 2500)
     }).catch(() => {
       toast.error('Erro ao copiar relatório.')
@@ -185,6 +246,67 @@ export function HistoricoRocagemTab({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Seletor de Atividade do Ciclo (Roçagem / Limpeza Manual / Limpeza com Soprador) */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-2.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Layers size={18} className="text-emerald-600" />
+          <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+            Selecione a Atividade para Medição:
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedActivity('rocagem')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              selectedActivity === 'rocagem'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+            }`}
+          >
+            <span>🌿 Roçagem</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
+              selectedActivity === 'rocagem' ? 'bg-white/20 text-white' : 'bg-emerald-200/80 text-emerald-900'
+            }`}>
+              {formatM2(activityTotals.rocagem)} m²
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedActivity('limpeza_manual')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              selectedActivity === 'limpeza_manual'
+                ? 'bg-teal-600 text-white shadow-sm'
+                : 'bg-teal-50 text-teal-800 hover:bg-teal-100'
+            }`}
+          >
+            <span>🧹 Limpeza Manual</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
+              selectedActivity === 'limpeza_manual' ? 'bg-white/20 text-white' : 'bg-teal-200/80 text-teal-900'
+            }`}>
+              {formatM2(activityTotals.limpeza_manual)} m²
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedActivity('limpeza_soprador')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              selectedActivity === 'limpeza_soprador'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'bg-sky-50 text-sky-800 hover:bg-sky-100'
+            }`}
+          >
+            <span>💨 Limpeza com Soprador</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
+              selectedActivity === 'limpeza_soprador' ? 'bg-white/20 text-white' : 'bg-sky-200/80 text-sky-900'
+            }`}>
+              {formatM2(activityTotals.limpeza_soprador)} m²
+            </span>
+          </button>
+        </div>
+      </div>
       {/* Barra Superior de Seleção do Ciclo e Ações */}
       <div className="bg-white border border-gray-200 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -241,7 +363,7 @@ export function HistoricoRocagemTab({
         <div className="bg-gradient-to-br from-emerald-50 to-green-50/50 border border-emerald-200 rounded-3xl p-5 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-              Total Roçado no Período
+              Total {currentActivityConfig.name} no Período
             </span>
             <span className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">
               m²
@@ -388,9 +510,9 @@ export function HistoricoRocagemTab({
           <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
             <Calendar size={28} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">Nenhum registro de roçagem neste período</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Nenhum registro de {currentActivityConfig.name.toLowerCase()} neste período</h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-            Não foram encontrados lançamentos de roçagem entre <strong>{currentCycle?.label}</strong>.
+            Não foram encontrados lançamentos de {currentActivityConfig.name.toLowerCase()} entre <strong>{currentCycle?.label}</strong>.
             Lançamentos feitos na aba "Registro Diário" com datas nesse intervalo aparecerão aqui automaticamente.
           </p>
         </div>

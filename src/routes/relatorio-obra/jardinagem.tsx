@@ -23,10 +23,12 @@ import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/logActivity'
 import {
   RocagemEntry,
-  calculatePeriodRocagemTotal,
-  getAllRocagemRecords,
+  calculatePeriodActivityTotal,
+  getAllJardinagemRecords,
   formatM2,
-  getRocagemCycleForDate
+  getRocagemCycleForDate,
+  AllJardinagemRecords,
+  JardinagemActivityType
 } from '../../lib/jardinagemRocagem'
 import { HistoricoRocagemTab } from '../../components/jardinagem/HistoricoRocagemTab'
 
@@ -207,7 +209,12 @@ function JardinagemPage() {
   });
 
   const [activeMainTab, setActiveMainTab] = useState<'diario' | 'historico_rocagem'>('diario');
-  const [allRocagemRecords, setAllRocagemRecords] = useState<RocagemEntry[]>([]);
+  const [allJardinagemRecords, setAllJardinagemRecords] = useState<AllJardinagemRecords>({
+    rocagem: [],
+    limpezaManual: [],
+    limpezaSoprador: []
+  });
+  const [historicoInitialActivity, setHistoricoInitialActivity] = useState<JardinagemActivityType>('rocagem');
   const [loadingRocagem, setLoadingRocagem] = useState<boolean>(true);
 
   const [showHistory, setShowHistory] = useState(false);
@@ -218,19 +225,27 @@ function JardinagemPage() {
   const refreshRocagemRecords = async () => {
     setLoadingRocagem(true);
     try {
-      const records = await getAllRocagemRecords();
-      setAllRocagemRecords(records);
+      const records = await getAllJardinagemRecords();
+      setAllJardinagemRecords(records);
     } catch (err) {
-      console.error('Erro ao buscar histórico de roçagem:', err);
+      console.error('Erro ao buscar histórico de jardinagem:', err);
     } finally {
       setLoadingRocagem(false);
     }
   };
 
-  // Cálculo em tempo real da soma do ciclo de roçagem (16 a 15)
+  // Cálculos em tempo real da soma do ciclo contratual (dia 16 ao dia 15)
   const rocagemPeriodInfo = useMemo(() => {
-    return calculatePeriodRocagemTotal(selectedDate, allRocagemRecords, rocagem);
-  }, [selectedDate, allRocagemRecords, rocagem]);
+    return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.rocagem, rocagem);
+  }, [selectedDate, allJardinagemRecords.rocagem, rocagem]);
+
+  const limpezaManualPeriodInfo = useMemo(() => {
+    return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.limpezaManual, limpezaManual);
+  }, [selectedDate, allJardinagemRecords.limpezaManual, limpezaManual]);
+
+  const limpezaSopradorPeriodInfo = useMemo(() => {
+    return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.limpezaSoprador, limpezaSoprador);
+  }, [selectedDate, allJardinagemRecords.limpezaSoprador, limpezaSoprador]);
 
   const updateSavedDates = async () => {
     const localKeys = Object.keys(localStorage).filter(k => k.startsWith('jardinagem_rdo_'));
@@ -292,9 +307,11 @@ function JardinagemPage() {
     localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(dataToSave));
     setIsLocked(true);
 
-    const cycleTotal = rocagemPeriodInfo.totalM2;
+    const cycleTotalRocagem = rocagemPeriodInfo.totalM2;
+    const cycleTotalManual = limpezaManualPeriodInfo.totalM2;
+    const cycleTotalSoprador = limpezaSopradorPeriodInfo.totalM2;
     toast.success(
-      `Relatório salvo para ${formatDateDisplay(selectedDate)}! Total de roçagem no ciclo (${rocagemPeriodInfo.cycle.startDate.slice(8)} a ${rocagemPeriodInfo.cycle.endDate.slice(8)}): ${formatM2(cycleTotal)} m²`
+      `Relatório salvo para ${formatDateDisplay(selectedDate)}! Ciclo (${rocagemPeriodInfo.cycle.startDate.slice(8)} a ${rocagemPeriodInfo.cycle.endDate.slice(8)}): Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²`
     );
     
     try {
@@ -307,7 +324,7 @@ function JardinagemPage() {
       const localUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null;
       await logActivity({
         module: 'RDO',
-        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Roçagem ciclo: ${formatM2(cycleTotal)} m²)`,
+        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Ciclo 16-15 — Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²)`,
         user_name: localUserName || 'Fabrício Silva'
       });
     } catch (e) {}
@@ -594,22 +611,41 @@ function JardinagemPage() {
             <span>Registro Diário (RDO)</span>
           </button>
           <button
-            onClick={() => setActiveMainTab('historico_rocagem')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
+            onClick={() => {
+              setHistoricoInitialActivity('rocagem');
+              setActiveMainTab('historico_rocagem');
+            }}
+            className={`flex flex-wrap items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
               activeMainTab === 'historico_rocagem'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             <Layers size={16} className={activeMainTab === 'historico_rocagem' ? 'text-white' : 'text-emerald-600'} />
-            <span>Histórico de Roçagem (Ciclos 16-15)</span>
-            <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition-colors ${
-              activeMainTab === 'historico_rocagem'
-                ? 'bg-white/20 text-white'
-                : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {formatM2(rocagemPeriodInfo.totalM2)} m²
-            </span>
+            <span>Histórico (Ciclos 16-15)</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                activeMainTab === 'historico_rocagem'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-emerald-100 text-emerald-800'
+              }`} title="Total de Roçagem no ciclo">
+                Roçagem: {formatM2(rocagemPeriodInfo.totalM2)} m²
+              </span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                activeMainTab === 'historico_rocagem'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-teal-100 text-teal-800'
+              }`} title="Total de Limpeza Manual no ciclo">
+                L. Manual: {formatM2(limpezaManualPeriodInfo.totalM2)} m²
+              </span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                activeMainTab === 'historico_rocagem'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-sky-100 text-sky-800'
+              }`} title="Total de Limpeza com Soprador no ciclo">
+                Soprador: {formatM2(limpezaSopradorPeriodInfo.totalM2)} m²
+              </span>
+            </div>
           </button>
         </div>
       </div>
@@ -617,7 +653,8 @@ function JardinagemPage() {
       {activeMainTab === 'historico_rocagem' ? (
         <div className="px-4 sm:px-8 mt-2">
           <HistoricoRocagemTab
-            records={allRocagemRecords}
+            allRecords={allJardinagemRecords}
+            initialActivity={historicoInitialActivity}
             loading={loadingRocagem}
             onSelectDate={(date) => {
               loadDate(date);
@@ -678,7 +715,10 @@ function JardinagemPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setActiveMainTab('historico_rocagem')}
+                    onClick={() => {
+                      setHistoricoInitialActivity('rocagem');
+                      setActiveMainTab('historico_rocagem');
+                    }}
                     className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-100/70 px-3 py-2 rounded-lg border border-emerald-300 transition-colors shadow-2xs cursor-pointer"
                   >
                     <span>Ver Histórico por Faixa/Berma</span>
@@ -740,8 +780,98 @@ function JardinagemPage() {
               ))}
             </div>
 
-            <ActivityRow title="LIMPEZA MANUAL (m²)" data={limpezaManual} setData={setLimpezaManual} />
-            <ActivityRow title="LIMPEZA COM SOPRADOR (m²)" data={limpezaSoprador} setData={setLimpezaSoprador} />
+            <ActivityRow 
+              title="LIMPEZA MANUAL (m²)" 
+              data={limpezaManual} 
+              setData={setLimpezaManual}
+              extraHeader={
+                <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-green-50 border border-teal-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-teal-600 text-white rounded-lg shadow-xs mt-0.5 sm:mt-0 shrink-0">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold tracking-wider uppercase text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md border border-teal-200">
+                          Período Contratual: {limpezaManualPeriodInfo.cycle.label}
+                        </span>
+                        <span className="text-xs text-teal-700 font-medium">
+                          (dia 16 ao dia 15)
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                        <span className="text-xs text-gray-600">Total acumulado no período:</span>
+                        <span className="text-lg font-black text-teal-950 tracking-tight">
+                          {formatM2(limpezaManualPeriodInfo.totalM2)} m²
+                        </span>
+                        {limpezaManualPeriodInfo.currentDayM2 > 0 && (
+                          <span className="text-xs text-teal-800 font-bold bg-white/90 px-2 py-0.5 rounded-md border border-teal-300 shadow-2xs">
+                            +{formatM2(limpezaManualPeriodInfo.currentDayM2)} m² hoje
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistoricoInitialActivity('limpeza_manual');
+                      setActiveMainTab('historico_rocagem');
+                    }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100/70 px-3 py-2 rounded-lg border border-teal-300 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Ver Histórico por Faixa/Berma</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              }
+            />
+            <ActivityRow 
+              title="LIMPEZA COM SOPRADOR (m²)" 
+              data={limpezaSoprador} 
+              setData={setLimpezaSoprador}
+              extraHeader={
+                <div className="bg-gradient-to-r from-sky-50 via-cyan-50 to-blue-50 border border-sky-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-sky-600 text-white rounded-lg shadow-xs mt-0.5 sm:mt-0 shrink-0">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold tracking-wider uppercase text-sky-900 bg-sky-100/80 px-2 py-0.5 rounded-md border border-sky-200">
+                          Período Contratual: {limpezaSopradorPeriodInfo.cycle.label}
+                        </span>
+                        <span className="text-xs text-sky-700 font-medium">
+                          (dia 16 ao dia 15)
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                        <span className="text-xs text-gray-600">Total acumulado no período:</span>
+                        <span className="text-lg font-black text-sky-950 tracking-tight">
+                          {formatM2(limpezaSopradorPeriodInfo.totalM2)} m²
+                        </span>
+                        {limpezaSopradorPeriodInfo.currentDayM2 > 0 && (
+                          <span className="text-xs text-sky-800 font-bold bg-white/90 px-2 py-0.5 rounded-md border border-sky-300 shadow-2xs">
+                            +{formatM2(limpezaSopradorPeriodInfo.currentDayM2)} m² hoje
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistoricoInitialActivity('limpeza_soprador');
+                      setActiveMainTab('historico_rocagem');
+                    }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-sky-800 hover:text-sky-950 bg-white hover:bg-sky-100/70 px-3 py-2 rounded-lg border border-sky-300 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Ver Histórico por Faixa/Berma</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              }
+            />
 
             {/* CONTROLE DE INVASORAS */}
             <div className="p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm">
@@ -961,7 +1091,19 @@ function JardinagemPage() {
                 {renderRows('Adubagem', adubagem, 'unid')}
                 {renderPlantio()}
                 {renderRows('Limpeza Manual', limpezaManual, 'm²')}
+                {limpezaManualPeriodInfo.totalM2 > 0 && (
+                  <div className="text-teal-800 bg-teal-50/90 px-2.5 py-1.5 rounded-lg border border-teal-200 text-xs font-semibold flex items-center justify-between my-1">
+                    <span>🧹 Limp. Manual no Período ({limpezaManualPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {limpezaManualPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
+                    <span className="font-bold text-teal-950">{formatM2(limpezaManualPeriodInfo.totalM2)} m²</span>
+                  </div>
+                )}
                 {renderRows('Limpeza com Soprador', limpezaSoprador, 'm²')}
+                {limpezaSopradorPeriodInfo.totalM2 > 0 && (
+                  <div className="text-sky-800 bg-sky-50/90 px-2.5 py-1.5 rounded-lg border border-sky-200 text-xs font-semibold flex items-center justify-between my-1">
+                    <span>💨 Soprador no Período ({limpezaSopradorPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {limpezaSopradorPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
+                    <span className="font-bold text-sky-950">{formatM2(limpezaSopradorPeriodInfo.totalM2)} m²</span>
+                  </div>
+                )}
                 {renderInvasoras()}
                 {renderRows('Retirada de Mudas - Árvores', retiradaMudas, 'unid')}
                 {renderRows('Plantio de Grama', plantioGrama, 'm²')}

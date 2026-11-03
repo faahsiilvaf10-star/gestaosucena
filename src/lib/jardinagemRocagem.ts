@@ -1,11 +1,60 @@
 import { supabase } from './supabase'
 
+export type JardinagemActivityType = 'rocagem' | 'limpeza_manual' | 'limpeza_soprador';
+
+export interface ActivityConfig {
+  type: JardinagemActivityType;
+  name: string;
+  shortName: string;
+  unit: string;
+  icon: string;
+  dbKey: 'rocagem' | 'limpezaManual' | 'limpezaSoprador';
+  color: string;
+}
+
+export const JARDINAGEM_ACTIVITIES: Record<JardinagemActivityType, ActivityConfig> = {
+  rocagem: {
+    type: 'rocagem',
+    name: 'Roçagem',
+    shortName: 'Roçagem',
+    unit: 'm²',
+    icon: '🌿',
+    dbKey: 'rocagem',
+    color: 'emerald'
+  },
+  limpeza_manual: {
+    type: 'limpeza_manual',
+    name: 'Limpeza Manual',
+    shortName: 'Limpeza Manual',
+    unit: 'm²',
+    icon: '🧹',
+    dbKey: 'limpezaManual',
+    color: 'teal'
+  },
+  limpeza_soprador: {
+    type: 'limpeza_soprador',
+    name: 'Limpeza com Soprador',
+    shortName: 'Limpeza Soprador',
+    unit: 'm²',
+    icon: '💨',
+    dbKey: 'limpezaSoprador',
+    color: 'sky'
+  }
+};
+
 export interface RocagemEntry {
+  activityType?: JardinagemActivityType;
   date: string // "YYYY-MM-DD"
   faixa: string // "Faixa 2", "Faixa 3", etc.
   berma: string // "Berma 28", "GABIÃO 1", etc.
   value: number // Em m²
   rawString: string // Como digitado (ex: "1.200" ou "1.240,00")
+}
+
+export interface AllJardinagemRecords {
+  rocagem: RocagemEntry[];
+  limpezaManual: RocagemEntry[];
+  limpezaSoprador: RocagemEntry[];
 }
 
 export interface RocagemCycle {
@@ -99,10 +148,34 @@ export function getRocagemCycleForDate(dateStr: string): RocagemCycle {
 }
 
 /**
- * Carrega todos os registros de roçagem salvos no Supabase e no localStorage.
+ * Função utilitária para extrair entradas de um array salvo (rocagem, limpezaManual, limpezaSoprador).
  */
-export async function getAllRocagemRecords(): Promise<RocagemEntry[]> {
-  const recordsMap: Record<string, RocagemEntry[]> = {};
+function extractEntriesFromRows(
+  rows: any,
+  date: string,
+  activityType: JardinagemActivityType
+): RocagemEntry[] {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .filter((r: any) => parseNumber(r?.value) > 0)
+    .map((r: any) => ({
+      activityType,
+      date,
+      faixa: r.faixa || 'Sem Faixa',
+      berma: r.berma || 'Sem Berma',
+      value: parseNumber(r.value),
+      rawString: String(r.value || '')
+    }));
+}
+
+/**
+ * Carrega todos os registros das 3 atividades (Roçagem, Limpeza Manual e Limpeza com Soprador)
+ * salvos no Supabase e no localStorage.
+ */
+export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
+  const rocagemMap: Record<string, RocagemEntry[]> = {};
+  const manualMap: Record<string, RocagemEntry[]> = {};
+  const sopradorMap: Record<string, RocagemEntry[]> = {};
 
   // 1. Carregar do localStorage
   try {
@@ -112,17 +185,9 @@ export async function getAllRocagemRecords(): Promise<RocagemEntry[]> {
         const date = k.replace('jardinagem_rdo_', '');
         try {
           const val = JSON.parse(localStorage.getItem(k) || '{}');
-          if (Array.isArray(val.rocagem)) {
-            recordsMap[date] = val.rocagem
-              .filter((r: any) => parseNumber(r.value) > 0)
-              .map((r: any) => ({
-                date,
-                faixa: r.faixa || 'Sem Faixa',
-                berma: r.berma || 'Sem Berma',
-                value: parseNumber(r.value),
-                rawString: String(r.value || '')
-              }));
-          }
+          if (val.rocagem) rocagemMap[date] = extractEntriesFromRows(val.rocagem, date, 'rocagem');
+          if (val.limpezaManual) manualMap[date] = extractEntriesFromRows(val.limpezaManual, date, 'limpeza_manual');
+          if (val.limpezaSoprador) sopradorMap[date] = extractEntriesFromRows(val.limpezaSoprador, date, 'limpeza_soprador');
         } catch (e) {}
       }
     }
@@ -139,30 +204,36 @@ export async function getAllRocagemRecords(): Promise<RocagemEntry[]> {
       data.forEach(item => {
         const date = item.key.replace('jardinagem_rdo_', '');
         const val = item.value;
-        if (val && Array.isArray(val.rocagem)) {
-          recordsMap[date] = val.rocagem
-            .filter((r: any) => parseNumber(r.value) > 0)
-            .map((r: any) => ({
-              date,
-              faixa: r.faixa || 'Sem Faixa',
-              berma: r.berma || 'Sem Berma',
-              value: parseNumber(r.value),
-              rawString: String(r.value || '')
-            }));
+        if (val) {
+          if (val.rocagem) rocagemMap[date] = extractEntriesFromRows(val.rocagem, date, 'rocagem');
+          if (val.limpezaManual) manualMap[date] = extractEntriesFromRows(val.limpezaManual, date, 'limpeza_manual');
+          if (val.limpezaSoprador) sopradorMap[date] = extractEntriesFromRows(val.limpezaSoprador, date, 'limpeza_soprador');
         }
       });
     }
   } catch (err) {
-    console.error('Erro ao buscar registros de roçagem do banco:', err);
+    console.error('Erro ao buscar registros de jardinagem do banco:', err);
   }
 
-  // Flatten todos os itens
-  const allEntries: RocagemEntry[] = [];
-  Object.values(recordsMap).forEach(list => {
-    allEntries.push(...list);
-  });
+  const flatten = (map: Record<string, RocagemEntry[]>) => {
+    const list: RocagemEntry[] = [];
+    Object.values(map).forEach(entries => list.push(...entries));
+    return list;
+  };
 
-  return allEntries;
+  return {
+    rocagem: flatten(rocagemMap),
+    limpezaManual: flatten(manualMap),
+    limpezaSoprador: flatten(sopradorMap)
+  };
+}
+
+/**
+ * Carrega todos os registros de roçagem salvos no Supabase e no localStorage (compatibilidade).
+ */
+export async function getAllRocagemRecords(): Promise<RocagemEntry[]> {
+  const all = await getAllJardinagemRecords();
+  return all.rocagem;
 }
 
 /**
@@ -189,10 +260,10 @@ export function getAvailableCycles(records: RocagemEntry[], currentDateStr?: str
 }
 
 /**
- * Calcula a soma em m² no período (16 a 15) para uma data de referência,
+ * Calcula a soma em m² no período contratual (16 a 15) para uma atividade,
  * permitindo incluir os dados que estão atualmente sendo editados no formulário do dia.
  */
-export function calculatePeriodRocagemTotal(
+export function calculatePeriodActivityTotal(
   referenceDateStr: string,
   allSavedRecords: RocagemEntry[],
   currentDayRows?: Array<{ value: string; faixa: string; berma: string }>
@@ -243,3 +314,8 @@ export function calculatePeriodRocagemTotal(
     otherDaysM2
   };
 }
+
+/**
+ * Alias mantido para compatibilidade com código existente
+ */
+export const calculatePeriodRocagemTotal = calculatePeriodActivityTotal;
