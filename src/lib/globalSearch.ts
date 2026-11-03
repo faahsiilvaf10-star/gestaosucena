@@ -54,6 +54,13 @@ export const SYSTEM_MODULES: SystemModule[] = [
     badge: 'Módulo',
   },
   {
+    title: 'Crachá Vinculado (Equipamentos)',
+    subtitle: 'Vínculo de motoristas aos equipamentos pesados da frota',
+    href: '/equipamentos/cracha-vinculado',
+    keywords: ['cracha', 'crachá', 'vinculado', 'cracha vinculado', 'motoristas equipamentos', 'frota motorista', 'pesados'],
+    badge: 'Módulo',
+  },
+  {
     title: 'Recursos Humanos (RH)',
     subtitle: 'Quadro de efetivo, colaboradores, matrículas e presenças',
     href: '/rh',

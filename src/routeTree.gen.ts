@@ -31,6 +31,7 @@ import { Route as AlmoxarifadoRequisicaoRouteImport } from './routes/almoxarifad
 import { Route as DocumentosIndexRouteImport } from './routes/documentos/index'
 import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/index'
 import { Route as EquipamentosAppMotoristaRouteImport } from './routes/equipamentos/app-motorista'
+import { Route as EquipamentosCrachaVinculadoRouteImport } from './routes/equipamentos/cracha-vinculado'
 import { Route as EquipamentosEntradaSaidaRouteImport } from './routes/equipamentos/entrada-saida'
 import { Route as EquipamentosParteDiariaRouteImport } from './routes/equipamentos/parte-diaria'
 import { Route as EquipamentosTodosRouteImport } from './routes/equipamentos/todos'
@@ -191,6 +192,12 @@ const EquipamentosAppMotoristaRoute =
   EquipamentosAppMotoristaRouteImport.update({
     id: '/app-motorista',
     path: '/app-motorista',
+    getParentRoute: () => EquipamentosRoute,
+  } as any)
+const EquipamentosCrachaVinculadoRoute =
+  EquipamentosCrachaVinculadoRouteImport.update({
+    id: '/cracha-vinculado',
+    path: '/cracha-vinculado',
     getParentRoute: () => EquipamentosRoute,
   } as any)
 const EquipamentosEntradaSaidaRoute =
@@ -470,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
+  '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -537,6 +545,7 @@ export interface FileRoutesByTo {
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
+  '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -611,6 +620,7 @@ export interface FileRoutesById {
   '/almoxarifado/notas-fiscais': typeof AlmoxarifadoNotasFiscaisRoute
   '/almoxarifado/requisicao': typeof AlmoxarifadoRequisicaoRoute
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
+  '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
     | '/equipamentos/app-motorista'
+    | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
@@ -753,6 +764,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
     | '/equipamentos/app-motorista'
+    | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
@@ -826,6 +838,7 @@ export interface FileRouteTypes {
     | '/almoxarifado/notas-fiscais'
     | '/almoxarifado/requisicao'
     | '/equipamentos/app-motorista'
+    | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
@@ -1057,6 +1070,13 @@ declare module '@tanstack/react-router' {
       path: '/app-motorista'
       fullPath: '/equipamentos/app-motorista'
       preLoaderRoute: typeof EquipamentosAppMotoristaRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
+    '/equipamentos/cracha-vinculado': {
+      id: '/equipamentos/cracha-vinculado'
+      path: '/cracha-vinculado'
+      fullPath: '/equipamentos/cracha-vinculado'
+      preLoaderRoute: typeof EquipamentosCrachaVinculadoRouteImport
       parentRoute: typeof EquipamentosRoute
     }
     '/equipamentos/entrada-saida': {
@@ -1439,6 +1459,7 @@ const AlmoxarifadoRouteWithChildren = AlmoxarifadoRoute._addFileChildren(
 
 interface EquipamentosRouteChildren {
   EquipamentosAppMotoristaRoute: typeof EquipamentosAppMotoristaRoute
+  EquipamentosCrachaVinculadoRoute: typeof EquipamentosCrachaVinculadoRoute
   EquipamentosEntradaSaidaRoute: typeof EquipamentosEntradaSaidaRoute
   EquipamentosParteDiariaRoute: typeof EquipamentosParteDiariaRoute
   EquipamentosTodosRoute: typeof EquipamentosTodosRoute
@@ -1448,6 +1469,7 @@ interface EquipamentosRouteChildren {
 
 const EquipamentosRouteChildren: EquipamentosRouteChildren = {
   EquipamentosAppMotoristaRoute: EquipamentosAppMotoristaRoute,
+  EquipamentosCrachaVinculadoRoute: EquipamentosCrachaVinculadoRoute,
   EquipamentosEntradaSaidaRoute: EquipamentosEntradaSaidaRoute,
   EquipamentosParteDiariaRoute: EquipamentosParteDiariaRoute,
   EquipamentosTodosRoute: EquipamentosTodosRoute,
