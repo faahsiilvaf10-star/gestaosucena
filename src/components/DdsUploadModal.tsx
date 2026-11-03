@@ -88,7 +88,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
       const today = new Date()
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-      let initialTema = tema && tema !== 'Sem tema agendado' ? tema.trim() : ''
+      let initialTema = tema && tema !== 'Sem tema agendado' && tema !== 'DDS Livre' ? tema.trim() : ''
       let initialPalestrante = palestrante && palestrante !== 'Livre' && palestrante !== 'Desconhecido' ? palestrante.trim() : ''
 
       // Se palestrante for 'Livre' ou vazio, busca direto no agendamento de hoje
@@ -200,7 +200,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
       }
 
       // Estruturar legenda
-      const caption = `🎤 **DDS Realizado!**\n**Tema:** ${editableTema?.trim() || 'Sem tema agendado'}\n**Palestrante:** ${speaker || 'Livre'}\n**Data:** ${today}\n**Cor Proibida do Mês:** ${colorName}\n\n${notes}`
+      const caption = `🎤 **DDS Realizado!**\n**Tema:** ${editableTema?.trim() || 'DDS Livre'}\n**Palestrante:** ${speaker || 'Livre'}\n**Data:** ${today}\n**Cor Proibida do Mês:** ${colorName}\n\n${notes}`
 
       const envName = (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null) === 'hydro-civil' ? 'HYDRO CIVIL' : 'HYDRO REABILITAÇÃO'
 

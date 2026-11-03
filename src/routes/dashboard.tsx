@@ -616,7 +616,8 @@ function DashboardComponent() {
         ? getPalestranteInfo(postedSpeaker)
         : (todayDds ? getPalestranteInfo(todayDds.palestrante_id) : { id: null, nome: 'Livre', avatar: null })
 
-      const finalTemaHoje = postedTema || todayDds?.tema || 'Reunião de Contrato Hydro'
+      const cleanTodayTema = todayDds?.tema?.trim()
+      const finalTemaHoje = postedTema?.trim() || (cleanTodayTema && cleanTodayTema.toUpperCase() !== 'A DEFINIR' ? cleanTodayTema : 'DDS Livre')
 
       // Sincroniza em segundo plano com a tabela seguranca_dds caso esteja defasada
       if (todayDds && (postedTema || postedSpeaker)) {
@@ -1318,7 +1319,7 @@ function DashboardComponent() {
           className="dds-card today"
           type="button"
           onClick={() => navigate({ to: '/seguranca/dds' })}
-          aria-label={`Palestrante do DDS hoje: ${ddsData?.hoje?.palestrante?.nome || 'Livre'}, tema ${ddsData?.hoje?.tema || 'Sem tema'}. Postar DDS`}
+          aria-label={`Palestrante do DDS hoje: ${ddsData?.hoje?.palestrante?.nome || 'Livre'}, tema ${ddsData?.hoje?.tema || 'DDS Livre'}. Postar DDS`}
         >
           <span
             className={`dds-photo today ${ddsData?.hoje?.postedMedia ? 'cursor-zoom-in group/photo' : ''}`}
@@ -1369,7 +1370,7 @@ function DashboardComponent() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
               </svg>
-              <span>Tema: <span className="dds-tema-text">{ddsData?.hoje?.tema || 'Sem tema agendado'}</span></span>
+              <span>Tema: <span className="dds-tema-text">{ddsData?.hoje?.tema || 'DDS Livre'}</span></span>
             </span>
           </span>
           <span className="dds-side">
@@ -1804,7 +1805,7 @@ function DashboardComponent() {
         key={`dds-modal-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
         isOpen={isDdsModalOpen}
         onClose={() => setIsDdsModalOpen(false)}
-        tema={ddsData?.hoje?.tema || 'Sem tema agendado'}
+        tema={ddsData?.hoje?.tema || 'DDS Livre'}
         palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
