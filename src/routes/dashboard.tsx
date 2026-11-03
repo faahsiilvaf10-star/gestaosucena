@@ -1779,10 +1779,10 @@ function DashboardComponent() {
         <div className="hydro-bottom-widgets-masonry">
           <DashboardDesviosWidget />
           <DashboardInspecaoCanteiroWidget />
-          <DashboardStockAlertWidget />
+          <DashboardMatrizWidget />
           <DashboardVistoriasWidget />
           <RecentActivitiesWidget />
-          <DashboardMatrizWidget />
+          <DashboardStockAlertWidget />
         </div>
       </section>
 
