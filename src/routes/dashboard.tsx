@@ -1714,7 +1714,6 @@ function DashboardComponent() {
         <button className="quick-item" data-name="almoxarifado" onClick={() => navigate({ to: "/almoxarifado" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>Almoxarifado</button>
         <button className="quick-item" data-name="relatorios relatorio de obra" onClick={() => navigate({ to: "/relatorio-obra" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Relatórios</button>
         <button className="quick-item" data-name="planejamento" onClick={() => toast.info("Módulo de Planejamento em desenvolvimento.")}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Planejamento</button>
-        <button className="quick-item" data-name="reunioes" onClick={() => navigate({ to: "/reunioes" })}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg>Reuniões</button>
       </div>
     </section>
 

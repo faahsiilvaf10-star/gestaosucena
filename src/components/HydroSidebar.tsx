@@ -137,17 +137,6 @@ export const NAV_ITEMS: NavItemDef[] = [
     ),
   },
   {
-    id: 'reunioes',
-    label: 'REUNIÕES',
-    href: '/reunioes',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="9" cy="8" r="3.5" />
-        <path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7" />
-      </svg>
-    ),
-  },
-  {
     id: 'emergencia',
     label: 'EMERGÊNCIA',
     href: '/emergencia',

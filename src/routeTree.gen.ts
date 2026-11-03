@@ -20,7 +20,6 @@ import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as InstacenaRouteImport } from './routes/instacena'
 import { Route as LembretesRouteImport } from './routes/lembretes'
 import { Route as MeioAmbienteRouteImport } from './routes/meio-ambiente'
-import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RhRouteImport } from './routes/rh'
 import { Route as SegurancaRouteImport } from './routes/seguranca'
 import { Route as AlmoxarifadoIndexRouteImport } from './routes/almoxarifado/index'
@@ -135,11 +134,6 @@ const LembretesRoute = LembretesRouteImport.update({
 const MeioAmbienteRoute = MeioAmbienteRouteImport.update({
   id: '/meio-ambiente',
   path: '/meio-ambiente',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReunioesRoute = ReunioesRouteImport.update({
-  id: '/reunioes',
-  path: '/reunioes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RhRoute = RhRouteImport.update({
@@ -468,7 +462,6 @@ export interface FileRoutesByFullPath {
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
-  '/reunioes': typeof ReunioesRoute
   '/rh': typeof RhRouteWithChildren
   '/seguranca': typeof SegurancaRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
@@ -538,7 +531,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/emergencia': typeof EmergenciaRoute
   '/lembretes': typeof LembretesRoute
-  '/reunioes': typeof ReunioesRoute
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
   '/almoxarifado/aspersores': typeof AlmoxarifadoAspersoresRoute
   '/almoxarifado/estoque': typeof AlmoxarifadoEstoqueRoute
@@ -611,7 +603,6 @@ export interface FileRoutesById {
   '/instacena': typeof InstacenaRouteWithChildren
   '/lembretes': typeof LembretesRoute
   '/meio-ambiente': typeof MeioAmbienteRouteWithChildren
-  '/reunioes': typeof ReunioesRoute
   '/rh': typeof RhRouteWithChildren
   '/seguranca': typeof SegurancaRouteWithChildren
   '/almoxarifado/adubo': typeof AlmoxarifadoAduboRoute
@@ -687,7 +678,6 @@ export interface FileRouteTypes {
     | '/instacena'
     | '/lembretes'
     | '/meio-ambiente'
-    | '/reunioes'
     | '/rh'
     | '/seguranca'
     | '/almoxarifado/adubo'
@@ -757,7 +747,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/emergencia'
     | '/lembretes'
-    | '/reunioes'
     | '/almoxarifado/adubo'
     | '/almoxarifado/aspersores'
     | '/almoxarifado/estoque'
@@ -829,7 +818,6 @@ export interface FileRouteTypes {
     | '/instacena'
     | '/lembretes'
     | '/meio-ambiente'
-    | '/reunioes'
     | '/rh'
     | '/seguranca'
     | '/almoxarifado/adubo'
@@ -904,7 +892,6 @@ export interface RootRouteChildren {
   InstacenaRoute: typeof InstacenaRouteWithChildren
   LembretesRoute: typeof LembretesRoute
   MeioAmbienteRoute: typeof MeioAmbienteRouteWithChildren
-  ReunioesRoute: typeof ReunioesRoute
   RhRoute: typeof RhRouteWithChildren
   SegurancaRoute: typeof SegurancaRouteWithChildren
   RelatorioObraGabiaoRoute: typeof RelatorioObraGabiaoRoute
@@ -993,13 +980,6 @@ declare module '@tanstack/react-router' {
       path: '/meio-ambiente'
       fullPath: '/meio-ambiente'
       preLoaderRoute: typeof MeioAmbienteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reunioes': {
-      id: '/reunioes'
-      path: '/reunioes'
-      fullPath: '/reunioes'
-      preLoaderRoute: typeof ReunioesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rh': {
@@ -1597,7 +1577,6 @@ const rootRouteChildren: RootRouteChildren = {
   InstacenaRoute: InstacenaRouteWithChildren,
   LembretesRoute: LembretesRoute,
   MeioAmbienteRoute: MeioAmbienteRouteWithChildren,
-  ReunioesRoute: ReunioesRoute,
   RhRoute: RhRouteWithChildren,
   SegurancaRoute: SegurancaRouteWithChildren,
   RelatorioObraGabiaoRoute: RelatorioObraGabiaoRoute,

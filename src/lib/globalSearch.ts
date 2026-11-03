@@ -145,13 +145,6 @@ export const SYSTEM_MODULES: SystemModule[] = [
     badge: 'Módulo',
   },
   {
-    title: 'Reuniões & Atas',
-    subtitle: 'Agendamento de reuniões, participantes e atas',
-    href: '/reunioes',
-    keywords: ['reunioes', 'atas', 'participantes', 'reuniao', 'alinhamento'],
-    badge: 'Módulo',
-  },
-  {
     title: 'Meio Ambiente & Sustentabilidade',
     subtitle: 'Controle de resíduos, água, efluentes e pluviosidade',
     href: '/meio-ambiente',

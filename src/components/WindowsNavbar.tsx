@@ -56,7 +56,6 @@ export const MENU_ITEMS = [
   { id: 'relatorio-obra', label: 'Relatório de Obra', href: '/relatorio-obra', icon: BarChart2, routeMatch: '/relatorio-obra' },
   { id: 'meio-ambiente', label: 'Meio Ambiente', href: '/meio-ambiente', icon: Leaf, routeMatch: '/meio-ambiente' },
   { id: 'planejamento', label: 'Planejamento', href: '#', icon: Calendar, routeMatch: '/planejamento' },
-  { id: 'reunioes', label: 'Reuniões', href: '/reunioes', icon: Video, routeMatch: '/reunioes' },
   { id: 'emergencia', label: 'Emergência', href: '/emergencia', icon: TriangleAlert, routeMatch: '/emergencia', isEmergency: true },
 ]
 

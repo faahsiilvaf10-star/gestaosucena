@@ -193,14 +193,6 @@ const SYSTEM_MODULES: SystemModule[] = [
     badge: 'Módulo',
   },
   {
-    title: 'Reuniões & Atas',
-    subtitle: 'Agendamento de reuniões, participantes e atas',
-    href: '/reunioes',
-    keywords: ['reunioes', 'atas', 'participantes', 'reuniao', 'alinhamento'],
-    icon: <Users size={16} className="text-cyan-500" />,
-    badge: 'Módulo',
-  },
-  {
     title: 'Meio Ambiente & Sustentabilidade',
     subtitle: 'Controle de resíduos, água, efluentes e pluviosidade',
     href: '/meio-ambiente',

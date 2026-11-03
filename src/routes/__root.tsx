@@ -19,7 +19,6 @@ import { AppLayout } from "../components/AppLayout";
 import { GlobalEquipmentAlert } from "../components/GlobalEquipmentAlert";
 import { ReminderAlertNotification } from "../components/ReminderAlertNotification";
 import { GlobalBackground } from "../components/GlobalBackground";
-import { GlobalMeetingAlert } from "../components/GlobalMeetingAlert";
 import { NotificationProvider } from "../context/NotificationContext";
 import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
@@ -39,7 +38,7 @@ function RootContent() {
   const router = useRouter()
   const path = router.state.location.pathname
   const isDashboard = path === '/dashboard' || path === '/dashboard/'
-  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/reunioes') || path.startsWith('/admin')) && !path.startsWith('/equipamentos/app-motorista')
+  const isAppRoute = (path.startsWith('/dashboard') || path.startsWith('/lembretes') || path.startsWith('/instacena') || path.startsWith('/almoxarifado') || path.startsWith('/equipamentos') || path.startsWith('/rh') || path.startsWith('/documentos') || path.startsWith('/meio-ambiente') || path.startsWith('/configuracoes') || path.startsWith('/relatorio-obra') || path.startsWith('/emergencia') || path.startsWith('/seguranca') || path.startsWith('/permissao-trabalho') || path.startsWith('/admin')) && !path.startsWith('/equipamentos/app-motorista')
   
   return (
     <div className="min-h-screen text-[#1c1d21]">
@@ -58,7 +57,6 @@ function RootContent() {
         <>
           <GlobalEquipmentAlert />
           <ReminderAlertNotification />
-          <GlobalMeetingAlert />
         </>
       )}
       {/* Comunicados: exibidos em qualquer rota, inclusive após o login */}
