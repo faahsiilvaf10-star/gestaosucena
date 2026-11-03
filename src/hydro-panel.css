@@ -173,9 +173,9 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .kpi-sub{font-size:13.5px;color:var(--muted);font-weight:600;margin-top:6px}
 .trend{display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);font-size:12.5px;font-weight:800;padding:5px 9px;border-radius:99px;margin-top:10px}
 .trend svg{width:13px;height:13px}
-.donut{position:relative;width:104px;height:104px;flex:none;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .35s cubic-bezier(.34,1.4,.4,1);background:transparent !important;transform:none !important}
+.donut{position:relative;width:104px;height:104px;flex:none;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .35s cubic-bezier(.34,1.4,.4,1);background:transparent !important;transform:none !important;display:flex;align-items:center;justify-content:center}
 .donut::after,.donut::before{content:none !important;display:none !important}
-.donut svg{transform:rotate(-90deg);overflow:visible;display:block}
+.donut svg,.donut .donut-svg{width:100% !important;height:100% !important;transform:rotate(-90deg);overflow:visible;display:block}
 .donut .donut-track{opacity:.9}
 .donut .donut-arc{transition:stroke-width .25s ease;will-change:stroke-dashoffset}
 .donut.arc-green .donut-arc{filter:drop-shadow(0 5px 10px rgba(34,197,94,.38))}
@@ -185,9 +185,9 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .donut:hover,.donut:focus-visible{transform:scale(1.05) !important}
 .donut:hover .donut-arc,.donut:focus-visible .donut-arc{stroke-width:12}
 .donut:active{transform:scale(.98) !important}
-.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:10;transform:none !important}
-.donut-center b{font-size:26px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink,#17233B) !important;font-weight:800;display:block}
-.donut-center span{font-size:11px;color:var(--muted,#7A8699) !important;font-weight:700;margin-top:3px;display:block}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:10;transform:none !important;text-align:center;box-sizing:border-box}
+.donut-center b{font-size:28px;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink,#17233B) !important;font-weight:800;display:block;margin-bottom:2px}
+.donut-center span{font-size:11px;line-height:1;color:var(--muted,#7A8699) !important;font-weight:700;display:block}
 .donut-tip{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,6px);background:#17233B;color:#fff;font-size:12px;font-weight:700;line-height:1.4;text-align:center;padding:9px 13px;border-radius:12px;white-space:normal;min-width:200px;max-width:min(320px,86vw);box-shadow:0 10px 24px rgba(20,30,55,.28);opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;z-index:30}
 .donut-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#17233B;border-bottom:0}
 .donut-tip small{display:block;font-size:11px;font-weight:600;color:#C7CEDA;margin-top:1px}
@@ -1942,7 +1942,9 @@ table {
   .hero-content { padding: 22px 24px; }
   .kpi { padding: 16px; }
   .kpi-big { font-size: clamp(32px, 3.2vw, 40px); }
-  .donut { width: 92px; height: 92px; }
+  .donut { width: 96px; height: 96px; }
+  .donut-center b { font-size: 25px; }
+  .donut-center span { font-size: 10.5px; }
 }
 
 @media (max-width: 1200px) {
