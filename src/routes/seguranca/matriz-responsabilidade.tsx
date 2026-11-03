@@ -370,7 +370,7 @@ export function MatrizResponsabilidadeComponent() {
     const trimmed = input.trim()
     if (!trimmed || trimmed === nomeAtual) return
 
-    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const lista = [...getAtividadesDoCargoOuPadrao(cargoId)]
     const ativ = { ...lista[ativIndex] }
     if (!ativ) return
 
@@ -400,7 +400,7 @@ export function MatrizResponsabilidadeComponent() {
       return
     }
     const totalAjustado = Math.max(1, Math.min(50, Math.round(novoTotal)))
-    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const lista = [...getAtividadesDoCargoOuPadrao(cargoId)]
     const ativ = { ...lista[ativIndex] }
     if (!ativ) return
 
@@ -463,7 +463,7 @@ export function MatrizResponsabilidadeComponent() {
       }
     }
 
-    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const lista = [...getAtividadesDoCargoOuPadrao(cargoId)]
     lista.push({
       nome: trimmed,
       marks: 0,
@@ -485,7 +485,7 @@ export function MatrizResponsabilidadeComponent() {
       showToast('⚠️ Apenas administradores podem excluir atividades.')
       return
     }
-    const lista = [...(atividadesPorCargo[cargoId] || [])]
+    const lista = [...getAtividadesDoCargoOuPadrao(cargoId)]
     const ativ = lista[ativIndex]
     if (!ativ) return
 
@@ -759,7 +759,14 @@ export function MatrizResponsabilidadeComponent() {
 
   const atividadesCargoAtivo = useMemo(() => {
     if (!cargoAtivo) return []
-    return atividadesPorCargo[cargoAtivo.id] || []
+    const ativs = atividadesPorCargo[cargoAtivo.id]
+    if (ativs && ativs.length > 0) return ativs
+    return (cargoAtivo.atividades || []).map((nome, i) => ({
+      nome,
+      marks: 0,
+      total: 3,
+      pers: ehPersonalizada(cargoAtivo.id, i),
+    }))
   }, [cargoAtivo, atividadesPorCargo])
 
   const metricasCargoAtivo = useMemo(() => {

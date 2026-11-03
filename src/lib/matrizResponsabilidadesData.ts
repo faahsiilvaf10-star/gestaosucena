@@ -143,12 +143,13 @@ export function getMesLabel(d: Date = new Date()): string {
   return `${getMesNome(d).toLowerCase()} de ${d.getFullYear()}`
 }
 
-export function criarEstadoInicial(): Record<string, AtividadeMatriz[]> {
+export function criarEstadoInicial(cargosList: CargoMatrizDef[] = CARGOS_MATRIZ): Record<string, AtividadeMatriz[]> {
   const init: Record<string, AtividadeMatriz[]> = {}
-  for (const cargo of CARGOS_MATRIZ) {
-    init[cargo.id] = cargo.atividades.map((nome, i) => ({
+  for (const cargo of cargosList) {
+    init[cargo.id] = (cargo.atividades || []).map((nome, i) => ({
       nome,
       marks: 0,
+      total: 3,
       pers: ehPersonalizada(cargo.id, i),
     }))
   }
@@ -326,6 +327,31 @@ export async function carregarDadosMatriz(
     }
   }
 
+    // GARANTIA TOTAL DE ATIVIDADES:
+  // Verifica se todos os cargos possuem sua lista de atividades inicializada.
+  // Se atividadesPorCargo estiver vazio ou se algum cargo estiver sem atividades, inicializa automaticamente.
+  const cargosFinais = result.cargos && result.cargos.length > 0 ? result.cargos : CARGOS_MATRIZ
+  if (!result.atividadesPorCargo || typeof result.atividadesPorCargo !== 'object') {
+    result.atividadesPorCargo = {}
+  }
+
+  let precisouCorrigirAtividades = false
+  for (const cargo of cargosFinais) {
+    if (!result.atividadesPorCargo[cargo.id] || result.atividadesPorCargo[cargo.id].length === 0) {
+      result.atividadesPorCargo[cargo.id] = (cargo.atividades || []).map((nome, i) => ({
+        nome,
+        marks: 0,
+        total: 3,
+        pers: ehPersonalizada(cargo.id, i),
+      }))
+      precisouCorrigirAtividades = true
+    }
+  }
+
+  if (precisouCorrigirAtividades) {
+    salvarDadosMatriz(result, mesKey, env).catch(() => {})
+  }
+
   // Atualiza cache local
   if (typeof window !== 'undefined') {
     try {
@@ -349,6 +375,21 @@ export async function salvarDadosMatriz(
   const masterKey = getMasterConfigKey(env)
   const localKey = `hydro-matriz-v2-${mesKey}`
   const localMasterKey = `hydro-matriz-master-${env}`
+
+  // Garantir que dados.atividadesPorCargo contenha as atividades de todos os cargos
+  const cargosParaSalvar = dados.cargos && dados.cargos.length > 0 ? dados.cargos : CARGOS_MATRIZ
+  const atividadesValidadas: Record<string, AtividadeMatriz[]> = { ...(dados.atividadesPorCargo || {}) }
+  for (const c of cargosParaSalvar) {
+    if (!atividadesValidadas[c.id] || atividadesValidadas[c.id].length === 0) {
+      atividadesValidadas[c.id] = (c.atividades || []).map((nome, i) => ({
+        nome,
+        marks: 0,
+        total: 3,
+        pers: ehPersonalizada(c.id, i),
+      }))
+    }
+  }
+  dados.atividadesPorCargo = atividadesValidadas
 
   // Salvar localmente primeiro para resposta instantânea
   if (typeof window !== 'undefined') {
