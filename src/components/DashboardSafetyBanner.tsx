@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import Pen from 'lucide-react/dist/esm/icons/pen.js';
 import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
-import { SafetyBanner, getSafetyBanners, canManageSafetyBanner, DEFAULT_SAFETY_BANNERS } from '../lib/safetyBanners';
+import { SafetyBanner, getSafetyBanners, canManageSafetyBanner, DEFAULT_SAFETY_BANNERS, resolveBannerUrl, isExternalUrl } from '../lib/safetyBanners';
 import { SafetyBannerModal } from './SafetyBannerModal';
 
 interface DashboardSafetyBannerProps {
@@ -89,15 +89,13 @@ export function DashboardSafetyBanner({ userRole, userName }: DashboardSafetyBan
     setCurrentIndex(prev => (prev + 1) % activeBanners.length);
   };
 
-  const handleClickCta = () => {
-    if (currentBanner.buttonLink) {
-      if (currentBanner.buttonLink.startsWith('http')) {
-        window.open(currentBanner.buttonLink, '_blank');
-      } else {
-        navigate({ to: currentBanner.buttonLink as any });
-      }
+  const handleClickCta = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const { url, isExternal } = resolveBannerUrl(currentBanner.buttonLink);
+    if (isExternal) {
+      window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      navigate({ to: '/seguranca/dds' as any });
+      navigate({ to: url as any });
     }
   };
 
@@ -169,9 +167,16 @@ export function DashboardSafetyBanner({ userRole, userName }: DashboardSafetyBan
           <button
             type="button"
             onClick={handleClickCta}
+            title={
+              currentBanner.buttonLink
+                ? isExternalUrl(currentBanner.buttonLink)
+                  ? `Abrir site ${resolveBannerUrl(currentBanner.buttonLink).url} (em nova aba)`
+                  : `Ir para ${resolveBannerUrl(currentBanner.buttonLink).url}`
+                : 'Acessar DDS'
+            }
             className="safety-btn cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
           >
-            {currentBanner.buttonText}
+            <span>{currentBanner.buttonText}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="m9 6 6 6-6 6" />
             </svg>

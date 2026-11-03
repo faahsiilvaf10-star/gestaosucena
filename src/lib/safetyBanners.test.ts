@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { canManageSafetyBanner, DEFAULT_SAFETY_BANNERS } from './safetyBanners';
+import {
+  canManageSafetyBanner,
+  DEFAULT_SAFETY_BANNERS,
+  isExternalUrl,
+  resolveBannerUrl
+} from './safetyBanners';
 
 describe('canManageSafetyBanner', () => {
   it('deve permitir administradores', () => {
@@ -38,3 +43,55 @@ describe('canManageSafetyBanner', () => {
   });
 });
 
+describe('isExternalUrl e resolveBannerUrl', () => {
+  it('deve reconhecer links com https:// e http:// como externos', () => {
+    expect(isExternalUrl('https://site.com.br')).toBe(true);
+    expect(isExternalUrl('http://empresa.com/pagina')).toBe(true);
+    expect(resolveBannerUrl('https://site.com.br')).toEqual({
+      url: 'https://site.com.br',
+      isExternal: true
+    });
+  });
+
+  it('deve reconhecer links começando com www. e adicionar https:// automaticamente', () => {
+    expect(isExternalUrl('www.google.com')).toBe(true);
+    expect(resolveBannerUrl('www.google.com')).toEqual({
+      url: 'https://www.google.com',
+      isExternal: true
+    });
+  });
+
+  it('deve reconhecer domínios válidos sem protocolo e adicionar https://', () => {
+    expect(isExternalUrl('intranet.sucena.com.br')).toBe(true);
+    expect(resolveBannerUrl('intranet.sucena.com.br/seguranca')).toEqual({
+      url: 'https://intranet.sucena.com.br/seguranca',
+      isExternal: true
+    });
+  });
+
+  it('deve tratar rotas internas do sistema preservando a barra inicial', () => {
+    expect(isExternalUrl('/seguranca/dds')).toBe(false);
+    expect(resolveBannerUrl('/seguranca/dds')).toEqual({
+      url: '/seguranca/dds',
+      isExternal: false
+    });
+    expect(isExternalUrl('estoque')).toBe(false);
+    expect(resolveBannerUrl('estoque')).toEqual({
+      url: '/estoque',
+      isExternal: false
+    });
+  });
+
+  it('deve usar rota padrão /seguranca/dds quando o link estiver vazio ou nulo', () => {
+    expect(isExternalUrl('')).toBe(false);
+    expect(isExternalUrl(null)).toBe(false);
+    expect(resolveBannerUrl('')).toEqual({
+      url: '/seguranca/dds',
+      isExternal: false
+    });
+    expect(resolveBannerUrl(undefined)).toEqual({
+      url: '/seguranca/dds',
+      isExternal: false
+    });
+  });
+});

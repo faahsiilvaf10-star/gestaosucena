@@ -29,6 +29,41 @@ export const DEFAULT_SAFETY_BANNERS: SafetyBanner[] = [
   }
 ];
 
+/**
+ * Detecta se uma string é uma URL externa (começa com http(s)://, www., ou domínio com extensão válida).
+ */
+export function isExternalUrl(link?: string | null): boolean {
+  if (!link) return false;
+  const trimmed = link.trim();
+  if (!trimmed) return false;
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  if (/^www\./i.test(trimmed)) return true;
+  if (/^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}(\/.*)?$/i.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Resolve e normaliza o link do banner para navegação correta.
+ * Retorna o link formatado e uma flag indicando se é externo.
+ */
+export function resolveBannerUrl(link?: string | null): { url: string; isExternal: boolean } {
+  if (!link || !link.trim()) {
+    return { url: '/seguranca/dds', isExternal: false };
+  }
+  const trimmed = link.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return { url: trimmed, isExternal: true };
+  }
+  if (/^www\./i.test(trimmed) || /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}(\/.*)?$/i.test(trimmed)) {
+    return { url: `https://${trimmed}`, isExternal: true };
+  }
+  return {
+    url: trimmed.startsWith('/') ? trimmed : `/${trimmed}`,
+    isExternal: false
+  };
+}
+
+
 const STORAGE_KEY = 'sucena_safety_banners';
 const DB_SETTINGS_KEY = 'dashboard_safety_banners';
 

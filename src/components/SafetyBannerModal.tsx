@@ -11,18 +11,21 @@ import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import Shield from 'lucide-react/dist/esm/icons/shield.js';
 import Eye from 'lucide-react/dist/esm/icons/eye.js';
 import EyeOff from 'lucide-react/dist/esm/icons/eye-off.js';
+import Globe from 'lucide-react/dist/esm/icons/globe.js';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
-import { SafetyBanner, getSafetyBanners, saveSafetyBanners } from '../lib/safetyBanners';
+import { SafetyBanner, getSafetyBanners, saveSafetyBanners, resolveBannerUrl, isExternalUrl } from '../lib/safetyBanners';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface SafetyBannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdated?: (banners: SafetyBanner[]) => void;
+  initialBannerId?: string | null;
 }
 
-export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerModalProps) {
+export function SafetyBannerModal({ isOpen, onClose, onUpdated, initialBannerId }: SafetyBannerModalProps) {
   const { isDark } = useTheme();
   const [banners, setBanners] = useState<SafetyBanner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,8 +53,14 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
     getSafetyBanners().then(data => {
       setBanners(data);
       setLoading(false);
+      if (initialBannerId) {
+        const found = data.find(b => b.id === initialBannerId);
+        if (found) {
+          handleStartEdit(found);
+        }
+      }
     });
-  }, [isOpen]);
+  }, [isOpen, initialBannerId]);
 
   // Open edit form for a banner
   const handleStartEdit = (b: SafetyBanner) => {
@@ -373,10 +382,37 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
                   <p className="text-xs text-gray-200 line-clamp-2 max-w-md">
                     {description || 'Descrição informativa de segurança...'}
                   </p>
-                  <div className="pt-1.5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#D6A72B] text-black">
-                      {buttonText || 'Juntos somos mais fortes'} →
-                    </span>
+                  <div className="pt-1.5 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (buttonLink.trim()) {
+                          const { url, isExternal } = resolveBannerUrl(buttonLink);
+                          if (isExternal) {
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          } else {
+                            toast.info(`Rota interna: ${url}`);
+                          }
+                        } else {
+                          toast.info('Nenhuma URL configurada (padrão: /seguranca/dds)');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#D6A72B] hover:bg-[#c29623] text-black transition-all cursor-pointer shadow-sm active:scale-95"
+                      title={buttonLink.trim() ? `Clique para testar: ${resolveBannerUrl(buttonLink).url}` : 'Clique para testar'}
+                    >
+                      <span>{buttonText || 'Juntos somos mais fortes'}</span>
+                      {buttonLink && isExternalUrl(buttonLink) ? (
+                        <ExternalLink size={12} />
+                      ) : (
+                        <span>→</span>
+                      )}
+                    </button>
+                    {buttonLink.trim() && (
+                      <span className="text-[10px] text-gray-300 bg-black/50 px-2 py-0.5 rounded-full truncate max-w-[220px] backdrop-blur-xs flex items-center gap-1">
+                        <Globe size={10} className="text-[#D6A72B] shrink-0" />
+                        <span className="truncate">{resolveBannerUrl(buttonLink).url}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -535,37 +571,74 @@ export function SafetyBannerModal({ isOpen, onClose, onUpdated }: SafetyBannerMo
               </div>
 
               {/* Link e Ativo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold">Link ao Clicar no Botão (opcional)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                      <Globe size={14} className="text-[#D6A72B]" />
+                      Link / URL do Site (Botão Amarelo)
+                    </label>
+                    {buttonLink.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const { url, isExternal } = resolveBannerUrl(buttonLink);
+                          if (isExternal) {
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          } else {
+                            window.open(url, '_blank');
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] text-[#D6A72B] hover:underline font-bold cursor-pointer"
+                        title="Abrir este link para testar em nova aba"
+                      >
+                        <ExternalLink size={12} /> Testar Link
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={buttonLink}
                     onChange={e => setButtonLink(e.target.value)}
-                    placeholder="Ex: /seguranca/dds ou /seguranca/campanhas"
-                    className={`w-full px-3 py-2 rounded-lg border text-xs outline-none ${
-                      isDark ? 'bg-black/30 border-white/10 text-white' : 'bg-gray-50 border-gray-200 text-black'
+                    placeholder="Ex: https://seusite.com.br, www.google.com ou /seguranca/dds"
+                    className={`w-full px-3 py-2 rounded-lg border text-xs outline-none transition-colors ${
+                      isDark ? 'bg-black/30 border-white/10 text-white focus:border-[#D6A72B]' : 'bg-gray-50 border-gray-200 text-black focus:border-[#D6A72B]'
                     }`}
                   />
+                  <div className="flex items-center justify-between text-[11px] pt-0.5">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Cole a URL do site desejado ou rota interna.
+                    </span>
+                    {buttonLink.trim() && (
+                      <span className={`font-semibold ${isExternalUrl(buttonLink) ? 'text-blue-500 dark:text-blue-400' : 'text-emerald-500 dark:text-emerald-400'}`}>
+                        {isExternalUrl(buttonLink) ? '🌐 Site Externo' : '📁 Rota Interna'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 sm:pt-0">
-                  <button
-                    type="button"
-                    onClick={() => setActive(!active)}
-                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                      active ? 'bg-[#D6A72B]' : 'bg-gray-600'
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                        active ? 'translate-x-5' : 'translate-x-0'
+                <div className="space-y-1.5 sm:pt-1">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Visibilidade no Carrossel
+                  </label>
+                  <div className="flex items-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActive(!active)}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                        active ? 'bg-[#D6A72B]' : 'bg-gray-600'
                       }`}
-                    />
-                  </button>
-                  <span className="text-xs font-semibold">
-                    {active ? 'Banner Ativo no Carrossel' : 'Banner Inativo (Oculto)'}
-                  </span>
+                    >
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                          active ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-xs font-semibold">
+                      {active ? 'Banner Ativo no Carrossel' : 'Banner Inativo (Oculto)'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

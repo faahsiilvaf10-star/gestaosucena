@@ -8,8 +8,10 @@ import EyeOff from 'lucide-react/dist/esm/icons/eye-off.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
+import Globe from 'lucide-react/dist/esm/icons/globe.js';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
 import { toast } from 'sonner';
-import { SafetyBanner, getSafetyBanners, saveSafetyBanners } from '../lib/safetyBanners';
+import { SafetyBanner, getSafetyBanners, saveSafetyBanners, resolveBannerUrl, isExternalUrl } from '../lib/safetyBanners';
 import { SafetyBannerModal } from './SafetyBannerModal';
 
 interface SafetyBannersAdminTabProps {
@@ -20,6 +22,7 @@ export function SafetyBannersAdminTab({ isDark }: SafetyBannersAdminTabProps) {
   const [banners, setBanners] = useState<SafetyBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -196,12 +199,20 @@ export function SafetyBannersAdminTab({ isDark }: SafetyBannersAdminTabProps) {
                     </p>
 
                     <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-medium truncate max-w-[150px]">
+                      <span className="font-medium truncate max-w-[140px]">
                         Botão: <b>{b.buttonText}</b>
                       </span>
-                      <span className="text-[11px] text-gray-400">
-                        {b.buttonLink || '/seguranca/dds'}
-                      </span>
+                      <a
+                        href={b.buttonLink ? resolveBannerUrl(b.buttonLink).url : '#'}
+                        target={b.buttonLink && isExternalUrl(b.buttonLink) ? '_blank' : undefined}
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 truncate max-w-[140px]"
+                        title={b.buttonLink ? resolveBannerUrl(b.buttonLink).url : '/seguranca/dds'}
+                      >
+                        <Globe size={11} className="shrink-0" />
+                        <span className="truncate">{b.buttonLink || '/seguranca/dds'}</span>
+                        {b.buttonLink && isExternalUrl(b.buttonLink) && <ExternalLink size={10} className="shrink-0" />}
+                      </a>
                     </div>
 
                     {/* Botões de Ação */}
@@ -221,8 +232,11 @@ export function SafetyBannersAdminTab({ isDark }: SafetyBannersAdminTabProps) {
 
                       <button
                         type="button"
-                        onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors"
+                        onClick={() => {
+                          setEditingBannerId(b.id);
+                          setIsModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors cursor-pointer"
                         title="Editar banner"
                       >
                         <Pen size={12} />
@@ -249,7 +263,11 @@ export function SafetyBannersAdminTab({ isDark }: SafetyBannersAdminTabProps) {
       {/* Modal de Gerenciamento / Criação */}
       <SafetyBannerModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        initialBannerId={editingBannerId}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingBannerId(null);
+        }}
         onUpdated={(updated) => {
           setBanners(updated);
         }}
