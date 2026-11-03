@@ -1772,23 +1772,15 @@ function DashboardComponent() {
 
 
 
-        {/* Widgets Inferiores */}
-        <div 
-          className="hydro-bottom-widgets-grid" 
-          style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))', 
-            gap: '20px', 
-            alignItems: 'start' 
-          }}
-        >
+        {/* Widgets Inferiores — Layout Masonry Automático sem buracos */}
+        <div className="hydro-bottom-widgets-masonry">
           <DashboardDesviosWidget />
-          <RecentActivitiesWidget />
           <DashboardInspecaoCanteiroWidget />
-          <DashboardMatrizWidget />
           <DashboardStockAlertWidget />
-          <DashboardCampanhaMesWidget />
           <DashboardVistoriasWidget />
+          <RecentActivitiesWidget />
+          <DashboardMatrizWidget />
+          <DashboardCampanhaMesWidget />
         </div>
       </section>
 

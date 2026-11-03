@@ -1950,3 +1950,29 @@ table {
   .dds-card { padding: 14px 16px; gap: 14px; }
   .dds-photo { width: 100px; height: 100px; }
 }
+
+/* ---------- MASONRY WIDGETS INFERIORES (ZERO GAPS) ---------- */
+.hydro-bottom-widgets-masonry {
+  column-count: 2;
+  column-gap: 20px;
+  width: 100%;
+}
+@media (max-width: 960px) {
+  .hydro-bottom-widgets-masonry {
+    column-count: 1;
+  }
+}
+.hydro-bottom-widgets-masonry > * {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  -webkit-column-break-inside: avoid !important;
+  display: block !important;
+  margin-bottom: 20px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.hydro-bottom-widgets-masonry > *:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
