@@ -69,7 +69,7 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
           );
           setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== notifId));
-          }, 400);
+          }, 450);
         }, 10000);
       }
     })
@@ -84,10 +84,10 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
           key={notif.id}
           className={`pointer-events-auto flex items-center gap-3 bg-white dark:bg-[#1A1B20] 
             border border-black/8 dark:border-white/10 rounded-2xl shadow-2xl px-4 py-3 
-            min-w-[240px] max-w-[300px] transition-all duration-400
+            min-w-[240px] max-w-[300px]
             ${notif.exiting
-              ? 'opacity-0 translate-y-4 scale-95'
-              : 'opacity-100 translate-y-0 scale-100 animate-slide-up-notif'
+              ? 'animate-slide-down-exit pointer-events-none'
+              : 'animate-slide-up-notif'
             }`}
           style={{
             boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)'
@@ -127,7 +127,7 @@ export function UserOnlineNotification({ currentUserId }: { currentUserId: strin
               )
               setTimeout(() => {
                 setNotifications(prev => prev.filter(n => n.id !== notif.id))
-              }, 400)
+              }, 450)
             }}
             className="shrink-0 text-[#5f6472] dark:text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
           >
