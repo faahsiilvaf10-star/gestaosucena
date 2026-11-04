@@ -1228,10 +1228,10 @@ function DashboardComponent() {
       <section className="kpis" aria-label="Indicadores de hoje">
         <article className="kpi">
           <div className="kpi-head"><div className="kpi-ico" style={{ background: 'var(--yellow-soft)', color: 'var(--yellow-dark)' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2 .6 3.5 2.1 4 4.7"/></svg></div><span>Total de<br/>funcionários</span></div>
-          <div>
-            <div className="kpi-big" data-count={totalFuncionarios}>{totalFuncionarios}</div>
-            <div className="kpi-sub">colaboradores no quadro</div>
-            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+          <div className="flex flex-col items-center justify-center text-center flex-1 py-1 w-full">
+            <div className="kpi-big text-center" data-count={totalFuncionarios}>{totalFuncionarios}</div>
+            <div className="kpi-sub text-center">colaboradores no quadro</div>
+            <div className="flex items-center justify-center gap-1.5 flex-wrap mt-2.5">
               <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
                 ● {statusCounts.ativos} em operação
               </span>
@@ -1271,7 +1271,7 @@ function DashboardComponent() {
                 <span className="donut-tip-hint">clique para reanimar</span>
               </span>
             </div>
-            <div className="kpi-foot" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--green)' }}><circle cx="9" cy="8" r="3.5"/><path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8"/></svg><div><b style={{ color: 'var(--green)' }} data-count-pct={pctPresenca}>{pctPresenca}%</b><br/><span>de presença</span></div></div>
+            <div className="kpi-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--green)' }}><circle cx="9" cy="8" r="3.5"/><path d="m15.5 11 2 2 4-4M2.5 20c.8-3.2 3.4-5 6.5-5 1.2 0 2.3.3 3.3.8"/></svg><div><b style={{ color: 'var(--green)' }} data-count-pct={pctPresenca}>{pctPresenca}%</b><br/><span>de presença</span></div></div>
           </div>
         </article>
 
@@ -1297,10 +1297,10 @@ function DashboardComponent() {
                 <span className="donut-tip-hint">clique para reanimar</span>
               </span>
             </div>
-            <div className="kpi-foot red" style={{ flex: '1' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--red)' }}><circle cx="9" cy="8" r="3.5"/><path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6"/></svg><div><b style={{ color: 'var(--red)' }} data-count-pct={pctAusencia}>{pctAusencia}%</b><br/><span>de ausências</span></div></div>
+            <div className="kpi-foot red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--red)' }}><circle cx="9" cy="8" r="3.5"/><path d="m16 16 5-5M21 16l-5-5M2.5 20c.8-3.2 3.4-5 6.5-5 1 0 2 .2 2.9.6"/></svg><div><b style={{ color: 'var(--red)' }} data-count-pct={pctAusencia}>{pctAusencia}%</b><br/><span>de ausências</span></div></div>
           </div>
           {isAttendanceSaved && absentFirstNames.length > 0 && (
-            <div className="kpi-absent-names" title={absentFirstNames.join(', ')}>
+            <div className="kpi-absent-names text-center flex items-center justify-center flex-wrap" title={absentFirstNames.join(', ')}>
               <span style={{ fontWeight: 800, color: 'var(--red)', marginRight: '6px' }}>
                 Ausente{absentFirstNames.length > 1 ? 's' : ''}:
               </span>
