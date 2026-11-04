@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { CAMPANHAS_ANUAIS, getCampanhaAtual, type CampanhaData } from '@/lib/campanhasData'
 import { toast } from 'sonner'
 import {

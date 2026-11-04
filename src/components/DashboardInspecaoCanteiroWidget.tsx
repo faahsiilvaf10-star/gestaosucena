@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import { CheckCircle2, Clock, AlertTriangle, HardHat, Calendar, MapPin, User, ChevronRight, ExternalLink } from 'lucide-react'

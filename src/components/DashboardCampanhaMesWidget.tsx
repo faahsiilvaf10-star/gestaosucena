@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from '@tanstack/react-router'
 import { getCampanhaAtual, type CampanhaData } from '../lib/campanhasData'
 import { ArrowRight, ChevronRight, X } from 'lucide-react'

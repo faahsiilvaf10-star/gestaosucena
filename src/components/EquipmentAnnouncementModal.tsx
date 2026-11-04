@@ -6,6 +6,7 @@ import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Info from 'lucide-react/dist/esm/icons/info.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getEquipmentImage } from '../lib/equipamentos/equipmentImage';
 
 interface EquipmentAnnouncementModalProps {

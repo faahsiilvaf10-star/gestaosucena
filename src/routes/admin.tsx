@@ -32,6 +32,7 @@ import HardHat from 'lucide-react/dist/esm/icons/hard-hat.js';
 import Palette from 'lucide-react/dist/esm/icons/palette.js';
 import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'

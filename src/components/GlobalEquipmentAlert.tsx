@@ -6,6 +6,7 @@ import User from 'lucide-react/dist/esm/icons/user.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Wrench from 'lucide-react/dist/esm/icons/wrench.js';
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../contexts/ThemeContext'
 import { format } from 'date-fns'

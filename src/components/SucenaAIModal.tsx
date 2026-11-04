@@ -7,6 +7,7 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Database from 'lucide-react/dist/esm/icons/database.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import React, { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Groq from 'groq-sdk'

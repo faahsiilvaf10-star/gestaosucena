@@ -6,6 +6,7 @@ import X from 'lucide-react/dist/esm/icons/x.js';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { SucenaLoginTransition } from '../components/SucenaLoginTransition'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { supabase } from '../lib/supabase'
