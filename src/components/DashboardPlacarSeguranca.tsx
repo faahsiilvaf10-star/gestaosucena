@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from '@tanstack/react-router'
 import {
   ShieldCheck,
@@ -46,6 +47,23 @@ export function DashboardPlacarSeguranca({
   const [metaDias, setMetaDias] = useState('365')
   const [recordeDias, setRecordeDias] = useState('420')
   const [observacao, setObservacao] = useState('')
+
+  // Trava scroll de fundo e escuta ESC enquanto modal de ajuste estiver aberto
+  useEffect(() => {
+    if (!modalAberto) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalAberto(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [modalAberto])
 
   // Carregar dados iniciais e escutar realtime
   useEffect(() => {
@@ -340,14 +358,16 @@ export function DashboardPlacarSeguranca({
         </div>
       </section>
 
-      {/* MODAL DE AJUSTE DO PLACAR E METAS */}
-      {modalAberto && (
+      {/* MODAL DE AJUSTE DO PLACAR E METAS VIA PORTAL */}
+      {modalAberto && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
           onClick={() => setModalAberto(false)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
-            className="bg-white dark:bg-[#1A1A1E] border border-amber-300/80 dark:border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4 text-gray-900 dark:text-white"
+            className="bg-white dark:bg-[#1A1A1E] border border-amber-300/80 dark:border-white/10 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl space-y-4 text-gray-900 dark:text-white my-auto max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/10 pb-3">
@@ -465,7 +485,8 @@ export function DashboardPlacarSeguranca({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

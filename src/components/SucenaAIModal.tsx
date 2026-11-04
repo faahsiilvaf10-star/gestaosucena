@@ -270,11 +270,11 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl h-[85vh] bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl my-auto h-[85vh] max-h-[92vh] bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-200">
         
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
@@ -442,6 +442,7 @@ ${employees ? employees.map(e => `- Func: ${e.nome} | Cargo: ${e.cargo} | Status
         )}
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -292,10 +292,10 @@ function AmbientesComponent() {
         })}
       </div>
 
-      {/* Modal de Acesso Restrito ao clicar em ambiente bloqueado */}
-      {restrictedModalEnv && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl relative border ${
+      {/* Modal de Acesso Restrito ao clicar em ambiente bloqueado via Portal */}
+      {restrictedModalEnv && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`w-full max-w-md my-auto max-h-[92vh] rounded-3xl p-6 shadow-2xl relative border animate-in zoom-in-95 duration-200 ${
             isDark ? 'bg-[#15161A] border-white/10 text-white' : 'bg-white border-black/10 text-gray-900'
           }`}>
             <button
