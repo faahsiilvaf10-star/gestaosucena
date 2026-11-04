@@ -1,5 +1,6 @@
 import X from 'lucide-react/dist/esm/icons/x.js';
-import React from 'react'
+import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { ColorOption, useMonthlyColors } from '../hooks/useMonthlyColors'
 
@@ -19,18 +20,36 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
   const { isDark } = useTheme()
   const { colors, updateColor } = useMonthlyColors()
 
+  // Trava scroll de fundo e tecla ESC
+  useEffect(() => {
+    if (!isOpen) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
+
   if (!isOpen) return null
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
-      style={{ zIndex: 99999 }}
+      className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm z-[999999] overflow-y-auto animate-in fade-in duration-200" 
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
-      
       {/* Outer Modal Container with Golden Glow Border */}
       <div 
-        className={`relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-5 md:p-6 ${isDark ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-white text-black shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]' }`}
+        className={`relative w-full max-w-3xl my-auto max-h-[92vh] overflow-y-auto rounded-3xl p-5 md:p-6 shadow-2xl animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#0f1014] text-white shadow-[0_0_1px_1px_rgba(201,168,76,0.2),0_10px_40px_-10px_rgba(0,0,0,0.8)]' : 'bg-white text-black shadow-[0_0_1px_1px_rgba(201,168,76,0.3),0_10px_40px_-10px_rgba(0,0,0,0.5)]' }`}
         onClick={e => e.stopPropagation()}
       >
         
@@ -99,7 +118,8 @@ export function MonthlyColorsModal({ isOpen, onClose }: { isOpen: boolean, onClo
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

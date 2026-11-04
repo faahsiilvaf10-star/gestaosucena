@@ -59,6 +59,19 @@ function TodosEquipamentosPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+
+  // Trava scroll de fundo e reseta scroll da janela ao abrir modal
+  useEffect(() => {
+    const isAnyModalOpen = isViewModalOpen || isEditModalOpen || isAddModalOpen
+    if (!isAnyModalOpen) return
+    window.scrollTo({ top: 0, behavior: 'instant' as any })
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isViewModalOpen, isEditModalOpen, isAddModalOpen])
+
   
   // Edit Form
   const [editName, setEditName] = useState('')
@@ -514,7 +527,7 @@ function TodosEquipamentosPage() {
       {/* View Modal */}
       {isViewModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
@@ -645,7 +658,7 @@ function TodosEquipamentosPage() {
       {/* Edit Modal */}
       {isEditModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
@@ -732,7 +745,7 @@ function TodosEquipamentosPage() {
       {/* Add Modal */}
       {isAddModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >

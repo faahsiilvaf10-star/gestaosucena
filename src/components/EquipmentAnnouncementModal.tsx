@@ -53,10 +53,12 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
   const colorBase = type === 'exit' ? 'yellow' : 'green';
   const colorHex = type === 'exit' ? '#D6A72B' : '#10b981';
 
-  return (
-    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isVisible ? 'opacity-100 backdrop-blur-md bg-black/60' : 'opacity-0 bg-transparent pointer-events-none'}`}>
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className={`fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto transition-all duration-300 ${isVisible ? 'opacity-100 backdrop-blur-md bg-black/75' : 'opacity-0 bg-transparent pointer-events-none'}`}>
       <div 
-        className={`relative w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 transform ${isVisible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'} ${isDark ? 'bg-[#121214] border border-white/10' : 'bg-white border border-gray-200'}`}
+        className={`relative w-full max-w-lg my-auto max-h-[92vh] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 transform ${isVisible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'} ${isDark ? 'bg-[#121214] border border-white/10' : 'bg-white border border-gray-200'}`}
       >
         {/* Header Bar */}
         <div className={`p-5 flex items-center justify-between border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
@@ -177,6 +179,7 @@ export function EquipmentAnnouncementModal({ announcement, onClose, isDark }: Eq
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

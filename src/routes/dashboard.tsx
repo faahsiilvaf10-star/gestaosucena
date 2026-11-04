@@ -1840,9 +1840,9 @@ function DashboardComponent() {
         document.body
       )}
 
-      {showBirthdayModal && aniversariantesHoje.length > 0 && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-in fade-in zoom-in duration-300">
+      {showBirthdayModal && aniversariantesHoje.length > 0 && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 max-w-md w-full my-auto max-h-[92vh] overflow-y-auto relative animate-in zoom-in-95 duration-200">
             <button
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
               onClick={() => setShowBirthdayModal(false)}
@@ -1883,7 +1883,8 @@ function DashboardComponent() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

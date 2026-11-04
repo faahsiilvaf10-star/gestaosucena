@@ -2,6 +2,7 @@ import X from 'lucide-react/dist/esm/icons/x.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useMonthlyColors } from '../hooks/useMonthlyColors'
 import { useTheme } from '../contexts/ThemeContext'
@@ -34,6 +35,22 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
   const [palestranteType, setPalestranteType] = useState<'interno' | 'externo'>('interno')
   const [colaboradores, setColaboradores] = useState<Array<{ id: string; nome: string; cargo?: string; source: 'system' | 'rh' }>>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Trava scroll de fundo e tecla ESC
+  useEffect(() => {
+    if (!isOpen) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
 
   // Carregar todos os colaboradores (usuários do sistema e efetivo do RH)
   useEffect(() => {
@@ -296,10 +313,17 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
     }
   }
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm z-[99999]" onClick={onClose}>
+  if (!isOpen || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm z-[999999] overflow-y-auto animate-in fade-in duration-200" 
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <div 
-        className={`relative w-full max-w-lg overflow-y-auto rounded-3xl p-5 md:p-6 ${isDark ? 'bg-[#0f1014] text-white' : 'bg-white text-black'}`}
+        className={`relative w-full max-w-lg overflow-y-auto rounded-3xl p-5 md:p-6 my-auto max-h-[92vh] shadow-2xl animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#0f1014] text-white' : 'bg-white text-black'}`}
         onClick={e => e.stopPropagation()}
       >
         <button 
@@ -441,6 +465,7 @@ export function DdsUploadModal({ isOpen, onClose, tema, palestrante, onSuccess }
           
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

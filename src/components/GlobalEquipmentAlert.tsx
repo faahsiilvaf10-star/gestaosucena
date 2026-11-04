@@ -164,9 +164,11 @@ export function GlobalEquipmentAlert() {
   const vehicleName = currentAlert.equipment?.name || 'Equipamento'
   const plateTag = currentAlert.equipment?.plate_tag
 
-  return (
-    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border ${
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+      <div className={`w-full max-w-md my-auto max-h-[92vh] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border ${
         isDark ? 'bg-[#15161A] text-white border-white/10' : 'bg-white text-gray-900 border-black/10'
       }`}>
         
@@ -308,6 +310,7 @@ export function GlobalEquipmentAlert() {
         </div>
         
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

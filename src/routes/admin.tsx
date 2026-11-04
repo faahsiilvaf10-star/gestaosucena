@@ -234,6 +234,26 @@ function AdminRoute() {
 
   // Test API Modal
   const [testApiModal, setTestApiModal] = useState(false)
+
+  // Trava scroll de fundo se qualquer modal administrativo estiver ativo
+  const isAnyAdminModalActive = Boolean(
+    unlockCodeModal ||
+    editingUser ||
+    removeRoleModal ||
+    blockUserModal ||
+    deleteUserModal ||
+    testApiModal
+  )
+
+  useEffect(() => {
+    if (!isAnyAdminModalActive) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isAnyAdminModalActive])
+
   const [testNumber, setTestNumber] = useState('')
   const [isTestingApi, setIsTestingApi] = useState(false)
 
@@ -3123,10 +3143,10 @@ function AdminRoute() {
         </div>
       )}
 
-      {/* Unlock WhatsApp Modal */}
-      {unlockCodeModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {/* Unlock WhatsApp Modal via Portal */}
+      {unlockCodeModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 my-auto max-h-[92vh] animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
                 <Lock className="text-blue-500" size={32} />
@@ -3166,13 +3186,14 @@ function AdminRoute() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Edit Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-          <div className={`w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {/* Edit Modal via Portal */}
+      {editingUser && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-lg max-h-[92vh] my-auto flex flex-col rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             <div className={`px-6 py-4 border-b shrink-0 flex items-center justify-between ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
               <div className="flex items-center gap-3 min-w-0">
                 <Edit2 className="text-[#D6A72B] shrink-0" size={22} />
@@ -3411,13 +3432,14 @@ function AdminRoute() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modals de Confirmação */}
-      {removeRoleModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 text-center ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {removeRoleModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 my-auto text-center animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             <AlertTriangle className="text-orange-500 mx-auto mb-4" size={40} />
             <h2 className="text-xl font-bold mb-2">Remover Cargo</h2>
             <p className={`mb-6 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -3439,12 +3461,13 @@ function AdminRoute() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {blockUserModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {blockUserModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 my-auto animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             {blockUserModal.banned_until ? (
               <>
                 <CheckCircle2 className="text-green-500 mx-auto mb-4" size={40} />
@@ -3599,12 +3622,13 @@ function AdminRoute() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {deleteUserModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {deleteUserModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 my-auto animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
                 <Trash2 className="text-red-500" size={32} />
@@ -3647,13 +3671,14 @@ function AdminRoute() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Test API Modal */}
-      {testApiModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
+      {/* Test API Modal via Portal */}
+      {testApiModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden p-6 my-auto animate-in zoom-in-95 duration-200 ${isDark ? 'bg-[#15161A] border border-white/10' : 'bg-white'}`}>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center mb-4">
                 <MessageCircle className="text-[#25D366]" size={32} />
