@@ -237,8 +237,8 @@ export function variacaoTxt(
   const pct =
     prev !== 0
       ? ` (${seta} ${Math.abs((diff / prev) * 100).toLocaleString('pt-BR', {
-          maximumFractionDigits: 1,
-        })}%)`
+        maximumFractionDigits: 1,
+      })}%)`
       : ''
   const sentido =
     diff === 0 ? 'sem alteração' : (ind.dir === 'menor' ? diff < 0 : diff > 0) ? 'melhorou' : 'piorou'
@@ -283,24 +283,21 @@ export function gerarTextoRelatorioIndicadores(store: IndicadoresStore, mes: str
     const prev = store[prevMes(mes)]
     const prevV = prev && prev.valores ? prev.valores[ind.id] : null
 
-    s += `${i + 1}. ${ind.nome}: ${fmtNum(v, ind.casas)} • Meta: ${
-      ind.dir === 'menor' ? '≤' : '≥'
-    } ${fmtNum(meta, ind.casas)} • ${
-      v === null
+    s += `${i + 1}. ${ind.nome}: ${fmtNum(v, ind.casas)} • Meta: ${ind.dir === 'menor' ? '≤' : '≥'
+      } ${fmtNum(meta, ind.casas)} • ${v === null
         ? 'SEM DADOS'
         : st.dentro === true
           ? 'DENTRO DA META'
           : st.dentro === false
             ? 'FORA DA META'
             : 'SEM META'
-    }\n`
-    s += `   Comparativo com ${fmtMes(prevMes(mes))}: ${
-      v === null
+      }\n`
+    s += `   Comparativo com ${fmtMes(prevMes(mes))}: ${v === null
         ? 'sem valor neste mês.'
         : prevV === null
           ? 'sem mês anterior salvo.'
           : variacaoTxt(ind, v, prevV)
-    }\n`
+      }\n`
   })
 
   return s
@@ -732,7 +729,7 @@ export async function carregarIndicadoresStore(env = 'barcarena'): Promise<Indic
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(LS_KEY_INDICADORES, JSON.stringify(store))
-        } catch (_) {}
+        } catch (_) { }
       }
       return store
     }
@@ -748,7 +745,7 @@ export async function carregarIndicadoresStore(env = 'barcarena'): Promise<Indic
         const parsed = JSON.parse(raw)
         if (parsed && typeof parsed === 'object') return parsed
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   return {}

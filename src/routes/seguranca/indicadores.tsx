@@ -20,6 +20,7 @@ import {
   type IndicadoresAutomaticos,
 } from '../../lib/indicadoresData'
 import { supabase } from '../../lib/supabase'
+import { DashboardPlacarSeguranca } from '../../components/DashboardPlacarSeguranca'
 import { ArrowLeft, Cloud, BarChart3, Printer, Copy, Sparkles, Save, RotateCcw, Calculator, Trash2, RefreshCw, ExternalLink, Zap, CheckCircle2 } from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/indicadores')({
@@ -1169,6 +1170,9 @@ export function IndicadoresComponent() {
             editar ou excluir qualquer mês histórico a qualquer momento.
           </p>
         </div>
+
+        {/* Placar de Segurança Diário — Dias sem Acidentes com Afastamento */}
+        <DashboardPlacarSeguranca currentEnv={currentEnv} />
 
         {/* SEÇÃO 1: FORMULÁRIO */}
         <section className="ind-card noprint" ref={formRef} id="formSection">

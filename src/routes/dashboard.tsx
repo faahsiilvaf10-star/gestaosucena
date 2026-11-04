@@ -29,6 +29,7 @@ import { DashboardCampanhaMesWidget } from '../components/DashboardCampanhaMesWi
 import { DashboardMatrizWidget } from '../components/DashboardMatrizWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { DashboardSafetyBanner } from '../components/DashboardSafetyBanner'
+import { DashboardPlacarSeguranca } from '../components/DashboardPlacarSeguranca'
 import '../hydro-panel.css'
 
 export const Route = createFileRoute('/dashboard')({
@@ -1219,6 +1220,9 @@ function DashboardComponent() {
 
     
     
+
+      {/* PLACAR DE SEGURANÇA — DIAS SEM ACIDENTES & META COMEMORATIVA */}
+      <DashboardPlacarSeguranca currentEnv={currentEnv} />
 
       {/* 2. CARDS DE KPIS COM DONUTS */}
       <section className="kpis" aria-label="Indicadores de hoje">
