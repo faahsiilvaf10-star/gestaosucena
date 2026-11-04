@@ -236,24 +236,6 @@ function AdminRoute() {
   // Test API Modal
   const [testApiModal, setTestApiModal] = useState(false)
 
-  // Trava scroll de fundo se qualquer modal administrativo estiver ativo
-  const isAnyAdminModalActive = Boolean(
-    unlockCodeModal ||
-    editingUser ||
-    removeRoleModal ||
-    blockUserModal ||
-    deleteUserModal ||
-    testApiModal
-  )
-
-  useEffect(() => {
-    if (!isAnyAdminModalActive) return
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = originalOverflow
-    }
-  }, [isAnyAdminModalActive])
 
   const [testNumber, setTestNumber] = useState('')
   const [isTestingApi, setIsTestingApi] = useState(false)
@@ -287,6 +269,25 @@ function AdminRoute() {
   const [deleteUserModal, setDeleteUserModal] = useState<AdminUser | null>(null)
   const [deleteEmailInput, setDeleteEmailInput] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Trava scroll de fundo se qualquer modal administrativo estiver ativo
+  const isAnyAdminModalActive = Boolean(
+    unlockCodeModal ||
+    editingUser ||
+    removeRoleModal ||
+    blockUserModal ||
+    deleteUserModal ||
+    testApiModal
+  )
+
+  useEffect(() => {
+    if (!isAnyAdminModalActive) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isAnyAdminModalActive])
 
   useEffect(() => {
     checkAdminAndLoad()
