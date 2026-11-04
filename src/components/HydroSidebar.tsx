@@ -167,6 +167,7 @@ interface HydroSidebarProps {
 }
 
 export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: HydroSidebarProps) {
+  const router = useRouter()
   const [isJogoAberto, setIsJogoAberto] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()

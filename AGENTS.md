@@ -17,6 +17,13 @@
 > 2. Adicione a interface de edição em `src/routes/admin.tsx` (na aba do WhatsApp)
 > 3. Use variáveis dinâmicas `{chave}` e garanta que o código (seja TSX ou SQL) faça os devidos replaces lendo da configuração antes de disparar.
 
+## Automação Obrigatória em Toda Alteração
+> [!IMPORTANT]
+> Em TODA alteração no sistema, execute obrigatoriamente a esteira completa:
+> 1. **Executar Todos os Testes:** Rodar a suíte de testes automatizados (`npm run test` / vitest) e garantir 100% de aprovação.
+> 2. **Build e Geração do Executável:** Executar a compilação (`npm run build`) e gerar o executável atualizado da aplicação (`cd launcher && npm run dist`).
+> 3. **Commit e Push Automático:** Criar o commit com descrição clara e realizar o push imediato para o repositório remoto.
+
 ## Fluxo de Trabalho e Controle de Qualidade
 > [!IMPORTANT]
 > - **Issues:** Antes de iniciar qualquer tarefa, crie uma Issue no GitHub categorizada como "Correção", "Melhoria" ou "Nova função".
