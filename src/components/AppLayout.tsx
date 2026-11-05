@@ -96,6 +96,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [location.pathname])
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
   const isDesvios = location.pathname.startsWith('/seguranca/desvios')
+  const [isIOS, setIsIOS] = useState(false)
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+      if (isIOSDevice) {
+        setIsIOS(true)
+        document.documentElement.classList.add('is-ios')
+      }
+    }
+  }, [])
   const [searchQuery, setSearchQuery] = useState('')
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -493,7 +505,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       >
         {/* Barra superior persistente em todo o sistema */}
         {/* Barra superior mobile amarela idêntica à imagem de referência: [ < ] | ⚡ Requisição Rápida */}
-        <div className="mobile-topbar-yellow">
+        <div className={`mobile-topbar-yellow ${isIOS ? 'is-ios is-ios-device' : ''}`}>
+
           <button
             type="button"
             className="mobile-topbar-back-btn"
@@ -518,7 +531,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
           <button
             type="button"
-            className="mobile-topbar-action-btn"
+            className={`mobile-topbar-action-btn ${isIOS ? 'is-ios is-ios-btn' : ''}`}
             onClick={() => navigate({ to: '/almoxarifado/requisicoes/nova' as any })}
             title="Nova Requisição Rápida"
           >

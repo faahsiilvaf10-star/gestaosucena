@@ -1844,8 +1844,9 @@ table {
     display: flex !important;
     align-items: center !important;
     background: #FFB800 !important;
-    height: 52px !important;
-    padding: 0 16px !important;
+    min-height: calc(52px + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    padding: max(env(safe-area-inset-top, 0px), 8px) max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)) !important;
     width: 100% !important;
     box-sizing: border-box !important;
     position: sticky !important;
@@ -1936,6 +1937,66 @@ table {
     display: none !important;
   }
 }
+
+
+/* ========================================================
+   AJUSTES ESPECÍFICOS PARA IOS / SAFARI / IPHONE
+   Desce o botão de nova requisição rápida com espaçamento
+   generoso para livrar o notch / Dynamic Island / status bar
+   ======================================================== */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    .mobile-topbar-yellow {
+      padding-top: max(calc(env(safe-area-inset-top, 0px) + 16px), 48px) !important;
+      padding-bottom: 12px !important;
+      min-height: calc(56px + max(env(safe-area-inset-top, 0px), 48px)) !important;
+    }
+
+    .mobile-topbar-action-btn {
+      padding: 6px 0 !important;
+      min-height: 44px !important;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .topbar-container,
+    .topbar-wrapper {
+      padding-top: max(calc(env(safe-area-inset-top, 0px) + 16px), 44px) !important;
+    }
+    .btn-requisicao-rapida-mobile {
+      margin-top: 6px !important;
+    }
+  }
+}
+
+/* Fallback via classe .is-ios e .is-ios-device */
+html.is-ios .mobile-topbar-yellow,
+body.is-ios .mobile-topbar-yellow,
+.is-ios-device.mobile-topbar-yellow {
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 16px), 48px) !important;
+  padding-bottom: 12px !important;
+  min-height: calc(56px + max(env(safe-area-inset-top, 0px), 48px)) !important;
+}
+
+html.is-ios .mobile-topbar-action-btn,
+body.is-ios .mobile-topbar-action-btn,
+.is-ios-btn.mobile-topbar-action-btn {
+  padding: 6px 0 !important;
+  min-height: 44px !important;
+}
+
+html.is-ios .topbar-container,
+html.is-ios .topbar-wrapper,
+body.is-ios .topbar-container,
+body.is-ios .topbar-wrapper {
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 16px), 44px) !important;
+}
+
+html.is-ios .btn-requisicao-rapida-mobile,
+body.is-ios .btn-requisicao-rapida-mobile {
+  margin-top: 6px !important;
+}
+
 
 /* COMPACT RESOLUTION ADAPTATIONS */
 @media (max-width: 1400px) {

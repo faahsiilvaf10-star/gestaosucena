@@ -35,6 +35,10 @@ export function applyThemeToDocument(_theme?: string) {
     body.classList.add('light')
   }
   root.style.colorScheme = 'light'
+  if (typeof navigator !== 'undefined' && (/(iPad|iPhone|iPod)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) {
+    root.classList.add('is-ios')
+    if (body) body.classList.add('is-ios')
+  }
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -89,4 +93,4 @@ export function useTheme() {
  * Script inline executado imediatamente antes do primeiro paint:
  * Força a remoção de 'dark', adiciona 'light' e define colorScheme = 'light'.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{localStorage.setItem('${STORAGE_KEY}','light');localStorage.removeItem('theme');var e=document.documentElement;e.classList.remove('dark');e.classList.add('light');e.style.colorScheme='light';e.style.backgroundColor='#eef0f4';}catch(_){}})();`
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{localStorage.setItem('${STORAGE_KEY}','light');localStorage.removeItem('theme');var e=document.documentElement;e.classList.remove('dark');e.classList.add('light');e.style.colorScheme='light';e.style.backgroundColor='#eef0f4';if(typeof navigator!=='undefined'&&(/(iPad|iPhone|iPod)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))){e.classList.add('is-ios');}}catch(_){}})();`
