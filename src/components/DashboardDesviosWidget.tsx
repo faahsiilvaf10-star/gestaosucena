@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   MapPin,
   User,
+  ChevronLeft,
   ChevronRight,
   ExternalLink,
   ShieldAlert,
@@ -92,7 +93,44 @@ function calcularPrazoDias(dataIso?: string): {
 export function DashboardDesviosWidget() {
   const [desvios, setDesvios] = useState<DesvioItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [fotoModal, setFotoModal] = useState<string | null>(null)
+  const [modalGaleria, setModalGaleria] = useState<{ fotos: string[]; index: number } | null>(null)
+
+  const abrirFoto = (fotos: string[], index = 0) => {
+    if (!fotos || fotos.length === 0) return
+    setModalGaleria({ fotos, index: Math.max(0, Math.min(index, fotos.length - 1)) })
+  }
+
+  const irFotoAnterior = () => {
+    setModalGaleria(prev => {
+      if (!prev || prev.fotos.length <= 1) return prev
+      return { ...prev, index: (prev.index - 1 + prev.fotos.length) % prev.fotos.length }
+    })
+  }
+
+  const irProximaFoto = () => {
+    setModalGaleria(prev => {
+      if (!prev || prev.fotos.length <= 1) return prev
+      return { ...prev, index: (prev.index + 1) % prev.fotos.length }
+    })
+  }
+
+  useEffect(() => {
+    if (!modalGaleria) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        irProximaFoto()
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        irFotoAnterior()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setModalGaleria(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [modalGaleria])
 
   const carregar = async () => {
     try {
@@ -281,7 +319,7 @@ export function DashboardDesviosWidget() {
                           src={fotosLista[0]}
                           alt="Desvio"
                           className="w-12 h-12 rounded-lg object-cover border border-gray-300 cursor-pointer hover:opacity-90 transition shadow-2xs"
-                          onClick={() => setFotoModal(fotosLista[0])}
+                          onClick={() => abrirFoto(fotosLista, 0)}
                           title="Clique para ampliar foto"
                         />
                         {fotosLista.length > 1 && (
@@ -324,24 +362,83 @@ export function DashboardDesviosWidget() {
         </Link>
       </div>
 
-      {/* Modal para expansão de foto */}
-      {fotoModal && typeof document !== 'undefined' && createPortal(
+      {/* Modal para expansão de foto com galeria interativa */}
+      {modalGaleria && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
+          className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 cursor-zoom-out select-none"
           style={{ zIndex: 9999999 }}
-          onClick={() => setFotoModal(null)}
+          onClick={() => setModalGaleria(null)}
         >
-          <div className="relative max-w-xl max-h-[90vh] bg-white rounded-2xl p-3 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-              <span className="text-xs font-black text-gray-900 uppercase">Foto do Desvio</span>
+          <div className="relative max-w-2xl max-h-[90vh] w-full bg-white rounded-2xl p-3 shadow-2xl cursor-default flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-gray-900 uppercase">Foto do Desvio</span>
+                {modalGaleria.fotos.length > 1 && (
+                  <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black px-2 py-0.5 rounded-full">
+                    {modalGaleria.index + 1} de {modalGaleria.fotos.length}
+                  </span>
+                )}
+              </div>
               <button
-                onClick={() => setFotoModal(null)}
+                onClick={() => setModalGaleria(null)}
                 className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition cursor-pointer"
+                title="Fechar (Esc)"
               >
                 <X className="w-4 h-4 text-gray-700" />
               </button>
             </div>
-            <img src={fotoModal} alt="Foto ampliada" className="max-w-full max-h-[75vh] object-contain rounded-xl mx-auto" />
+
+            <div className="relative w-full flex items-center justify-center overflow-hidden rounded-xl bg-black/5 min-h-[200px]">
+              {modalGaleria.fotos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    irFotoAnterior()
+                  }}
+                  title="Foto anterior (←)"
+                  aria-label="Foto anterior"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/65 hover:bg-black/90 text-white shadow-xl flex items-center justify-center transition hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs border border-white/20"
+                >
+                  <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+                </button>
+              )}
+
+              <img
+                src={modalGaleria.fotos[modalGaleria.index]}
+                alt={`Foto ${modalGaleria.index + 1} de ${modalGaleria.fotos.length}`}
+                className="max-w-full max-h-[75vh] object-contain rounded-xl mx-auto select-none"
+              />
+
+              {modalGaleria.fotos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    irProximaFoto()
+                  }}
+                  title="Próxima foto (→)"
+                  aria-label="Próxima foto"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/65 hover:bg-black/90 text-white shadow-xl flex items-center justify-center transition hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs border border-white/20"
+                >
+                  <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+                </button>
+              )}
+
+              {modalGaleria.fotos.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-md pointer-events-none">
+                  Use as setas ← → do teclado
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setModalGaleria(null)}
+              className="mt-3 w-full py-2 bg-gray-950 text-white font-bold text-xs rounded-xl hover:bg-black transition cursor-pointer"
+            >
+              Fechar Foto
+            </button>
           </div>
         </div>,
         document.body
