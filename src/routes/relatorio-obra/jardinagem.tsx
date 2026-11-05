@@ -902,6 +902,7 @@ function JardinagemPage() {
                         <select value={row.nome} onChange={(e) => { const n = [...invasoras]; n[idx].nome = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                           <option value="">Selecione a invasora</option>
                           <option value="Acácia">Acácia</option>
+                          <option value="Crotalária">Crotalária</option>
                           <option value="Erva Daninha">Erva Daninha</option>
                           <option value="Erva-de-passarinho">Erva-de-passarinho</option>
                           <option value="Juqueri">Juqueri</option>

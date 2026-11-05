@@ -38,7 +38,7 @@ const PRESET_JARDINAGEM: CustomCardModel[] = [
     titulo: 'CONTROLE DE INVASORAS',
     unidade: 'unid',
     labelOpcao: 'Nome da Invasora',
-    opcoes: ['Acácia', 'Erva Daninha', 'Erva-de-passarinho', 'Juqueri', 'Leucena'],
+    opcoes: ['Acácia', 'Crotalária', 'Erva Daninha', 'Erva-de-passarinho', 'Juqueri', 'Leucena'],
   },
   { id: 'm-plantio-grama', tipo: 'medicao', titulo: 'PLANTIO DE GRAMA (M²)', unidade: 'm²' },
 ];
@@ -395,7 +395,7 @@ export function CreateModuleModal({ isOpen, onClose, onSave, initialData, isEdit
                               opcoes: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
                             })
                           }
-                          placeholder="Ex: Acácia, Erva Daninha, Juqueri, Leucena"
+                          placeholder="Ex: Acácia, Crotalária, Erva Daninha, Juqueri, Leucena"
                           className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                         />
                       </div>
