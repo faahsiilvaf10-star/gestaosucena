@@ -69,6 +69,8 @@ export interface ChecklistStore {
   execucoes: ChecklistExecucao[]
   pendenciasResolvidas: Record<string, { em: string }>
   anexos: ChecklistAnexo[]
+  arquivosExtras?: ChecklistAnexo[]
+  tituloAbaArquivos?: string
 }
 
 export const LS_KEY_MODELOS = 'hydro-checklist-modelos'
@@ -288,6 +290,11 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
             ? val.pendenciasResolvidas
             : {},
         anexos: Array.isArray(val.anexos) ? val.anexos : [],
+        arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
+        tituloAbaArquivos:
+          typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
+            ? val.tituloAbaArquivos.trim()
+            : 'Arquivos & Documentos',
       }
 
       // Atualiza o localStorage local
@@ -297,6 +304,14 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
           localStorage.setItem(LS_KEY_EXECUCOES, JSON.stringify(store.execucoes))
           localStorage.setItem(LS_KEY_PENDENCIAS, JSON.stringify(store.pendenciasResolvidas))
           localStorage.setItem(LS_KEY_ANEXOS, JSON.stringify(store.anexos))
+          localStorage.setItem(
+            'hydro-checklist-arquivos-extras',
+            JSON.stringify(store.arquivosExtras || [])
+          )
+          localStorage.setItem(
+            'hydro-checklist-titulo-aba-arquivos',
+            store.tituloAbaArquivos || 'Arquivos & Documentos'
+          )
         } catch (_) {}
       }
 
@@ -313,12 +328,17 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
       const exe = JSON.parse(localStorage.getItem(LS_KEY_EXECUCOES) || '[]')
       const pen = JSON.parse(localStorage.getItem(LS_KEY_PENDENCIAS) || '{}')
       const ane = JSON.parse(localStorage.getItem(LS_KEY_ANEXOS) || '[]')
+      const ext = JSON.parse(localStorage.getItem('hydro-checklist-arquivos-extras') || '[]')
+      const tit =
+        localStorage.getItem('hydro-checklist-titulo-aba-arquivos') || 'Arquivos & Documentos'
 
       return {
         modelos: Array.isArray(mod) ? mod : [],
         execucoes: Array.isArray(exe) ? exe : [],
         pendenciasResolvidas: pen && typeof pen === 'object' ? pen : {},
         anexos: Array.isArray(ane) ? ane : [],
+        arquivosExtras: Array.isArray(ext) ? ext : [],
+        tituloAbaArquivos: tit,
       }
     } catch (_) {}
   }
@@ -328,6 +348,8 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
+    arquivosExtras: [],
+    tituloAbaArquivos: 'Arquivos & Documentos',
   }
 }
 
@@ -347,6 +369,14 @@ export async function salvarChecklistStore(
       localStorage.setItem(LS_KEY_EXECUCOES, JSON.stringify(store.execucoes))
       localStorage.setItem(LS_KEY_PENDENCIAS, JSON.stringify(store.pendenciasResolvidas))
       localStorage.setItem(LS_KEY_ANEXOS, JSON.stringify(store.anexos))
+      localStorage.setItem(
+        'hydro-checklist-arquivos-extras',
+        JSON.stringify(store.arquivosExtras || [])
+      )
+      localStorage.setItem(
+        'hydro-checklist-titulo-aba-arquivos',
+        store.tituloAbaArquivos || 'Arquivos & Documentos'
+      )
     } catch (e) {
       console.warn('[Checklist] Erro ao salvar no LocalStorage:', e)
     }
@@ -356,9 +386,12 @@ export async function salvarChecklistStore(
     const { error } = await supabase
       .from('global_settings')
       .upsert(
-        { key: dbKey, value: lista, updated_at: new Date().toISOString() },
+        { key: dbKey, value: store, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       )
+    if (error) {
+      console.warn('[Checklist] Erro ao persistir no Supabase:', error)
+    }
     return !error
   } catch (err) {
     console.warn('[Checklist] Erro ao persistir no Supabase:', err)

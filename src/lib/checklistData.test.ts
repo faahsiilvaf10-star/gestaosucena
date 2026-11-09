@@ -84,5 +84,46 @@ describe('checklistData logic', () => {
     expect(relatorio).toContain('50%')
     expect(relatorio).toContain('Colaborador sem óculos')
   })
+
+  it('deve suportar anexos de checklists preenchidos e arquivos extras com título editável', () => {
+    const store = {
+      modelos: [],
+      execucoes: [],
+      pendenciasResolvidas: {},
+      anexos: [
+        {
+          id: 'arq-1',
+          nome: 'checklist-obra.pdf',
+          mime: 'application/pdf',
+          rotulo: 'PDF',
+          icone: '📕',
+          tamanho: 1024,
+          dataUrl: 'data:application/pdf;base64,JVBERi0xLg==',
+          anexadoEm: '09/11/2026 às 11:30',
+          titulo: 'Checklist Diário de Andaime',
+        },
+      ],
+      arquivosExtras: [
+        {
+          id: 'ext-1',
+          nome: 'laudo-vistoria.pdf',
+          mime: 'application/pdf',
+          rotulo: 'PDF',
+          icone: '📕',
+          tamanho: 2048,
+          dataUrl: 'data:application/pdf;base64,JVBERi0xLg==',
+          anexadoEm: '09/11/2026 às 11:32',
+          titulo: 'Laudo Pericial de Segurança',
+        },
+      ],
+      tituloAbaArquivos: 'Documentos & Laudos',
+    }
+
+    expect(store.anexos.length).toBe(1)
+    expect(store.anexos[0].titulo).toBe('Checklist Diário de Andaime')
+    expect(store.arquivosExtras?.length).toBe(1)
+    expect(store.arquivosExtras?.[0].titulo).toBe('Laudo Pericial de Segurança')
+    expect(store.tituloAbaArquivos).toBe('Documentos & Laudos')
+  })
 })
 

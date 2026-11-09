@@ -51,9 +51,11 @@ export function ChecklistComponent() {
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
+    arquivosExtras: [],
+    tituloAbaArquivos: 'Arquivos & Documentos',
   })
   const [carregando, setCarregando] = useState(true)
-  const [abaAtiva, setAbaAtiva] = useState<'principal' | 'anexos'>('principal')
+  const [abaAtiva, setAbaAtiva] = useState<'principal' | 'anexos' | 'arquivos'>('principal')
 
   // Colaboradores RH
   const [colaboradoresRH, setColaboradoresRH] = useState<ColaboradorRH[]>([])
@@ -110,6 +112,32 @@ export function ChecklistComponent() {
   const [anexFiltroTipo, setAnexFiltroTipo] = useState('todos')
   const [anexFeedback, setAnexFeedback] = useState<{ tipo: 'ok' | 'erro'; msg: string } | null>(null)
   const [confirmExcluirAnexo, setConfirmExcluirAnexo] = useState<Record<string, boolean>>({})
+
+  // Edição de título de anexos (em qualquer aba)
+  const [editingAnexoId, setEditingAnexoId] = useState<string | null>(null)
+  const [editingAnexoTitulo, setEditingAnexoTitulo] = useState<string>('')
+  const [editingTarget, setEditingTarget] = useState<'anexos' | 'arquivos' | null>(null)
+
+  // 7) Nova Aba de Arquivos & Documentos
+  const [editandoNomeAba, setEditandoNomeAba] = useState(false)
+  const [novoNomeAba, setNovoNomeAba] = useState('')
+  const [extraNome, setExtraNome] = useState('')
+  const [extraLocal, setExtraLocal] = useState('')
+  const [extraData, setExtraData] = useState('')
+  const [pendExtra, setPendExtra] = useState<
+    {
+      nome: string
+      mime: string
+      rotulo: string
+      icone: string
+      tamanho: number
+      dataUrl: string
+    }[]
+  >([])
+  const [extraBusca, setExtraBusca] = useState('')
+  const [extraFiltroTipo, setExtraFiltroTipo] = useState('todos')
+  const [extraFeedback, setExtraFeedback] = useState<{ tipo: 'ok' | 'erro'; msg: string } | null>(null)
+  const [confirmExcluirExtra, setConfirmExcluirExtra] = useState<Record<string, boolean>>({})
 
   // Toast
   const [toastMsg, setToastMsg] = useState<string | null>(null)
@@ -181,6 +209,11 @@ export function ChecklistComponent() {
                   ? val.pendenciasResolvidas
                   : {},
               anexos: Array.isArray(val.anexos) ? val.anexos : [],
+              arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
+              tituloAbaArquivos:
+                typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
+                  ? val.tituloAbaArquivos.trim()
+                  : 'Arquivos & Documentos',
             })
           }
         }
@@ -591,17 +624,75 @@ export function ChecklistComponent() {
   }
 
   // ==========================================
-  // 6) ANEXOS
+  // 6) ANEXOS & EDIÇÃO DE TÍTULO
   // ==========================================
-  const handleAnexInput = (ev: React.ChangeEvent<HTMLInputElement>) => {
+  const iniciarEdicaoTitulo = (id: string, tituloAtual: string, target: 'anexos' | 'arquivos') => {
+    setEditingAnexoId(id)
+    setEditingAnexoTitulo(tituloAtual || '')
+    setEditingTarget(target)
+  }
+
+  const salvarEdicaoTitulo = async () => {
+    if (!editingAnexoId || !editingTarget) return
+    const novoTit = editingAnexoTitulo.trim() || undefined
+    if (editingTarget === 'anexos') {
+      const novos = store.anexos.map((a, i) =>
+        (a.id ? a.id === editingAnexoId : String(i) === editingAnexoId)
+          ? { ...a, titulo: novoTit }
+          : a
+      )
+      await persistStore({ ...store, anexos: novos })
+    } else {
+      const novos = (store.arquivosExtras || []).map((a, i) =>
+        (a.id ? a.id === editingAnexoId : String(i) === editingAnexoId)
+          ? { ...a, titulo: novoTit }
+          : a
+      )
+      await persistStore({ ...store, arquivosExtras: novos })
+    }
+    setEditingAnexoId(null)
+    setEditingAnexoTitulo('')
+    setEditingTarget(null)
+    showToast('✏️ Título do arquivo atualizado com sucesso!')
+  }
+
+  const cancelarEdicaoTitulo = () => {
+    setEditingAnexoId(null)
+    setEditingAnexoTitulo('')
+    setEditingTarget(null)
+  }
+
+  const abrirEdicaoNomeAba = () => {
+    setNovoNomeAba(store.tituloAbaArquivos || 'Arquivos & Documentos')
+    setEditandoNomeAba(true)
+  }
+
+  const salvarNomeAba = async () => {
+    const nome = novoNomeAba.trim() || 'Arquivos & Documentos'
+    await persistStore({ ...store, tituloAbaArquivos: nome })
+    setEditandoNomeAba(false)
+    showToast(`Nome da aba atualizado para: "${nome}"`)
+  }
+
+  const handleAnexInput = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(ev.target.files || [])
     if (!files.length) return
 
     let pend = files.length
-    files.forEach((f) => {
+    for (const f of files) {
       const t = tipoArq(f.name, f.type)
-      const r = new FileReader()
-      r.onload = (e) => {
+      try {
+        let dataUrl = ''
+        if (f.type.startsWith('image/')) {
+          dataUrl = await comprimirImagem(f, 1600, 0.8)
+        } else {
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const r = new FileReader()
+            r.onload = (e) => resolve(e.target?.result as string)
+            r.onerror = reject
+            r.readAsDataURL(f)
+          })
+        }
         setPendAnex((prev) => [
           ...prev,
           {
@@ -610,20 +701,18 @@ export function ChecklistComponent() {
             rotulo: t.rotulo,
             icone: t.icone,
             tamanho: f.size,
-            dataUrl: e.target?.result as string,
+            dataUrl,
           },
         ])
+      } catch (err) {
+        showToast(`Não foi possível ler o arquivo: ${f.name}`)
+      } finally {
         pend--
         if (pend <= 0) {
-          showToast(`📎 ${files.length} arquivo(s) escolhido(s) — clique em Salvar arquivos`)
+          showToast(`📎 ${files.length} arquivo(s) preparado(s) — clique em Salvar arquivos`)
         }
       }
-      r.onerror = () => {
-        pend--
-        showToast(`Não foi possível ler o arquivo: ${f.name}`)
-      }
-      r.readAsDataURL(f)
-    })
+    }
     ev.target.value = ''
   }
 
@@ -672,7 +761,7 @@ export function ChecklistComponent() {
     setAnexData('')
     setAnexFeedback({
       tipo: 'ok',
-      msg: `✅ ${novos.length} CHECKLIST(S) PREENCHIDO(S) SALVO(S)!\nArquivados em ${quando} e já aparecem na lista abaixo, para visualizar/abrir ou baixar.`,
+      msg: `✅ ${novos.length} CHECKLIST(S) PREENCHIDO(S) SALVO(S)!\nArquivados em ${quando} e salvos com segurança.`,
     })
     showToast(`📎 ${novos.length} checklist(s) salvo(s) — anexados em ${quando}`)
   }
@@ -685,16 +774,16 @@ export function ChecklistComponent() {
     setAnexFeedback(null)
   }
 
-  const excluirAnexo = async (idx: number, nome: string) => {
-    if (!confirmExcluirAnexo[idx]) {
-      setConfirmExcluirAnexo((prev) => ({ ...prev, [idx]: true }))
+  const excluirAnexo = async (id: string, nome: string) => {
+    if (!confirmExcluirAnexo[id]) {
+      setConfirmExcluirAnexo((prev) => ({ ...prev, [id]: true }))
       setTimeout(() => {
-        setConfirmExcluirAnexo((prev) => ({ ...prev, [idx]: false }))
+        setConfirmExcluirAnexo((prev) => ({ ...prev, [id]: false }))
       }, 4000)
       return
     }
 
-    const novosAnexos = store.anexos.filter((_, i) => i !== idx)
+    const novosAnexos = store.anexos.filter((a, i) => (a.id ? a.id !== id : String(i) !== id))
     const novaStore = { ...store, anexos: novosAnexos }
     await persistStore(novaStore)
     showToast(`Arquivo excluído: ${nome}`)
@@ -734,6 +823,164 @@ export function ChecklistComponent() {
     })
     return porTipo
   }, [store.anexos])
+
+  // ==========================================
+  // 7) ARQUIVOS EXTRAS (NOVA ABA)
+  // ==========================================
+  const handleExtraInput = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(ev.target.files || [])
+    if (!files.length) return
+
+    let pend = files.length
+    for (const f of files) {
+      const t = tipoArq(f.name, f.type)
+      try {
+        let dataUrl = ''
+        if (f.type.startsWith('image/')) {
+          dataUrl = await comprimirImagem(f, 1600, 0.8)
+        } else {
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const r = new FileReader()
+            r.onload = (e) => resolve(e.target?.result as string)
+            r.onerror = reject
+            r.readAsDataURL(f)
+          })
+        }
+        setPendExtra((prev) => [
+          ...prev,
+          {
+            nome: f.name,
+            mime: f.type || '',
+            rotulo: t.rotulo,
+            icone: t.icone,
+            tamanho: f.size,
+            dataUrl,
+          },
+        ])
+      } catch (err) {
+        showToast(`Não foi possível ler o arquivo: ${f.name}`)
+      } finally {
+        pend--
+        if (pend <= 0) {
+          showToast(`📁 ${files.length} arquivo(s) preparado(s) — clique em Salvar arquivos`)
+        }
+      }
+    }
+    ev.target.value = ''
+  }
+
+  const salvarArquivosExtras = async () => {
+    if (!pendExtra.length) {
+      setExtraFeedback({
+        tipo: 'erro',
+        msg: '⚠️ NADA PARA SALVAR — clique em “📁 Escolher arquivos” e selecione pelo menos 1 arquivo antes de salvar.',
+      })
+      return
+    }
+
+    const agora = new Date()
+    const quando =
+      String(agora.getDate()).padStart(2, '0') +
+      '/' +
+      String(agora.getMonth() + 1).padStart(2, '0') +
+      '/' +
+      agora.getFullYear() +
+      ' às ' +
+      String(agora.getHours()).padStart(2, '0') +
+      ':' +
+      String(agora.getMinutes()).padStart(2, '0')
+
+    const novos: ChecklistAnexo[] = pendExtra.map((a) => ({
+      id: uid('ext'),
+      nome: a.nome,
+      mime: a.mime,
+      rotulo: a.rotulo,
+      icone: a.icone,
+      tamanho: a.tamanho,
+      dataUrl: a.dataUrl,
+      anexadoEm: quando,
+      titulo: extraNome.trim() || undefined,
+      local: extraLocal.trim() || undefined,
+      dataChecklist: extraData || undefined,
+    }))
+
+    const listaAtual = store.arquivosExtras || []
+    const novosArquivos = [...novos, ...listaAtual]
+    const novaStore = { ...store, arquivosExtras: novosArquivos }
+    await persistStore(novaStore)
+
+    setPendExtra([])
+    setExtraNome('')
+    setExtraLocal('')
+    setExtraData('')
+    setExtraFeedback({
+      tipo: 'ok',
+      msg: `✅ ${novos.length} ARQUIVO(S) SALVO(S) COM SUCESSO!\nSalvos em ${quando} e disponíveis para visualização, download ou edição de título.`,
+    })
+    showToast(`📁 ${novos.length} arquivo(s) salvo(s) em ${quando}`)
+  }
+
+  const limparArquivosExtras = () => {
+    setPendExtra([])
+    setExtraNome('')
+    setExtraLocal('')
+    setExtraData('')
+    setExtraFeedback(null)
+  }
+
+  const excluirArquivoExtra = async (id: string, nome: string) => {
+    if (!confirmExcluirExtra[id]) {
+      setConfirmExcluirExtra((prev) => ({ ...prev, [id]: true }))
+      setTimeout(() => {
+        setConfirmExcluirExtra((prev) => ({ ...prev, [id]: false }))
+      }, 4000)
+      return
+    }
+
+    const novos = (store.arquivosExtras || []).filter((a, i) =>
+      a.id ? a.id !== id : String(i) !== id
+    )
+    const novaStore = { ...store, arquivosExtras: novos }
+    await persistStore(novaStore)
+    showToast(`Arquivo excluído: ${nome}`)
+  }
+
+  const extrasFiltrados = useMemo(() => {
+    const busca = extraBusca.trim().toLowerCase()
+    const lista = store.arquivosExtras || []
+    return lista.filter((a) => {
+      const t = tipoArq(a.nome, a.mime)
+      const r = a.rotulo || t.rotulo
+      if (extraFiltroTipo !== 'todos' && r !== extraFiltroTipo) return false
+      if (
+        busca &&
+        !String(a.nome || '').toLowerCase().includes(busca) &&
+        !String(a.titulo || '').toLowerCase().includes(busca) &&
+        !String(a.local || '').toLowerCase().includes(busca)
+      ) {
+        return false
+      }
+      return true
+    })
+  }, [store.arquivosExtras, extraBusca, extraFiltroTipo])
+
+  const statsExtrasPorTipo = useMemo(() => {
+    const porTipo: Record<string, number> = {
+      PDF: 0,
+      Excel: 0,
+      Word: 0,
+      Imagem: 0,
+      Arquivo: 0,
+    }
+    const lista = store.arquivosExtras || []
+    lista.forEach((a) => {
+      const t = tipoArq(a.nome, a.mime)
+      const r = a.rotulo || t.rotulo
+      const chave = porTipo[r] !== undefined ? r : 'Arquivo'
+      porTipo[chave] = (porTipo[chave] || 0) + 1
+    })
+    return porTipo
+  }, [store.arquivosExtras])
 
   // Colaboradores RH para autocomplete
   const colaboradoresFiltrados = useMemo(() => {
@@ -1468,6 +1715,14 @@ export function ChecklistComponent() {
           >
             📎 Anexar Check List Preenchido{' '}
             {store.anexos.length > 0 && `(${store.anexos.length})`}
+          </button>
+          <button
+            type="button"
+            className={`ck-tabbtn ${abaAtiva === 'arquivos' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('arquivos')}
+          >
+            📁 {store.tituloAbaArquivos || 'Arquivos & Documentos'}{' '}
+            {(store.arquivosExtras?.length || 0) > 0 && `(${store.arquivosExtras?.length})`}
           </button>
         </div>
 
@@ -2237,7 +2492,7 @@ export function ChecklistComponent() {
               )}
             </section>
           </>
-        ) : (
+        ) : abaAtiva === 'anexos' ? (
           /* ===== 6) ABA ANEXOS ===== */
           <section className="ck-card" id="secAnexos">
             <button
@@ -2446,12 +2701,61 @@ export function ChecklistComponent() {
                     ? `📅 Anexado em ${a.anexadoEm}`
                     : '📅 Data de anexo não registrada'
 
+                  const idItem = a.id || String(idx)
+
                   return (
-                    <div key={idx} className="ck-arq-item">
+                    <div key={idItem} className="ck-arq-item">
                       <span className="ck-anexo-ic">{icone}</span>
                       <div className="ck-anexo-info">
                         <b>{a.nome}</b>
-                        {a.titulo && <span className="titulo-arq">✅ {a.titulo}</span>}
+
+                        {/* Edição de Título */}
+                        {editingAnexoId === idItem && editingTarget === 'anexos' ? (
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <input
+                              type="text"
+                              className="ck-input text-xs py-1 px-2.5 w-64 max-w-full font-bold"
+                              value={editingAnexoTitulo}
+                              onChange={(e) => setEditingAnexoTitulo(e.target.value)}
+                              placeholder="Título do checklist / arquivo..."
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') salvarEdicaoTitulo()
+                                if (e.key === 'Escape') cancelarEdicaoTitulo()
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="ck-btn ck-btn-dark text-xs py-1 px-2.5"
+                              onClick={salvarEdicaoTitulo}
+                            >
+                              ✓ Salvar
+                            </button>
+                            <button
+                              type="button"
+                              className="ck-btn ck-btn-ghost text-xs py-1 px-2"
+                              onClick={cancelarEdicaoTitulo}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {a.titulo ? (
+                              <span className="titulo-arq">✅ {a.titulo}</span>
+                            ) : (
+                              <span className="text-xs text-gray-500 italic">Sem título definido</span>
+                            )}
+                            <button
+                              type="button"
+                              className="text-xs text-blue-700 font-bold hover:underline cursor-pointer bg-blue-50 border border-blue-200 px-2 py-0.5 rounded"
+                              onClick={() => iniciarEdicaoTitulo(idItem, a.titulo || '', 'anexos')}
+                            >
+                              ✏️ Editar título
+                            </button>
+                          </div>
+                        )}
+
                         {(a.local || a.dataChecklist) && (
                           <span>
                             {[
@@ -2485,9 +2789,358 @@ export function ChecklistComponent() {
                         <button
                           type="button"
                           className="del"
-                          onClick={() => excluirAnexo(idx, a.nome)}
+                          onClick={() => excluirAnexo(idItem, a.nome)}
                         >
-                          {confirmExcluirAnexo[idx]
+                          {confirmExcluirAnexo[idItem]
+                            ? 'Clique de novo para confirmar a exclusão'
+                            : '🗑️ Excluir arquivo'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </section>
+        ) : (
+          /* ===== 7) NOVA ABA: ARQUIVOS & DOCUMENTOS GERAIS ===== */
+          <section className="ck-card" id="secArquivosExtras">
+            <button
+              type="button"
+              className="ck-btn ck-btn-ghost noprint mb-3.5"
+              onClick={() => setAbaAtiva('principal')}
+            >
+              ← Voltar para a tela de checklists
+            </button>
+
+            {editandoNomeAba ? (
+              <div className="flex items-center gap-2 flex-wrap mb-4 p-3 bg-amber-50 border-2 border-amber-300 rounded-xl">
+                <span className="text-xs font-bold text-amber-900 uppercase">Título da Aba:</span>
+                <input
+                  type="text"
+                  className="ck-input text-sm py-1.5 px-3 w-80 max-w-full font-bold"
+                  value={novoNomeAba}
+                  onChange={(e) => setNovoNomeAba(e.target.value)}
+                  placeholder="Nome personalizado da aba..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') salvarNomeAba()
+                    if (e.key === 'Escape') setEditandoNomeAba(false)
+                  }}
+                />
+                <button
+                  type="button"
+                  className="ck-btn ck-btn-dark text-xs py-1.5 px-3"
+                  onClick={salvarNomeAba}
+                >
+                  ✓ Salvar título da aba
+                </button>
+                <button
+                  type="button"
+                  className="ck-btn ck-btn-ghost text-xs py-1.5 px-2.5"
+                  onClick={() => setEditandoNomeAba(false)}
+                >
+                  ✕ Cancelar
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <h2>📁 {store.tituloAbaArquivos || 'Arquivos & Documentos'}</h2>
+                <button
+                  type="button"
+                  className="ck-btn ck-btn-ghost text-xs py-1 px-3 flex items-center gap-1.5 border border-gray-400 font-bold"
+                  onClick={abrirEdicaoNomeAba}
+                  title="Clique para renomear esta aba"
+                >
+                  ✏️ Editar título da aba
+                </button>
+              </div>
+            )}
+
+            <p className="hint">
+              Nesta aba você pode anexar e gerenciar <b>arquivos e documentos</b> gerais — como laudos, relatórios,
+              evidências fotográficas e termos. Escolha <b>vários arquivos</b> de uma vez ({' '}
+              <b>PDF, Excel, Word, imagens e outros</b>). Você pode <b>definir e editar o título</b> de cada
+              arquivo a qualquer momento.
+            </p>
+
+            <div className="ck-grid3">
+              <div>
+                <label className="ck-label" htmlFor="extraNome">
+                  TÍTULO DO ARQUIVO / DOCUMENTO (OPCIONAL)
+                </label>
+                <input
+                  id="extraNome"
+                  className="ck-input"
+                  placeholder="Ex.: Laudo Técnico / Relatório Mensal"
+                  value={extraNome}
+                  onChange={(e) => setExtraNome(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="ck-label" htmlFor="extraLocal">
+                  LOCAL / ÁREA / OBSERVAÇÃO (OPCIONAL)
+                </label>
+                <input
+                  id="extraLocal"
+                  className="ck-input"
+                  placeholder="Ex.: Canteiro Central — Galpão 02"
+                  value={extraLocal}
+                  onChange={(e) => setExtraLocal(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="ck-label" htmlFor="extraData">
+                  DATA DO DOCUMENTO (OPCIONAL)
+                </label>
+                <input
+                  type="date"
+                  id="extraData"
+                  className="ck-input"
+                  value={extraData}
+                  onChange={(e) => setExtraData(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <label className="ck-label">Arquivos para anexar</label>
+            <div className="ck-anexos-box">
+              <span className="ck-anexo-txt">
+                📁 <b>+ Adicionar arquivos e documentos nesta aba</b>
+                <br />
+                PDF, Excel, Word, imagens e outros formatos. Pode selecionar múltiplos arquivos.
+              </span>
+              <label className="ck-anexo-btn" htmlFor="extraInput">
+                📁 Escolher arquivos
+              </label>
+              <input
+                type="file"
+                id="extraInput"
+                multiple
+                accept=".pdf,.xls,.xlsx,.csv,.doc,.docx,.txt,.zip,.rar,image/*"
+                className="hidden"
+                onChange={handleExtraInput}
+              />
+              <p className="ck-anexo-hint">
+                Os arquivos ficam salvos e sincronizados com segurança no Supabase e em cache no navegador.
+              </p>
+
+              {pendExtra.length > 0 && (
+                <div className="ck-anexo-lista">
+                  {pendExtra.map((a, i) => (
+                    <div key={i} className="ck-anexo-item">
+                      <span className="ck-anexo-ic">{a.icone}</span>
+                      <div className="ck-anexo-info">
+                        <b>{a.nome}</b>
+                        <span>
+                          {a.rotulo} • {fmtTam(a.tamanho)}
+                        </span>
+                      </div>
+                      <div className="ck-anexo-acoes">
+                        <button
+                          type="button"
+                          className="del"
+                          onClick={() => {
+                            setPendExtra((prev) => prev.filter((_, idx) => idx !== i))
+                            showToast('Arquivo removido da seleção')
+                          }}
+                        >
+                          ✕ Remover
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {extraFeedback && (
+              <div className={`ck-feedback ${extraFeedback.tipo}`}>{extraFeedback.msg}</div>
+            )}
+
+            <div className="flex gap-2.5 flex-wrap mt-4 noprint">
+              <button
+                type="button"
+                className="ck-btn ck-btn-dark"
+                onClick={salvarArquivosExtras}
+              >
+                💾 Salvar arquivos
+              </button>
+              <button
+                type="button"
+                className="ck-btn ck-btn-ghost"
+                onClick={limparArquivosExtras}
+              >
+                Limpar seleção
+              </button>
+            </div>
+
+            <h2 className="mt-7">🗂️ Arquivos e documentos salvos</h2>
+            <p className="hint">
+              Lista dos documentos arquivados nesta aba. Você pode <b>editar o título</b> do arquivo a qualquer momento,{' '}
+              <b>visualizar</b> ou <b>baixar</b>.
+            </p>
+
+            <div className="ck-stats-anex">
+              <div className="ck-stat">
+                <b>{(store.arquivosExtras || []).length}</b>
+                <span>Total de arquivos</span>
+              </div>
+              <div className="ck-stat">
+                <b>{statsExtrasPorTipo['PDF']}</b>
+                <span>PDF</span>
+              </div>
+              <div className="ck-stat">
+                <b>{statsExtrasPorTipo['Excel']}</b>
+                <span>Excel</span>
+              </div>
+              <div className="ck-stat">
+                <b>{statsExtrasPorTipo['Word']}</b>
+                <span>Word</span>
+              </div>
+              <div className="ck-stat">
+                <b>{statsExtrasPorTipo['Imagem']}</b>
+                <span>Imagem</span>
+              </div>
+              <div className="ck-stat">
+                <b>{statsExtrasPorTipo['Arquivo']}</b>
+                <span>Outros</span>
+              </div>
+            </div>
+
+            <div className="ck-filtros-anex noprint">
+              <input
+                id="extraBusca"
+                className="ck-input"
+                placeholder="🔍 Buscar pelo título ou nome do arquivo..."
+                value={extraBusca}
+                onChange={(e) => setExtraBusca(e.target.value)}
+              />
+              <select
+                id="extraFiltroTipo"
+                className="ck-select"
+                value={extraFiltroTipo}
+                onChange={(e) => setExtraFiltroTipo(e.target.value)}
+              >
+                <option value="todos">Todos os tipos</option>
+                <option value="PDF">📕 PDF</option>
+                <option value="Excel">📗 Excel</option>
+                <option value="Word">📘 Word</option>
+                <option value="Imagem">🖼️ Imagem</option>
+                <option value="Arquivo">📄 Outros arquivos</option>
+              </select>
+            </div>
+
+            <div className="ck-arq-lista">
+              {!(store.arquivosExtras || []).length ? (
+                <div className="ck-empty">
+                  Nenhum arquivo ou documento salvo nesta aba ainda.
+                  <br />
+                  Selecione os arquivos acima e clique em “💾 Salvar arquivos”.
+                </div>
+              ) : !extrasFiltrados.length ? (
+                <div className="ck-empty">
+                  Nenhum arquivo encontrado com esta busca / filtro.
+                </div>
+              ) : (
+                extrasFiltrados.map((a, idx) => {
+                  const t = tipoArq(a.nome, a.mime)
+                  const icone = a.icone || t.icone
+                  const rotulo = a.rotulo || t.rotulo
+                  const quando = a.anexadoEm
+                    ? `📅 Anexado em ${a.anexadoEm}`
+                    : '📅 Data de anexo não registrada'
+                  const idItem = a.id || String(idx)
+
+                  return (
+                    <div key={idItem} className="ck-arq-item">
+                      <span className="ck-anexo-ic">{icone}</span>
+                      <div className="ck-anexo-info">
+                        <b>{a.nome}</b>
+
+                        {/* Edição de Título */}
+                        {editingAnexoId === idItem && editingTarget === 'arquivos' ? (
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <input
+                              type="text"
+                              className="ck-input text-xs py-1 px-2.5 w-64 max-w-full font-bold"
+                              value={editingAnexoTitulo}
+                              onChange={(e) => setEditingAnexoTitulo(e.target.value)}
+                              placeholder="Digite o título do documento..."
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') salvarEdicaoTitulo()
+                                if (e.key === 'Escape') cancelarEdicaoTitulo()
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="ck-btn ck-btn-dark text-xs py-1 px-2.5"
+                              onClick={salvarEdicaoTitulo}
+                            >
+                              ✓ Salvar
+                            </button>
+                            <button
+                              type="button"
+                              className="ck-btn ck-btn-ghost text-xs py-1 px-2"
+                              onClick={cancelarEdicaoTitulo}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {a.titulo ? (
+                              <span className="titulo-arq">✅ {a.titulo}</span>
+                            ) : (
+                              <span className="text-xs text-gray-500 italic">Sem título definido</span>
+                            )}
+                            <button
+                              type="button"
+                              className="text-xs text-blue-700 font-bold hover:underline cursor-pointer bg-blue-50 border border-blue-200 px-2 py-0.5 rounded"
+                              onClick={() => iniciarEdicaoTitulo(idItem, a.titulo || '', 'arquivos')}
+                            >
+                              ✏️ Editar título
+                            </button>
+                          </div>
+                        )}
+
+                        {(a.local || a.dataChecklist) && (
+                          <span>
+                            {[
+                              a.local ? `📍 ${a.local}` : '',
+                              a.dataChecklist ? `🗓️ Data: ${fmtDate(a.dataChecklist)}` : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' • ')}
+                          </span>
+                        )}
+                        <span>
+                          {rotulo} • {fmtTam(a.tamanho)}
+                        </span>
+                        <span>{quando}</span>
+                      </div>
+                      <div className="ck-anexo-acoes">
+                        {a.dataUrl ? (
+                          <>
+                            <a href={a.dataUrl} target="_blank" rel="noopener noreferrer">
+                              👁️ Visualizar / Abrir
+                            </a>
+                            <a href={a.dataUrl} download={a.nome} target="_blank" rel="noopener noreferrer">
+                              ⬇️ Baixar
+                            </a>
+                          </>
+                        ) : (
+                          <span className="text-xs font-bold text-gray-500">
+                            Sem conteúdo
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="del"
+                          onClick={() => excluirArquivoExtra(idItem, a.nome)}
+                        >
+                          {confirmExcluirExtra[idItem]
                             ? 'Clique de novo para confirmar a exclusão'
                             : '🗑️ Excluir arquivo'}
                         </button>
