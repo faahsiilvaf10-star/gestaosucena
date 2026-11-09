@@ -293,24 +293,13 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
       const val = data.value as Partial<ChecklistStore>
       
       let abas: ChecklistAbaCustom[] = []
-      if (Array.isArray(val.abasCustom) && val.abasCustom.length > 0) {
-        abas = val.abasCustom
-      } else if (Array.isArray(val.arquivosExtras) && val.arquivosExtras.length > 0) {
-        abas = [
-          {
-            id: 'aba-arquivos-extras',
-            titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
-            arquivos: val.arquivosExtras,
-          },
-        ]
-      } else {
-        abas = [
-          {
-            id: 'aba-1',
-            titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
-            arquivos: [],
-          },
-        ]
+      if (Array.isArray(val.abasCustom)) {
+        abas = val.abasCustom.filter(
+          (a) =>
+            a.id !== 'aba-1' &&
+            a.id !== 'aba-arquivos-extras' &&
+            a.titulo !== 'Arquivos & Documentos'
+        )
       }
 
       const store: ChecklistStore = {
@@ -322,11 +311,8 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
             : {},
         anexos: Array.isArray(val.anexos) ? val.anexos : [],
         abasCustom: abas,
-        arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
-        tituloAbaArquivos:
-          typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
-            ? val.tituloAbaArquivos.trim()
-            : 'Arquivos & Documentos',
+        arquivosExtras: [],
+        tituloAbaArquivos: '',
       }
 
       // Atualiza o localStorage local
@@ -362,16 +348,15 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
       const pen = JSON.parse(localStorage.getItem(LS_KEY_PENDENCIAS) || '{}')
       const ane = JSON.parse(localStorage.getItem(LS_KEY_ANEXOS) || '[]')
       const abasL = JSON.parse(localStorage.getItem(LS_KEY_ABAS_CUSTOM) || '[]')
-      const ext = JSON.parse(localStorage.getItem('hydro-checklist-arquivos-extras') || '[]')
-      const tit =
-        localStorage.getItem('hydro-checklist-titulo-aba-arquivos') || 'Arquivos & Documentos'
 
-      const abasF: ChecklistAbaCustom[] =
-        Array.isArray(abasL) && abasL.length > 0
-          ? abasL
-          : Array.isArray(ext) && ext.length > 0
-          ? [{ id: 'aba-arquivos-extras', titulo: tit, arquivos: ext }]
-          : [{ id: 'aba-1', titulo: tit, arquivos: [] }]
+      const abasF: ChecklistAbaCustom[] = Array.isArray(abasL)
+        ? abasL.filter(
+            (a: any) =>
+              a.id !== 'aba-1' &&
+              a.id !== 'aba-arquivos-extras' &&
+              a.titulo !== 'Arquivos & Documentos'
+          )
+        : []
 
       return {
         modelos: Array.isArray(mod) ? mod : [],
@@ -379,8 +364,8 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
         pendenciasResolvidas: pen && typeof pen === 'object' ? pen : {},
         anexos: Array.isArray(ane) ? ane : [],
         abasCustom: abasF,
-        arquivosExtras: Array.isArray(ext) ? ext : [],
-        tituloAbaArquivos: tit,
+        arquivosExtras: [],
+        tituloAbaArquivos: '',
       }
     } catch (_) {}
   }
@@ -390,9 +375,9 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
-    abasCustom: [{ id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }],
+    abasCustom: [],
     arquivosExtras: [],
-    tituloAbaArquivos: 'Arquivos & Documentos',
+    tituloAbaArquivos: '',
   }
 }
 

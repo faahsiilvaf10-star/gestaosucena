@@ -52,13 +52,13 @@ export function ChecklistComponent() {
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
-    abasCustom: [{ id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }],
+    abasCustom: [],
     arquivosExtras: [],
-    tituloAbaArquivos: 'Arquivos & Documentos',
+    tituloAbaArquivos: '',
   })
   const [carregando, setCarregando] = useState(true)
   const [abaAtiva, setAbaAtiva] = useState<'principal' | 'anexos' | 'custom'>('principal')
-  const [abaCustomAtivaId, setAbaCustomAtivaId] = useState<string>('aba-1')
+  const [abaCustomAtivaId, setAbaCustomAtivaId] = useState<string>('')
   const [confirmExcluirAba, setConfirmExcluirAba] = useState<Record<string, boolean>>({})
 
   // Colaboradores RH
@@ -175,7 +175,25 @@ export function ChecklistComponent() {
           carregarColaboradoresAtivosRH(),
         ])
         if (isMounted) {
-          setStore(dadosStore)
+          const abasLimpas = (dadosStore.abasCustom || []).filter(
+            (a) =>
+              a.id !== 'aba-1' &&
+              a.id !== 'aba-arquivos-extras' &&
+              a.titulo !== 'Arquivos & Documentos'
+          )
+          const dadosLimpos = {
+            ...dadosStore,
+            abasCustom: abasLimpas,
+            arquivosExtras: [],
+            tituloAbaArquivos: '',
+          }
+          setStore(dadosLimpos)
+          if (abasLimpas.length > 0) {
+            setAbaCustomAtivaId(abasLimpas[0].id)
+          }
+          if (dadosStore.abasCustom && dadosStore.abasCustom.length !== abasLimpas.length) {
+            salvarChecklistStore(dadosLimpos).catch(() => {})
+          }
           setColaboradoresRH(listaRH)
         }
       } catch (err) {
@@ -206,24 +224,13 @@ export function ChecklistComponent() {
           if (payload.new && payload.new.value && typeof payload.new.value === 'object') {
             const val = payload.new.value as Partial<ChecklistStore>
             let abas: ChecklistAbaCustom[] = []
-            if (Array.isArray(val.abasCustom) && val.abasCustom.length > 0) {
-              abas = val.abasCustom
-            } else if (Array.isArray(val.arquivosExtras) && val.arquivosExtras.length > 0) {
-              abas = [
-                {
-                  id: 'aba-arquivos-extras',
-                  titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
-                  arquivos: val.arquivosExtras,
-                },
-              ]
-            } else {
-              abas = [
-                {
-                  id: 'aba-1',
-                  titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
-                  arquivos: [],
-                },
-              ]
+            if (Array.isArray(val.abasCustom)) {
+              abas = val.abasCustom.filter(
+                (a) =>
+                  a.id !== 'aba-1' &&
+                  a.id !== 'aba-arquivos-extras' &&
+                  a.titulo !== 'Arquivos & Documentos'
+              )
             }
             setStore({
               modelos: Array.isArray(val.modelos) ? val.modelos : [],
@@ -234,11 +241,8 @@ export function ChecklistComponent() {
                   : {},
               anexos: Array.isArray(val.anexos) ? val.anexos : [],
               abasCustom: abas,
-              arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
-              tituloAbaArquivos:
-                typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
-                  ? val.tituloAbaArquivos.trim()
-                  : 'Arquivos & Documentos',
+              arquivosExtras: [],
+              tituloAbaArquivos: '',
             })
           }
         }
@@ -657,12 +661,12 @@ export function ChecklistComponent() {
     setEditingTarget(target)
   }
 
-  const abaCustomAtiva: ChecklistAbaCustom = useMemo(() => {
+  const abaCustomAtiva: ChecklistAbaCustom | null = useMemo(() => {
     const abas = store.abasCustom || []
+    if (abas.length === 0) return null
     const achou = abas.find((a) => a.id === abaCustomAtivaId)
     if (achou) return achou
-    if (abas.length > 0) return abas[0]
-    return { id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }
+    return abas[0] || null
   }, [store.abasCustom, abaCustomAtivaId])
 
   const criarNovaAba = async () => {
@@ -694,18 +698,16 @@ export function ChecklistComponent() {
     }
 
     const novasAbas = (store.abasCustom || []).filter((a) => a.id !== id)
-    if (novasAbas.length === 0) {
-      novasAbas.push({
-        id: 'aba-' + Date.now(),
-        titulo: 'Arquivos & Documentos',
-        arquivos: [],
-      })
-    }
     const novaStore = { ...store, abasCustom: novasAbas }
     await persistStore(novaStore)
 
     if (abaCustomAtivaId === id) {
-      setAbaCustomAtivaId(novasAbas[0].id)
+      if (novasAbas.length > 0) {
+        setAbaCustomAtivaId(novasAbas[0].id)
+      } else {
+        setAbaAtiva('principal')
+        setAbaCustomAtivaId('')
+      }
     }
     setConfirmExcluirAba((prev) => ({ ...prev, [id]: false }))
     showToast(`🗑️ Aba "${titulo}" excluída com sucesso!`)
@@ -748,16 +750,18 @@ export function ChecklistComponent() {
   }
 
   const abrirEdicaoNomeAba = () => {
-    setNovoNomeAba(abaCustomAtiva.titulo || 'Arquivos & Documentos')
+    if (!abaCustomAtiva) return
+    setNovoNomeAba(abaCustomAtiva.titulo || 'Nova Aba')
     setEditandoNomeAba(true)
   }
 
   const salvarNomeAba = async () => {
-    const nome = novoNomeAba.trim() || 'Arquivos & Documentos'
+    if (!abaCustomAtiva) return
+    const nome = novoNomeAba.trim() || 'Nova Aba'
     const novasAbas = (store.abasCustom || []).map((a) =>
       a.id === abaCustomAtiva.id ? { ...a, titulo: nome } : a
     )
-    await persistStore({ ...store, abasCustom: novasAbas, tituloAbaArquivos: nome })
+    await persistStore({ ...store, abasCustom: novasAbas })
     setEditandoNomeAba(false)
     showToast(`Nome da aba atualizado para: "${nome}"`)
   }
@@ -958,6 +962,7 @@ export function ChecklistComponent() {
   }
 
   const salvarArquivosExtras = async () => {
+    if (!abaCustomAtiva) return
     if (!pendExtra.length) {
       setExtraFeedback({
         tipo: 'erro',
@@ -1024,6 +1029,7 @@ export function ChecklistComponent() {
   }
 
   const excluirArquivoExtra = async (id: string, nome: string) => {
+    if (!abaCustomAtiva) return
     if (!confirmExcluirExtra[id]) {
       setConfirmExcluirExtra((prev) => ({ ...prev, [id]: true }))
       setTimeout(() => {
@@ -1047,6 +1053,7 @@ export function ChecklistComponent() {
   }
 
   const extrasFiltrados = useMemo(() => {
+    if (!abaCustomAtiva) return []
     const busca = extraBusca.trim().toLowerCase()
     const lista = abaCustomAtiva.arquivos || []
     return lista.filter((a) => {
@@ -1063,7 +1070,7 @@ export function ChecklistComponent() {
       }
       return true
     })
-  }, [abaCustomAtiva.arquivos, extraBusca, extraFiltroTipo])
+  }, [abaCustomAtiva, extraBusca, extraFiltroTipo])
 
   const statsExtrasPorTipo = useMemo(() => {
     const porTipo: Record<string, number> = {
@@ -1073,6 +1080,7 @@ export function ChecklistComponent() {
       Imagem: 0,
       Arquivo: 0,
     }
+    if (!abaCustomAtiva) return porTipo
     const lista = abaCustomAtiva.arquivos || []
     lista.forEach((a) => {
       const t = tipoArq(a.nome, a.mime)
@@ -1081,7 +1089,7 @@ export function ChecklistComponent() {
       porTipo[chave] = (porTipo[chave] || 0) + 1
     })
     return porTipo
-  }, [abaCustomAtiva.arquivos])
+  }, [abaCustomAtiva])
 
   // Colaboradores RH para autocomplete
   const colaboradoresFiltrados = useMemo(() => {
@@ -1818,18 +1826,47 @@ export function ChecklistComponent() {
             {store.anexos.length > 0 && `(${store.anexos.length})`}
           </button>
           {(store.abasCustom || []).map((aba) => (
-            <button
+            <div
               key={aba.id}
-              type="button"
-              className={`ck-tabbtn ${abaAtiva === 'custom' && abaCustomAtivaId === aba.id ? 'active' : ''}`}
-              onClick={() => {
-                setAbaCustomAtivaId(aba.id)
-                setAbaAtiva('custom')
-              }}
+              className={`inline-flex items-center rounded-full border transition-all ${
+                abaAtiva === 'custom' && abaCustomAtivaId === aba.id
+                  ? 'bg-black text-white border-black shadow-sm'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+              }`}
             >
-              📁 {aba.titulo || 'Arquivos'}{' '}
-              {(aba.arquivos?.length || 0) > 0 && `(${aba.arquivos.length})`}
-            </button>
+              <button
+                type="button"
+                className="px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer rounded-full"
+                onClick={() => {
+                  setAbaCustomAtivaId(aba.id)
+                  setAbaAtiva('custom')
+                }}
+              >
+                📁 {aba.titulo || 'Nova Aba'}{' '}
+                {(aba.arquivos?.length || 0) > 0 && `(${aba.arquivos.length})`}
+              </button>
+              <button
+                type="button"
+                className={`mr-1 px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                  confirmExcluirAba[aba.id]
+                    ? 'bg-red-600 text-white'
+                    : abaAtiva === 'custom' && abaCustomAtivaId === aba.id
+                    ? 'text-gray-300 hover:text-white hover:bg-white/20'
+                    : 'text-gray-400 hover:text-red-600 hover:bg-gray-200'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  excluirAbaCustom(aba.id, aba.titulo)
+                }}
+                title={
+                  confirmExcluirAba[aba.id]
+                    ? 'Clique para confirmar a exclusão desta aba'
+                    : `Excluir aba "${aba.titulo}"`
+                }
+              >
+                {confirmExcluirAba[aba.id] ? '⚠️' : '✕'}
+              </button>
+            </div>
           ))}
           <button
             type="button"
@@ -2961,7 +2998,7 @@ export function ChecklistComponent() {
               </div>
             ) : (
               <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                <h2>📁 {abaCustomAtiva.titulo || 'Arquivos & Documentos'}</h2>
+                <h2>📁 {abaCustomAtiva?.titulo || 'Nova Aba'}</h2>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -2971,18 +3008,16 @@ export function ChecklistComponent() {
                   >
                     ✏️ Editar título da aba
                   </button>
-                  {(store.abasCustom || []).length > 1 && (
-                    <button
-                      type="button"
-                      className="ck-btn text-xs py-1 px-3 flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-300 hover:bg-red-100 font-bold"
-                      onClick={() => excluirAbaCustom(abaCustomAtiva.id, abaCustomAtiva.titulo)}
-                      title="Excluir esta aba e seus arquivos"
-                    >
-                      {confirmExcluirAba[abaCustomAtiva.id]
-                        ? 'Confirmar exclusão da aba?'
-                        : '🗑️ Excluir aba'}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="ck-btn text-xs py-1 px-3 flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-300 hover:bg-red-100 font-bold"
+                    onClick={() => excluirAbaCustom(abaCustomAtiva.id, abaCustomAtiva.titulo)}
+                    title="Excluir esta aba e seus arquivos"
+                  >
+                    {confirmExcluirAba[abaCustomAtiva.id]
+                      ? 'Confirmar exclusão da aba?'
+                      : '🗑️ Excluir aba'}
+                  </button>
                 </div>
               </div>
             )}
@@ -3113,7 +3148,7 @@ export function ChecklistComponent() {
 
             <div className="ck-stats-anex">
               <div className="ck-stat">
-                <b>{(abaCustomAtiva.arquivos || []).length}</b>
+                <b>{(abaCustomAtiva?.arquivos || []).length}</b>
                 <span>Total de arquivos</span>
               </div>
               <div className="ck-stat">
@@ -3162,7 +3197,7 @@ export function ChecklistComponent() {
             </div>
 
             <div className="ck-arq-lista">
-              {!(abaCustomAtiva.arquivos || []).length ? (
+              {!(abaCustomAtiva?.arquivos || []).length ? (
                 <div className="ck-empty">
                   Nenhum arquivo ou documento salvo nesta aba ainda.
                   <br />
