@@ -33,6 +33,7 @@ import { Route as EquipamentosIndexRouteImport } from './routes/equipamentos/ind
 import { Route as EquipamentosAppMotoristaRouteImport } from './routes/equipamentos/app-motorista'
 import { Route as EquipamentosCrachaVinculadoRouteImport } from './routes/equipamentos/cracha-vinculado'
 import { Route as EquipamentosEntradaSaidaRouteImport } from './routes/equipamentos/entrada-saida'
+import { Route as EquipamentosEquipamentoParadoRouteImport } from './routes/equipamentos/equipamento-parado'
 import { Route as EquipamentosParteDiariaRouteImport } from './routes/equipamentos/parte-diaria'
 import { Route as EquipamentosTodosRouteImport } from './routes/equipamentos/todos'
 import { Route as EquipamentosVistoriaRouteImport } from './routes/equipamentos/vistoria'
@@ -204,6 +205,12 @@ const EquipamentosEntradaSaidaRoute =
   EquipamentosEntradaSaidaRouteImport.update({
     id: '/entrada-saida',
     path: '/entrada-saida',
+    getParentRoute: () => EquipamentosRoute,
+  } as any)
+const EquipamentosEquipamentoParadoRoute =
+  EquipamentosEquipamentoParadoRouteImport.update({
+    id: '/equipamento-parado',
+    path: '/equipamento-parado',
     getParentRoute: () => EquipamentosRoute,
   } as any)
 const EquipamentosParteDiariaRoute = EquipamentosParteDiariaRouteImport.update({
@@ -479,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/equipamento-parado': typeof EquipamentosEquipamentoParadoRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
@@ -547,6 +555,7 @@ export interface FileRoutesByTo {
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/equipamento-parado': typeof EquipamentosEquipamentoParadoRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
@@ -622,6 +631,7 @@ export interface FileRoutesById {
   '/equipamentos/app-motorista': typeof EquipamentosAppMotoristaRoute
   '/equipamentos/cracha-vinculado': typeof EquipamentosCrachaVinculadoRoute
   '/equipamentos/entrada-saida': typeof EquipamentosEntradaSaidaRoute
+  '/equipamentos/equipamento-parado': typeof EquipamentosEquipamentoParadoRoute
   '/equipamentos/parte-diaria': typeof EquipamentosParteDiariaRoute
   '/equipamentos/todos': typeof EquipamentosTodosRoute
   '/equipamentos/vistoria': typeof EquipamentosVistoriaRoute
@@ -698,6 +708,7 @@ export interface FileRouteTypes {
     | '/equipamentos/app-motorista'
     | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/equipamento-parado'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/equipamentos/app-motorista'
     | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/equipamento-parado'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
@@ -840,6 +852,7 @@ export interface FileRouteTypes {
     | '/equipamentos/app-motorista'
     | '/equipamentos/cracha-vinculado'
     | '/equipamentos/entrada-saida'
+    | '/equipamentos/equipamento-parado'
     | '/equipamentos/parte-diaria'
     | '/equipamentos/todos'
     | '/equipamentos/vistoria'
@@ -1084,6 +1097,13 @@ declare module '@tanstack/react-router' {
       path: '/entrada-saida'
       fullPath: '/equipamentos/entrada-saida'
       preLoaderRoute: typeof EquipamentosEntradaSaidaRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
+    '/equipamentos/equipamento-parado': {
+      id: '/equipamentos/equipamento-parado'
+      path: '/equipamento-parado'
+      fullPath: '/equipamentos/equipamento-parado'
+      preLoaderRoute: typeof EquipamentosEquipamentoParadoRouteImport
       parentRoute: typeof EquipamentosRoute
     }
     '/equipamentos/parte-diaria': {
@@ -1461,6 +1481,7 @@ interface EquipamentosRouteChildren {
   EquipamentosAppMotoristaRoute: typeof EquipamentosAppMotoristaRoute
   EquipamentosCrachaVinculadoRoute: typeof EquipamentosCrachaVinculadoRoute
   EquipamentosEntradaSaidaRoute: typeof EquipamentosEntradaSaidaRoute
+  EquipamentosEquipamentoParadoRoute: typeof EquipamentosEquipamentoParadoRoute
   EquipamentosParteDiariaRoute: typeof EquipamentosParteDiariaRoute
   EquipamentosTodosRoute: typeof EquipamentosTodosRoute
   EquipamentosVistoriaRoute: typeof EquipamentosVistoriaRoute
@@ -1471,6 +1492,7 @@ const EquipamentosRouteChildren: EquipamentosRouteChildren = {
   EquipamentosAppMotoristaRoute: EquipamentosAppMotoristaRoute,
   EquipamentosCrachaVinculadoRoute: EquipamentosCrachaVinculadoRoute,
   EquipamentosEntradaSaidaRoute: EquipamentosEntradaSaidaRoute,
+  EquipamentosEquipamentoParadoRoute: EquipamentosEquipamentoParadoRoute,
   EquipamentosParteDiariaRoute: EquipamentosParteDiariaRoute,
   EquipamentosTodosRoute: EquipamentosTodosRoute,
   EquipamentosVistoriaRoute: EquipamentosVistoriaRoute,

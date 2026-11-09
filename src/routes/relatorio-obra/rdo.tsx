@@ -17,6 +17,7 @@ import { useMonthlyColors } from '../../hooks/useMonthlyColors'
 import { type RdoAtividade, getSubItens } from '@/components/rdo/ActivityCard'
 import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
 import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
+import { isVehicle } from '@/lib/equipamentos/equipmentTypes'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -192,26 +193,29 @@ function RDOPage() {
         const lastMov = eqMovs[0];
 
         if (lastMov?.movement_type === 'exit') {
-          // Saiu em dia anterior: o equipamento já estava FORA no dia inteiro.
-          // Antes retornava `false` e ele sumia do relatório sem qualquer
-          // indicação — falha silenciosa.
+          const brokenDateObj = new Date(lastMov.created_at);
+          const brokenDateTime = `${brokenDateObj.toLocaleDateString('pt-BR')} às ${brokenDateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
           if (lastMov.created_at < startDate) {
             const since = new Date(lastMov.created_at).toLocaleString('pt-BR', {
               dateStyle: 'short',
               timeStyle: 'short',
             });
-            return { ...eq, outsideSince: since };
+            return { ...eq, outsideSince: since, brokenDateTime };
           }
-          // Saiu neste dia: trabalhou parte do dia. Mostramos o horário.
           const time = new Date(lastMov.created_at).toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
           });
-          return { ...eq, exitTime: time };
+          return { ...eq, exitTime: time, brokenDateTime };
         }
 
-        // Último movimento é entrada, ou nunca houve movimento algum.
-        // Sem registro de saída não existe "fora da obra".
+        if (eq.location_status === 'outside' || eq.status === 'Quebrado') {
+          const brokenDateObj = eq.updated_at ? new Date(eq.updated_at) : new Date();
+          const brokenDateTime = `${brokenDateObj.toLocaleDateString('pt-BR')} às ${brokenDateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+          return { ...eq, outsideSince: brokenDateTime, brokenDateTime };
+        }
+
         return eq;
       });
 
@@ -712,25 +716,29 @@ function RDOPage() {
     let lines = [];
     const isLeveOuCanteiro = (eq: any) => {
       const cat = (eq.category || '').toLowerCase();
-      return cat.includes('leve') || cat.includes('canteiro') || eq.name.toUpperCase().includes('SUC 01'); // explicitly include SUC 01 just in case
+      return cat.includes('leve') || cat.includes('canteiro') || eq.name.toUpperCase().includes('SUC 01');
     };
     const isJardinagem = (eq: any) => (eq.category || '').toLowerCase().includes('jardinagem');
-    // Já estava fora da obra no dia inteiro (saída registrada em dia anterior).
-    // Não contam como equipamentos em operação no relatório.
-    const jaForaDesdeAntes = (eq: any) => !!eq.outsideSince;
-    const labelFora = (eq: any) => ` (Fora desde ${eq.outsideSince})`;
+
+    // Equipamento quebrado (sem ser veículo): não conta no RDO e mostra data/hora da quebra
+    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime);
+    // Veículo fora desde antes
+    const isVeiculoForaAntes = (eq: any) => isVehicle(eq) && !!eq.outsideSince;
 
     const eqPesados = equipamentos.filter(eq => !isJardinagem(eq) && !isLeveOuCanteiro(eq));
     const eqLeves = equipamentos.filter(eq => isLeveOuCanteiro(eq));
 
-    const eqPesadosNaObra = eqPesados.filter(eq => !jaForaDesdeAntes(eq));
-    const eqLevesNaObra = eqLeves.filter(eq => !jaForaDesdeAntes(eq));
+    // Na obra / operando:
+    // Para veículos: não está fora desde antes
+    // Para equipamentos não-veículos: NÃO está quebrado
+    const eqPesadosNaObra = eqPesados.filter(eq => isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq));
+    const eqLevesNaObra = eqLeves.filter(eq => isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq));
 
     lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesadosNaObra.length})`);
     if (eqPesadosNaObra.length > 0) {
       eqPesadosNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if (eq.exitTime) {
+        if (eq.exitTime && isVehicle(eq)) {
           eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
@@ -739,11 +747,21 @@ function RDOPage() {
       lines.push(`Nenhum equipamento pesado na obra.`);
     }
 
-    if (eqPesados.some(jaForaDesdeAntes)) {
+    const veiculosPesadosFora = eqPesados.filter(isVeiculoForaAntes);
+    if (veiculosPesadosFora.length > 0) {
       lines.push('');
-      lines.push(`⛔ FORA DA OBRA (${eqPesados.filter(jaForaDesdeAntes).length})`);
-      eqPesados.filter(jaForaDesdeAntes).forEach(eq => {
-        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}${labelFora(eq)}`);
+      lines.push(`⛔ FORA DA OBRA (${veiculosPesadosFora.length})`);
+      veiculosPesadosFora.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Fora desde ${eq.outsideSince})`);
+      });
+    }
+
+    const eqPesadosQuebrados = eqPesados.filter(isEqQuebrado);
+    if (eqPesadosQuebrados.length > 0) {
+      lines.push('');
+      lines.push(`⛔ EQUIPAMENTOS QUEBRADOS (${eqPesadosQuebrados.length})`);
+      eqPesadosQuebrados.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Quebrado em ${eq.brokenDateTime || eq.outsideSince})`);
       });
     }
 
@@ -753,7 +771,7 @@ function RDOPage() {
     if (eqLevesNaObra.length > 0) {
       eqLevesNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if (eq.exitTime) {
+        if (eq.exitTime && isVehicle(eq)) {
           eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
@@ -762,11 +780,21 @@ function RDOPage() {
       lines.push(`Nenhum equipamento leve ou de canteiro na obra.`);
     }
 
-    if (eqLeves.some(jaForaDesdeAntes)) {
+    const veiculosLevesFora = eqLeves.filter(isVeiculoForaAntes);
+    if (veiculosLevesFora.length > 0) {
       lines.push('');
-      lines.push(`⛔ FORA DA OBRA - LEVES/CANTEIRO (${eqLeves.filter(jaForaDesdeAntes).length})`);
-      eqLeves.filter(jaForaDesdeAntes).forEach(eq => {
-        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}${labelFora(eq)}`);
+      lines.push(`⛔ FORA DA OBRA - VEÍCULOS LEVES (${veiculosLevesFora.length})`);
+      veiculosLevesFora.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Fora desde ${eq.outsideSince})`);
+      });
+    }
+
+    const eqLevesQuebrados = eqLeves.filter(isEqQuebrado);
+    if (eqLevesQuebrados.length > 0) {
+      lines.push('');
+      lines.push(`⛔ EQUIPAMENTOS QUEBRADOS - LEVES/CANTEIRO (${eqLevesQuebrados.length})`);
+      eqLevesQuebrados.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Quebrado em ${eq.brokenDateTime || eq.outsideSince})`);
       });
     }
 
@@ -776,10 +804,15 @@ function RDOPage() {
   const renderEquipamentosJardinagemText = () => {
     let lines = [];
     const eqJardim = equipamentos.filter(eq => eq.category === 'Jardinagem');
-    lines.push(`✅ Equipamentos Jardinagem na Obra (${eqJardim.length})`);
-    if (eqJardim.length > 0) {
+    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime);
+
+    const eqJardimQuebrados = eqJardim.filter(isEqQuebrado);
+    const eqJardimFuncionando = eqJardim.filter(eq => !isEqQuebrado(eq));
+
+    lines.push(`✅ Equipamentos Jardinagem na Obra (${eqJardimFuncionando.length})`);
+    if (eqJardimFuncionando.length > 0) {
       const counts: Record<string, number> = {};
-      eqJardim.forEach(eq => {
+      eqJardimFuncionando.forEach(eq => {
         counts[eq.name] = (counts[eq.name] || 0) + 1;
       });
       Object.entries(counts)
@@ -787,7 +820,18 @@ function RDOPage() {
         .forEach(([name, count]) => {
           lines.push(`• ${count} ${name}`);
         });
+    } else {
+      lines.push(`Nenhum equipamento de jardinagem operando na obra.`);
     }
+
+    if (eqJardimQuebrados.length > 0) {
+      lines.push('');
+      lines.push(`⛔ EQUIPAMENTOS JARDINAGEM QUEBRADOS (${eqJardimQuebrados.length})`);
+      eqJardimQuebrados.forEach(eq => {
+        lines.push(`• ${eq.name}${eq.plate_tag ? ` (${eq.plate_tag.toUpperCase()})` : ''} - Quebrado em ${eq.brokenDateTime || eq.outsideSince}`);
+      });
+    }
+
     return lines.join('\n');
   }
 
