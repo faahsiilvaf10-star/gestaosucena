@@ -3,18 +3,21 @@ import Users from 'lucide-react/dist/esm/icons/users.js'
 import Swords from 'lucide-react/dist/esm/icons/swords.js'
 import Hourglass from 'lucide-react/dist/esm/icons/hourglass.js'
 import CircleCheck from 'lucide-react/dist/esm/icons/circle-check.js'
+import Copy from 'lucide-react/dist/esm/icons/copy.js'
+import Check from 'lucide-react/dist/esm/icons/check.js'
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js'
 import { supabase } from '../../lib/supabase'
 import {
   atualizarPartida,
+  buscarPartidaPorCodigo,
+  cancelarPartida,
   criarPartida,
   entrarPartida,
   listarJogadoresOnline,
-  listarJogadoresPartida,
   listarPartidasAbertas,
   marcarOffline,
   registrarPresenca,
   salvarPontuacao,
-  salvarProgressoPartida,
   type JogadorOnline,
   type Partida,
 } from '../../lib/cacaPalavras'
@@ -68,6 +71,8 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
   const [partida, setPartida] = useState<Partida | null>(null)
   const [codigoDigitado, setCodigoDigitado] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState(false)
+  const [conectando, setConectando] = useState(false)
 
   // Estado da partida em andamento
   const [fase, setFase] = useState(1)
@@ -113,11 +118,18 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
       setPresentes((atuais) => {
         const semEle = atuais.filter((j) => j.user_id !== dados.user_id)
         return [
-          { user_id: dados.user_id, user_name: dados.nome, avatar_url: dados.avatar_url ?? null, online: true, pontos: 0 },
+          {
+            user_id: dados.user_id,
+            user_name: dados.nome,
+            avatar_url: dados.avatar_url ?? null,
+            online: true,
+            pontos: 0,
+          },
           ...semEle,
         ]
       })
     })
+
     canal.on('broadcast', { event: 'convite' }, ({ payload }) => {
       const dados = payload as Convite
       if (dados.hostId === user.id) return
@@ -128,11 +140,17 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     })
     void canal.subscribe()
 
-    const intervalo = window.setInterval(async () => {
-      const [lista, partidas] = await Promise.all([listarJogadoresOnline(), listarPartidasAbertas()])
+    const carregarLobby = async () => {
+      const [lista, partidas] = await Promise.all([
+        listarJogadoresOnline(),
+        listarPartidasAbertas(),
+      ])
       setJogadores(lista.filter((j) => j.user_id !== user.id))
       setPartidasAbertas(partidas.filter((p) => p.host_id !== user.id))
-    }, 5000)
+    }
+
+    void carregarLobby()
+    const intervalo = window.setInterval(carregarLobby, 4000)
 
     return () => {
       window.clearInterval(intervalo)
@@ -141,7 +159,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     }
   }, [user.id, user.nome, user.avatarUrl])
 
-  // Presença anunciada no lobby.
+  // Presença anunciada no lobby
   useEffect(() => {
     const canal = supabase.channel(CANAL_LOBBY)
     canal.subscribe((status) => {
@@ -161,14 +179,11 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
   // ---------------------------------------------------------------
   // Canal da partida
   // ---------------------------------------------------------------
-  const enviar = useCallback(
-    (event: string, payload: Record<string, unknown>) => {
-      const canal = canalPartidaRef.current
-      if (!canal) return
-      void canal.send({ type: 'broadcast', event, payload })
-    },
-    [],
-  )
+  const enviar = useCallback((event: string, payload: Record<string, unknown>) => {
+    const canal = canalPartidaRef.current
+    if (!canal) return
+    void canal.send({ type: 'broadcast', event, payload })
+  }, [])
 
   const iniciarFase = useCallback(
     (novaFase: number, prazo: number, semente: number) => {
@@ -183,7 +198,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
       setTela('jogo')
       void semente
     },
-    [],
+    []
   )
 
   const finalizarPartida = useCallback(
@@ -206,12 +221,12 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
         nivel: FASES_POR_PARTIDA_ONLINE,
         score: meu,
         tempo_ms: 0,
-        palavras_found: 0,
-        total_palavras: 0,
+        palavras_found: meuProgresso.palavras,
+        total_palavras: meuProgresso.palavras,
         vitoria: venceu,
       })
     },
-    [som, user.avatarUrl, user.id, user.nome],
+    [meuProgresso.palavras, som, user.avatarUrl, user.id, user.nome]
   )
 
   const subscreverPartida = useCallback(
@@ -226,7 +241,8 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
         const dados = payload as { user_id: string; nome: string }
         if (dados.user_id === user.id) return
         setOponente({ id: dados.user_id, nome: dados.nome })
-        // Quem criou o desafio começa a partida assim que o outro entra.
+
+        // Quem criou o desafio inicia a partida assim que o adversário entra
         if (partidaRef.current?.host_id === user.id && !iniciadoRef.current) {
           iniciadoRef.current = true
           const duracao = configDaFase(1).segundos
@@ -234,15 +250,30 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
           canal.send({
             type: 'broadcast',
             event: 'inicio',
-            payload: { prazo, semente: partidaRef.current?.semente ?? 0, fase: 1, host_nome: user.nome },
+            payload: {
+              prazo,
+              semente: partidaRef.current?.semente ?? 0,
+              fase: 1,
+              host_nome: user.nome,
+              adversario_nome: dados.nome,
+            },
           })
+          void atualizarPartida(partidaRef.current.codigo, { status: 'em_andamento' })
           iniciarFase(1, prazo, partidaRef.current?.semente ?? 0)
         }
       })
 
       canal.on('broadcast', { event: 'inicio' }, ({ payload }) => {
-        const dados = payload as { prazo: number; semente: number; fase: number; host_nome?: string }
-        if (dados.host_nome) setOponente({ id: '', nome: dados.host_nome })
+        const dados = payload as {
+          prazo: number
+          semente: number
+          fase: number
+          host_nome?: string
+          adversario_nome?: string
+        }
+        if (dados.host_nome && dados.host_nome !== user.nome) {
+          setOponente({ id: '', nome: dados.host_nome })
+        }
         iniciadoRef.current = true
         iniciarFase(dados.fase ?? 1, dados.prazo, dados.semente)
       })
@@ -261,7 +292,6 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
         const dados = payload as { pontos: number; fase: number }
         if (dados.fase !== faseRef.current) return
         setFaseOponente(dados.pontos)
-        // Se eu ainda não terminei a fase, encerro com o que já conquistei.
         if (!minhaFaseCompletaRef.current) {
           setMinhaFaseCompleta(false)
           setFaseEu((valorAtual) => valorAtual)
@@ -275,7 +305,7 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
 
       void canal.subscribe()
     },
-    [finalizarPartida, iniciarFase, user.id],
+    [finalizarPartida, iniciarFase, user.id, user.nome]
   )
 
   useEffect(() => {
@@ -288,71 +318,105 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
   }, [])
 
   // ---------------------------------------------------------------
-  // Criar / entrar
+  // Criar / Entrar
   // ---------------------------------------------------------------
   const criarDesafio = useCallback(async () => {
     setMensagem(null)
     const semente = Math.floor(Math.random() * 1_000_000_000)
-    const criada = await criarPartida(user.id, modo, semente)
+    const criada = await criarPartida(user.id, user.nome, modo, semente)
     setPartida(criada)
     subscreverPartida(criada.codigo)
     setTela('sala')
     som('entrada')
-  }, [modo, som, subscreverPartida, user.id])
+  }, [modo, som, subscreverPartida, user.id, user.nome])
 
   const entrarNoDesafio = useCallback(
-    async (codigo: string, dados?: Partial<Convite>) => {
+    async (codigo: string) => {
       setMensagem(null)
-      let partidaAtual = partidaRef.current
-      if (!partidaAtual) {
-        const existentes = await listarPartidasAbertas()
-        const encontrada = existentes.find((p) => p.codigo.toUpperCase() === codigo.toUpperCase())
-        partidaAtual = encontrada ?? null
+      const codNormalizado = codigo.trim().toUpperCase()
+      if (!codNormalizado) {
+        setMensagem('Digite o código da sala para entrar.')
+        return
       }
 
-      if (partidaAtual) {
-        await entrarPartida(partidaAtual, user.id, user.nome)
-        setPartida(partidaAtual)
-        subscreverPartida(partidaAtual.codigo)
-        enviar('entrou', { user_id: user.id, nome: user.nome })
-        setTela('sala')
-        // Avisa o criador do desafio.
-        const canalLobby = supabase.channel(CANAL_LOBBY)
-        canalLobby.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            void canalLobby.send({
-              type: 'broadcast',
-              event: 'presenca',
-              payload: { user_id: user.id, nome: user.nome, aceite: partidaAtual?.codigo },
-            })
-            setTimeout(() => void supabase.removeChannel(canalLobby), 2000)
-          }
-        })
-      } else if (dados) {
-        // Partida criada só via broadcast (sem tabela no banco).
-        const virtual: Partida = {
-          id: dados.codigo,
-          codigo: dados.codigo,
-          host_id: dados.hostId,
-          modo: dados.modo,
-          fase_atual: 1,
-          semente: dados.semente,
-          status: 'em_andamento',
-          criado_em: new Date().toISOString(),
-        }
-        setPartida(virtual)
-        subscreverPartida(virtual.codigo)
-        enviar('entrou', { user_id: user.id, nome: user.nome })
-        setTela('sala')
-      } else {
-        setMensagem('Código de partida não encontrado.')
+      setConectando(true)
+
+      // 1. Busca no banco de dados Supabase global_settings
+      let partidaEncontrada = await buscarPartidaPorCodigo(codNormalizado)
+
+      // 2. Se não achou de imediato, busca nas abertas
+      if (!partidaEncontrada) {
+        const abertas = await listarPartidasAbertas()
+        partidaEncontrada =
+          abertas.find((p) => p.codigo.toUpperCase() === codNormalizado) ?? null
       }
+
+      // 3. Fallback convite broadcast
+      if (!partidaEncontrada) {
+        const conv = convites.find((c) => c.codigo.toUpperCase() === codNormalizado)
+        if (conv) {
+          partidaEncontrada = {
+            id: conv.codigo,
+            codigo: conv.codigo,
+            host_id: conv.hostId,
+            host_nome: conv.hostNome,
+            modo: conv.modo,
+            fase_atual: 1,
+            semente: conv.semente,
+            status: 'aberta',
+            criado_em: new Date().toISOString(),
+          }
+        }
+      }
+
+      setConectando(false)
+
+      if (!partidaEncontrada) {
+        setMensagem(`⚠️ Sala "${codNormalizado}" não encontrada ou expirada. Verifique o código.`)
+        return
+      }
+
+      if (partidaEncontrada.host_id === user.id) {
+        setMensagem('Você é o criador desta sala. Aguarde o outro jogador conectar.')
+        setPartida(partidaEncontrada)
+        setTela('sala')
+        return
+      }
+
+      const partidaAtualizada = await entrarPartida(
+        partidaEncontrada.codigo,
+        user.id,
+        user.nome
+      )
+      const partidaFinal = partidaAtualizada || partidaEncontrada
+      setPartida(partidaFinal)
+      setOponente({ id: partidaFinal.host_id, nome: partidaFinal.host_nome || 'Anfitrião' })
+      subscreverPartida(partidaFinal.codigo)
+      enviar('entrou', { user_id: user.id, nome: user.nome })
+      setTela('sala')
       som('entrada')
     },
-    [enviar, som, subscreverPartida, user.id, user.nome],
+    [convites, enviar, som, subscreverPartida, user.id, user.nome]
   )
 
-  // Anúncio contínuo do desafio enquanto se está na sala.
+  const cancelarSala = useCallback(async () => {
+    if (partida) {
+      await cancelarPartida(partida.codigo)
+    }
+    setTela('lobby')
+    setPartida(null)
+    setOponente(null)
+    setMensagem(null)
+  }, [partida])
+
+  const copiarCodigo = useCallback(() => {
+    if (!partida?.codigo) return
+    void navigator.clipboard.writeText(partida.codigo)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2500)
+  }, [partida?.codigo])
+
+  // Anúncio contínuo do desafio enquanto se está na sala aguardando
   useEffect(() => {
     if (tela !== 'sala' || !partida) return
     if (partida.host_id !== user.id) return
@@ -378,51 +442,55 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     }
 
     anunciar()
-    const intervalo = window.setInterval(anunciar, 4000)
+    const intervalo = window.setInterval(anunciar, 3500)
     return () => window.clearInterval(intervalo)
   }, [modo, partida, tela, user.id, user.nome])
 
-  // Detecta a chegada do adversário (via canal da partida ou via banco).
+  // Verificação ativa de adversário na sala (banco e polling para 100% de estabilidade)
   useEffect(() => {
     if (tela !== 'sala' || !partida) return
     iniciadoRef.current = false
 
-    const verificar = async () => {
+    const verificarAdversario = async () => {
       if (iniciadoRef.current) return
-      const jogadores = await listarJogadoresPartida(partida.id)
-      const outro = jogadores.find((j) => j.user_id !== user.id)
-      if (outro) {
-        setOponente({ id: outro.user_id, nome: outro.user_name })
-        if (partida.host_id === user.id) {
+      const p = await buscarPartidaPorCodigo(partida.codigo)
+      if (!p) return
+
+      // Se for host e adversário entrou
+      if (partida.host_id === user.id && p.adversario_id && p.adversario_id !== user.id) {
+        setOponente({ id: p.adversario_id, nome: p.adversario_nome || 'Adversário' })
+        if (!iniciadoRef.current) {
           iniciadoRef.current = true
           const duracao = configDaFase(1).segundos
           const prazo = Date.now() + duracao * 1000
-          enviar('inicio', { prazo, semente: partida.semente, fase: 1, host_nome: user.nome })
-          void atualizarPartida(partida.id, { status: 'em_andamento' })
-          iniciarFase(1, prazo, partida.semente)
+          enviar('inicio', {
+            prazo,
+            semente: p.semente,
+            fase: 1,
+            host_nome: user.nome,
+            adversario_nome: p.adversario_nome,
+          })
+          void atualizarPartida(p.codigo, { status: 'em_andamento' })
+          iniciarFase(1, prazo, p.semente)
+        }
+      }
+
+      // Se for convidado e o status mudou para em andamento
+      if (partida.host_id !== user.id && p.status === 'em_andamento') {
+        setOponente({ id: p.host_id, nome: p.host_nome || 'Anfitrião' })
+        if (!iniciadoRef.current) {
+          iniciadoRef.current = true
+          const duracao = configDaFase(1).segundos
+          const prazo = Date.now() + duracao * 1000
+          iniciarFase(1, prazo, p.semente)
         }
       }
     }
 
-    const intervalo = window.setInterval(() => void verificar(), 2000)
-    void verificar()
+    const intervalo = window.setInterval(verificarAdversario, 1200)
+    void verificarAdversario()
     return () => window.clearInterval(intervalo)
   }, [enviar, iniciarFase, partida, tela, user.id, user.nome])
-
-  // O convidado espera o aviso de início; se não vier, começa sozinho.
-  useEffect(() => {
-    if (tela !== 'sala' || !partida) return
-    if (partida.host_id === user.id) return
-    const duracao = configDaFase(1).segundos
-    const prazo = Date.now() + duracao * 1000
-    const tempo = window.setTimeout(() => {
-      if (iniciadoRef.current) return
-      iniciadoRef.current = true
-      setOponente({ id: partida.host_id, nome: 'Anfitrião' })
-      iniciarFase(1, prazo, partida.semente)
-    }, 6000)
-    return () => window.clearTimeout(tempo)
-  }, [iniciarFase, partida, tela, user.id])
 
   // ---------------------------------------------------------------
   // Progresso e fim de fase
@@ -431,23 +499,13 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     (pontos: number, palavras: number) => {
       setMeuProgresso({ pontos, palavras })
       enviar('progresso', { pontos, palavras, fase: faseRef.current })
-      void salvarProgressoPartida({
-        match_id: partidaRef.current?.id ?? '',
-        user_id: user.id,
-        user_name: user.nome,
-        score: pontos,
-        fase: faseRef.current,
-        palavras_found: palavras,
-        terminou: false,
-        vitorioso: false,
-      })
     },
-    [enviar, user.id, user.nome],
+    [enviar]
   )
 
   const avancarParaProximaFase = useCallback(
     (pontosEu: number, pontosOponente: number) => {
-      const bonus = minhaFaseCompletaRef.current ? Math.round(pontosEu * 0.5) : 0
+      const bonus = minhaFaseCompletaRef.current ? 20 * faseRef.current : 0
       const meu = euFinalRef.current + pontosEu + bonus
       const dele = oponenteFinalRef.current + pontosOponente
       euFinalRef.current = meu
@@ -465,109 +523,94 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
       const duracao = configDaFase(proxima).segundos
       const prazo = Date.now() + duracao * 1000
       if (partidaRef.current?.host_id === user.id) {
-        enviar('proxima_fase', { fase: proxima, prazo, semente: partidaRef.current?.semente ?? 0 })
+        enviar('proxima_fase', {
+          fase: proxima,
+          prazo,
+          semente: partidaRef.current?.semente ?? 0,
+        })
       }
       iniciarFase(proxima, prazo, partidaRef.current?.semente ?? 0)
     },
-    [enviar, finalizarPartida, iniciarFase, user.id],
+    [enviar, finalizarPartida, iniciarFase, user.id]
   )
 
-  // Quando as duas pontuações da fase chegam, avança.
   useEffect(() => {
-    if (tela !== 'jogo') return
     if (faseEu === null || faseOponente === null) return
     avancarParaProximaFase(faseEu, faseOponente)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [faseEu, faseOponente, tela])
-
-  // Se o adversário não fechar a fase em 30s, ele recebe 0.
-  useEffect(() => {
-    if (tela !== 'jogo') return
-    if (faseOponente !== null) return
-    if (faseEu === null) return
-    const tempo = window.setTimeout(() => {
-      setFaseOponente(0)
-    }, 30000)
-    return () => window.clearTimeout(tempo)
-  }, [faseEu, faseOponente, tela])
+  }, [avancarParaProximaFase, faseEu, faseOponente])
 
   const aoConcluirFase = useCallback(
     (resultado: ResultadoFase) => {
-      setMinhaFaseCompleta(true)
-      minhaFaseCompletaRef.current = true
+      setMinhaFaseCompleta(resultado.completo)
       setFaseEu(resultado.pontos)
-      enviar('fase_fim', { pontos: resultado.pontos, fase: faseRef.current, user_id: user.id })
-      void salvarProgressoPartida({
-        match_id: partidaRef.current?.id ?? '',
-        user_id: user.id,
-        user_name: user.nome,
-        score: euFinalRef.current + resultado.pontos,
+      enviar('fase_fim', {
+        pontos: resultado.pontos,
         fase: faseRef.current,
-        palavras_found: resultado.palavrasEncontradas,
-        terminou: true,
-        vitorioso: false,
+        user_id: user.id,
       })
     },
-    [enviar, user.id, user.nome],
+    [enviar, user.id]
   )
 
   const aoPerderTempo = useCallback(() => {
-    // Tempo esgotado: encerra a fase com 0 e espera o adversário.
+    setMinhaFaseCompleta(false)
     setFaseEu(0)
     enviar('fase_fim', { pontos: 0, fase: faseRef.current, user_id: user.id })
   }, [enviar, user.id])
 
-  const sementeAtual = useMemo(
-    () => (partida?.semente ?? 0) + fase * 7919,
-    [fase, partida?.semente],
-  )
-
-  /** Jogadores online vindos do banco e da presença em tempo real. */
   const jogadoresOnline = useMemo(() => {
     const mapa = new Map<string, JogadorOnline>()
-    for (const jogador of [...jogadores, ...presentes]) {
-      if (jogador.user_id === user.id) continue
-      mapa.set(jogador.user_id, jogador)
-    }
-    return [...mapa.values()]
+    for (const j of jogadores) mapa.set(j.user_id, j)
+    for (const p of presentes) mapa.set(p.user_id, p)
+    mapa.delete(user.id)
+    return Array.from(mapa.values())
   }, [jogadores, presentes, user.id])
 
   // ---------------------------------------------------------------
-  // Render
+  // Renderização
   // ---------------------------------------------------------------
+
   if (tela === 'jogo') {
     return (
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 shadow-xs">
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-800">Você</p>
-            <p className="text-lg font-black text-white">
-              {meuProgresso.pontos} pts · {meuProgresso.palavras} palavras
-            </p>
+      <div className="space-y-3">
+        {/* Placar ao vivo */}
+        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-black text-emerald-700">
+              {user.nome.slice(0, 2).toUpperCase()}
+            </span>
+            <div>
+              <p className="text-xs font-bold text-slate-900 leading-tight">Você</p>
+              <p className="text-[0.7rem] text-slate-500 font-semibold">
+                {meuProgresso.pontos} pts · {meuProgresso.palavras} palavras
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-sky-300 bg-sky-50 p-3 shadow-xs">
-            <p className="text-xs font-bold uppercase tracking-wider text-sky-800">
-              {oponente?.nome ?? 'Adversário'}
-            </p>
-            <p className="text-lg font-black text-white">
-              {oponenteProgresso.pontos} pts · {oponenteProgresso.palavras} palavras
-            </p>
+
+          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+            Fase {fase}/{FASES_POR_PARTIDA_ONLINE}
+          </div>
+
+          <div className="flex items-center gap-2 text-right">
+            <div>
+              <p className="text-xs font-bold text-slate-900 leading-tight">
+                {oponente?.nome ?? 'Adversário'}
+              </p>
+              <p className="text-[0.7rem] text-slate-500 font-semibold">
+                {oponenteProgresso.pontos} pts · {oponenteProgresso.palavras} palavras
+              </p>
+            </div>
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-500/20 text-xs font-black text-rose-700">
+              {(oponente?.nome ?? 'AD').slice(0, 2).toUpperCase()}
+            </span>
           </div>
         </div>
 
-        {faseEu !== null && faseOponente === null && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 shadow-xs">
-            <Hourglass className="h-4 w-4 animate-spin" /> Você fechou a fase! Aguardando o adversário…
-          </div>
-        )}
-
         <ArenaDeJogo
-          key={`${fase}-${sementeAtual}`}
           modo={modo}
           fase={fase}
-          semente={sementeAtual}
+          semente={(partida?.semente ?? 0) + fase * 1337}
           prazoFinal={prazoFinal}
-          bloqueado={faseEu !== null}
           aoConcluirFase={aoConcluirFase}
           aoPerderTempo={aoPerderTempo}
           aoProgresso={aoProgresso}
@@ -577,27 +620,27 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
   }
 
   if (tela === 'resultado') {
-    const venci = vencedor === 'eu'
+    const empate = vencedor === 'empate'
+    const euVenci = vencedor === 'eu'
+
     return (
-      <div className="space-y-4 text-center">
-        <div
-          className={`rounded-3xl border p-8 ${
-            venci
-              ? 'border-emerald-300 bg-emerald-50 shadow-md'
-              : vencedor === 'empate'
-                ? 'border-amber-300 bg-amber-50 shadow-md'
-                : 'border-red-300 bg-red-50 shadow-md'
-          }`}
-        >
-          <CircleCheck className="mx-auto mb-3 h-12 w-12 text-white" />
-          <h3 className="text-2xl font-black text-white">
-            {venci ? 'Você venceu o duelo!' : vencedor === 'empate' ? 'Empate!' : 'Vitória do Adversário'}
+      <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xs">
+        <div className="space-y-2">
+          {empate ? (
+            <div className="text-4xl">🤝</div>
+          ) : euVenci ? (
+            <div className="text-4xl">🏆</div>
+          ) : (
+            <div className="text-4xl">🥈</div>
+          )}
+          <h3 className="text-xl font-black text-slate-900">
+            {empate ? 'Empate!' : euVenci ? 'Você Venceu o Desafio!' : 'Você Perdeu!'}
           </h3>
-          <p className="mt-2 text-sm text-slate-700 font-medium">
+          <p className="text-sm text-slate-600 font-medium">
             {meuTotal} pontos contra {oponenteTotal} de {oponente?.nome ?? 'adversário'}.
           </p>
-          <p className="mt-4 text-xs text-slate-600 font-medium">Sua pontuação já foi registrada no ranking geral.</p>
         </div>
+
         <button
           type="button"
           onClick={() => {
@@ -611,48 +654,73 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
             oponenteFinalRef.current = 0
             setFase(1)
           }}
-          className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-black text-white shadow-lg transition-transform hover:scale-105"
+          className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-black text-white shadow-lg transition-transform hover:scale-105 cursor-pointer"
         >
-          Voltar ao lobby
+          Voltar ao Lobby
         </button>
       </div>
     )
   }
 
+  // Tela da Sala de Espera (Aguardando Adversário)
   if (tela === 'sala') {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-xs">
-          <Hourglass className="mx-auto mb-2 h-8 w-8 text-amber-400 animate-pulse" />
-          <h3 className="text-lg font-black text-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xs">
+          <Hourglass className="mx-auto mb-2 h-9 w-9 text-amber-500 animate-pulse" />
+          <h3 className="text-xl font-black text-slate-900">
             {partida?.host_id === user.id ? 'Aguardando adversário' : 'Conectando ao adversário'}
           </h3>
           <p className="mt-1 text-sm text-slate-600 font-medium">
             {partida?.host_id === user.id
               ? 'Compartilhe o código abaixo com o colega que deseja desafiar.'
-              : 'O jogo começa em instantes.'}
+              : 'O jogo começa em instantes...'}
           </p>
+
           {partida ? (
-            <div className="mx-auto mt-4 w-fit rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-50 px-8 py-3">
-              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-600">Código da Sala</p>
-              <p className="text-3xl font-black tracking-[0.25em] text-emerald-700">{partida.codigo}</p>
+            <div className="mx-auto mt-4 w-fit rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-50 px-8 py-3.5">
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-600">
+                CÓDIGO DA SALA
+              </p>
+              <div className="flex items-center gap-3 justify-center mt-1">
+                <p className="text-3xl font-black tracking-[0.25em] text-emerald-800">
+                  {partida.codigo}
+                </p>
+                <button
+                  type="button"
+                  onClick={copiarCodigo}
+                  className="flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 font-bold shadow-xs transition-colors cursor-pointer"
+                  title="Copiar código da sala"
+                >
+                  {copiado ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" /> Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" /> Copiar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           ) : null}
+
           {oponente ? (
-            <p className="mt-3 text-sm font-semibold text-emerald-400 animate-bounce">
-              {oponente.nome} entrou na partida! Iniciando…
+            <p className="mt-4 text-sm font-bold text-emerald-700 animate-bounce">
+              ✓ {oponente.nome} entrou na sala! Iniciando partida...
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-3 text-xs text-slate-500 font-semibold animate-pulse">
+              Aguardando o adversário digitar o código e entrar...
+            </p>
+          )}
         </div>
 
         <button
           type="button"
-          onClick={() => {
-            setTela('lobby')
-            setPartida(null)
-            setOponente(null)
-          }}
-          className="w-full rounded-xl border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-xs"
+          onClick={() => void cancelarSala()}
+          className="w-full rounded-xl border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-xs cursor-pointer"
         >
           Cancelar e voltar ao lobby
         </button>
@@ -660,111 +728,140 @@ export function PainelOnline({ user, modo, aoSair }: Props) {
     )
   }
 
-  // Lobby
+  // Tela de Lobby Online
   return (
     <div className="space-y-5">
       {mensagem && (
-        <div className="rounded-xl border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-xs">
           {mensagem}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      {/* Ações principais: Criar Desafio ou Digitar Código */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button
           type="button"
           onClick={() => void criarDesafio()}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-transform hover:scale-105 active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
         >
-          <Swords className="h-4 w-4" /> Criar desafio 1x1
+          <Swords className="h-4 w-4" /> Criar Desafio 1x1
         </button>
+
         <div className="flex flex-1 items-center gap-2">
           <input
             value={codigoDigitado}
             onChange={(e) => setCodigoDigitado(e.target.value.toUpperCase())}
-            placeholder="Código da partida"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void entrarNoDesafio(codigoDigitado)
+            }}
+            placeholder="CÓDIGO DA SALA (EX: 38GD5W)"
             maxLength={6}
-            className="w-44 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold uppercase tracking-widest text-slate-900 outline-none focus:border-emerald-500 placeholder:text-slate-400 shadow-xs"
+            className="flex-1 min-w-[160px] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold uppercase tracking-widest text-slate-900 outline-none focus:border-emerald-500 placeholder:text-slate-400 shadow-xs placeholder:tracking-normal"
           />
           <button
             type="button"
+            disabled={conectando}
             onClick={() => void entrarNoDesafio(codigoDigitado)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-emerald-400 hover:bg-slate-50 shadow-xs"
+            className="flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 text-sm font-bold transition-colors shadow-xs cursor-pointer disabled:opacity-50"
           >
-            Entrar
+            {conectando ? 'Buscando...' : 'Entrar'}
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
+      {/* Convites Recebidos */}
       {convites.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Convites recebidos</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Convites Recebidos
+          </h4>
           {convites.map((convite) => (
             <div
               key={convite.codigo}
               className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 shadow-xs"
             >
-              <p className="text-sm font-semibold text-white">
-                {convite.hostNome} está esperando você
-                <span className="ml-2 rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs uppercase font-bold text-emerald-300">{convite.modo}</span>
+              <p className="text-sm font-semibold text-slate-900">
+                <b>{convite.hostNome}</b> está esperando você
+                <span className="ml-2 rounded bg-emerald-600 px-2 py-0.5 text-xs uppercase font-bold text-white">
+                  {convite.modo}
+                </span>
               </p>
               <button
                 type="button"
-                onClick={() => void entrarNoDesafio(convite.codigo, convite)}
-                className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-bold text-white shadow transition-transform hover:scale-105"
+                onClick={() => void entrarNoDesafio(convite.codigo)}
+                className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-bold text-white shadow-xs transition-transform hover:scale-105 cursor-pointer"
               >
-                Aceitar
+                Aceitar Desafio
               </button>
             </div>
           ))}
         </div>
       )}
 
+      {/* Desafios Abertos no Momento */}
       {partidasAbertas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Desafios abertos</h4>
-          {partidasAbertas.map((aberta) => (
-            <div
-              key={aberta.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs"
-            >
-              <p className="text-sm font-semibold text-white">
-                Código <span className="font-black tracking-widest text-emerald-400">{aberta.codigo}</span>
-                <span className="ml-2 text-xs uppercase text-slate-600 font-bold">{aberta.modo}</span>
-              </p>
-              <button
-                type="button"
-                onClick={() => void entrarNoDesafio(aberta.codigo)}
-                className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 transition-colors hover:border-emerald-400 hover:bg-slate-50 shadow-xs"
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Salas Abertas Aguardando Oponente ({partidasAbertas.length})
+          </h4>
+          <div className="grid gap-2">
+            {partidasAbertas.map((aberta) => (
+              <div
+                key={aberta.id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs"
               >
-                Entrar
-              </button>
-            </div>
-          ))}
+                <div>
+                  <p className="text-sm font-bold text-slate-900">
+                    Sala de <b>{aberta.host_nome || 'Colega'}</b>
+                  </p>
+                  <p className="text-xs text-slate-500 font-semibold flex items-center gap-2 mt-0.5">
+                    Código:{' '}
+                    <span className="font-black tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {aberta.codigo}
+                    </span>
+                    <span className="uppercase">{aberta.modo}</span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void entrarNoDesafio(aberta.codigo)}
+                  className="rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white px-4 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  Entrar na Sala
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* Lista de Usuários Online */}
       <div className="space-y-2">
         <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-          <Users className="h-3.5 w-3.5 text-emerald-400" /> Usuários cadastrados online ({jogadoresOnline.length})
+          <Users className="h-3.5 w-3.5 text-emerald-600" /> Colegas Online ({jogadoresOnline.length})
         </h4>
         {jogadoresOnline.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-xs text-slate-600 font-medium">
-            Nenhum outro jogador online no momento. Compartilhe o código com alguém para jogar 1x1!
+            Nenhum outro jogador online no momento. Compartilhe o código da sala com um colega para jogar 1x1!
           </p>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {jogadoresOnline.map((jogador) => (
               <li
                 key={jogador.user_id}
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-xs"
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-xs"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-black text-emerald-300">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-800">
                   {jogador.user_name.slice(0, 2).toUpperCase()}
                 </span>
                 <span className="truncate text-sm font-semibold text-slate-900">
                   {jogador.user_name}
                 </span>
-                <span className="ml-auto h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="ml-auto flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Online
+                </span>
               </li>
             ))}
           </ul>
