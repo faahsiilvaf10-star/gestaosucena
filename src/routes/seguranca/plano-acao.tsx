@@ -10,8 +10,6 @@ import {
   PRIORIDADES_PLANO,
   hojeISO,
   fmtData,
-  diasParaPrazo,
-  isVencido,
   statusEfetivo,
   prazoInfo,
   gerarTextoRelatorio,
@@ -47,7 +45,6 @@ export function PlanoAcaoComponent() {
   const [acao, setAcao] = useState<string>('')
   const [responsavel, setResponsavel] = useState<string>('')
   const [dataAbertura, setDataAbertura] = useState<string>(() => hojeISO())
-  const [prazo, setPrazo] = useState<string>('')
   const [prioridadeSel, setPrioridadeSel] = useState<PrioridadePlano>('Média')
   const [statusSel, setStatusSel] = useState<StatusPlano>('Pendente')
   const [observacoes, setObservacoes] = useState<string>('')
@@ -194,10 +191,6 @@ export function PlanoAcaoComponent() {
       erros.push('• Responsável: selecione ou informe quem vai executar a ação a partir do RH.')
       novosInvalidos.responsavel = true
     }
-    if (!prazo) {
-      erros.push('• Prazo: o prazo é obrigatório.')
-      novosInvalidos.prazo = true
-    }
 
     setInvalidCampos(novosInvalidos)
 
@@ -217,7 +210,7 @@ export function PlanoAcaoComponent() {
       responsavel: responsavel.trim(),
       responsavelCargo: responsavelCargo.trim() || undefined,
       dataAbertura: dataAbertura || hojeISO(),
-      prazo,
+      prazo: '',
       prioridade: prioridadeSel,
       status: statusSel,
       observacoes: observacoes.trim(),
@@ -232,10 +225,9 @@ export function PlanoAcaoComponent() {
     await atualizarRegistros(novos)
 
     const st = statusEfetivo(novoItem)
-    const pi = prazoInfo(novoItem)
     setFeedbackForm({
       tipo: 'ok',
-      msg: `✅ Plano de ação salvo! A ação entrou na lista abaixo como ${st}${isVencido(novoItem) ? ' (prazo já vencido — Atrasado)' : ''} — ${pi.texto}.`,
+      msg: `✅ Plano de ação salvo! A ação entrou na lista abaixo como ${st} — ${novoItem.acao}.`,
     })
     showToast('Plano de ação salvo')
 
@@ -247,7 +239,6 @@ export function PlanoAcaoComponent() {
     setResponsavelCargo('')
     setResponsavelDropdownOpen(false)
     setDataAbertura(hojeISO())
-    setPrazo('')
     setPrioridadeSel('Média')
     setStatusSel('Pendente')
     setObservacoes('')
@@ -262,7 +253,6 @@ export function PlanoAcaoComponent() {
     setResponsavelCargo('')
     setResponsavelDropdownOpen(false)
     setDataAbertura(hojeISO())
-    setPrazo('')
     setPrioridadeSel('Média')
     setStatusSel('Pendente')
     setObservacoes('')
@@ -413,12 +403,10 @@ export function PlanoAcaoComponent() {
     const q = buscaTexto.trim().toLowerCase()
     return registros.filter((r) => {
       const st = statusEfetivo(r)
-      const venc = isVencido(r)
 
       if (filtroAtual === 'Pendentes' && st !== 'Pendente') return false
       if (filtroAtual === 'Em andamento' && st !== 'Em andamento') return false
       if (filtroAtual === 'Concluídos' && st !== 'Concluído') return false
-      if (filtroAtual === 'Vencidos' && !venc) return false
 
       if (q) {
         const full = `${r.origem} ${r.referencia || ''} ${r.acao} ${r.responsavel} ${r.responsavelCargo || ''} ${r.observacoes || ''}`.toLowerCase()
@@ -432,7 +420,7 @@ export function PlanoAcaoComponent() {
   // Statistics
   const total = registros.length
   const concluidas = registros.filter((r) => r.status === 'Concluído').length
-  const vencidas = registros.filter(isVencido).length
+  const emAberto = total - concluidas
   const percConcluidas = total ? Math.round((concluidas / total) * 100) : 0
 
   const contagemHelper = (chave: keyof PlanoAcaoItem, ordem: string[]) => {
@@ -457,18 +445,6 @@ export function PlanoAcaoComponent() {
     })
     const ks = Object.keys(mSt)
     return ks.length ? ks.map((k) => `${k}: ${mSt[k]}`).join('  •  ') : 'Nenhuma ação registrada.'
-  }, [registros])
-
-  const relVencimentosTexto = useMemo(() => {
-    const abertas = registros
-      .filter((r) => r.status !== 'Concluído')
-      .slice()
-      .sort((a, b) => (diasParaPrazo(a.prazo) ?? 9999) - (diasParaPrazo(b.prazo) ?? 9999))
-      .slice(0, 5)
-
-    return abertas.length
-      ? abertas.map((r) => `${r.acao} — ${prazoInfo(r).texto}`).join('  •  ')
-      : 'Nenhuma ação com prazo em aberto.'
   }, [registros])
 
   return (
@@ -902,7 +878,7 @@ export function PlanoAcaoComponent() {
       <h1>✅ Plano de Ação</h1>
       <p className="sub">
         Transforme <b>desvios, inspeções, ocorrências, auditorias e DDS</b> em ações com{' '}
-        <b>responsável, prazo e prioridade</b> — e acompanhe cada uma até a conclusão, com{' '}
+        <b>responsável e prioridade</b> — e acompanhe cada uma até a conclusão, com{' '}
         <b>evidência</b>. Uma ação só vira <b>Concluída</b> depois de anexar a{' '}
         <b>foto da conclusão</b>, preencher <b>“o que foi feito”</b> e clicar em{' '}
         <b>Salvar conclusão</b>.
@@ -924,7 +900,7 @@ export function PlanoAcaoComponent() {
       <section className="card noprint" id="novoPlano">
         <h2>➕ Novo Plano de Ação</h2>
         <p className="hint">
-          Preencha os campos abaixo. O <b>prazo é obrigatório</b> — sem ele a ação não é salva.
+          Preencha os campos abaixo para cadastrar uma nova ação.
         </p>
 
         <form onSubmit={handleSalvarPlano} noValidate>
@@ -979,7 +955,7 @@ export function PlanoAcaoComponent() {
             />
           </div>
 
-          <div className="grid3">
+          <div className="grid2">
             {/* Responsável com busca no efetivo do RH */}
             <div className="relative z-30" ref={responsavelBoxRef}>
               <label htmlFor="responsavel">RESPONSÁVEL (EFETIVO RH) *</label>
@@ -1067,22 +1043,6 @@ export function PlanoAcaoComponent() {
                 onChange={(e) => setDataAbertura(e.target.value)}
               />
             </div>
-            <div>
-              <label htmlFor="prazo">PRAZO (OBRIGATÓRIO) *</label>
-              <input
-                id="prazo"
-                type="date"
-                value={prazo}
-                onChange={(e) => {
-                  setPrazo(e.target.value)
-                  if (invalidCampos.prazo) {
-                    setInvalidCampos((prev) => ({ ...prev, prazo: false }))
-                  }
-                }}
-                className={invalidCampos.prazo ? 'invalid-campo' : ''}
-                required
-              />
-            </div>
           </div>
 
           <div className="grid2">
@@ -1141,24 +1101,10 @@ export function PlanoAcaoComponent() {
                 >
                   Concluído
                 </button>
-                <button
-                  type="button"
-                  data-s="Atrasado"
-                  className="spill opacity-60"
-                  onClick={() => {
-                    setFeedbackForm({
-                      tipo: 'info',
-                      msg: '“Atrasado” é automático: ele aparece sozinho quando o prazo vence sem a ação estar concluída.\nEscolha Pendente ou Em andamento como status inicial.',
-                    })
-                  }}
-                >
-                  Atrasado
-                </button>
               </div>
               <p className="lock-note">
                 <b>Regra:</b> “Concluído” <b>não</b> pode ser marcado aqui — ele só aparece depois
-                da conclusão com foto + “o que foi feito” + <b>Salvar conclusão</b>. “Atrasado” é
-                automático quando o prazo vence sem conclusão.
+                da conclusão com foto + “o que foi feito” + <b>Salvar conclusão</b>.
               </p>
             </div>
           </div>
@@ -1194,9 +1140,7 @@ export function PlanoAcaoComponent() {
       <section className="card noprint">
         <h2>📋 Ações registradas</h2>
         <p className="hint">
-          Use os filtros para acompanhar o que está pendente, em andamento, concluído ou vencido. O
-          prazo mostra a contagem automática: <b>“Faltam X dias”</b>, <b>“Vence hoje”</b> ou{' '}
-          <b>“VENCIDO”</b>.
+          Use os filtros para acompanhar o que está pendente, em andamento ou concluído.
         </p>
 
         {/* Busca rápida */}
@@ -1212,7 +1156,7 @@ export function PlanoAcaoComponent() {
 
         {/* Filtros rápidos */}
         <div className="filters" id="filtros">
-          {['Todos', 'Pendentes', 'Em andamento', 'Concluídos', 'Vencidos'].map((f) => (
+          {['Todos', 'Pendentes', 'Em andamento', 'Concluídos'].map((f) => (
             <button
               key={f}
               type="button"
@@ -1238,9 +1182,8 @@ export function PlanoAcaoComponent() {
             listaFiltrada.map((r) => {
               const st = statusEfetivo(r)
               const pi = prazoInfo(r)
-              const venc = isVencido(r)
               const cardCls =
-                r.status === 'Concluído' ? 'done' : venc ? 'overdue' : st === 'Em andamento' ? 'doing' : ''
+                r.status === 'Concluído' ? 'done' : st === 'Em andamento' ? 'doing' : ''
 
               const pendFoto = evidenciasPendentes[r.id]?.foto
               const pendFeito = evidenciasPendentes[r.id]?.feito ?? ''
@@ -1251,8 +1194,6 @@ export function PlanoAcaoComponent() {
                   <div>
                     {st === 'Concluído' ? (
                       <span className="badge ok">Concluído</span>
-                    ) : st === 'Atrasado' ? (
-                      <span className="badge venc">Atrasado / Vencido</span>
                     ) : st === 'Em andamento' ? (
                       <span className="badge fluxo">Em andamento</span>
                     ) : (
@@ -1279,8 +1220,7 @@ export function PlanoAcaoComponent() {
                     {r.responsavelCargo && (
                       <span className="text-gray-600 font-semibold"> ({r.responsavelCargo})</span>
                     )}{' '}
-                    &nbsp;•&nbsp; 📅 <b>Abertura:</b> {fmtData(r.dataAbertura)} &nbsp;•&nbsp; ⏰{' '}
-                    <b>Prazo:</b> {fmtData(r.prazo)}
+                    &nbsp;•&nbsp; 📅 <b>Abertura:</b> {fmtData(r.dataAbertura)}
                     {r.referencia && (
                       <>
                         {' '}
@@ -1291,7 +1231,7 @@ export function PlanoAcaoComponent() {
 
                   {r.observacoes && <p>📝 {r.observacoes}</p>}
 
-                  <div className={`prazo-line ${pi.classe}`}>{pi.texto}</div>
+                  {pi.texto && <div className={`prazo-line ${pi.classe}`}>{pi.texto}</div>}
 
                   {r.status === 'Concluído' ? (
                     <div className="conclusao">
@@ -1439,16 +1379,16 @@ export function PlanoAcaoComponent() {
             <span>Total de ações</span>
           </div>
           <div className="stat">
+            <b>{emAberto}</b>
+            <span>Em aberto</span>
+          </div>
+          <div className="stat">
             <b>{concluidas}</b>
             <span>Concluídas</span>
           </div>
           <div className="stat">
             <b>{percConcluidas}%</b>
             <span>% concluído</span>
-          </div>
-          <div className="stat">
-            <b>{vencidas}</b>
-            <span>Vencidas</span>
           </div>
         </div>
 
@@ -1478,11 +1418,6 @@ export function PlanoAcaoComponent() {
         <div className="rel-item">
           <b>Por status</b>
           <p>{relStatusTexto}</p>
-        </div>
-
-        <div className="rel-item">
-          <b>Próximos vencimentos</b>
-          <p>{relVencimentosTexto}</p>
         </div>
 
         <div

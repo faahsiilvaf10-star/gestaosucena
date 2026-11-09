@@ -12,7 +12,7 @@ export interface PlanoAcaoItem {
   responsavel: string
   responsavelCargo?: string
   dataAbertura: string // YYYY-MM-DD
-  prazo: string // YYYY-MM-DD
+  prazo?: string // YYYY-MM-DD (legado / opcional)
   prioridade: PrioridadePlano
   status: StatusPlano
   observacoes?: string
@@ -51,7 +51,7 @@ export const STATUS_LISTA: StatusPlano[] = [
   'Pendente',
   'Em andamento',
   'Concluído',
-  'Atrasado',
+
 ]
 
 export const LS_KEY_PLANO_ACAO = 'planoAcaoHydroV1'
@@ -84,60 +84,41 @@ export function diasParaPrazo(iso?: string): number | null {
   return Math.round((d.getTime() - hoje.getTime()) / 86400000)
 }
 
-export function isVencido(r: Pick<PlanoAcaoItem, 'status' | 'prazo'>): boolean {
-  if (r.status === 'Concluído') return false
-  const dias = diasParaPrazo(r.prazo)
-  return dias !== null && dias < 0
+export function isVencido(_r?: Pick<PlanoAcaoItem, 'status' | 'prazo'>): boolean {
+  return false
 }
 
-export function statusEfetivo(r: Pick<PlanoAcaoItem, 'status' | 'prazo'>): StatusPlano {
+export function statusEfetivo(r: Pick<PlanoAcaoItem, 'status'>): StatusPlano {
   if (r.status === 'Concluído') return 'Concluído'
-  if (isVencido(r)) return 'Atrasado'
-  return r.status
+  if (r.status === 'Em andamento') return 'Em andamento'
+  return 'Pendente'
 }
 
-export function prazoInfo(r: Pick<PlanoAcaoItem, 'status' | 'prazo' | 'concluidoEm'>): {
+export function prazoInfo(r: Pick<PlanoAcaoItem, 'status' | 'concluidoEm'>): {
   texto: string
-  classe: 'ok' | 'vencido' | 'hoje' | ''
-  dias: number | null
+  classe: 'ok' | ''
+  dias: null
 } {
-  const dias = diasParaPrazo(r.prazo)
-  if (dias === null) return { texto: 'Prazo não informado', classe: '', dias: null }
   if (r.status === 'Concluído') {
     return {
       texto: `Concluída em ${fmtData(r.concluidoEm || hojeISO())}`,
       classe: 'ok',
-      dias,
+      dias: null,
     }
   }
-  if (dias < 0) {
-    const diff = Math.abs(dias)
-    return {
-      texto: `VENCIDO há ${diff} ${diff === 1 ? 'dia' : 'dias'} — prazo era ${fmtData(r.prazo)}`,
-      classe: 'vencido',
-      dias,
-    }
-  }
-  if (dias === 0) {
-    return { texto: `Vence hoje — ${fmtData(r.prazo)}`, classe: 'hoje', dias }
-  }
-  if (dias === 1) {
-    return { texto: `Falta 1 dia para o vencimento — ${fmtData(r.prazo)}`, classe: 'ok', dias }
-  }
-  return { texto: `Faltam ${dias} dias para o vencimento — ${fmtData(r.prazo)}`, classe: 'ok', dias }
+  return { texto: '', classe: '', dias: null }
 }
 
 export function gerarTextoRelatorio(registros: PlanoAcaoItem[]): string {
   const total = registros.length
   const concl = registros.filter((r) => r.status === 'Concluído').length
-  const venc = registros.filter(isVencido).length
   const perc = total ? Math.round((concl / total) * 100) : 0
   const linhas: string[] = []
 
   linhas.push('RELATÓRIO — PLANO DE AÇÃO — SEGURANÇA — HYDRO REABILITAÇÃO (SUCENA)')
   linhas.push(`Data do relatório: ${fmtData(hojeISO())}`)
   linhas.push('')
-  linhas.push(`Total de ações: ${total} | Concluídas: ${concl} (${perc}%) | Vencidas: ${venc}`)
+  linhas.push(`Total de ações: ${total} | Concluídas: ${concl} (${perc}%)`)
   linhas.push('')
 
   PRIORIDADES_PLANO.forEach((p) => {
@@ -156,13 +137,12 @@ export function gerarTextoRelatorio(registros: PlanoAcaoItem[]): string {
   }
   registros.forEach((r, i) => {
     const st = statusEfetivo(r)
-    const pi = prazoInfo(r)
     const concStr =
       r.status === 'Concluído'
         ? ` — Concluída em ${fmtData(r.concluidoEm)}. O que foi feito: ${r.feito || ''}`
         : ''
     linhas.push(
-      `${i + 1}. [${st}] [${r.prioridade}] [${r.origem}] ${r.acao} — Responsável: ${r.responsavel}${r.responsavelCargo ? ` (${r.responsavelCargo})` : ''} — Prazo: ${fmtData(r.prazo)} (${pi.texto})${concStr}`
+      `${i + 1}. [${st}] [${r.prioridade}] [${r.origem}] ${r.acao} — Responsável: ${r.responsavel}${r.responsavelCargo ? ` (${r.responsavelCargo})` : ''} — Abertura: ${fmtData(r.dataAbertura)}${concStr}`
     )
   })
 

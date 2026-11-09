@@ -37,23 +37,24 @@ describe('planoAcaoData helper functions', () => {
   })
 
   it('computes effective status and vencido check', () => {
-    const pastDate = new Date()
-    pastDate.setDate(pastDate.getDate() - 2)
-    const past = `${pastDate.getFullYear()}-${String(pastDate.getMonth() + 1).padStart(2, '0')}-${String(pastDate.getDate()).padStart(2, '0')}`
-
     const openItem: PlanoAcaoItem = {
       id: '1',
       origem: 'Desvio',
       acao: 'Instalar guarda-corpo',
       responsavel: 'João',
       dataAbertura: '2026-10-01',
-      prazo: past,
       prioridade: 'Crítica',
       status: 'Pendente',
     }
 
-    expect(isVencido(openItem)).toBe(true)
-    expect(statusEfetivo(openItem)).toBe('Atrasado')
+    expect(isVencido(openItem)).toBe(false)
+    expect(statusEfetivo(openItem)).toBe('Pendente')
+
+    const doingItem: PlanoAcaoItem = {
+      ...openItem,
+      status: 'Em andamento',
+    }
+    expect(statusEfetivo(doingItem)).toBe('Em andamento')
 
     const concludedItem: PlanoAcaoItem = {
       ...openItem,
@@ -66,15 +67,12 @@ describe('planoAcaoData helper functions', () => {
     expect(statusEfetivo(concludedItem)).toBe('Concluído')
   })
 
-  it('generates accurate deadline descriptions', () => {
-    const today = hojeISO()
-    const infoHoje = prazoInfo({ status: 'Pendente', prazo: today })
-    expect(infoHoje.classe).toBe('hoje')
-    expect(infoHoje.texto).toContain('Vence hoje')
+  it('generates accurate conclusion descriptions', () => {
+    const infoPendente = prazoInfo({ status: 'Pendente' })
+    expect(infoPendente.texto).toBe('')
 
     const infoConcluido = prazoInfo({
       status: 'Concluído',
-      prazo: '2026-10-20',
       concluidoEm: '2026-10-18',
     })
     expect(infoConcluido.classe).toBe('ok')
