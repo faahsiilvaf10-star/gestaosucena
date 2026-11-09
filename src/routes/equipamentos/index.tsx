@@ -4,6 +4,7 @@ import ListChecks from 'lucide-react/dist/esm/icons/list-checks.js';
 import ClipboardCheck from 'lucide-react/dist/esm/icons/clipboard-check.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import UserCheck from 'lucide-react/dist/esm/icons/user-check.js';
+import PowerOff from 'lucide-react/dist/esm/icons/power-off.js';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/equipamentos/')({
 
 const HUB_ITEMS = [
   { name: 'Entrada e Saída', icon: ArrowLeftRight, href: '/equipamentos/entrada-saida', desc: 'Registrar movimentações' },
+  { name: 'Equipamento parado', icon: PowerOff, href: '/equipamentos/equipamento-parado', desc: 'Funcionando e Quebrado' },
   { name: 'Parte Diária', icon: Truck, href: '/equipamentos/parte-diaria', desc: 'Relatório diário' },
   { name: 'Todos os Equipamentos', icon: ListChecks, href: '/equipamentos/todos', desc: 'Visualizar a frota completa' },
   { name: 'Vistoria de Equipamentos', icon: ClipboardCheck, href: '/equipamentos/vistoria', desc: 'Laudos e manutenções' },
