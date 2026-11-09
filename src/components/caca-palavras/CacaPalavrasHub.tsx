@@ -238,7 +238,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
 
   const aoConcluirFase = useCallback(
     (resultado: ResultadoFase) => {
-      const bonus = resultado.completo ? 200 * fase : 0
+      const bonus = resultado.completo ? 20 * fase : 0
       const total = pontosTotais + resultado.pontos + bonus
       const totalPalavras = palavrasTotais + resultado.palavrasEncontradas
       setPontosTotais(total)
@@ -615,7 +615,7 @@ export function CacaPalavrasHub({ aoFechar, modoInicial = 'cruzada' }: { aoFecha
                     </div>
                     <h5 className="text-xs font-bold text-slate-900">Velocidade & Bônus</h5>
                     <p className="mt-1 text-[0.72rem] leading-relaxed text-slate-600 font-medium">
-                      Encontre as palavras rapidamente para ganhar pontos extras de tempo. Completar cada fase rende até +1.000 pts de bônus!
+                      Encontre as palavras rapidamente para ganhar pontos extras de tempo. Completar cada fase rende bônus extras de pontuação!
                     </p>
                   </div>
 

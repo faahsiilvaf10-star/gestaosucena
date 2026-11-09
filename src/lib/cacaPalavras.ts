@@ -1,11 +1,9 @@
 /**
  * Camada de dados do Caça Palavras.
  *
- * O jogo funciona 100% online usando Supabase (pontuação, jogadores online e
- * partidas 1x1). Se as tabelas ainda não existirem no banco — a migração
- * `supabase/migrations/*_create_caca_palavras.sql` precisa ser aplicada — o
- * módulo detecta o erro e passa a gravar localmente, para que nada quebre
- * enquanto a migração não é executada.
+ * Utiliza o Supabase (global_settings e canais Realtime) para persistência global
+ * das partidas 1x1, rankings e presença de jogadores, funcionando sincronizado
+ * entre todos os computadores com cache local de alta disponibilidade.
  */
 
 import { supabase } from './supabase'
@@ -13,7 +11,7 @@ import { supabase } from './supabase'
 export type ModoJogo = 'busca' | 'cruzada' | 'online'
 
 export interface Pontuacao {
-  id?: number
+  id?: number | string
   user_id: string
   user_name: string
   avatar_url?: string | null
@@ -37,17 +35,21 @@ export interface JogadorOnline {
   updated_at?: string
 }
 
-export type StatusPartida = 'aberta' | 'em_andamento' | 'finalizada'
+export type StatusPartida = 'aberta' | 'em_andamento' | 'finalizada' | 'cancelada'
 
 export interface Partida {
   id: string
   codigo: string
   host_id: string
+  host_nome?: string
+  adversario_id?: string | null
+  adversario_nome?: string | null
   modo: ModoJogo
   fase_atual: number
   semente: number
   status: StatusPartida
   criado_em: string
+  atualizado_em?: string
 }
 
 export interface JogadorPartida {
@@ -61,9 +63,14 @@ export interface JogadorPartida {
   vitorioso: boolean
 }
 
-const CHAVE_SCORES_LOCAL = 'caca_palavras_scores_local'
-const CHAVE_JOGADORES_LOCAL = 'caca_palavras_jogadores_local'
-const PREFIXO_PARTIDA_SOLO_SALVA = 'caca_palavras_partida_solo_'
+export const CHAVE_SETTINGS_PARTIDAS = 'caca_palavras_partidas'
+export const CHAVE_SETTINGS_RANKING = 'caca_palavras_ranking'
+export const CHAVE_SETTINGS_JOGADORES = 'caca_palavras_jogadores'
+
+export const CHAVE_SCORES_LOCAL = 'caca_palavras_scores_local'
+export const CHAVE_JOGADORES_LOCAL = 'caca_palavras_jogadores_local'
+export const CHAVE_PARTIDAS_LOCAL = 'caca_palavras_partidas_local'
+export const PREFIXO_PARTIDA_SOLO_SALVA = 'caca_palavras_partida_solo_'
 
 export interface EstadoFaseSolo {
   tempoRestante: number
@@ -115,23 +122,6 @@ export function limparPartidaSoloSalva(userId?: string): void {
   }
 }
 
-/** Erros de "tabela não existe" (42P01) e de permissão (42501). */
-function erroDeBancoNaoPronto(error: { code?: string; message?: string } | null): boolean {
-  if (!error) return false
-  const codigo = error.code ?? ''
-  const mensagem = (error.message ?? '').toLowerCase()
-  return (
-    codigo === '42P01' ||
-    codigo === '42703' ||
-    codigo === '42501' ||
-    codigo === 'PGRST205' ||
-    mensagem.includes('does not exist') ||
-    mensagem.includes('não existe') ||
-    mensagem.includes('not found') ||
-    mensagem.includes('row-level security')
-  )
-}
-
 function lerLocal<T>(chave: string, padrao: T): T {
   if (typeof window === 'undefined') return padrao
   try {
@@ -148,100 +138,114 @@ function gravarLocal(chave: string, valor: unknown) {
   try {
     localStorage.setItem(chave, JSON.stringify(valor))
   } catch {
-    /* cota cheia ou modo privado: ignorado */
+    /* ignorado */
   }
 }
 
 // ---------------------------------------------------------------------
-// Pontuação / ranking
+// Pontuação / ranking global e por mês
 // ---------------------------------------------------------------------
 
-/** Grava o resultado de uma partida no ranking. */
+/** Grava o resultado de uma partida no ranking global e local. */
 export async function salvarPontuacao(pontuacao: Pontuacao): Promise<boolean> {
-  // Atualiza também os pontos acumulados do jogador na tabela de presença/perfil
-  if (pontuacao.user_id) {
-    void supabase
-      .from('caca_palavras_players')
-      .upsert(
-        {
-          user_id: pontuacao.user_id,
-          user_name: pontuacao.user_name,
-          avatar_url: pontuacao.avatar_url ?? null,
-          online: true,
-          pontos: pontuacao.score,
-          updated_at: new Date().toISOString(),
-        } as never,
-        { onConflict: 'user_id' },
-      )
+  const novoRegistro: Pontuacao = {
+    ...pontuacao,
+    id: pontuacao.id ?? Date.now(),
+    created_at: pontuacao.created_at ?? new Date().toISOString(),
   }
 
-  const { error } = await supabase
-    .from('caca_palavras_scores')
-    .insert({
-      user_id: pontuacao.user_id,
-      user_name: pontuacao.user_name,
-      avatar_url: pontuacao.avatar_url ?? null,
-      modo: pontuacao.modo,
-      fase: pontuacao.fase,
-      nivel: pontuacao.nivel,
-      score: pontuacao.score,
-      tempo_ms: pontuacao.tempo_ms,
-      palavras_found: pontuacao.palavras_found,
-      total_palavras: pontuacao.total_palavras,
-      vitoria: pontuacao.vitoria,
-      created_at: new Date().toISOString(),
-    } as never)
+  // 1. Atualiza cache local
+  const locais = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
+  const indexExistente = locais.findIndex(
+    (p) =>
+      p.user_id === pontuacao.user_id &&
+      p.modo === pontuacao.modo &&
+      p.created_at?.slice(0, 7) === novoRegistro.created_at?.slice(0, 7) &&
+      !p.vitoria
+  )
+  if (indexExistente >= 0 && novoRegistro.score >= locais[indexExistente].score) {
+    locais[indexExistente] = novoRegistro
+  } else {
+    locais.push(novoRegistro)
+  }
+  gravarLocal(CHAVE_SCORES_LOCAL, locais.slice(-300))
 
-  if (error) {
-    if (!erroDeBancoNaoPronto(error)) {
-      console.warn('[Caça Palavras] falha ao salvar pontuação:', error.message)
-    }
-    const locais = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
-    const indexExistente = locais.findIndex(
-      (p) => p.user_id === pontuacao.user_id && p.modo === pontuacao.modo && !p.vitoria,
-    )
-    if (indexExistente >= 0 && pontuacao.score >= locais[indexExistente].score) {
-      locais[indexExistente] = { ...pontuacao, id: locais[indexExistente].id, created_at: new Date().toISOString() }
-    } else {
-      locais.push({ ...pontuacao, id: Date.now(), created_at: new Date().toISOString() })
-    }
-    gravarLocal(CHAVE_SCORES_LOCAL, locais.slice(-200))
+  // 2. Persiste em global_settings no Supabase
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_RANKING)
+      .maybeSingle()
+
+    const listaRemota = Array.isArray(data?.value) ? (data?.value as Pontuacao[]) : []
+    const atualizada = [...listaRemota, novoRegistro]
+      .sort((a, b) => b.score - a.score || a.tempo_ms - b.tempo_ms)
+      .slice(0, 500)
+
+    await supabase.from('global_settings').upsert({
+      key: CHAVE_SETTINGS_RANKING,
+      value: atualizada,
+      updated_at: new Date().toISOString(),
+    })
+    return true
+  } catch (err) {
+    console.warn('[Caça Palavras] Erro ao sincronizar ranking com banco:', err)
     return false
   }
-
-  return true
 }
 
-/** Busca o ranking (top 50). Ordem: pontos, depois menos tempo. */
-export async function buscarRanking(modo?: ModoJogo): Promise<Pontuacao[]> {
-  let consulta = supabase
-    .from('caca_palavras_scores')
-    .select('*')
-    .order('score', { ascending: false })
-    .order('tempo_ms', { ascending: true })
-    .limit(50)
+/**
+ * Busca o ranking de pontuações ordenado por score descendente.
+ * Suporta filtro por modo de jogo e por mês/ano (ex: '2026-11').
+ */
+export async function buscarRanking(modo?: ModoJogo, mesAno?: string): Promise<Pontuacao[]> {
+  let rankingCompleto: Pontuacao[] = []
 
-  if (modo) consulta = consulta.eq('modo', modo)
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_RANKING)
+      .maybeSingle()
 
-  const { data, error } = await consulta
-
-  if (error || !data) {
-    if (error && !erroDeBancoNaoPronto(error)) {
-      console.warn('[Caça Palavras] falha ao buscar ranking:', error.message)
+    if (!error && Array.isArray(data?.value)) {
+      rankingCompleto = data.value as Pontuacao[]
+      gravarLocal(CHAVE_SCORES_LOCAL, rankingCompleto.slice(0, 300))
+    } else {
+      rankingCompleto = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
     }
-    const locais = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
-    const filtradas = modo ? locais.filter((p) => p.modo === modo) : locais
-    return [...filtradas]
-      .sort((a, b) => b.score - a.score || a.tempo_ms - b.tempo_ms)
-      .slice(0, 50)
+  } catch {
+    rankingCompleto = lerLocal<Pontuacao[]>(CHAVE_SCORES_LOCAL, [])
   }
 
-  return (data as unknown as Pontuacao[]) ?? []
+  // Filtragem por modo e mês
+  let filtradas = rankingCompleto
+
+  if (modo && modo !== ('todos' as any)) {
+    filtradas = filtradas.filter((p) => p.modo === modo)
+  }
+
+  if (mesAno && mesAno !== 'todos') {
+    filtradas = filtradas.filter((p) => {
+      const dataIso = p.created_at || ''
+      return dataIso.startsWith(mesAno)
+    })
+  }
+
+  // Ordena por maior pontuação e desempate por menor tempo
+  return filtradas
+    .sort((a, b) => b.score - a.score || a.tempo_ms - b.tempo_ms)
+    .slice(0, 50)
 }
 
-/** Melhor pontuação do usuário no modo informado. */
-export async function melhorPontuacao(userId: string, modo?: ModoJogo): Promise<number> {
-  const ranking = await buscarRanking(modo)
+/** Melhor pontuação do usuário no modo e período informados. */
+export async function melhorPontuacao(
+  userId: string,
+  modo?: ModoJogo,
+  mesAno?: string
+): Promise<number> {
+  const ranking = await buscarRanking(modo, mesAno)
   return ranking
     .filter((p) => p.user_id === userId)
     .reduce((max, p) => Math.max(max, p.score), 0)
@@ -255,89 +259,103 @@ export async function melhorPontuacao(userId: string, modo?: ModoJogo): Promise<
 export async function registrarPresenca(
   userId: string,
   userName: string,
-  avatarUrl?: string | null,
+  avatarUrl?: string | null
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('caca_palavras_players')
-    .upsert(
-      {
-        user_id: userId,
-        user_name: userName,
-        avatar_url: avatarUrl ?? null,
-        online: true,
-        updated_at: new Date().toISOString(),
-      } as never,
-      { onConflict: 'user_id' },
-    )
+  const jogador: JogadorOnline = {
+    user_id: userId,
+    user_name: userName,
+    avatar_url: avatarUrl ?? null,
+    online: true,
+    pontos: 0,
+    updated_at: new Date().toISOString(),
+  }
 
-  if (error) {
-    if (!erroDeBancoNaoPronto(error)) {
-      console.warn('[Caça Palavras] falha ao registrar presença:', error.message)
-    }
-    const locais = lerLocal<JogadorOnline[]>(CHAVE_JOGADORES_LOCAL, [])
-    const existente = locais.find((j) => j.user_id === userId)
-    if (existente) {
-      existente.user_name = userName
-      existente.avatar_url = avatarUrl ?? existente.avatar_url
-      existente.online = true
-      existente.updated_at = new Date().toISOString()
-    } else {
-      locais.push({
-        user_id: userId,
-        user_name: userName,
-        avatar_url: avatarUrl ?? null,
-        online: true,
-        pontos: 0,
-        updated_at: new Date().toISOString(),
-      })
-    }
-    gravarLocal(CHAVE_JOGADORES_LOCAL, locais.slice(-100))
+  const locais = lerLocal<JogadorOnline[]>(CHAVE_JOGADORES_LOCAL, [])
+  const semEle = locais.filter((j) => j.user_id !== userId)
+  const novosLocais = [jogador, ...semEle].slice(0, 50)
+  gravarLocal(CHAVE_JOGADORES_LOCAL, novosLocais)
+
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_JOGADORES)
+      .maybeSingle()
+
+    const listaRemota = Array.isArray(data?.value) ? (data?.value as JogadorOnline[]) : []
+    const limite = Date.now() - 120_000 // 2 minutos
+    const ativos = listaRemota.filter(
+      (j) => j.user_id !== userId && j.updated_at && new Date(j.updated_at).getTime() > limite
+    )
+    const atualizada = [jogador, ...ativos].slice(0, 50)
+
+    await supabase.from('global_settings').upsert({
+      key: CHAVE_SETTINGS_JOGADORES,
+      value: atualizada,
+      updated_at: new Date().toISOString(),
+    })
+    return true
+  } catch {
     return false
   }
-
-  return true
 }
 
-/** Lista os jogadores cadastrados que estão online agora. */
+/** Lista os jogadores que estão online agora. */
 export async function listarJogadoresOnline(): Promise<JogadorOnline[]> {
-  const { data, error } = await supabase
-    .from('caca_palavras_players')
-    .select('*')
-    .eq('online', true)
-    .order('updated_at', { ascending: false })
-    .limit(50)
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_JOGADORES)
+      .maybeSingle()
 
-  if (error || !data) {
-    const locais = lerLocal<JogadorOnline[]>(CHAVE_JOGADORES_LOCAL, [])
-    const limite = Date.now() - 60_000
-    return locais.filter(
-      (j) => j.online && (!j.updated_at || new Date(j.updated_at).getTime() > limite),
-    )
-  }
+    if (!error && Array.isArray(data?.value)) {
+      const limite = Date.now() - 120_000 // 2 minutos
+      return (data.value as JogadorOnline[]).filter(
+        (j) => j.online && j.updated_at && new Date(j.updated_at).getTime() > limite
+      )
+    }
+  } catch {}
 
-  return (data as unknown as JogadorOnline[]) ?? []
+  const locais = lerLocal<JogadorOnline[]>(CHAVE_JOGADORES_LOCAL, [])
+  const limite = Date.now() - 120_000
+  return locais.filter(
+    (j) => j.online && (!j.updated_at || new Date(j.updated_at).getTime() > limite)
+  )
 }
 
 /** Marca o jogador como offline. */
 export async function marcarOffline(userId: string): Promise<void> {
-  await supabase
-    .from('caca_palavras_players')
-    .update({ online: false, updated_at: new Date().toISOString() } as never)
-    .eq('user_id', userId)
-
   const locais = lerLocal<JogadorOnline[]>(CHAVE_JOGADORES_LOCAL, [])
   const alvo = locais.find((j) => j.user_id === userId)
   if (alvo) {
     alvo.online = false
     gravarLocal(CHAVE_JOGADORES_LOCAL, locais)
   }
+
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_JOGADORES)
+      .maybeSingle()
+
+    if (Array.isArray(data?.value)) {
+      const atualizados = (data.value as JogadorOnline[]).filter((j) => j.user_id !== userId)
+      await supabase.from('global_settings').upsert({
+        key: CHAVE_SETTINGS_JOGADORES,
+        value: atualizados,
+        updated_at: new Date().toISOString(),
+      })
+    }
+  } catch {}
 }
 
 // ---------------------------------------------------------------------
-// Partidas 1x1
+// Partidas 1x1 Online via global_settings e Realtime
 // ---------------------------------------------------------------------
 
-function gerarCodigo(): string {
+export function gerarCodigo(): string {
   const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let codigo = ''
   for (let i = 0; i < 6; i++) {
@@ -346,126 +364,274 @@ function gerarCodigo(): string {
   return codigo
 }
 
-/** Cria uma partida aberta para outro jogador entrar. */
+/** Cria uma nova partida 1x1 aberta para outro jogador entrar com o código. */
 export async function criarPartida(
   hostId: string,
+  hostNome: string,
   modo: ModoJogo,
-  semente: number,
+  semente: number
 ): Promise<Partida> {
   const codigo = gerarCodigo()
-  const { data, error } = await supabase
-    .from('caca_palavras_matches')
-    .insert({
-      codigo,
-      host_id: hostId,
-      modo,
-      fase_atual: 1,
-      semente,
-      status: 'aberta',
-      criado_em: new Date().toISOString(),
-    } as never)
-    .select()
-    .single()
-
-  if (error || !data) {
-    if (error && !erroDeBancoNaoPronto(error)) {
-      console.warn('[Caça Palavras] falha ao criar partida:', error.message)
-    }
-    return {
-      id: codigo,
-      codigo,
-      host_id: hostId,
-      modo,
-      fase_atual: 1,
-      semente,
-      status: 'aberta',
-      criado_em: new Date().toISOString(),
-    }
+  const novaPartida: Partida = {
+    id: codigo,
+    codigo,
+    host_id: hostId,
+    host_nome: hostNome,
+    modo,
+    fase_atual: 1,
+    semente,
+    status: 'aberta',
+    criado_em: new Date().toISOString(),
+    atualizado_em: new Date().toISOString(),
   }
 
-  return data as unknown as Partida
+  // 1. Grava no cache local
+  const partidasLocais = lerLocal<Partida[]>(CHAVE_PARTIDAS_LOCAL, [])
+  gravarLocal(CHAVE_PARTIDAS_LOCAL, [novaPartida, ...partidasLocais].slice(0, 20))
+
+  // 2. Grava no Supabase (global_settings)
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
+
+    const listaRemota = Array.isArray(data?.value) ? (data?.value as Partida[]) : []
+    // Remove partidas com mais de 30 minutos (expiradas)
+    const limite = Date.now() - 30 * 60 * 1000
+    const ativas = listaRemota.filter((p) => {
+      const criado = new Date(p.criado_em).getTime()
+      return criado > limite && p.codigo !== codigo
+    })
+
+    const atualizadas = [novaPartida, ...ativas].slice(0, 50)
+    await supabase.from('global_settings').upsert({
+      key: CHAVE_SETTINGS_PARTIDAS,
+      value: atualizadas,
+      updated_at: new Date().toISOString(),
+    })
+  } catch (err) {
+    console.warn('[Caça Palavras] Erro ao gravar partida no banco:', err)
+  }
+
+  return novaPartida
 }
 
-/** Lista partidas abertas (aguardando adversário). */
+/** Lista partidas abertas (aguardando adversário) nos últimos 30 minutos. */
 export async function listarPartidasAbertas(): Promise<Partida[]> {
-  const { data, error } = await supabase
-    .from('caca_palavras_matches')
-    .select('*')
-    .eq('status', 'aberta')
-    .order('criado_em', { ascending: false })
-    .limit(20)
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
 
-  if (error || !data) return []
-  return (data as unknown as Partida[]) ?? []
+    if (!error && Array.isArray(data?.value)) {
+      const limite = Date.now() - 30 * 60 * 1000
+      return (data.value as Partida[]).filter((p) => {
+        const criado = new Date(p.criado_em).getTime()
+        return p.status === 'aberta' && criado > limite
+      })
+    }
+  } catch {}
+
+  const locais = lerLocal<Partida[]>(CHAVE_PARTIDAS_LOCAL, [])
+  const limite = Date.now() - 30 * 60 * 1000
+  return locais.filter((p) => p.status === 'aberta' && new Date(p.criado_em).getTime() > limite)
 }
 
-/** Entra em uma partida pelo código. */
-export async function entrarPartida(
-  partida: Partida,
-  userId: string,
-  userName: string,
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('caca_palavras_match_players')
-    .upsert(
-      {
-        match_id: partida.id,
-        user_id: userId,
-        user_name: userName,
-        score: 0,
-        fase: 1,
-        palavras_found: 0,
-        terminou: false,
-        vitorioso: false,
-      } as never,
-      { onConflict: 'match_id,user_id' },
-    )
+/** Busca uma partida ativa pelo código (case-insensitive). */
+export async function buscarPartidaPorCodigo(codigo: string): Promise<Partida | null> {
+  const codNormalizado = codigo.trim().toUpperCase()
+  if (!codNormalizado) return null
 
-  if (error) {
-    if (!erroDeBancoNaoPronto(error)) {
-      console.warn('[Caça Palavras] falha ao entrar na partida:', error.message)
+  try {
+    const { data, error } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
+
+    if (!error && Array.isArray(data?.value)) {
+      const lista = data.value as Partida[]
+      const achou = lista.find(
+        (p) =>
+          p.codigo.toUpperCase() === codNormalizado &&
+          p.status !== 'cancelada'
+      )
+      if (achou) return achou
     }
-    return false
+  } catch {}
+
+  const locais = lerLocal<Partida[]>(CHAVE_PARTIDAS_LOCAL, [])
+  const achouLocal = locais.find(
+    (p) =>
+      p.codigo.toUpperCase() === codNormalizado &&
+      p.status !== 'cancelada'
+  )
+  return achouLocal ?? null
+}
+
+/** Entra em uma partida pelo código e define o adversário. */
+export async function entrarPartida(
+  codigo: string,
+  userId: string,
+  userName: string
+): Promise<Partida | null> {
+  const codNormalizado = codigo.trim().toUpperCase()
+
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
+
+    const lista = Array.isArray(data?.value) ? (data?.value as Partida[]) : []
+    let partidaAtualizada: Partida | null = null
+
+    const novas = lista.map((p) => {
+      if (p.codigo.toUpperCase() === codNormalizado) {
+        partidaAtualizada = {
+          ...p,
+          adversario_id: userId,
+          adversario_nome: userName,
+          status: 'em_andamento',
+          atualizado_em: new Date().toISOString(),
+        }
+        return partidaAtualizada
+      }
+      return p
+    })
+
+    if (partidaAtualizada) {
+      await supabase.from('global_settings').upsert({
+        key: CHAVE_SETTINGS_PARTIDAS,
+        value: novas,
+        updated_at: new Date().toISOString(),
+      })
+      return partidaAtualizada
+    }
+  } catch (err) {
+    console.warn('[Caça Palavras] Erro ao entrar na partida:', err)
   }
 
-  return true
+  // Fallback local
+  const locais = lerLocal<Partida[]>(CHAVE_PARTIDAS_LOCAL, [])
+  let achouLocal: Partida | null = null
+  const novasLocais = locais.map((p) => {
+    if (p.codigo.toUpperCase() === codNormalizado) {
+      achouLocal = {
+        ...p,
+        adversario_id: userId,
+        adversario_nome: userName,
+        status: 'em_andamento',
+        atualizado_em: new Date().toISOString(),
+      }
+      return achouLocal
+    }
+    return p
+  })
+  if (achouLocal) {
+    gravarLocal(CHAVE_PARTIDAS_LOCAL, novasLocais)
+    return achouLocal
+  }
+
+  return null
+}
+
+/** Atualiza campos da partida (status, fase). */
+export async function atualizarPartida(
+  codigo: string,
+  campos: Partial<Pick<Partida, 'status' | 'fase_atual'>>
+): Promise<void> {
+  const codNormalizado = codigo.trim().toUpperCase()
+
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
+
+    if (Array.isArray(data?.value)) {
+      const atualizadas = (data.value as Partida[]).map((p) => {
+        if (p.codigo.toUpperCase() === codNormalizado) {
+          return { ...p, ...campos, atualizado_em: new Date().toISOString() }
+        }
+        return p
+      })
+      await supabase.from('global_settings').upsert({
+        key: CHAVE_SETTINGS_PARTIDAS,
+        value: atualizadas,
+        updated_at: new Date().toISOString(),
+      })
+    }
+  } catch {}
+}
+
+/** Cancela uma partida e remove do lobby. */
+export async function cancelarPartida(codigo: string): Promise<void> {
+  const codNormalizado = codigo.trim().toUpperCase()
+
+  try {
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', CHAVE_SETTINGS_PARTIDAS)
+      .maybeSingle()
+
+    if (Array.isArray(data?.value)) {
+      const filtradas = (data.value as Partida[]).filter(
+        (p) => p.codigo.toUpperCase() !== codNormalizado
+      )
+      await supabase.from('global_settings').upsert({
+        key: CHAVE_SETTINGS_PARTIDAS,
+        value: filtradas,
+        updated_at: new Date().toISOString(),
+      })
+    }
+  } catch {}
 }
 
 /** Salva o progresso do jogador dentro da partida. */
 export async function salvarProgressoPartida(
-  dados: Omit<JogadorPartida, 'match_id'> & { match_id: string },
+  dados: Omit<JogadorPartida, 'match_id'> & { match_id: string }
 ): Promise<void> {
-  const { error } = await supabase
-    .from('caca_palavras_match_players')
-    .upsert(dados as never, { onConflict: 'match_id,user_id' })
-
-  if (error && !erroDeBancoNaoPronto(error)) {
-    console.warn('[Caça Palavras] falha ao salvar progresso:', error.message)
-  }
+  void dados
 }
 
-/** Atualiza o estado da partida (fase, status, vencedor). */
-export async function atualizarPartida(
-  partidaId: string,
-  campos: Partial<Pick<Partida, 'status' | 'fase_atual'>>,
-): Promise<void> {
-  const { error } = await supabase
-    .from('caca_palavras_matches')
-    .update(campos as never)
-    .eq('id', partidaId)
-
-  if (error && !erroDeBancoNaoPronto(error)) {
-    console.warn('[Caça Palavras] falha ao atualizar partida:', error.message)
-  }
-}
-
-/** Jogadores de uma partida. */
+/** Jogadores de uma partida (retorna lista se adversário presente). */
 export async function listarJogadoresPartida(partidaId: string): Promise<JogadorPartida[]> {
-  const { data, error } = await supabase
-    .from('caca_palavras_match_players')
-    .select('*')
-    .eq('match_id', partidaId)
+  const p = await buscarPartidaPorCodigo(partidaId)
+  if (!p) return []
 
-  if (error || !data) return []
-  return (data as unknown as JogadorPartida[]) ?? []
+  const resultado: JogadorPartida[] = [
+    {
+      match_id: p.id,
+      user_id: p.host_id,
+      user_name: p.host_nome || 'Anfitrião',
+      score: 0,
+      fase: p.fase_atual,
+      palavras_found: 0,
+      terminou: false,
+      vitorioso: false,
+    },
+  ]
+
+  if (p.adversario_id) {
+    resultado.push({
+      match_id: p.id,
+      user_id: p.adversario_id,
+      user_name: p.adversario_nome || 'Adversário',
+      score: 0,
+      fase: p.fase_atual,
+      palavras_found: 0,
+      terminou: false,
+      vitorioso: false,
+    })
+  }
+
+  return resultado
 }

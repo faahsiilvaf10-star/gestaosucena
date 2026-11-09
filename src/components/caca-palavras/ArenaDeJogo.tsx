@@ -57,9 +57,12 @@ interface Props {
   aoAtualizarEstado?: (snapshot: SnapshotFase) => void
 }
 
-/** Pontuação de uma palavra encontrada. */
+/** Pontuação de uma palavra encontrada (pontuação clara e sem números inflados). */
 function pontosDaPalavra(palavra: string, fase: number, tempoRestante: number): number {
-  return 100 + fase * 15 + palavra.length * 8 + Math.max(0, Math.min(30, tempoRestante))
+  const base = 10
+  const bonusTam = palavra.length >= 7 ? 3 : palavra.length >= 5 ? 2 : 1
+  const bonusTempo = tempoRestante > 20 ? 2 : tempoRestante > 5 ? 1 : 0
+  return base + bonusTam + bonusTempo
 }
 
 export function ArenaDeJogo({
