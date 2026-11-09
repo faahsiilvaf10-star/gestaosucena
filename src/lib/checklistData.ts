@@ -64,11 +64,19 @@ export interface ChecklistAnexo {
   dataChecklist?: string
 }
 
+export interface ChecklistAbaCustom {
+  id: string
+  titulo: string
+  criadaEm?: string
+  arquivos: ChecklistAnexo[]
+}
+
 export interface ChecklistStore {
   modelos: ChecklistModelo[]
   execucoes: ChecklistExecucao[]
   pendenciasResolvidas: Record<string, { em: string }>
   anexos: ChecklistAnexo[]
+  abasCustom?: ChecklistAbaCustom[]
   arquivosExtras?: ChecklistAnexo[]
   tituloAbaArquivos?: string
 }
@@ -77,6 +85,7 @@ export const LS_KEY_MODELOS = 'hydro-checklist-modelos'
 export const LS_KEY_EXECUCOES = 'hydro-checklist-execucoes'
 export const LS_KEY_PENDENCIAS = 'hydro-checklist-pendencias'
 export const LS_KEY_ANEXOS = 'hydro-checklist-anexados'
+export const LS_KEY_ABAS_CUSTOM = 'hydro-checklist-abas-custom'
 
 export function hojeISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -282,6 +291,28 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
 
     if (!error && data?.value && typeof data.value === 'object') {
       const val = data.value as Partial<ChecklistStore>
+      
+      let abas: ChecklistAbaCustom[] = []
+      if (Array.isArray(val.abasCustom) && val.abasCustom.length > 0) {
+        abas = val.abasCustom
+      } else if (Array.isArray(val.arquivosExtras) && val.arquivosExtras.length > 0) {
+        abas = [
+          {
+            id: 'aba-arquivos-extras',
+            titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
+            arquivos: val.arquivosExtras,
+          },
+        ]
+      } else {
+        abas = [
+          {
+            id: 'aba-1',
+            titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
+            arquivos: [],
+          },
+        ]
+      }
+
       const store: ChecklistStore = {
         modelos: Array.isArray(val.modelos) ? val.modelos : [],
         execucoes: Array.isArray(val.execucoes) ? val.execucoes : [],
@@ -290,6 +321,7 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
             ? val.pendenciasResolvidas
             : {},
         anexos: Array.isArray(val.anexos) ? val.anexos : [],
+        abasCustom: abas,
         arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
         tituloAbaArquivos:
           typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
@@ -304,6 +336,7 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
           localStorage.setItem(LS_KEY_EXECUCOES, JSON.stringify(store.execucoes))
           localStorage.setItem(LS_KEY_PENDENCIAS, JSON.stringify(store.pendenciasResolvidas))
           localStorage.setItem(LS_KEY_ANEXOS, JSON.stringify(store.anexos))
+          localStorage.setItem(LS_KEY_ABAS_CUSTOM, JSON.stringify(store.abasCustom || []))
           localStorage.setItem(
             'hydro-checklist-arquivos-extras',
             JSON.stringify(store.arquivosExtras || [])
@@ -328,15 +361,24 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
       const exe = JSON.parse(localStorage.getItem(LS_KEY_EXECUCOES) || '[]')
       const pen = JSON.parse(localStorage.getItem(LS_KEY_PENDENCIAS) || '{}')
       const ane = JSON.parse(localStorage.getItem(LS_KEY_ANEXOS) || '[]')
+      const abasL = JSON.parse(localStorage.getItem(LS_KEY_ABAS_CUSTOM) || '[]')
       const ext = JSON.parse(localStorage.getItem('hydro-checklist-arquivos-extras') || '[]')
       const tit =
         localStorage.getItem('hydro-checklist-titulo-aba-arquivos') || 'Arquivos & Documentos'
+
+      const abasF: ChecklistAbaCustom[] =
+        Array.isArray(abasL) && abasL.length > 0
+          ? abasL
+          : Array.isArray(ext) && ext.length > 0
+          ? [{ id: 'aba-arquivos-extras', titulo: tit, arquivos: ext }]
+          : [{ id: 'aba-1', titulo: tit, arquivos: [] }]
 
       return {
         modelos: Array.isArray(mod) ? mod : [],
         execucoes: Array.isArray(exe) ? exe : [],
         pendenciasResolvidas: pen && typeof pen === 'object' ? pen : {},
         anexos: Array.isArray(ane) ? ane : [],
+        abasCustom: abasF,
         arquivosExtras: Array.isArray(ext) ? ext : [],
         tituloAbaArquivos: tit,
       }
@@ -348,6 +390,7 @@ export async function carregarChecklistStore(env = 'barcarena'): Promise<Checkli
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
+    abasCustom: [{ id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }],
     arquivosExtras: [],
     tituloAbaArquivos: 'Arquivos & Documentos',
   }
@@ -369,6 +412,7 @@ export async function salvarChecklistStore(
       localStorage.setItem(LS_KEY_EXECUCOES, JSON.stringify(store.execucoes))
       localStorage.setItem(LS_KEY_PENDENCIAS, JSON.stringify(store.pendenciasResolvidas))
       localStorage.setItem(LS_KEY_ANEXOS, JSON.stringify(store.anexos))
+      localStorage.setItem(LS_KEY_ABAS_CUSTOM, JSON.stringify(store.abasCustom || []))
       localStorage.setItem(
         'hydro-checklist-arquivos-extras',
         JSON.stringify(store.arquivosExtras || [])

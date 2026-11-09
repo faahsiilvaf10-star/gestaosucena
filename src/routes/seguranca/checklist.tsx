@@ -5,6 +5,7 @@ import {
   type ChecklistExecucao,
   type ChecklistAnexo,
   type ChecklistStore,
+  type ChecklistAbaCustom,
   type StatusItemChecklist,
   hojeISO,
   fmtDate,
@@ -51,11 +52,14 @@ export function ChecklistComponent() {
     execucoes: [],
     pendenciasResolvidas: {},
     anexos: [],
+    abasCustom: [{ id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }],
     arquivosExtras: [],
     tituloAbaArquivos: 'Arquivos & Documentos',
   })
   const [carregando, setCarregando] = useState(true)
-  const [abaAtiva, setAbaAtiva] = useState<'principal' | 'anexos' | 'arquivos'>('principal')
+  const [abaAtiva, setAbaAtiva] = useState<'principal' | 'anexos' | 'custom'>('principal')
+  const [abaCustomAtivaId, setAbaCustomAtivaId] = useState<string>('aba-1')
+  const [confirmExcluirAba, setConfirmExcluirAba] = useState<Record<string, boolean>>({})
 
   // Colaboradores RH
   const [colaboradoresRH, setColaboradoresRH] = useState<ColaboradorRH[]>([])
@@ -201,6 +205,26 @@ export function ChecklistComponent() {
         (payload: any) => {
           if (payload.new && payload.new.value && typeof payload.new.value === 'object') {
             const val = payload.new.value as Partial<ChecklistStore>
+            let abas: ChecklistAbaCustom[] = []
+            if (Array.isArray(val.abasCustom) && val.abasCustom.length > 0) {
+              abas = val.abasCustom
+            } else if (Array.isArray(val.arquivosExtras) && val.arquivosExtras.length > 0) {
+              abas = [
+                {
+                  id: 'aba-arquivos-extras',
+                  titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
+                  arquivos: val.arquivosExtras,
+                },
+              ]
+            } else {
+              abas = [
+                {
+                  id: 'aba-1',
+                  titulo: val.tituloAbaArquivos || 'Arquivos & Documentos',
+                  arquivos: [],
+                },
+              ]
+            }
             setStore({
               modelos: Array.isArray(val.modelos) ? val.modelos : [],
               execucoes: Array.isArray(val.execucoes) ? val.execucoes : [],
@@ -209,6 +233,7 @@ export function ChecklistComponent() {
                   ? val.pendenciasResolvidas
                   : {},
               anexos: Array.isArray(val.anexos) ? val.anexos : [],
+              abasCustom: abas,
               arquivosExtras: Array.isArray(val.arquivosExtras) ? val.arquivosExtras : [],
               tituloAbaArquivos:
                 typeof val.tituloAbaArquivos === 'string' && val.tituloAbaArquivos.trim()
@@ -632,6 +657,60 @@ export function ChecklistComponent() {
     setEditingTarget(target)
   }
 
+  const abaCustomAtiva: ChecklistAbaCustom = useMemo(() => {
+    const abas = store.abasCustom || []
+    const achou = abas.find((a) => a.id === abaCustomAtivaId)
+    if (achou) return achou
+    if (abas.length > 0) return abas[0]
+    return { id: 'aba-1', titulo: 'Arquivos & Documentos', arquivos: [] }
+  }, [store.abasCustom, abaCustomAtivaId])
+
+  const criarNovaAba = async () => {
+    const num = (store.abasCustom?.length || 0) + 1
+    const novaId = 'aba-' + Date.now()
+    const novaAba: ChecklistAbaCustom = {
+      id: novaId,
+      titulo: `Nova Aba ${num}`,
+      arquivos: [],
+      criadaEm: new Date().toISOString(),
+    }
+    const novasAbas = [...(store.abasCustom || []), novaAba]
+    const novaStore = { ...store, abasCustom: novasAbas }
+    await persistStore(novaStore)
+    setAbaCustomAtivaId(novaId)
+    setAbaAtiva('custom')
+    setNovoNomeAba(novaAba.titulo)
+    setEditandoNomeAba(true)
+    showToast(`✨ Nova aba criada: "${novaAba.titulo}"`)
+  }
+
+  const excluirAbaCustom = async (id: string, titulo: string) => {
+    if (!confirmExcluirAba[id]) {
+      setConfirmExcluirAba((prev) => ({ ...prev, [id]: true }))
+      setTimeout(() => {
+        setConfirmExcluirAba((prev) => ({ ...prev, [id]: false }))
+      }, 4000)
+      return
+    }
+
+    const novasAbas = (store.abasCustom || []).filter((a) => a.id !== id)
+    if (novasAbas.length === 0) {
+      novasAbas.push({
+        id: 'aba-' + Date.now(),
+        titulo: 'Arquivos & Documentos',
+        arquivos: [],
+      })
+    }
+    const novaStore = { ...store, abasCustom: novasAbas }
+    await persistStore(novaStore)
+
+    if (abaCustomAtivaId === id) {
+      setAbaCustomAtivaId(novasAbas[0].id)
+    }
+    setConfirmExcluirAba((prev) => ({ ...prev, [id]: false }))
+    showToast(`🗑️ Aba "${titulo}" excluída com sucesso!`)
+  }
+
   const salvarEdicaoTitulo = async () => {
     if (!editingAnexoId || !editingTarget) return
     const novoTit = editingAnexoTitulo.trim() || undefined
@@ -643,12 +722,18 @@ export function ChecklistComponent() {
       )
       await persistStore({ ...store, anexos: novos })
     } else {
-      const novos = (store.arquivosExtras || []).map((a, i) =>
-        (a.id ? a.id === editingAnexoId : String(i) === editingAnexoId)
-          ? { ...a, titulo: novoTit }
-          : a
-      )
-      await persistStore({ ...store, arquivosExtras: novos })
+      const novasAbas = (store.abasCustom || []).map((aba) => {
+        if (aba.id === abaCustomAtiva.id) {
+          const novosArquivos = (aba.arquivos || []).map((a, i) =>
+            (a.id ? a.id === editingAnexoId : String(i) === editingAnexoId)
+              ? { ...a, titulo: novoTit }
+              : a
+          )
+          return { ...aba, arquivos: novosArquivos }
+        }
+        return aba
+      })
+      await persistStore({ ...store, abasCustom: novasAbas })
     }
     setEditingAnexoId(null)
     setEditingAnexoTitulo('')
@@ -663,13 +748,16 @@ export function ChecklistComponent() {
   }
 
   const abrirEdicaoNomeAba = () => {
-    setNovoNomeAba(store.tituloAbaArquivos || 'Arquivos & Documentos')
+    setNovoNomeAba(abaCustomAtiva.titulo || 'Arquivos & Documentos')
     setEditandoNomeAba(true)
   }
 
   const salvarNomeAba = async () => {
     const nome = novoNomeAba.trim() || 'Arquivos & Documentos'
-    await persistStore({ ...store, tituloAbaArquivos: nome })
+    const novasAbas = (store.abasCustom || []).map((a) =>
+      a.id === abaCustomAtiva.id ? { ...a, titulo: nome } : a
+    )
+    await persistStore({ ...store, abasCustom: novasAbas, tituloAbaArquivos: nome })
     setEditandoNomeAba(false)
     showToast(`Nome da aba atualizado para: "${nome}"`)
   }
@@ -904,9 +992,16 @@ export function ChecklistComponent() {
       dataChecklist: extraData || undefined,
     }))
 
-    const listaAtual = store.arquivosExtras || []
-    const novosArquivos = [...novos, ...listaAtual]
-    const novaStore = { ...store, arquivosExtras: novosArquivos }
+    const novasAbas = (store.abasCustom || []).map((aba) => {
+      if (aba.id === abaCustomAtiva.id) {
+        return {
+          ...aba,
+          arquivos: [...novos, ...(aba.arquivos || [])],
+        }
+      }
+      return aba
+    })
+    const novaStore = { ...store, abasCustom: novasAbas }
     await persistStore(novaStore)
 
     setPendExtra([])
@@ -915,7 +1010,7 @@ export function ChecklistComponent() {
     setExtraData('')
     setExtraFeedback({
       tipo: 'ok',
-      msg: `✅ ${novos.length} ARQUIVO(S) SALVO(S) COM SUCESSO!\nSalvos em ${quando} e disponíveis para visualização, download ou edição de título.`,
+      msg: `✅ ${novos.length} ARQUIVO(S) SALVO(S) COM SUCESSO!\nSalvos em ${quando} na aba "${abaCustomAtiva.titulo}" e disponíveis para visualização, download ou edição de título.`,
     })
     showToast(`📁 ${novos.length} arquivo(s) salvo(s) em ${quando}`)
   }
@@ -937,17 +1032,23 @@ export function ChecklistComponent() {
       return
     }
 
-    const novos = (store.arquivosExtras || []).filter((a, i) =>
-      a.id ? a.id !== id : String(i) !== id
-    )
-    const novaStore = { ...store, arquivosExtras: novos }
+    const novasAbas = (store.abasCustom || []).map((aba) => {
+      if (aba.id === abaCustomAtiva.id) {
+        const novos = (aba.arquivos || []).filter((a, i) =>
+          a.id ? a.id !== id : String(i) !== id
+        )
+        return { ...aba, arquivos: novos }
+      }
+      return aba
+    })
+    const novaStore = { ...store, abasCustom: novasAbas }
     await persistStore(novaStore)
     showToast(`Arquivo excluído: ${nome}`)
   }
 
   const extrasFiltrados = useMemo(() => {
     const busca = extraBusca.trim().toLowerCase()
-    const lista = store.arquivosExtras || []
+    const lista = abaCustomAtiva.arquivos || []
     return lista.filter((a) => {
       const t = tipoArq(a.nome, a.mime)
       const r = a.rotulo || t.rotulo
@@ -962,7 +1063,7 @@ export function ChecklistComponent() {
       }
       return true
     })
-  }, [store.arquivosExtras, extraBusca, extraFiltroTipo])
+  }, [abaCustomAtiva.arquivos, extraBusca, extraFiltroTipo])
 
   const statsExtrasPorTipo = useMemo(() => {
     const porTipo: Record<string, number> = {
@@ -972,7 +1073,7 @@ export function ChecklistComponent() {
       Imagem: 0,
       Arquivo: 0,
     }
-    const lista = store.arquivosExtras || []
+    const lista = abaCustomAtiva.arquivos || []
     lista.forEach((a) => {
       const t = tipoArq(a.nome, a.mime)
       const r = a.rotulo || t.rotulo
@@ -980,7 +1081,7 @@ export function ChecklistComponent() {
       porTipo[chave] = (porTipo[chave] || 0) + 1
     })
     return porTipo
-  }, [store.arquivosExtras])
+  }, [abaCustomAtiva.arquivos])
 
   // Colaboradores RH para autocomplete
   const colaboradoresFiltrados = useMemo(() => {
@@ -1700,7 +1801,7 @@ export function ChecklistComponent() {
         </div>
 
         {/* Tabs de navegação */}
-        <div className="ck-tabs noprint">
+        <div className="ck-tabs noprint flex items-center flex-wrap gap-2">
           <button
             type="button"
             className={`ck-tabbtn ${abaAtiva === 'principal' ? 'active' : ''}`}
@@ -1716,13 +1817,28 @@ export function ChecklistComponent() {
             📎 Anexar Check List Preenchido{' '}
             {store.anexos.length > 0 && `(${store.anexos.length})`}
           </button>
+          {(store.abasCustom || []).map((aba) => (
+            <button
+              key={aba.id}
+              type="button"
+              className={`ck-tabbtn ${abaAtiva === 'custom' && abaCustomAtivaId === aba.id ? 'active' : ''}`}
+              onClick={() => {
+                setAbaCustomAtivaId(aba.id)
+                setAbaAtiva('custom')
+              }}
+            >
+              📁 {aba.titulo || 'Arquivos'}{' '}
+              {(aba.arquivos?.length || 0) > 0 && `(${aba.arquivos.length})`}
+            </button>
+          ))}
           <button
             type="button"
-            className={`ck-tabbtn ${abaAtiva === 'arquivos' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('arquivos')}
+            className="ck-tabbtn flex items-center gap-1.5 font-bold text-blue-700 bg-blue-50 border-2 border-dashed border-blue-400 hover:bg-blue-100 hover:border-blue-600 transition-all cursor-pointer shadow-sm"
+            onClick={criarNovaAba}
+            title="Clique para adicionar uma nova aba personalizada de arquivos/documentos"
           >
-            📁 {store.tituloAbaArquivos || 'Arquivos & Documentos'}{' '}
-            {(store.arquivosExtras?.length || 0) > 0 && `(${store.arquivosExtras?.length})`}
+            <Plus size={16} className="text-blue-600 stroke-[3]" />
+            Nova Aba
           </button>
         </div>
 
@@ -2845,15 +2961,29 @@ export function ChecklistComponent() {
               </div>
             ) : (
               <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                <h2>📁 {store.tituloAbaArquivos || 'Arquivos & Documentos'}</h2>
-                <button
-                  type="button"
-                  className="ck-btn ck-btn-ghost text-xs py-1 px-3 flex items-center gap-1.5 border border-gray-400 font-bold"
-                  onClick={abrirEdicaoNomeAba}
-                  title="Clique para renomear esta aba"
-                >
-                  ✏️ Editar título da aba
-                </button>
+                <h2>📁 {abaCustomAtiva.titulo || 'Arquivos & Documentos'}</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="ck-btn ck-btn-ghost text-xs py-1 px-3 flex items-center gap-1.5 border border-gray-400 font-bold"
+                    onClick={abrirEdicaoNomeAba}
+                    title="Clique para renomear esta aba"
+                  >
+                    ✏️ Editar título da aba
+                  </button>
+                  {(store.abasCustom || []).length > 1 && (
+                    <button
+                      type="button"
+                      className="ck-btn text-xs py-1 px-3 flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-300 hover:bg-red-100 font-bold"
+                      onClick={() => excluirAbaCustom(abaCustomAtiva.id, abaCustomAtiva.titulo)}
+                      title="Excluir esta aba e seus arquivos"
+                    >
+                      {confirmExcluirAba[abaCustomAtiva.id]
+                        ? 'Confirmar exclusão da aba?'
+                        : '🗑️ Excluir aba'}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -2983,7 +3113,7 @@ export function ChecklistComponent() {
 
             <div className="ck-stats-anex">
               <div className="ck-stat">
-                <b>{(store.arquivosExtras || []).length}</b>
+                <b>{(abaCustomAtiva.arquivos || []).length}</b>
                 <span>Total de arquivos</span>
               </div>
               <div className="ck-stat">
@@ -3032,7 +3162,7 @@ export function ChecklistComponent() {
             </div>
 
             <div className="ck-arq-lista">
-              {!(store.arquivosExtras || []).length ? (
+              {!(abaCustomAtiva.arquivos || []).length ? (
                 <div className="ck-empty">
                   Nenhum arquivo ou documento salvo nesta aba ainda.
                   <br />

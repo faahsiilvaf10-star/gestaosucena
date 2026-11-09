@@ -125,5 +125,58 @@ describe('checklistData logic', () => {
     expect(store.arquivosExtras?.[0].titulo).toBe('Laudo Pericial de Segurança')
     expect(store.tituloAbaArquivos).toBe('Documentos & Laudos')
   })
+
+  it('deve suportar múltiplas abas customizadas com arquivos independentes', () => {
+    const store = {
+      modelos: [],
+      execucoes: [],
+      pendenciasResolvidas: {},
+      anexos: [],
+      abasCustom: [
+        {
+          id: 'aba-1',
+          titulo: 'Documentos Gerais',
+          arquivos: [
+            {
+              id: 'arq-1',
+              nome: 'documento1.pdf',
+              mime: 'application/pdf',
+              rotulo: 'PDF',
+              icone: '📕',
+              tamanho: 1024,
+              dataUrl: 'data:application/pdf;base64,JVBERi0xLg==',
+              anexadoEm: '09/11/2026 às 12:00',
+              titulo: 'Laudo de Iluminamento',
+            },
+          ],
+        },
+        {
+          id: 'aba-2',
+          titulo: 'Treinamentos e Certificados',
+          arquivos: [
+            {
+              id: 'arq-2',
+              nome: 'certificado-nr35.pdf',
+              mime: 'application/pdf',
+              rotulo: 'PDF',
+              icone: '📕',
+              tamanho: 2048,
+              dataUrl: 'data:application/pdf;base64,JVBERi0xLg==',
+              anexadoEm: '09/11/2026 às 12:05',
+              titulo: 'Certificado NR-35 Trabalho em Altura',
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(store.abasCustom.length).toBe(2)
+    expect(store.abasCustom[0].titulo).toBe('Documentos Gerais')
+    expect(store.abasCustom[0].arquivos.length).toBe(1)
+    expect(store.abasCustom[0].arquivos[0].titulo).toBe('Laudo de Iluminamento')
+    expect(store.abasCustom[1].titulo).toBe('Treinamentos e Certificados')
+    expect(store.abasCustom[1].arquivos.length).toBe(1)
+    expect(store.abasCustom[1].arquivos[0].titulo).toBe('Certificado NR-35 Trabalho em Altura')
+  })
 })
 
