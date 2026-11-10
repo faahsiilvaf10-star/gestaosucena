@@ -64,6 +64,65 @@ export type BrokenReasonValue = (typeof BROKEN_REASONS)[number]['value']
 
 export function getBrokenReasonLabel(value?: string | null): string {
   if (!value) return 'Defeito não especificado'
+  if (value === 'loaned' || value === 'Empréstimo') return 'Emprestado'
   const found = BROKEN_REASONS.find(r => r.value === value)
   return found ? found.label : value
+}
+
+/**
+ * Identifica se um equipamento está marcado como emprestado para outra empresa.
+ */
+export function isLoanedEquipment(eq: {
+  last_exit_reason?: string | null
+  status?: string | null
+  last_exit_description?: string | null
+} | null | undefined): boolean {
+  if (!eq) return false
+  const reason = (eq.last_exit_reason || '').toLowerCase().trim()
+  const status = (eq.status || '').toLowerCase().trim()
+  const desc = (eq.last_exit_description || '').toLowerCase().trim()
+
+  return (
+    reason === 'loaned' ||
+    reason === 'emprestimo' ||
+    reason === 'empréstimo' ||
+    status === 'emprestado' ||
+    desc.startsWith('empresa:')
+  )
+}
+
+/**
+ * Extrai a empresa e as observações de um registro de empréstimo.
+ */
+export function parseLoanDetails(
+  exitReason?: string | null,
+  exitDescription?: string | null
+): { company: string; notes: string } | null {
+  const isLoan = isLoanedEquipment({ last_exit_reason: exitReason, last_exit_description: exitDescription })
+  if (!isLoan) return null
+
+  const desc = (exitDescription || '').trim()
+  if (!desc) {
+    return { company: 'Empresa não informada', notes: '' }
+  }
+
+  const companyMatch = desc.match(/Empresa:\s*([^|\n]+)/i)
+  const company = companyMatch ? companyMatch[1].trim() : desc
+
+  const notesMatch = desc.match(/\|\s*(?:Obs(?:ervação|ervações)?:?\s*)?(.*)$/i)
+  const notes = notesMatch ? notesMatch[1].trim() : ''
+
+  return { company, notes }
+}
+
+/**
+ * Formata o texto persistido para saída de empréstimo.
+ */
+export function formatLoanDescription(company: string, notes?: string | null): string {
+  const cleanCompany = (company || '').trim()
+  const cleanNotes = (notes || '').trim()
+  if (!cleanNotes) {
+    return `Empresa: ${cleanCompany}`
+  }
+  return `Empresa: ${cleanCompany} | Obs: ${cleanNotes}`
 }

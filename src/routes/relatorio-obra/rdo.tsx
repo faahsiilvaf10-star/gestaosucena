@@ -759,9 +759,10 @@ function RDOPage() {
     const eqPesadosQuebrados = eqPesados.filter(isEqQuebrado);
     if (eqPesadosQuebrados.length > 0) {
       lines.push('');
-      lines.push(`⛔ EQUIPAMENTOS QUEBRADOS (${eqPesadosQuebrados.length})`);
+      lines.push(`⛔ EQUIPAMENTOS FORA DE OPERAÇÃO / QUEBRADOS / EMPRESTADOS (${eqPesadosQuebrados.length})`);
       eqPesadosQuebrados.forEach(eq => {
-        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Quebrado em ${eq.brokenDateTime || eq.outsideSince})`);
+        const isLoan = eq.last_exit_reason === 'loaned' || eq.status === 'Emprestado';
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (${isLoan ? 'Emprestado' : 'Quebrado'} em ${eq.brokenDateTime || eq.outsideSince})`);
       });
     }
 
@@ -792,9 +793,10 @@ function RDOPage() {
     const eqLevesQuebrados = eqLeves.filter(isEqQuebrado);
     if (eqLevesQuebrados.length > 0) {
       lines.push('');
-      lines.push(`⛔ EQUIPAMENTOS QUEBRADOS - LEVES/CANTEIRO (${eqLevesQuebrados.length})`);
+      lines.push(`⛔ EQUIPAMENTOS LEVES/CANTEIRO (QUEBRADOS / EMPRESTADOS) (${eqLevesQuebrados.length})`);
       eqLevesQuebrados.forEach(eq => {
-        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Quebrado em ${eq.brokenDateTime || eq.outsideSince})`);
+        const isLoan = eq.last_exit_reason === 'loaned' || eq.status === 'Emprestado';
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (${isLoan ? 'Emprestado' : 'Quebrado'} em ${eq.brokenDateTime || eq.outsideSince})`);
       });
     }
 
@@ -826,9 +828,10 @@ function RDOPage() {
 
     if (eqJardimQuebrados.length > 0) {
       lines.push('');
-      lines.push(`⛔ EQUIPAMENTOS JARDINAGEM QUEBRADOS (${eqJardimQuebrados.length})`);
+      lines.push(`⛔ EQUIPAMENTOS JARDINAGEM (QUEBRADOS / EMPRESTADOS) (${eqJardimQuebrados.length})`);
       eqJardimQuebrados.forEach(eq => {
-        lines.push(`• ${eq.name}${eq.plate_tag ? ` (${eq.plate_tag.toUpperCase()})` : ''} - Quebrado em ${eq.brokenDateTime || eq.outsideSince}`);
+        const isLoan = eq.last_exit_reason === 'loaned' || eq.status === 'Emprestado';
+        lines.push(`• ${eq.name}${eq.plate_tag ? ` (${eq.plate_tag.toUpperCase()})` : ''} - ${isLoan ? 'Emprestado' : 'Quebrado'} em ${eq.brokenDateTime || eq.outsideSince}`);
       });
     }
 
