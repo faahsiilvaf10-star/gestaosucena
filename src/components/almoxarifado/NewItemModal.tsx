@@ -48,6 +48,7 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
     setLoading(true)
     
     try {
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
       const { error } = await supabase.from('al_products').insert([{
         name: formData.name,
         internal_code: formData.internal_code,
@@ -57,7 +58,8 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
         min_stock: Number(formData.min_stock) >= 1000 ? 5 : (Number(formData.min_stock) || 0),
         ca_number: formData.ca_number || (Number(formData.min_stock) >= 1000 ? String(formData.min_stock) : null),
         location: formData.location,
-        description: formData.description
+        description: formData.description,
+        environment: currentEnv
       }])
 
       if (error) throw error

@@ -22,6 +22,15 @@ export const AVAILABLE_ENVIRONMENTS: EnvironmentInfo[] = [
   }
 ]
 
+export function getEnvironmentLabel(envId?: string | null): string {
+  if (!envId) return 'HYDRO REABILITAÇÃO (Contrato 4600012690)'
+  const found = AVAILABLE_ENVIRONMENTS.find(e => e.id.toLowerCase() === envId.toLowerCase())
+  if (found) {
+    return found.contract ? `${found.name} (${found.contract})` : found.name
+  }
+  return envId.toUpperCase()
+}
+
 // Mapeamento: userId -> array de IDs dos ambientes permitidos
 // Ex: { "uuid-1": ["barcarena"], "uuid-2": ["barcarena", "hydro-civil"] }
 export type UserEnvironmentAccessMap = {

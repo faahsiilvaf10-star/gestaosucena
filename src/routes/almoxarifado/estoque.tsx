@@ -23,6 +23,8 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import CheckSquare from 'lucide-react/dist/esm/icons/square-check.js';
 import Square from 'lucide-react/dist/esm/icons/square.js';
+import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left.js';
+import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -31,9 +33,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { NewItemModal } from '../../components/almoxarifado/NewItemModal';
 import { ImportStockModal } from '../../components/almoxarifado/ImportStockModal';
 import { StockUpdateModal } from '../../components/almoxarifado/StockUpdateModal';
+import { StockTransferModal } from '../../components/almoxarifado/StockTransferModal';
 import { EditItemModal } from '../../components/almoxarifado/EditItemModal';
 import { StockAlertBanner } from '../../components/almoxarifado/StockAlertBanner';
 import { canEditAlmoxarifado } from '../../components/ui/VerifiedBadge';
+import { getEnvironmentLabel, AVAILABLE_ENVIRONMENTS } from '../../lib/environmentAccess';
 
 export const Route = createFileRoute('/almoxarifado/estoque')({
   component: AlmoxarifadoRoute,
@@ -76,11 +80,17 @@ function AlmoxarifadoRoute() {
     estimatedValue: 0,
   });
 
+  // Environment state
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
+  });
+
   // Modals
   const [showNewItemModal, setShowNewItemModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [updateModalConfig, setUpdateModalConfig] = useState<{ product: any; type: 'in' | 'out' } | null>(null);
   const [editModalProduct, setEditModalProduct] = useState<any>(null);
+  const [transferModalProduct, setTransferModalProduct] = useState<any | null>(null);
 
   // Check if current user can edit
   const canEdit = canEditAlmoxarifado(userName, userRole);
@@ -88,19 +98,53 @@ function AlmoxarifadoRoute() {
   useEffect(() => {
     fetchData();
     fetchUserInfo();
+
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+      setCurrentEnv(newEnv);
+      fetchData(newEnv);
+    };
+
+    window.addEventListener('sucena_environment_change', handleEnvChange);
+    window.addEventListener('storage', handleEnvChange);
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange);
+      window.removeEventListener('storage', handleEnvChange);
+    };
   }, []);
 
-  const fetchData = async () => {
+  const handleSwitchEnvironment = (newEnvId: string) => {
+    if (newEnvId === currentEnv) return;
+    try {
+      localStorage.setItem('sucena_environment', newEnvId);
+      setCurrentEnv(newEnvId);
+      window.dispatchEvent(new CustomEvent('sucena_environment_change', { detail: newEnvId }));
+      fetchData(newEnvId);
+      toast.success(`Estoque alternado para ${getEnvironmentLabel(newEnvId)}`);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchData = async (envOverride?: string) => {
+    const env = envOverride || currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
     setLoading(true);
     try {
-      const { data: productsData, error } = await supabase
+      let query = supabase
         .from('al_products')
         .select(`
           *,
           al_categories(name)
         `)
-        .or('status.eq.Ativo,status.is.null')
-        .order('name');
+        .or('status.eq.Ativo,status.is.null');
+
+      if (env === 'barcarena') {
+        query = query.or('environment.eq.barcarena,environment.is.null');
+      } else {
+        query = query.eq('environment', env);
+      }
+
+      const { data: productsData, error } = await query.order('name');
 
       if (error) {
         console.error('Erro ao buscar produtos:', error.message);
@@ -348,10 +392,29 @@ function AlmoxarifadoRoute() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+              <Building2 size={13} /> {getEnvironmentLabel(currentEnv)}
+            </span>
+            <div className="relative">
+              <select
+                value={currentEnv}
+                onChange={e => handleSwitchEnvironment(e.target.value)}
+                className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 outline-none cursor-pointer"
+                title="Alternar visualização de estoque por contrato/ambiente"
+              >
+                {AVAILABLE_ENVIRONMENTS.map(env => (
+                  <option key={env.id} value={env.id}>
+                    Ver {env.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <h1 className="tracking-tight" style={{ fontSize: 'clamp(28px, 8vw, 54px)', lineHeight: '1' }}>
             Almoxarifado
           </h1>
-          <p className="text-sm text-gray-500">Gestão completa de estoque, EPIs, ferramentas e materiais.</p>
+          <p className="text-sm text-gray-500">Gestão completa de estoque, EPIs, ferramentas e transferências entre contratos.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -665,6 +728,13 @@ function AlmoxarifadoRoute() {
                                     >
                                       <ArrowUpFromLine size={16} />
                                     </button>
+                                    <button
+                                      onClick={() => setTransferModalProduct(product)}
+                                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors cursor-pointer"
+                                      title="Transferir para outro Contrato / Ambiente"
+                                    >
+                                      <ArrowRightLeft size={16} />
+                                    </button>
                                     {canEdit && (
                                       <button
                                         onClick={() => setItemToDelete(product)}
@@ -810,6 +880,20 @@ function AlmoxarifadoRoute() {
           onClose={() => setUpdateModalConfig(null)}
           onSuccess={() => {
             setUpdateModalConfig(null);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* Transfer Stock Between Environments Modal */}
+      {transferModalProduct && (
+        <StockTransferModal
+          product={transferModalProduct}
+          currentEnv={currentEnv}
+          userName={userName}
+          onClose={() => setTransferModalProduct(null)}
+          onSuccess={() => {
+            setTransferModalProduct(null);
             fetchData();
           }}
         />

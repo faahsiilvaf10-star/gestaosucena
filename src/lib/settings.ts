@@ -255,6 +255,10 @@ export type WhatsappSettings = {
     enabled_emprestado: boolean;
     specificGroupId: string;
   };
+  estoqueTransferencia?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
@@ -293,6 +297,7 @@ export type WhatsappSettings = {
     estoqueAlteracao: string;
     equipamentoQuebrado?: string;
     equipamentoEmprestado?: string;
+    estoqueTransferencia?: string;
   };
 };
 
@@ -363,6 +368,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
   // Notificações de alteração de quantidade
   estoqueAlteracao: {
     enabled: false,
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
+  },
+  // Transferência de estoque entre ambientes
+  estoqueTransferencia: {
+    enabled: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
   // Matriz de Responsabilidades
@@ -479,6 +489,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🚨 *ALERTA: EQUIPAMENTO MARCADO COMO QUEBRADO* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n⚠️ *Motivo do Defeito:* {motivo}\n📅 *Data e Hora:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n⚠️ _Equipamento paralisado. Não contará no RDO principal até ser regularizado._\n_Mensagem automática - Sucena / Gestão Operacional_",
     equipamentoEmprestado:
       "🤝 *AVISO: EQUIPAMENTO EMPRESTADO* 🤝\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n🏢 *Empresa Destino:* {empresa}\n📅 *Data e Hora do Empréstimo:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento cedido temporariamente à empresa informada._\n_Mensagem automática - Sucena / Gestão Operacional_",
+    estoqueTransferencia:
+      "🔄 *TRANSFERÊNCIA DE ESTOQUE ENTRE AMBIENTES* 🔄\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📂 *Categoria:* {categoria}\n🔢 *Quantidade Transferida:* {quantidade} {unidade}\n\n📤 *Origem:* {ambiente_origem}\n📥 *Destino:* {ambiente_destino}\n\n📊 *Saldos Atualizados:*\n• Saldo restante na Origem: {saldo_origem} {unidade}\n• Novo saldo no Destino: {saldo_destino} {unidade}\n\n📅 *Data e Hora:* {data_hora}\n👤 *Responsável:* {responsavel}\n📝 *Observações:* {observacoes}\n\n_Mensagem automática - Sucena Almoxarifado / Estoque_",
   },
 };
 
