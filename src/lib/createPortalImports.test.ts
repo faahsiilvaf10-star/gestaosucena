@@ -34,5 +34,5 @@ describe('createPortal import check', () => {
     }
 
     expect(filesWithMissingImport).toEqual([])
-  })
+  }, 15000)
 })

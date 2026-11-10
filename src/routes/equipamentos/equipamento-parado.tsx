@@ -598,8 +598,8 @@ function EquipamentoParadoPage() {
   return (
     <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
-      <div className="flex-none p-4 md:p-8 pb-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex-none p-3 sm:p-5 md:p-6 pb-2 sm:pb-3">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Link
@@ -640,12 +640,12 @@ function EquipamentoParadoPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 md:px-8 pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+      <div className="flex-1 px-3 sm:p-5 md:px-6 pb-6">
+        <div className="max-w-7xl mx-auto flex flex-col gap-6">
 
           {/* Cards de Métricas */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-1.5">
                   <CheckCircle2 size={16} /> Funcionando
@@ -658,7 +658,7 @@ function EquipamentoParadoPage() {
               </div>
             </div>
 
-            <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
+            <div className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
                   <TriangleAlert size={16} /> Quebrado / Parado
@@ -671,7 +671,7 @@ function EquipamentoParadoPage() {
               </div>
             </div>
 
-            <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
+            <div className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/60 border-black/10 backdrop-blur-md shadow-sm'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold uppercase tracking-wider opacity-60 flex items-center gap-1.5">
                   <Wrench size={16} /> Total de Equipamentos
@@ -691,7 +691,7 @@ function EquipamentoParadoPage() {
               <input
                 type="text"
                 placeholder="Buscar equipamento, tag ou categoria..."
-                className={`w-full border rounded-xl pl-11 pr-4 py-3 outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                className={`w-full border rounded-xl pl-10 pr-3 py-2 text-xs sm:text-sm outline-none transition-all ${isDark ? 'bg-white/5 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-white/45 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -699,7 +699,7 @@ function EquipamentoParadoPage() {
             <div className="relative">
               <button
                 onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowFilterMenu(false) }}
-                className={`border px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-red-600 text-white border-red-600' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
+                className={`border px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${filterCategory !== 'Todas as categorias' ? 'bg-red-600 text-white border-red-600' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white/45 border-black/10 hover:bg-white'}`}
               >
                 <Filter size={18} /> <span>{filterCategory === 'Todas as categorias' ? 'Categoria' : filterCategory}</span>
               </button>
@@ -769,94 +769,152 @@ function EquipamentoParadoPage() {
               </div>
             ) : (
               <>
-                {/* Tabela Desktop */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                {/* Tabela Desktop Otimizada (Encaixe Fluido em Qualquer Resolução, Sem Scroll Horizontal) */}
+                <div className="hidden md:block w-full overflow-hidden">
+                  <table className="w-full table-fixed text-left text-xs">
+                    <colgroup>
+                      <col className="w-[24%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[20%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[14%]" />
+                    </colgroup>
+                    <thead className={`border-b font-bold tracking-wider text-[11px] uppercase select-none ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/60'}`}>
                       <tr>
-                        <th className="p-4">EQUIPAMENTO</th>
-                        <th className="p-4">TAG / IDENTIFICAÇÃO</th>
-                        <th className="p-4">CATEGORIA</th>
-                        <th className="p-4">STATUS</th>
-                        <th className="p-4">DATA DO STATUS</th>
-                        <th className="p-4 text-right">AÇÕES</th>
+                        <th className="py-2.5 px-2.5 sm:px-3">EQUIPAMENTO</th>
+                        <th className="py-2.5 px-2 sm:px-2.5">TAG / IDENT.</th>
+                        <th className="py-2.5 px-2 sm:px-2.5">CATEGORIA</th>
+                        <th className="py-2.5 px-2 sm:px-2.5">STATUS</th>
+                        <th className="py-2.5 px-2 sm:px-2.5">DATA DO STATUS</th>
+                        <th className="py-2.5 px-2 sm:px-3 text-right">AÇÕES</th>
                       </tr>
                     </thead>
-                    <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
+                    <tbody className={`divide-y text-xs ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
                       {filteredEquipments.map(eq => {
                         const isBroken = isOutside(eq)
                         return (
-                          <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
-                            <td className="p-4 font-bold text-base">
-                              <div className="flex items-center gap-2">
+                          <tr key={eq.id} className={`transition-colors group ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
+                            {/* 1. EQUIPAMENTO */}
+                            <td className="py-2 px-2.5 sm:px-3">
+                              <div className="flex items-center gap-2 min-w-0">
                                 {isBroken ? (
-                                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                  <span className="w-2 h-2 shrink-0 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
                                 ) : (
-                                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                                  <span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                                 )}
-                                {eq.name}
+                                <span
+                                  className="font-bold text-xs sm:text-[13px] tracking-tight truncate block text-gray-900 dark:text-white"
+                                  title={eq.name}
+                                >
+                                  {eq.name}
+                                </span>
                               </div>
                             </td>
-                            <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}</td>
-                            <td className="p-4">{eq.category || '-'}</td>
-                            <td className="p-4">
-                              <div className="relative group/tooltip inline-block">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${!isBroken ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
+
+                            {/* 2. TAG / IDENTIFICAÇÃO */}
+                            <td className="py-2 px-2 sm:px-2.5 font-mono text-[11px] font-semibold tracking-wider uppercase opacity-80">
+                              <span className="truncate block" title={eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}>
+                                {eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}
+                              </span>
+                            </td>
+
+                            {/* 3. CATEGORIA */}
+                            <td className="py-2 px-2 sm:px-2.5 opacity-75">
+                              <span className="truncate block" title={eq.category || '-'}>
+                                {eq.category || '-'}
+                              </span>
+                            </td>
+
+                            {/* 4. STATUS COMPACTO */}
+                            <td className="py-2 px-2 sm:px-2.5">
+                              <div className="relative group/tooltip inline-flex flex-col min-w-0 max-w-full">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold max-w-full truncate shadow-sm ${
+                                    !isBroken
+                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                      : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300'
+                                  }`}
+                                >
                                   {!isBroken ? (
                                     <>
-                                      <CheckCircle2 size={13} /> Funcionando
+                                      <CheckCircle2 size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                      <span className="truncate">Funcionando</span>
                                     </>
                                   ) : (
                                     <>
-                                      <TriangleAlert size={13} /> Quebrado ({getBrokenReasonLabel(eq.last_exit_reason)})
+                                      <TriangleAlert size={12} className="shrink-0 text-red-600 dark:text-red-400" />
+                                      <span className="truncate">Quebrado</span>
                                     </>
                                   )}
                                 </span>
+                                {isBroken && eq.last_exit_reason && (
+                                  <span
+                                    className="text-[10px] text-red-600 dark:text-red-400 font-medium truncate mt-0.5 block max-w-[150px]"
+                                    title={getBrokenReasonLabel(eq.last_exit_reason)}
+                                  >
+                                    {getBrokenReasonLabel(eq.last_exit_reason)}
+                                  </span>
+                                )}
                                 {isBroken && eq.last_exit_description && (
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 shadow-xl pointer-events-none">
-                                    <div className="font-bold mb-1 opacity-60 text-[10px] uppercase">Observação do defeito</div>
-                                    {eq.last_exit_description}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                  <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-950 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-20 shadow-2xl pointer-events-none border border-white/10">
+                                    <div className="font-bold mb-0.5 opacity-60 text-[9px] uppercase tracking-wider">Defeito relatado</div>
+                                    <div className="leading-tight">{eq.last_exit_description}</div>
                                   </div>
                                 )}
                               </div>
                             </td>
-                            <td className="p-4 opacity-70 text-xs">
-                              <div className="flex items-center gap-1">
-                                <Clock size={12} />
-                                {isBroken ? (
-                                  <span className="text-red-600 dark:text-red-400 font-medium">
-                                    Quebrou em {new Date(eq.updated_at).toLocaleString('pt-BR')}
-                                  </span>
-                                ) : (
-                                  <span>
-                                    Operando desde {new Date(eq.updated_at).toLocaleString('pt-BR')}
-                                  </span>
-                                )}
+
+                            {/* 5. DATA DO STATUS */}
+                            <td className="py-2 px-2 sm:px-2.5 text-[11px] leading-tight">
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <Clock size={11} className="shrink-0 opacity-50" />
+                                  {isBroken ? (
+                                    <span className="text-red-600 dark:text-red-400 font-bold truncate">
+                                      Quebrou
+                                    </span>
+                                  ) : (
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate">
+                                      Operando
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="opacity-70 font-mono text-[10px] sm:text-[11px] truncate block">
+                                  {formatCompactDate(eq.updated_at)}
+                                </span>
                               </div>
                             </td>
-                            <td className="p-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
+
+                            {/* 6. AÇÕES */}
+                            <td className="py-2 px-2.5 sm:px-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
-                                  title="Histórico"
+                                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                                    isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'
+                                  }`}
+                                  title="Ver histórico de movimentações deste equipamento"
                                 >
-                                  <History size={18} />
+                                  <History size={15} />
                                 </button>
                                 {!isBroken ? (
                                   <button
                                     onClick={() => handleOpenMarkBroken(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors shadow-sm active:scale-[0.98]"
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-[11px] tracking-wide transition-all shadow-sm active:scale-95 shrink-0"
+                                    title="Marcar equipamento como quebrado / fora de operação"
                                   >
-                                    <TriangleAlert size={14} /> MARCAR QUEBRADO
+                                    <TriangleAlert size={12} />
+                                    <span>Parar</span>
                                   </button>
                                 ) : (
                                   <button
                                     onClick={() => handleOpenMarkWorking(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors shadow-sm active:scale-[0.98]"
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] tracking-wide transition-all shadow-sm active:scale-95 shrink-0"
+                                    title="Marcar equipamento como funcionando / operando"
                                   >
-                                    <Play size={14} /> MARCAR FUNCIONANDO
+                                    <Play size={12} />
+                                    <span>Liberar</span>
                                   </button>
                                 )}
                               </div>
@@ -868,72 +926,83 @@ function EquipamentoParadoPage() {
                   </table>
                 </div>
 
-                {/* Cards Mobile */}
-                <div className="md:hidden flex flex-col gap-3 p-4">
+                {/* Cards Mobile (< 768px) Otimizados e Compactos */}
+                <div className="md:hidden flex flex-col gap-2.5 p-3">
                   {filteredEquipments.map(eq => {
                     const isBroken = isOutside(eq)
                     return (
-                      <div key={eq.id} className={`w-full p-4 rounded-2xl border flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
+                      <div key={eq.id} className={`w-full p-3 rounded-xl border flex flex-col gap-2.5 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                         <div className="flex items-start justify-between gap-2">
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               {isBroken ? (
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                               ) : (
-                                <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                               )}
-                              <h3 className="font-bold text-lg">{eq.name}</h3>
+                              <h3 className="font-bold text-sm sm:text-base truncate">{eq.name}</h3>
                             </div>
-                            <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap mt-1">
-                              Tag: {eq.plate_tag ? eq.plate_tag.toUpperCase() : 'S/ Tag'}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="font-mono text-[11px] font-semibold tracking-wider uppercase opacity-70">
+                                Tag: {eq.plate_tag ? eq.plate_tag.toUpperCase() : 'S/ Tag'}
+                              </span>
+                              <span className="opacity-40">•</span>
+                              <span className="text-[11px] opacity-70 truncate">{eq.category || 'Sem categoria'}</span>
                             </div>
-                            <div className="text-xs opacity-70 mt-0.5">{eq.category || 'Sem categoria'}</div>
                           </div>
-                          <button onClick={() => handleOpenHistory(eq)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg opacity-70">
-                            <History size={18} />
+                          <button
+                            onClick={() => handleOpenHistory(eq)}
+                            className="p-1.5 bg-black/5 dark:bg-white/5 rounded-lg opacity-70 hover:opacity-100 shrink-0"
+                            title="Histórico"
+                          >
+                            <History size={16} />
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between mt-1">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${!isBroken ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-black/5 dark:border-white/5">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            !isBroken
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
+                              : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300'
+                          }`}>
                             {!isBroken ? (
                               <>
-                                <CheckCircle2 size={13} /> Funcionando
+                                <CheckCircle2 size={12} /> Funcionando
                               </>
                             ) : (
                               <>
-                                <TriangleAlert size={13} /> Quebrado
+                                <TriangleAlert size={12} /> Quebrado
                               </>
                             )}
                           </span>
-                          <span className="text-[10px] opacity-60 flex items-center gap-1">
-                            <Clock size={11} /> {new Date(eq.updated_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                          <span className="text-[10px] opacity-70 font-mono flex items-center gap-1">
+                            <Clock size={11} /> {formatCompactDate(eq.updated_at)}
                           </span>
                         </div>
 
                         {isBroken && eq.last_exit_reason && (
-                          <div className="text-xs bg-red-500/10 text-red-600 dark:text-red-400 p-2.5 rounded-xl border border-red-500/20">
+                          <div className="text-[11px] bg-red-500/10 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-500/20">
                             <div className="font-semibold">{getBrokenReasonLabel(eq.last_exit_reason)}</div>
                             {eq.last_exit_description && (
-                              <div className="opacity-80 text-[11px] mt-1">{eq.last_exit_description}</div>
+                              <div className="opacity-80 text-[10px] mt-0.5 leading-tight">{eq.last_exit_description}</div>
                             )}
                           </div>
                         )}
 
-                        <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col">
+                        <div className="pt-1">
                           {!isBroken ? (
                             <button
                               onClick={() => handleOpenMarkBroken(eq)}
-                              className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors min-h-[44px]"
+                              className="w-full flex justify-center items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors active:scale-98 shadow-sm"
                             >
-                              <TriangleAlert size={16} /> MARCAR QUEBRADO
+                              <TriangleAlert size={14} /> Marcar como Quebrado
                             </button>
                           ) : (
                             <button
                               onClick={() => handleOpenMarkWorking(eq)}
-                              className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-colors min-h-[44px]"
+                              className="w-full flex justify-center items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors active:scale-98 shadow-sm"
                             >
-                              <Play size={16} /> MARCAR FUNCIONANDO
+                              <Play size={14} /> Marcar como Funcionando
                             </button>
                           )}
                         </div>
