@@ -250,6 +250,11 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  equipamentosStatusAlerts?: {
+    enabled_quebrado: boolean;
+    enabled_emprestado: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
@@ -286,6 +291,8 @@ export type WhatsappSettings = {
     // Novos templates de estoque
     estoqueMinimo: string;
     estoqueAlteracao: string;
+    equipamentoQuebrado?: string;
+    equipamentoEmprestado?: string;
   };
 };
 
@@ -393,6 +400,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
+  equipamentosStatusAlerts: {
+    enabled_quebrado: true,
+    enabled_emprestado: true,
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
+  },
   messageTemplates: {
     vistoriaEquipamentoVencendo20Dias:
       "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
@@ -463,6 +475,10 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🚨 *HOJE É DIA DE INSPEÇÃO DE CANTEIRO (07:00)* 🚨\n\n📅 *Data:* {data_inspecao} (Hoje)\n📍 *Local:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n\n📊 *Situação Atual:*\n• Total de pontos: {total_pontos}\n• ✅ Corrigidos: {total_corrigidos}\n• ⏳ Pendentes: {total_pendentes}\n\n{lista_pendencias}\n\n_Favor verificar os pontos pendentes antes da fiscalização.\n_Mensagem automática - Sucena Segurança_",
     inspecaoCanteiroCorrecao:
       "✅ *ITEM DE INSPEÇÃO DE CANTEIRO CORRIGIDO*\n\n🏗️ *Ponto:* {titulo_item}\n📂 *Categoria:* {categoria}\n🚨 *Prioridade:* {prioridade}\n📍 *Local:* {local}\n📅 *Prazo:* {prazo}\n\n🛠️ *O que foi feito na correção:*\n{o_que_foi_feito}\n\n👤 *Atualizado por:* {usuario}\n🕒 *Concluído em:* {data_correcao}\n📊 *Progresso da Inspeção:* {total_corrigidos}/{total_pontos} itens corrigidos ({porcentagem}%)\n\n_Mensagem automática - Sucena Segurança_",
+    equipamentoQuebrado:
+      "🚨 *ALERTA: EQUIPAMENTO MARCADO COMO QUEBRADO* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n⚠️ *Motivo do Defeito:* {motivo}\n📅 *Data e Hora:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n⚠️ _Equipamento paralisado. Não contará no RDO principal até ser regularizado._\n_Mensagem automática - Sucena / Gestão Operacional_",
+    equipamentoEmprestado:
+      "🤝 *AVISO: EQUIPAMENTO EMPRESTADO* 🤝\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n🏢 *Empresa Destino:* {empresa}\n📅 *Data e Hora do Empréstimo:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento cedido temporariamente à empresa informada._\n_Mensagem automática - Sucena / Gestão Operacional_",
   },
 };
 
