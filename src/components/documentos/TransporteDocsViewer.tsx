@@ -97,7 +97,7 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
       const { data, error } = await supabase
         .from('eq_equipments')
         .select('id, name, plate_tag, type, category, status')
-        .ilike('category', '%pesado%')
+        .or('category.ilike.%pesado%,type.ilike.%ônibus%,type.ilike.%onibus%,name.ilike.%gerador%')
         .order('name');
       if (error) throw error;
       return (data || []) as HeavyEquipment[];
@@ -200,12 +200,18 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
     if (fileDriverInputRef.current) fileDriverInputRef.current.value = '';
   };
 
+  const getDocUrl = (filePath: string) => {
+    if (!filePath) return '';
+    if (filePath.startsWith('/') || filePath.startsWith('http') || filePath.startsWith('data:')) {
+      return filePath;
+    }
+    return supabase.storage.from('documentos_cargos').getPublicUrl(filePath).data.publicUrl;
+  };
+
   const handleDownload = async (doc: DocArquivo) => {
-    const { data } = supabase.storage.from('documentos_cargos').getPublicUrl(doc.file_path, {
-      download: doc.file_name
-    });
+    const url = getDocUrl(doc.file_path);
     const link = document.createElement('a');
-    link.href = data.publicUrl;
+    link.href = url;
     link.download = doc.file_name;
     document.body.appendChild(link);
     link.click();
@@ -375,37 +381,59 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
                   <Filter className={`w-4 h-4 shrink-0 ${isDark ? 'text-white/50' : 'text-gray-400'}`} />
                   <button
                     onClick={() => setSelectedEquipmentFilter('all')}
-                    className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all ${
+                    className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
                       selectedEquipmentFilter === 'all'
-                        ? 'bg-amber-500 text-black font-semibold'
+                        ? 'bg-amber-500 text-black font-semibold shadow-xs'
                         : isDark ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >
-                    Todos ({equipDocs.length})
+                    <span>Todos</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      selectedEquipmentFilter === 'all' ? 'bg-black/20 text-black' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                    }`}>
+                      {equipDocs.length}
+                    </span>
                   </button>
                   <button
                     onClick={() => setSelectedEquipmentFilter('geral')}
-                    className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all ${
+                    className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
                       selectedEquipmentFilter === 'geral'
-                        ? 'bg-amber-500 text-black font-semibold'
+                        ? 'bg-amber-500 text-black font-semibold shadow-xs'
                         : isDark ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >
-                    Frota Geral
+                    <span>Frota Geral</span>
+                    {equipDocs.filter(d => d.cargo_id === 'transporte_eq_geral').length > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        selectedEquipmentFilter === 'geral' ? 'bg-black/20 text-black' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {equipDocs.filter(d => d.cargo_id === 'transporte_eq_geral').length}
+                      </span>
+                    )}
                   </button>
-                  {equipments.map(eq => (
-                    <button
-                      key={eq.id}
-                      onClick={() => setSelectedEquipmentFilter(eq.id)}
-                      className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all ${
-                        selectedEquipmentFilter === eq.id
-                          ? 'bg-amber-500 text-black font-semibold'
-                          : isDark ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {eq.name}
-                    </button>
-                  ))}
+                  {equipments.map(eq => {
+                    const count = equipDocs.filter(d => d.cargo_id === `transporte_eq_${eq.id}`).length;
+                    return (
+                      <button
+                        key={eq.id}
+                        onClick={() => setSelectedEquipmentFilter(eq.id)}
+                        className={`px-3 py-1.5 text-xs rounded-xl font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                          selectedEquipmentFilter === eq.id
+                            ? 'bg-amber-500 text-black font-semibold shadow-xs'
+                            : isDark ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <span>{eq.name}</span>
+                        {count > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            selectedEquipmentFilter === eq.id ? 'bg-black/20 text-black' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          }`}>
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Search */}
@@ -448,7 +476,7 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {filteredEquipDocs.map((doc) => {
                     const isImage = doc.file_type.toLowerCase().includes('image') || doc.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif|svg|webp)$/);
-                    const publicUrl = supabase.storage.from('documentos_cargos').getPublicUrl(doc.file_path).data.publicUrl;
+                    const publicUrl = getDocUrl(doc.file_path);
                     const equipLabel = getEquipmentLabel(doc.cargo_id);
 
                     return (
@@ -798,7 +826,7 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
                   <div className="space-y-2.5">
                     {(driverDocsMap.get(selectedDriverForDocs.id) || []).map((doc) => {
                       const isImage = doc.file_type.toLowerCase().includes('image') || doc.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif|svg|webp)$/);
-                      const publicUrl = supabase.storage.from('documentos_cargos').getPublicUrl(doc.file_path).data.publicUrl;
+                      const publicUrl = getDocUrl(doc.file_path);
 
                       return (
                         <div 
@@ -923,7 +951,7 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
                 </Button>
                 
                 <a
-                  href={supabase.storage.from('documentos_cargos').getPublicUrl(previewDoc.file_path).data.publicUrl}
+                  href={getDocUrl(previewDoc.file_path)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-colors ${
@@ -947,13 +975,13 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/10">
               {previewDoc.file_type.toLowerCase().includes('image') || previewDoc.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif|svg|webp)$/) ? (
                 <img 
-                  src={supabase.storage.from('documentos_cargos').getPublicUrl(previewDoc.file_path).data.publicUrl} 
+                  src={getDocUrl(previewDoc.file_path)} 
                   alt={previewDoc.file_name} 
                   className="max-h-full max-w-full object-contain rounded-xl shadow-lg"
                 />
               ) : previewDoc.file_type.toLowerCase().includes('pdf') || previewDoc.file_name.toLowerCase().endsWith('.pdf') ? (
                 <iframe
-                  src={supabase.storage.from('documentos_cargos').getPublicUrl(previewDoc.file_path).data.publicUrl}
+                  src={getDocUrl(previewDoc.file_path)}
                   title={previewDoc.file_name}
                   className="w-full h-full rounded-xl border-none shadow-lg bg-white"
                 />

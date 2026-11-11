@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import transportCatalog from '@/data/transportDocuments.json';
 
 export type DocArquivo = {
   id: string;
@@ -18,17 +19,29 @@ export const useDocumentos = (cargoId: string) => {
     queryKey: ['documentos', cargoId],
     queryFn: async () => {
       if (!cargoId) return [];
-      const { data, error } = await supabase
-        .from('doc_arquivos')
-        .select('*')
-        .eq('cargo_id', cargoId)
-        .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error('Erro ao buscar documentos');
-        throw error;
+      const baseCatalog = (transportCatalog as DocArquivo[]).filter(d => d.cargo_id === cargoId);
+
+      try {
+        const { data, error } = await supabase
+          .from('doc_arquivos')
+          .select('*')
+          .eq('cargo_id', cargoId)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const map = new Map<string, DocArquivo>();
+          (data as DocArquivo[]).forEach(d => map.set(d.id, d));
+          baseCatalog.forEach(d => {
+            if (!map.has(d.id)) map.set(d.id, d);
+          });
+          return Array.from(map.values());
+        }
+      } catch (err) {
+        console.warn('Erro ao consultar doc_arquivos:', err);
       }
-      return data as DocArquivo[];
+
+      return baseCatalog;
     },
     enabled: !!cargoId
   });
@@ -39,17 +52,46 @@ export const useDocumentosByPrefix = (prefix: string) => {
     queryKey: ['documentos-prefix', prefix],
     queryFn: async () => {
       if (!prefix) return [];
-      const { data, error } = await supabase
-        .from('doc_arquivos')
-        .select('*')
-        .like('cargo_id', `${prefix}%`)
-        .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error('Erro ao buscar documentos');
-        throw error;
+      // 1. Catálogo base importado
+      const baseCatalog = (transportCatalog as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
+
+      // 2. Tentar ler de global_settings para novas inclusões dinâmicas
+      let dynamicCatalog: DocArquivo[] = [];
+      try {
+        const { data: gsData } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', 'transporte_docs_catalog')
+          .maybeSingle();
+        if (gsData?.value && Array.isArray(gsData.value)) {
+          dynamicCatalog = (gsData.value as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
+        }
+      } catch (err) {
+        console.warn('Erro ao ler catalogo remoto de global_settings:', err);
       }
-      return data as DocArquivo[];
+
+      // 3. Mesclar catálogo local com catálogo de global_settings
+      const mergedMap = new Map<string, DocArquivo>();
+      baseCatalog.forEach(d => mergedMap.set(d.id, d));
+      dynamicCatalog.forEach(d => mergedMap.set(d.id, d));
+
+      // 4. Buscar também da tabela doc_arquivos (para uploads manuais)
+      try {
+        const { data, error } = await supabase
+          .from('doc_arquivos')
+          .select('*')
+          .like('cargo_id', `${prefix}%`)
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          (data as DocArquivo[]).forEach(d => mergedMap.set(d.id, d));
+        }
+      } catch (err) {
+        console.warn('Erro ao consultar doc_arquivos:', err);
+      }
+
+      return Array.from(mergedMap.values());
     },
     enabled: !!prefix
   });
