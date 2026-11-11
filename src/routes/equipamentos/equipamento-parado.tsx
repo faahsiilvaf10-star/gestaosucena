@@ -784,8 +784,8 @@ function EquipamentoParadoPage() {
   return (
     <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
-      <div className="flex-none p-4 md:p-8 pb-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex-none p-3 md:p-6 pb-2">
+        <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Link
@@ -826,8 +826,8 @@ function EquipamentoParadoPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 md:px-8 pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+      <div className="flex-1 px-1 sm:px-3 pb-8">
+        <div className="w-full max-w-7xl mx-auto flex flex-col gap-4">
 
           {/* Cards de Métricas Clicáveis */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1020,15 +1020,15 @@ function EquipamentoParadoPage() {
               <>
                 {/* Tabela Desktop */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className={`border-b font-semibold text-[11px] uppercase tracking-wider ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/60'}`}>
                       <tr>
-                        <th className="p-4">EQUIPAMENTO</th>
-                        <th className="p-4">TAG / IDENTIFICAÇÃO</th>
-                        <th className="p-4">CATEGORIA</th>
-                        <th className="p-4">STATUS & DETALHES</th>
-                        <th className="p-4">DATA DO STATUS</th>
-                        <th className="p-4 text-right">AÇÕES</th>
+                        <th className="px-3 py-2.5">EQUIPAMENTO</th>
+                        <th className="px-2.5 py-2.5">TAG</th>
+                        <th className="px-2.5 py-2.5">CATEGORIA</th>
+                        <th className="px-2.5 py-2.5">STATUS & DETALHES</th>
+                        <th className="px-2.5 py-2.5">ATUALIZAÇÃO</th>
+                        <th className="px-3 py-2.5 text-right">AÇÕES</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
@@ -1039,40 +1039,49 @@ function EquipamentoParadoPage() {
 
                         return (
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
-                            <td className="p-4 font-bold text-base">
+                            <td className="px-3 py-2 font-bold text-xs sm:text-sm">
                               <div className="flex items-center gap-2">
                                 {isBroken ? (
-                                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                  <span className="w-2 h-2 shrink-0 rounded-full bg-red-500 animate-pulse" />
                                 ) : isLoaned ? (
-                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                                  <span className="w-2 h-2 shrink-0 rounded-full bg-blue-500" />
                                 ) : (
-                                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                                  <span className="w-2 h-2 shrink-0 rounded-full bg-green-500" />
                                 )}
-                                {eq.name}
+                                <span className="truncate max-w-[150px] lg:max-w-[220px] xl:max-w-none" title={eq.name}>
+                                  {eq.name}
+                                </span>
                               </div>
                             </td>
-                            <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}</td>
-                            <td className="p-4">{eq.category || '-'}</td>
-                            <td className="p-4">
-                              <div className="relative group/tooltip inline-flex flex-col gap-1">
+                            <td className="px-2.5 py-2 font-mono text-xs tracking-wider uppercase whitespace-nowrap">{eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}</td>
+                            <td className="px-2.5 py-2 text-xs opacity-80 whitespace-nowrap">{eq.category || '-'}</td>
+                            <td className="px-2.5 py-2">
+                              <div className="relative group/tooltip inline-flex flex-col gap-0.5">
                                 {isLoaned ? (
                                   <>
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
-                                      <Handshake size={13} /> Emprestado
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 w-fit whitespace-nowrap">
+                                      <Handshake size={12} /> Emprestado
                                     </span>
                                     {loanInfo?.company && (
-                                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400">
-                                        <Building2 size={12} /> {loanInfo.company}
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 truncate max-w-[130px]" title={loanInfo.company}>
+                                        <Building2 size={11} className="shrink-0" /> {loanInfo.company}
                                       </span>
                                     )}
                                   </>
                                 ) : isBroken ? (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
-                                    <TriangleAlert size={13} /> Quebrado ({getBrokenReasonLabel(eq.last_exit_reason)})
-                                  </span>
+                                  <>
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 w-fit whitespace-nowrap">
+                                      <TriangleAlert size={12} /> Quebrado
+                                    </span>
+                                    {eq.last_exit_reason && (
+                                      <span className="text-[10px] text-red-600/80 dark:text-red-400 font-medium truncate max-w-[130px]" title={getBrokenReasonLabel(eq.last_exit_reason)}>
+                                        {getBrokenReasonLabel(eq.last_exit_reason)}
+                                      </span>
+                                    )}
+                                  </>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
-                                    <CheckCircle2 size={13} /> Funcionando
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 w-fit whitespace-nowrap">
+                                    <CheckCircle2 size={12} /> Funcionando
                                   </span>
                                 )}
 
@@ -1087,80 +1096,73 @@ function EquipamentoParadoPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="p-4 opacity-70 text-xs">
-                              <div className="flex items-center gap-1">
-                                <Clock size={12} />
-                                {isLoaned ? (
-                                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                    Emprestado em {new Date(eq.updated_at).toLocaleString('pt-BR')}
-                                  </span>
-                                ) : isBroken ? (
-                                  <span className="text-red-600 dark:text-red-400 font-medium">
-                                    Quebrou em {new Date(eq.updated_at).toLocaleString('pt-BR')}
-                                  </span>
-                                ) : (
-                                  <span>
-                                    Operando desde {new Date(eq.updated_at).toLocaleString('pt-BR')}
-                                  </span>
-                                )}
+                            <td className="px-2.5 py-2 whitespace-nowrap">
+                              <div className="flex flex-col text-[11px] leading-tight">
+                                <span className={`font-semibold ${isLoaned ? 'text-blue-600 dark:text-blue-400' : isBroken ? 'text-red-600 dark:text-red-400' : 'opacity-80'}`}>
+                                  {isLoaned ? 'Emprestado' : isBroken ? 'Quebrou' : 'Operando'}
+                                </span>
+                                <span className="opacity-60 text-[10px] flex items-center gap-1 mt-0.5">
+                                  <Clock size={10} className="shrink-0" />
+                                  {new Date(eq.updated_at).toLocaleDateString('pt-BR')} {new Date(eq.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </div>
                             </td>
-                            <td className="p-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
                                   title="Histórico"
                                 >
-                                  <History size={18} />
+                                  <History size={16} />
                                 </button>
 
                                 {isLoaned ? (
                                   <>
                                     <button
                                       onClick={() => handleOpenMarkWorking(eq)}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors shadow-sm active:scale-[0.98]"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-green-600 text-white rounded-lg font-bold text-[11px] hover:bg-green-700 transition-colors shadow-sm active:scale-[0.98]"
                                       title="Receber de volta o equipamento emprestado"
                                     >
-                                      <Undo2 size={13} /> DEVOLVER
+                                      <Undo2 size={12} /> DEVOLVER
                                     </button>
                                     <button
                                       onClick={() => handleOpenMarkBroken(eq)}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg font-bold text-xs hover:bg-red-600 hover:text-white transition-colors"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg font-bold text-[11px] hover:bg-red-600 hover:text-white transition-colors"
                                       title="Marcar quebrado caso tenha retornado avariado"
                                     >
-                                      <TriangleAlert size={13} /> QUEBROU
+                                      <TriangleAlert size={12} /> QUEBROU
                                     </button>
                                   </>
                                 ) : isBroken ? (
                                   <>
                                     <button
                                       onClick={() => handleOpenMarkWorking(eq)}
-                                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors shadow-sm active:scale-[0.98]"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-green-600 text-white rounded-lg font-bold text-[11px] hover:bg-green-700 transition-colors shadow-sm active:scale-[0.98]"
                                     >
-                                      <Play size={13} /> FUNCIONANDO
+                                      <Play size={12} /> FUNCIONANDO
                                     </button>
                                     <button
                                       onClick={() => handleOpenMarkLoan(eq)}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-colors"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg font-bold text-[11px] hover:bg-blue-600 hover:text-white transition-colors"
                                     >
-                                      <Handshake size={13} /> EMPRESTAR
+                                      <Handshake size={12} /> EMPRESTAR
                                     </button>
                                   </>
                                 ) : (
                                   <>
                                     <button
                                       onClick={() => handleOpenMarkLoan(eq)}
-                                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98]"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white rounded-lg font-bold text-[11px] hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98]"
                                       title="Emprestar equipamento para outra empresa"
                                     >
-                                      <Handshake size={13} /> EMPRESTAR
+                                      <Handshake size={12} /> EMPRESTAR
                                     </button>
                                     <button
                                       onClick={() => handleOpenMarkBroken(eq)}
-                                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors shadow-sm active:scale-[0.98]"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white rounded-lg font-bold text-[11px] hover:bg-red-700 transition-colors shadow-sm active:scale-[0.98]"
                                     >
-                                      <TriangleAlert size={13} /> QUEBRADO
+                                      <TriangleAlert size={12} /> QUEBRADO
                                     </button>
                                   </>
                                 )}
