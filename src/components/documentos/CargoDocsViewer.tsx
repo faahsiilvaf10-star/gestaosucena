@@ -8,12 +8,15 @@ import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import UploadCloud from 'lucide-react/dist/esm/icons/cloud-upload.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import Search from 'lucide-react/dist/esm/icons/search.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDocumentos, useUploadDocumento, useDeleteDocumento, DocArquivo } from '@/hooks/useDocumentos';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useTheme } from '@/contexts/ThemeContext';
+import { PdfViewerModal } from '@/components/PdfViewerModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -50,6 +53,7 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [docToDelete, setDocToDelete] = useState<DocArquivo | null>(null);
+  const [selectedPdfViewer, setSelectedPdfViewer] = useState<{ url: string; title: string; fileType?: string } | null>(null);
 
   const filteredDocumentos = documentos?.filter(doc => 
     doc.file_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,9 +85,11 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-black/40 animate-in fade-in duration-300">
-      <div className={`relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-black/40 overflow-y-auto animate-in fade-in duration-300">
+      <div className={`relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border my-auto ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-gray-200'}`}>
         
         {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
@@ -184,13 +190,22 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
                     </div>
                     
                     <div className="flex items-center gap-2 shrink-0 ml-4">
-                      <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Baixar Arquivo">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setSelectedPdfViewer({ url: publicUrl, title: doc.file_name, fileType: doc.file_type })} 
+                        title="Visualizar em Tela Cheia"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-500/10 cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Baixar Arquivo" className="cursor-pointer">
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10" 
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10 cursor-pointer" 
                         onClick={() => setDocToDelete(doc)}
                         disabled={deleteMutation.isPending}
                         title="Excluir Arquivo"
@@ -224,7 +239,16 @@ export function CargoDocsViewer({ cargoId, cargoName, onClose }: CargoDocsViewer
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+
+      <PdfViewerModal
+        isOpen={!!selectedPdfViewer}
+        onClose={() => setSelectedPdfViewer(null)}
+        url={selectedPdfViewer?.url || null}
+        title={selectedPdfViewer?.title || 'Documento'}
+        fileType={selectedPdfViewer?.fileType}
+      />
+    </div>,
+    document.body
   );
 }
 

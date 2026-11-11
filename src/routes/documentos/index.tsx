@@ -6,6 +6,7 @@ import Users from 'lucide-react/dist/esm/icons/users.js';
 import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
 import Truck from 'lucide-react/dist/esm/icons/truck.js';
+import Leaf from 'lucide-react/dist/esm/icons/leaf.js';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -25,6 +26,7 @@ const CARGOS = [
   { id: 'admin', name: 'Administração', icon: Building2 },
   { id: 'mestre', name: 'Encarregado', icon: Hammer },
   { id: 'transporte', name: 'Transporte', icon: Truck },
+  { id: 'meio-ambiente', name: 'Meio Ambiente', icon: Leaf },
 ];
 
 function DocumentosIndex() {
