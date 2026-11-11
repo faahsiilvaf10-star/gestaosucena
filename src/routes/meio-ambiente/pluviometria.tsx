@@ -376,18 +376,18 @@ function PluviometriaPage() {
                     const daysInMonth = getDaysInMonth(year, mIdx)
                     return (
                       <tr key={monthName} className="border-b border-white/10">
-                        <td className="p-2 border-r border-white/20 text-left bg-black/60 text-[#1c1d21] dark:text-white">
+                        <td className="p-2 border-r border-gray-300 text-left bg-white text-black font-bold whitespace-nowrap shadow-xs">
                           {monthName}
                         </td>
                         {Array.from({ length: 31 }).map((_, dIdx) => {
                           const day = dIdx + 1
                           if (day > daysInMonth) {
-                            return <td key={day} className="border-r border-white/20 bg-black/80"></td>
+                            return <td key={day} className="border-r border-white/20 bg-neutral-900/90"></td>
                           }
                           const dateKey = `${year}-${String(mIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                           const valStr = data[dateKey] ?? ''
                           
-                          let bgColor = 'bg-transparent hover:bg-white/5' // Vazio
+                          let bgColor = 'bg-neutral-800/80 hover:bg-neutral-700/80' // Vazio
                           if (valStr !== '') {
                             const numericVal = parseFloat(valStr.replace(',', '.')) || 0
                             if (numericVal === 0) {
@@ -405,20 +405,20 @@ function PluviometriaPage() {
                           
                           return (
                             <td key={day} className={`border-r border-white/20 p-0 transition-colors ${bgColor} relative`}>
-                              <div className="absolute top-0.5 left-0 w-full text-[9px] text-center opacity-60 pointer-events-none font-medium leading-none">
+                              <div className="absolute top-0.5 left-0 w-full text-[9px] text-center text-white/80 pointer-events-none font-semibold leading-none">
                                 {dayLetter}
                               </div>
                               <input 
                                 type="text"
                                 value={valStr}
                                 onChange={(e) => handleValueChange(mIdx, day, e.target.value)}
-                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-[#1c1d21] dark:text-white outline-none focus:bg-white/20"
+                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-white font-bold outline-none focus:bg-white/20"
                                 style={{ minHeight: '34px' }}
                               />
                             </td>
                           )
                         })}
-                        <td className="p-2 bg-black/60 text-[#1c1d21] dark:text-white text-lg font-bold">
+                        <td className="p-2 bg-white text-black text-lg font-bold border-l border-gray-300 shadow-xs">
                           {monthTotals[mIdx]}
                         </td>
                       </tr>
@@ -427,7 +427,7 @@ function PluviometriaPage() {
                 </tbody>
               </table>
               <div className="flex justify-between items-end p-4 bg-black/80 border-t border-white/20">
-                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-[#1c1d21] dark:text-white font-medium tracking-wide uppercase">
+                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-white font-medium tracking-wide uppercase">
                   <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-sm"></div> SEM COLETA</div>
                   <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-sm"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
                 </div>
