@@ -17,6 +17,11 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
 import Users from 'lucide-react/dist/esm/icons/users.js';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase.js';
 import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import Download from 'lucide-react/dist/esm/icons/download.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
 import { createPortal } from 'react-dom';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
@@ -94,6 +99,19 @@ function DDSSchedulePage() {
   // Estados para Modal de Upload do DDS e Foto Expandida
   const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [selectedDdsDetail, setSelectedDdsDetail] = useState<{
+    id: string
+    dateStr: string
+    formattedDate: string
+    mediaUrl: string
+    tema: string
+    palestrante: string
+    corProibida?: string
+    location?: string
+    caption: string
+    createdAt: string
+    formattedTime: string
+  } | null>(null)
   const [uploadTarget, setUploadTarget] = useState<{ tema: string; palestrante: string }>({
     tema: '',
     palestrante: ''
@@ -249,6 +267,134 @@ function DDSSchedulePage() {
     if (!todayDdsData?.palestrante_id) return null
     return allSpeakersMap.get(todayDdsData.palestrante_id) || null
   }, [todayDdsData, allSpeakersMap])
+
+  // Buscar todas as fotos postadas de DDS no sistema
+  const { data: allDdsPosts = [], refetch: refetchAllDdsPosts } = useQuery({
+    queryKey: ['all_dds_posts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('social_posts')
+        .select(`
+          id,
+          user_id,
+          caption,
+          location,
+          created_at,
+          social_post_media (
+            media_url
+          )
+        `)
+        .or('caption.ilike.%DDS%,post_type.eq.dds')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error("Erro ao buscar todos os posts de DDS:", error)
+        return []
+      }
+
+      const parsed: Array<{
+        id: string
+        dateStr: string
+        formattedDate: string
+        mediaUrl: string
+        tema: string
+        palestrante: string
+        corProibida?: string
+        location?: string
+        caption: string
+        createdAt: string
+        formattedTime: string
+      }> = []
+
+      data?.forEach(post => {
+        const mediaUrl = post.social_post_media?.[0]?.media_url
+        if (!mediaUrl) return
+
+        const caption = post.caption || ''
+
+        let dateStr = ''
+        let formattedDate = ''
+        const dateMatch = caption.match(/\*\*Data:\*\*\s*(\d{2})\/(\d{2})\/(\d{4})/)
+        if (dateMatch) {
+          const [_, d, m, y] = dateMatch
+          dateStr = `${y}-${m}-${d}`
+          formattedDate = `${d}/${m}/${y}`
+        } else {
+          const dt = new Date(post.created_at)
+          const y = dt.getFullYear()
+          const m = String(dt.getMonth() + 1).padStart(2, '0')
+          const d = String(dt.getDate()).padStart(2, '0')
+          dateStr = `${y}-${m}-${d}`
+          formattedDate = `${d}/${m}/${y}`
+        }
+
+        const temaMatch = caption.match(/\*\*Tema:\*\*\s*([^\n*]+)/)
+        const tema = temaMatch ? temaMatch[1].trim() : 'DDS'
+
+        const palestranteMatch = caption.match(/\*\*Palestrante:\*\*\s*([^\n*]+)/)
+        const palestrante = palestranteMatch ? palestranteMatch[1].trim() : 'Livre'
+
+        const corMatch = caption.match(/\*\*Cor Proibida do Mês:\*\*\s*([^\n*]+)/)
+        const corProibida = corMatch ? corMatch[1].trim() : ''
+
+        const createdDt = new Date(post.created_at)
+        const formattedTime = createdDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+        parsed.push({
+          id: post.id,
+          dateStr,
+          formattedDate,
+          mediaUrl,
+          tema,
+          palestrante,
+          corProibida,
+          location: post.location || 'HYDRO REABILITAÇÃO',
+          caption,
+          createdAt: post.created_at,
+          formattedTime
+        })
+      })
+
+      return parsed
+    },
+    refetchInterval: 30000,
+    staleTime: 10000
+  })
+
+  // Mapeamento dateStr -> post de DDS
+  const ddsPostsByDate = useMemo(() => {
+    const map = new Map<string, typeof allDdsPosts[0]>()
+    allDdsPosts.forEach(post => {
+      if (!map.has(post.dateStr)) {
+        map.set(post.dateStr, post)
+      }
+    })
+    return map
+  }, [allDdsPosts])
+
+  // Download da foto do DDS em alta resolução
+  const handleDownloadDdsPhoto = async (url: string, dateStr: string, speakerName?: string) => {
+    try {
+      toast.loading('Iniciando download da foto do DDS...', { id: 'download-dds' })
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const safeSpeaker = (speakerName || 'palestrante').replace(/[^a-zA-Z0-9_-]/g, '_')
+      const fileName = `DDS_${dateStr}_${safeSpeaker}.jpg`
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(blobUrl)
+      toast.success('Foto baixada com sucesso!', { id: 'download-dds' })
+    } catch (err) {
+      console.warn('Erro ao baixar foto diretamente:', err)
+      window.open(url, '_blank')
+      toast.info('Abrindo foto em nova aba para salvar.', { id: 'download-dds' })
+    }
+  }
 
   const handleOpenDdsUpload = (targetTema?: string, targetPalestrante?: string) => {
     const t = targetTema !== undefined && targetTema !== '' ? targetTema : (todayDdsData?.tema || 'A DEFINIR')
@@ -548,6 +694,20 @@ function DDSSchedulePage() {
                 alt="Foto do DDS de Hoje" 
                 className="w-full h-auto max-h-[520px] object-cover sm:object-contain rounded-2xl transition-transform duration-300 group-hover:scale-[1.005]" 
               />
+              <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDownloadDdsPhoto(todayPostData.mediaUrl, todayDateStr, todayPalestrante?.nome)
+                  }}
+                  title="Baixar foto do DDS de hoje em alta resolução"
+                  className="bg-black/80 hover:bg-black text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 backdrop-blur-md shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar Foto</span>
+                </button>
+              </div>
               <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
                 <span className="bg-black/70 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg">
                   <ZoomIn className="w-4 h-4" />
@@ -633,6 +793,7 @@ function DDSSchedulePage() {
                   <th className="px-6 py-4 whitespace-nowrap">Dia</th>
                   <th className="px-6 py-4 whitespace-nowrap">Palestrante</th>
                   <th className="px-6 py-4 whitespace-nowrap">Tema</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Foto do DDS</th>
                   <th className="px-6 py-4 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
@@ -640,6 +801,7 @@ function DDSSchedulePage() {
                 {workDays.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd')
                   const entry = scheduleMap.get(dateStr)
+                  const post = ddsPostsByDate.get(dateStr)
                   const isCurrentDay = dateStr === todayDateStr
                   
                   return (
@@ -691,6 +853,60 @@ function DDSSchedulePage() {
                           <span className="text-[#5f6472] dark:text-gray-400">-</span>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {post ? (
+                          <div className="flex items-center gap-2.5">
+                            <div 
+                              onClick={() => setSelectedDdsDetail(post)}
+                              className="relative group/thumb cursor-pointer w-11 h-11 rounded-xl overflow-hidden border border-gray-200 shadow-xs hover:ring-2 hover:ring-blue-500 transition-all shrink-0 bg-gray-100"
+                              title="Clique para ver a foto com todos os detalhes"
+                            >
+                              <img 
+                                src={post.mediaUrl} 
+                                alt="Foto do DDS" 
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                              />
+                              <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                <Eye className="w-4 h-4" />
+                              </div>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full w-fit">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Foto postada
+                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadDdsPhoto(post.mediaUrl, post.dateStr, post.palestrante || entry?.palestrante?.nome)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                                  title="Baixar foto do DDS"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  <span>Baixar</span>
+                                </button>
+                                <span className="text-gray-300">•</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDdsDetail(post)}
+                                  className="text-[11px] text-gray-500 hover:text-gray-800 transition-colors font-medium"
+                                >
+                                  Detalhes
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDdsUpload(entry?.tema, entry?.palestrante?.nome)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 border border-dashed border-gray-300 transition-colors"
+                            title="Postar foto deste DDS"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>Adicionar</span>
+                          </button>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           {isCurrentDay && (
@@ -730,6 +946,7 @@ function DDSSchedulePage() {
             {workDays.map(day => {
               const dateStr = format(day, 'yyyy-MM-dd')
               const entry = scheduleMap.get(dateStr)
+              const post = ddsPostsByDate.get(dateStr)
               const isCurrentDay = dateStr === todayDateStr
               
               return (
@@ -797,6 +1014,52 @@ function DDSSchedulePage() {
                         <span className="text-[#5f6472] dark:text-gray-400 text-sm">-</span>
                       )}
                     </div>
+
+                    {/* Foto do DDS Mobile */}
+                    {post ? (
+                      <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center gap-3">
+                        <div 
+                          onClick={() => setSelectedDdsDetail(post)}
+                          className="w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-gray-200 relative group cursor-pointer"
+                          title="Clique para ver detalhes e foto ampliada"
+                        >
+                          <img src={post.mediaUrl} alt="Foto do DDS" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/25 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Eye className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Foto do DDS
+                          </span>
+                          <div className="flex items-center gap-3 mt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadDdsPhoto(post.mediaUrl, post.dateStr, post.palestrante || entry?.palestrante?.nome)}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Baixar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDdsDetail(post)}
+                              className="text-xs text-gray-600 hover:text-black font-medium"
+                            >
+                              Ver detalhes
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDdsUpload(entry?.tema, entry?.palestrante?.nome)}
+                        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-gray-600 hover:text-blue-600 bg-gray-50 border border-dashed border-gray-300 rounded-xl transition-colors"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Adicionar Foto do DDS
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -1018,11 +1281,137 @@ function DDSSchedulePage() {
         palestrante={uploadTarget.palestrante || 'Livre'}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['dds_post_today'] })
+          queryClient.invalidateQueries({ queryKey: ['all_dds_posts'] })
           queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
           refetchTodayPost()
+          refetchAllDdsPosts()
           toast.success("Foto do DDS postada com sucesso!")
         }}
       />
+
+      {/* Modal com Todos os Detalhes e Download da Foto do DDS */}
+      {selectedDdsDetail && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 cursor-default animate-in fade-in duration-200"
+          style={{ zIndex: 9999999 }}
+          onClick={() => setSelectedDdsDetail(null)}
+        >
+          <div 
+            className="relative w-full max-w-4xl max-h-[92vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Imagem em Destaque */}
+            <div className="relative md:w-3/5 bg-black flex items-center justify-center overflow-hidden min-h-[300px] md:min-h-[500px]">
+              <img 
+                src={selectedDdsDetail.mediaUrl} 
+                alt="Foto do DDS" 
+                className="w-full h-full max-h-[75vh] object-contain cursor-zoom-in"
+                onClick={() => setExpandedImage(selectedDdsDetail.mediaUrl)}
+                title="Clique para ver em tela cheia"
+              />
+              <button 
+                type="button"
+                onClick={() => setExpandedImage(selectedDdsDetail.mediaUrl)}
+                className="absolute bottom-3 left-3 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ZoomIn className="w-3.5 h-3.5" /> Tela cheia
+              </button>
+            </div>
+
+            {/* Painel de Detalhes e Download */}
+            <div className="md:w-2/5 p-6 flex flex-col justify-between overflow-y-auto max-h-[92vh]">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> DDS Realizado
+                  </span>
+                  <button 
+                    onClick={() => setSelectedDdsDetail(null)}
+                    className="p-2 rounded-full text-gray-400 hover:text-black hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 leading-snug mb-4">
+                  {selectedDdsDetail.tema || 'DDS Realizado'}
+                </h3>
+
+                <div className="space-y-3.5 border-t border-b border-gray-100 py-4 text-sm">
+                  <div className="flex items-start gap-3">
+                    <CalendarIcon className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Data do DDS</p>
+                      <p className="font-semibold text-gray-800">{selectedDdsDetail.formattedDate}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Users className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Palestrante</p>
+                      <p className="font-semibold text-gray-800">{selectedDdsDetail.palestrante || 'Livre'}</p>
+                    </div>
+                  </div>
+
+                  {selectedDdsDetail.corProibida && (
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium">Cor Proibida do Mês</p>
+                        <p className="font-semibold text-gray-800">{selectedDdsDetail.corProibida}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedDdsDetail.location && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium">Ambiente / Unidade</p>
+                        <p className="font-semibold text-gray-800">{selectedDdsDetail.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Horário da Postagem</p>
+                      <p className="font-medium text-gray-600">
+                        {new Date(selectedDdsDetail.createdAt).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedDdsDetail.caption && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                      Legenda / Informações Completas
+                    </p>
+                    <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {selectedDdsDetail.caption.replace(/[*#]/g, '')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Ação de Download com Alta Resolução */}
+              <div className="pt-5 mt-4 border-t border-gray-100">
+                <Button
+                  onClick={() => handleDownloadDdsPhoto(selectedDdsDetail.mediaUrl, selectedDdsDetail.dateStr, selectedDdsDetail.palestrante)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Baixar Foto (Alta Resolução)</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Expanded Image Modal */}
       {expandedImage && typeof document !== 'undefined' && createPortal(
