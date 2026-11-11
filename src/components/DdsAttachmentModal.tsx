@@ -15,6 +15,7 @@ interface DdsAttachmentModalProps {
   isOpen: boolean
   onClose: () => void
   currentDate?: string
+  currentMonth?: string // YYYY-MM
   environment?: string
   onSuccess?: () => void
 }
@@ -23,6 +24,7 @@ export function DdsAttachmentModal({
   isOpen,
   onClose,
   currentDate,
+  currentMonth,
   environment,
   onSuccess
 }: DdsAttachmentModalProps) {
@@ -51,13 +53,23 @@ export function DdsAttachmentModal({
 
   useEffect(() => {
     if (isOpen) {
-      if (currentDate) setTargetDate(currentDate)
+      if (currentDate) {
+        setTargetDate(currentDate)
+      } else if (currentMonth) {
+        // Se temos currentMonth mas não data específica, aponta pro dia 01 do mês ou hoje se for no mesmo mês
+        const todayStr = new Date().toISOString().split('T')[0]
+        if (todayStr.startsWith(currentMonth)) {
+          setTargetDate(todayStr)
+        } else {
+          setTargetDate(`${currentMonth}-01`)
+        }
+      }
       setSelectedFiles([])
       setDescription('')
       setIsUploading(false)
       setUploadProgress(null)
     }
-  }, [isOpen, currentDate])
+  }, [isOpen, currentDate, currentMonth])
 
   if (!isOpen) return null
   if (typeof document === 'undefined') return null
@@ -102,6 +114,7 @@ export function DdsAttachmentModal({
 
         try {
           const res = await uploadDdsFile(file, targetDate, environment)
+          const targetMonthStr = targetDate ? targetDate.slice(0, 7) : new Date().toISOString().slice(0, 7)
           uploadedList.push({
             id: `dds-att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: res.name,
@@ -111,6 +124,7 @@ export function DdsAttachmentModal({
             uploadedAt: new Date().toISOString(),
             uploadedBy: userStr,
             date: targetDate,
+            month: targetMonthStr,
             description: description.trim() || undefined,
             environment: environment || 'barcarena'
           })
@@ -154,10 +168,10 @@ export function DdsAttachmentModal({
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                Anexar Arquivos / PDF do DDS
+                Anexar Arquivos DDS Mensal
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Adicione múltiplos documentos, apresentações ou atas de DDS
+                Adicione múltiplos documentos, apresentações ou atas salvos no mês selecionado
               </p>
             </div>
           </div>
@@ -173,12 +187,12 @@ export function DdsAttachmentModal({
 
         {/* Modal Body */}
         <div className="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
-          {/* Data de Vínculo do DDS */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1.5">
-              Data do DDS *
-            </label>
-            <div className="relative">
+          {/* Data e Mês de Vínculo do DDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1.5 flex items-center justify-between">
+                <span>Data do DDS *</span>
+              </label>
               <input
                 type="date"
                 value={targetDate}
@@ -186,6 +200,25 @@ export function DdsAttachmentModal({
                 disabled={isUploading}
                 className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-white outline-none focus:border-blue-500 transition"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1.5">
+                Mês Salvo (Pasta Mensal)
+              </label>
+              <div className="flex items-center gap-2 h-[42px] px-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                <Calendar size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="capitalize">
+                  {targetDate ? (() => {
+                    try {
+                      const [y, m] = targetDate.split('-')
+                      const d = new Date(parseInt(y), parseInt(m) - 1, 1)
+                      return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                    } catch {
+                      return targetDate.slice(0, 7)
+                    }
+                  })() : 'Não definido'}
+                </span>
+              </div>
             </div>
           </div>
 

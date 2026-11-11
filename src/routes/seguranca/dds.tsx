@@ -24,6 +24,10 @@ import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
 import Paperclip from 'lucide-react/dist/esm/icons/paperclip.js';
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
+import Search from 'lucide-react/dist/esm/icons/search.js';
+import Filter from 'lucide-react/dist/esm/icons/filter.js';
+import RotateCcw from 'lucide-react/dist/esm/icons/rotate-ccw.js';
+import Folder from 'lucide-react/dist/esm/icons/folder.js';
 import { createPortal } from 'react-dom';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
@@ -150,6 +154,65 @@ function DDSSchedulePage() {
       toast.error('Erro ao excluir anexo.')
     }
   }
+
+  // Estados de Filtro para Arquivos DDS Mensal
+  const [attMonthFilter, setAttMonthFilter] = useState<string>('current') // 'current' | 'all' | 'YYYY-MM'
+  const [attTypeFilter, setAttTypeFilter] = useState<'all' | 'pdf' | 'image' | 'doc'>('all')
+  const [attSearchQuery, setAttSearchQuery] = useState('')
+
+  // Meses disponíveis para os documentos de DDS
+  const availableAttMonths = useMemo(() => {
+    const monthsMap = new Map<string, string>()
+    const curMonthKey = format(currentMonth, 'yyyy-MM')
+    monthsMap.set(curMonthKey, format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }))
+
+    ddsAttachments.forEach(att => {
+      const m = att.month || att.date?.slice(0, 7) || att.uploadedAt?.slice(0, 7)
+      if (m && !monthsMap.has(m)) {
+        try {
+          const [y, mon] = m.split('-')
+          const d = new Date(parseInt(y), parseInt(mon) - 1, 1)
+          monthsMap.set(m, format(d, "MMMM 'de' yyyy", { locale: ptBR }))
+        } catch {
+          monthsMap.set(m, m)
+        }
+      }
+    })
+
+    return Array.from(monthsMap.entries()).sort((a, b) => b[0].localeCompare(a[0]))
+  }, [ddsAttachments, currentMonth])
+
+  // Anexos filtrados por Mês, Tipo e Texto de Busca
+  const filteredAttachments = useMemo(() => {
+    const curMonthKey = format(currentMonth, 'yyyy-MM')
+    return ddsAttachments.filter(att => {
+      const attMonth = att.month || att.date?.slice(0, 7) || att.uploadedAt?.slice(0, 7)
+
+      // 1. Filtro de Mês
+      if (attMonthFilter === 'current') {
+        if (attMonth !== curMonthKey) return false
+      } else if (attMonthFilter !== 'all') {
+        if (attMonth !== attMonthFilter) return false
+      }
+
+      // 2. Filtro de Tipo de Arquivo
+      const isPdf = att.fileType === 'pdf' || att.name.toLowerCase().endsWith('.pdf')
+      if (attTypeFilter === 'pdf' && !isPdf) return false
+      if (attTypeFilter === 'image' && att.fileType !== 'image') return false
+      if (attTypeFilter === 'doc' && (isPdf || att.fileType === 'image')) return false
+
+      // 3. Filtro de Busca Textual
+      if (attSearchQuery.trim()) {
+        const q = attSearchQuery.toLowerCase()
+        const matchName = att.name.toLowerCase().includes(q)
+        const matchDesc = att.description?.toLowerCase().includes(q) || false
+        const matchAuthor = att.uploadedBy?.toLowerCase().includes(q) || false
+        if (!matchName && !matchDesc && !matchAuthor) return false
+      }
+
+      return true
+    })
+  }, [ddsAttachments, attMonthFilter, currentMonth, attTypeFilter, attSearchQuery])
 
   const todayDate = useMemo(() => new Date(), [])
   const todayDateStr = useMemo(() => format(todayDate, 'yyyy-MM-dd'), [todayDate])
@@ -788,14 +851,15 @@ function DDSSchedulePage() {
             </Button>
             <Button 
               onClick={() => {
-                setAttachmentTargetDate(todayDateStr)
+                const curMonthStr = format(currentMonth, 'yyyy-MM')
+                setAttachmentTargetDate(todayDateStr.startsWith(curMonthStr) ? todayDateStr : `${curMonthStr}-01`)
                 setIsAttachmentModalOpen(true)
               }} 
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium border-0 shadow-sm"
-              title="Anexar múltiplos arquivos ou PDFs para salvar no banco de dados"
+              title="Anexar múltiplos arquivos ou PDFs para salvar por mês no banco de dados"
             >
               <Paperclip className="w-4 h-4 mr-2" />
-              Anexar Arquivos / PDF
+              Anexar Arquivos DDS Mensal
             </Button>
             <Button 
               onClick={handleRandomize} 
@@ -817,45 +881,194 @@ function DDSSchedulePage() {
           </div>
         </div>
 
-        {/* Seção de Arquivos e PDFs Anexados do DDS */}
-        <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        {/* Seção: Arquivos DDS Mensal */}
+        <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <FileText className="w-5 h-5 text-emerald-600" />
-                <h2 className="text-xl font-bold text-black">Arquivos e PDFs do DDS</h2>
+                <h2 className="text-xl font-bold text-black">Arquivos DDS Mensal</h2>
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                  {ddsAttachments.length} {ddsAttachments.length === 1 ? 'arquivo' : 'arquivos'}
+                  {filteredAttachments.length} {filteredAttachments.length === 1 ? 'arquivo' : 'arquivos'}
+                  {ddsAttachments.length !== filteredAttachments.length && (
+                    <span className="text-emerald-700/70 font-normal ml-1">
+                      (de {ddsAttachments.length})
+                    </span>
+                  )}
                 </span>
+                {attMonthFilter === 'current' && (
+                  <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize">
+                    Mês: {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                )}
               </div>
               <p className="text-gray-500 text-sm mt-0.5">
-                Documentos, atas, listas de presença e materiais salvos no banco de dados
+                Documentos, atas, listas de presença e materiais salvos por mês no banco de dados
               </p>
             </div>
             <Button
               size="sm"
               onClick={() => {
-                setAttachmentTargetDate(todayDateStr)
+                const curMonthStr = format(currentMonth, 'yyyy-MM')
+                setAttachmentTargetDate(todayDateStr.startsWith(curMonthStr) ? todayDateStr : `${curMonthStr}-01`)
                 setIsAttachmentModalOpen(true)
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 mr-1.5" />
               Novo Anexo / PDF
             </Button>
           </div>
 
-          {ddsAttachments.length === 0 ? (
+          {/* Barra de Filtros e Busca */}
+          <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Campo de Busca */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={attSearchQuery}
+                onChange={e => setAttSearchQuery(e.target.value)}
+                placeholder="Buscar por nome, autor ou descrição..."
+                className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 transition"
+              />
+              {attSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setAttSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Filtro de Mês */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1 shrink-0">
+                <CalendarIcon className="w-3.5 h-3.5 text-gray-400" />
+                Mês:
+              </span>
+              <select
+                value={attMonthFilter}
+                onChange={e => setAttMonthFilter(e.target.value)}
+                className="text-xs font-semibold bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 outline-none focus:border-emerald-500 transition cursor-pointer capitalize"
+              >
+                <option value="current">
+                  Mês Atual ({format(currentMonth, "MMMM yyyy", { locale: ptBR })})
+                </option>
+                <option value="all">Todos os Meses</option>
+                {availableAttMonths
+                  .filter(([m]) => m !== format(currentMonth, 'yyyy-MM'))
+                  .map(([monthKey, label]) => (
+                    <option key={monthKey} value={monthKey}>
+                      {label}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Filtro de Tipo (Pills) */}
+            <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-200 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setAttTypeFilter('all')}
+                className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  attTypeFilter === 'all'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-100'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttTypeFilter('pdf')}
+                className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  attTypeFilter === 'pdf'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-100'
+                }`}
+              >
+                PDFs
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttTypeFilter('image')}
+                className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  attTypeFilter === 'image'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-100'
+                }`}
+              >
+                Imagens
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttTypeFilter('doc')}
+                className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                  attTypeFilter === 'doc'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-100'
+                }`}
+              >
+                Outros
+              </button>
+            </div>
+
+            {/* Botão Limpar Filtros */}
+            {(attMonthFilter !== 'current' || attTypeFilter !== 'all' || attSearchQuery.trim() !== '') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAttMonthFilter('current')
+                  setAttTypeFilter('all')
+                  setAttSearchQuery('')
+                }}
+                className="text-xs font-semibold text-gray-500 hover:text-red-600 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 transition cursor-pointer"
+                title="Restaurar filtros padrões"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Limpar
+              </button>
+            )}
+          </div>
+
+          {/* Cards ou Empty State */}
+          {filteredAttachments.length === 0 ? (
             <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500 text-sm bg-gray-50/40">
               <FileText className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-              <p className="font-semibold text-gray-700">Nenhum arquivo ou PDF anexado ainda.</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Clique no botão "Anexar Arquivos / PDF" para adicionar e visualizar em tela cheia.
-              </p>
+              {ddsAttachments.length === 0 ? (
+                <>
+                  <p className="font-semibold text-gray-700">Nenhum arquivo ou PDF anexado ainda.</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Clique no botão "Novo Anexo / PDF" para adicionar e salvar no mês selecionado.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-gray-700">Nenhum documento encontrado com os filtros selecionados.</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Tente selecionar outro mês, limpar a busca ou alternar para "Todos os Meses".
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttMonthFilter('all')
+                      setAttTypeFilter('all')
+                      setAttSearchQuery('')
+                    }}
+                    className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Mostrar Todos os Meses ({ddsAttachments.length})
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {ddsAttachments.map((att) => {
+              {filteredAttachments.map((att) => {
                 const isPdf = att.fileType === 'pdf' || att.name.toLowerCase().endsWith('.pdf')
                 return (
                   <div
@@ -875,12 +1088,17 @@ function DDSSchedulePage() {
                         >
                           {isPdf ? 'PDF' : att.fileType.toUpperCase()}
                         </span>
-                        {att.date && (
+                        {att.date ? (
                           <span className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3 text-gray-400" />
                             {format(new Date(att.date + 'T12:00:00'), 'dd/MM/yyyy')}
                           </span>
-                        )}
+                        ) : att.month ? (
+                          <span className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
+                            <CalendarIcon className="w-3 h-3 text-gray-400" />
+                            {att.month}
+                          </span>
+                        ) : null}
                       </div>
 
                       <h4
@@ -1645,6 +1863,7 @@ function DDSSchedulePage() {
         isOpen={isAttachmentModalOpen}
         onClose={() => setIsAttachmentModalOpen(false)}
         currentDate={attachmentTargetDate}
+        currentMonth={format(currentMonth, 'yyyy-MM')}
         environment={currentEnvironment}
         onSuccess={() => refetchAttachments()}
       />

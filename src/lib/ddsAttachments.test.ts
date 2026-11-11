@@ -72,4 +72,38 @@ describe('ddsAttachments', () => {
       })
     )
   })
+
+  it('deve associar o mês correto ao anexo mensal do DDS', async () => {
+    const mockUpsert = vi.fn().mockResolvedValue({ error: null })
+    vi.spyOn(supabase, 'from').mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { value: [] }, error: null }),
+      upsert: mockUpsert
+    } as any)
+
+    const item: DdsAttachment = {
+      id: 'att-mensal-1',
+      name: 'ata_mensal_novembro.pdf',
+      url: 'https://storage.com/ata_mensal_novembro.pdf',
+      fileType: 'pdf',
+      size: 2048,
+      uploadedAt: '2026-11-11T10:00:00Z',
+      date: '2026-11-11',
+      month: '2026-11'
+    }
+
+    const ok = await saveDdsAttachments([item], 'barcarena')
+    expect(ok).toBe(true)
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        value: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'att-mensal-1',
+            month: '2026-11'
+          })
+        ])
+      })
+    )
+  })
 })

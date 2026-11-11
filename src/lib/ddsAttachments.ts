@@ -9,6 +9,7 @@ export interface DdsAttachment {
   uploadedAt: string
   uploadedBy?: string
   date?: string // YYYY-MM-DD (data do DDS ao qual o arquivo está vinculado)
+  month?: string // YYYY-MM (mês de referência do arquivo)
   description?: string
   environment?: string
 }
