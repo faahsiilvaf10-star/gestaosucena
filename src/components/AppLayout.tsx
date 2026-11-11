@@ -500,7 +500,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           paddingBottom: 'max(32px, calc(32px + env(safe-area-inset-bottom, 0px)))',
           transition: 'margin-left .28s cubic-bezier(.16,1,.3,1), width .28s cubic-bezier(.16,1,.3,1), padding-left .28s cubic-bezier(.16,1,.3,1)',
           willChange: 'margin-left, width, padding-left',
-          transform: 'translateZ(0)',
         }}
       >
         {/* Barra superior persistente em todo o sistema */}

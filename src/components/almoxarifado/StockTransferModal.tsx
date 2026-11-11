@@ -7,6 +7,7 @@ import Package from 'lucide-react/dist/esm/icons/package.js'
 import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js'
 import PlusCircle from 'lucide-react/dist/esm/icons/circle-plus.js'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { AVAILABLE_ENVIRONMENTS, getEnvironmentLabel } from '../../lib/environmentAccess'
@@ -213,9 +214,11 @@ export function StockTransferModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-lg rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-lg rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 bg-gradient-to-r from-blue-600/10 to-indigo-600/10">
@@ -384,6 +387,7 @@ export function StockTransferModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

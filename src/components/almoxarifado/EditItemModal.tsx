@@ -4,6 +4,7 @@ import Save from 'lucide-react/dist/esm/icons/save.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { sendStockQuantityChangeWhatsappNotification } from '../../lib/whatsappHelpers'
@@ -158,9 +159,11 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative my-auto">
 
         {/* Modal de Confirmação de Exclusão */}
         {showDeleteConfirm && (
@@ -354,6 +357,7 @@ export function EditItemModal({ product, userName, onClose, onSuccess }: EditIte
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

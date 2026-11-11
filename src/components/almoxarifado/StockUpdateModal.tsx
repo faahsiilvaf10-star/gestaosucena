@@ -2,6 +2,7 @@ import X from 'lucide-react/dist/esm/icons/x.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { sendStockQuantityChangeWhatsappNotification } from '../../lib/whatsappHelpers'
@@ -86,9 +87,11 @@ export function StockUpdateModal({ product, type, userName = 'Almoxarifado', onC
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-[#faf9f6] dark:bg-[#101014] w-full max-w-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
 
         <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
           <h2 className="text-xl font-bold font-evantic tracking-wide text-[#1c1d21] dark:text-white">
@@ -164,7 +167,8 @@ export function StockUpdateModal({ product, type, userName = 'Almoxarifado', onC
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
