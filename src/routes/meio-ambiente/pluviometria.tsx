@@ -436,14 +436,14 @@ function PluviometriaPage() {
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-between items-end p-4 bg-black/80 border-t border-white/20">
-                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-white font-medium tracking-wide uppercase">
-                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-sm"></div> SEM COLETA</div>
-                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-sm"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
+              <div className="flex justify-between items-end p-4 bg-white border-t border-gray-300 rounded-b-xl">
+                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-black font-bold tracking-wide uppercase">
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-xs rounded-xs"></div> SEM COLETA</div>
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-xs rounded-xs"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-4xl font-bold text-green-500">{grandTotal}</span>
-                  <span className="text-sm border border-green-500/50 px-2 py-0.5 rounded text-green-500 mt-1">TOTAL ANUAL</span>
+                  <span className="text-4xl font-extrabold text-green-600">{grandTotal}</span>
+                  <span className="text-xs font-bold border border-green-600/50 px-2.5 py-0.5 rounded-full text-green-700 bg-green-50 mt-1 shadow-xs tracking-wider">TOTAL ANUAL</span>
                 </div>
               </div>
             </div>
