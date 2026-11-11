@@ -13,12 +13,25 @@ import CalendarDays from 'lucide-react/dist/esm/icons/calendar-days.js';
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js';
 import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check.js';
 import Info from 'lucide-react/dist/esm/icons/info.js';
+import Paperclip from 'lucide-react/dist/esm/icons/paperclip.js';
+import Upload from 'lucide-react/dist/esm/icons/upload.js';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import { toast } from 'sonner'
+import {
+  getInspectionFiles,
+  saveInspectionFile,
+  uploadInspectionFile,
+  type InspectionFilesRecord,
+  type InspectionDocFile,
+  type DocFieldKey
+} from '../../lib/inspectionFileUpload'
 
 export const Route = createFileRoute('/equipamentos/vistoria')({
   component: VistoriaPage,
@@ -96,6 +109,67 @@ function VistoriaPage() {
   // Edit states keyed by equipment id
   const [editingEqs, setEditingEqs] = useState<Record<string, EditState>>({})
   const [savingEqs, setSavingEqs] = useState<Record<string, boolean>>({})
+
+  // Anexos de vistorias / laudos salvos no banco de dados
+  const [inspectionFiles, setInspectionFiles] = useState<InspectionFilesRecord>({})
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null)
+
+  const loadFiles = async () => {
+    const files = await getInspectionFiles()
+    setInspectionFiles(files)
+  }
+
+  const handleFileUpload = async (equipmentId: string, docType: DocFieldKey, file: File) => {
+    const uploadKey = `${equipmentId}_${docType}`
+    setUploadingDoc(uploadKey)
+    try {
+      toast.loading(`Enviando ${file.name}...`, { id: uploadKey })
+      const uploaded = await uploadInspectionFile(file, equipmentId, docType)
+      const fileInfo: InspectionDocFile = {
+        url: uploaded.url,
+        name: uploaded.name,
+        uploadedAt: new Date().toISOString()
+      }
+      const ok = await saveInspectionFile(equipmentId, docType, fileInfo)
+      if (ok) {
+        setInspectionFiles(prev => ({
+          ...prev,
+          [equipmentId]: {
+            ...(prev[equipmentId] || {}),
+            [docType]: fileInfo
+          }
+        }))
+        toast.success(`Arquivo "${file.name}" anexado com sucesso!`, { id: uploadKey })
+      } else {
+        toast.error(`Falha ao salvar anexo no banco de dados.`, { id: uploadKey })
+      }
+    } catch (err: any) {
+      console.error('Erro no upload de vistoria:', err)
+      toast.error(err.message || 'Erro ao realizar upload do arquivo.', { id: uploadKey })
+    } finally {
+      setUploadingDoc(null)
+    }
+  }
+
+  const handleRemoveFile = async (equipmentId: string, docType: DocFieldKey) => {
+    try {
+      const ok = await saveInspectionFile(equipmentId, docType, null)
+      if (ok) {
+        setInspectionFiles(prev => {
+          const copy = { ...prev }
+          if (copy[equipmentId]) {
+            const eqCopy = { ...copy[equipmentId] }
+            delete eqCopy[docType]
+            copy[equipmentId] = eqCopy
+          }
+          return copy
+        })
+        toast.info('Arquivo anexado removido com sucesso.')
+      }
+    } catch (err) {
+      toast.error('Erro ao remover anexo.')
+    }
+  }
   
   // Track if there are unsaved changes
   const hasUnsavedChanges = Object.keys(editingEqs).length > 0
@@ -128,6 +202,7 @@ function VistoriaPage() {
 
       if (sbError) throw sbError
       setEquipments(data || [])
+      await loadFiles()
     } catch (err: any) {
       console.error('Erro ao buscar equipamentos:', err)
       setError('Não foi possível carregar os equipamentos.')
@@ -440,6 +515,9 @@ function VistoriaPage() {
                     ins?.tachograph_expiry
                   ].filter(Boolean).length
 
+                  const eqFiles = inspectionFiles[eq.id] || {}
+                  const attachedFilesCount = Object.keys(eqFiles).length
+
                   return (
                     <div key={eq.id} className={`flex flex-col rounded-2xl border shadow-sm transition-colors overflow-hidden ${isDark ? 'bg-[#121214] border-white/10' : 'bg-white border-black/10'}`}>
                       
@@ -452,10 +530,16 @@ function VistoriaPage() {
                           <h3 className="font-bold text-2xl tracking-tight">{eq.name}</h3>
                           <div className="font-mono text-xs tracking-wider uppercase opacity-70 mt-1">{eq.plate_tag}</div>
                         </div>
-                        <div className="text-right flex flex-col items-end">
+                        <div className="text-right flex flex-col items-end gap-1">
                           <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-white/10' : 'bg-black/5'}`}>
                             {docsCount} {docsCount === 1 ? 'documento' : 'documentos'}
                           </span>
+                          {attachedFilesCount > 0 && (
+                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <Paperclip size={11} />
+                              {attachedFilesCount} {attachedFilesCount === 1 ? 'anexo' : 'anexos'}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -468,6 +552,10 @@ function VistoriaPage() {
                           isEditing={isEditing}
                           onChange={(val) => updateEditState(eq.id, 'opacity_report_expiry', val)}
                           isDark={isDark}
+                          fileInfo={eqFiles.opacity_report}
+                          isUploading={uploadingDoc === `${eq.id}_opacity_report`}
+                          onUploadFile={(file) => handleFileUpload(eq.id, 'opacity_report', file)}
+                          onRemoveFile={() => handleRemoveFile(eq.id, 'opacity_report')}
                         />
                         <div className="h-px bg-black/5 dark:bg-white/5 w-full"></div>
                         
@@ -478,6 +566,10 @@ function VistoriaPage() {
                           isEditing={isEditing}
                           onChange={(val) => updateEditState(eq.id, 'mechanical_report_expiry', val)}
                           isDark={isDark}
+                          fileInfo={eqFiles.mechanical_report}
+                          isUploading={uploadingDoc === `${eq.id}_mechanical_report`}
+                          onUploadFile={(file) => handleFileUpload(eq.id, 'mechanical_report', file)}
+                          onRemoveFile={() => handleRemoveFile(eq.id, 'mechanical_report')}
                         />
                         <div className="h-px bg-black/5 dark:bg-white/5 w-full"></div>
                         
@@ -488,6 +580,10 @@ function VistoriaPage() {
                           isEditing={isEditing}
                           onChange={(val) => updateEditState(eq.id, 'maintenance_plan_expiry', val)}
                           isDark={isDark}
+                          fileInfo={eqFiles.maintenance_plan}
+                          isUploading={uploadingDoc === `${eq.id}_maintenance_plan`}
+                          onUploadFile={(file) => handleFileUpload(eq.id, 'maintenance_plan', file)}
+                          onRemoveFile={() => handleRemoveFile(eq.id, 'maintenance_plan')}
                         />
                         <div className="h-px bg-black/5 dark:bg-white/5 w-full"></div>
                         
@@ -498,6 +594,10 @@ function VistoriaPage() {
                           isEditing={isEditing}
                           onChange={(val) => updateEditState(eq.id, 'tachograph_expiry', val)}
                           isDark={isDark}
+                          fileInfo={eqFiles.tachograph}
+                          isUploading={uploadingDoc === `${eq.id}_tachograph`}
+                          onUploadFile={(file) => handleFileUpload(eq.id, 'tachograph', file)}
+                          onRemoveFile={() => handleRemoveFile(eq.id, 'tachograph')}
                         />
                       </div>
 
@@ -546,11 +646,21 @@ function VistoriaPage() {
 }
 
 function DocRow({ 
-  label, currentDate, editValue, isEditing, onChange, isDark 
+  label, currentDate, editValue, isEditing, onChange, isDark,
+  fileInfo, isUploading, onUploadFile, onRemoveFile
 }: { 
-  label: string, currentDate: string | null | undefined, editValue: string | undefined, 
-  isEditing: boolean, onChange: (v: string) => void, isDark: boolean 
+  label: string, 
+  currentDate: string | null | undefined, 
+  editValue: string | undefined, 
+  isEditing: boolean, 
+  onChange: (v: string) => void, 
+  isDark: boolean,
+  fileInfo?: InspectionDocFile | null,
+  isUploading?: boolean,
+  onUploadFile?: (file: File) => void,
+  onRemoveFile?: () => void
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const daysRemaining = getDaysRemaining(currentDate)
   const info = getStatusInfo(daysRemaining)
   
@@ -572,8 +682,94 @@ function DocRow({
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs uppercase tracking-wider font-semibold opacity-70 mb-1">{label}</div>
+    <div className="flex flex-col gap-1.5">
+      {/* Cabeçalho da Linha com Label e Ação de Upload */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs uppercase tracking-wider font-semibold opacity-70 truncate">{label}</div>
+        
+        {/* Upload / Ver Arquivo */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf,image/*,.doc,.docx"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file && onUploadFile) {
+                onUploadFile(file)
+              }
+              e.target.value = ''
+            }}
+          />
+
+          {fileInfo ? (
+            <div className="inline-flex items-center gap-1">
+              <a
+                href={fileInfo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Visualizar documento anexado: ${fileInfo.name}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all ${
+                  isDark
+                    ? 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 border border-blue-500/30'
+                    : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-sm'
+                }`}
+              >
+                <FileCheck size={12} className="text-emerald-500 shrink-0" />
+                <span className="truncate max-w-[85px] sm:max-w-[120px]">{fileInfo.name}</span>
+                <ExternalLink size={10} className="opacity-60 shrink-0" />
+              </a>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                title="Substituir arquivo anexado"
+                className={`p-1 rounded transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+              >
+                {isUploading ? <RefreshCw size={11} className="animate-spin text-blue-500" /> : <Pencil size={11} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={onRemoveFile}
+                disabled={isUploading}
+                title="Remover anexo"
+                className="p-1 rounded text-red-500/70 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              title="Fazer upload de laudo ou documento (PDF ou imagem)"
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all ${
+                isDark
+                  ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'
+                  : 'bg-black/5 hover:bg-black/10 text-black/70 hover:text-black border border-black/10 shadow-xs'
+              }`}
+            >
+              {isUploading ? (
+                <>
+                  <RefreshCw size={11} className="animate-spin text-blue-500" />
+                  <span>Enviando...</span>
+                </>
+              ) : (
+                <>
+                  <Paperclip size={11} />
+                  <span>Anexar</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Linha com Data e Badge de Status */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-h-[32px]">
         {isEditing ? (
           <div className="w-full">

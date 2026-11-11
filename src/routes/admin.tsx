@@ -172,6 +172,10 @@ function AdminRoute() {
       enabled: false,
       specificGroupId: '120363406691114696@g.us' // Grupo de estoque
     },
+    estoqueTransferencia: {
+      enabled: true,
+      specificGroupId: '120363406691114696@g.us' // Grupo de estoque
+    },
     inspecaoCanteiro: {
       enabled_agendamento: true,
       enabled_dia_inspecao_0700: true,
@@ -380,6 +384,10 @@ function AdminRoute() {
         estoqueAlteracao: {
           ...waSettings.estoqueAlteracao,
           specificGroupId: waSettings.estoqueAlteracao?.specificGroupId || '120363406691114696@g.us'
+        },
+        estoqueTransferencia: {
+          ...waSettings.estoqueTransferencia,
+          specificGroupId: waSettings.estoqueTransferencia?.specificGroupId || '120363406691114696@g.us'
         },
         inspecaoCanteiro: {
           ...waSettings.inspecaoCanteiro,
@@ -1475,6 +1483,87 @@ function AdminRoute() {
               </div>
             </div>
 
+            {/* Nova Seção: Notificações de Equipamento Quebrado e Emprestado */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <span className="text-xl">⚠️</span>
+                Notificações de Equipamentos (Quebrado / Emprestado)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia mensagens automáticas para o grupo de Avisos quando um equipamento for marcado como quebrado ou emprestado para outra empresa.
+              </p>
+
+              <div className="space-y-4">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        equipamentosStatusAlerts: {
+                          ...prev.equipamentosStatusAlerts!,
+                          enabled_quebrado: !(prev.equipamentosStatusAlerts?.enabled_quebrado ?? true)
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.equipamentosStatusAlerts?.enabled_quebrado ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.equipamentosStatusAlerts?.enabled_quebrado ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Alerta de Equipamento Quebrado</span>
+                      <span className={`text-[11px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Dispara aviso no grupo com motivo do defeito e observações</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.equipamentosStatusAlerts?.enabled_quebrado ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.equipamentosStatusAlerts?.enabled_quebrado ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({
+                        ...prev,
+                        equipamentosStatusAlerts: {
+                          ...prev.equipamentosStatusAlerts!,
+                          enabled_emprestado: !(prev.equipamentosStatusAlerts?.enabled_emprestado ?? true)
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.equipamentosStatusAlerts?.enabled_emprestado ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.equipamentosStatusAlerts?.enabled_emprestado ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Aviso de Equipamento Emprestado</span>
+                      <span className={`text-[11px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Dispara aviso no grupo com empresa que recebeu e data/hora</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.equipamentosStatusAlerts?.enabled_emprestado ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.equipamentosStatusAlerts?.enabled_emprestado ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <WhatsappGroupIdField
+                    label="ID do Grupo para Avisos de Quebrado / Emprestado"
+                    value={whatsappSettings.equipamentosStatusAlerts?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      equipamentosStatusAlerts: {
+                        enabled_quebrado: prev.equipamentosStatusAlerts?.enabled_quebrado ?? true,
+                        enabled_emprestado: prev.equipamentosStatusAlerts?.enabled_emprestado ?? true,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Quando preenchido, os alertas de equipamento quebrado e emprestado serão enviados para este grupo específico (padrão: Grupo de Avisos)."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Nova Seção: Notificações de Inspeção de Cintas */}
             <div className="mt-12 pt-8 border-t border-white/10">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
@@ -1956,6 +2045,49 @@ function AdminRoute() {
                     onChange={val => setWhatsappSettings(prev => ({ ...prev, estoqueAlteracao: { ...prev.estoqueAlteracao!, specificGroupId: val } }))}
                     disabled={isWhatsappLocked}
                     helpText="Grupo que receberá as notificações de alteração de estoque. Se deixar em branco, será usado o grupo padrão."
+                    recommendedGroupId="120363406691114696@g.us"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nova Seção: Notificações de Transferência de Estoque entre Ambientes */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                <span className="text-xl">🔄</span>
+                Notificações de Transferência de Estoque (Ambientes)
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Envia automaticamente uma mensagem detalhada para o WhatsApp de Estoque sempre que qualquer EPI, ferramenta ou material for transferido de um contrato/ambiente para outro.
+              </p>
+
+              <div className="space-y-6">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => !isWhatsappLocked && setWhatsappSettings(prev => ({ ...prev, estoqueTransferencia: { ...prev.estoqueTransferencia!, enabled: !prev.estoqueTransferencia?.enabled } }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${whatsappSettings.estoqueTransferencia?.enabled ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${whatsappSettings.estoqueTransferencia?.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm block">Ativar envio de transferências entre ambientes</span>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>↳ Detalha origem, destino, quantidade, saldos e responsável</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${whatsappSettings.estoqueTransferencia?.enabled ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {whatsappSettings.estoqueTransferencia?.enabled ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <WhatsappGroupIdField
+                    label="ID do grupo para transferências de estoque"
+                    value={whatsappSettings.estoqueTransferencia?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({ ...prev, estoqueTransferencia: { ...prev.estoqueTransferencia!, specificGroupId: val } }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Grupo que receberá os detalhes de transferências entre contratos. Padrão: Grupo de Estoque."
                     recommendedGroupId="120363406691114696@g.us"
                   />
                 </div>
@@ -2558,7 +2690,10 @@ function AdminRoute() {
                     { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' },
                     { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' },
                     { key: 'vistoriaEquipamentoVencendo1Dia', label: 'Vistoria Equipamento (1 Dia Antes)' },
-                    { key: 'viradaCorDoMesFerramentas', label: 'Virada Cor do Mês (Ferramentas)' }
+                    { key: 'viradaCorDoMesFerramentas', label: 'Virada Cor do Mês (Ferramentas)' },
+                    { key: 'equipamentoQuebrado', label: 'Equipamento Quebrado' },
+                    { key: 'equipamentoEmprestado', label: 'Equipamento Emprestado' },
+                    { key: 'estoqueTransferencia', label: 'Transferência de Estoque' }
                   ].map(t => (
                     <button
                       key={t.key}
@@ -2613,6 +2748,9 @@ function AdminRoute() {
                     {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
                     {(selectedTemplate === 'vistoriaEquipamentoVencendo20Dias' || selectedTemplate === 'vistoriaEquipamentoVencendo1Dia') && '{equipamento}, {placa_tag}, {tipo_vistoria}, {data_vencimento}, {dias_restantes}'}
                     {selectedTemplate === 'viradaCorDoMesFerramentas' && '{mes_nome}, {ano}, {cor_atual}, {cor_anterior_proibida}'}
+                    {selectedTemplate === 'equipamentoQuebrado' && '{equipamento}, {tag}, {categoria}, {motivo}, {data_hora}, {responsavel}, {observacoes}'}
+                    {selectedTemplate === 'equipamentoEmprestado' && '{equipamento}, {tag}, {categoria}, {empresa}, {data_hora}, {responsavel}, {observacoes}'}
+                    {selectedTemplate === 'estoqueTransferencia' && '{produto}, {codigo}, {categoria}, {quantidade}, {unidade}, {ambiente_origem}, {ambiente_destino}, {saldo_origem}, {saldo_destino}, {data_hora}, {responsavel}, {observacoes}'}
                   </div>
                 </div>
               </div>

@@ -250,6 +250,15 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  equipamentosStatusAlerts?: {
+    enabled_quebrado: boolean;
+    enabled_emprestado: boolean;
+    specificGroupId: string;
+  };
+  estoqueTransferencia?: {
+    enabled: boolean;
+    specificGroupId: string;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
@@ -286,6 +295,9 @@ export type WhatsappSettings = {
     // Novos templates de estoque
     estoqueMinimo: string;
     estoqueAlteracao: string;
+    equipamentoQuebrado?: string;
+    equipamentoEmprestado?: string;
+    estoqueTransferencia?: string;
   };
 };
 
@@ -358,6 +370,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled: false,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
   },
+  // Transferência de estoque entre ambientes
+  estoqueTransferencia: {
+    enabled: true,
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.ESTOQUE,
+  },
   // Matriz de Responsabilidades
   matrizResponsabilidade: {
     enabled: true,
@@ -391,6 +408,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
   },
   viradaCorDoMes: {
     enabled: true,
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
+  },
+  equipamentosStatusAlerts: {
+    enabled_quebrado: true,
+    enabled_emprestado: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   messageTemplates: {
@@ -463,6 +485,12 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🚨 *HOJE É DIA DE INSPEÇÃO DE CANTEIRO (07:00)* 🚨\n\n📅 *Data:* {data_inspecao} (Hoje)\n📍 *Local:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n\n📊 *Situação Atual:*\n• Total de pontos: {total_pontos}\n• ✅ Corrigidos: {total_corrigidos}\n• ⏳ Pendentes: {total_pendentes}\n\n{lista_pendencias}\n\n_Favor verificar os pontos pendentes antes da fiscalização.\n_Mensagem automática - Sucena Segurança_",
     inspecaoCanteiroCorrecao:
       "✅ *ITEM DE INSPEÇÃO DE CANTEIRO CORRIGIDO*\n\n🏗️ *Ponto:* {titulo_item}\n📂 *Categoria:* {categoria}\n🚨 *Prioridade:* {prioridade}\n📍 *Local:* {local}\n📅 *Prazo:* {prazo}\n\n🛠️ *O que foi feito na correção:*\n{o_que_foi_feito}\n\n👤 *Atualizado por:* {usuario}\n🕒 *Concluído em:* {data_correcao}\n📊 *Progresso da Inspeção:* {total_corrigidos}/{total_pontos} itens corrigidos ({porcentagem}%)\n\n_Mensagem automática - Sucena Segurança_",
+    equipamentoQuebrado:
+      "🚨 *ALERTA: EQUIPAMENTO MARCADO COMO QUEBRADO* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n⚠️ *Motivo do Defeito:* {motivo}\n📅 *Data e Hora:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n⚠️ _Equipamento paralisado. Não contará no RDO principal até ser regularizado._\n_Mensagem automática - Sucena / Gestão Operacional_",
+    equipamentoEmprestado:
+      "🤝 *AVISO: EQUIPAMENTO EMPRESTADO* 🤝\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n🏢 *Empresa Destino:* {empresa}\n📅 *Data e Hora do Empréstimo:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento cedido temporariamente à empresa informada._\n_Mensagem automática - Sucena / Gestão Operacional_",
+    estoqueTransferencia:
+      "🔄 *TRANSFERÊNCIA DE ESTOQUE ENTRE AMBIENTES* 🔄\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📂 *Categoria:* {categoria}\n🔢 *Quantidade Transferida:* {quantidade} {unidade}\n\n📤 *Origem:* {ambiente_origem}\n📥 *Destino:* {ambiente_destino}\n\n📊 *Saldos Atualizados:*\n• Saldo restante na Origem: {saldo_origem} {unidade}\n• Novo saldo no Destino: {saldo_destino} {unidade}\n\n📅 *Data e Hora:* {data_hora}\n👤 *Responsável:* {responsavel}\n📝 *Observações:* {observacoes}\n\n_Mensagem automática - Sucena Almoxarifado / Estoque_",
   },
 };
 

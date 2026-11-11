@@ -2,6 +2,7 @@ import X from 'lucide-react/dist/esm/icons/x.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import Save from 'lucide-react/dist/esm/icons/save.js';
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 
 interface Category {
@@ -48,6 +49,7 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
     setLoading(true)
     
     try {
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
       const { error } = await supabase.from('al_products').insert([{
         name: formData.name,
         internal_code: formData.internal_code,
@@ -57,7 +59,8 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
         min_stock: Number(formData.min_stock) >= 1000 ? 5 : (Number(formData.min_stock) || 0),
         ca_number: formData.ca_number || (Number(formData.min_stock) >= 1000 ? String(formData.min_stock) : null),
         location: formData.location,
-        description: formData.description
+        description: formData.description,
+        environment: currentEnv
       }])
 
       if (error) throw error
@@ -70,9 +73,11 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl my-auto">
         
         {/* Header */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
@@ -222,7 +227,8 @@ export function NewItemModal({ onClose, onSuccess }: NewItemModalProps) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -375,26 +375,34 @@ function PluviometriaPage() {
                   {MONTHS.map((monthName, mIdx) => {
                     const daysInMonth = getDaysInMonth(year, mIdx)
                     return (
-                      <tr key={monthName} className="border-b border-white/10">
-                        <td className="p-2 border-r border-white/20 text-left bg-black/60 text-[#1c1d21] dark:text-white">
+                      <tr key={monthName} className="border-b border-gray-300">
+                        <td className="p-2 border-r border-gray-300 text-left bg-white text-black font-bold whitespace-nowrap shadow-xs">
                           {monthName}
                         </td>
                         {Array.from({ length: 31 }).map((_, dIdx) => {
                           const day = dIdx + 1
                           if (day > daysInMonth) {
-                            return <td key={day} className="border-r border-white/20 bg-black/80"></td>
+                            return <td key={day} className="border-r border-white/20 bg-neutral-900/90"></td>
                           }
                           const dateKey = `${year}-${String(mIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                           const valStr = data[dateKey] ?? ''
+                          const isFilled = valStr !== ''
                           
-                          let bgColor = 'bg-transparent hover:bg-white/5' // Vazio
-                          if (valStr !== '') {
+                          let bgColor = 'bg-white hover:bg-neutral-100' // Vazio (quadrinho branco)
+                          let textColor = 'text-black'
+                          let dayLetterColor = 'text-black font-semibold'
+                          let cellBorder = 'border-r border-gray-300'
+
+                          if (isFilled) {
                             const numericVal = parseFloat(valStr.replace(',', '.')) || 0
                             if (numericVal === 0) {
                               bgColor = 'bg-red-600 hover:bg-red-500' // Zero
-                            } else if (numericVal > 0) {
+                            } else {
                               bgColor = 'bg-green-600 hover:bg-green-500' // Maior que zero
                             }
+                            textColor = 'text-white'
+                            dayLetterColor = 'text-white/90 font-semibold'
+                            cellBorder = 'border-r border-white/20'
                           }
                           
                           // Calcular dia da semana (0 = Dom, 1 = Seg...)
@@ -404,21 +412,23 @@ function PluviometriaPage() {
                           const dayLetter = daysOfWek[dayOfWeekIdx]
                           
                           return (
-                            <td key={day} className={`border-r border-white/20 p-0 transition-colors ${bgColor} relative`}>
-                              <div className="absolute top-0.5 left-0 w-full text-[9px] text-center opacity-60 pointer-events-none font-medium leading-none">
+                            <td key={day} className={`p-0 transition-colors ${bgColor} ${cellBorder} relative`}>
+                              <div className={`absolute top-0.5 left-0 w-full text-[9px] text-center ${dayLetterColor} pointer-events-none leading-none`}>
                                 {dayLetter}
                               </div>
                               <input 
                                 type="text"
                                 value={valStr}
                                 onChange={(e) => handleValueChange(mIdx, day, e.target.value)}
-                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-[#1c1d21] dark:text-white outline-none focus:bg-white/20"
+                                className={`w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center ${textColor} font-bold outline-none ${
+                                  isFilled ? 'focus:bg-white/20' : 'focus:bg-neutral-200/50'
+                                }`}
                                 style={{ minHeight: '34px' }}
                               />
                             </td>
                           )
                         })}
-                        <td className="p-2 bg-black/60 text-[#1c1d21] dark:text-white text-lg font-bold">
+                        <td className="p-2 bg-white text-black text-lg font-bold border-l border-gray-300 shadow-xs">
                           {monthTotals[mIdx]}
                         </td>
                       </tr>
@@ -426,14 +436,14 @@ function PluviometriaPage() {
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-between items-end p-4 bg-black/80 border-t border-white/20">
-                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-[#1c1d21] dark:text-white font-medium tracking-wide uppercase">
-                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-sm"></div> SEM COLETA</div>
-                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-sm"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
+              <div className="flex justify-between items-end p-4 bg-white border-t border-gray-300 rounded-b-xl">
+                <div className="flex flex-col gap-2 text-[10px] sm:text-xs text-black font-bold tracking-wide uppercase">
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-600 shadow-xs rounded-xs"></div> SEM COLETA</div>
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-600 shadow-xs rounded-xs"></div> VALOR ACUMULADO PARA O DIA POSTERIOR</div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-4xl font-bold text-green-500">{grandTotal}</span>
-                  <span className="text-sm border border-green-500/50 px-2 py-0.5 rounded text-green-500 mt-1">TOTAL ANUAL</span>
+                  <span className="text-4xl font-extrabold text-green-600">{grandTotal}</span>
+                  <span className="text-xs font-bold border border-green-600/50 px-2.5 py-0.5 rounded-full text-green-700 bg-green-50 mt-1 shadow-xs tracking-wider">TOTAL ANUAL</span>
                 </div>
               </div>
             </div>

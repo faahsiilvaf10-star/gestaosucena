@@ -5,6 +5,7 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import Download from 'lucide-react/dist/esm/icons/download.js';
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 
 interface ImportStockModalProps {
@@ -126,9 +127,11 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
     document.body.removeChild(link)
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-white dark:bg-[#1a1a1b] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl my-auto">
         
         {/* Header */}
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
@@ -253,7 +256,8 @@ export function ImportStockModal({ onClose, onSuccess }: ImportStockModalProps) 
         )}
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
