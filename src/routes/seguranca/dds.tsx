@@ -22,6 +22,8 @@ import Eye from 'lucide-react/dist/esm/icons/eye.js';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles.js';
+import Paperclip from 'lucide-react/dist/esm/icons/paperclip.js';
+import ExternalLink from 'lucide-react/dist/esm/icons/external-link.js';
 import { createPortal } from 'react-dom';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
@@ -39,6 +41,9 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useTheme } from '@/contexts/ThemeContext'
 import { DdsUploadModal } from '@/components/DdsUploadModal'
+import { DdsAttachmentModal } from '@/components/DdsAttachmentModal'
+import { PdfViewerModal } from '@/components/PdfViewerModal'
+import { getDdsAttachments, deleteDdsAttachment, DdsAttachment } from '@/lib/ddsAttachments'
 
 // Helper para feriados móveis e fixos no Brasil
 function getEaster(year: number) {
@@ -116,6 +121,35 @@ function DDSSchedulePage() {
     tema: '',
     palestrante: ''
   })
+
+  // Estados para Anexos / PDFs do DDS
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false)
+  const [attachmentTargetDate, setAttachmentTargetDate] = useState<string | undefined>(undefined)
+  const [selectedPdfViewer, setSelectedPdfViewer] = useState<{
+    url: string
+    title: string
+    fileType?: string
+  } | null>(null)
+
+  const currentEnvironment = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+
+  const { data: ddsAttachments = [], refetch: refetchAttachments } = useQuery({
+    queryKey: ['dds_attachments', currentEnvironment],
+    queryFn: async () => {
+      return getDdsAttachments(currentEnvironment)
+    }
+  })
+
+  const handleDeleteAttachment = async (id: string, name: string) => {
+    if (!confirm(`Deseja realmente excluir o anexo "${name}"?`)) return
+    const ok = await deleteDdsAttachment(id, currentEnvironment)
+    if (ok) {
+      toast.success('Anexo excluído com sucesso!')
+      refetchAttachments()
+    } else {
+      toast.error('Erro ao excluir anexo.')
+    }
+  }
 
   const todayDate = useMemo(() => new Date(), [])
   const todayDateStr = useMemo(() => format(todayDate, 'yyyy-MM-dd'), [todayDate])
@@ -753,6 +787,17 @@ function DDSSchedulePage() {
               Postar Foto do DDS
             </Button>
             <Button 
+              onClick={() => {
+                setAttachmentTargetDate(todayDateStr)
+                setIsAttachmentModalOpen(true)
+              }} 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium border-0 shadow-sm"
+              title="Anexar múltiplos arquivos ou PDFs para salvar no banco de dados"
+            >
+              <Paperclip className="w-4 h-4 mr-2" />
+              Anexar Arquivos / PDF
+            </Button>
+            <Button 
               onClick={handleRandomize} 
               disabled={generateRandomMutation.isPending}
               className="bg-black hover:bg-gray-800 text-white font-medium border-0"
@@ -770,6 +815,135 @@ function DDSSchedulePage() {
               Limpar Mês
             </Button>
           </div>
+        </div>
+
+        {/* Seção de Arquivos e PDFs Anexados do DDS */}
+        <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-xl font-bold text-black">Arquivos e PDFs do DDS</h2>
+                <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {ddsAttachments.length} {ddsAttachments.length === 1 ? 'arquivo' : 'arquivos'}
+                </span>
+              </div>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Documentos, atas, listas de presença e materiais salvos no banco de dados
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => {
+                setAttachmentTargetDate(todayDateStr)
+                setIsAttachmentModalOpen(true)
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+            >
+              <Upload className="w-3.5 h-3.5 mr-1.5" />
+              Novo Anexo / PDF
+            </Button>
+          </div>
+
+          {ddsAttachments.length === 0 ? (
+            <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500 text-sm bg-gray-50/40">
+              <FileText className="w-10 h-10 mx-auto text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700">Nenhum arquivo ou PDF anexado ainda.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Clique no botão "Anexar Arquivos / PDF" para adicionar e visualizar em tela cheia.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ddsAttachments.map((att) => {
+                const isPdf = att.fileType === 'pdf' || att.name.toLowerCase().endsWith('.pdf')
+                return (
+                  <div
+                    key={att.id}
+                    className="border border-gray-200/90 hover:border-emerald-500/60 rounded-xl p-4 bg-gray-50/60 hover:bg-emerald-50/20 transition-all flex flex-col justify-between shadow-xs group"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                            isPdf
+                              ? 'bg-red-500/15 text-red-700'
+                              : att.fileType === 'image'
+                              ? 'bg-blue-500/15 text-blue-700'
+                              : 'bg-emerald-500/15 text-emerald-700'
+                          }`}
+                        >
+                          {isPdf ? 'PDF' : att.fileType.toUpperCase()}
+                        </span>
+                        {att.date && (
+                          <span className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
+                            <CalendarIcon className="w-3 h-3 text-gray-400" />
+                            {format(new Date(att.date + 'T12:00:00'), 'dd/MM/yyyy')}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4
+                        className="font-bold text-sm text-gray-900 group-hover:text-emerald-700 transition truncate mb-1"
+                        title={att.name}
+                      >
+                        {att.name}
+                      </h4>
+
+                      {att.description && (
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                          {att.description}
+                        </p>
+                      )}
+
+                      <div className="text-[11px] text-gray-400">
+                        {att.uploadedBy && <span>Enviado por {att.uploadedBy} • </span>}
+                        <span>{format(new Date(att.uploadedAt), "dd/MM/yy 'às' HH:mm")}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-200/60">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedPdfViewer({
+                            url: att.url,
+                            title: att.name,
+                            fileType: att.fileType
+                          })
+                        }
+                        className="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        title="Visualizar em tela cheia"
+                      >
+                        <Eye size={14} />
+                        <span>Ver em Tela Cheia</span>
+                      </button>
+
+                      <a
+                        href={att.url}
+                        download={att.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-lg border border-gray-300 hover:bg-white text-gray-700 transition cursor-pointer"
+                        title="Baixar arquivo / PDF"
+                      >
+                        <Download size={14} />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAttachment(att.id, att.name)}
+                        className="p-1.5 rounded-lg border border-gray-300 hover:bg-red-50 text-gray-500 hover:text-red-600 transition cursor-pointer"
+                        title="Excluir do banco"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Schedule Table */}
@@ -906,9 +1080,40 @@ function DDSSchedulePage() {
                             <span>Adicionar</span>
                           </button>
                         )}
+                        {(() => {
+                          const dayAtts = ddsAttachments.filter(a => a.date === dateStr)
+                          if (dayAtts.length === 0) return null
+                          return (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {dayAtts.map(att => (
+                                <button
+                                  key={att.id}
+                                  type="button"
+                                  onClick={() => setSelectedPdfViewer({ url: att.url, title: att.name, fileType: att.fileType })}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100 transition cursor-pointer"
+                                  title={`Ver ${att.name} em tela cheia`}
+                                >
+                                  <Paperclip className="w-2.5 h-2.5 text-emerald-600" />
+                                  <span className="truncate max-w-[100px]">{att.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setAttachmentTargetDate(dateStr)
+                              setIsAttachmentModalOpen(true)
+                            }}
+                            title="Anexar arquivos ou PDF neste dia"
+                            className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
+                          >
+                            <Paperclip className="w-4 h-4" />
+                          </button>
                           {isCurrentDay && (
                             <button 
                               onClick={() => handleOpenDdsUpload(entry?.tema, entry?.palestrante?.nome)}
@@ -1434,6 +1639,24 @@ function DDSSchedulePage() {
         </div>,
         document.body
       )}
+
+      {/* Modal de Upload de Múltiplos Arquivos e PDFs do DDS */}
+      <DdsAttachmentModal
+        isOpen={isAttachmentModalOpen}
+        onClose={() => setIsAttachmentModalOpen(false)}
+        currentDate={attachmentTargetDate}
+        environment={currentEnvironment}
+        onSuccess={() => refetchAttachments()}
+      />
+
+      {/* Modal de Visualização em Tela Cheia do PDF / Arquivo */}
+      <PdfViewerModal
+        isOpen={!!selectedPdfViewer}
+        onClose={() => setSelectedPdfViewer(null)}
+        url={selectedPdfViewer?.url || null}
+        title={selectedPdfViewer?.title || 'Documento do DDS'}
+        fileType={selectedPdfViewer?.fileType}
+      />
     </div>
   )
 }
