@@ -375,7 +375,7 @@ function PluviometriaPage() {
                   {MONTHS.map((monthName, mIdx) => {
                     const daysInMonth = getDaysInMonth(year, mIdx)
                     return (
-                      <tr key={monthName} className="border-b border-white/10">
+                      <tr key={monthName} className="border-b border-gray-300">
                         <td className="p-2 border-r border-gray-300 text-left bg-white text-black font-bold whitespace-nowrap shadow-xs">
                           {monthName}
                         </td>
@@ -386,15 +386,23 @@ function PluviometriaPage() {
                           }
                           const dateKey = `${year}-${String(mIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                           const valStr = data[dateKey] ?? ''
+                          const isFilled = valStr !== ''
                           
-                          let bgColor = 'bg-neutral-800/80 hover:bg-neutral-700/80' // Vazio
-                          if (valStr !== '') {
+                          let bgColor = 'bg-white hover:bg-neutral-100' // Vazio (quadrinho branco)
+                          let textColor = 'text-black'
+                          let dayLetterColor = 'text-black font-semibold'
+                          let cellBorder = 'border-r border-gray-300'
+
+                          if (isFilled) {
                             const numericVal = parseFloat(valStr.replace(',', '.')) || 0
                             if (numericVal === 0) {
                               bgColor = 'bg-red-600 hover:bg-red-500' // Zero
-                            } else if (numericVal > 0) {
+                            } else {
                               bgColor = 'bg-green-600 hover:bg-green-500' // Maior que zero
                             }
+                            textColor = 'text-white'
+                            dayLetterColor = 'text-white/90 font-semibold'
+                            cellBorder = 'border-r border-white/20'
                           }
                           
                           // Calcular dia da semana (0 = Dom, 1 = Seg...)
@@ -404,15 +412,17 @@ function PluviometriaPage() {
                           const dayLetter = daysOfWek[dayOfWeekIdx]
                           
                           return (
-                            <td key={day} className={`border-r border-white/20 p-0 transition-colors ${bgColor} relative`}>
-                              <div className="absolute top-0.5 left-0 w-full text-[9px] text-center text-white/80 pointer-events-none font-semibold leading-none">
+                            <td key={day} className={`p-0 transition-colors ${bgColor} ${cellBorder} relative`}>
+                              <div className={`absolute top-0.5 left-0 w-full text-[9px] text-center ${dayLetterColor} pointer-events-none leading-none`}>
                                 {dayLetter}
                               </div>
                               <input 
                                 type="text"
                                 value={valStr}
                                 onChange={(e) => handleValueChange(mIdx, day, e.target.value)}
-                                className="w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center text-white font-bold outline-none focus:bg-white/20"
+                                className={`w-full h-full px-0.5 pb-0.5 pt-3.5 bg-transparent text-center ${textColor} font-bold outline-none ${
+                                  isFilled ? 'focus:bg-white/20' : 'focus:bg-neutral-200/50'
+                                }`}
                                 style={{ minHeight: '34px' }}
                               />
                             </td>
