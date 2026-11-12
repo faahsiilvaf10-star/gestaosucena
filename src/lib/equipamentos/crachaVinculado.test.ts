@@ -9,26 +9,59 @@ import {
   type EquipamentoItem,
 } from './crachaVinculado'
 
-vi.mock('../supabase', () => ({
-  supabase: {
+// Mock do rawSupabase (nova API — tabela eq_cracha_vinculos)
+vi.mock('../supabase', () => {
+  const mockRows = [
+    { motorista_id: 'mot-1', equipamento_id: 'eq-1' },
+    { motorista_id: 'mot-1', equipamento_id: 'eq-2' },
+    { motorista_id: 'mot-2', equipamento_id: 'eq-3' },
+  ]
+
+  const chainable = {
+    eq: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockResolvedValue({ error: null }),
+    upsert: vi.fn().mockResolvedValue({ error: null }),
+    select: vi.fn().mockResolvedValue({ data: mockRows, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+  }
+
+  // Suporte a chaining fluente (cada método retorna o mesmo objeto)
+  chainable.eq.mockReturnValue({
+    ...chainable,
+    eq: vi.fn().mockReturnValue({
+      ...chainable,
+      eq: vi.fn().mockResolvedValue({ data: mockRows, error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+    delete: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    }),
+    select: vi.fn().mockResolvedValue({ data: mockRows, error: null }),
+  })
+
+  const rawSupabase = {
     from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: {
-              value: {
-                'mot-1': ['eq-1', 'eq-2'],
-                'mot-2': ['eq-3'],
-              },
-            },
-            error: null,
-          }),
-        })),
-      })),
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: mockRows, error: null }),
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      }),
+      insert: vi.fn().mockResolvedValue({ error: null }),
       upsert: vi.fn().mockResolvedValue({ error: null }),
     })),
-  },
-}))
+  }
+
+  return {
+    supabase: rawSupabase,
+    rawSupabase,
+  }
+})
 
 describe('Crachá Vinculado - Helpers e Filtros', () => {
   beforeEach(() => {
@@ -68,15 +101,15 @@ describe('Crachá Vinculado - Helpers e Filtros', () => {
     expect(getStorageKeyCracha('belem')).toBe('equipamentos_cracha_vinculado_belem')
   })
 
-  it('deve carregar vínculos do Supabase com sucesso', async () => {
+  it('deve carregar vínculos do Supabase e montar mapa { [motorista_id]: equipamento_id[] }', async () => {
     const vinculos = await carregarVinculosCracha('barcarena')
     expect(vinculos).toBeDefined()
-    expect(vinculos['mot-1']).toEqual(['eq-1', 'eq-2'])
+    expect(vinculos['mot-1']).toEqual(expect.arrayContaining(['eq-1', 'eq-2']))
     expect(vinculos['mot-2']).toEqual(['eq-3'])
   })
 
   it('deve salvar vínculos no Supabase com sucesso', async () => {
-    const ok = await salvarVinculosCracha({ 'mot-1': ['eq-1'] }, 'barcarena')
+    const ok = await salvarVinculosCracha({ 'mot-1': ['eq-1'] }, 'barcarena', 'mot-1')
     expect(ok).toBe(true)
   })
 })
