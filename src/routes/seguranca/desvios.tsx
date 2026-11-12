@@ -65,6 +65,7 @@ export interface DesvioRegistro {
   corrigido: boolean
   correcaoTexto: string
   fotoCorrecao: string
+  fotosCorrecao?: string[]
   dataCorrecao: string
   salvoEm: string
 }
@@ -216,8 +217,10 @@ function DesviosPage() {
   const [auditList, setAuditList] = useState<AuditRecord[]>([])
   const [filtroAtual, setFiltroAtual] = useState<'todos' | 'pendentes' | 'corrigidos' | 'vencidos'>('todos')
 
-  // Rascunhos de correção por desvio: { [uid]: { foto: string, texto: string, erro?: string, info?: string } }
-  const [correcaoDraft, setCorrecaoDraft] = useState<Record<string, { foto: string; texto: string; erro?: string; info?: string }>>({})
+  // Rascunhos de correção por desvio: { [uid]: { foto: string, fotos?: string[], texto: string, erro?: string, info?: string } }
+  const [correcaoDraft, setCorrecaoDraft] = useState<
+    Record<string, { foto: string; fotos?: string[]; texto: string; erro?: string; info?: string }>
+  >({})
 
   // Permissão para alterar Status: apenas Técnico de Segurança ou Administrador
   const isTecnicoSeguranca = useMemo(() => {
@@ -586,35 +589,77 @@ function DesviosPage() {
     toast.info('Formulário limpo!')
   }
 
-  // Upload da foto de correção de um desvio
-  const handleFotoCorrecaoUpload = (uid: string, ev: React.ChangeEvent<HTMLInputElement>) => {
-    const file = ev.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const res = e.target?.result as string
-      setCorrecaoDraft((prev) => ({
+  // Upload de foto(s) de correção de um desvio (múltiplas fotos permitidas)
+  const handleFotosCorrecaoUpload = (uid: string, ev: React.ChangeEvent<HTMLInputElement>) => {
+    const files = ev.target.files
+    if (!files || files.length === 0) return
+
+    const lidos: string[] = []
+    let processados = 0
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const res = e.target?.result as string
+        if (res) lidos.push(res)
+        processados++
+        if (processados === files.length) {
+          setCorrecaoDraft((prev) => {
+            const atual = prev[uid] || { foto: '', fotos: [], texto: '' }
+            const fotosExistentes =
+              atual.fotos && atual.fotos.length > 0 ? atual.fotos : atual.foto ? [atual.foto] : []
+            const novasFotos = [...fotosExistentes, ...lidos]
+            return {
+              ...prev,
+              [uid]: {
+                ...atual,
+                foto: novasFotos[0] || '',
+                fotos: novasFotos,
+                erro: undefined,
+                info: `📷 ${novasFotos.length} foto(s) da correção adicionada(s) — preencha “Correção realizada — o que foi feito” e clique em 💾 Salvar correção.`,
+              },
+            }
+          })
+          toast.info(`📷 ${lidos.length} foto(s) adicionada(s) à correção!`)
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+    ev.target.value = ''
+  }
+
+  // Remover uma foto específica do rascunho de correção
+  const handleRemoverFotoCorrecao = (uid: string, index: number) => {
+    setCorrecaoDraft((prev) => {
+      const atual = prev[uid]
+      if (!atual) return prev
+      const fotosExistentes =
+        atual.fotos && atual.fotos.length > 0 ? atual.fotos : atual.foto ? [atual.foto] : []
+      const novasFotos = fotosExistentes.filter((_, i) => i !== index)
+      return {
         ...prev,
         [uid]: {
-          ...(prev[uid] || { texto: '' }),
-          foto: res,
-          erro: undefined,
-          info: '📷 Foto da correção adicionada — mas o desvio AINDA ESTÁ ⏳ PENDENTE. Preencha “Correção realizada — o que foi feito” e clique em 💾 Salvar correção.',
+          ...atual,
+          foto: novasFotos[0] || '',
+          fotos: novasFotos,
         },
-      }))
-      toast.info('📷 Foto pronta — falta preencher a correção e Salvar')
-    }
-    reader.readAsDataURL(file)
+      }
+    })
   }
 
   // Salvar Correção do Desvio (Qualquer pessoa pode salvar a correção!)
   const handleSalvarCorrecao = (uid: string) => {
-    const draft = correcaoDraft[uid] || { foto: '', texto: '' }
-    const foto = draft.foto?.trim()
+    const draft = correcaoDraft[uid] || { foto: '', fotos: [], texto: '' }
+    const fotos =
+      draft.fotos && draft.fotos.length > 0
+        ? draft.fotos
+        : draft.foto?.trim()
+        ? [draft.foto.trim()]
+        : []
     const texto = draft.texto?.trim()
 
     const faltas: string[] = []
-    if (!foto) faltas.push('enviar a FOTO DA CORREÇÃO')
+    if (fotos.length === 0) faltas.push('enviar ao menos uma FOTO DA CORREÇÃO')
     if (!texto) faltas.push('preencher a CORREÇÃO REALIZADA — O QUE FOI FEITO')
 
     if (faltas.length > 0) {
@@ -639,7 +684,8 @@ function DesviosPage() {
           ...d,
           corrigido: true,
           statusFluxo: 'Corrigido',
-          fotoCorrecao: foto,
+          fotoCorrecao: fotos[0] || '',
+          fotosCorrecao: fotos,
           correcaoTexto: texto,
           dataCorrecao: agoraStr,
         }
@@ -653,7 +699,7 @@ function DesviosPage() {
     logAudit(
       quemSalvou,
       'Correção salva — ✅ CORRIGIDO',
-      `${desvioAlvo?.titulo} • Realizado por: ${quemSalvou} • ${texto}`
+      `${desvioAlvo?.titulo} • Realizado por: ${quemSalvou} • ${fotos.length} foto(s) • ${texto}`
     )
 
     setCorrecaoDraft((prev) => {
@@ -670,10 +716,18 @@ function DesviosPage() {
     const alvo = desvios.find((d) => d.uid === uid)
     if (!alvo) return
 
+    const fotosAlvo =
+      alvo.fotosCorrecao && alvo.fotosCorrecao.length > 0
+        ? alvo.fotosCorrecao
+        : alvo.fotoCorrecao
+        ? [alvo.fotoCorrecao]
+        : []
+
     setCorrecaoDraft((prev) => ({
       ...prev,
       [uid]: {
-        foto: alvo.fotoCorrecao || '',
+        foto: fotosAlvo[0] || '',
+        fotos: fotosAlvo,
         texto: alvo.correcaoTexto || '',
       },
     }))
@@ -1510,8 +1564,18 @@ function DesviosPage() {
           <div className="space-y-4">
             {desviosFiltrados.map((d) => {
               const vencido = isVencido(d)
-              const draft = correcaoDraft[d.uid] || { foto: '', texto: '' }
-              const fotoDepois = d.corrigido ? d.fotoCorrecao : draft.foto
+              const draft = correcaoDraft[d.uid] || { foto: '', fotos: [], texto: '' }
+              const fotosDepois = d.corrigido
+                ? d.fotosCorrecao && d.fotosCorrecao.length > 0
+                  ? d.fotosCorrecao
+                  : d.fotoCorrecao
+                  ? [d.fotoCorrecao]
+                  : []
+                : draft.fotos && draft.fotos.length > 0
+                ? draft.fotos
+                : draft.foto
+                ? [draft.foto]
+                : []
               const textoCorr = d.corrigido ? d.correcaoTexto : draft.texto
               const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
 
@@ -1651,15 +1715,20 @@ function DesviosPage() {
 
                         <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
                           <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            ✅ Depois — foto da correção
+                            ✅ Depois — fotos da correção ({fotosDepois.length})
                           </span>
-                          {d.fotoCorrecao ? (
-                            <img
-                              src={d.fotoCorrecao}
-                              alt="Depois"
-                              className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
-                              onClick={() => abrirModalFoto([d.fotoCorrecao], 0)}
-                            />
+                          {fotosDepois.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {fotosDepois.map((f, idx) => (
+                                <img
+                                  key={idx}
+                                  src={f}
+                                  alt={`Depois #${idx + 1}`}
+                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                  onClick={() => abrirModalFoto(fotosDepois, idx)}
+                                />
+                              ))}
+                            </div>
                           ) : (
                             <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
                               Sem foto da correção
@@ -1675,7 +1744,7 @@ function DesviosPage() {
                       <button
                         type="button"
                         onClick={() => handleReabrir(d.uid)}
-                        className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs"
+                        className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs cursor-pointer"
                       >
                         ↩️ Voltar para PENDENTE para editar a correção
                       </button>
@@ -1683,7 +1752,7 @@ function DesviosPage() {
                   ) : (
                     <div className="mt-4 pt-3 border-t border-amber-200">
                       <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-950 mb-3">
-                        ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a foto da correção,{' '}
+                        ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a(s) foto(s) da correção,{' '}
                         <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
                         <strong>💾 Salvar correção</strong>. <em>(Qualquer pessoa pode salvar a correção)</em>
                       </div>
@@ -1713,32 +1782,62 @@ function DesviosPage() {
                         </div>
 
                         <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
-                          <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            ✅ Depois — foto da correção *
-                          </span>
-                          {fotoDepois ? (
-                            <img
-                              src={fotoDepois}
-                              alt="Depois"
-                              className="w-full h-32 object-cover rounded-lg mb-2 cursor-pointer hover:opacity-90 transition"
-                              onClick={() => abrirModalFoto([fotoDepois], 0)}
-                            />
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-black uppercase tracking-wider text-black">
+                              ✅ Depois — fotos da correção ({fotosDepois.length}) *
+                            </span>
+                            {fotosDepois.length > 0 && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                {fotosDepois.length} anexada(s)
+                              </span>
+                            )}
+                          </div>
+
+                          {fotosDepois.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              {fotosDepois.map((f, idx) => (
+                                <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                                  <img
+                                    src={f}
+                                    alt={`Foto da correção #${idx + 1}`}
+                                    className="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition"
+                                    onClick={() => abrirModalFoto(fotosDepois, idx)}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleRemoverFotoCorrecao(d.uid, idx)
+                                    }}
+                                    title="Remover foto"
+                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition shadow-xs cursor-pointer"
+                                  >
+                                    <X className="w-3.5 h-3.5 stroke-[3]" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           ) : (
-                            <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
+                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
                               Nenhuma foto da correção ainda
                             </div>
                           )}
 
-                          <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 rounded-xl p-2.5 text-center cursor-pointer block bg-white">
+                          <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 rounded-xl p-2.5 text-center cursor-pointer block bg-white hover:bg-amber-50/20 transition">
                             <input
                               type="file"
                               accept="image/*"
+                              multiple
                               capture="environment"
-                              onChange={(ev) => handleFotoCorrecaoUpload(d.uid, ev)}
+                              onChange={(ev) => handleFotosCorrecaoUpload(d.uid, ev)}
                               className="hidden"
                             />
-                            <span className="block text-xs font-black text-black">📷 Clique para enviar a foto da correção</span>
-                            <span className="block text-[10.5px] text-gray-600">Ela aparece na hora, mas continua PENDENTE até salvar</span>
+                            <span className="block text-xs font-black text-black">
+                              📷 Clique para enviar fotos da correção
+                            </span>
+                            <span className="block text-[10.5px] text-gray-600">
+                              Selecione uma ou várias fotos • Fica PENDENTE até salvar
+                            </span>
                           </label>
                         </div>
                       </div>
@@ -1759,9 +1858,9 @@ function DesviosPage() {
                             },
                           }))
                         }}
-                        placeholder="Preenchimento da correção: descreva o que foi feito para corrigir o desvio..."
+                        placeholder="Preenchimento da correção: descreva detalhadamente o que foi feito para corrigir o desvio..."
                         rows={3}
-                        className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-600 outline-hidden bg-white mb-2"
+                        className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-500 outline-hidden bg-white mb-2"
                       />
 
                       {/* Mensagens de Erro / Info do Card */}
@@ -1779,7 +1878,7 @@ function DesviosPage() {
                       <button
                         type="button"
                         onClick={() => handleSalvarCorrecao(d.uid)}
-                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xs"
+                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
                       >
                         💾 Salvar correção
                       </button>
@@ -1853,6 +1952,12 @@ function DesviosPage() {
 
               {desvios.map((d, i) => {
                 const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
+                const listaFotosCorrecao =
+                  d.fotosCorrecao && d.fotosCorrecao.length > 0
+                    ? d.fotosCorrecao
+                    : d.fotoCorrecao
+                    ? [d.fotoCorrecao]
+                    : []
 
                 return (
                   <div key={d.uid} className="p-3 border-t border-gray-200 text-xs font-semibold">
@@ -1911,14 +2016,21 @@ function DesviosPage() {
                       </div>
 
                       <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <span className="block text-[10px] font-black uppercase text-black mb-1">Depois</span>
-                        {d.fotoCorrecao ? (
-                          <img
-                            src={d.fotoCorrecao}
-                            alt="Depois"
-                            className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
-                            onClick={() => abrirModalFoto([d.fotoCorrecao], 0)}
-                          />
+                        <span className="block text-[10px] font-black uppercase text-black mb-1">
+                          Depois ({listaFotosCorrecao.length})
+                        </span>
+                        {listaFotosCorrecao.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {listaFotosCorrecao.map((f, idx) => (
+                              <img
+                                key={idx}
+                                src={f}
+                                alt={`Depois #${idx + 1}`}
+                                className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
+                                onClick={() => abrirModalFoto(listaFotosCorrecao, idx)}
+                              />
+                            ))}
+                          </div>
                         ) : (
                           <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
                             Sem foto da correção
