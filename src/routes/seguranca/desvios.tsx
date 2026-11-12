@@ -27,6 +27,10 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 export const Route = createFileRoute('/seguranca/desvios')({
@@ -222,6 +226,34 @@ function DesviosPage() {
   const [correcaoDraft, setCorrecaoDraft] = useState<
     Record<string, { foto: string; fotos?: string[]; texto: string; erro?: string; info?: string }>
   >({})
+
+  // Controle de exibição em lista resumida (expandir/recolher para abrir fotos e detalhes)
+  const [expandedHistorico, setExpandedHistorico] = useState<Record<string, boolean>>({})
+  const [expandedRelatorio, setExpandedRelatorio] = useState<Record<string, boolean>>({})
+
+  const toggleExpandHistorico = (uid: string) => {
+    setExpandedHistorico((prev) => ({ ...prev, [uid]: !prev[uid] }))
+  }
+
+  const toggleTodosHistorico = (expandir: boolean) => {
+    const mapa: Record<string, boolean> = {}
+    if (expandir) {
+      desvios.forEach((d) => { mapa[d.uid] = true })
+    }
+    setExpandedHistorico(mapa)
+  }
+
+  const toggleExpandRelatorio = (uid: string) => {
+    setExpandedRelatorio((prev) => ({ ...prev, [uid]: !prev[uid] }))
+  }
+
+  const toggleTodosRelatorio = (expandir: boolean) => {
+    const mapa: Record<string, boolean> = {}
+    if (expandir) {
+      desvios.forEach((d) => { mapa[d.uid] = true })
+    }
+    setExpandedRelatorio(mapa)
+  }
 
   // Permissão para alterar Status: apenas Técnico de Segurança ou Administrador
   const isTecnicoSeguranca = useMemo(() => {
@@ -944,6 +976,8 @@ function DesviosPage() {
     h1 { font-size: 24px; font-weight: 900; margin-bottom: 4px; }
     p { font-size: 14px; margin-top: 4px; }
     .rel-item { border-top: 1px solid #ccc; padding: 14px 0; font-size: 13px; line-height: 1.5; }
+    .hidden { display: block !important; }
+    button { display: none !important; }
     .fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
     .foto-box { border: 1px solid #999; padding: 8px; border-radius: 8px; }
     .foto-box img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; }
@@ -1639,22 +1673,41 @@ function DesviosPage() {
           </span>
         </div>
 
-        {/* Filtros */}
-        <div className="flex items-center gap-2 flex-wrap mb-4">
-          {(['todos', 'pendentes', 'corrigidos', 'vencidos'] as const).map((f) => (
+        {/* Filtros e Controles de Lista Resumida */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(['todos', 'pendentes', 'corrigidos', 'vencidos'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFiltroAtual(f)}
+                className={`text-xs font-black px-4 py-1.5 rounded-full border transition capitalize ${
+                  filtroAtual === f
+                    ? 'bg-black border-black text-white'
+                    : 'bg-white border-gray-400 text-black hover:border-black'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              key={f}
               type="button"
-              onClick={() => setFiltroAtual(f)}
-              className={`text-xs font-black px-4 py-1.5 rounded-full border transition capitalize ${
-                filtroAtual === f
-                  ? 'bg-black border-black text-white'
-                  : 'bg-white border-gray-400 text-black hover:border-black'
-              }`}
+              onClick={() => toggleTodosHistorico(true)}
+              className="text-xs font-bold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl border border-gray-300 transition flex items-center gap-1 shadow-2xs cursor-pointer"
             >
-              {f}
+              <Eye className="w-3.5 h-3.5" /> Expandir todos
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => toggleTodosHistorico(false)}
+              className="text-xs font-bold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl border border-gray-300 transition flex items-center gap-1 shadow-2xs cursor-pointer"
+            >
+              <EyeOff className="w-3.5 h-3.5" /> Recolher lista
+            </button>
+          </div>
         </div>
 
         {/* Lista de Cards */}
@@ -1663,7 +1716,7 @@ function DesviosPage() {
             Nenhum desvio registrado com o filtro selecionado.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {desviosFiltrados.map((d) => {
               const vencido = isVencido(d)
               const draft = correcaoDraft[d.uid] || { foto: '', fotos: [], texto: '' }
@@ -1680,321 +1733,395 @@ function DesviosPage() {
                 : []
               const textoCorr = d.corrigido ? d.correcaoTexto : draft.texto
               const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
+              const isExpanded = !!expandedHistorico[d.uid]
 
               return (
                 <div
                   key={d.uid}
                   data-uid={d.uid}
-                  className={`rounded-2xl p-5 border-2 transition shadow-xs ${
+                  className={`rounded-2xl border-2 transition shadow-xs ${
                     d.corrigido
-                      ? 'border-green-300 bg-green-50/30 border-l-8 border-l-green-600'
+                      ? 'border-green-300 bg-green-50/20 border-l-8 border-l-green-600'
                       : vencido
-                      ? 'border-red-300 bg-red-50/40 border-l-8 border-l-red-600'
-                      : 'border-amber-300 bg-amber-50/30 border-l-8 border-l-amber-500'
+                      ? 'border-red-300 bg-red-50/30 border-l-8 border-l-red-600'
+                      : 'border-amber-300 bg-amber-50/20 border-l-8 border-l-amber-500'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="text-base font-extrabold text-black">{d.titulo}</h3>
+                  {/* Cabeçalho Resumido (Clicável para abrir/recolher) */}
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div
+                        onClick={() => toggleExpandHistorico(d.uid)}
+                        className="flex-1 cursor-pointer select-none"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <h3 className="text-base font-extrabold text-black hover:text-amber-700 transition flex items-center gap-1.5">
+                            {d.titulo}
+                          </h3>
 
-                        {d.corrigido ? (
-                          <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-green-100 text-green-900 border border-green-300">
-                            ✅ CORRIGIDO
-                          </span>
-                        ) : vencido ? (
-                          <>
-                            <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-red-600 text-white">
-                              🔴 VENCIDO
+                          {d.corrigido ? (
+                            <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-green-100 text-green-900 border border-green-300">
+                              ✅ CORRIGIDO
                             </span>
-                            <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-red-100 text-red-900 border border-red-300">
+                          ) : vencido ? (
+                            <>
+                              <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-red-600 text-white">
+                                🔴 VENCIDO
+                              </span>
+                              <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-red-100 text-red-900 border border-red-300">
+                                ⏳ PENDENTE
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                               ⏳ PENDENTE
                             </span>
-                          </>
-                        ) : (
-                          <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                            ⏳ PENDENTE
-                          </span>
-                        )}
+                          )}
 
-                        {/* Prioridade */}
-                        <span
-                          className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                            d.prioridade.includes('Crítica')
-                              ? 'bg-red-600 text-white'
-                              : d.prioridade === 'Alta'
-                              ? 'bg-orange-500 text-white'
-                              : d.prioridade === 'Média'
-                              ? 'bg-amber-400 text-black'
-                              : 'bg-green-600 text-white'
+                          {/* Prioridade */}
+                          <span
+                            className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                              d.prioridade.includes('Crítica')
+                                ? 'bg-red-600 text-white'
+                                : d.prioridade === 'Alta'
+                                ? 'bg-orange-500 text-white'
+                                : d.prioridade === 'Média'
+                                ? 'bg-amber-400 text-black'
+                                : 'bg-green-600 text-white'
+                            }`}
+                          >
+                            Prioridade: {d.prioridade}
+                          </span>
+
+                          <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gray-900 text-white">
+                            Risco: {d.risco}
+                          </span>
+
+                          <span className="text-[11px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                            📂 {d.categoria}
+                          </span>
+
+                          {d.statusFluxo && (
+                            <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-200">
+                              {d.statusFluxo}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Linha Resumo */}
+                        <div className="flex items-center gap-2.5 text-xs text-gray-700 flex-wrap">
+                          <span>📍 <strong>{d.local}</strong>{d.area ? ` (${d.area})` : ''}</span>
+                          <span>•</span>
+                          <span>📅 Registrado {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong></span>
+                          <span>•</span>
+                          <span className="font-bold text-gray-950">{previsaoTxt(d)}</span>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1 font-bold text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-300">
+                            📷 {listaFotosDesvio.length} foto(s) antes
+                          </span>
+                          <span className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded border ${
+                            fotosDepois.length > 0 ? 'bg-green-50 text-green-900 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-200'
+                          }`}>
+                            ✅ {fotosDepois.length} foto(s) depois
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandHistorico(d.uid)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+                            isExpanded
+                              ? 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                              : 'bg-amber-500 hover:bg-amber-600 text-white'
                           }`}
                         >
-                          Prioridade: {d.prioridade}
-                        </span>
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="w-4 h-4" /> Recolher
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4" /> Abrir fotos e detalhes
+                            </>
+                          )}
+                        </button>
 
-                        <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gray-900 text-white">
-                          Risco: {d.risco}
-                        </span>
-
-                        {d.statusFluxo && (
-                          <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-200">
-                            {d.statusFluxo}
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleExcluir(d.uid)}
+                          className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          title="Excluir desvio"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
+                    </div>
 
-                      <p className="text-sm font-semibold text-gray-800 mt-1">{d.descricao}</p>
+                    {/* CONTEÚDO EXPANDIDO */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-gray-300/80 space-y-3">
+                        <div className="p-3 bg-white/90 border border-gray-200 rounded-xl">
+                          <span className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-1">
+                            Descrição do Desvio
+                          </span>
+                          <p className="text-sm font-semibold text-gray-900">{d.descricao}</p>
+                        </div>
 
-                      <div className="text-xs font-semibold text-gray-700 mt-2 space-y-1">
-                        <div>
-                          📂 <strong>{d.categoria}</strong>
-                          {d.etiqueta && d.etiqueta !== 'Selecionar etiquetas...' && <span> • 🏷️ {d.etiqueta}</span>}
-                          <span> • ⚠️ Gravidade: {d.gravidade}</span>
-                        </div>
-                        <div>
-                          📍 <strong>{d.local}</strong>
-                          {d.area && <span> — {d.area}</span>}
-                          <span> • 📅 Registrado em {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong></span>
-                        </div>
-                        <div className="font-bold text-gray-950">{previsaoTxt(d)}</div>
-                        {d.respCorrecao && (
+                        <div className="text-xs font-semibold text-gray-700 space-y-1 bg-white/70 p-3 rounded-xl border border-gray-200">
                           <div>
-                            👷 <strong>Responsáveis pela correção:</strong> {d.respCorrecao}
+                            📂 <strong>{d.categoria}</strong>
+                            {d.etiqueta && d.etiqueta !== 'Selecionar etiquetas...' && <span> • 🏷️ {d.etiqueta}</span>}
+                            <span> • ⚠️ Gravidade: {d.gravidade}</span>
+                          </div>
+                          <div>
+                            📍 <strong>{d.local}</strong>
+                            {d.area && <span> — {d.area}</span>}
+                            <span> • 📅 Registrado em {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong></span>
+                          </div>
+                          <div className="font-bold text-gray-950">{previsaoTxt(d)}</div>
+                          {d.respCorrecao && (
+                            <div>
+                              👷 <strong>Responsáveis pela correção:</strong> {d.respCorrecao}
+                            </div>
+                          )}
+                          {d.empresa && <div>🏢 Empresa/equipe: <strong>{d.empresa}</strong></div>}
+                          {d.comentarios && <div>💬 Comentários: <em>{d.comentarios}</em></div>}
+                          <div className="text-[11px] text-gray-500">Salvo em {d.salvoEm}</div>
+                        </div>
+
+                        {/* Instrução / Sugestão */}
+                        {d.sugestao && (
+                          <div className="p-3 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-gray-900">
+                            💡 <strong>Instrução / Sugestão de correção (Técnico de Segurança):</strong> {d.sugestao}
                           </div>
                         )}
-                        {d.empresa && <div>🏢 Empresa/equipe: <strong>{d.empresa}</strong></div>}
-                        {d.comentarios && <div>💬 Comentários: <em>{d.comentarios}</em></div>}
-                        <div className="text-[11px] text-gray-500">Salvo em {d.salvoEm}</div>
-                      </div>
-                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleExcluir(d.uid)}
-                      className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold transition flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Excluir
-                    </button>
-                  </div>
-
-                  {/* Instrução / Sugestão */}
-                  {d.sugestao && (
-                    <div className="mt-3 p-3 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-gray-900">
-                      💡 <strong>Instrução / Sugestão de correção (Técnico de Segurança):</strong> {d.sugestao}
-                    </div>
-                  )}
-
-                  {/* BLOCO DE CORREÇÃO (Antes / Depois) */}
-                  {d.corrigido ? (
-                    <div className="mt-4 pt-3 border-t border-green-200">
-                      <div className="p-3 bg-green-50 border border-green-300 rounded-xl text-xs font-bold text-green-950 mb-3">
-                        ✅ <strong>Correção salva</strong> em {d.dataCorrecao} — este desvio já entrou como CORRIGIDO no relatório abaixo.
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                        <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
-                          <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            📷 Antes — fotos do desvio ({listaFotosDesvio.length})
-                          </span>
-                          {listaFotosDesvio.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              {listaFotosDesvio.map((f, idx) => (
-                                <img
-                                  key={idx}
-                                  src={f}
-                                  alt={`Antes #${idx + 1}`}
-                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
-                                  onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
-                                />
-                              ))}
+                        {/* BLOCO DE CORREÇÃO (Antes / Depois) */}
+                        {d.corrigido ? (
+                          <div className="pt-3 border-t border-green-200">
+                            <div className="p-3 bg-green-50 border border-green-300 rounded-xl text-xs font-bold text-green-950 mb-3">
+                              ✅ <strong>Correção salva</strong> em {d.dataCorrecao} — este desvio já entrou como CORRIGIDO no relatório abaixo.
                             </div>
-                          ) : (
-                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
-                              Sem fotos do desvio
-                            </div>
-                          )}
-                        </div>
 
-                        <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
-                          <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            ✅ Depois — fotos da correção ({fotosDepois.length})
-                          </span>
-                          {fotosDepois.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              {fotosDepois.map((f, idx) => (
-                                <img
-                                  key={idx}
-                                  src={f}
-                                  alt={`Depois #${idx + 1}`}
-                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
-                                  onClick={() => abrirModalFoto(fotosDepois, idx)}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
-                              Sem foto da correção
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                              <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
+                                <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
+                                  📷 Antes — fotos do desvio ({listaFotosDesvio.length})
+                                </span>
+                                {listaFotosDesvio.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {listaFotosDesvio.map((f, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={f}
+                                        alt={`Antes #${idx + 1}`}
+                                        className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                        onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                                    Sem fotos do desvio
+                                  </div>
+                                )}
+                              </div>
 
-                      <p className="text-xs font-semibold text-gray-900 mb-3">
-                        <strong>Correção realizada — o que foi feito:</strong> {d.correcaoTexto}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleReenviarCorrecaoWhatsapp(d)}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5"
-                          title="Dispara a mensagem e as fotos da correção no grupo do WhatsApp"
-                        >
-                          <span>📲</span> Enviar/Reenviar Correção ao WhatsApp
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReabrir(d.uid)}
-                          className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs cursor-pointer"
-                        >
-                          ↩️ Voltar para PENDENTE para editar a correção
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 pt-3 border-t border-amber-200">
-                      <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-950 mb-3">
-                        ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a(s) foto(s) da correção,{' '}
-                        <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
-                        <strong>💾 Salvar correção</strong> (envia fotos e texto ao WhatsApp automaticamente). <em>(Qualquer pessoa pode salvar a correção)</em>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                        <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
-                          <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
-                            📷 Antes — fotos do desvio ({listaFotosDesvio.length})
-                          </span>
-                          {listaFotosDesvio.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              {listaFotosDesvio.map((f, idx) => (
-                                <img
-                                  key={idx}
-                                  src={f}
-                                  alt={`Antes #${idx + 1}`}
-                                  className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
-                                  onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
-                                />
-                              ))}
+                              <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
+                                <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
+                                  ✅ Depois — fotos da correção ({fotosDepois.length})
+                                </span>
+                                {fotosDepois.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {fotosDepois.map((f, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={f}
+                                        alt={`Depois #${idx + 1}`}
+                                        className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                        onClick={() => abrirModalFoto(fotosDepois, idx)}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                                    Sem foto da correção
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          ) : (
-                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
-                              Sem fotos do desvio
-                            </div>
-                          )}
-                        </div>
 
-                        <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-black uppercase tracking-wider text-black">
-                              ✅ Depois — fotos da correção ({fotosDepois.length}) *
-                            </span>
-                            {fotosDepois.length > 0 && (
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                {fotosDepois.length} anexada(s)
-                              </span>
-                            )}
+                            <p className="text-xs font-semibold text-gray-900 mb-3">
+                              <strong>Correção realizada — o que foi feito:</strong> {d.correcaoTexto}
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleReenviarCorrecaoWhatsapp(d)}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                                title="Dispara a mensagem e as fotos da correção no grupo do WhatsApp"
+                              >
+                                <span>📲</span> Enviar/Reenviar Correção ao WhatsApp
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleReabrir(d.uid)}
+                                className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs cursor-pointer"
+                              >
+                                ↩️ Voltar para PENDENTE para editar a correção
+                              </button>
+                            </div>
                           </div>
+                        ) : (
+                          <div className="pt-3 border-t border-amber-200">
+                            <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-950 mb-3">
+                              ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a(s) foto(s) da correção,{' '}
+                              <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
+                              <strong>💾 Salvar correção</strong> (envia fotos e texto ao WhatsApp automaticamente). <em>(Qualquer pessoa pode salvar a correção)</em>
+                            </div>
 
-                          {fotosDepois.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                              {fotosDepois.map((f, idx) => (
-                                <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
-                                  <img
-                                    src={f}
-                                    alt={`Foto da correção #${idx + 1}`}
-                                    className="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition"
-                                    onClick={() => abrirModalFoto(fotosDepois, idx)}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleRemoverFotoCorrecao(d.uid, idx)
-                                    }}
-                                    title="Remover foto"
-                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition shadow-xs cursor-pointer"
-                                  >
-                                    <X className="w-3.5 h-3.5 stroke-[3]" />
-                                  </button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                              <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
+                                <span className="block text-xs font-black uppercase tracking-wider text-black mb-2">
+                                  📷 Antes — fotos do desvio ({listaFotosDesvio.length})
+                                </span>
+                                {listaFotosDesvio.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {listaFotosDesvio.map((f, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={f}
+                                        alt={`Antes #${idx + 1}`}
+                                        className="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition"
+                                        onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500">
+                                    Sem fotos do desvio
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="border border-gray-300 rounded-xl p-2.5 bg-white">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-black uppercase tracking-wider text-black">
+                                    ✅ Depois — fotos da correção ({fotosDepois.length}) *
+                                  </span>
+                                  {fotosDepois.length > 0 && (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                      {fotosDepois.length} anexada(s)
+                                    </span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
-                              Nenhuma foto da correção ainda
-                            </div>
-                          )}
 
-                          <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 rounded-xl p-2.5 text-center cursor-pointer block bg-white hover:bg-amber-50/20 transition">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={(ev) => handleFotosCorrecaoUpload(d.uid, ev)}
-                              className="hidden"
+                                {fotosDepois.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-2 mb-2">
+                                    {fotosDepois.map((f, idx) => (
+                                      <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                                        <img
+                                          src={f}
+                                          alt={`Foto da correção #${idx + 1}`}
+                                          className="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition"
+                                          onClick={() => abrirModalFoto(fotosDepois, idx)}
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleRemoverFotoCorrecao(d.uid, idx)
+                                          }}
+                                          title="Remover foto"
+                                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition shadow-xs cursor-pointer"
+                                        >
+                                          <X className="w-3.5 h-3.5 stroke-[3]" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="h-28 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 mb-2">
+                                    Nenhuma foto da correção ainda
+                                  </div>
+                                )}
+
+                                <label className="border-2 border-dashed border-gray-400 hover:border-amber-500 rounded-xl p-2.5 text-center cursor-pointer block bg-white hover:bg-amber-50/20 transition">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(ev) => handleFotosCorrecaoUpload(d.uid, ev)}
+                                    className="hidden"
+                                  />
+                                  <span className="block text-xs font-black text-black">
+                                    📷 Clique para enviar fotos da correção
+                                  </span>
+                                  <span className="block text-[10.5px] text-gray-600">
+                                    Selecione uma ou várias fotos • Fica PENDENTE até salvar
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
+                              Correção realizada — o que foi feito *
+                            </label>
+                            <textarea
+                              value={textoCorr}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setCorrecaoDraft((prev) => ({
+                                  ...prev,
+                                  [d.uid]: {
+                                    ...(prev[d.uid] || { foto: '' }),
+                                    texto: val,
+                                    erro: undefined,
+                                  },
+                                }))
+                              }}
+                              placeholder="Preenchimento da correção: descreva detalhadamente o que foi feito para corrigir o desvio..."
+                              rows={3}
+                              className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-500 outline-hidden bg-white mb-2"
                             />
-                            <span className="block text-xs font-black text-black">
-                              📷 Clique para enviar fotos da correção
-                            </span>
-                            <span className="block text-[10.5px] text-gray-600">
-                              Selecione uma ou várias fotos • Fica PENDENTE até salvar
-                            </span>
-                          </label>
+
+                            {/* Mensagens de Erro / Info do Card */}
+                            {draft.erro && (
+                              <div className="p-3 bg-red-50 border border-red-600 rounded-xl text-xs font-bold text-red-900 mb-2">
+                                {draft.erro}
+                              </div>
+                            )}
+                            {draft.info && (
+                              <div className="p-3 bg-amber-50 border border-amber-400 rounded-xl text-xs font-bold text-amber-900 mb-2">
+                                {draft.info}
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleSalvarCorrecao(d.uid)}
+                              className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              💾 Salvar correção
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandHistorico(d.uid)}
+                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" /> Recolher detalhes
+                          </button>
                         </div>
                       </div>
-
-                      <label className="block text-xs font-black text-black uppercase tracking-wider mb-1">
-                        Correção realizada — o que foi feito *
-                      </label>
-                      <textarea
-                        value={textoCorr}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setCorrecaoDraft((prev) => ({
-                            ...prev,
-                            [d.uid]: {
-                              ...(prev[d.uid] || { foto: '' }),
-                              texto: val,
-                              erro: undefined,
-                            },
-                          }))
-                        }}
-                        placeholder="Preenchimento da correção: descreva detalhadamente o que foi feito para corrigir o desvio..."
-                        rows={3}
-                        className="w-full border-1.5 border-gray-400 focus:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-black placeholder:text-gray-500 outline-hidden bg-white mb-2"
-                      />
-
-                      {/* Mensagens de Erro / Info do Card */}
-                      {draft.erro && (
-                        <div className="p-3 bg-red-50 border border-red-600 rounded-xl text-xs font-bold text-red-900 mb-2">
-                          {draft.erro}
-                        </div>
-                      )}
-                      {draft.info && (
-                        <div className="p-3 bg-amber-50 border border-amber-400 rounded-xl text-xs font-bold text-amber-900 mb-2">
-                          {draft.info}
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleSalvarCorrecao(d.uid)}
-                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        💾 Salvar correção
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -2061,6 +2188,28 @@ function DesviosPage() {
                 Por risco: {Object.keys(relStats.porRisco).map((k) => `${k}: ${relStats.porRisco[k]}`).join(' • ')}
               </div>
 
+              <div className="flex items-center justify-between gap-3 flex-wrap p-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+                <span className="text-xs font-bold text-gray-700">
+                  📋 Lista resumida no relatório: clique em qualquer item para abrir fotos e detalhes
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleTodosRelatorio(true)}
+                    className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-800 rounded-lg border border-gray-300 transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Expandir todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleTodosRelatorio(false)}
+                    className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-800 rounded-lg border border-gray-300 transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                  >
+                    <EyeOff className="w-3.5 h-3.5" /> Recolher lista
+                  </button>
+                </div>
+              </div>
+
               {desvios.map((d, i) => {
                 const listaFotosDesvio = d.fotos && d.fotos.length > 0 ? d.fotos : d.foto ? [d.foto] : []
                 const listaFotosCorrecao =
@@ -2069,84 +2218,124 @@ function DesviosPage() {
                     : d.fotoCorrecao
                     ? [d.fotoCorrecao]
                     : []
+                const isRelExpanded = !!expandedRelatorio[d.uid]
 
                 return (
                   <div key={d.uid} className="p-3 border-t border-gray-200 text-xs font-semibold">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <strong className="font-black text-black">
-                        {i + 1}. {d.titulo}
-                      </strong>
-                      <span
-                        className={`font-black uppercase px-2 py-0.5 rounded text-[10px] ${
-                          d.corrigido ? 'bg-green-100 text-green-800' : isVencido(d) ? 'bg-rose-100 text-rose-900' : 'bg-red-100 text-red-800'
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div
+                        onClick={() => toggleExpandRelatorio(d.uid)}
+                        className="flex-1 cursor-pointer select-none"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <strong className="font-black text-black hover:text-amber-700 transition">
+                            {i + 1}. {d.titulo}
+                          </strong>
+                          <span
+                            className={`font-black uppercase px-2 py-0.5 rounded text-[10px] ${
+                              d.corrigido ? 'bg-green-100 text-green-800' : isVencido(d) ? 'bg-rose-100 text-rose-900' : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {d.corrigido ? 'CORRIGIDO' : isVencido(d) ? 'VENCIDO / PENDENTE' : 'PENDENTE'}
+                          </span>
+                          <span className="text-[10px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                            {d.prioridade} • {d.risco} • {d.categoria}
+                          </span>
+                        </div>
+
+                        <div className="text-gray-700 flex items-center gap-2 flex-wrap text-[11px]">
+                          <span>Local: <strong>{d.local}</strong></span>
+                          <span>•</span>
+                          <span>Registrado: {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong></span>
+                          <span>•</span>
+                          <span className="font-bold text-black">{previsaoTxt(d)}</span>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1 font-bold text-gray-800 bg-white px-1.5 py-0.5 rounded border border-gray-300">
+                            📷 {listaFotosDesvio.length} antes
+                          </span>
+                          <span className={`inline-flex items-center gap-1 font-bold px-1.5 py-0.5 rounded border ${
+                            listaFotosCorrecao.length > 0 ? 'bg-green-50 text-green-900 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-200'
+                          }`}>
+                            ✅ {listaFotosCorrecao.length} depois
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandRelatorio(d.uid)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer print:hidden ${
+                          isRelExpanded
+                            ? 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                            : 'bg-amber-500 hover:bg-amber-600 text-white shadow-2xs'
                         }`}
                       >
-                        {d.corrigido ? 'CORRIGIDO' : isVencido(d) ? 'VENCIDO / PENDENTE' : 'PENDENTE'}
-                      </span>
+                        {isRelExpanded ? (
+                          <>
+                            <ChevronUp className="w-3.5 h-3.5" /> Recolher
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" /> Abrir fotos e detalhes
+                          </>
+                        )}
+                      </button>
                     </div>
 
-                    <div className="text-gray-700 space-y-0.5">
-                      <div>
-                        Prioridade: <strong>{d.prioridade}</strong> • Risco: <strong>{d.risco}</strong> • Categoria: <strong>{d.categoria}</strong>
-                      </div>
-                      <div>
-                        Local: <strong>{d.local}</strong> • Registrado: {fmtDateBr(d.dataRegistro)} por <strong>{d.tecnico}</strong>
-                      </div>
-                      <div>
-                        Responsáveis: <strong>{d.respCorrecao || 'A definir'}</strong>
-                      </div>
-                      <div className="font-bold text-black">{previsaoTxt(d)}</div>
-                      <div>Desvio: {d.descricao}</div>
-                      {d.sugestao && <div>Instrução / Sugestão: {d.sugestao}</div>}
-                      {d.correcaoTexto && <div>Correção realizada: <strong>{d.correcaoTexto}</strong></div>}
-                      {d.dataCorrecao && <div className="text-green-800">Corrigido em: {d.dataCorrecao}</div>}
-                    </div>
+                    {/* CONTEÚDO EXPANDIDO (Ou visível na impressão) */}
+                    <div className={`${isRelExpanded ? 'block' : 'hidden print:block'} mt-2 pt-2 border-t border-gray-100 text-gray-700 space-y-1`}>
+                      <div><strong>Responsáveis:</strong> {d.respCorrecao || 'A definir'}</div>
+                      <div><strong>Desvio:</strong> {d.descricao}</div>
+                      {d.sugestao && <div><strong>Instrução / Sugestão:</strong> {d.sugestao}</div>}
+                      {d.correcaoTexto && <div><strong>Correção realizada:</strong> {d.correcaoTexto}</div>}
+                      {d.dataCorrecao && <div className="text-green-800 font-bold">Corrigido em: {d.dataCorrecao}</div>}
 
-                    <div className="grid grid-cols-2 gap-3 mt-2 max-w-xl">
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <span className="block text-[10px] font-black uppercase text-black mb-1">
-                          Antes ({listaFotosDesvio.length})
-                        </span>
-                        {listaFotosDesvio.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {listaFotosDesvio.map((f, idx) => (
-                              <img
-                                key={idx}
-                                src={f}
-                                alt={`Antes #${idx + 1}`}
-                                className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
-                                onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
-                            Sem fotos
-                          </div>
-                        )}
-                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-2 max-w-xl">
+                        <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                          <span className="block text-[10px] font-black uppercase text-black mb-1">
+                            Antes ({listaFotosDesvio.length})
+                          </span>
+                          {listaFotosDesvio.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {listaFotosDesvio.map((f, idx) => (
+                                <img
+                                  key={idx}
+                                  src={f}
+                                  alt={`Antes #${idx + 1}`}
+                                  className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
+                                  onClick={() => abrirModalFoto(listaFotosDesvio, idx)}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
+                              Sem fotos
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <span className="block text-[10px] font-black uppercase text-black mb-1">
-                          Depois ({listaFotosCorrecao.length})
-                        </span>
-                        {listaFotosCorrecao.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {listaFotosCorrecao.map((f, idx) => (
-                              <img
-                                key={idx}
-                                src={f}
-                                alt={`Depois #${idx + 1}`}
-                                className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
-                                onClick={() => abrirModalFoto(listaFotosCorrecao, idx)}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
-                            Sem foto da correção
-                          </div>
-                        )}
+                        <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                          <span className="block text-[10px] font-black uppercase text-black mb-1">
+                            Depois ({listaFotosCorrecao.length})
+                          </span>
+                          {listaFotosCorrecao.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {listaFotosCorrecao.map((f, idx) => (
+                                <img
+                                  key={idx}
+                                  src={f}
+                                  alt={`Depois #${idx + 1}`}
+                                  className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
+                                  onClick={() => abrirModalFoto(listaFotosCorrecao, idx)}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="h-20 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded">
+                              Sem foto da correção
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
