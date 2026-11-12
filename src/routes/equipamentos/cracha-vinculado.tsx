@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { supabase, rawSupabase } from '../../lib/supabase'
 import {
@@ -67,6 +68,23 @@ export function CrachaVinculadoComponent() {
     typeof window !== 'undefined'
       ? localStorage.getItem('sucena_environment') || 'barcarena'
       : 'barcarena'
+
+  // Trava scroll da página quando modal de edição/vínculo estiver aberto (sem página longa de fundo)
+  useEffect(() => {
+    if (!modalMotorista) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalMotorista(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [modalMotorista])
 
   const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
     setToastMsg({ msg, type })
@@ -766,131 +784,160 @@ export function CrachaVinculadoComponent() {
         )}
       </div>
 
-      {/* Modal de Vinculação */}
-      {modalMotorista && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-xl w-full border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/70">
-              <div className="flex items-center gap-3">
-                <span className="p-2 rounded-xl bg-amber-400 text-black"><Truck className="w-5 h-5" /></span>
-                <div>
-                  <h3 className="font-extrabold text-lg text-black leading-tight">Vincular Equipamentos</h3>
-                  <p className="text-xs font-semibold text-gray-600 mt-0.5">
-                    Motorista: <b>{modalMotorista.nome}</b> ({modalMotorista.cargo})
-                  </p>
+      {/* Modal de Vinculação com Portal no topo da tela (sem scroll da página) */}
+      {modalMotorista &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto">
+            {/* Backdrop com clique para fechar */}
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+              onClick={() => setModalMotorista(null)}
+            />
+
+            <div className="relative bg-white rounded-3xl max-w-xl w-full border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] my-auto animate-in zoom-in-95 duration-200 z-10">
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/70">
+                <div className="flex items-center gap-3">
+                  <span className="p-2 rounded-xl bg-amber-400 text-black">
+                    <Truck className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-extrabold text-lg text-black leading-tight">
+                      Vincular Equipamentos
+                    </h3>
+                    <p className="text-xs font-semibold text-gray-600 mt-0.5">
+                      Motorista: <b>{modalMotorista.nome}</b> ({modalMotorista.cargo})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalMotorista(null)}
+                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center justify-center transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Search */}
+              <div className="p-4 border-b border-gray-100 bg-white">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={buscaEquipModal}
+                    onChange={(e) => setBuscaEquipModal(e.target.value)}
+                    placeholder="Pesquisar por nome, placa ou tipo de equipamento..."
+                    className="w-full border-2 border-gray-200 rounded-2xl px-4 py-2 pl-10 text-xs sm:text-sm font-bold text-black placeholder-gray-400 outline-none focus:border-amber-400"
+                  />
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                </div>
+                <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mt-2 px-1">
+                  <span>{selecionadosModal.length} equipamento(s) selecionado(s)</span>
+                  {selecionadosModal.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelecionadosModal([])}
+                      className="text-red-600 hover:underline font-bold"
+                    >
+                      Limpar seleção
+                    </button>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setModalMotorista(null)}
-                className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Modal Search */}
-            <div className="p-4 border-b border-gray-100 bg-white">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={buscaEquipModal}
-                  onChange={(e) => setBuscaEquipModal(e.target.value)}
-                  placeholder="Pesquisar por nome, placa ou tipo de equipamento..."
-                  className="w-full border-2 border-gray-200 rounded-2xl px-4 py-2 pl-10 text-xs sm:text-sm font-bold text-black placeholder-gray-400 outline-none focus:border-amber-400"
-                />
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-              </div>
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mt-2 px-1">
-                <span>{selecionadosModal.length} equipamento(s) selecionado(s)</span>
-                {selecionadosModal.length > 0 && (
-                  <button type="button" onClick={() => setSelecionadosModal([])} className="text-red-600 hover:underline font-bold">
-                    Limpar seleção
-                  </button>
-                )}
-              </div>
-            </div>
+              {/* Modal Equipment List */}
+              <div className="p-4 overflow-y-auto space-y-2 flex-1 divide-y divide-gray-100">
+                {equipamentosPesados
+                  .filter((eq) => {
+                    const q = buscaEquipModal.toLowerCase().trim()
+                    if (!q) return true
+                    return (
+                      eq.name.toLowerCase().includes(q) ||
+                      (eq.plate_tag && eq.plate_tag.toLowerCase().includes(q)) ||
+                      (eq.type && eq.type.toLowerCase().includes(q))
+                    )
+                  })
+                  .map((eq) => {
+                    const selecionado = selecionadosModal.includes(eq.id)
+                    const emOp = eq.status === 'Em operação'
+                    // Outros motoristas vinculados a este equipamento (exceto o atual)
+                    const outrosVinculados = (vinculosInvertido[eq.id] || []).filter(
+                      (id) => id !== modalMotorista.id
+                    )
 
-            {/* Modal Equipment List */}
-            <div className="p-4 overflow-y-auto space-y-2 flex-1 divide-y divide-gray-100">
-              {equipamentosPesados
-                .filter((eq) => {
-                  const q = buscaEquipModal.toLowerCase().trim()
-                  if (!q) return true
-                  return (
-                    eq.name.toLowerCase().includes(q) ||
-                    (eq.plate_tag && eq.plate_tag.toLowerCase().includes(q)) ||
-                    (eq.type && eq.type.toLowerCase().includes(q))
-                  )
-                })
-                .map((eq) => {
-                  const selecionado = selecionadosModal.includes(eq.id)
-                  const emOp = eq.status === 'Em operação'
-                  // Outros motoristas vinculados a este equipamento (exceto o atual)
-                  const outrosVinculados = (vinculosInvertido[eq.id] || []).filter((id) => id !== modalMotorista.id)
-
-                  return (
-                    <label
-                      key={eq.id}
-                      onClick={() => toggleEquipamentoModal(eq.id)}
-                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
-                        selecionado ? 'bg-amber-50/80 border-amber-400 shadow-2xs' : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${
-                          selecionado ? 'bg-amber-500 border-amber-500 text-black' : 'border-gray-300 bg-white'
-                        }`}>
-                          {selecionado && <Check className="w-4 h-4 stroke-[3]" />}
-                        </div>
-                        <div>
-                          <div className="font-extrabold text-sm text-black flex items-center gap-2">
-                            <span>{eq.name}</span>
-                            <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
-                              {eq.plate_tag || 'Sem Placa'}
-                            </span>
+                    return (
+                      <label
+                        key={eq.id}
+                        onClick={() => toggleEquipamentoModal(eq.id)}
+                        className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
+                          selecionado
+                            ? 'bg-amber-50/80 border-amber-400 shadow-2xs'
+                            : 'bg-white border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${
+                              selecionado
+                                ? 'bg-amber-500 border-amber-500 text-black'
+                                : 'border-gray-300 bg-white'
+                            }`}
+                          >
+                            {selecionado && <Check className="w-4 h-4 stroke-[3]" />}
                           </div>
-                          <span className="text-xs text-gray-500 font-semibold block mt-0.5">{eq.type} • {eq.category}</span>
-                          {outrosVinculados.length > 0 && (
-                            <span className="text-[10px] text-blue-600 font-bold block mt-0.5">
-                              + {outrosVinculados.length} outro(s) colaborador(es) vinculado(s)
+                          <div>
+                            <div className="font-extrabold text-sm text-black flex items-center gap-2">
+                              <span>{eq.name}</span>
+                              <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                                {eq.plate_tag || 'Sem Placa'}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 font-semibold block mt-0.5">
+                              {eq.type} • {eq.category}
                             </span>
-                          )}
+                            {outrosVinculados.length > 0 && (
+                              <span className="text-[10px] text-blue-600 font-bold block mt-0.5">
+                                + {outrosVinculados.length} outro(s) colaborador(es) vinculado(s)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        emOp ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {eq.status}
-                      </span>
-                    </label>
-                  )
-                })}
-            </div>
+                        <span
+                          className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            emOp ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {eq.status}
+                        </span>
+                      </label>
+                    )
+                  })}
+              </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50/70 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setModalMotorista(null)}
-                className="px-4 py-2.5 rounded-xl text-gray-700 font-bold text-xs sm:text-sm hover:bg-gray-200 transition cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSalvarModal}
-                disabled={saving}
-                className="bg-amber-400 hover:bg-amber-500 text-black font-extrabold text-xs sm:text-sm rounded-xl py-2.5 px-5 shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-60"
-              >
-                <Check className="w-4 h-4" />
-                {saving ? 'Salvando…' : 'Confirmar e Salvar'}
-              </button>
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-gray-200 bg-gray-50/70 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setModalMotorista(null)}
+                  className="px-4 py-2.5 rounded-xl text-gray-700 font-bold text-xs sm:text-sm hover:bg-gray-200 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSalvarModal}
+                  disabled={saving}
+                  className="bg-amber-400 hover:bg-amber-500 text-black font-extrabold text-xs sm:text-sm rounded-xl py-2.5 px-5 shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-60"
+                >
+                  <Check className="w-4 h-4" />
+                  {saving ? 'Salvando…' : 'Confirmar e Salvar'}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
