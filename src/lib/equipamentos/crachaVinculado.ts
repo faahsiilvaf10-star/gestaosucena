@@ -157,9 +157,10 @@ export async function carregarMapaEquipamentoParaMotoristas(
       const mapaDir = await carregarVinculosCracha(env)
       const mapaInv: Record<string, string[]> = {}
       for (const [motId, eqList] of Object.entries(mapaDir)) {
+        if (!Array.isArray(eqList)) continue
         for (const eqId of eqList) {
-          if (!mapInv[eqId]) mapInv[eqId] = []
-          mapInv[eqId].push(motId)
+          if (!mapaInv[eqId]) mapaInv[eqId] = []
+          mapaInv[eqId].push(motId)
         }
       }
       return mapaInv

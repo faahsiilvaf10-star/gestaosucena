@@ -40,8 +40,6 @@ export function CrachaVinculadoComponent() {
   const [equipamentos, setEquipamentos] = useState<EquipamentoItem[]>([])
   // Mapa: { [motorista_id]: equipamento_id[] }
   const [vinculos, setVinculos] = useState<Record<string, string[]>>({})
-  // Mapa invertido: { [equipamento_id]: motorista_id[] }
-  const [vinculosInvertido, setVinculosInvertido] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toastMsg, setToastMsg] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
@@ -95,7 +93,7 @@ export function CrachaVinculadoComponent() {
   const carregarDados = useCallback(async () => {
     setLoading(true)
     try {
-      const [rhRes, eqRes, mapaDir, mapaInv] = await Promise.all([
+      const [rhRes, eqRes, mapaDir] = await Promise.all([
         // Busca todos os colaboradores do RH efetivo
         rawSupabase
           .from('rh_efetivo')
@@ -106,7 +104,6 @@ export function CrachaVinculadoComponent() {
           .select('id, name, plate_tag, type, category, status')
           .order('name', { ascending: true }),
         carregarVinculosCracha(env),
-        carregarMapaEquipamentoParaMotoristas(env),
       ])
 
       if (rhRes.error) console.error('[RH Efetivo]', rhRes.error)
@@ -115,7 +112,6 @@ export function CrachaVinculadoComponent() {
       setMotoristas((rhRes.data as MotoristaRH[]) || [])
       setEquipamentos((eqRes.data as EquipamentoItem[]) || [])
       setVinculos(mapaDir || {})
-      setVinculosInvertido(mapaInv || {})
 
       // Migração silenciosa de legado (roda somente se tabela existir e legado existir)
       migrarVinculosLegados(env).catch(() => {})
@@ -130,6 +126,20 @@ export function CrachaVinculadoComponent() {
   useEffect(() => { carregarDados() }, [carregarDados])
 
   // ── Computed ────────────────────────────────────────────────────────────────
+  // Mapa invertido reativo: { [equipamento_id]: motorista_id[] }
+  const vinculosInvertido = useMemo(() => {
+    const mapaInv: Record<string, string[]> = {}
+    for (const [motId, eqList] of Object.entries(vinculos)) {
+      if (!Array.isArray(eqList)) continue
+      for (const eqId of eqList) {
+        if (!mapaInv[eqId]) mapaInv[eqId] = []
+        if (!mapaInv[eqId].includes(motId)) {
+          mapaInv[eqId].push(motId)
+        }
+      }
+    }
+    return mapaInv
+  }, [vinculos])
   const motoristasBase = useMemo(() => {
     // Filtra apenas status inativo/demitido/desligado (a query já exclui DEMITIDO/DESLIGADO)
     const ativos = motoristas.filter((m) => {
@@ -214,10 +224,6 @@ export function CrachaVinculadoComponent() {
     const atuais = vinculos[motoristaId] || []
     const novosEquips = atuais.filter((id) => id !== equipId)
     setVinculos((prev) => ({ ...prev, [motoristaId]: novosEquips }))
-    setVinculosInvertido((prev) => ({
-      ...prev,
-      [equipId]: (prev[equipId] || []).filter((id) => id !== motoristaId),
-    }))
 
     setSaving(true)
     const eq = mapaEquipamentos.get(equipId)
@@ -245,23 +251,8 @@ export function CrachaVinculadoComponent() {
     const motId = modalMotorista.id
     const anteriores = vinculos[motId] || []
 
-    // Atualiza otimista
+    // Atualiza otimista (vinculosInvertido atualiza automaticamente via useMemo)
     setVinculos((prev) => ({ ...prev, [motId]: selecionadosModal }))
-
-    // Atualiza mapa invertido otimista
-    setVinculosInvertido((prev) => {
-      const novo = { ...prev }
-      // Remove este motorista de todos os equipamentos anteriores
-      for (const eqId of anteriores) {
-        novo[eqId] = (novo[eqId] || []).filter((id) => id !== motId)
-      }
-      // Adiciona para os novos selecionados
-      for (const eqId of selecionadosModal) {
-        if (!novo[eqId]) novo[eqId] = []
-        if (!novo[eqId].includes(motId)) novo[eqId].push(motId)
-      }
-      return novo
-    })
 
     setModalMotorista(null)
     setSaving(true)
