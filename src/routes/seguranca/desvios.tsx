@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { isAdmin } from '@/components/ui/VerifiedBadge'
-import { notificarDesvioRegistrado } from '@/lib/desviosWhatsapp'
+import { notificarDesvioRegistrado, notificarDesvioCorrigido } from '@/lib/desviosWhatsapp'
 import { compressImage } from '@/lib/cintasConfig'
 import {
   ArrowLeft,
@@ -740,13 +740,78 @@ function DesviosPage() {
       `${desvioAlvo?.titulo} • Realizado por: ${quemSalvou} • ${fotos.length} foto(s) • ${texto}`
     )
 
+    // Disparo imediato para o grupo do WhatsApp da correção e fotos anexadas
+    if (desvioAlvo) {
+      void notificarDesvioCorrigido(
+        {
+          uid: desvioAlvo.uid,
+          titulo: desvioAlvo.titulo,
+          descricao: desvioAlvo.descricao,
+          local: desvioAlvo.local,
+          area: desvioAlvo.area,
+          categoria: desvioAlvo.categoria,
+          prioridade: desvioAlvo.prioridade,
+          risco: desvioAlvo.risco,
+          gravidade: desvioAlvo.gravidade,
+          tecnico: desvioAlvo.tecnico,
+          respCorrecao: desvioAlvo.respCorrecao,
+          empresa: desvioAlvo.empresa,
+          previsao: desvioAlvo.previsao,
+          correcaoTexto: texto,
+          usuario: quemSalvou,
+          dataCorrecao: agoraStr,
+        },
+        fotos
+      )
+    }
+
     setCorrecaoDraft((prev) => {
       const copy = { ...prev }
       delete copy[uid]
       return copy
     })
 
-    toast.success('✅ Correção salva! Desvio CORRIGIDO — relatório e histórico atualizados')
+    toast.success('✅ Correção salva e enviada ao WhatsApp! Desvio CORRIGIDO')
+  }
+
+  // Reenviar notificação de correção ao WhatsApp
+  const handleReenviarCorrecaoWhatsapp = async (d: DesvioRegistro) => {
+    const fotos =
+      d.fotosCorrecao && d.fotosCorrecao.length > 0
+        ? d.fotosCorrecao
+        : d.fotoCorrecao
+        ? [d.fotoCorrecao]
+        : []
+    const toastId = toast.loading('Enviando correção ao grupo do WhatsApp...')
+    try {
+      await notificarDesvioCorrigido(
+        {
+          uid: d.uid,
+          titulo: d.titulo,
+          descricao: d.descricao,
+          local: d.local,
+          area: d.area,
+          categoria: d.categoria,
+          prioridade: d.prioridade,
+          risco: d.risco,
+          gravidade: d.gravidade,
+          tecnico: d.tecnico,
+          respCorrecao: d.respCorrecao,
+          empresa: d.empresa,
+          previsao: d.previsao,
+          correcaoTexto: d.correcaoTexto || 'Correção realizada.',
+          usuario: currentUserName || d.tecnico || 'Colaborador',
+          dataCorrecao: d.dataCorrecao || new Date().toLocaleString('pt-BR'),
+        },
+        fotos
+      )
+      toast.dismiss(toastId)
+      toast.success('✅ Correção enviada ao WhatsApp com sucesso!')
+    } catch (err) {
+      console.error(err)
+      toast.dismiss(toastId)
+      toast.error('❌ Falha ao reenviar correção ao WhatsApp.')
+    }
   }
 
   // Reabrir desvio
@@ -1778,20 +1843,30 @@ function DesviosPage() {
                         <strong>Correção realizada — o que foi feito:</strong> {d.correcaoTexto}
                       </p>
 
-                      <button
-                        type="button"
-                        onClick={() => handleReabrir(d.uid)}
-                        className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs cursor-pointer"
-                      >
-                        ↩️ Voltar para PENDENTE para editar a correção
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleReenviarCorrecaoWhatsapp(d)}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                          title="Dispara a mensagem e as fotos da correção no grupo do WhatsApp"
+                        >
+                          <span>📲</span> Enviar/Reenviar Correção ao WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReabrir(d.uid)}
+                          className="px-4 py-2 bg-white hover:bg-gray-100 border-1.5 border-gray-400 text-black text-xs font-black rounded-xl transition shadow-xs cursor-pointer"
+                        >
+                          ↩️ Voltar para PENDENTE para editar a correção
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="mt-4 pt-3 border-t border-amber-200">
                       <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-950 mb-3">
                         ⏳ Este desvio fica <strong>PENDENTE</strong> até você: <strong>1)</strong> enviar a(s) foto(s) da correção,{' '}
                         <strong>2)</strong> preencher “Correção realizada — o que foi feito” e <strong>3)</strong> clicar em{' '}
-                        <strong>💾 Salvar correção</strong>. <em>(Qualquer pessoa pode salvar a correção)</em>
+                        <strong>💾 Salvar correção</strong> (envia fotos e texto ao WhatsApp automaticamente). <em>(Qualquer pessoa pode salvar a correção)</em>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">

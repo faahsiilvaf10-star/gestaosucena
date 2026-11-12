@@ -2681,7 +2681,8 @@ function AdminRoute() {
                     { key: 'inspecaoCanteiroAgendada', label: 'Inspeção Canteiro (Agendada)' },
                     { key: 'inspecaoCanteiroDia', label: 'Inspeção Canteiro (Dia às 07h)' },
                     { key: 'inspecaoCanteiroCorrecao', label: 'Inspeção Canteiro (Correção)' },
-                    { key: 'desvioRegistrado', label: 'Desvio de Segurança' },
+                    { key: 'desvioRegistrado', label: 'Desvio de Segurança (Abertura)' },
+                    { key: 'desvioCorrigido', label: 'Desvio de Segurança (Correção)' },
                     { key: 'campanhaSegurancaMes', label: 'Campanha de Segurança (Mês)' },
                     { key: 'matrizResponsabilidadeLembrete', label: 'Matriz Responsabilidades (10 Dias)' },
                     { key: 'matrizFechamentoMesAnterior', label: 'Matriz - Fechamento Mês Anterior (Dia 1)' },
@@ -2741,6 +2742,7 @@ function AdminRoute() {
                     {selectedTemplate === 'inspecaoCanteiroDia' && '{data_inspecao}, {local}, {responsavel}, {turno}, {area}, {total_pontos}, {total_corrigidos}, {total_pendentes}, {lista_pendencias}'}
                     {selectedTemplate === 'inspecaoCanteiroCorrecao' && '{titulo_item}, {categoria}, {prioridade}, {local}, {prazo}, {o_que_foi_feito}, {usuario}, {data_correcao}, {total_corrigidos}, {total_pontos}, {porcentagem}'}
                     {selectedTemplate === 'desvioRegistrado' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {tecnico}, {responsaveis}, {empresa}, {previsao}, {sugestao}'}
+                    {selectedTemplate === 'desvioCorrigido' && '{titulo}, {descricao}, {prioridade}, {risco}, {gravidade}, {categoria}, {local}, {area}, {correcao}, {usuario}, {data_correcao}, {tecnico}, {responsaveis}, {empresa}'}
                     {selectedTemplate === 'campanhaSegurancaMes' && '{mes_nome}, {campanha_nome}, {tema}, {descricao}, {frase}'}
                     {selectedTemplate === 'matrizResponsabilidadeLembrete' && '{mes_nome}, {ano}, {dias_restantes}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}
                     {selectedTemplate === 'matrizFechamentoMesAnterior' && '{mes_anterior_nome}, {ano}, {mes_atual_nome}, {total_cargos}, {cargos_concluidos}, {cargos_pendentes}, {lista_concluidos}, {lista_pendentes}'}

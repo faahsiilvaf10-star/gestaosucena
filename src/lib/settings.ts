@@ -270,6 +270,7 @@ export type WhatsappSettings = {
     matrizFechamentoMesAnterior?: string;
     matrizAcompanhamentoQuintaFeira?: string;
     desvioRegistrado?: string;
+    desvioCorrigido?: string;
     inspecaoCanteiroAgendada?: string;
     inspecaoCanteiroDia?: string;
     inspecaoCanteiroCorrecao?: string;
@@ -479,6 +480,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🎗️ *CAMPANHA DO MÊS: {campanha_nome} ({mes_nome})* 🎗️\n\n💡 *Conscientização:* {tema}\n\n📝 *Sobre a campanha:*\n{descricao}\n\n📢 *Mensagem:* \"{frase}\"\n\n_Mensagem automática de Segurança do Trabalho - Sucena / Hydro Reabilitação_",
     desvioRegistrado:
       "⚠️ *NOVO DESVIO DE SEGURANÇA REGISTRADO* ⚠️\n\n📌 *Título:* {titulo}\n📝 *Descrição:* {descricao}\n🚨 *Prioridade:* {prioridade}\n⚠️ *Risco:* {risco} ({gravidade})\n📂 *Categoria:* {categoria}\n📍 *Local:* {local} {area}\n\n👷 *Técnico Responsável:* {tecnico}\n👥 *Pessoas Responsáveis:* {responsaveis}\n🏢 *Empresa/Equipe:* {empresa}\n⏰ *Data Limite para Correção:* {previsao}\n\n💡 *Instrução / Sugestão:* {sugestao}\n\n_Mensagem automática - Sucena Segurança_",
+    desvioCorrigido:
+      "✅ *DESVIO DE SEGURANÇA CORRIGIDO* ✅\n\n📌 *Título do Desvio:* {titulo}\n📂 *Categoria:* {categoria}\n📍 *Local:* {local} {area}\n⚠️ *Risco Original:* {risco} ({gravidade})\n\n🛠️ *CORREÇÃO REALIZADA — O QUE FOI FEITO:*\n{correcao}\n\n👤 *Corrigido por:* {usuario}\n📅 *Data da Correção:* {data_correcao}\n👷 *Técnico Responsável:* {tecnico}\n👥 *Pessoas Responsáveis:* {responsaveis}\n🏢 *Empresa/Equipe:* {empresa}\n\n_Mensagem automática - Sucena Segurança_",
     inspecaoCanteiroAgendada:
       "🏗️ *NOVA INSPEÇÃO DE CANTEIRO AGENDADA* 🏗️\n\n📅 *Data da Inspeção:* {data_inspecao}\n📍 *Local / Frente:* {local}\n👤 *Responsável:* {responsavel}\n🕒 *Turno:* {turno}\n🏗️ *Área:* {area}\n⏳ *Prazo Final:* {prazo}\n\n⚠️ *Pontos de Atenção ({total_pontos}):*\n{lista_itens}\n\n_Mensagem automática - Sucena Segurança_",
     inspecaoCanteiroDia:

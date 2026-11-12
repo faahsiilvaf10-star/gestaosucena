@@ -112,3 +112,98 @@ export async function notificarDesvioRegistrado(
   }
 }
 
+export interface DesvioCorrigidoNotificacaoData extends DesvioNotificacaoData {
+  correcaoTexto: string
+  usuario?: string
+  dataCorrecao?: string
+}
+
+/**
+ * Dispara notificação no grupo do WhatsApp ao registrar/salvar a correção de um Desvio de Segurança.
+ * Inclui os detalhes da correção realizada, fotos do antes e depois, responsável e data/hora.
+ */
+export async function notificarDesvioCorrigido(
+  desvio: DesvioCorrigidoNotificacaoData,
+  fotosCorrecao: string[] = []
+) {
+  try {
+    const settings = await getWhatsappSettings()
+
+    if (settings.desviosSeguranca?.enabled === false) {
+      console.info('[Desvios Segurança] Notificação desativada nas configurações do WhatsApp.')
+      return
+    }
+
+    const targetGroup = settings.desviosSeguranca?.specificGroupId || settings.groupId
+    if (!targetGroup || !settings.url || !settings.token) {
+      console.warn('[Desvios Segurança] WhatsApp não configurado para envio de desvios.')
+      return
+    }
+
+    let msg =
+      settings.messageTemplates?.desvioCorrigido ||
+      '✅ *DESVIO DE SEGURANÇA CORRIGIDO* ✅\n\n📌 *Título do Desvio:* {titulo}\n📂 *Categoria:* {categoria}\n📍 *Local:* {local} {area}\n⚠️ *Risco Original:* {risco} ({gravidade})\n\n🛠️ *CORREÇÃO REALIZADA — O QUE FOI FEITO:*\n{correcao}\n\n👤 *Corrigido por:* {usuario}\n📅 *Data da Correção:* {data_correcao}\n👷 *Técnico Responsável:* {tecnico}\n👥 *Pessoas Responsáveis:* {responsaveis}\n🏢 *Empresa/Equipe:* {empresa}\n\n_Mensagem automática - Sucena Segurança_'
+
+    msg = msg.replaceAll('{titulo}', desvio.titulo || 'Desvio de Segurança')
+    msg = msg.replaceAll('{descricao}', desvio.descricao || 'Sem descrição')
+    msg = msg.replaceAll('{prioridade}', desvio.prioridade || 'Média')
+    msg = msg.replaceAll('{risco}', desvio.risco || 'Geral')
+    msg = msg.replaceAll('{gravidade}', desvio.gravidade || 'Média')
+    msg = msg.replaceAll('{categoria}', desvio.categoria || 'Geral')
+    msg = msg.replaceAll('{local}', desvio.local || 'Canteiro')
+    msg = msg.replaceAll('{area}', desvio.area ? `(${desvio.area})` : '')
+    msg = msg.replaceAll('{correcao}', desvio.correcaoTexto || 'Correção realizada.')
+    msg = msg.replaceAll('{usuario}', desvio.usuario || 'Colaborador')
+    msg = msg.replaceAll('{data_correcao}', desvio.dataCorrecao || new Date().toLocaleString('pt-BR'))
+    msg = msg.replaceAll('{tecnico}', desvio.tecnico || 'Técnico de Segurança')
+    msg = msg.replaceAll('{responsaveis}', desvio.respCorrecao || 'A definir')
+    msg = msg.replaceAll('{empresa}', desvio.empresa || 'Própria')
+
+    // 1. Enviar mensagem de texto principal
+    await sendWhatsappTextOnServer({
+      data: {
+        url: settings.url,
+        token: settings.token,
+        instanceId: settings.instanceId,
+        phone: targetGroup,
+        text: msg,
+      },
+    })
+
+    // 2. Enviar fotos da correção anexadas
+    const fotosValidas = (fotosCorrecao || []).filter((f) => f && (f.startsWith('data:image') || f.startsWith('http')))
+    for (let i = 0; i < fotosValidas.length; i++) {
+      const f = fotosValidas[i]
+      try {
+        await sendWhatsappMediaOnServer({
+          data: {
+            url: settings.url,
+            token: settings.token,
+            instanceId: settings.instanceId,
+            phone: targetGroup,
+            caption: `✅ Foto da Correção: *${desvio.titulo}* (${i + 1}/${fotosValidas.length})`,
+            base64Media: f.startsWith('data:image') ? f : '',
+            imageUrl: f.startsWith('http') ? f : undefined,
+            fileName: `correcao-desvio-${desvio.uid}-${i + 1}.jpg`,
+          },
+        })
+      } catch (mediaErr) {
+        console.warn(`[Desvios WhatsApp] Erro ao enviar foto da correção ${i + 1}:`, mediaErr)
+      }
+    }
+
+    // Registrar no histórico de atividades
+    try {
+      const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      await supabase.from('system_activities').insert({
+        module: 'Segurança',
+        action: `Correção de Desvio enviada ao grupo WhatsApp: "${desvio.titulo}" por ${desvio.usuario || 'Colaborador'} (${fotosValidas.length} foto(s))`,
+        user_name: desvio.usuario || desvio.tecnico || 'Segurança',
+        environment: env,
+      })
+    } catch (_) {}
+  } catch (err) {
+    console.warn('[Desvios Segurança] Falha ao enviar notificação de correção WhatsApp:', err)
+  }
+}
+
