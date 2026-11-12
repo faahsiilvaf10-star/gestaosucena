@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { supabase } from '../../lib/supabase'
+import { supabase, rawSupabase } from '../../lib/supabase'
 import {
   filtrarMotoristasEfetivo,
   filtrarEquipamentosPesados,
@@ -52,7 +52,8 @@ export function CrachaVinculadoComponent() {
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'com_vinculo' | 'sem_vinculo'>('todos')
   const [filtroCargo, setFiltroCargo] = useState('todos')
-  const [mostrarTodosColabs, setMostrarTodosColabs] = useState(false)
+  // Por padrão mostra todos os ativos do RH (não filtra por cargo)
+  const [mostrarTodosColabs, setMostrarTodosColabs] = useState(true)
 
   // Filtros — Equipamentos
   const [buscaEquip, setBuscaEquip] = useState('')
@@ -77,9 +78,12 @@ export function CrachaVinculadoComponent() {
     setLoading(true)
     try {
       const [rhRes, eqRes, mapaDir, mapaInv] = await Promise.all([
-        supabase
+        // rh_efetivo não tem coluna environment — usa rawSupabase para buscar todos os ativos
+        rawSupabase
           .from('rh_efetivo')
           .select('id, nome, cargo, status, matricula, foto_url')
+          .not('status', 'ilike', '%DEMITIDO%')
+          .not('status', 'ilike', '%DESLIGADO%')
           .order('nome', { ascending: true }),
         supabase
           .from('eq_equipments')
@@ -111,12 +115,16 @@ export function CrachaVinculadoComponent() {
 
   // ── Computed ────────────────────────────────────────────────────────────────
   const motoristasBase = useMemo(() => {
+    // Filtra apenas status inativo/demitido/desligado (a query já exclui DEMITIDO/DESLIGADO)
+    const ativos = motoristas.filter((m) => {
+      const s = (m.status || '').toUpperCase()
+      return !s.includes('DEMITIDO') && !s.includes('INATIVO') && !s.includes('DESLIGADO')
+    })
     if (mostrarTodosColabs) {
-      return motoristas.filter((m) => {
-        const s = (m.status || '').toUpperCase()
-        return !s.includes('DEMITIDO') && !s.includes('INATIVO') && !s.includes('DESLIGADO')
-      })
+      // Mostra TODOS os ativos do RH
+      return ativos
     }
+    // Filtra apenas motoristas e operadores
     return filtrarMotoristasEfetivo(motoristas)
   }, [motoristas, mostrarTodosColabs])
 
@@ -464,7 +472,7 @@ export function CrachaVinculadoComponent() {
                   className="text-amber-700 font-extrabold hover:underline cursor-pointer flex items-center gap-1.5"
                 >
                   <User className="w-3.5 h-3.5" />
-                  {mostrarTodosColabs ? 'Exibir apenas Motoristas e Operadores' : 'Ver todos os colaboradores do RH (incluir outros cargos)'}
+                  {mostrarTodosColabs ? 'Filtrar apenas Motoristas e Operadores' : 'Ver todos os colaboradores do RH (incluir outros cargos)'}
                 </button>
               </div>
             </div>
@@ -499,10 +507,10 @@ export function CrachaVinculadoComponent() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setMostrarTodosColabs(true)}
+                      onClick={() => setMostrarTodosColabs(!mostrarTodosColabs)}
                       className="mt-4 text-amber-600 font-bold text-sm hover:underline"
                     >
-                      Ver todos os colaboradores do RH
+                      {mostrarTodosColabs ? 'Filtrar apenas Motoristas e Operadores' : 'Ver todos os colaboradores do RH'}
                     </button>
                   </div>
                 ) : (
