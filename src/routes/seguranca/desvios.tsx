@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { isAdmin } from '@/components/ui/VerifiedBadge'
 import { notificarDesvioRegistrado } from '@/lib/desviosWhatsapp'
+import { compressImage } from '@/lib/cintasConfig'
 import {
   ArrowLeft,
   TriangleAlert,
@@ -420,23 +421,41 @@ function DesviosPage() {
   }
 
   // Upload de Múltiplas Fotos
-  const handleFotosDesvioUpload = (ev: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotosDesvioUpload = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const files = ev.target.files
     if (!files || files.length === 0) return
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const res = e.target?.result as string
-        if (res) {
-          setFotosDesvio((prev) => [...prev, res])
+    const fileList = Array.from(files)
+    ev.target.value = ''
+    const toastId = toast.loading(`Processando ${fileList.length} foto(s)...`)
+
+    try {
+      const lidos: string[] = []
+      for (const file of fileList) {
+        try {
+          const comp = await compressImage(file, 1280, 0.85)
+          lidos.push(comp)
+        } catch {
+          const raw = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve((e.target?.result as string) || '')
+            reader.onerror = () => resolve('')
+            reader.readAsDataURL(file)
+          })
+          if (raw) lidos.push(raw)
         }
       }
-      reader.readAsDataURL(file)
-    })
-
-    toast.success(`${files.length} foto(s) selecionada(s)!`)
-    ev.target.value = ''
+      if (lidos.length > 0) {
+        setFotosDesvio((prev) => [...prev, ...lidos])
+        toast.dismiss(toastId)
+        toast.success(`${lidos.length} foto(s) adicionada(s)!`)
+      } else {
+        toast.dismiss(toastId)
+      }
+    } catch (err) {
+      console.error('Erro ao processar fotos do desvio:', err)
+      toast.dismiss(toastId)
+    }
   }
 
   const handleRemoverFotoDesvio = (index: number) => {
@@ -589,43 +608,62 @@ function DesviosPage() {
     toast.info('Formulário limpo!')
   }
 
-  // Upload de foto(s) de correção de um desvio (múltiplas fotos permitidas)
-  const handleFotosCorrecaoUpload = (uid: string, ev: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload de foto(s) de correção de um desvio (múltiplas fotos permitidas com compressão)
+  const handleFotosCorrecaoUpload = async (uid: string, ev: React.ChangeEvent<HTMLInputElement>) => {
     const files = ev.target.files
     if (!files || files.length === 0) return
 
-    const lidos: string[] = []
-    let processados = 0
+    const fileList = Array.from(files)
+    ev.target.value = ''
+    const toastId = toast.loading(`Processando ${fileList.length} foto(s) da correção...`)
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const res = e.target?.result as string
-        if (res) lidos.push(res)
-        processados++
-        if (processados === files.length) {
-          setCorrecaoDraft((prev) => {
-            const atual = prev[uid] || { foto: '', fotos: [], texto: '' }
-            const fotosExistentes =
-              atual.fotos && atual.fotos.length > 0 ? atual.fotos : atual.foto ? [atual.foto] : []
-            const novasFotos = [...fotosExistentes, ...lidos]
-            return {
-              ...prev,
-              [uid]: {
-                ...atual,
-                foto: novasFotos[0] || '',
-                fotos: novasFotos,
-                erro: undefined,
-                info: `📷 ${novasFotos.length} foto(s) da correção adicionada(s) — preencha “Correção realizada — o que foi feito” e clique em 💾 Salvar correção.`,
-              },
-            }
+    try {
+      const lidos: string[] = []
+      for (const file of fileList) {
+        try {
+          const comp = await compressImage(file, 1280, 0.85)
+          lidos.push(comp)
+        } catch {
+          const raw = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve((e.target?.result as string) || '')
+            reader.onerror = () => resolve('')
+            reader.readAsDataURL(file)
           })
-          toast.info(`📷 ${lidos.length} foto(s) adicionada(s) à correção!`)
+          if (raw) lidos.push(raw)
         }
       }
-      reader.readAsDataURL(file)
-    })
-    ev.target.value = ''
+
+      if (lidos.length === 0) {
+        toast.dismiss(toastId)
+        toast.error('Nenhuma imagem válida pôde ser lida.')
+        return
+      }
+
+      setCorrecaoDraft((prev) => {
+        const atual = prev[uid] || { foto: '', fotos: [], texto: '' }
+        const fotosExistentes =
+          atual.fotos && atual.fotos.length > 0 ? atual.fotos : atual.foto ? [atual.foto] : []
+        const novasFotos = [...fotosExistentes, ...lidos]
+        return {
+          ...prev,
+          [uid]: {
+            ...atual,
+            foto: novasFotos[0] || '',
+            fotos: novasFotos,
+            erro: undefined,
+            info: `📷 ${novasFotos.length} foto(s) da correção anexada(s) — preencha “Correção realizada — o que foi feito” e clique em 💾 Salvar correção.`,
+          },
+        }
+      })
+
+      toast.dismiss(toastId)
+      toast.success(`📷 ${lidos.length} foto(s) adicionada(s) à correção!`)
+    } catch (err) {
+      console.error('Erro ao processar fotos de correção:', err)
+      toast.dismiss(toastId)
+      toast.error('Erro ao carregar fotos da correção.')
+    }
   }
 
   // Remover uma foto específica do rascunho de correção
@@ -1052,7 +1090,6 @@ function DesviosPage() {
                   type="file"
                   accept="image/*"
                   multiple
-                  capture="environment"
                   onChange={handleFotosDesvioUpload}
                   className="hidden"
                 />
@@ -1828,7 +1865,6 @@ function DesviosPage() {
                               type="file"
                               accept="image/*"
                               multiple
-                              capture="environment"
                               onChange={(ev) => handleFotosCorrecaoUpload(d.uid, ev)}
                               className="hidden"
                             />
