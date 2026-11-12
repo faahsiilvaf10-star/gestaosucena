@@ -78,12 +78,10 @@ export function CrachaVinculadoComponent() {
     setLoading(true)
     try {
       const [rhRes, eqRes, mapaDir, mapaInv] = await Promise.all([
-        // rh_efetivo não tem coluna environment — usa rawSupabase para buscar todos os ativos
+        // Busca todos os colaboradores do RH efetivo
         rawSupabase
           .from('rh_efetivo')
-          .select('id, nome, cargo, status, matricula, foto_url')
-          .not('status', 'ilike', '%DEMITIDO%')
-          .not('status', 'ilike', '%DESLIGADO%')
+          .select('id, nome, cargo, status, matricula')
           .order('nome', { ascending: true }),
         supabase
           .from('eq_equipments')

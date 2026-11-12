@@ -85,12 +85,27 @@ export function filtrarEquipamentosPesados(equipamentos: EquipamentoItem[]): Equ
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CRUD — Tabela dedicada eq_cracha_vinculos
+// Helpers de erro de tabela ausente
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _isTableMissingError(err: any): boolean {
+  if (!err) return false
+  const msg = (err.message || '').toLowerCase()
+  return (
+    err.code === '42P01' ||
+    msg.includes('does not exist') ||
+    msg.includes('schema cache') ||
+    msg.includes('relation')
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRUD — Tabela dedicada eq_cracha_vinculos com Fallback Automático
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Carrega todos os vínculos do ambiente como mapa { [motorista_id]: equipamento_id[] }
- * Faz fallback para global_settings (legado) se a tabela ainda não existir.
+ * Faz fallback para global_settings (legado) se a tabela ainda não existir no banco.
  */
 export async function carregarVinculosCracha(
   env: string = 'barcarena'
@@ -104,9 +119,8 @@ export async function carregarVinculosCracha(
       .eq('environment', env)
 
     if (error) {
-      // Tabela ainda não existe → tenta legado
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        return _carregarVinculosLegado(env, localKey)
+      if (_isTableMissingError(error)) {
+        return await _carregarVinculosLegado(env, localKey)
       }
       console.warn('[Crachá Vinculado] Erro ao carregar:', error.message)
       return _carregarCacheLocal(localKey)
@@ -127,8 +141,51 @@ export async function carregarVinculosCracha(
 }
 
 /**
- * Salva (upsert + delete) os vínculos de um motorista específico.
- * Recebe o mapa completo e atualiza apenas o motorista afetado.
+ * Carrega mapa invertido { [equipamento_id]: motorista_id[] }
+ */
+export async function carregarMapaEquipamentoParaMotoristas(
+  env: string = 'barcarena'
+): Promise<Record<string, string[]>> {
+  try {
+    const { data, error } = await rawSupabase
+      .from('eq_cracha_vinculos')
+      .select('motorista_id, equipamento_id')
+      .eq('environment', env)
+
+    if (error && _isTableMissingError(error)) {
+      // Inverte a partir do mapa carregado de global_settings
+      const mapaDir = await carregarVinculosCracha(env)
+      const mapaInv: Record<string, string[]> = {}
+      for (const [motId, eqList] of Object.entries(mapaDir)) {
+        for (const eqId of eqList) {
+          if (!mapInv[eqId]) mapInv[eqId] = []
+          mapInv[eqId].push(motId)
+        }
+      }
+      return mapaInv
+    }
+
+    if (error) {
+      console.warn('[Crachá Vinculado] Erro ao carregar mapa invertido:', error.message)
+      return {}
+    }
+
+    const mapa: Record<string, string[]> = {}
+    for (const row of data || []) {
+      if (!mapa[row.equipamento_id]) mapa[row.equipamento_id] = []
+      mapa[row.equipamento_id].push(row.motorista_id)
+    }
+    return mapa
+  } catch (err) {
+    console.warn('[Crachá Vinculado] Erro geral mapa invertido:', err)
+    return {}
+  }
+}
+
+/**
+ * Salva (upsert + delete) os vínculos de um motorista específico ou o mapa todo.
+ * Salva no Supabase (tabela dedicada ou global_settings se a tabela ainda não foi criada)
+ * e também no LocalStorage.
  */
 export async function salvarVinculosCracha(
   mapa: Record<string, string[]>,
@@ -139,39 +196,59 @@ export async function salvarVinculosCracha(
   _salvarCacheLocal(localKey, mapa)
 
   try {
-    // Se sabemos qual motorista mudou, opera só nele (mais eficiente)
     if (motoristaIdAlterado) {
-      return await _sincronizarMotoristaSingle(motoristaIdAlterado, mapa[motoristaIdAlterado] || [], env)
+      const ok = await _sincronizarMotoristaSingle(motoristaIdAlterado, mapa[motoristaIdAlterado] || [], env)
+      if (!ok) {
+        // Fallback para global_settings se falhar ou tabela ausente
+        return await _salvarVinculosLegado(mapa, env)
+      }
+      return true
     }
 
-    // Fallback: re-sincroniza todos
-    return await _sincronizarTodosMapa(mapa, env)
+    const ok = await _sincronizarTodosMapa(mapa, env)
+    if (!ok) {
+      return await _salvarVinculosLegado(mapa, env)
+    }
+    return true
   } catch (err) {
     console.warn('[Crachá Vinculado] Erro ao salvar:', err)
-    return false
+    return await _salvarVinculosLegado(mapa, env)
   }
 }
 
 /**
- * Vincula um equipamento a um motorista (insert único).
+ * Vincula um equipamento a um motorista.
  */
 export async function vincularEquipamento(
   motoristaId: string,
   equipamentoId: string,
   env: string = 'barcarena'
 ): Promise<boolean> {
-  const { error } = await rawSupabase
-    .from('eq_cracha_vinculos')
-    .upsert(
-      { environment: env, motorista_id: motoristaId, equipamento_id: equipamentoId },
-      { onConflict: 'environment,motorista_id,equipamento_id', ignoreDuplicates: true }
-    )
+  try {
+    const { error } = await rawSupabase
+      .from('eq_cracha_vinculos')
+      .upsert(
+        { environment: env, motorista_id: motoristaId, equipamento_id: equipamentoId },
+        { onConflict: 'environment,motorista_id,equipamento_id', ignoreDuplicates: true }
+      )
 
-  if (error) {
-    console.warn('[Crachá Vinculado] Erro ao vincular:', error.message)
+    if (error) {
+      if (_isTableMissingError(error)) {
+        const mapa = await carregarVinculosCracha(env)
+        const lista = mapa[motoristaId] || []
+        if (!lista.includes(equipamentoId)) {
+          lista.push(equipamentoId)
+          mapa[motoristaId] = lista
+          return await _salvarVinculosLegado(mapa, env)
+        }
+        return true
+      }
+      return false
+    }
+    return true
+  } catch {
     return false
   }
-  return true
 }
 
 /**
@@ -182,72 +259,31 @@ export async function desvincularEquipamento(
   equipamentoId: string,
   env: string = 'barcarena'
 ): Promise<boolean> {
-  const { error } = await rawSupabase
-    .from('eq_cracha_vinculos')
-    .delete()
-    .eq('environment', env)
-    .eq('motorista_id', motoristaId)
-    .eq('equipamento_id', equipamentoId)
+  try {
+    const { error } = await rawSupabase
+      .from('eq_cracha_vinculos')
+      .delete()
+      .eq('environment', env)
+      .eq('motorista_id', motoristaId)
+      .eq('equipamento_id', equipamentoId)
 
-  if (error) {
-    console.warn('[Crachá Vinculado] Erro ao desvincular:', error.message)
+    if (error) {
+      if (_isTableMissingError(error)) {
+        const mapa = await carregarVinculosCracha(env)
+        const lista = (mapa[motoristaId] || []).filter((id) => id !== equipamentoId)
+        mapa[motoristaId] = lista
+        return await _salvarVinculosLegado(mapa, env)
+      }
+      return false
+    }
+    return true
+  } catch {
     return false
   }
-  return true
 }
-
-/**
- * Busca todos os motoristas vinculados a um equipamento específico.
- * Útil para a view "Por Equipamento".
- */
-export async function buscarMotoristasPorEquipamento(
-  equipamentoId: string,
-  env: string = 'barcarena'
-): Promise<string[]> {
-  const { data, error } = await rawSupabase
-    .from('eq_cracha_vinculos')
-    .select('motorista_id')
-    .eq('environment', env)
-    .eq('equipamento_id', equipamentoId)
-
-  if (error) {
-    console.warn('[Crachá Vinculado] Erro ao buscar motoristas do equipamento:', error.message)
-    return []
-  }
-  return (data || []).map((r) => r.motorista_id)
-}
-
-/**
- * Carrega mapa invertido { [equipamento_id]: motorista_id[] }
- */
-export async function carregarMapaEquipamentoParaMotoristas(
-  env: string = 'barcarena'
-): Promise<Record<string, string[]>> {
-  const { data, error } = await rawSupabase
-    .from('eq_cracha_vinculos')
-    .select('motorista_id, equipamento_id')
-    .eq('environment', env)
-
-  if (error) {
-    console.warn('[Crachá Vinculado] Erro ao carregar mapa invertido:', error.message)
-    return {}
-  }
-
-  const mapa: Record<string, string[]> = {}
-  for (const row of data || []) {
-    if (!mapa[row.equipamento_id]) mapa[row.equipamento_id] = []
-    mapa[row.equipamento_id].push(row.motorista_id)
-  }
-  return mapa
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Migração de legado (global_settings → tabela dedicada)
-// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Migra dados do global_settings (formato legado) para a tabela eq_cracha_vinculos.
- * Executar UMA única vez após criar a tabela.
  */
 export async function migrarVinculosLegados(env: string = 'barcarena'): Promise<boolean> {
   const legacyKey = `equipamentos_cracha_vinculado_${env}`
@@ -259,7 +295,7 @@ export async function migrarVinculosLegados(env: string = 'barcarena'): Promise<
       .eq('key', legacyKey)
       .maybeSingle()
 
-    if (!data?.value || typeof data.value !== 'object') return true // sem legado
+    if (!data?.value || typeof data.value !== 'object') return true
 
     const mapa = data.value as Record<string, string[]>
     const rows = Object.entries(mapa).flatMap(([motId, eqIds]) =>
@@ -272,15 +308,9 @@ export async function migrarVinculosLegados(env: string = 'barcarena'): Promise<
       .from('eq_cracha_vinculos')
       .upsert(rows, { onConflict: 'environment,motorista_id,equipamento_id', ignoreDuplicates: true })
 
-    if (error) {
-      console.warn('[Migração] Erro ao migrar vínculos legados:', error.message)
-      return false
-    }
-
-    console.info(`[Migração] ${rows.length} vínculo(s) migrados com sucesso.`)
+    if (error) return false
     return true
-  } catch (err) {
-    console.warn('[Migração] Falha geral:', err)
+  } catch {
     return false
   }
 }
@@ -294,7 +324,6 @@ async function _sincronizarMotoristaSingle(
   equipamentosIds: string[],
   env: string
 ): Promise<boolean> {
-  // 1. Apaga todos os vínculos atuais do motorista
   const { error: delErr } = await rawSupabase
     .from('eq_cracha_vinculos')
     .delete()
@@ -302,13 +331,12 @@ async function _sincronizarMotoristaSingle(
     .eq('motorista_id', motoristaId)
 
   if (delErr) {
-    console.warn('[Crachá Vinculado] Erro ao limpar vínculos:', delErr.message)
+    if (_isTableMissingError(delErr)) return false
     return false
   }
 
   if (equipamentosIds.length === 0) return true
 
-  // 2. Insere os novos
   const rows = equipamentosIds.map((eqId) => ({
     environment: env,
     motorista_id: motoristaId,
@@ -320,7 +348,7 @@ async function _sincronizarMotoristaSingle(
     .insert(rows)
 
   if (insErr) {
-    console.warn('[Crachá Vinculado] Erro ao inserir vínculos:', insErr.message)
+    if (_isTableMissingError(insErr)) return false
     return false
   }
 
@@ -335,13 +363,15 @@ async function _sincronizarTodosMapa(
     eqIds.map((eqId) => ({ environment: env, motorista_id: motId, equipamento_id: eqId }))
   )
 
-  // Limpa tudo do ambiente e reinsere
   const { error: delErr } = await rawSupabase
     .from('eq_cracha_vinculos')
     .delete()
     .eq('environment', env)
 
-  if (delErr) return false
+  if (delErr) {
+    if (_isTableMissingError(delErr)) return false
+    return false
+  }
   if (rows.length === 0) return true
 
   const { error: insErr } = await rawSupabase
@@ -386,7 +416,21 @@ async function _carregarVinculosLegado(env: string, localKey: string): Promise<R
   return _carregarCacheLocal(localKey)
 }
 
-// Mantida por compatibilidade com código legado
+async function _salvarVinculosLegado(mapa: Record<string, string[]>, env: string): Promise<boolean> {
+  try {
+    const { error } = await rawSupabase
+      .from('global_settings')
+      .upsert({
+        key: `equipamentos_cracha_vinculado_${env}`,
+        value: mapa,
+        updated_at: new Date().toISOString(),
+      })
+    return !error
+  } catch {
+    return false
+  }
+}
+
 export function getStorageKeyCracha(env: string = 'barcarena'): string {
   return `equipamentos_cracha_vinculado_${env}`
 }
