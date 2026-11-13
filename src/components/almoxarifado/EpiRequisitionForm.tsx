@@ -90,7 +90,7 @@ function generateReceiptPng(
     }
 
     const envStr = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null;
-    const contractNum = envStr === 'hydro-civil' ? 'Hydro Civil' : '4600012690';
+    const contractNum = envStr === 'hydro-civil' ? '4600013715' : '4600012690';
     drawText(`CONTRATO: ${contractNum}`, W - padX - 160, 60, '12px Arial', '#666');
     drawLine(padX, 90, W - padX, 90, '#ccc');
     drawText('REQUISIÇÃO DE EPI', W / 2 - 120, 140, 'bold 24px Arial', '#333');

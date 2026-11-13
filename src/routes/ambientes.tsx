@@ -74,6 +74,7 @@ function AmbientesComponent() {
     {
       id: 'hydro-civil',
       name: 'HYDRO CIVIL',
+      contract: 'Contrato 4600013715',
       description: 'Ambiente de gestão e operações da unidade Hydro Civil.',
       pinColor: isDark ? '#c9a84c' : '#b88e28',
     }

@@ -1464,7 +1464,7 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
           data={localDate}
           equipamentoNome={vehicle.type || 'Equipamento'}
           placa={vehicle.plate_tag || '-'}
-          obra={vehicle.brand ? `OBRA: ${vehicle.brand}` : (typeof window !== 'undefined' && localStorage.getItem('sucena_environment') === 'hydro-civil' ? 'Hydro Civil' : '4600012690')}
+          obra={vehicle.brand ? `OBRA: ${vehicle.brand}` : (typeof window !== 'undefined' && localStorage.getItem('sucena_environment') === 'hydro-civil' ? '4600013715' : '4600012690')}
           kmInicial={dispatch?.odometer_start || '-'}
           kmFinal={dispatch?.odometer_end || dispatch?.odometer_start || vehicle.current_km || '-'}
           horimetroInicial={dispatch?.horimeter_start || '-'}

@@ -1068,7 +1068,7 @@ export function CustomModuloAtividadePage() {
                 className="bg-[#faf9f6] dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 p-4 rounded-2xl font-mono text-[13px] text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[480px] shadow-inner select-text"
               >
                 <div>🏗️ EMPRESA: Sucena Empreendimentos</div>
-                <div className="mt-1">📄 CONTRATO - 460001269</div>
+                <div className="mt-1">📄 CONTRATO - {typeof window !== 'undefined' && localStorage.getItem('sucena_environment') === 'hydro-civil' ? '4600013715' : '460001269'}</div>
                 <div className="mt-1">➡️ GERÊNCIA: Hydro</div>
                 <div className="mt-1">➡️ DATA: {selectedDate.split('-').reverse().join('/')}</div>
 

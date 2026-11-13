@@ -15,6 +15,8 @@ describe('RDO - Informações Gerais Isoladas por Ambiente', () => {
     expect(DEFAULT_RDO_INFO_CIVIL.local).toBe('Hydro Civil');
     expect(DEFAULT_RDO_INFO_BARCARENA.empresa).toBe('Sucena Empreendimentos');
     expect(DEFAULT_RDO_INFO_CIVIL.empresa).toBe('Sucena Empreendimentos');
+    expect(DEFAULT_RDO_INFO_CIVIL.contrato).toBe('4600013715');
+    expect(DEFAULT_RDO_INFO_BARCARENA.contrato).toBe('460001269');
   });
 
   it('salvar Informações Gerais em um ambiente não deve afetar o outro', () => {

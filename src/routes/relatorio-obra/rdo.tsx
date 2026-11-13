@@ -71,7 +71,7 @@ export const DEFAULT_RDO_INFO_BARCARENA: RdoInfoGerais = {
 
 export const DEFAULT_RDO_INFO_CIVIL: RdoInfoGerais = {
   empresa: 'Sucena Empreendimentos',
-  contrato: '460001269',
+  contrato: '4600013715',
   gerencia: 'Hydro',
   lideranca: 'Eng. Luís Araújo',
   tst: 'Itamar Junior e Alexssandro Chaves',
