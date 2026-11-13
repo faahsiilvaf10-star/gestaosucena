@@ -13,6 +13,7 @@ import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import FileDown from 'lucide-react/dist/esm/icons/file-down.js';
 import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import Zap from 'lucide-react/dist/esm/icons/zap.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
@@ -31,6 +32,14 @@ import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
 import { sendEntryExitWhatsappNotification } from '@/lib/whatsappHelpers'
 import { isOutside, locationFromMovements, MovementRecord, EXIT_REASONS as LOCATION_EXIT_REASONS } from '@/lib/equipamentos/locationStatus'
 import { getAuthenticatedUserName } from '@/lib/authHelpers'
+import {
+  GeradorHorimetroData,
+  getGeradorHorimetro,
+  calcHorasRestantes,
+  getStatusGerador,
+  GERADOR_HORIMETRO_UPDATED_EVENT
+} from '../../lib/geradorHorimetro'
+import { GeradorHorimetroModal } from '../../components/GeradorHorimetroModal'
 
 // EXIT_REASONS passou a ter fonte única em @/lib/equipamentos/locationStatus.
 const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
@@ -78,6 +87,8 @@ function EntradaSaidaPage() {
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
   const [isExitModalOpen, setIsExitModalOpen] = useState(false)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+  const [isGeradorModalOpen, setIsGeradorModalOpen] = useState(false)
+  const [geradorData, setGeradorData] = useState<GeradorHorimetroData | null>(null)
 
   // Report Modal
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
@@ -176,6 +187,12 @@ function EntradaSaidaPage() {
 
   useEffect(() => {
     fetchEquipments()
+    getGeradorHorimetro().then(setGeradorData).catch(console.error)
+
+    const handleHoriUpdate = (e: any) => {
+      if (e?.detail) setGeradorData(e.detail)
+    }
+    window.addEventListener(GERADOR_HORIMETRO_UPDATED_EVENT, handleHoriUpdate)
 
     const subscription = supabase
       .channel('eq_equipments_changes_es')
@@ -188,6 +205,7 @@ function EntradaSaidaPage() {
       .subscribe()
 
     return () => {
+      window.removeEventListener(GERADOR_HORIMETRO_UPDATED_EVENT, handleHoriUpdate)
       subscription.unsubscribe()
     }
   }, [])
@@ -820,9 +838,48 @@ function EntradaSaidaPage() {
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
                       {filteredEquipments.map(eq => {
                         const isInside = !isOutside(eq)
+                        const isEqGerador = (eq.name || '').toUpperCase().includes('GERADOR') || (eq.plate_tag || '').toUpperCase() === 'E9A4808'
+                        const remHoriGerador = geradorData ? calcHorasRestantes(geradorData.currentHorimeter, geradorData.nextMaintenanceHorimeter) : 0
+                        const statusHoriGerador = geradorData ? getStatusGerador(geradorData.currentHorimeter, geradorData.nextMaintenanceHorimeter, geradorData.alertHoursThreshold) : 'normal'
                         return (
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
-                            <td className="p-4 font-bold text-base">{eq.name}</td>
+                            <td className="p-4 font-bold text-base">
+                              {isEqGerador ? (
+                                <div className="flex flex-col items-start gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsGeradorModalOpen(true)}
+                                    className="text-left font-bold text-base hover:text-amber-500 transition-colors flex items-center gap-1.5 group/g"
+                                    title="Clique para ver e alterar o Horímetro do Gerador"
+                                  >
+                                    <span>{eq.name}</span>
+                                    <Zap size={15} className="text-amber-500 fill-amber-500 group-hover/g:scale-125 transition-transform" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsGeradorModalOpen(true)}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all shadow-sm ${
+                                      statusHoriGerador === 'vencido'
+                                        ? 'bg-red-500 text-white animate-pulse'
+                                        : statusHoriGerador === 'alerta'
+                                        ? 'bg-amber-500 text-black'
+                                        : isDark
+                                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+                                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300'
+                                    }`}
+                                    title="Clique para ver e alterar o Horímetro do Gerador"
+                                  >
+                                    <Clock size={11} />
+                                    <span>Horímetro: {geradorData?.currentHorimeter ?? 0}h</span>
+                                    <span className="opacity-80">
+                                      ({remHoriGerador <= 0 ? `Vencido +${Math.abs(remHoriGerador)}h` : `Faltam ${remHoriGerador}h`})
+                                    </span>
+                                  </button>
+                                </div>
+                              ) : (
+                                eq.name
+                              )}
+                            </td>
                             <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</td>
                             <td className="p-4">{eq.category || '-'}</td>
                             <td className="p-4">
@@ -844,6 +901,25 @@ function EntradaSaidaPage() {
                             </td>
                             <td className="p-4 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {isEqGerador && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsGeradorModalOpen(true)}
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs transition-colors ${
+                                      statusHoriGerador === 'vencido'
+                                        ? 'bg-red-600 text-white hover:bg-red-700'
+                                        : statusHoriGerador === 'alerta'
+                                        ? 'bg-amber-500 text-black hover:bg-amber-600'
+                                        : isDark
+                                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+                                        : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                                    }`}
+                                    title="Horímetro e Manutenção Preventiva do Gerador"
+                                  >
+                                    <Zap size={14} className="fill-current" />
+                                    <span>HORÍMETRO</span>
+                                  </button>
+                                )}
                                 <button 
                                   onClick={() => handleOpenHistory(eq)}
                                   className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
@@ -879,11 +955,43 @@ function EntradaSaidaPage() {
                 <div className="md:hidden flex flex-col gap-3 p-4">
                   {filteredEquipments.map(eq => {
                     const isInside = !isOutside(eq)
+                    const isEqGerador = (eq.name || '').toUpperCase().includes('GERADOR') || (eq.plate_tag || '').toUpperCase() === 'E9A4808'
+                    const remHoriGerador = geradorData ? calcHorasRestantes(geradorData.currentHorimeter, geradorData.nextMaintenanceHorimeter) : 0
+                    const statusHoriGerador = geradorData ? getStatusGerador(geradorData.currentHorimeter, geradorData.nextMaintenanceHorimeter, geradorData.alertHoursThreshold) : 'normal'
                     return (
                       <div key={eq.id} className={`w-full p-4 rounded-2xl border flex flex-col gap-3 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <h3 className="font-bold text-lg">{eq.name}</h3>
+                            {isEqGerador ? (
+                              <div className="flex flex-col items-start gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsGeradorModalOpen(true)}
+                                  className="font-bold text-lg text-left hover:text-amber-500 transition-colors flex items-center gap-1.5"
+                                >
+                                  <span>{eq.name}</span>
+                                  <Zap size={16} className="text-amber-500 fill-amber-500" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsGeradorModalOpen(true)}
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold transition-all shadow-sm ${
+                                    statusHoriGerador === 'vencido'
+                                      ? 'bg-red-500 text-white animate-pulse'
+                                      : statusHoriGerador === 'alerta'
+                                      ? 'bg-amber-500 text-black'
+                                      : isDark
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  }`}
+                                >
+                                  <Clock size={11} />
+                                  <span>Horímetro: {geradorData?.currentHorimeter ?? 0}h ({remHoriGerador <= 0 ? `+${Math.abs(remHoriGerador)}h` : `Faltam ${remHoriGerador}h`})</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <h3 className="font-bold text-lg">{eq.name}</h3>
+                            )}
                             <div className="font-mono text-xs tracking-wider uppercase opacity-70 whitespace-nowrap tabular-nums mt-1">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</div>
                             <div className="text-xs opacity-70 mt-1">{eq.category || 'Sem categoria'}</div>
                           </div>
@@ -913,6 +1021,15 @@ function EntradaSaidaPage() {
                         </div>
 
                         <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col">
+                           {isEqGerador && (
+                             <button
+                               type="button"
+                               onClick={() => setIsGeradorModalOpen(true)}
+                               className="w-full flex justify-center items-center gap-2 px-4 py-2.5 bg-amber-500 text-black rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors mb-2 min-h-[40px]"
+                             >
+                               <Zap size={16} className="fill-current" /> HORÍMETRO DO GERADOR
+                             </button>
+                           )}
                            {isInside ? (
                               <button 
                                 onClick={() => handleOpenExit(eq)}
@@ -1238,6 +1355,14 @@ function EntradaSaidaPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Horímetro e Manutenção do Gerador */}
+      <GeradorHorimetroModal
+        isOpen={isGeradorModalOpen}
+        onClose={() => setIsGeradorModalOpen(false)}
+        initialData={geradorData}
+        onSuccess={setGeradorData}
+      />
 
     </div>
   )

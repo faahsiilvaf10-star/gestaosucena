@@ -259,6 +259,11 @@ export type WhatsappSettings = {
     enabled: boolean;
     specificGroupId: string;
   };
+  geradorManutencao?: {
+    enabled: boolean;
+    specificGroupId: string;
+    alertHours: number;
+  };
   messageTemplates?: {
     analiseRiscoVencendo5Dias?: string;
     vistoriaEquipamentoVencendo20Dias?: string;
@@ -300,6 +305,7 @@ export type WhatsappSettings = {
     equipamentoQuebrado?: string;
     equipamentoEmprestado?: string;
     estoqueTransferencia?: string;
+    geradorHorimetroManutencao?: string;
   };
 };
 
@@ -417,6 +423,11 @@ const defaultWhatsappSettings: WhatsappSettings = {
     enabled_emprestado: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
+  geradorManutencao: {
+    enabled: true,
+    specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
+    alertHours: 20,
+  },
   messageTemplates: {
     vistoriaEquipamentoVencendo20Dias:
       "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_",
@@ -497,6 +508,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🤝 *AVISO: EQUIPAMENTO EMPRESTADO* 🤝\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n🏢 *Empresa Destino:* {empresa}\n📅 *Data e Hora do Empréstimo:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento cedido temporariamente à empresa informada._\n_Mensagem automática - Sucena / Gestão Operacional_",
     estoqueTransferencia:
       "🔄 *TRANSFERÊNCIA DE ESTOQUE ENTRE AMBIENTES* 🔄\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📂 *Categoria:* {categoria}\n🔢 *Quantidade Transferida:* {quantidade} {unidade}\n\n📤 *Origem:* {ambiente_origem}\n📥 *Destino:* {ambiente_destino}\n\n📊 *Saldos Atualizados:*\n• Saldo restante na Origem: {saldo_origem} {unidade}\n• Novo saldo no Destino: {saldo_destino} {unidade}\n\n📅 *Data e Hora:* {data_hora}\n👤 *Responsável:* {responsavel}\n📝 *Observações:* {observacoes}\n\n_Mensagem automática - Sucena Almoxarifado / Estoque_",
+    geradorHorimetroManutencao:
+      "⚡ *ALERTA: MANUTENÇÃO PREVENTIVA DO GERADOR* ⚡\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *TAG / Placa:* {tag}\n⏱️ *Horímetro Atual:* {horimetro_atual} h\n🔧 *Próxima Manutenção:* {proximo_horimetro} h\n⏳ *Horas Restantes:* {horas_restantes} h\n📅 *Data / Hora:* {data_hora}\n👤 *Atualizado por:* {responsavel}\n\n⚠️ *Atenção:* Restam apenas {horas_restantes} horas para o horímetro de manutenção do gerador! Programar a manutenção preventiva com antecedência para evitar paradas operacionais.\n\n_Mensagem automática - Sucena / Gestão de Equipamentos_",
   },
 };
 
@@ -521,6 +534,7 @@ export function extractWhatsappGroups(settings: WhatsappSettings): Record<string
     vistoriasEquipamentos: settings.vistoriasEquipamentos?.specificGroupId || "",
     viradaCorDoMes: settings.viradaCorDoMes?.specificGroupId || "",
     equipamentosStatusAlerts: settings.equipamentosStatusAlerts?.specificGroupId || "",
+    geradorManutencao: settings.geradorManutencao?.specificGroupId || "",
     appMotoristaAlerts: settings.appMotoristaAlerts?.specificGroupId || "",
     equipamentosMovimentacao: settings.equipamentosMovimentacao?.specificGroupId || "",
     cintasInspection: settings.cintasInspection?.specificGroupId || "",
@@ -596,6 +610,10 @@ export function applyWhatsappGroups(baseSettings: WhatsappSettings, groups: Reco
     equipamentosStatusAlerts: {
       ...baseSettings.equipamentosStatusAlerts!,
       specificGroupId: groups.equipamentosStatusAlerts ?? "",
+    },
+    geradorManutencao: {
+      ...baseSettings.geradorManutencao!,
+      specificGroupId: groups.geradorManutencao ?? "",
     },
     appMotoristaAlerts: {
       ...baseSettings.appMotoristaAlerts!,

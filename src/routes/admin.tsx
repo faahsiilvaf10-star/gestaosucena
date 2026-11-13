@@ -210,6 +210,11 @@ function AdminRoute() {
       enabled: true,
       specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     },
+    geradorManutencao: {
+      enabled: true,
+      specificGroupId: '120363408136247156@g.us', // Grupo de Avisos
+      alertHours: 20
+    },
     appMotoristaAlerts: {
       enabled: true,
       specificGroupId: '120363402703768386@g.us' // Grupo de Motoristas
@@ -397,6 +402,12 @@ function AdminRoute() {
         viradaCorDoMes: {
           ...waSettings.viradaCorDoMes,
           specificGroupId: waSettings.viradaCorDoMes?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        geradorManutencao: {
+          ...waSettings.geradorManutencao,
+          enabled: waSettings.geradorManutencao?.enabled ?? true,
+          alertHours: waSettings.geradorManutencao?.alertHours ?? 20,
+          specificGroupId: waSettings.geradorManutencao?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
         },
         appMotoristaAlerts: {
           ...waSettings.appMotoristaAlerts,
@@ -2710,6 +2721,86 @@ function AdminRoute() {
                   />
                 </div>
               </div>
+
+              {/* Alerta de Horímetro e Manutenção do Gerador */}
+              <div className="space-y-4 pt-6 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setWhatsappSettings(prev => ({
+                        ...prev,
+                        geradorManutencao: {
+                          enabled: !(prev.geradorManutencao?.enabled ?? true),
+                          alertHours: prev.geradorManutencao?.alertHours ?? 20,
+                          specificGroupId: prev.geradorManutencao?.specificGroupId || ''
+                        }
+                      }))}
+                      disabled={isWhatsappLocked}
+                      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${(whatsappSettings.geradorManutencao?.enabled ?? true) ? 'bg-[#D6A72B]' : isDark ? 'bg-white/20' : 'bg-gray-300'} ${isWhatsappLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${(whatsappSettings.geradorManutencao?.enabled ?? true) ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                    <div>
+                      <span className="font-semibold text-sm">Alerta de Manutenção do Gerador por Horímetro</span>
+                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Dispara notificação no WhatsApp quando faltar {whatsappSettings.geradorManutencao?.alertHours ?? 20} horas ou menos para o próximo horímetro de manutenção.
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${(whatsappSettings.geradorManutencao?.enabled ?? true) ? (isDark ? 'bg-white/10 text-[#1c1d21] dark:text-white' : 'bg-black/5 text-black') : (isDark ? 'bg-white/5 text-gray-500' : 'bg-black/5 text-gray-400')}`}>
+                    {(whatsappSettings.geradorManutencao?.enabled ?? true) ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+
+                <div className={`p-6 rounded-xl border space-y-4 ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <label className="text-sm font-medium">
+                      Horas de Antecedência do Alerta:
+                      <span className={`block text-xs font-normal ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Disparar aviso no grupo quando faltarem estas horas para a revisão.
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="200"
+                        value={whatsappSettings.geradorManutencao?.alertHours ?? 20}
+                        onChange={e => {
+                          const val = Math.max(1, parseInt(e.target.value) || 20)
+                          setWhatsappSettings(prev => ({
+                            ...prev,
+                            geradorManutencao: {
+                              enabled: prev.geradorManutencao?.enabled ?? true,
+                              specificGroupId: prev.geradorManutencao?.specificGroupId || '',
+                              alertHours: val
+                            }
+                          }))
+                        }}
+                        disabled={isWhatsappLocked}
+                        className={`w-24 px-3 py-2 rounded-lg border text-sm font-bold text-center ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                      />
+                      <span className="text-xs opacity-70">horas</span>
+                    </div>
+                  </div>
+
+                  <WhatsappGroupIdField
+                    value={whatsappSettings.geradorManutencao?.specificGroupId || ''}
+                    onChange={val => setWhatsappSettings(prev => ({
+                      ...prev,
+                      geradorManutencao: {
+                        enabled: prev.geradorManutencao?.enabled ?? true,
+                        alertHours: prev.geradorManutencao?.alertHours ?? 20,
+                        specificGroupId: val
+                      }
+                    }))}
+                    disabled={isWhatsappLocked}
+                    helpText="Grupo específico para receber os avisos preventivos de horímetro do Gerador (deixe em branco para usar o grupo padrão)."
+                    recommendedGroupId="120363408136247156@g.us"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Nova Seção: Modelos de Mensagens (Templates) */}
@@ -2759,6 +2850,7 @@ function AdminRoute() {
                     { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' },
                     { key: 'vistoriaEquipamentoVencendo1Dia', label: 'Vistoria Equipamento (1 Dia Antes)' },
                     { key: 'viradaCorDoMesFerramentas', label: 'Virada Cor do Mês (Ferramentas)' },
+                    { key: 'geradorHorimetroManutencao', label: 'Horímetro Gerador (Manutenção)' },
                     { key: 'equipamentoQuebrado', label: 'Equipamento Quebrado' },
                     { key: 'equipamentoEmprestado', label: 'Equipamento Emprestado' },
                     { key: 'estoqueTransferencia', label: 'Transferência de Estoque' }
@@ -2817,6 +2909,7 @@ function AdminRoute() {
                     {selectedTemplate.startsWith('analiseRisco') && '{titulo}, {local}, {data_validade}, {dias_restantes}'}
                     {(selectedTemplate === 'vistoriaEquipamentoVencendo20Dias' || selectedTemplate === 'vistoriaEquipamentoVencendo1Dia') && '{equipamento}, {placa_tag}, {tipo_vistoria}, {data_vencimento}, {dias_restantes}'}
                     {selectedTemplate === 'viradaCorDoMesFerramentas' && '{mes_nome}, {ano}, {cor_atual}, {cor_anterior_proibida}'}
+                    {selectedTemplate === 'geradorHorimetroManutencao' && '{equipamento}, {tag}, {horimetro_atual}, {proximo_horimetro}, {horas_restantes}, {data_hora}, {responsavel}'}
                     {selectedTemplate === 'equipamentoQuebrado' && '{equipamento}, {tag}, {categoria}, {motivo}, {data_hora}, {responsavel}, {observacoes}'}
                     {selectedTemplate === 'equipamentoEmprestado' && '{equipamento}, {tag}, {categoria}, {empresa}, {data_hora}, {responsavel}, {observacoes}'}
                     {selectedTemplate === 'estoqueTransferencia' && '{produto}, {codigo}, {categoria}, {quantidade}, {unidade}, {ambiente_origem}, {ambiente_destino}, {saldo_origem}, {saldo_destino}, {data_hora}, {responsavel}, {observacoes}'}
