@@ -66,8 +66,15 @@ export function CustomModuloAtividadePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const getTodayDateStr = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayDateStr);
 
   const [modulo, setModulo] = useState<CustomRdoModulo | null>(null);
   const [loadingModulo, setLoadingModulo] = useState(true);
@@ -435,6 +442,10 @@ export function CustomModuloAtividadePage() {
     localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     setIsLocked(true);
     toast.success(`${modulo.name} salva com sucesso para ${selectedDate}!`);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: id } }));
+    }
 
     try {
       await supabase.from('global_settings').upsert({

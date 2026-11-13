@@ -277,8 +277,16 @@ function RDOPage() {
       })
       .subscribe();
 
+    const handleLocalRdoSaved = () => {
+      fetchCustomModulosForDate(selectedDate);
+    };
+    window.addEventListener('sucena_rdo_saved', handleLocalRdoSaved);
+    window.addEventListener('storage', handleLocalRdoSaved);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('sucena_rdo_saved', handleLocalRdoSaved);
+      window.removeEventListener('storage', handleLocalRdoSaved);
     };
   }, [selectedDate]);
 
@@ -303,25 +311,7 @@ function RDOPage() {
 
   const fetchCustomModulosForDate = async (dateStr: string) => {
     try {
-      const modulosKey = isCivil ? 'rdo_modulos_customizados_hydro-civil' : 'rdo_modulos_customizados';
-
-      // 1. Descobrir quais módulos pertencem ao ambiente ativo
-      let allowedModuleIds: Set<string> | null = null;
-      try {
-        const { data: modSetting } = await supabase
-          .from('global_settings')
-          .select('value')
-          .eq('key', modulosKey)
-          .single();
-
-        let modList = (modSetting?.value && Array.isArray(modSetting.value)) ? modSetting.value : [];
-        if (modList.length === 0) {
-          const localMods = localStorage.getItem(modulosKey);
-          if (localMods) try { modList = JSON.parse(localMods); } catch (e) {}
-        }
-        allowedModuleIds = new Set(modList.map((m: any) => m.id));
-      } catch (e) {}
-
+      // Buscar todos os registros diários de atividades salvas para a data
       const { data: list } = await supabase
         .from('global_settings')
         .select('key, value')
@@ -332,9 +322,7 @@ function RDOPage() {
         list.forEach((item: any) => {
           if (item.value) {
             const val = item.value as CustomRdoDailyData;
-            if (!allowedModuleIds || allowedModuleIds.has(val.moduloId)) {
-              map.set(item.key, val);
-            }
+            map.set(item.key, val);
             localStorage.setItem(item.key, JSON.stringify(item.value));
           }
         });
@@ -346,7 +334,7 @@ function RDOPage() {
           if (k.startsWith('custom_rdo_') && k.endsWith(`_${dateStr}`) && !map.has(k)) {
             try {
               const val = JSON.parse(localStorage.getItem(k) || '');
-              if (val && (!allowedModuleIds || allowedModuleIds.has(val.moduloId))) {
+              if (val) {
                 map.set(k, val);
               }
             } catch (e) {}
@@ -354,7 +342,18 @@ function RDOPage() {
         });
       }
 
-      setCustomModulosDaily(Array.from(map.values()));
+      const allDaily = Array.from(map.values());
+      // Manter todas as atividades que possuam dados ou resumo
+      const validDaily = allDaily.filter(d => {
+        if (!d) return false;
+        if (d.renderedSummary && d.renderedSummary.trim() && !d.renderedSummary.startsWith('Nenhuma atividade')) return true;
+        if (d.outrasAtividades?.descricao && d.outrasAtividades.descricao.trim()) return true;
+        if (d.cardRows && Object.values(d.cardRows).some(rows => rows.some(r => r.value && r.value !== '0' && r.value !== '0,00'))) return true;
+        if (d.cardCheckboxes && Object.values(d.cardCheckboxes).some(v => v)) return true;
+        return false;
+      });
+
+      setCustomModulosDaily(validDaily);
     } catch (err) {
       console.error('Erro ao buscar dados de módulos customizados:', err);
     }
