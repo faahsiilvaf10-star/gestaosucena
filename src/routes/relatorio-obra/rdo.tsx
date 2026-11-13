@@ -148,13 +148,30 @@ function RDOPage() {
 
   const fetchPresencasForDate = async (dateStr: string) => {
     try {
-      const { data: pData, error: pError } = await supabase
+      let query = supabase
         .from('rh_presencas')
         .select('*')
         .eq('data', dateStr)
         .eq('status', 'PRESENTE');
+
+      const env = currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+      if (env === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil');
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null');
+      }
+
+      const { data: pData, error: pError } = await query;
         
       if (pError) throw pError;
+
+      // Filtra áreas que foram colocadas em modo de edição (desbloqueadas)
+      const filteredPData = (pData || []).filter(p => {
+        if (typeof window !== 'undefined' && localStorage.getItem(`rh_unlocked_${dateStr}_${p.area}`) === 'true') {
+          return false;
+        }
+        return true;
+      });
       
       const { data: eData, error: eError } = await supabase
         .from('rh_efetivo')
@@ -163,7 +180,7 @@ function RDOPage() {
       if (eError) throw eError;
       
       const efetivoMap = new Map((eData || []).map(c => [c.id, c]));
-      const mapped = (pData || []).map(p => {
+      const mapped = filteredPData.map(p => {
         const emp = efetivoMap.get(p.funcionario_id);
         return {
           ...p,
@@ -331,11 +348,14 @@ function RDOPage() {
       fetchCustomModulosForDate(selectedDate);
     };
     window.addEventListener('sucena_rdo_saved', handleLocalRdoSaved);
+    const handlePresencaEvent = () => fetchPresencasForDate(selectedDate);
+    window.addEventListener('sucena_presenca_change', handlePresencaEvent);
     window.addEventListener('storage', handleLocalRdoSaved);
 
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener('sucena_rdo_saved', handleLocalRdoSaved);
+      window.removeEventListener('sucena_presenca_change', handlePresencaEvent);
       window.removeEventListener('storage', handleLocalRdoSaved);
     };
   }, [selectedDate]);
@@ -646,9 +666,12 @@ function RDOPage() {
   }
   
   const renderEfetivoPorArea = (area: string) => {
+    if (typeof window !== 'undefined' && localStorage.getItem(`rh_unlocked_${selectedDate}_${area}`) === 'true') {
+      return '';
+    }
     const pArea = presencas.filter(p => p.area === area);
     if (pArea.length === 0) {
-      return `👷 Efetivo 👷\n⚠️ Lista de Presença ainda não salva para esta data.`;
+      return '';
     }
     
     let text = `👷 Efetivo 👷\n✴️ EQUIPE DE EXECUÇÃO ✴️\n`;
@@ -671,8 +694,12 @@ function RDOPage() {
 
   // Formatting helpers for sub-reports
   const renderJardinagemText = () => {
+    const efetivoText = renderEfetivoPorArea('Área Jardinagem');
     if (!jardinagemData) {
-      return `⚠️ Relatório diário de Jardinagem ainda não salvo para esta data.\n\n${renderEfetivoPorArea('Área Jardinagem')}`;
+      if (!efetivoText) {
+        return '⚠️ Relatório diário e Lista de Presença de Jardinagem ainda não salvos para esta data.';
+      }
+      return `⚠️ Relatório diário de Jardinagem ainda não salvo para esta data.\n\n${efetivoText}`;
     }
     
     let text = "";
@@ -758,17 +785,21 @@ function RDOPage() {
     if (d.manutencaoIrrigacao) lines.push(`* Manutenção Sistema de Irrigação`);
     
     if (lines.length > 0) {
-      text = lines.join('\n') + `\n\n${renderEfetivoPorArea('Área Jardinagem')}`;
+      text = lines.join('\n') + (efetivoText ? `\n\n${efetivoText}` : '');
     } else {
-      text = `Nenhuma atividade de jardinagem preenchida.\n\n${renderEfetivoPorArea('Área Jardinagem')}`;
+      text = 'Nenhuma atividade de jardinagem preenchida.' + (efetivoText ? `\n\n${efetivoText}` : '');
     }
     
     return text;
   }
 
   const renderGabiaoText = () => {
+    const efetivoText = renderEfetivoPorArea('Área Gabião');
     if (!gabiaoData) {
-      return `⚠️ Relatório diário de Gabião ainda não salvo para esta data.\n\n${renderEfetivoPorArea('Área Gabião')}`;
+      if (!efetivoText) {
+        return '⚠️ Relatório diário e Lista de Presença de Gabião ainda não salvos para esta data.';
+      }
+      return `⚠️ Relatório diário de Gabião ainda não salvo para esta data.\n\n${efetivoText}`;
     }
     
     let text = "";
@@ -820,9 +851,9 @@ function RDOPage() {
     }
     
     if (lines.length > 0) {
-      text = lines.join('\n') + `\n\n${renderEfetivoPorArea('Área Gabião')}`;
+      text = lines.join('\n') + (efetivoText ? `\n\n${efetivoText}` : '');
     } else {
-      text = `Nenhuma atividade de Gabião preenchida.\n\n${renderEfetivoPorArea('Área Gabião')}`;
+      text = 'Nenhuma atividade de Gabião preenchida.' + (efetivoText ? `\n\n${efetivoText}` : '');
     }
     
     return text;
@@ -1267,18 +1298,22 @@ function RDOPage() {
                     );
                   }
                   if (area === 'Área Transporte') {
+                    const efetivoText = renderEfetivoPorArea('Área Transporte');
+                    if (!efetivoText) return null;
                     return (
                       <div key={area}>
                         <div className="mt-6 font-bold text-green-700">🚚 ÁREA TRANSPORTE 🚚</div>
-                        <div className="mt-2 text-gray-600 whitespace-pre-wrap">{renderEfetivoPorArea('Área Transporte')}</div>
+                        <div className="mt-2 text-gray-600 whitespace-pre-wrap">{efetivoText}</div>
                       </div>
                     );
                   }
                   // Qualquer outra área nova adicionada no sistema
+                  const efetivoText = renderEfetivoPorArea(area);
+                  if (!efetivoText) return null;
                   return (
                     <div key={area}>
                       <div className="mt-6 font-bold text-green-700">🏗️ {area.toUpperCase()} 🏗️</div>
-                      <div className="mt-2 text-gray-600 whitespace-pre-wrap">{renderEfetivoPorArea(area)}</div>
+                      <div className="mt-2 text-gray-600 whitespace-pre-wrap">{efetivoText}</div>
                     </div>
                   );
                 });

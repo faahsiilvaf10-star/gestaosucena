@@ -724,8 +724,16 @@ function RhListaPresencaPage() {
           })
 
           // Bloqueia a área caso não tenha sido explicitamente desbloqueada pelo usuário
-          if (localStorage.getItem(`rh_unlocked_${attendanceDate}_${area}`) !== 'true') {
+          const isExplicitlyUnlocked = typeof window !== 'undefined' && localStorage.getItem(`rh_unlocked_${attendanceDate}_${area}`) === 'true'
+          if (!isExplicitlyUnlocked) {
             newLockedAreas.push(area)
+          } else {
+            try {
+              let delQ = supabase.from('rh_presencas').delete().eq('data', attendanceDate).eq('area', area)
+              if (currentEnv === 'hydro-civil') delQ = delQ.eq('environment', 'hydro-civil')
+              else delQ = delQ.or('environment.eq.barcarena,environment.is.null')
+              delQ.then?.()
+            } catch (_) {}
           }
         }
       }
@@ -864,6 +872,39 @@ function RhListaPresencaPage() {
     toast.success(`${efetivo.nome} adicionado(a) à ${activeTab}`)
   }
 
+  const handleEditar = async () => {
+    const areaToUnlock = activeTab
+    setLockedAreas(prev => prev.filter(a => a !== areaToUnlock))
+    try {
+      localStorage.setItem(`rh_unlocked_${attendanceDate}_${areaToUnlock}`, 'true')
+    } catch (_) {}
+
+    // Ao colocar para editar novamente, remove do banco para que saia do RDO imediatamente
+    try {
+      let delQ = supabase
+        .from('rh_presencas')
+        .delete()
+        .eq('data', attendanceDate)
+        .eq('area', areaToUnlock)
+
+      if (currentEnv === 'hydro-civil') {
+        delQ = delQ.eq('environment', 'hydro-civil')
+      } else {
+        delQ = delQ.or('environment.eq.barcarena,environment.is.null')
+      }
+      await delQ
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'))
+        window.dispatchEvent(new CustomEvent('sucena_presenca_change', {
+          detail: { date: attendanceDate, area: areaToUnlock, action: 'unlock' }
+        }))
+      }
+    } catch (err) {
+      console.error('Erro ao remover presenças ao colocar para editar:', err)
+    }
+  }
+
   const handleSalvar = async () => {
     const toastId = toast.loading(`Salvando ${activeTab}...`)
     try {
@@ -921,6 +962,12 @@ function RhListaPresencaPage() {
       setLockedAreas(prev => [...prev, activeTab])
       localStorage.removeItem(`rh_unlocked_${attendanceDate}_${activeTab}`)
       sessionStorage.removeItem(`rh_cleared_${attendanceDate}_${activeTab}`)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'))
+        window.dispatchEvent(new CustomEvent('sucena_presenca_change', {
+          detail: { date: attendanceDate, area: activeTab, action: 'save' }
+        }))
+      }
 
       // Se for área nova, garante persistência no rh_custom_areas
       const defaultAreasList = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
@@ -1345,10 +1392,7 @@ function RhListaPresencaPage() {
                   
                   {lockedAreas.includes(activeTab) ? (
                     <button 
-                      onClick={() => {
-                        setLockedAreas(prev => prev.filter(a => a !== activeTab))
-                        localStorage.setItem(`rh_unlocked_${attendanceDate}_${activeTab}`, 'true')
-                      }} 
+                      onClick={handleEditar} 
                       className="shrink-0 px-4 py-2.5 rounded-full text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 flex items-center gap-2 whitespace-nowrap ml-2 transition-colors"
                     >
                       <Unlock size={14} /> Editar
