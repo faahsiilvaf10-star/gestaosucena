@@ -720,8 +720,8 @@ function RDOPage() {
     const lines: string[] = [];
 
     const locParts: string[] = [];
-    if (d.localFaixa) locParts.push(`Faixa: ${d.localFaixa}`);
-    if (d.localElevado) locParts.push(`Local: ${d.localElevado}`);
+    if (!isCivil && d.localFaixa) locParts.push(`Faixa: ${d.localFaixa}`);
+    if (!isCivil && d.localElevado) locParts.push(`Local: ${d.localElevado}`);
     if (locParts.length > 0) {
       lines.push(`📍 Localização: ${locParts.join(' | ')}`);
     }
@@ -733,8 +733,8 @@ function RDOPage() {
         itemLine += `: ${it.valor} ${it.unidade || 'm²'}`;
       }
       const loc: string[] = [];
-      if (it.faixa) loc.push(it.faixa);
-      if (it.berma) loc.push(it.berma);
+      if (!isCivil && it.faixa) loc.push(it.faixa);
+      if (!isCivil && it.berma) loc.push(it.berma);
       if (loc.length > 0) itemLine += ` (${loc.join(' - ')})`;
       if (it.detalhe) itemLine += ` - ${it.detalhe}`;
       lines.push(itemLine);
@@ -1165,8 +1165,8 @@ function RDOPage() {
                         {markedSubItens.length > 0 ? (
                           <div className="ml-4 mt-1 space-y-0.5 text-xs sm:text-sm font-normal text-gray-700">
                             {markedSubItens.map(si => {
-                              const bStr = si.berma ? ` (${si.berma})` : '';
-                              const fStr = si.faixa ? ` - ${si.faixa}` : '';
+                              const bStr = !isCivil && si.berma ? ` (${si.berma})` : '';
+                              const fStr = !isCivil && si.faixa ? ` - ${si.faixa}` : '';
                               const vStr = si.tipo === 'medicao' && si.valor ? `: ${si.valor} ${si.unidade || 'm²'}` : '';
                               const dStr = si.detalhe ? ` (${si.detalhe})` : '';
                               return (

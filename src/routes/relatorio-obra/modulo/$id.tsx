@@ -358,8 +358,8 @@ export function CustomModuloAtividadePage() {
         const valid = rows.filter(r => r.value && r.value !== '0' && r.value !== '0,00');
         valid.forEach(r => {
           const locParts = [];
-          if (r.faixa) locParts.push(r.faixa);
-          if (r.berma) locParts.push(r.berma);
+          if (!isCivil && r.faixa) locParts.push(r.faixa);
+          if (!isCivil && r.berma) locParts.push(r.berma);
           if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
           const unit = r.unidade || m.unidade || 'unid';
@@ -378,8 +378,8 @@ export function CustomModuloAtividadePage() {
         const valid = rows.filter(r => r.value && r.value !== '0' && r.value !== '0,00');
         valid.forEach(r => {
           const locParts = [];
-          if (r.faixa) locParts.push(r.faixa);
-          if (r.berma) locParts.push(r.berma);
+          if (!isCivil && r.faixa) locParts.push(r.faixa);
+          if (!isCivil && r.berma) locParts.push(r.berma);
           if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
           const unit = r.unidade || m.unidade || 'm²';
@@ -392,8 +392,8 @@ export function CustomModuloAtividadePage() {
     // Outras Atividades manuais
     if (outrasDesc.trim()) {
       const locParts = [];
-      if (outrasFaixa) locParts.push(outrasFaixa);
-      if (outrasBerma) locParts.push(outrasBerma);
+      if (!isCivil && outrasFaixa) locParts.push(outrasFaixa);
+      if (!isCivil && outrasBerma) locParts.push(outrasBerma);
       const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
       lines.push(`* ${outrasDesc.trim()}${locStr}`);
     }
@@ -892,39 +892,54 @@ export function CustomModuloAtividadePage() {
                           />
                         </div>
 
-                        {/* Faixa */}
-                        <div className="w-full sm:w-36 relative">
-                          <select
-                            value={row.faixa || ''}
-                            onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
-                            className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                          >
-                            <option value="">Faixa</option>
-                            {FAIXAS.map(f => (
-                              <option key={f} value={f}>
-                                {f}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                        </div>
+                        {!isCivil ? (
+                          <>
+                            {/* Faixa */}
+                            <div className="w-full sm:w-36 relative">
+                              <select
+                                value={row.faixa || ''}
+                                onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                              >
+                                <option value="">Faixa</option>
+                                {FAIXAS.map(f => (
+                                  <option key={f} value={f}>
+                                    {f}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                            </div>
 
-                        {/* Elevado / Berma */}
-                        <div className="w-full sm:w-40 relative">
-                          <select
-                            value={row.berma || ''}
-                            onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
-                            className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                          >
-                            <option value="">Elevado/Berma</option>
-                            {BERMAS.map(b => (
-                              <option key={b} value={b}>
-                                {b}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                        </div>
+                            {/* Elevado / Berma */}
+                            <div className="w-full sm:w-40 relative">
+                              <select
+                                value={row.berma || ''}
+                                onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                              >
+                                <option value="">Elevado/Berma</option>
+                                {BERMAS.map(b => (
+                                  <option key={b} value={b}>
+                                    {b}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full sm:w-44 relative">
+                            <input
+                              type="text"
+                              placeholder="Local / Eixo (opcional)"
+                              value={row.detalhe || ''}
+                              onChange={e => handleUpdateRow(model.id, idx, 'detalhe', e.target.value)}
+                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                              title="Local ou eixo (opcional)"
+                            />
+                          </div>
+                        )}
 
                         {/* Botão de Excluir Linha se houver mais de uma */}
                         {rows.length > 1 && (
@@ -961,39 +976,41 @@ export function CustomModuloAtividadePage() {
                     </h3>
                   </div>
 
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <div className="relative flex-1 sm:w-32">
-                      <select
-                        value={outrasFaixa}
-                        onChange={e => setOutrasFaixa(e.target.value)}
-                        className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
-                      >
-                        <option value="">Faixa</option>
-                        {FAIXAS.map(f => (
-                          <option key={f} value={f}>
-                            {f}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                    </div>
+                  {!isCivil && (
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:w-32">
+                        <select
+                          value={outrasFaixa}
+                          onChange={e => setOutrasFaixa(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                        >
+                          <option value="">Faixa</option>
+                          {FAIXAS.map(f => (
+                            <option key={f} value={f}>
+                              {f}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      </div>
 
-                    <div className="relative flex-1 sm:w-36">
-                      <select
-                        value={outrasBerma}
-                        onChange={e => setOutrasBerma(e.target.value)}
-                        className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
-                      >
-                        <option value="">Elevado/Berma</option>
-                        {BERMAS.map(b => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      <div className="relative flex-1 sm:w-36">
+                        <select
+                          value={outrasBerma}
+                          onChange={e => setOutrasBerma(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                        >
+                          <option value="">Elevado/Berma</option>
+                          {BERMAS.map(b => (
+                            <option key={b} value={b}>
+                              {b}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <textarea
