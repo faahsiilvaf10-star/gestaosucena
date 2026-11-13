@@ -179,9 +179,20 @@ export function DashboardDesviosWidget() {
   }, [])
 
   // Desvios em aberto
+  const isCorrigido = (d: DesvioItem) => {
+    if (d.corrigido) return true
+    const st = String(d.statusFluxo || '').toLowerCase().trim()
+    return st === 'corrigido' || st === 'concluido' || st === 'concluído' || st === 'finalizado'
+  }
+
+  const isCancelado = (d: DesvioItem) => {
+    const st = String(d.statusFluxo || '').toLowerCase().trim()
+    return st === 'cancelado' || st === 'arquivado'
+  }
+
   const desviosAbertos = useMemo(() => {
     return desvios
-      .filter((d) => !d.corrigido && d.statusFluxo !== 'Corrigido' && d.statusFluxo !== 'Cancelado')
+      .filter((d) => !isCorrigido(d) && !isCancelado(d))
       .sort((a, b) => {
         const prazoA = a.previsao || '9999-99-99'
         const prazoB = b.previsao || '9999-99-99'
@@ -191,7 +202,7 @@ export function DashboardDesviosWidget() {
 
   const totalAbertos = desviosAbertos.length
   const totalGeral = desvios.length
-  const totalCorrigidos = desvios.filter((d) => d.corrigido || d.statusFluxo === 'Corrigido').length
+  const totalCorrigidos = desvios.filter(isCorrigido).length
 
   if (loading) {
     return (

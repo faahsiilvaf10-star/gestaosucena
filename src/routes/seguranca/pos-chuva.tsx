@@ -824,22 +824,12 @@ function PosChuvaPage() {
     } catch (_) {}
 
     try {
-      const { data: existing } = await supabase
+      await supabase
         .from('global_settings')
-        .select('id')
-        .eq('key', storageKey)
-        .maybeSingle()
-
-      if (existing) {
-        await supabase
-          .from('global_settings')
-          .update({ value: novosRegistros })
-          .eq('key', storageKey)
-      } else {
-        await supabase
-          .from('global_settings')
-          .insert({ key: storageKey, value: novosRegistros })
-      }
+        .upsert(
+          { key: storageKey, value: novosRegistros, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        )
 
       await supabase.from('system_activities').insert({
         module: 'Segurança',

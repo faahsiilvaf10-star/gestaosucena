@@ -255,6 +255,24 @@ function DesviosPage() {
     setExpandedRelatorio(mapa)
   }
 
+  // Auto-abrir e rolar até o desvio quando acessado via link direto ?corrigir=UID
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const uidAlvo = params.get('corrigir')
+    if (uidAlvo) {
+      setExpandedHistorico((prev) => ({ ...prev, [uidAlvo]: true }))
+      setTimeout(() => {
+        const el = document.getElementById(`desvio-${uidAlvo}`) || document.querySelector(`[data-uid="${uidAlvo}"]`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          el.classList.add('ring-4', 'ring-amber-400')
+          setTimeout(() => el.classList.remove('ring-4', 'ring-amber-400'), 4000)
+        }
+      }, 350)
+    }
+  }, [desvios.length])
+
   // Permissão para alterar Status: apenas Técnico de Segurança ou Administrador
   const isTecnicoSeguranca = useMemo(() => {
     const roleLower = currentUserRole.toLowerCase()
@@ -399,17 +417,12 @@ function DesviosPage() {
     } catch (_) {}
 
     try {
-      const { data: existing } = await supabase
+      await supabase
         .from('global_settings')
-        .select('id')
-        .eq('key', storageKey)
-        .maybeSingle()
-
-      if (existing) {
-        await supabase.from('global_settings').update({ value: novos }).eq('key', storageKey)
-      } else {
-        await supabase.from('global_settings').insert({ key: storageKey, value: novos })
-      }
+        .upsert(
+          { key: storageKey, value: novos, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        )
     } catch (err) {
       console.warn('Erro ao persistir desvios no Supabase:', err)
     }
@@ -431,17 +444,12 @@ function DesviosPage() {
     } catch (_) {}
 
     try {
-      const { data: existing } = await supabase
+      await supabase
         .from('global_settings')
-        .select('id')
-        .eq('key', auditKey)
-        .maybeSingle()
-
-      if (existing) {
-        await supabase.from('global_settings').update({ value: novosAudit }).eq('key', auditKey)
-      } else {
-        await supabase.from('global_settings').insert({ key: auditKey, value: novosAudit })
-      }
+        .upsert(
+          { key: auditKey, value: novosAudit, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        )
 
       await supabase.from('system_activities').insert({
         module: 'Segurança',
@@ -729,7 +737,6 @@ function DesviosPage() {
     const texto = draft.texto?.trim()
 
     const faltas: string[] = []
-    if (fotos.length === 0) faltas.push('enviar ao menos uma FOTO DA CORREÇÃO')
     if (!texto) faltas.push('preencher a CORREÇÃO REALIZADA — O QUE FOI FEITO')
 
     if (faltas.length > 0) {
@@ -1738,6 +1745,7 @@ function DesviosPage() {
               return (
                 <div
                   key={d.uid}
+                  id={`desvio-${d.uid}`}
                   data-uid={d.uid}
                   className={`rounded-2xl border-2 transition shadow-xs ${
                     d.corrigido

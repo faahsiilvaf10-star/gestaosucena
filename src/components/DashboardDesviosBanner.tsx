@@ -129,9 +129,20 @@ export function DashboardDesviosBanner() {
   }, [])
 
   // Filtrar apenas desvios em aberto (não corrigidos e não cancelados)
+  const isCorrigido = (d: DesvioItem) => {
+    if (d.corrigido) return true
+    const st = String(d.statusFluxo || '').toLowerCase().trim()
+    return st === 'corrigido' || st === 'concluido' || st === 'concluído' || st === 'finalizado'
+  }
+
+  const isCancelado = (d: DesvioItem) => {
+    const st = String(d.statusFluxo || '').toLowerCase().trim()
+    return st === 'cancelado' || st === 'arquivado'
+  }
+
   const abertos = useMemo(() => {
     return desvios
-      .filter((d) => !d.corrigido && d.statusFluxo !== 'Corrigido' && d.statusFluxo !== 'Cancelado')
+      .filter((d) => !isCorrigido(d) && !isCancelado(d))
       .sort((a, b) => {
         // Ordenar por prazo mais urgente
         const prazoA = a.previsao || '9999-99-99'
@@ -279,7 +290,7 @@ export function DashboardDesviosBanner() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Link
-          to="/seguranca/desvios"
+          to={`/seguranca/desvios?corrigir=${principal.uid}`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
