@@ -41,6 +41,19 @@ type Efetivo = {
   status?: string
 }
 
+export function isDesligado(status?: string | null): boolean {
+  if (!status) return false
+  const s = status.toUpperCase().trim()
+  return (
+    s === 'DESLIGADO' ||
+    s === 'INATIVO' ||
+    s === 'DEMITIDO' ||
+    s.includes('DESLIGAD') ||
+    s.includes('DEMITID') ||
+    s.includes('INATIV')
+  )
+}
+
 function AddCollaboratorModal({ 
   isOpen, 
   onClose, 
@@ -85,10 +98,7 @@ function AddCollaboratorModal({
       if (error) throw error
       
       // Considera ativos todos os colaboradores cujo status não é INATIVO, DEMITIDO ou DESLIGADO
-      const ativos = (data || []).filter((c: any) => {
-        const s = (c.status || '').toUpperCase().trim()
-        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO'
-      })
+      const ativos = (data || []).filter((c: any) => !isDesligado(c.status))
 
       setEfetivo(ativos)
     } catch (err) {
@@ -569,15 +579,21 @@ function RhListaPresencaPage() {
       
       if (error) throw error
       
+      // Mapeia o status contratual de todos os funcionários (para validação de desligados)
+      const contractStatusMap = new Map((data || []).map(d => [d.id, (d.status || '').toUpperCase().trim()]))
+
+      // Filtra estritamente apenas quem está ATIVO (remove desligados)
+      const activeEfetivo = (data || []).filter(d => !isDesligado(d.status))
+
       // Map efetivo data (used as lookup in fetchPresencas)
-      const mappedData: Colaborador[] = (data || []).map(d => ({
+      const mappedData: Colaborador[] = activeEfetivo.map(d => ({
         ...d,
         setor: getLogicalAreaForColaborador(d),
         status: 'PRESENTE'
       }))
         
       // Fetch saved attendance for today if any (this is what actually sets colaboradores)
-      await fetchPresencas(mappedData)
+      await fetchPresencas(mappedData, contractStatusMap)
       
     } catch (err) {
       console.error('Erro ao buscar efetivo:', err)
@@ -587,7 +603,7 @@ function RhListaPresencaPage() {
     }
   }
 
-  const fetchPresencas = async (currentColaboradores: Colaborador[]) => {
+  const fetchPresencas = async (currentColaboradores: Colaborador[], contractStatusMap: Map<string, string>) => {
     try {
       const efetivoMap = new Map(currentColaboradores.map(c => [c.id, c]))
       const defaultAreas = ['Área Gabião', 'Área Jardinagem', 'Área ADM', 'Área Transporte']
@@ -712,6 +728,10 @@ function RhListaPresencaPage() {
         if (savedTodayByArea.has(area)) {
           const rows = savedTodayByArea.get(area) || []
           rows.forEach(d => {
+            // Se o colaborador foi desligado no efetivo, NUNCA deve aparecer na lista de presença
+            if (isDesligado(contractStatusMap.get(d.funcionario_id))) {
+              return
+            }
             const emp = efetivoMap.get(d.funcionario_id)
             allocatedEmployeeIds.add(d.funcionario_id)
             nextColaboradores.push({
@@ -747,21 +767,21 @@ function RhListaPresencaPage() {
           const prevRows = previousEmployeesByArea.get(area)
 
           if (prevRows && prevRows.length > 0) {
-            // HERDA EXATAMENTE OS MESMOS FUNCIONÁRIOS DO DIA ANTERIOR SALVO:
+            // HERDA EXATAMENTE OS MESMOS FUNCIONÁRIOS DO DIA ANTERIOR SALVO (EXCLUINDO DESLIGADOS):
             prevRows.forEach(d => {
+              if (isDesligado(contractStatusMap.get(d.funcionario_id))) {
+                return
+              }
               const emp = efetivoMap.get(d.funcionario_id)
-              const s = ((emp as any)?.status || '').toUpperCase().trim()
-              if (s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO') {
-                if (!allocatedEmployeeIds.has(d.funcionario_id)) {
-                  allocatedEmployeeIds.add(d.funcionario_id)
-                  nextColaboradores.push({
-                    id: d.funcionario_id,
-                    nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
-                    cargo: emp ? emp.cargo : null,
-                    setor: area,
-                    status: 'PRESENTE' // Pré-selecionado como PRESENTE para a chamada do novo dia
-                  })
-                }
+              if (!allocatedEmployeeIds.has(d.funcionario_id)) {
+                allocatedEmployeeIds.add(d.funcionario_id)
+                nextColaboradores.push({
+                  id: d.funcionario_id,
+                  nome: emp ? emp.nome : (d.nome || 'Desconhecido'),
+                  cargo: emp ? emp.cargo : null,
+                  setor: area,
+                  status: 'PRESENTE' // Pré-selecionado como PRESENTE para a chamada do novo dia
+                })
               }
             })
           } else {
@@ -770,8 +790,10 @@ function RhListaPresencaPage() {
             currentColaboradores
               .filter(c => cleanAreaName(c.setor) === area)
               .forEach(c => {
-                const s = ((c as any).status || '').toUpperCase().trim()
-                if (!allocatedEmployeeIds.has(c.id) && s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO') {
+                if (isDesligado(contractStatusMap.get(c.id))) {
+                  return
+                }
+                if (!allocatedEmployeeIds.has(c.id)) {
                   allocatedEmployeeIds.add(c.id)
                   nextColaboradores.push({
                     id: c.id,
@@ -786,8 +808,11 @@ function RhListaPresencaPage() {
         }
       }
 
+      // Filtro final estrito: nenhum colaborador desligado pode aparecer na lista de presença
+      const activeOnlyColaboradores = nextColaboradores.filter(c => !isDesligado(contractStatusMap.get(c.id)))
+
       setLockedAreas(newLockedAreas)
-      setColaboradores(nextColaboradores)
+      setColaboradores(activeOnlyColaboradores)
 
       // Atualiza tabs disponíveis
       const areasFromColabs = Array.from(new Set(nextColaboradores.map(c => c.setor).filter(Boolean) as string[]))

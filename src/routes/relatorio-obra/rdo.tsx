@@ -176,19 +176,25 @@ function RDOPage() {
       
       const { data: eData, error: eError } = await supabase
         .from('rh_efetivo')
-        .select('id, nome, cargo');
+        .select('id, nome, cargo, status');
 
       if (eError) throw eError;
       
       const efetivoMap = new Map((eData || []).map(c => [c.id, c]));
-      const mapped = filteredPData.map(p => {
-        const emp = efetivoMap.get(p.funcionario_id);
-        return {
-          ...p,
-          nome: emp ? emp.nome : 'Desconhecido',
-          cargo: emp ? emp.cargo : 'Sem Cargo'
-        };
-      });
+      const mapped = filteredPData
+        .filter(p => {
+          const emp = efetivoMap.get(p.funcionario_id);
+          const s = ((emp?.status) || '').toUpperCase().trim();
+          return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO' && !s.includes('DESLIGAD') && !s.includes('DEMITID');
+        })
+        .map(p => {
+          const emp = efetivoMap.get(p.funcionario_id);
+          return {
+            ...p,
+            nome: emp ? emp.nome : 'Desconhecido',
+            cargo: emp ? emp.cargo : 'Sem Cargo'
+          };
+        });
       setPresencas(mapped);
     } catch(e) {
       console.error('Erro ao buscar presenças:', e);

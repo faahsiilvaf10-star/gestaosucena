@@ -82,9 +82,10 @@ function RelatorioPresencaPage() {
 
       const ativos = (efetivo || []).filter((e: any) => {
         const s = (e.status || '').toUpperCase().trim();
-        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO';
+        return s !== 'INATIVO' && s !== 'DEMITIDO' && s !== 'DESLIGADO' && !s.includes('DESLIGAD') && !s.includes('DEMITID');
       });
 
+      const ativosSet = new Set(ativos.map((e: any) => e.id));
       setTotalEfetivo(ativos.length)
       const efetivoMap = new Map((efetivo || []).map((e: any) => [e.id, { nome: e.nome, cargo: e.cargo }]))
 
@@ -109,10 +110,10 @@ function RelatorioPresencaPage() {
         return
       }
 
-      // 3. Merge and filter out REMOVIDO and only allow specified statuses
+      // 3. Merge and filter out REMOVIDO, only allow specified statuses and exclude DESLIGADOS
       const allowedStatuses = ['PRESENTE', 'AUSENTE', 'EXTERNO', 'ATESTADO']
       const merged: Presenca[] = presencas
-        .filter(p => p.status !== 'REMOVIDO' && allowedStatuses.includes(p.status))
+        .filter(p => p.status !== 'REMOVIDO' && allowedStatuses.includes(p.status) && ativosSet.has(p.funcionario_id))
         .map(p => {
           const emp = efetivoMap.get(p.funcionario_id)
           let area = p.area

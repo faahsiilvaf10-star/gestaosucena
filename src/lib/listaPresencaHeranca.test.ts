@@ -85,4 +85,55 @@ describe('Lista de Presença - Regras de Herança do Dia Anterior e Áreas Novas
     expect(canteiro).toHaveLength(1)
     expect(canteiro[0].nome).toBe('GUSTAVO DA SILVA')
   })
+
+  it('não deve incluir colaboradores desligados, inativos ou demitidos na lista de presença', () => {
+    const isDesligado = (status?: string | null): boolean => {
+      if (!status) return false
+      const s = status.toUpperCase().trim()
+      return (
+        s === 'DESLIGADO' ||
+        s === 'INATIVO' ||
+        s === 'DEMITIDO' ||
+        s.includes('DESLIGAD') ||
+        s.includes('DEMITID') ||
+        s.includes('INATIV')
+      )
+    }
+
+    expect(isDesligado('DESLIGADO')).toBe(true)
+    expect(isDesligado('Desligado')).toBe(true)
+    expect(isDesligado('INATIVO')).toBe(true)
+    expect(isDesligado('DEMITIDO')).toBe(true)
+    expect(isDesligado('ATIVO')).toBe(false)
+    expect(isDesligado('FÉRIAS')).toBe(false)
+    expect(isDesligado(null)).toBe(false)
+
+    // Simula registros do dia anterior contendo um funcionário que agora foi desligado
+    const pastRecords = [
+      { id: '1', funcionario_id: 'func-ativo', area: 'Área Gabião', data: '2026-11-12', status: 'PRESENTE' },
+      { id: '2', funcionario_id: 'func-desligado', area: 'Área Gabião', data: '2026-11-12', status: 'PRESENTE' },
+    ]
+
+    const contractStatusMap = new Map([
+      ['func-ativo', 'ATIVO'],
+      ['func-desligado', 'DESLIGADO'],
+    ])
+
+    const nextColaboradores: any[] = []
+    pastRecords.forEach(d => {
+      const rawStatus = contractStatusMap.get(d.funcionario_id)
+      if (isDesligado(rawStatus)) {
+        return // Bloqueia desligado
+      }
+      nextColaboradores.push({
+        id: d.funcionario_id,
+        setor: d.area,
+        status: 'PRESENTE',
+      })
+    })
+
+    expect(nextColaboradores).toHaveLength(1)
+    expect(nextColaboradores[0].id).toBe('func-ativo')
+    expect(nextColaboradores.some(c => c.id === 'func-desligado')).toBe(false)
+  })
 })
