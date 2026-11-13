@@ -49,6 +49,36 @@ export const Route = createFileRoute('/relatorio-obra/rdo')({
   component: RDOPage,
 })
 
+export type RdoInfoGerais = {
+  empresa: string;
+  contrato: string;
+  gerencia: string;
+  lideranca: string;
+  tst: string;
+  local: string;
+  horario: string;
+};
+
+export const DEFAULT_RDO_INFO_BARCARENA: RdoInfoGerais = {
+  empresa: 'Sucena Empreendimentos',
+  contrato: '460001269',
+  gerencia: 'Hydro',
+  lideranca: 'Eng. Luís Araújo',
+  tst: 'Itamar Junior e Alexssandro Chaves',
+  local: 'Alunorte Barcarena',
+  horario: '07:00 as 17:00'
+};
+
+export const DEFAULT_RDO_INFO_CIVIL: RdoInfoGerais = {
+  empresa: 'Sucena Empreendimentos',
+  contrato: '460001269',
+  gerencia: 'Hydro',
+  lideranca: 'Eng. Luís Araújo',
+  tst: 'Itamar Junior e Alexssandro Chaves',
+  local: 'Hydro Civil',
+  horario: '07:00 as 17:00'
+};
+
 function RDOPage() {
   const { colors } = useMonthlyColors();
 
@@ -91,10 +121,16 @@ function RDOPage() {
     const handleEnvChange = (e: any) => {
       const newEnv = e.detail?.environment || localStorage.getItem('sucena_environment') || 'barcarena';
       setCurrentEnv(newEnv);
+      loadDate(selectedDate, newEnv);
+      updateSavedDates(newEnv);
     };
     window.addEventListener('sucena_environment_change', handleEnvChange);
-    return () => window.removeEventListener('sucena_environment_change', handleEnvChange);
-  }, []);
+    window.addEventListener('storage', handleEnvChange);
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange);
+      window.removeEventListener('storage', handleEnvChange);
+    };
+  }, [selectedDate]);
 
   // States to hold Jardinagem and Gabiao data
   const [jardinagemData, setJardinagemData] = useState<any>(null);
@@ -141,8 +177,16 @@ function RDOPage() {
     }
   }
 
-  const updateSavedDates = async () => {
-    const localKeys = Object.keys(localStorage).filter(k => k.startsWith('main_rdo_') && k !== 'main_rdo_defaults');
+  const updateSavedDates = async (envParam?: string) => {
+    const env = envParam || currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+    const isCivilEnv = env === 'hydro-civil';
+    const prefix = isCivilEnv ? 'main_rdo_civil_' : 'main_rdo_';
+
+    const localKeys = Object.keys(localStorage).filter(k => {
+      if (isCivilEnv) return k.startsWith('main_rdo_civil_');
+      return k.startsWith('main_rdo_') && !k.startsWith('main_rdo_civil_') && k !== 'main_rdo_defaults' && !k.includes('info_gerais');
+    });
+
     const localDates = localKeys.filter(k => {
       try {
         const data = JSON.parse(localStorage.getItem(k) || '{}');
@@ -150,13 +194,15 @@ function RDOPage() {
       } catch (e) {
         return false;
       }
-    }).map(k => k.replace('main_rdo_', ''));
+    }).map(k => k.replace(prefix, ''));
 
     let remoteDates: string[] = [];
     try {
-      const { data } = await supabase.from('global_settings').select('key, value').like('key', 'main_rdo_%');
+      const { data } = await supabase.from('global_settings').select('key, value').like('key', `${prefix}%`);
       if (data) {
-        remoteDates = data.filter(r => r.key !== 'main_rdo_defaults' && r.value?.isLocked !== false).map(r => r.key.replace('main_rdo_', ''));
+        remoteDates = data
+          .filter(r => !r.key.includes('defaults') && !r.key.includes('info_gerais') && r.value?.isLocked !== false)
+          .map(r => r.key.replace(prefix, ''));
       }
     } catch (e) {}
 
@@ -165,18 +211,22 @@ function RDOPage() {
   }
 
   const handleUnlock = async () => {
+    const env = currentEnv;
+    const isCivilEnv = env === 'hydro-civil';
+    const mainKey = isCivilEnv ? `main_rdo_civil_${selectedDate}` : `main_rdo_${selectedDate}`;
+
     setIsLocked(false);
     let parsed: any = {};
-    const localData = localStorage.getItem(`main_rdo_${selectedDate}`);
+    const localData = localStorage.getItem(mainKey);
     if (localData) {
       try { parsed = JSON.parse(localData); } catch (e) {}
     }
     parsed.isLocked = false;
-    localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(parsed));
+    localStorage.setItem(mainKey, JSON.stringify(parsed));
     
     try {
       await supabase.from('global_settings').upsert({
-        key: `main_rdo_${selectedDate}`,
+        key: mainKey,
         value: parsed,
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
@@ -359,7 +409,42 @@ function RDOPage() {
     }
   };
 
-  const loadDate = async (dateStr: string) => {
+  const handleSaveInfoGerais = async () => {
+    const env = currentEnv;
+    const infoKey = `rdo_info_gerais_${env}`;
+    const infoData: RdoInfoGerais = {
+      empresa,
+      contrato,
+      gerencia,
+      lideranca,
+      tst,
+      local,
+      horario
+    };
+
+    localStorage.setItem(infoKey, JSON.stringify(infoData));
+
+    try {
+      await supabase.from('global_settings').upsert({
+        key: infoKey,
+        value: infoData,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      
+      const envNome = env === 'hydro-civil' ? 'Hydro Civil' : 'Reabilitação (Barcarena)';
+      toast.success(`Informações Gerais salvas para ${envNome}! Ficarão salvas até serem alteradas novamente.`);
+    } catch (err) {
+      console.error('Erro ao salvar Informações Gerais no banco:', err);
+      toast.success('Informações salvas localmente!');
+    }
+  };
+
+  const loadDate = async (dateStr: string, envParam?: string) => {
+    const env = envParam || currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+    const isCivilEnv = env === 'hydro-civil';
+    const mainKey = isCivilEnv ? `main_rdo_civil_${dateStr}` : `main_rdo_${dateStr}`;
+    const infoKey = `rdo_info_gerais_${env}`;
+
     setSelectedDate(dateStr);
     fetchEquipamentos(dateStr);
     fetchPresencasForDate(dateStr);
@@ -394,31 +479,44 @@ function RDOPage() {
     let mainData: any = null;
     let jarData: any = null;
     let gabData: any = null;
+    let savedInfoGerais: RdoInfoGerais | null = null;
     
     try {
-      const { data } = await supabase.from('global_settings').select('key, value').in('key', [`main_rdo_${dateStr}`, `jardinagem_rdo_${dateStr}`, `gabiao_rdo_${dateStr}`]);
+      const keysToFetch = [mainKey, `jardinagem_rdo_${dateStr}`, `gabiao_rdo_${dateStr}`, infoKey];
+      if (!isCivilEnv) {
+        keysToFetch.push(`main_rdo_${dateStr}`);
+      }
+      const { data } = await supabase.from('global_settings').select('key, value').in('key', keysToFetch);
       if (data) {
         data.forEach(item => {
-          if (item.key.startsWith('main_rdo_')) { mainData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
+          if (item.key === mainKey) { mainData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
+          if (item.key === infoKey && item.value) { savedInfoGerais = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
           if (item.key.startsWith('jardinagem_rdo_')) { jarData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
           if (item.key.startsWith('gabiao_rdo_')) { gabData = item.value; localStorage.setItem(item.key, JSON.stringify(item.value)); }
         });
       }
     } catch(e) {}
 
-    // Fallbacks
-    if (!mainData) { const local = localStorage.getItem(`main_rdo_${dateStr}`); if (local) try { mainData = JSON.parse(local); } catch(e){} }
+    // Fallbacks do localStorage
+    if (!mainData) { const local = localStorage.getItem(mainKey); if (local) try { mainData = JSON.parse(local); } catch(e){} }
+    if (!savedInfoGerais) { const localInfo = localStorage.getItem(infoKey); if (localInfo) try { savedInfoGerais = JSON.parse(localInfo); } catch(e){} }
     if (!jarData) { const local = localStorage.getItem(`jardinagem_rdo_${dateStr}`); if (local) try { jarData = JSON.parse(local); } catch(e){} }
     if (!gabData) { const local = localStorage.getItem(`gabiao_rdo_${dateStr}`); if (local) try { gabData = JSON.parse(local); } catch(e){} }
 
+    const baseDefaults: RdoInfoGerais = isCivilEnv ? DEFAULT_RDO_INFO_CIVIL : DEFAULT_RDO_INFO_BARCARENA;
+    const resolvedInfo: RdoInfoGerais = {
+      ...baseDefaults,
+      ...(savedInfoGerais || {})
+    };
+
     if (mainData) {
-      setEmpresa(mainData.empresa || 'Sucena Empreendimentos');
-      setContrato(mainData.contrato || '460001269');
-      setGerencia(mainData.gerencia || 'Hydro');
-      setLideranca(mainData.lideranca || 'Eng. Luís Araújo');
-      setTst(mainData.tst || 'Itamar Junior e Alexssandro Chaves');
-      setLocal(mainData.local || 'Alunorte Barcarena');
-      let savedHorario = mainData.horario;
+      setEmpresa(mainData.empresa || resolvedInfo.empresa);
+      setContrato(mainData.contrato || resolvedInfo.contrato);
+      setGerencia(mainData.gerencia || resolvedInfo.gerencia);
+      setLideranca(mainData.lideranca || resolvedInfo.lideranca);
+      setTst(mainData.tst || resolvedInfo.tst);
+      setLocal(mainData.local || resolvedInfo.local);
+      let savedHorario = mainData.horario || resolvedInfo.horario;
       if (savedHorario === '07:00 as 17:00' && isFriday) savedHorario = '07:00 as 16:00';
       setHorario(savedHorario || defaultHorario);
       setClimaManha(mainData.climaManha || 'Sol');
@@ -428,25 +526,28 @@ function RDOPage() {
       setIsLocked(mainData.isLocked !== false);
       setShowHistory(false);
     } else {
-      let defaults = {
-        empresa: 'Sucena Empreendimentos', contrato: '460001269', gerencia: 'Hydro',
-        lideranca: 'Eng. Luís Araújo', tst: 'Itamar Junior e Alexssandro Chaves', local: 'Alunorte Barcarena'
-      };
-      const savedDefaults = localStorage.getItem('main_rdo_defaults');
-      if (savedDefaults) {
-        try { defaults = { ...defaults, ...JSON.parse(savedDefaults) }; } catch(e) {}
-      }
-      setEmpresa(defaults.empresa); setContrato(defaults.contrato); setGerencia(defaults.gerencia);
-      setLideranca(defaults.lideranca); setTst(defaults.tst); setLocal(defaults.local);
-      setHorario(defaultHorario); setClimaManha('Sol'); setClimaTarde('Sol'); setTemperatura(''); setDificuldades('Não Houve.');
-      setIsLocked(false); setShowHistory(false);
+      // Data ainda não salva: carrega as Informações Gerais salvas deste ambiente
+      setEmpresa(resolvedInfo.empresa);
+      setContrato(resolvedInfo.contrato);
+      setGerencia(resolvedInfo.gerencia);
+      setLideranca(resolvedInfo.lideranca);
+      setTst(resolvedInfo.tst);
+      setLocal(resolvedInfo.local);
+      let currentHorario = resolvedInfo.horario || defaultHorario;
+      if (currentHorario === '07:00 as 17:00' && isFriday) currentHorario = '07:00 as 16:00';
+      setHorario(currentHorario);
+      setClimaManha('Sol');
+      setClimaTarde('Sol');
+      setTemperatura('');
+      setDificuldades('Não Houve.');
+      setIsLocked(false);
+      setShowHistory(false);
 
       // Auto-fetch temperature if it is today
       const today = new Date().toISOString().split('T')[0];
       if (dateStr === today) {
         let lat = -1.5061, lon = -48.6258; // Default Barcarena
-        const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') : null;
-        if (env === 'hydro-civil') { lat = -2.9998; lon = -47.3537; }
+        if (isCivilEnv) { lat = -2.9998; lon = -47.3537; }
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`)
           .then(res => res.json())
           .then(data => {
@@ -462,31 +563,51 @@ function RDOPage() {
   }
 
   const handleSave = async () => {
+    const env = currentEnv;
+    const isCivilEnv = env === 'hydro-civil';
+    const mainKey = isCivilEnv ? `main_rdo_civil_${selectedDate}` : `main_rdo_${selectedDate}`;
+    const infoKey = `rdo_info_gerais_${env}`;
+
     const dataToSave = {
       empresa, contrato, gerencia, lideranca, tst, local, horario,
       climaManha, climaTarde, temperatura, dificuldades,
+      environment: env,
       isLocked: true
     };
-    localStorage.setItem(`main_rdo_${selectedDate}`, JSON.stringify(dataToSave));
-    localStorage.setItem('main_rdo_defaults', JSON.stringify({
-      empresa, contrato, gerencia, lideranca, tst, local
-    }));
+
+    const infoData: RdoInfoGerais = {
+      empresa, contrato, gerencia, lideranca, tst, local, horario
+    };
+
+    localStorage.setItem(mainKey, JSON.stringify(dataToSave));
+    localStorage.setItem(infoKey, JSON.stringify(infoData));
+    localStorage.setItem('main_rdo_defaults', JSON.stringify(infoData));
+
     setIsLocked(true);
     toast.success('RDO salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
     
     try {
-      await supabase.from('global_settings').upsert({
-        key: `main_rdo_${selectedDate}`,
-        value: dataToSave,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' });
+      await Promise.all([
+        supabase.from('global_settings').upsert({
+          key: mainKey,
+          value: dataToSave,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' }),
+        supabase.from('global_settings').upsert({
+          key: infoKey,
+          value: infoData,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' })
+      ]);
       
       const { logActivity } = await import('../../lib/logActivity');
       await logActivity({
         module: 'RDO',
-        action: `RDO Principal salvo para ${formatDateDisplay(selectedDate)}`
+        action: `RDO Principal salvo para ${formatDateDisplay(selectedDate)} (${env})`
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('Erro ao salvar no banco:', e);
+    }
     
     updateSavedDates();
   }
@@ -999,7 +1120,25 @@ function RDOPage() {
             
             <div className={`bg-[#faf9f6] border border-yellow-500/20 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-sm transition-all duration-300 relative overflow-hidden ${isLocked ? 'opacity-70 pointer-events-none' : ''}`}>
               <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-yellow-100/50 to-transparent pointer-events-none" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2 relative z-10">Informações Gerais</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10 mb-2">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">Informações Gerais</h2>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isCivil ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isCivil ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                    {isCivil ? 'Ambiente: Hydro Civil' : 'Ambiente: Reabilitação (Barcarena)'}
+                  </span>
+                </div>
+                {!isLocked && (
+                  <button 
+                    type="button"
+                    onClick={handleSaveInfoGerais}
+                    className="self-start sm:self-auto flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                    title="Salvar estas informações como padrão deste ambiente"
+                  >
+                    <Save size={14} /> Salvar Informações
+                  </button>
+                )}
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
                 <div className="flex flex-col gap-2">
