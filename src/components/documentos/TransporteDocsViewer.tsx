@@ -86,19 +86,29 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
   const [previewDoc, setPreviewDoc] = useState<DocArquivo | null>(null);
   const [docToDelete, setDocToDelete] = useState<DocArquivo | null>(null);
 
+  // --- AMBIENTE ATIVO ---
+  const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
+
   // --- MUTATIONS ---
   const uploadMutation = useUploadDocumento();
   const deleteMutation = useDeleteDocumento();
 
   // --- FETCH EQUIPAMENTOS PESADOS ---
   const { data: equipments = [], isLoading: isLoadingEquipments } = useQuery<HeavyEquipment[]>({
-    queryKey: ['heavy-equipments-list'],
+    queryKey: ['heavy-equipments-list', currentEnv],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('eq_equipments')
         .select('id, name, plate_tag, type, category, status')
-        .or('category.ilike.%pesado%,type.ilike.%ônibus%,type.ilike.%onibus%,name.ilike.%gerador%')
-        .order('name');
+        .or('category.ilike.%pesado%,type.ilike.%ônibus%,type.ilike.%onibus%,name.ilike.%gerador%');
+
+      if (currentEnv === 'hydro-civil') {
+        q = q.eq('environment', 'hydro-civil');
+      } else {
+        q = q.or('environment.eq.barcarena,environment.is.null');
+      }
+
+      const { data, error } = await q.order('name');
       if (error) throw error;
       return (data || []) as HeavyEquipment[];
     }
@@ -109,13 +119,20 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
 
   // --- FETCH MOTORISTAS DA LISTA DE RH ---
   const { data: drivers = [], isLoading: isLoadingDrivers } = useQuery<DriverColaborador[]>({
-    queryKey: ['transporte-drivers-list'],
+    queryKey: ['transporte-drivers-list', currentEnv],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, matricula, setor')
-        .ilike('cargo', '%motorista%')
-        .order('nome');
+        .ilike('cargo', '%motorista%');
+
+      if (currentEnv === 'hydro-civil') {
+        q = q.eq('environment', 'hydro-civil');
+      } else {
+        q = q.or('environment.eq.barcarena,environment.is.null');
+      }
+
+      const { data, error } = await q.order('nome');
       if (error) throw error;
       return (data || []) as DriverColaborador[];
     }

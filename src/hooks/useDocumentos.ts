@@ -22,7 +22,9 @@ export const useDocumentos = (cargoId: string) => {
     queryFn: async () => {
       if (!cargoId) return [];
 
-      const baseCatalog = (transportCatalog as DocArquivo[]).filter(d => d.cargo_id === cargoId);
+      const baseCatalog = env === 'hydro-civil'
+        ? []
+        : (transportCatalog as DocArquivo[]).filter(d => d.cargo_id === cargoId);
 
       try {
         let q = supabase
@@ -58,27 +60,33 @@ export const useDocumentos = (cargoId: string) => {
 };
 
 export const useDocumentosByPrefix = (prefix: string) => {
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
+
   return useQuery({
-    queryKey: ['documentos-prefix', prefix],
+    queryKey: ['documentos-prefix', prefix, env],
     queryFn: async () => {
       if (!prefix) return [];
 
-      // 1. Catálogo base importado
-      const baseCatalog = (transportCatalog as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
+      // 1. Catálogo base importado (somente para Barcarena / Reabilitação)
+      const baseCatalog = env === 'hydro-civil'
+        ? []
+        : (transportCatalog as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
 
-      // 2. Tentar ler de global_settings para novas inclusões dinâmicas
+      // 2. Tentar ler de global_settings para novas inclusões dinâmicas (apenas Barcarena)
       let dynamicCatalog: DocArquivo[] = [];
-      try {
-        const { data: gsData } = await supabase
-          .from('global_settings')
-          .select('value')
-          .eq('key', 'transporte_docs_catalog')
-          .maybeSingle();
-        if (gsData?.value && Array.isArray(gsData.value)) {
-          dynamicCatalog = (gsData.value as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
+      if (env !== 'hydro-civil') {
+        try {
+          const { data: gsData } = await supabase
+            .from('global_settings')
+            .select('value')
+            .eq('key', 'transporte_docs_catalog')
+            .maybeSingle();
+          if (gsData?.value && Array.isArray(gsData.value)) {
+            dynamicCatalog = (gsData.value as DocArquivo[]).filter(d => d.cargo_id.startsWith(prefix));
+          }
+        } catch (err) {
+          console.warn('Erro ao ler catalogo remoto de global_settings:', err);
         }
-      } catch (err) {
-        console.warn('Erro ao ler catalogo remoto de global_settings:', err);
       }
 
       // 3. Mesclar catálogo local com catálogo de global_settings
@@ -86,13 +94,21 @@ export const useDocumentosByPrefix = (prefix: string) => {
       baseCatalog.forEach(d => mergedMap.set(d.id, d));
       dynamicCatalog.forEach(d => mergedMap.set(d.id, d));
 
-      // 4. Buscar também da tabela doc_arquivos (para uploads manuais)
+      // 4. Buscar também da tabela doc_arquivos (para uploads manuais filtrados pelo ambiente ativo)
       try {
-        const { data, error } = await supabase
+        let q = supabase
           .from('doc_arquivos')
           .select('*')
           .like('cargo_id', `${prefix}%`)
           .order('created_at', { ascending: false });
+
+        if (env === 'hydro-civil') {
+          q = q.eq('environment', 'hydro-civil');
+        } else {
+          q = q.or('environment.eq.barcarena,environment.is.null');
+        }
+
+        const { data, error } = await q;
 
         if (!error && data && data.length > 0) {
           (data as DocArquivo[]).forEach(d => mergedMap.set(d.id, d));
@@ -109,6 +125,7 @@ export const useDocumentosByPrefix = (prefix: string) => {
 
 export const useUploadDocumento = () => {
   const queryClient = useQueryClient();
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
 
   return useMutation({
     mutationFn: async ({ file, cargoId, fileName }: { file: File; cargoId: string; fileName?: string }) => {
@@ -135,7 +152,8 @@ export const useUploadDocumento = () => {
           file_path: filePath,
           file_size: file.size,
           file_type: file.type || fileExt || 'unknown',
-          uploaded_by: user.id
+          uploaded_by: user.id,
+          environment: env
         }])
         .select()
         .single();
