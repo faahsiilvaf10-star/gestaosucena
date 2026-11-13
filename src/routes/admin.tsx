@@ -231,6 +231,12 @@ function AdminRoute() {
       specificGroupId: '120363408136247156@g.us' // Grupo de Avisos
     }
   })
+  const [whatsappEnv, setWhatsappEnv] = useState<'barcarena' | 'hydro-civil'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('sucena_environment') as any) || 'barcarena'
+    }
+    return 'barcarena'
+  })
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
   const [isWhatsappLocked, setIsWhatsappLocked] = useState(true)
   const [unlockCodeModal, setUnlockCodeModal] = useState(false)
@@ -322,6 +328,107 @@ function AdminRoute() {
     }
   }
 
+  const loadWhatsappForEnv = async (targetEnv: 'barcarena' | 'hydro-civil') => {
+    try {
+      const waSettings = await getWhatsappSettings(targetEnv)
+      const isCivil = targetEnv === 'hydro-civil'
+      setWhatsappSettings(prev => ({
+        ...prev,
+        ...waSettings,
+        groupId: waSettings.groupId || (isCivil ? '' : '120363374999567363@g.us'),
+        ddsReminders: {
+          ...waSettings.ddsReminders,
+          specificGroupId: waSettings.ddsReminders?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        requisitionAlerts: {
+          ...waSettings.requisitionAlerts,
+          specificGroupId: waSettings.requisitionAlerts?.specificGroupId || (isCivil ? '' : '120363406691114696@g.us')
+        },
+        purchaseOrders: {
+          ...waSettings.purchaseOrders,
+          specificGroupId: waSettings.purchaseOrders?.specificGroupId || (isCivil ? '' : '120363406691114696@g.us')
+        },
+        asoVencendo: {
+          ...waSettings.asoVencendo,
+          specificGroupId: waSettings.asoVencendo?.specificGroupId || (isCivil ? '' : '120363374999567363@g.us')
+        },
+        relatorioDiarioEquipamentos: {
+          ...waSettings.relatorioDiarioEquipamentos,
+          specificGroupId: waSettings.relatorioDiarioEquipamentos?.specificGroupId || (isCivil ? '' : '120363402703768386@g.us')
+        },
+        estoqueMinimo: {
+          ...waSettings.estoqueMinimo,
+          specificGroupId: waSettings.estoqueMinimo?.specificGroupId || (isCivil ? '' : '120363406691114696@g.us')
+        },
+        estoqueAlteracao: {
+          ...waSettings.estoqueAlteracao,
+          specificGroupId: waSettings.estoqueAlteracao?.specificGroupId || (isCivil ? '' : '120363406691114696@g.us')
+        },
+        estoqueTransferencia: {
+          ...waSettings.estoqueTransferencia,
+          specificGroupId: waSettings.estoqueTransferencia?.specificGroupId || (isCivil ? '' : '120363406691114696@g.us')
+        },
+        inspecaoCanteiro: {
+          ...waSettings.inspecaoCanteiro,
+          specificGroupId: waSettings.inspecaoCanteiro?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        desviosSeguranca: {
+          ...waSettings.desviosSeguranca,
+          specificGroupId: waSettings.desviosSeguranca?.specificGroupId || (isCivil ? '' : '120363409913606942@g.us')
+        },
+        campanhasSeguranca: {
+          ...waSettings.campanhasSeguranca,
+          specificGroupId: waSettings.campanhasSeguranca?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        matrizResponsabilidade: {
+          ...waSettings.matrizResponsabilidade,
+          specificGroupId: waSettings.matrizResponsabilidade?.specificGroupId || (isCivil ? '' : '120363374999567363@g.us')
+        },
+        analiseRisco: {
+          ...waSettings.analiseRisco,
+          specificGroupId: waSettings.analiseRisco?.specificGroupId || (isCivil ? '' : '120363374999567363@g.us')
+        },
+        vistoriasEquipamentos: {
+          ...waSettings.vistoriasEquipamentos,
+          enabled_20_dias: waSettings.vistoriasEquipamentos?.enabled_20_dias ?? true,
+          enabled_1_dia: waSettings.vistoriasEquipamentos?.enabled_1_dia ?? true,
+          specificGroupId: waSettings.vistoriasEquipamentos?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        viradaCorDoMes: {
+          ...waSettings.viradaCorDoMes,
+          specificGroupId: waSettings.viradaCorDoMes?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        appMotoristaAlerts: {
+          ...waSettings.appMotoristaAlerts,
+          specificGroupId: waSettings.appMotoristaAlerts?.specificGroupId || (isCivil ? '' : '120363402703768386@g.us')
+        },
+        equipamentosMovimentacao: {
+          ...waSettings.equipamentosMovimentacao,
+          specificGroupId: waSettings.equipamentosMovimentacao?.specificGroupId || (isCivil ? '' : '120363402703768386@g.us')
+        },
+        cintasInspection: {
+          ...waSettings.cintasInspection,
+          specificGroupId: waSettings.cintasInspection?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        reminders: {
+          ...waSettings.reminders,
+          specificGroupId: waSettings.reminders?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        },
+        attendanceAlerts: {
+          ...waSettings.attendanceAlerts,
+          specificGroupId: waSettings.attendanceAlerts?.specificGroupId || (isCivil ? '' : '120363408136247156@g.us')
+        }
+      }))
+      if (!waSettings.url && !waSettings.instanceId) {
+        setIsWhatsappLocked(false)
+      } else {
+        setIsWhatsappLocked(true)
+      }
+    } catch (e) {
+      console.error("Erro ao carregar configurações do whatsapp", e)
+    }
+  }
+
   async function loadUsers() {
     setLoading(true)
     setError('')
@@ -351,103 +458,7 @@ function AdminRoute() {
       console.error("Erro ao carregar cargos", e)
     }
 
-    try {
-      const waSettings = await getWhatsappSettings()
-      setWhatsappSettings(prev => ({
-        ...prev,
-        ...waSettings,
-        groupId: waSettings.groupId || '120363374999567363@g.us',
-        ddsReminders: {
-          ...waSettings.ddsReminders,
-          specificGroupId: waSettings.ddsReminders?.specificGroupId || '120363408136247156@g.us'
-        },
-        requisitionAlerts: {
-          ...waSettings.requisitionAlerts,
-          specificGroupId: waSettings.requisitionAlerts?.specificGroupId || '120363406691114696@g.us'
-        },
-        purchaseOrders: {
-          ...waSettings.purchaseOrders,
-          specificGroupId: waSettings.purchaseOrders?.specificGroupId || '120363406691114696@g.us'
-        },
-        asoVencendo: {
-          ...waSettings.asoVencendo,
-          specificGroupId: waSettings.asoVencendo?.specificGroupId || '120363374999567363@g.us'
-        },
-        relatorioDiarioEquipamentos: {
-          ...waSettings.relatorioDiarioEquipamentos,
-          specificGroupId: waSettings.relatorioDiarioEquipamentos?.specificGroupId || '120363402703768386@g.us'
-        },
-        estoqueMinimo: {
-          ...waSettings.estoqueMinimo,
-          specificGroupId: waSettings.estoqueMinimo?.specificGroupId || '120363406691114696@g.us'
-        },
-        estoqueAlteracao: {
-          ...waSettings.estoqueAlteracao,
-          specificGroupId: waSettings.estoqueAlteracao?.specificGroupId || '120363406691114696@g.us'
-        },
-        estoqueTransferencia: {
-          ...waSettings.estoqueTransferencia,
-          specificGroupId: waSettings.estoqueTransferencia?.specificGroupId || '120363406691114696@g.us'
-        },
-        inspecaoCanteiro: {
-          ...waSettings.inspecaoCanteiro,
-          specificGroupId: waSettings.inspecaoCanteiro?.specificGroupId || '120363408136247156@g.us'
-        },
-        desviosSeguranca: {
-          ...waSettings.desviosSeguranca,
-          specificGroupId: waSettings.desviosSeguranca?.specificGroupId || '120363409913606942@g.us'
-        },
-        campanhasSeguranca: {
-          ...waSettings.campanhasSeguranca,
-          specificGroupId: waSettings.campanhasSeguranca?.specificGroupId || '120363408136247156@g.us'
-        },
-        matrizResponsabilidade: {
-          ...waSettings.matrizResponsabilidade,
-          specificGroupId: waSettings.matrizResponsabilidade?.specificGroupId || '120363374999567363@g.us'
-        },
-        analiseRisco: {
-          ...waSettings.analiseRisco,
-          specificGroupId: waSettings.analiseRisco?.specificGroupId || '120363374999567363@g.us'
-        },
-        vistoriasEquipamentos: {
-          ...waSettings.vistoriasEquipamentos,
-          enabled_20_dias: waSettings.vistoriasEquipamentos?.enabled_20_dias ?? true,
-          enabled_1_dia: waSettings.vistoriasEquipamentos?.enabled_1_dia ?? true,
-          specificGroupId: waSettings.vistoriasEquipamentos?.specificGroupId || '120363408136247156@g.us'
-        },
-        viradaCorDoMes: {
-          ...waSettings.viradaCorDoMes,
-          specificGroupId: waSettings.viradaCorDoMes?.specificGroupId || '120363408136247156@g.us'
-        },
-        appMotoristaAlerts: {
-          ...waSettings.appMotoristaAlerts,
-          specificGroupId: waSettings.appMotoristaAlerts?.specificGroupId || '120363402703768386@g.us'
-        },
-        equipamentosMovimentacao: {
-          ...waSettings.equipamentosMovimentacao,
-          specificGroupId: waSettings.equipamentosMovimentacao?.specificGroupId || '120363402703768386@g.us'
-        },
-        cintasInspection: {
-          ...waSettings.cintasInspection,
-          specificGroupId: waSettings.cintasInspection?.specificGroupId || '120363408136247156@g.us'
-        },
-        reminders: {
-          ...waSettings.reminders,
-          specificGroupId: waSettings.reminders?.specificGroupId || '120363408136247156@g.us'
-        },
-        attendanceAlerts: {
-          ...waSettings.attendanceAlerts,
-          specificGroupId: waSettings.attendanceAlerts?.specificGroupId || '120363408136247156@g.us'
-        }
-      }))
-      if (!waSettings.url && !waSettings.instanceId) {
-        setIsWhatsappLocked(false)
-      } else {
-        setIsWhatsappLocked(true)
-      }
-    } catch (e) {
-      console.error("Erro ao carregar configurações do whatsapp", e)
-    }
+    await loadWhatsappForEnv(whatsappEnv)
 
     try {
       const perms = await getAllPermissions()
@@ -711,9 +722,13 @@ function AdminRoute() {
 
   const handleSaveWhatsapp = async () => {
     setSavingWhatsapp(true)
-    const result = await saveWhatsappSettings(whatsappSettings)
+    const result = await saveWhatsappSettings(whatsappSettings, whatsappEnv)
     if (result.success) {
-      toast.success('Configurações do WhatsApp salvas com sucesso!')
+      toast.success(
+        whatsappEnv === 'hydro-civil'
+          ? 'Configurações e grupos do WhatsApp salvos para o ambiente Hydro Civil!'
+          : 'Configurações e grupos do WhatsApp salvos para o ambiente Barcarena!'
+      )
       setIsWhatsappLocked(true)
     } else {
       toast.error('Erro ao salvar as configurações: ' + (result.error || 'Desconhecido'))
@@ -1226,6 +1241,57 @@ function AdminRoute() {
             <div>
               <h2 className="text-xl font-bold">WhatsApp API (W-API)</h2>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Configure a instância e envie mensagens automáticas</p>
+            </div>
+          </div>
+
+          {/* Banner de Isolamento de Grupos por Ambiente */}
+          <div className="mt-6 mb-4 p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 shrink-0">
+                <MessageCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">Isolamento de Grupos por Ambiente</h4>
+                  <span className="text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full bg-blue-600 text-white">
+                    Mesma API W-API · Grupos Isolados
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                  A instância W-API (URL, Instance ID, Token) é a mesma para todo o sistema. Os IDs dos grupos abaixo são configurados e salvos para o ambiente selecionado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center bg-black/20 dark:bg-black/40 p-1.5 rounded-xl border border-white/10 shrink-0 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setWhatsappEnv('barcarena')
+                  loadWhatsappForEnv('barcarena')
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  whatsappEnv === 'barcarena'
+                    ? 'bg-amber-500 text-white shadow-xs font-bold'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Reabilitação (Barcarena)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setWhatsappEnv('hydro-civil')
+                  loadWhatsappForEnv('hydro-civil')
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  whatsappEnv === 'hydro-civil'
+                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Hydro Civil
+              </button>
             </div>
           </div>
 

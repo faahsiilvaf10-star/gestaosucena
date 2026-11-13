@@ -499,7 +499,129 @@ const defaultWhatsappSettings: WhatsappSettings = {
 
 const WHATSAPP_SETTINGS_CACHE_KEY = "sucena_whatsapp_settings_cache";
 
-export async function getWhatsappSettings(): Promise<WhatsappSettings> {
+export function extractWhatsappGroups(settings: WhatsappSettings): Record<string, string> {
+  return {
+    groupId: settings.groupId || "",
+    ddsReminders: settings.ddsReminders?.specificGroupId || "",
+    requisitionAlerts: settings.requisitionAlerts?.specificGroupId || "",
+    purchaseOrders: settings.purchaseOrders?.specificGroupId || "",
+    asoVencendo: settings.asoVencendo?.specificGroupId || "",
+    relatorioDiarioEquipamentos: settings.relatorioDiarioEquipamentos?.specificGroupId || "",
+    estoqueMinimo: settings.estoqueMinimo?.specificGroupId || "",
+    estoqueAlteracao: settings.estoqueAlteracao?.specificGroupId || "",
+    estoqueTransferencia: settings.estoqueTransferencia?.specificGroupId || "",
+    inspecaoCanteiro: settings.inspecaoCanteiro?.specificGroupId || "",
+    desviosSeguranca: settings.desviosSeguranca?.specificGroupId || "",
+    campanhasSeguranca: settings.campanhasSeguranca?.specificGroupId || "",
+    matrizResponsabilidade: settings.matrizResponsabilidade?.specificGroupId || "",
+    analiseRisco: settings.analiseRisco?.specificGroupId || "",
+    vistoriasEquipamentos: settings.vistoriasEquipamentos?.specificGroupId || "",
+    viradaCorDoMes: settings.viradaCorDoMes?.specificGroupId || "",
+    equipamentosStatusAlerts: settings.equipamentosStatusAlerts?.specificGroupId || "",
+    appMotoristaAlerts: settings.appMotoristaAlerts?.specificGroupId || "",
+    equipamentosMovimentacao: settings.equipamentosMovimentacao?.specificGroupId || "",
+    cintasInspection: settings.cintasInspection?.specificGroupId || "",
+    reminders: settings.reminders?.specificGroupId || "",
+    attendanceAlerts: settings.attendanceAlerts?.specificGroupId || "",
+  };
+}
+
+export function applyWhatsappGroups(baseSettings: WhatsappSettings, groups: Record<string, string>): WhatsappSettings {
+  return {
+    ...baseSettings,
+    groupId: groups.groupId ?? "",
+    ddsReminders: {
+      ...baseSettings.ddsReminders!,
+      specificGroupId: groups.ddsReminders ?? "",
+    },
+    requisitionAlerts: {
+      ...baseSettings.requisitionAlerts!,
+      specificGroupId: groups.requisitionAlerts ?? "",
+    },
+    purchaseOrders: {
+      ...baseSettings.purchaseOrders!,
+      specificGroupId: groups.purchaseOrders ?? "",
+    },
+    asoVencendo: {
+      ...baseSettings.asoVencendo!,
+      specificGroupId: groups.asoVencendo ?? "",
+    },
+    relatorioDiarioEquipamentos: {
+      ...baseSettings.relatorioDiarioEquipamentos!,
+      specificGroupId: groups.relatorioDiarioEquipamentos ?? "",
+    },
+    estoqueMinimo: {
+      ...baseSettings.estoqueMinimo!,
+      specificGroupId: groups.estoqueMinimo ?? "",
+    },
+    estoqueAlteracao: {
+      ...baseSettings.estoqueAlteracao!,
+      specificGroupId: groups.estoqueAlteracao ?? "",
+    },
+    estoqueTransferencia: {
+      ...baseSettings.estoqueTransferencia!,
+      specificGroupId: groups.estoqueTransferencia ?? "",
+    },
+    inspecaoCanteiro: {
+      ...baseSettings.inspecaoCanteiro!,
+      specificGroupId: groups.inspecaoCanteiro ?? "",
+    },
+    desviosSeguranca: {
+      ...baseSettings.desviosSeguranca!,
+      specificGroupId: groups.desviosSeguranca ?? "",
+    },
+    campanhasSeguranca: {
+      ...baseSettings.campanhasSeguranca!,
+      specificGroupId: groups.campanhasSeguranca ?? "",
+    },
+    matrizResponsabilidade: {
+      ...baseSettings.matrizResponsabilidade!,
+      specificGroupId: groups.matrizResponsabilidade ?? "",
+    },
+    analiseRisco: {
+      ...baseSettings.analiseRisco!,
+      specificGroupId: groups.analiseRisco ?? "",
+    },
+    vistoriasEquipamentos: {
+      ...baseSettings.vistoriasEquipamentos!,
+      specificGroupId: groups.vistoriasEquipamentos ?? "",
+    },
+    viradaCorDoMes: {
+      ...baseSettings.viradaCorDoMes!,
+      specificGroupId: groups.viradaCorDoMes ?? "",
+    },
+    equipamentosStatusAlerts: {
+      ...baseSettings.equipamentosStatusAlerts!,
+      specificGroupId: groups.equipamentosStatusAlerts ?? "",
+    },
+    appMotoristaAlerts: {
+      ...baseSettings.appMotoristaAlerts!,
+      specificGroupId: groups.appMotoristaAlerts ?? "",
+    },
+    equipamentosMovimentacao: {
+      ...baseSettings.equipamentosMovimentacao!,
+      specificGroupId: groups.equipamentosMovimentacao ?? "",
+    },
+    cintasInspection: {
+      ...baseSettings.cintasInspection!,
+      specificGroupId: groups.cintasInspection ?? "",
+    },
+    reminders: {
+      ...baseSettings.reminders!,
+      specificGroupId: groups.reminders ?? "",
+    },
+    attendanceAlerts: {
+      ...baseSettings.attendanceAlerts!,
+      specificGroupId: groups.attendanceAlerts ?? "",
+    },
+  };
+}
+
+export async function getWhatsappSettings(env?: string): Promise<WhatsappSettings> {
+  const targetEnv = env || (typeof window !== "undefined" ? localStorage.getItem("sucena_environment") || "barcarena" : "barcarena");
+
+  let baseSettings = defaultWhatsappSettings;
+
   try {
     const { data, error } = await supabase
       .from("global_settings")
@@ -523,7 +645,7 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
         }
       }
 
-      const mergedSettings: WhatsappSettings = {
+      baseSettings = {
         ...defaultWhatsappSettings,
         ...loaded,
         messageTemplates: mergedTemplates,
@@ -531,23 +653,21 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
 
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem(WHATSAPP_SETTINGS_CACHE_KEY, JSON.stringify(mergedSettings));
+          localStorage.setItem(WHATSAPP_SETTINGS_CACHE_KEY, JSON.stringify(baseSettings));
         } catch (_) {}
       }
-
-      return mergedSettings;
     }
   } catch (err) {
     console.warn("Erro ao buscar configs do whatsapp no Supabase, tentando cache local:", err);
   }
 
-  // Fallback para cache local no localStorage (essencial no APK e em conexões oscilantes)
-  if (typeof window !== "undefined") {
+  // Fallback para cache local no localStorage
+  if (baseSettings === defaultWhatsappSettings && typeof window !== "undefined") {
     try {
       const cached = localStorage.getItem(WHATSAPP_SETTINGS_CACHE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        return {
+        baseSettings = {
           ...defaultWhatsappSettings,
           ...parsed,
           messageTemplates: {
@@ -559,12 +679,67 @@ export async function getWhatsappSettings(): Promise<WhatsappSettings> {
     } catch (_) {}
   }
 
-  return defaultWhatsappSettings;
+  // Se o ambiente for hydro-civil:
+  // Usa o mesmo API (url, instanceId, token, etc.), mas aplica os grupos do Civil!
+  if (targetEnv === "hydro-civil") {
+    let civilGroups: Record<string, string> | null = null;
+
+    try {
+      const { data: civilData } = await supabase
+        .from("global_settings")
+        .select("value")
+        .eq("key", "whatsapp_groups_hydro-civil")
+        .maybeSingle();
+
+      if (civilData?.value && typeof civilData.value === "object") {
+        civilGroups = civilData.value as Record<string, string>;
+      }
+    } catch (_) {}
+
+    if (!civilGroups && typeof window !== "undefined") {
+      try {
+        const cachedCivil = localStorage.getItem("sucena_whatsapp_groups_hydro-civil");
+        if (cachedCivil) civilGroups = JSON.parse(cachedCivil);
+      } catch (_) {}
+    }
+
+    const finalCivilGroups = civilGroups || {
+      groupId: "",
+      ddsReminders: "",
+      requisitionAlerts: "",
+      purchaseOrders: "",
+      asoVencendo: "",
+      relatorioDiarioEquipamentos: "",
+      estoqueMinimo: "",
+      estoqueAlteracao: "",
+      estoqueTransferencia: "",
+      inspecaoCanteiro: "",
+      desviosSeguranca: "",
+      campanhasSeguranca: "",
+      matrizResponsabilidade: "",
+      analiseRisco: "",
+      vistoriasEquipamentos: "",
+      viradaCorDoMes: "",
+      equipamentosStatusAlerts: "",
+      appMotoristaAlerts: "",
+      equipamentosMovimentacao: "",
+      cintasInspection: "",
+      reminders: "",
+      attendanceAlerts: "",
+    };
+
+    return applyWhatsappGroups(baseSettings, finalCivilGroups);
+  }
+
+  return baseSettings;
 }
 
 export async function saveWhatsappSettings(
   settings: WhatsappSettings,
+  env?: string,
 ): Promise<{ success: boolean; error?: string }> {
+  const targetEnv = env || (typeof window !== "undefined" ? localStorage.getItem("sucena_environment") || "barcarena" : "barcarena");
+
   try {
     if (typeof window !== "undefined") {
       try {
@@ -572,10 +747,51 @@ export async function saveWhatsappSettings(
       } catch (_) {}
     }
 
+    let settingsToSaveToGlobal = settings;
+
+    if (targetEnv === "hydro-civil") {
+      // Salva os grupos específicos do Civil em 'whatsapp_groups_hydro-civil'
+      const civilGroups = extractWhatsappGroups(settings);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("sucena_whatsapp_groups_hydro-civil", JSON.stringify(civilGroups));
+        } catch (_) {}
+      }
+
+      await supabase.from("global_settings").upsert(
+        {
+          key: "whatsapp_groups_hydro-civil",
+          value: civilGroups,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+
+      // Busca as configurações atuais de whatsapp_settings para preservar os grupos de Barcarena
+      try {
+        const { data: currentGlobal } = await supabase
+          .from("global_settings")
+          .select("value")
+          .eq("key", "whatsapp_settings")
+          .maybeSingle();
+
+        const baseVal = (currentGlobal?.value && typeof currentGlobal.value === 'object') ? currentGlobal.value : defaultWhatsappSettings;
+        settingsToSaveToGlobal = {
+          ...baseVal,
+          url: settings.url,
+          instanceId: settings.instanceId,
+          token: settings.token,
+          interval: settings.interval,
+          adminPhone: settings.adminPhone,
+          messageTemplates: settings.messageTemplates || baseVal.messageTemplates,
+        };
+      } catch (_) {}
+    }
+
     const { error } = await supabase.from("global_settings").upsert(
       {
         key: "whatsapp_settings",
-        value: settings,
+        value: settingsToSaveToGlobal,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "key" },
