@@ -78,6 +78,24 @@ function RDOPage() {
   const [isLocked, setIsLocked] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    return typeof window !== 'undefined'
+      ? (localStorage.getItem('sucena_environment') || 'barcarena')
+      : 'barcarena';
+  });
+
+  const isCivil = currentEnv === 'hydro-civil';
+
+  // Monitorar alterações de ambiente no sistema
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e.detail?.environment || localStorage.getItem('sucena_environment') || 'barcarena';
+      setCurrentEnv(newEnv);
+    };
+    window.addEventListener('sucena_environment_change', handleEnvChange);
+    return () => window.removeEventListener('sucena_environment_change', handleEnvChange);
+  }, []);
+
   // States to hold Jardinagem and Gabiao data
   const [jardinagemData, setJardinagemData] = useState<any>(null);
   const [gabiaoData, setGabiaoData] = useState<any>(null);
@@ -285,6 +303,25 @@ function RDOPage() {
 
   const fetchCustomModulosForDate = async (dateStr: string) => {
     try {
+      const modulosKey = isCivil ? 'rdo_modulos_customizados_hydro-civil' : 'rdo_modulos_customizados';
+
+      // 1. Descobrir quais módulos pertencem ao ambiente ativo
+      let allowedModuleIds: Set<string> | null = null;
+      try {
+        const { data: modSetting } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', modulosKey)
+          .single();
+
+        let modList = (modSetting?.value && Array.isArray(modSetting.value)) ? modSetting.value : [];
+        if (modList.length === 0) {
+          const localMods = localStorage.getItem(modulosKey);
+          if (localMods) try { modList = JSON.parse(localMods); } catch (e) {}
+        }
+        allowedModuleIds = new Set(modList.map((m: any) => m.id));
+      } catch (e) {}
+
       const { data: list } = await supabase
         .from('global_settings')
         .select('key, value')
@@ -294,7 +331,10 @@ function RDOPage() {
       if (list) {
         list.forEach((item: any) => {
           if (item.value) {
-            map.set(item.key, item.value as CustomRdoDailyData);
+            const val = item.value as CustomRdoDailyData;
+            if (!allowedModuleIds || allowedModuleIds.has(val.moduloId)) {
+              map.set(item.key, val);
+            }
             localStorage.setItem(item.key, JSON.stringify(item.value));
           }
         });
@@ -306,7 +346,9 @@ function RDOPage() {
           if (k.startsWith('custom_rdo_') && k.endsWith(`_${dateStr}`) && !map.has(k)) {
             try {
               const val = JSON.parse(localStorage.getItem(k) || '');
-              if (val) map.set(k, val);
+              if (val && (!allowedModuleIds || allowedModuleIds.has(val.moduloId))) {
+                map.set(k, val);
+              }
             } catch (e) {}
           }
         });
@@ -1056,12 +1098,20 @@ function RDOPage() {
               <div className="mt-6 mb-2 font-bold">🛠️ ATIVIDADES:</div>
               
               {(() => {
-                const defaultAreasToRender = ['Área Jardinagem', 'Área Gabião', 'Área Transporte'];
-                const areasComPresenca = Array.from(new Set(presencas.map(p => p.area))).filter(Boolean) as string[];
+                const defaultAreasToRender = isCivil
+                  ? ['Área Transporte']
+                  : ['Área Jardinagem', 'Área Gabião', 'Área Transporte'];
+                
+                const rawAreasComPresenca = Array.from(new Set(presencas.map(p => p.area))).filter(Boolean) as string[];
+                const areasComPresenca = isCivil
+                  ? rawAreasComPresenca.filter(a => a !== 'Área Jardinagem' && a !== 'Área Gabião')
+                  : rawAreasComPresenca;
+                
                 const todasAreas = Array.from(new Set([...defaultAreasToRender, ...areasComPresenca]));
                 
                 return todasAreas.map(area => {
                   if (area === 'Área Jardinagem') {
+                    if (isCivil) return null;
                     return (
                       <div key={area}>
                         <div className="mt-2 font-bold text-green-700">🌿 Jardinagem 🌿</div>
@@ -1070,6 +1120,7 @@ function RDOPage() {
                     );
                   }
                   if (area === 'Área Gabião') {
+                    if (isCivil) return null;
                     return (
                       <div key={area}>
                         <div className="mt-6 font-bold text-green-700">✳️ ÁREA GABIÃO ✳️</div>
@@ -1154,11 +1205,13 @@ function RDOPage() {
                   <div key={`geral-${i}`} className={i === 0 ? "font-bold text-blue-700" : "text-gray-600 font-normal"}>{line}</div>
                 ))}
                 
-                <div className="mt-4">
-                  {renderEquipamentosJardinagemText().split('\n').map((line, i) => (
-                    <div key={`jardim-${i}`} className={i === 0 ? "font-bold text-green-700" : "text-gray-600 font-normal"}>{line}</div>
-                  ))}
-                </div>
+                {!isCivil && (
+                  <div className="mt-4">
+                    {renderEquipamentosJardinagemText().split('\n').map((line, i) => (
+                      <div key={`jardim-${i}`} className={i === 0 ? "font-bold text-green-700" : "text-gray-600 font-normal"}>{line}</div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mt-8 font-bold text-orange-600">    Condições climáticas:</div>

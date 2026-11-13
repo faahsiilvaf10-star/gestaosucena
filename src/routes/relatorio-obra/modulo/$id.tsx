@@ -85,6 +85,25 @@ export function CustomModuloAtividadePage() {
   const [copied, setCopied] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    return typeof window !== 'undefined'
+      ? (localStorage.getItem('sucena_environment') || 'barcarena')
+      : 'barcarena';
+  });
+
+  const isCivil = currentEnv === 'hydro-civil';
+  const modulosKey = isCivil ? 'rdo_modulos_customizados_hydro-civil' : 'rdo_modulos_customizados';
+
+  // Monitorar alterações de ambiente
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e.detail?.environment || localStorage.getItem('sucena_environment') || 'barcarena';
+      setCurrentEnv(newEnv);
+    };
+    window.addEventListener('sucena_environment_change', handleEnvChange);
+    return () => window.removeEventListener('sucena_environment_change', handleEnvChange);
+  }, []);
+
   // Verificar admin
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -102,20 +121,32 @@ export function CustomModuloAtividadePage() {
     try {
       let found: CustomRdoModulo | null = null;
 
-      // 1. Banco remoto
+      // 1. Banco remoto na chave do ambiente ativo
       const { data } = await supabase
         .from('global_settings')
         .select('value')
-        .eq('key', 'rdo_modulos_customizados')
+        .eq('key', modulosKey)
         .single();
 
       if (data && Array.isArray(data.value)) {
         found = data.value.find((m: CustomRdoModulo) => m.id === id) || null;
       }
 
+      // 1b. Fallback banco remoto chave padrão se não achou
+      if (!found && modulosKey !== 'rdo_modulos_customizados') {
+        const { data: defaultData } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', 'rdo_modulos_customizados')
+          .single();
+        if (defaultData && Array.isArray(defaultData.value)) {
+          found = defaultData.value.find((m: CustomRdoModulo) => m.id === id) || null;
+        }
+      }
+
       // 2. Fallback localStorage
       if (!found) {
-        const local = localStorage.getItem('rdo_modulos_customizados');
+        const local = localStorage.getItem(modulosKey) || localStorage.getItem('rdo_modulos_customizados');
         if (local) {
           try {
             const list: CustomRdoModulo[] = JSON.parse(local);
@@ -404,14 +435,14 @@ export function CustomModuloAtividadePage() {
       const { data } = await supabase
         .from('global_settings')
         .select('value')
-        .eq('key', 'rdo_modulos_customizados')
+        .eq('key', modulosKey)
         .single();
 
       let currentList: CustomRdoModulo[] = [];
       if (data && Array.isArray(data.value)) {
         currentList = data.value;
       } else {
-        const local = localStorage.getItem('rdo_modulos_customizados');
+        const local = localStorage.getItem(modulosKey);
         if (local) try { currentList = JSON.parse(local); } catch (e) {}
       }
 
@@ -421,13 +452,13 @@ export function CustomModuloAtividadePage() {
       ];
 
       setModulo(fullUpdated);
-      localStorage.setItem('rdo_modulos_customizados', JSON.stringify(updatedList));
+      localStorage.setItem(modulosKey, JSON.stringify(updatedList));
 
       await supabase.from('global_settings').upsert({
-        key: 'rdo_modulos_customizados',
+        key: modulosKey,
         value: updatedList,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'key' });
 
       toast.success('Modelos da atividade atualizados com sucesso!');
     } catch (err: any) {
@@ -445,25 +476,25 @@ export function CustomModuloAtividadePage() {
       const { data } = await supabase
         .from('global_settings')
         .select('value')
-        .eq('key', 'rdo_modulos_customizados')
+        .eq('key', modulosKey)
         .single();
 
       let currentList: CustomRdoModulo[] = [];
       if (data && Array.isArray(data.value)) {
         currentList = data.value;
       } else {
-        const local = localStorage.getItem('rdo_modulos_customizados');
+        const local = localStorage.getItem(modulosKey);
         if (local) try { currentList = JSON.parse(local); } catch (e) {}
       }
 
       const updatedList = currentList.filter(m => m.id !== modulo.id);
-      localStorage.setItem('rdo_modulos_customizados', JSON.stringify(updatedList));
+      localStorage.setItem(modulosKey, JSON.stringify(updatedList));
 
       await supabase.from('global_settings').upsert({
-        key: 'rdo_modulos_customizados',
+        key: modulosKey,
         value: updatedList,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'key' });
 
       toast.success(`Módulo "${modulo.name}" excluído com sucesso!`);
       navigate({ to: '/relatorio-obra' });

@@ -28,6 +28,24 @@ function RelatorioObraHub() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customModulos, setCustomModulos] = useState<CustomRdoModulo[]>([]);
   const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false);
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    return typeof window !== 'undefined'
+      ? (localStorage.getItem('sucena_environment') || 'barcarena')
+      : 'barcarena';
+  });
+
+  const isCivil = currentEnv === 'hydro-civil';
+  const storageKey = isCivil ? 'rdo_modulos_customizados_hydro-civil' : 'rdo_modulos_customizados';
+
+  // Monitorar mudanças de ambiente no cabeçalho
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e.detail?.environment || localStorage.getItem('sucena_environment') || 'barcarena';
+      setCurrentEnv(newEnv);
+    };
+    window.addEventListener('sucena_environment_change', handleEnvChange);
+    return () => window.removeEventListener('sucena_environment_change', handleEnvChange);
+  }, []);
 
   // Verificar admin
   useEffect(() => {
@@ -40,36 +58,40 @@ function RelatorioObraHub() {
     });
   }, []);
 
-  // Carregar módulos customizados
+  // Carregar módulos customizados do ambiente ativo
   const fetchCustomModulos = async () => {
     try {
       // 1. Tentar remoto
       const { data } = await supabase
         .from('global_settings')
         .select('value')
-        .eq('key', 'rdo_modulos_customizados')
+        .eq('key', storageKey)
         .single();
 
       if (data && Array.isArray(data.value)) {
         setCustomModulos(data.value);
-        localStorage.setItem('rdo_modulos_customizados', JSON.stringify(data.value));
+        localStorage.setItem(storageKey, JSON.stringify(data.value));
         return;
       }
 
       // 2. Fallback local
-      const local = localStorage.getItem('rdo_modulos_customizados');
+      const local = localStorage.getItem(storageKey);
       if (local) {
         try {
           setCustomModulos(JSON.parse(local));
+          return;
         } catch (e) {}
       }
+      setCustomModulos([]);
     } catch (e) {
       console.warn('Erro ao buscar módulos customizados:', e);
-      const local = localStorage.getItem('rdo_modulos_customizados');
+      const local = localStorage.getItem(storageKey);
       if (local) {
         try {
           setCustomModulos(JSON.parse(local));
         } catch (err) {}
+      } else {
+        setCustomModulos([]);
       }
     }
   };
@@ -79,10 +101,10 @@ function RelatorioObraHub() {
 
     // Inscrição em tempo real para sincronizar novos módulos entre usuários
     const channel = supabase
-      .channel('rdo_modulos_realtime')
+      .channel(`rdo_modulos_${storageKey}_realtime`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'global_settings', filter: 'key=eq.rdo_modulos_customizados' },
+        { event: '*', schema: 'public', table: 'global_settings', filter: `key=eq.${storageKey}` },
         () => {
           fetchCustomModulos();
         }
@@ -92,7 +114,7 @@ function RelatorioObraHub() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [storageKey]);
 
   // Salvar novo módulo criado por qualquer encarregado
   const handleSaveModulo = async (newModuloData: Omit<CustomRdoModulo, 'created_at'>) => {
@@ -103,14 +125,14 @@ function RelatorioObraHub() {
 
     const updatedList = [...customModulos.filter(m => m.id !== newModulo.id), newModulo];
     setCustomModulos(updatedList);
-    localStorage.setItem('rdo_modulos_customizados', JSON.stringify(updatedList));
+    localStorage.setItem(storageKey, JSON.stringify(updatedList));
 
     try {
       const { error } = await supabase.from('global_settings').upsert({
-        key: 'rdo_modulos_customizados',
+        key: storageKey,
         value: updatedList,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'key' });
 
       if (error) throw error;
       toast.success(`Botão "${newModulo.name}" adicionado com sucesso!`);
@@ -131,14 +153,14 @@ function RelatorioObraHub() {
 
     const updatedList = customModulos.filter(m => m.id !== moduloId);
     setCustomModulos(updatedList);
-    localStorage.setItem('rdo_modulos_customizados', JSON.stringify(updatedList));
+    localStorage.setItem(storageKey, JSON.stringify(updatedList));
 
     try {
       const { error } = await supabase.from('global_settings').upsert({
-        key: 'rdo_modulos_customizados',
+        key: storageKey,
         value: updatedList,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'key' });
 
       if (error) throw error;
       toast.success(`Módulo "${moduloName}" excluído com sucesso!`);
@@ -147,6 +169,11 @@ function RelatorioObraHub() {
       toast.error('Erro ao excluir módulo');
     }
   };
+
+  // Filtrar itens padrão com base no ambiente (No Civil, Jardinagem e Gabião são excluídos)
+  const activeHubItems = isCivil
+    ? DEFAULT_HUB_ITEMS.filter(item => item.href !== '/relatorio-obra/jardinagem' && item.href !== '/relatorio-obra/gabiao')
+    : DEFAULT_HUB_ITEMS;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-transparent pb-20">
@@ -168,8 +195,8 @@ function RelatorioObraHub() {
 
         {/* Grid de Atividades da Obra — Cards Fixos + Módulos Customizados + Botão Nova Atividade */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full animate-in fade-in zoom-in-95 duration-700">
-          {/* Módulos Fixos (RDO, Jardinagem, Gabião, Prevista) */}
-          {DEFAULT_HUB_ITEMS.map((item, idx) => {
+          {/* Módulos Fixos (RDO, Jardinagem, Gabião, Prevista - Filtrados por ambiente) */}
+          {activeHubItems.map((item, idx) => {
             const Icon = item.icon;
             return (
               <Link
