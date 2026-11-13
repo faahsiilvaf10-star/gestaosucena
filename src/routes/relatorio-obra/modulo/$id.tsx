@@ -421,10 +421,14 @@ export function CustomModuloAtividadePage() {
   const handleSave = async () => {
     if (!modulo) return;
 
+    const isCivilArea = isCivil || id.startsWith('civil-') || CIVIL_AREAS_DEFINITIONS.some(c => c.id === id);
+    const modEnvironment = isCivilArea ? 'hydro-civil' : 'barcarena';
+
     const storageKey = `custom_rdo_${id}_${selectedDate}`;
     const dataToSave: CustomRdoDailyData = {
       moduloId: id,
       moduloName: modulo.name,
+      environment: modEnvironment,
       data: selectedDate,
       cardRows,
       cardCheckboxes,
@@ -444,7 +448,7 @@ export function CustomModuloAtividadePage() {
     toast.success(`${modulo.name} salva com sucesso para ${selectedDate}!`);
 
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: id } }));
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: id, environment: modEnvironment } }));
     }
 
     try {
@@ -490,8 +494,10 @@ export function CustomModuloAtividadePage() {
   // Atualizar definição do módulo (quando o usuário gerencia/adiciona modelos no sistema)
   const handleSaveModuleSettings = async (updatedModuleData: Omit<CustomRdoModulo, 'created_at'>) => {
     try {
+      const isCivilArea = isCivil || id.startsWith('civil-') || CIVIL_AREAS_DEFINITIONS.some(c => c.id === id);
       const fullUpdated: CustomRdoModulo = {
         ...updatedModuleData,
+        environment: isCivilArea ? 'hydro-civil' : 'barcarena',
         created_at: modulo?.created_at || new Date().toISOString(),
       };
 

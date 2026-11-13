@@ -40,6 +40,7 @@ export interface CustomRdoModulo {
   models?: CustomCardModel[];
   temOutrasAtividades?: boolean;
   defaultItens?: CustomRdoItem[];
+  environment?: string;
   created_at: string;
   created_by?: string;
 }
@@ -47,6 +48,7 @@ export interface CustomRdoModulo {
 export interface CustomRdoDailyData {
   moduloId: string;
   moduloName?: string;
+  environment?: string;
   data: string;
   renderedSummary?: string;
   cardRows?: Record<string, CustomCardRowData[]>;

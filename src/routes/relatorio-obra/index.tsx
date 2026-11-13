@@ -164,6 +164,7 @@ function RelatorioObraHub() {
   const handleSaveModulo = async (newModuloData: Omit<CustomRdoModulo, 'created_at'>) => {
     const newModulo: CustomRdoModulo = {
       ...newModuloData,
+      environment: isCivil ? 'hydro-civil' : 'barcarena',
       created_at: new Date().toISOString(),
     };
 

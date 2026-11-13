@@ -18,6 +18,7 @@ import { type RdoAtividade, getSubItens } from '@/components/rdo/ActivityCard'
 import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
 import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
 import { isVehicle } from '@/lib/equipamentos/equipmentTypes'
+import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -332,7 +333,7 @@ function RDOPage() {
             });
         }
         if (key.startsWith('custom_rdo_') && key.endsWith(`_${selectedDate}`)) {
-          fetchCustomModulosForDate(selectedDate);
+          fetchCustomModulosForDate(selectedDate, currentEnv);
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rh_presencas', filter: `data=eq.${selectedDate}` }, () => {
@@ -340,12 +341,12 @@ function RDOPage() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rdo_atividades' }, () => {
         // Refresh custom activities when they change
-        fetchCustomAtividades(selectedDate);
+        fetchCustomAtividades(selectedDate, currentEnv);
       })
       .subscribe();
 
     const handleLocalRdoSaved = () => {
-      fetchCustomModulosForDate(selectedDate);
+      fetchCustomModulosForDate(selectedDate, currentEnv);
     };
     window.addEventListener('sucena_rdo_saved', handleLocalRdoSaved);
     const handlePresencaEvent = () => fetchPresencasForDate(selectedDate);
@@ -361,9 +362,10 @@ function RDOPage() {
   }, [selectedDate]);
 
   // Fetch custom activities from database
-  const fetchCustomAtividades = async (dateStr: string) => {
+  const fetchCustomAtividades = async (dateStr: string, envParam?: string) => {
     try {
-      const environment = localStorage.getItem('sucena_environment') || 'barcarena';
+      const environment = envParam || currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+      const isCivilEnv = environment === 'hydro-civil';
       const { data, error } = await supabase
         .from('rdo_atividades')
         .select('*')
@@ -372,15 +374,56 @@ function RDOPage() {
 
       if (error) throw error;
 
-      const filteredData = (data || []).filter(a => !a.obra_id || a.obra_id === environment);
+      const filteredData = (data || []).filter(a => {
+        if (a.obra_id) return a.obra_id === environment;
+        const isCivilArea = (a.area || '').toLowerCase().includes('civil') || (a.area || '').toLowerCase().includes('canteiro');
+        return isCivilEnv ? isCivilArea : !isCivilArea;
+      });
       setCustomAtividades(filteredData);
     } catch (error) {
       console.error('Erro ao buscar atividades customizadas:', error);
     }
   };
 
-  const fetchCustomModulosForDate = async (dateStr: string) => {
+  const fetchCustomModulosForDate = async (dateStr: string, envParam?: string) => {
     try {
+      const env = envParam || currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena');
+      const isCivilEnv = env === 'hydro-civil';
+
+      const civilDefIds = new Set(CIVIL_AREAS_DEFINITIONS.map(a => a.id));
+      const civilCustomIds = new Set<string>();
+      try {
+        const { data: civilSettings } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', 'rdo_modulos_customizados_hydro-civil')
+          .single();
+        if (civilSettings && Array.isArray(civilSettings.value)) {
+          civilSettings.value.forEach((m: any) => { if (m.id) civilCustomIds.add(m.id); });
+        }
+      } catch (e) {}
+
+      if (typeof window !== 'undefined') {
+        try {
+          const localCivil = JSON.parse(localStorage.getItem('rdo_modulos_customizados_hydro-civil') || '[]');
+          if (Array.isArray(localCivil)) {
+            localCivil.forEach((m: any) => { if (m.id) civilCustomIds.add(m.id); });
+          }
+        } catch (e) {}
+      }
+
+      const isItemCivil = (d: CustomRdoDailyData, storageKey?: string): boolean => {
+        if (d.environment === 'hydro-civil') return true;
+        if (d.environment === 'barcarena') return false;
+        if (d.moduloId && (d.moduloId.startsWith('civil-') || civilDefIds.has(d.moduloId) || civilCustomIds.has(d.moduloId))) return true;
+        if (storageKey && (storageKey.includes('civil-') || storageKey.includes('_hydro-civil_'))) return true;
+        const name = (d.moduloName || '').trim().toLowerCase();
+        if (name.includes('canteiro') && name.includes('sucena')) return true;
+        if (name.includes('canteiro') && name.includes('hydro')) return true;
+        if (CIVIL_AREAS_DEFINITIONS.some(c => c.name.toLowerCase() === name)) return true;
+        return false;
+      };
+
       // Buscar todos os registros diários de atividades salvas para a data
       const { data: list } = await supabase
         .from('global_settings')
@@ -412,9 +455,16 @@ function RDOPage() {
         });
       }
 
-      const allDaily = Array.from(map.values());
+      const allDailyEntries = Array.from(map.entries());
+      const filteredByEnv = allDailyEntries
+        .filter(([k, d]) => {
+          const itemIsCivil = isItemCivil(d, k);
+          return isCivilEnv ? itemIsCivil : !itemIsCivil;
+        })
+        .map(([, d]) => d);
+
       // Manter todas as atividades que possuam dados ou resumo
-      const validDaily = allDaily.filter(d => {
+      const validDaily = filteredByEnv.filter(d => {
         if (!d) return false;
         if (d.renderedSummary && d.renderedSummary.trim() && !d.renderedSummary.startsWith('Nenhuma atividade')) return true;
         if (d.outrasAtividades?.descricao && d.outrasAtividades.descricao.trim()) return true;
@@ -1274,7 +1324,7 @@ function RDOPage() {
                 const rawAreasComPresenca = Array.from(new Set(presencas.map(p => p.area))).filter(Boolean) as string[];
                 const areasComPresenca = isCivil
                   ? rawAreasComPresenca.filter(a => a !== 'Área Jardinagem' && a !== 'Área Gabião')
-                  : rawAreasComPresenca;
+                  : rawAreasComPresenca.filter(a => !CIVIL_AREAS_DEFINITIONS.some(c => c.name.toLowerCase() === a.toLowerCase()) && !a.toLowerCase().includes('civil') && !a.toLowerCase().includes('canteiro sucena'));
                 
                 const todasAreas = Array.from(new Set([...defaultAreasToRender, ...areasComPresenca]));
                 
