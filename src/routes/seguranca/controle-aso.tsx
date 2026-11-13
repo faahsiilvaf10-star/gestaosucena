@@ -44,6 +44,26 @@ export const Route = createFileRoute('/seguranca/controle-aso')({
 
 function ControleAsoPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
+
   const [colaboradores, setColaboradores] = useState<ColaboradorAso[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -131,10 +151,18 @@ function ControleAsoPage() {
   const carregarColaboradores = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('rh_efetivo')
         .select('*')
         .order('nome', { ascending: true })
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 

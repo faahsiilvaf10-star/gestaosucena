@@ -62,10 +62,20 @@ export function CrachaVinculadoComponent() {
   const [selecionadosModal, setSelecionadosModal] = useState<string[]>([])
   const [buscaEquipModal, setBuscaEquipModal] = useState('')
 
-  const env =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('sucena_environment') || 'barcarena'
-      : 'barcarena'
+  const [env, setEnv] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
 
   // Trava scroll da página quando modal de edição/vínculo estiver aberto (sem página longa de fundo)
   useEffect(() => {
@@ -93,16 +103,27 @@ export function CrachaVinculadoComponent() {
   const carregarDados = useCallback(async () => {
     setLoading(true)
     try {
+      let rhQ = rawSupabase
+        .from('rh_efetivo')
+        .select('id, nome, cargo, status, matricula')
+        .order('nome', { ascending: true })
+
+      let eqQ = supabase
+        .from('eq_equipments')
+        .select('id, name, plate_tag, type, category, status')
+        .order('name', { ascending: true })
+
+      if (env === 'hydro-civil') {
+        rhQ = rhQ.eq('environment', 'hydro-civil')
+        eqQ = eqQ.eq('environment', 'hydro-civil')
+      } else {
+        rhQ = rhQ.or('environment.eq.barcarena,environment.is.null')
+        eqQ = eqQ.or('environment.eq.barcarena,environment.is.null')
+      }
+
       const [rhRes, eqRes, mapaDir] = await Promise.all([
-        // Busca todos os colaboradores do RH efetivo
-        rawSupabase
-          .from('rh_efetivo')
-          .select('id, nome, cargo, status, matricula')
-          .order('nome', { ascending: true }),
-        supabase
-          .from('eq_equipments')
-          .select('id, name, plate_tag, type, category, status')
-          .order('name', { ascending: true }),
+        rhQ,
+        eqQ,
         carregarVinculosCracha(env),
       ])
 

@@ -24,8 +24,20 @@ export type HistoricoInspecao = {
   foto: string | null
 }
 
-const STORAGE_KEY = 'sucena_cintas_data'
-const HIST_STORAGE_KEY = 'sucena_cintas_historico'
+function getCurrentEnv(): string {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('sucena_environment') || 'barcarena'
+  }
+  return 'barcarena'
+}
+
+function getStorageKey(): string {
+  return `sucena_cintas_data_${getCurrentEnv()}`
+}
+
+function getHistStorageKey(): string {
+  return `sucena_cintas_historico_${getCurrentEnv()}`
+}
 
 const DEFAULT_CINTAS: Cinta[] = [
   { id: '00000000-0000-0000-0000-000000000001', tag: 'E-SUC-001', descricao: 'CINTA 4T - 4M', cor: 'Vermelho', status: 'Inspecionada', inspecionadaEm: '09/10/2026', foto: null },
@@ -126,9 +138,9 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
         }))
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(mappedCintas))
+          localStorage.setItem(getStorageKey(), JSON.stringify(mappedCintas))
           if (historicoData) {
-            localStorage.setItem(HIST_STORAGE_KEY, JSON.stringify(historicoData))
+            localStorage.setItem(getHistStorageKey(), JSON.stringify(historicoData))
           }
         }
 
@@ -218,8 +230,8 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
 
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedCintas))
-        localStorage.setItem(HIST_STORAGE_KEY, JSON.stringify(updatedHistorico))
+        localStorage.setItem(getStorageKey(), JSON.stringify(updatedCintas))
+        localStorage.setItem(getHistStorageKey(), JSON.stringify(updatedHistorico))
       } catch (e) {
         console.warn('Erro ao salvar no localStorage:', e)
       }

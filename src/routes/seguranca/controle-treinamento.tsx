@@ -120,8 +120,26 @@ function statusTreino(t: { expira?: string }): {
 }
 
 function ControleTreinamentoPage() {
-  const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
   const storageKey = `controle_treinamento_${currentEnv}`
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
 
   // Estados principais
   const [colaboradores, setColaboradores] = useState<ColaboradorEfetivo[]>([])
@@ -160,9 +178,17 @@ function ControleTreinamentoPage() {
   const buscarColaboradoresRH = async (mostrarMensagem = false) => {
     setLoadingRH(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, matricula, setor, status')
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.warn('[Treinamento] Erro ao buscar colaboradores:', error)

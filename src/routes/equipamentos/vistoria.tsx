@@ -94,6 +94,25 @@ function formatDateBr(dateString: string | null | undefined): string {
 
 function VistoriaPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const [equipments, setEquipments] = useState<Equipment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -190,15 +209,24 @@ function VistoriaPage() {
       setError(null)
       if (!isRefreshing) setLoading(true)
       
-      const { data, error: sbError } = await supabase
-        .from('eq_equipments').select(`
+      let query = supabase
+        .from('eq_equipments')
+        .select(`
           id, name, plate_tag, category,
           equipment_inspections (
             id, opacity_report_expiry, mechanical_report_expiry, maintenance_plan_expiry, tachograph_expiry, updated_at
-          ).eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+          )
         `)
         .or('category.neq.Jardinagem,category.is.null')
         .order('name', { ascending: true })
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error: sbError } = await query
 
       if (sbError) throw sbError
       setEquipments(data || [])

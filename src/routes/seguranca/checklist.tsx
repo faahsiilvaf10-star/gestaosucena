@@ -192,7 +192,7 @@ export function ChecklistComponent() {
             setAbaCustomAtivaId(abasLimpas[0].id)
           }
           if (dadosStore.abasCustom && dadosStore.abasCustom.length !== abasLimpas.length) {
-            salvarChecklistStore(dadosLimpos).catch(() => {})
+            salvarChecklistStore(dadosLimpos, currentEnv).catch(() => {})
           }
           setColaboradoresRH(listaRH)
         }
@@ -258,7 +258,7 @@ export function ChecklistComponent() {
   // Helper para salvar estado da store no Supabase + LocalStorage
   const persistStore = async (novo: ChecklistStore) => {
     setStore(novo)
-    await salvarChecklistStore(novo)
+    await salvarChecklistStore(novo, currentEnv)
   }
 
   // ==========================================

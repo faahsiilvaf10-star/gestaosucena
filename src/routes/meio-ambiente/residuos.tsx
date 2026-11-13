@@ -40,6 +40,26 @@ const CATEGORIES = [
 
 function ResiduosPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
+
   const [year, setYear] = useState(new Date().getFullYear())
   
   const [data, setData] = useState<Record<string, Record<string, string>>>({})
@@ -50,11 +70,40 @@ function ResiduosPage() {
 
   useEffect(() => {
     fetchData()
-  }, [year])
+  }, [year, currentEnv])
 
   const fetchData = async () => {
     setIsLoading(true)
     
+    if (currentEnv === 'hydro-civil') {
+      try {
+        const { data: gsData } = await supabase
+          .from('global_settings')
+          .select('key, value')
+          .in('key', [`residuos_civil_${year}`, `efluentes_civil_${year}`])
+
+        const resMap: Record<string, Record<string, string>> = {}
+        const efMap: Record<string, string> = {}
+
+        gsData?.forEach((row: any) => {
+          if (row.key === `residuos_civil_${year}` && row.value) {
+            Object.assign(resMap, row.value)
+          } else if (row.key === `efluentes_civil_${year}` && row.value) {
+            Object.assign(efMap, row.value)
+          }
+        })
+
+        setData(resMap)
+        setEfluentesData(efMap)
+      } catch (err) {
+        console.error('Erro ao buscar dados civil:', err)
+        setData({})
+        setEfluentesData({})
+      }
+      setIsLoading(false)
+      return
+    }
+
     const [residuosRes, efluentesRes] = await Promise.all([
       supabase.from('residuos_registros').select('*').like('data_registro', `${year}-%`),
       supabase.from('efluentes_registros').select('*').like('data_registro', `${year}-%`)
@@ -144,6 +193,28 @@ function ResiduosPage() {
     if (records.length === 0 && efluentesRecords.length === 0) {
       setIsSaving(false)
       return toast.info('Não há dados para salvar.')
+    }
+
+    if (currentEnv === 'hydro-civil') {
+      const { error: err1 } = await supabase.from('global_settings').upsert({
+        key: `residuos_civil_${year}`,
+        value: data,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' })
+
+      const { error: err2 } = await supabase.from('global_settings').upsert({
+        key: `efluentes_civil_${year}`,
+        value: efluentesData,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' })
+
+      if (err1 || err2) {
+        toast.error('Erro ao salvar os registros do Civil.')
+      } else {
+        toast.success('Registros salvos com sucesso no Hydro Civil!')
+      }
+      setIsSaving(false)
+      return
     }
 
     const promises = []

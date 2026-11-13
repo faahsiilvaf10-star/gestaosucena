@@ -70,10 +70,17 @@ function AddCollaboratorModal({
   const fetchEfetivo = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      const curEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      let mQ = supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, setor, matricula, status')
         .order('nome', { ascending: true })
+      if (curEnv === 'hydro-civil') {
+        mQ = mQ.eq('environment', 'hydro-civil')
+      } else {
+        mQ = mQ.or('environment.eq.barcarena,environment.is.null')
+      }
+      const { data, error } = await mQ
 
       if (error) throw error
       
@@ -487,6 +494,25 @@ type Colaborador = {
 
 function RhListaPresencaPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -523,15 +549,23 @@ function RhListaPresencaPage() {
   useEffect(() => {
     initialLoadDone.current = false
     fetchDados()
-  }, [attendanceDate])
+  }, [attendanceDate, currentEnv])
 
   const fetchDados = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      let efQuery = supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, setor, status')
         .order('nome', { ascending: true })
+
+      if (currentEnv === 'hydro-civil') {
+        efQuery = efQuery.eq('environment', 'hydro-civil')
+      } else {
+        efQuery = efQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await efQuery
       
       if (error) throw error
       
@@ -564,10 +598,18 @@ function RhListaPresencaPage() {
       }
 
       // 1. Buscar registros salvos para a data selecionada
-      const { data: todayData, error: todayError } = await supabase
+      let tdQuery = supabase
         .from('rh_presencas')
         .select('*')
         .eq('data', attendanceDate)
+
+      if (currentEnv === 'hydro-civil') {
+        tdQuery = tdQuery.eq('environment', 'hydro-civil')
+      } else {
+        tdQuery = tdQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data: todayData, error: todayError } = await tdQuery
 
       if (todayError) throw todayError
 
@@ -584,12 +626,20 @@ function RhListaPresencaPage() {
       })
 
       // 2. Buscar presenças anteriores a esta data para herdar os mesmos funcionários do dia anterior
-      const { data: pastData, error: pastError } = await supabase
+      let pstQuery = supabase
         .from('rh_presencas')
         .select('*')
         .lt('data', attendanceDate)
         .order('data', { ascending: false })
         .limit(500)
+
+      if (currentEnv === 'hydro-civil') {
+        pstQuery = pstQuery.eq('environment', 'hydro-civil')
+      } else {
+        pstQuery = pstQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data: pastData, error: pastError } = await pstQuery
 
       if (pastError) {
         console.error('Erro ao buscar presenças anteriores:', pastError)
@@ -795,11 +845,19 @@ function RhListaPresencaPage() {
     const toastId = toast.loading(`Salvando ${activeTab}...`)
     try {
       // Deletar registros APENAS da área atual e data atual
-      const { error: delError } = await supabase
+      let delQ = supabase
         .from('rh_presencas')
         .delete()
         .eq('data', attendanceDate)
         .eq('area', activeTab)
+
+      if (currentEnv === 'hydro-civil') {
+        delQ = delQ.eq('environment', 'hydro-civil')
+      } else {
+        delQ = delQ.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { error: delError } = await delQ
 
       if (delError) throw delError;
 
@@ -810,7 +868,8 @@ function RhListaPresencaPage() {
           data: attendanceDate,
           area: c.setor || 'Sem Área',
           funcionario_id: c.id,
-          status: c.status
+          status: c.status,
+          environment: currentEnv
         }))
       
       if (recordsToInsert.length > 0) {

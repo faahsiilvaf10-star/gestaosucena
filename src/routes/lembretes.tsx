@@ -24,6 +24,25 @@ export const Route = createFileRoute('/lembretes')({
 
 function LembretesComponent() {
   const navigate = useNavigate()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const { isDark } = useTheme()
 
   const [reminderToEdit, setReminderToEdit] = useState<Reminder | null>(null)
@@ -36,7 +55,7 @@ function LembretesComponent() {
 
   // Fetch Data
   const { data: reminders = [], isLoading } = useQuery({
-    queryKey: ['reminders'],
+    queryKey: ['reminders', currentEnv],
     queryFn: fetchReminders
   })
 
@@ -49,7 +68,7 @@ function LembretesComponent() {
   const createMutation = useMutation({
     mutationFn: (variables: { reminder: Partial<Reminder>; mentions?: string[] }) => createReminder(variables.reminder, variables.mentions),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reminders'] })
+      queryClient.invalidateQueries({ queryKey: ['reminders', currentEnv] })
       setNewTaskTitle('')
     }
   })
@@ -57,7 +76,7 @@ function LembretesComponent() {
   const toggleMutation = useMutation({
     mutationFn: ({ id, status }: { id: string, status: string }) => toggleReminderCompletion(id, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reminders'] })
+      queryClient.invalidateQueries({ queryKey: ['reminders', currentEnv] })
     }
   })
 
@@ -75,7 +94,7 @@ function LembretesComponent() {
   }
 
   const handleSaveReminder = () => {
-    queryClient.invalidateQueries({ queryKey: ['reminders'] })
+    queryClient.invalidateQueries({ queryKey: ['reminders', currentEnv] })
     setIsSheetOpen(false)
     setReminderToEdit(null)
   }

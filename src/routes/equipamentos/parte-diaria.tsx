@@ -218,10 +218,20 @@ function ParteDiariaPage() {
   const fetchDashboardData = async () => {
     try {
       // 1. Busca todos os Equipamentos Pesados
-      const { data: pesados, error: pesadosError } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description, status, latitude, longitude, last_location_update').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+      const curEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      let eqQ = supabase
+        .from('eq_equipments')
+        .select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description, status, latitude, longitude, last_location_update')
         .eq('category', 'Equipamento Pesado')
         .order('name', { ascending: true })
+
+      if (curEnv === 'hydro-civil') {
+        eqQ = eqQ.eq('environment', 'hydro-civil')
+      } else {
+        eqQ = eqQ.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data: pesados, error: pesadosError } = await eqQ
 
       if (pesadosError) throw pesadosError
       
@@ -353,6 +363,16 @@ function ParteDiariaPage() {
   }
 
   // Initial fetch and Realtime subscription
+  useEffect(() => {
+    const handleEnv = () => fetchDashboardData()
+    window.addEventListener('sucena_environment_change', handleEnv)
+    window.addEventListener('storage', handleEnv)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnv)
+      window.removeEventListener('storage', handleEnv)
+    }
+  }, [selectedDate])
+
   useEffect(() => {
     fetchDashboardData()
 

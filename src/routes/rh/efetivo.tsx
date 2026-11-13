@@ -47,6 +47,25 @@ type EfetivoItem = {
 
 function RhEfetivoPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const [items, setItems] = useState<EfetivoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
@@ -141,10 +160,18 @@ function RhEfetivoPage() {
   const fetchEfetivo = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('rh_efetivo')
         .select('*')
         .order('nome', { ascending: true })
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await query
       
       if (error) throw error
       
@@ -350,12 +377,19 @@ function RhEfetivoPage() {
               aso_periodico: asoPeriodico,
               retorno_ao_trabalho: retornoTrabalho,
               mudanca_de_risco: mudancaRisco,
-              raw_data: row
+              raw_data: row,
+              environment: currentEnv
             }
           })
 
           // Prevent duplicates and retrieve existing fields to preserve them
-          const { data: existingData } = await supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena, cargo, setor, aso_admissional, aso_admissional_2, aso_periodico, retorno_ao_trabalho, mudanca_de_risco')
+          let exQuery = supabase.from('rh_efetivo').select('id, nome, matricula, matricula_hydro, matricula_sucena, cargo, setor, aso_admissional, aso_admissional_2, aso_periodico, retorno_ao_trabalho, mudanca_de_risco')
+          if (currentEnv === 'hydro-civil') {
+            exQuery = exQuery.eq('environment', 'hydro-civil')
+          } else {
+            exQuery = exQuery.or('environment.eq.barcarena,environment.is.null')
+          }
+          const { data: existingData } = await exQuery
           const existingMap = new Map<string, any>((existingData || []).map((d: any) => [d.nome.toUpperCase(), d]))
 
           const uniqueNewProcessedData: any[] = []

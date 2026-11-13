@@ -15,19 +15,29 @@ export type DocArquivo = {
 };
 
 export const useDocumentos = (cargoId: string) => {
+  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena';
+
   return useQuery({
-    queryKey: ['documentos', cargoId],
+    queryKey: ['documentos', cargoId, env],
     queryFn: async () => {
       if (!cargoId) return [];
 
       const baseCatalog = (transportCatalog as DocArquivo[]).filter(d => d.cargo_id === cargoId);
 
       try {
-        const { data, error } = await supabase
+        let q = supabase
           .from('doc_arquivos')
           .select('*')
           .eq('cargo_id', cargoId)
           .order('created_at', { ascending: false });
+
+        if (env === 'hydro-civil') {
+          q = q.eq('environment', 'hydro-civil');
+        } else {
+          q = q.or('environment.eq.barcarena,environment.is.null');
+        }
+
+        const { data, error } = await q;
 
         if (!error && data) {
           const map = new Map<string, DocArquivo>();

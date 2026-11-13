@@ -50,8 +50,15 @@ function VistoriaCintas() {
   const [editingCinta, setEditingCinta] = useState<any | null>(null)
 
   useEffect(() => {
-    if (!hasHydrated) fetchCintas()
-  }, [hasHydrated, fetchCintas])
+    fetchCintas()
+    const handleEnv = () => fetchCintas()
+    window.addEventListener('sucena_environment_change', handleEnv)
+    window.addEventListener('storage', handleEnv)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnv)
+      window.removeEventListener('storage', handleEnv)
+    }
+  }, [fetchCintas])
 
   const mesAtualInfo = getMesInspecaoAtual()
   const [mesFiltro, setMesFiltro] = useState(mesAtualInfo.label)

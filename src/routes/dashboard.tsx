@@ -182,10 +182,18 @@ function DashboardComponent() {
   const { data: attendanceInfo } = useQuery({
     queryKey: ['presencas_dashboard_hoje', currentEnv, todayStr],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rh_presencas')
         .select('data, status, funcionario_id, area')
         .eq('data', todayStr)
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 
@@ -344,11 +352,19 @@ function DashboardComponent() {
   const { data: efetivo = [] } = useQuery({
     queryKey: ['efetivo_dashboard', currentEnv],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rh_efetivo')
         .select(
           'id, nome, cargo, setor, raw_data, status, validade_aso_efetiva, aso_admissional, aso_periodico, retorno_ao_trabalho, mudanca_de_risco, aso_admissional_2'
         )
+
+      if (currentEnv === 'hydro-civil') {
+        query = query.eq('environment', 'hydro-civil')
+      } else {
+        query = query.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data, error } = await query
       if (error) throw error
       return data || []
     },
@@ -491,6 +507,7 @@ function DashboardComponent() {
     queryKey: ['expiring_pts', currentEnv],
     refetchInterval: 30000,
     queryFn: async () => {
+      if (currentEnv === 'hydro-civil') return []
       const { data, error } = await supabase
         .from('permissao_trabalho')
         .select('*')
@@ -520,10 +537,18 @@ function DashboardComponent() {
       const today = format(new Date(), 'yyyy-MM-dd')
       const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-      const { data: schedule } = await supabase
+      let ddsQuery = supabase
         .from('seguranca_dds')
         .select('id, date, tema, palestrante_id')
         .in('date', [today, tomorrow])
+
+      if (currentEnv === 'hydro-civil') {
+        ddsQuery = ddsQuery.eq('environment', 'hydro-civil')
+      } else {
+        ddsQuery = ddsQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+
+      const { data: schedule } = await ddsQuery
 
       const { data: users } = await supabase.rpc('get_system_users')
       const rhList = (efetivo || []).filter((r: any) => {
@@ -670,12 +695,20 @@ function DashboardComponent() {
   const { data: fleetData } = useQuery({
     queryKey: ['equipamentos_frota_dashboard', currentEnv],
     queryFn: async () => {
+      let eqQuery = supabase
+        .from('eq_equipments')
+        .select(
+          'id, name, plate_tag, category, location_status, last_exit_reason, last_exit_description, updated_at'
+        )
+
+      if (currentEnv === 'hydro-civil') {
+        eqQuery = eqQuery.eq('environment', 'hydro-civil')
+      } else {
+        eqQuery = eqQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+
       const [eqRes, movRes] = await Promise.all([
-        supabase
-          .from('eq_equipments')
-          .select(
-            'id, name, plate_tag, category, location_status, last_exit_reason, last_exit_description, updated_at'
-          ),
+        eqQuery,
         supabase
           .from('eq_movements')
           .select('id, equipment_id, movement_type, exit_reason, description, created_at')
@@ -1754,7 +1787,7 @@ function DashboardComponent() {
         <DashboardInspecaoCanteiroBanner />
 
         {/* Banner de Aviso de Desvios de Segurança em Aberto */}
-        <DashboardDesviosBanner />
+        <DashboardDesviosBanner currentEnv={currentEnv} />
 
         {/* Banner de Aviso de Análise de Risco (Vencendo ou Vencida) */}
         <DashboardAnaliseRiscoBanner />
@@ -1796,7 +1829,7 @@ function DashboardComponent() {
 
         {/* Widgets Inferiores — Layout Masonry Automático sem buracos */}
         <div className="hydro-bottom-widgets-masonry">
-          <DashboardDesviosWidget />
+          <DashboardDesviosWidget currentEnv={currentEnv} />
           <DashboardInspecaoCanteiroWidget />
           <DashboardMatrizWidget />
           <DashboardVistoriasWidget />

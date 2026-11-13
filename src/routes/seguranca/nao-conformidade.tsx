@@ -112,7 +112,7 @@ export function NaoConformidadeComponent() {
       try {
         setCarregando(true)
         const [dadosNCs, listaRH] = await Promise.all([
-          carregarNCs(),
+          carregarNCs(currentEnv),
           carregarColaboradoresAtivosRH(),
         ])
         if (isMounted) {
@@ -300,7 +300,7 @@ export function NaoConformidadeComponent() {
     setNcs(atualizados)
     limparForm()
 
-    const ok = await salvarNCs(atualizados)
+    const ok = await salvarNCs(atualizados, currentEnv)
     if (ok) {
       setFeedbackForm({
         tipo: 'ok',
@@ -320,7 +320,7 @@ export function NaoConformidadeComponent() {
   const handleMudarStatus = async (id: string, novoStatus: StatusNC) => {
     const atualizados = ncs.map((n) => (n.id === id ? { ...n, status: novoStatus } : n))
     setNcs(atualizados)
-    await salvarNCs(atualizados)
+    await salvarNCs(atualizados, currentEnv)
     showToast(`NC colocada em ${novoStatus}.`)
   }
 
@@ -336,7 +336,7 @@ export function NaoConformidadeComponent() {
 
     const atualizados = ncs.filter((n) => n.id !== id)
     setNcs(atualizados)
-    await salvarNCs(atualizados)
+    await salvarNCs(atualizados, currentEnv)
     showToast(`NC ${numeroNC} excluída com sucesso.`)
   }
 
@@ -410,7 +410,7 @@ export function NaoConformidadeComponent() {
     )
 
     setNcs(atualizados)
-    await salvarNCs(atualizados)
+    await salvarNCs(atualizados, currentEnv)
 
     const msgSucesso =
       estado.eficaz === 'sim'

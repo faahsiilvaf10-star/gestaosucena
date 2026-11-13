@@ -96,8 +96,8 @@ export function PlanoAcaoComponent() {
     const carregar = async () => {
       try {
         const [dados, rh] = await Promise.all([
-          carregarPlanosAcao(),
-          carregarColaboradoresAtivosRH(),
+          carregarPlanosAcao(currentEnv),
+          carregarColaboradoresAtivosRH(currentEnv),
         ])
         if (isMounted) {
           setRegistros(dados)
@@ -142,7 +142,7 @@ export function PlanoAcaoComponent() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rh_efetivo' },
         async () => {
-          const rhAtualizado = await carregarColaboradoresAtivosRH()
+          const rhAtualizado = await carregarColaboradoresAtivosRH(currentEnv)
           if (isMounted) setColaboradoresRH(rhAtualizado)
         }
       )
@@ -170,7 +170,7 @@ export function PlanoAcaoComponent() {
   // Persist helper
   const atualizarRegistros = async (novos: PlanoAcaoItem[]) => {
     setRegistros(novos)
-    await salvarPlanosAcao(novos)
+    await salvarPlanosAcao(novos, currentEnv)
   }
 
   // Handle Create Form Submit

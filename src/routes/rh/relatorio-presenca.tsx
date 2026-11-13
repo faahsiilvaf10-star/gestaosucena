@@ -29,6 +29,25 @@ type Presenca = {
 
 function RelatorioPresencaPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const getLocalDate = () => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -42,16 +61,22 @@ function RelatorioPresencaPage() {
 
   useEffect(() => {
     fetchRelatorio()
-  }, [date])
+  }, [date, currentEnv])
 
   const fetchRelatorio = async () => {
     setLoading(true)
     try {
       // 1. Fetch ativo efetivo to get names, cargos, and total count
-      const { data: efetivo, error: efetivoError } = await supabase
+      let efQuery = supabase
         .from('rh_efetivo')
         .select('id, nome, cargo, status')
         .order('nome', { ascending: true })
+      if (currentEnv === 'hydro-civil') {
+        efQuery = efQuery.eq('environment', 'hydro-civil')
+      } else {
+        efQuery = efQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+      const { data: efetivo, error: efetivoError } = await efQuery
 
       if (efetivoError) throw efetivoError
 
@@ -64,10 +89,16 @@ function RelatorioPresencaPage() {
       const efetivoMap = new Map((efetivo || []).map((e: any) => [e.id, { nome: e.nome, cargo: e.cargo }]))
 
       // 2. Fetch presenças for date
-      const { data: presencas, error: presencasError } = await supabase
+      let prQuery = supabase
         .from('rh_presencas')
         .select('*')
         .eq('data', date)
+      if (currentEnv === 'hydro-civil') {
+        prQuery = prQuery.eq('environment', 'hydro-civil')
+      } else {
+        prQuery = prQuery.or('environment.eq.barcarena,environment.is.null')
+      }
+      const { data: presencas, error: presencasError } = await prQuery
         
       if (presencasError) throw presencasError
 

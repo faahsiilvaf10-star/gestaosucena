@@ -56,7 +56,7 @@ export function RelatorioOcorrenciaComponent() {
     const carregar = async () => {
       try {
         setCarregando(true)
-        const dados = await carregarArquivosOcorrencia()
+        const dados = await carregarArquivosOcorrencia(currentEnv)
         if (isMounted) {
           setArquivos(dados)
         }
@@ -169,7 +169,7 @@ export function RelatorioOcorrenciaComponent() {
     setPendentes([])
     setTituloArquivo('')
 
-    const ok = await salvarArquivosOcorrencia(atualizados)
+    const ok = await salvarArquivosOcorrencia(atualizados, currentEnv)
     setFeedback({
       tipo: 'ok',
       msg: `✅ ${novos.length} ARQUIVO(S) SALVO(S)!\nArquivados em ${quando} e já aparecem na lista de arquivos salvos abaixo, para visualizar/abrir ou baixar.${
@@ -190,7 +190,7 @@ export function RelatorioOcorrenciaComponent() {
 
     const atualizados = arquivos.filter((_, i) => i !== idx)
     setArquivos(atualizados)
-    await salvarArquivosOcorrencia(atualizados)
+    await salvarArquivosOcorrencia(atualizados, currentEnv)
     showToast(`Arquivo excluído: ${nome}`)
   }
 

@@ -81,13 +81,13 @@ function calcularPrazoDias(dataIso?: string): { texto: string; corFundo: string;
   }
 }
 
-export function DashboardDesviosBanner() {
+export function DashboardDesviosBanner({ currentEnv }: { currentEnv?: string }) {
   const [desvios, setDesvios] = useState<DesvioItem[]>([])
 
   useEffect(() => {
     const carregar = async () => {
       try {
-        const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+        const env = currentEnv || (typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
         const storageKey = `desvios_seguranca_${env}`
 
         const { data } = await supabase
@@ -100,6 +100,9 @@ export function DashboardDesviosBanner() {
           const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value
           if (Array.isArray(parsed)) {
             setDesvios(parsed)
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(parsed))
+            } catch (_) {}
             return
           }
         }
@@ -108,6 +111,8 @@ export function DashboardDesviosBanner() {
         if (local) {
           const parsed = JSON.parse(local)
           if (Array.isArray(parsed)) setDesvios(parsed)
+        } else {
+          setDesvios([])
         }
       } catch (_) {
         setDesvios([])
@@ -116,21 +121,30 @@ export function DashboardDesviosBanner() {
 
     carregar()
 
+    const handleUpdate = () => carregar()
+    window.addEventListener('sucena_dashboard_realtime_update', handleUpdate)
+    window.addEventListener('sucena_environment_change', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+
     const sub = supabase
-      .channel('dash_desvios_banner_sync')
+      .channel(`dash_desvios_banner_sync_${currentEnv || 'all'}_${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings' }, () => {
         carregar()
       })
       .subscribe()
 
     return () => {
+      window.removeEventListener('sucena_dashboard_realtime_update', handleUpdate)
+      window.removeEventListener('sucena_environment_change', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
       sub.unsubscribe()
     }
-  }, [])
+  }, [currentEnv])
 
   // Filtrar apenas desvios em aberto (não corrigidos e não cancelados)
   const isCorrigido = (d: DesvioItem) => {
-    if (d.corrigido) return true
+    if (d.corrigido === true) return true
+    if (d.dataCorrecao && String(d.dataCorrecao).trim().length > 0) return true
     const st = String(d.statusFluxo || '').toLowerCase().trim()
     return st === 'corrigido' || st === 'concluido' || st === 'concluído' || st === 'finalizado'
   }

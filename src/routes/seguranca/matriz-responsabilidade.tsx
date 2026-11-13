@@ -116,7 +116,25 @@ export function MatrizResponsabilidadeComponent() {
     atividades: string[]
   }>({ isOpen: false, colab: null, cargoId: '', atividades: [] })
 
-  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  const [env, setEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
 
   // Exibir toast temporário
   const showToast = (msg: string) => {
@@ -180,10 +198,18 @@ export function MatrizResponsabilidadeComponent() {
 
       // Carregar colaboradores do RH (Carrega TODOS do efetivo para o Admin poder atribuir)
       try {
-        const { data: rhData } = await supabase
+        let rhQuery = supabase
           .from('rh_efetivo')
           .select('id, nome, cargo, status')
           .order('nome', { ascending: true })
+
+        if (env === 'hydro-civil') {
+          rhQuery = rhQuery.eq('environment', 'hydro-civil')
+        } else {
+          rhQuery = rhQuery.or('environment.eq.barcarena,environment.is.null')
+        }
+
+        const { data: rhData } = await rhQuery
 
         if (mounted && rhData) {
           const list: ColaboradorMatrizRH[] = []

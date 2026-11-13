@@ -81,6 +81,25 @@ function EquipamentoParadoPage() {
   const [filterCategory, setFilterCategory] = useState<string>('Todas as categorias')
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
 
   // Modals
   const [selectedEq, setSelectedEq] = useState<Equipment | null>(null)
@@ -123,14 +142,19 @@ function EquipamentoParadoPage() {
       setError(null)
       if (!isRefreshing) setLoading(true)
 
-      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      let eqQ = supabase
+        .from('eq_equipments')
+        .select('id, name, plate_tag, category, type, location_status, status, environment, updated_at, last_exit_reason, last_exit_description')
+        .order('name', { ascending: true })
+
+      if (currentEnv === 'hydro-civil') {
+        eqQ = eqQ.eq('environment', 'hydro-civil')
+      } else {
+        eqQ = eqQ.or('environment.eq.barcarena,environment.is.null')
+      }
 
       const [eqRes, movRes] = await Promise.all([
-        supabase
-          .from('eq_equipments')
-          .select('id, name, plate_tag, category, type, location_status, status, environment, updated_at, last_exit_reason, last_exit_description')
-          .eq('environment', currentEnv)
-          .order('name', { ascending: true }),
+        eqQ,
         supabase
           .from('eq_movements')
           .select('id, equipment_id, movement_type, exit_reason, description, created_at, created_by')
@@ -220,7 +244,7 @@ function EquipamentoParadoPage() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [])
+  }, [currentEnv])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
