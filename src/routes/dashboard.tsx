@@ -569,29 +569,44 @@ function DashboardComponent() {
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
 
+      const isCivil = currentEnv === 'hydro-civil'
+
       const { data: ddsPosts } = await supabase
         .from('social_posts')
-        .select(`id, caption, created_at, social_post_media (media_url)`)
+        .select(`id, caption, location, created_at, social_post_media (media_url)`)
         .ilike('caption', '%DDS Realizado%')
         .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: false })
-        .limit(1)
 
-      let activePost = ddsPosts && ddsPosts[0] ? ddsPosts[0] : null
+      const filteredPosts = (ddsPosts || []).filter((p: any) => {
+        const loc = (p.location || '').toUpperCase()
+        const cap = (p.caption || '').toUpperCase()
+        const isCivilPost = loc.includes('CIVIL') || cap.includes('[HYDRO CIVIL]')
+        return isCivil ? isCivilPost : !isCivilPost
+      })
+
+      let activePost = filteredPosts[0] || null
       let postedMediaUrl = activePost?.social_post_media?.[0]?.media_url || null
 
       if (!postedMediaUrl) {
         const todayStr = format(new Date(), 'yyyy-MM-dd')
         const { data: fallbackPosts } = await supabase
           .from('social_posts')
-          .select(`id, caption, created_at, social_post_media (media_url)`)
+          .select(`id, caption, location, created_at, social_post_media (media_url)`)
           .ilike('caption', '%DDS Realizado%')
           .gte('created_at', `${todayStr}T00:00:00.000Z`)
           .order('created_at', { ascending: false })
-          .limit(1)
-        if (fallbackPosts && fallbackPosts[0]) {
-          activePost = fallbackPosts[0]
-          postedMediaUrl = fallbackPosts[0].social_post_media?.[0]?.media_url || null
+
+        const filteredFallback = (fallbackPosts || []).filter((p: any) => {
+          const loc = (p.location || '').toUpperCase()
+          const cap = (p.caption || '').toUpperCase()
+          const isCivilPost = loc.includes('CIVIL') || cap.includes('[HYDRO CIVIL]')
+          return isCivil ? isCivilPost : !isCivilPost
+        })
+
+        if (filteredFallback[0]) {
+          activePost = filteredFallback[0]
+          postedMediaUrl = filteredFallback[0].social_post_media?.[0]?.media_url || null
         }
       }
 
@@ -1804,7 +1819,7 @@ function DashboardComponent() {
 
       {/* Modais */}
       <DdsUploadModal
-        key={`dds-modal-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
+        key={`dds-modal-${currentEnv}-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
         isOpen={isDdsModalOpen}
         onClose={() => setIsDdsModalOpen(false)}
         tema={ddsData?.hoje?.tema || 'DDS Livre'}

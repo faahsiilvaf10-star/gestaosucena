@@ -311,7 +311,7 @@ function DDSSchedulePage() {
 
   // Buscar DDS de hoje especificamente (permanece visível mesmo mudando de mês)
   const { data: todayDdsData } = useQuery({
-    queryKey: ['seguranca_dds_today', todayDateStr],
+    queryKey: ['seguranca_dds_today', currentEnvironment, todayDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('seguranca_dds')
@@ -328,16 +328,18 @@ function DDSSchedulePage() {
 
   // Buscar foto do DDS de hoje já postada no Instacena (social_posts)
   const { data: todayPostData, refetch: refetchTodayPost } = useQuery({
-    queryKey: ['dds_post_today', todayDateStr],
+    queryKey: ['dds_post_today', currentEnvironment, todayDateStr],
     queryFn: async () => {
       const startOfToday = new Date()
       startOfToday.setHours(0, 0, 0, 0)
+      const isCivil = currentEnvironment === 'hydro-civil'
 
       const { data, error } = await supabase
         .from('social_posts')
         .select(`
           id,
           caption,
+          location,
           created_at,
           social_post_media (
             media_url
@@ -346,14 +348,22 @@ function DDSSchedulePage() {
         .like('caption', '%DDS Realizado!%')
         .gte('created_at', startOfToday.toISOString())
         .order('created_at', { ascending: false })
-        .limit(1)
 
       if (error) {
         console.error("Erro ao buscar foto do DDS de hoje:", error)
         return null
       }
-      const mediaUrl = data?.[0]?.social_post_media?.[0]?.media_url || null
-      return { post: data?.[0] || null, mediaUrl }
+
+      const filtered = (data || []).filter((p: any) => {
+        const loc = (p.location || '').toUpperCase()
+        const cap = (p.caption || '').toUpperCase()
+        const isCivilPost = loc.includes('CIVIL') || cap.includes('[HYDRO CIVIL]')
+        return isCivil ? isCivilPost : !isCivilPost
+      })
+
+      const targetPost = filtered[0] || null
+      const mediaUrl = targetPost?.social_post_media?.[0]?.media_url || null
+      return { post: targetPost, mediaUrl }
     },
     refetchInterval: 30000,
     staleTime: 10000
@@ -367,8 +377,9 @@ function DDSSchedulePage() {
 
   // Buscar todas as fotos postadas de DDS no sistema
   const { data: allDdsPosts = [], refetch: refetchAllDdsPosts } = useQuery({
-    queryKey: ['all_dds_posts'],
+    queryKey: ['all_dds_posts', currentEnvironment],
     queryFn: async () => {
+      const isCivil = currentEnvironment === 'hydro-civil'
       const { data, error } = await supabase
         .from('social_posts')
         .select(`
@@ -389,6 +400,13 @@ function DDSSchedulePage() {
         return []
       }
 
+      const filtered = (data || []).filter((p: any) => {
+        const loc = (p.location || '').toUpperCase()
+        const cap = (p.caption || '').toUpperCase()
+        const isCivilPost = loc.includes('CIVIL') || cap.includes('[HYDRO CIVIL]')
+        return isCivil ? isCivilPost : !isCivilPost
+      })
+
       const parsed: Array<{
         id: string
         dateStr: string
@@ -403,7 +421,7 @@ function DDSSchedulePage() {
         formattedTime: string
       }> = []
 
-      data?.forEach(post => {
+      filtered.forEach(post => {
         const mediaUrl = post.social_post_media?.[0]?.media_url
         if (!mediaUrl) return
 
@@ -510,7 +528,7 @@ function DDSSchedulePage() {
   const monthEndStr = format(monthEnd, 'yyyy-MM-dd')
 
   const { data: schedule = [] } = useQuery({
-    queryKey: ['seguranca_dds', monthStartStr, monthEndStr],
+    queryKey: ['seguranca_dds', currentEnvironment, monthStartStr, monthEndStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('seguranca_dds')

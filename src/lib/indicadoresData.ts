@@ -490,14 +490,20 @@ export async function obterIndicadoresAutomaticosDoMes(
   const mesAtual = mesAtualISO()
 
   // 1. Fotos de DDS (social_posts)
-  let ddsPosts: Array<{ created_at?: string; caption?: string }> = []
+  let ddsPosts: Array<{ created_at?: string; caption?: string; location?: string }> = []
   try {
     const { data } = await supabase
       .from('social_posts')
-      .select('id, created_at, caption')
+      .select('id, created_at, caption, location')
       .ilike('caption', '%dds%')
     if (data && Array.isArray(data)) {
-      ddsPosts = data
+      const isCivil = env === 'hydro-civil'
+      ddsPosts = data.filter((p: any) => {
+        const loc = (p.location || '').toUpperCase()
+        const cap = (p.caption || '').toUpperCase()
+        const isCivilPost = loc.includes('CIVIL') || cap.includes('[HYDRO CIVIL]')
+        return isCivil ? isCivilPost : !isCivilPost
+      })
     }
   } catch (err) {
     console.warn('[Indicadores] Aviso ao consultar fotos de DDS no social_posts:', err)
