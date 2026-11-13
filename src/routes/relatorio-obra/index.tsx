@@ -4,6 +4,7 @@ import Hammer from 'lucide-react/dist/esm/icons/hammer.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
 import * as Icons from 'lucide-react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
@@ -19,16 +20,114 @@ export const Route = createFileRoute('/relatorio-obra/')({
 });
 
 const DEFAULT_HUB_ITEMS = [
-  { name: 'RDO', icon: FileText, href: '/relatorio-obra/rdo', desc: 'Relatório Diário de Obra' },
-  { name: 'Atividade Jardinagem', icon: Leaf, href: '/relatorio-obra/jardinagem', desc: 'Registros de jardinagem' },
-  { name: 'Atividade Gabião', icon: Hammer, href: '/relatorio-obra/gabiao', desc: 'Registros de gabião' },
-  { name: 'Atividade Prevista', icon: Clock, href: '/relatorio-obra/rdo', desc: 'Planejamento futuro' },
+  { id: 'rdo', name: 'RDO', icon: FileText, href: '/relatorio-obra/rdo', desc: 'Relatório Diário de Obra' },
+  { id: 'jardinagem', name: 'Atividade Jardinagem', icon: Leaf, href: '/relatorio-obra/jardinagem', desc: 'Registros de jardinagem' },
+  { id: 'gabiao', name: 'Atividade Gabião', icon: Hammer, href: '/relatorio-obra/gabiao', desc: 'Registros de gabião' },
+  { id: 'prevista', name: 'Atividade Prevista', icon: Clock, href: '/relatorio-obra/rdo', desc: 'Planejamento futuro' },
 ];
 
 function RelatorioObraHub() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customModulos, setCustomModulos] = useState<CustomRdoModulo[]>([]);
   const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false);
+  const [savedToday, setSavedToday] = useState<Set<string>>(new Set());
+
+  const getTodayDateStr = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const isSavedCustom = (d: any) => {
+    if (!d) return false;
+    if (d.isLocked !== false && d.isLocked !== undefined) return true;
+    if (d.renderedSummary && d.renderedSummary.trim() && !d.renderedSummary.startsWith('Nenhuma atividade')) return true;
+    if (d.outrasAtividades?.descricao && d.outrasAtividades.descricao.trim()) return true;
+    if (d.cardRows && Object.values(d.cardRows).some((rows: any) => Array.isArray(rows) && rows.some((r: any) => r && r.value && r.value !== '0' && r.value !== '0,00'))) return true;
+    if (d.cardCheckboxes && Object.values(d.cardCheckboxes).some((v: any) => !!v)) return true;
+    return false;
+  };
+
+  const hasDataObj = (val: any) => {
+    if (!val) return false;
+    if (val.isLocked !== false && val.isLocked !== undefined) return true;
+    return Object.values(val).some((v: any) => {
+      if (Array.isArray(v)) return v.some((r: any) => r && r.value && r.value !== '0' && r.value !== '0,00');
+      if (typeof v === 'string') return v.trim().length > 0;
+      return false;
+    });
+  };
+
+  const fetchSavedToday = async () => {
+    const todayStr = getTodayDateStr();
+    const isCivilEnv = currentEnv === 'hydro-civil';
+    const rdoKey = isCivilEnv ? `main_rdo_civil_${todayStr}` : `main_rdo_${todayStr}`;
+    const newSaved = new Set<string>();
+
+    if (typeof window !== 'undefined') {
+      try {
+        const rdoLocal = localStorage.getItem(rdoKey);
+        if (rdoLocal) {
+          const parsed = JSON.parse(rdoLocal);
+          if (parsed && parsed.isLocked !== false) newSaved.add('rdo');
+        }
+        const jarLocal = localStorage.getItem(`jardinagem_rdo_${todayStr}`);
+        if (jarLocal) {
+          const parsed = JSON.parse(jarLocal);
+          if (parsed && (parsed.isLocked !== false || hasDataObj(parsed))) newSaved.add('jardinagem');
+        }
+        const gabLocal = localStorage.getItem(`gabiao_rdo_${todayStr}`);
+        if (gabLocal) {
+          const parsed = JSON.parse(gabLocal);
+          if (parsed && (parsed.isLocked !== false || hasDataObj(parsed))) newSaved.add('gabiao');
+        }
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('custom_rdo_') && k.endsWith(`_${todayStr}`)) {
+            try {
+              const val = JSON.parse(localStorage.getItem(k) || '');
+              if (val && isSavedCustom(val)) {
+                const modId = k.replace('custom_rdo_', '').replace(`_${todayStr}`, '');
+                if (modId) newSaved.add(modId);
+              }
+            } catch (e) {}
+          }
+        });
+      } catch (e) {}
+    }
+
+    setSavedToday(new Set(newSaved));
+
+    try {
+      const { data: list } = await supabase
+        .from('global_settings')
+        .select('key, value')
+        .like('key', `%_${todayStr}`);
+
+      if (list && Array.isArray(list)) {
+        list.forEach(item => {
+          const k = item.key;
+          const val = item.value;
+          if (!val) return;
+
+          if (k === rdoKey && val.isLocked !== false) {
+            newSaved.add('rdo');
+          } else if (k === `jardinagem_rdo_${todayStr}` && (val.isLocked !== false || hasDataObj(val))) {
+            newSaved.add('jardinagem');
+          } else if (k === `gabiao_rdo_${todayStr}` && (val.isLocked !== false || hasDataObj(val))) {
+            newSaved.add('gabiao');
+          } else if (k.startsWith('custom_rdo_') && k.endsWith(`_${todayStr}`) && isSavedCustom(val)) {
+            const modId = k.replace('custom_rdo_', '').replace(`_${todayStr}`, '');
+            if (modId) newSaved.add(modId);
+          }
+        });
+        setSavedToday(new Set(newSaved));
+      }
+    } catch (err) {
+      console.warn('Erro ao verificar relatórios salvos hoje:', err);
+    }
+  };
   const [currentEnv, setCurrentEnv] = useState<string>(() => {
     return typeof window !== 'undefined'
       ? (localStorage.getItem('sucena_environment') || 'barcarena')
@@ -160,6 +259,45 @@ function RelatorioObraHub() {
     };
   }, [storageKey]);
 
+  useEffect(() => {
+    fetchSavedToday();
+
+    const handleSavedEvent = (e: any) => {
+      if (e?.detail?.moduloId) {
+        if (e.detail.isLocked === false) {
+          setSavedToday(prev => {
+            const next = new Set(prev);
+            next.delete(e.detail.moduloId);
+            return next;
+          });
+        } else {
+          setSavedToday(prev => new Set([...prev, e.detail.moduloId]));
+        }
+      }
+      fetchSavedToday();
+    };
+
+    window.addEventListener('sucena_rdo_saved', handleSavedEvent);
+    window.addEventListener('storage', handleSavedEvent);
+
+    const channel = supabase
+      .channel(`hub_saved_today_${storageKey}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'global_settings' },
+        () => {
+          fetchSavedToday();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('sucena_rdo_saved', handleSavedEvent);
+      window.removeEventListener('storage', handleSavedEvent);
+      supabase.removeChannel(channel);
+    };
+  }, [currentEnv, storageKey]);
+
   // Salvar novo módulo criado por qualquer encarregado
   const handleSaveModulo = async (newModuloData: Omit<CustomRdoModulo, 'created_at'>) => {
     const newModulo: CustomRdoModulo = {
@@ -243,12 +381,25 @@ function RelatorioObraHub() {
           {/* Módulos Fixos (RDO, Jardinagem, Gabião, Prevista - Filtrados por ambiente) */}
           {activeHubItems.map((item, idx) => {
             const Icon = item.icon;
+            const isSaved = item.id ? savedToday.has(item.id) : false;
+
             return (
               <Link
                 key={`default-${idx}`}
                 to={item.href as any}
                 className="group relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
               >
+                {/* Ícone de Salvo no Dia Atual */}
+                {isSaved && (
+                  <div
+                    className="absolute top-3.5 left-3.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-xs shadow-xs animate-in fade-in zoom-in-90 duration-300 z-20 pointer-events-none"
+                    title="Relatório preenchido e salvo no dia de hoje"
+                  >
+                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
+                    <span className="text-[11px] tracking-tight">Salvo hoje</span>
+                  </div>
+                )}
+
                 <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
                   <Icon className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
                 </div>
@@ -262,12 +413,25 @@ function RelatorioObraHub() {
           {/* Módulos Customizados Criados pelos Encarregados (igual Jardinagem e Gabião) */}
           {customModulos.map(modulo => {
             const IconComponent = (Icons as any)[modulo.icon] || Icons.Activity;
+            const isSaved = savedToday.has(modulo.id);
+
             return (
               <div key={modulo.id} className="relative group">
                 <Link
                   to={`/relatorio-obra/modulo/${modulo.id}` as any}
                   className="relative flex flex-col items-center justify-center p-6 h-40 rounded-[32px] liquid-card-effect transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full"
                 >
+                  {/* Ícone de Salvo no Dia Atual */}
+                  {isSaved && (
+                    <div
+                      className="absolute top-3.5 left-3.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-xs shadow-xs animate-in fade-in zoom-in-90 duration-300 z-20 pointer-events-none"
+                      title="Relatório preenchido e salvo no dia de hoje"
+                    >
+                      <CheckCircle2 size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
+                      <span className="text-[11px] tracking-tight">Salvo hoje</span>
+                    </div>
+                  )}
+
                   <div className="mb-4 transition-transform duration-500 group-hover:scale-110 z-10">
                     <IconComponent className="w-10 h-10 text-current opacity-90" strokeWidth={1.5} />
                   </div>

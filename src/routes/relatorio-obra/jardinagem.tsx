@@ -307,6 +307,10 @@ function JardinagemPage() {
     localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(dataToSave));
     setIsLocked(true);
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: 'jardinagem' } }));
+    }
+
     const cycleTotalRocagem = rocagemPeriodInfo.totalM2;
     const cycleTotalManual = limpezaManualPeriodInfo.totalM2;
     const cycleTotalSoprador = limpezaSopradorPeriodInfo.totalM2;

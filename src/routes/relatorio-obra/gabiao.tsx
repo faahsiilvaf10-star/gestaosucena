@@ -187,6 +187,10 @@ function GabiaoPage() {
     };
     localStorage.setItem(`gabiao_rdo_${selectedDate}`, JSON.stringify(dataToSave));
     setIsLocked(true);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: 'gabiao' } }));
+    }
     toast.success('Relatório salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
     
     try {

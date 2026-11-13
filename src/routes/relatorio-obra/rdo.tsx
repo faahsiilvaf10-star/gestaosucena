@@ -656,6 +656,10 @@ function RDOPage() {
     setIsLocked(true);
     toast.success('RDO salvo com sucesso para a data ' + formatDateDisplay(selectedDate));
     
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', { detail: { date: selectedDate, moduloId: 'rdo', environment: env } }));
+    }
+    
     try {
       await Promise.all([
         supabase.from('global_settings').upsert({
