@@ -21,6 +21,10 @@ export interface FeitoSegurancaInfo {
   gradienteBg: string
 }
 
+export function getLsKeyPlacarSeguranca(env = 'barcarena'): string {
+  return `hydro-placar-seguranca-${env}-v1`
+}
+
 export const LS_KEY_PLACAR_SEGURANCA = 'hydro-placar-seguranca-v1'
 
 export function getDataPadraoInicio(diasAtras = 145): string {
@@ -176,6 +180,7 @@ export function getDbKeyPlacarSeguranca(env = 'barcarena'): string {
  */
 export async function carregarPlacarSeguranca(env = 'barcarena'): Promise<PlacarSegurancaConfig> {
   const dbKey = getDbKeyPlacarSeguranca(env)
+  const lsKey = getLsKeyPlacarSeguranca(env)
   try {
     const { data, error } = await supabase
       .from('global_settings')
@@ -187,7 +192,7 @@ export async function carregarPlacarSeguranca(env = 'barcarena'): Promise<Placar
       const cfg = { ...CONFIG_PADRAO_PLACAR, ...(data.value as Partial<PlacarSegurancaConfig>) }
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(LS_KEY_PLACAR_SEGURANCA, JSON.stringify(cfg))
+          localStorage.setItem(lsKey, JSON.stringify(cfg))
         } catch (_) {}
       }
       return cfg
@@ -196,10 +201,10 @@ export async function carregarPlacarSeguranca(env = 'barcarena'): Promise<Placar
     console.warn('[PlacarSegurança] Erro ao carregar do Supabase:', err)
   }
 
-  // Fallback LocalStorage
+  // Fallback LocalStorage específico do ambiente
   if (typeof window !== 'undefined') {
     try {
-      const raw = localStorage.getItem(LS_KEY_PLACAR_SEGURANCA)
+      const raw = localStorage.getItem(lsKey)
       if (raw) {
         const parsed = JSON.parse(raw)
         if (parsed && typeof parsed === 'object') {
@@ -220,6 +225,7 @@ export async function salvarPlacarSeguranca(
   env = 'barcarena'
 ): Promise<boolean> {
   const dbKey = getDbKeyPlacarSeguranca(env)
+  const lsKey = getLsKeyPlacarSeguranca(env)
   const payload = {
     ...config,
     atualizadoEm: new Date().toISOString(),
@@ -227,8 +233,8 @@ export async function salvarPlacarSeguranca(
 
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(LS_KEY_PLACAR_SEGURANCA, JSON.stringify(payload))
-      window.dispatchEvent(new CustomEvent('sucena_placar_seguranca_updated', { detail: payload }))
+      localStorage.setItem(lsKey, JSON.stringify(payload))
+      window.dispatchEvent(new CustomEvent('sucena_placar_seguranca_updated', { detail: { ...payload, env } }))
     } catch (e) {
       console.warn('[PlacarSegurança] Erro no LocalStorage:', e)
     }

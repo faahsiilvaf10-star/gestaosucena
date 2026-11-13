@@ -113,7 +113,7 @@ export function DashboardPlacarSeguranca({
       .subscribe()
 
     const handleCustomUpdate = (e: any) => {
-      if (e.detail && typeof e.detail === 'object') {
+      if (e.detail && typeof e.detail === 'object' && (!e.detail.env || e.detail.env === currentEnv)) {
         setConfig(e.detail)
       }
     }
