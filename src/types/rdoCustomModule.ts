@@ -16,6 +16,8 @@ export interface CustomCardRowData {
   faixa?: string;
   berma?: string;
   opcao?: string;
+  unidade?: string;
+  detalhe?: string;
 }
 
 export interface CustomRdoItem {

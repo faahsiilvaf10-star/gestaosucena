@@ -31,6 +31,7 @@ import {
   CustomRdoDailyData,
 } from '@/types/rdoCustomModule';
 import { CreateModuleModal } from '@/components/rdo/CreateModuleModal';
+import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData';
 
 export const Route = createFileRoute('/relatorio-obra/modulo/$id')({
   component: CustomModuloAtividadePage,
@@ -155,6 +156,31 @@ export function CustomModuloAtividadePage() {
         }
       }
 
+      // 3. Fallback definições oficiais de áreas do Civil
+      if (!found) {
+        const civilDef = CIVIL_AREAS_DEFINITIONS.find(a => a.id === id);
+        if (civilDef) {
+          found = {
+            id: civilDef.id,
+            name: civilDef.name,
+            icon: civilDef.icon,
+            desc: civilDef.desc,
+            created_at: new Date().toISOString(),
+            temOutrasAtividades: true,
+            models: [
+              {
+                id: `${civilDef.id}-atividades`,
+                tipo: 'selecao',
+                titulo: 'ATIVIDADES REALIZADAS',
+                labelOpcao: 'Atividade',
+                unidade: 'unid',
+                opcoes: civilDef.atividades.map(a => a.nome),
+              },
+            ],
+          };
+        }
+      }
+
       if (found) {
         // Normalizar caso seja módulo antigo sem 'models'
         if (!found.models || found.models.length === 0) {
@@ -254,13 +280,25 @@ export function CustomModuloAtividadePage() {
     }
   }, [modulo, selectedDate]);
 
+  // Mapa de unidades das atividades do civil para autocompletar
+  const civilActivityUnitMap: Record<string, string> = useMemo(() => {
+    const map: Record<string, string> = {};
+    CIVIL_AREAS_DEFINITIONS.forEach(area => {
+      area.atividades.forEach(a => {
+        map[a.nome] = a.unidade;
+      });
+    });
+    return map;
+  }, []);
+
   // Manipulação de Linhas de Medição / Seleção
   const handleAddRow = (modelId: string, defaultOpcao?: string) => {
     setCardRows(prev => {
       const current = prev[modelId] || [];
+      const autoUnit = defaultOpcao && civilActivityUnitMap[defaultOpcao] ? civilActivityUnitMap[defaultOpcao] : '';
       return {
         ...prev,
-        [modelId]: [...current, { value: '', faixa: '', berma: '', opcao: defaultOpcao || '' }],
+        [modelId]: [...current, { value: '', faixa: '', berma: '', opcao: defaultOpcao || '', unidade: autoUnit, detalhe: '' }],
       };
     });
   };
@@ -272,6 +310,12 @@ export function CustomModuloAtividadePage() {
         current[rowIndex] = { value: '', faixa: '', berma: '' };
       }
       current[rowIndex] = { ...current[rowIndex], [field]: val };
+
+      // Se mudou a opção e é do civil, atualiza automaticamente a unidade padrão
+      if (field === 'opcao' && val && civilActivityUnitMap[val]) {
+        current[rowIndex].unidade = civilActivityUnitMap[val];
+      }
+
       return {
         ...prev,
         [modelId]: current,
@@ -285,7 +329,7 @@ export function CustomModuloAtividadePage() {
       const updated = current.filter((_, idx) => idx !== rowIndex);
       return {
         ...prev,
-        [modelId]: updated.length > 0 ? updated : [{ value: '', faixa: '', berma: '' }],
+        [modelId]: updated.length > 0 ? updated : [{ value: '', faixa: '', berma: '', unidade: '', detalhe: '' }],
       };
     });
   };
@@ -316,10 +360,17 @@ export function CustomModuloAtividadePage() {
           const locParts = [];
           if (r.faixa) locParts.push(r.faixa);
           if (r.berma) locParts.push(r.berma);
+          if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
-          const opStr = r.opcao ? ` (${r.opcao})` : '';
+          const unit = r.unidade || m.unidade || 'unid';
           const cleanVal = String(r.value).replace(/,00$/, '');
-          lines.push(`* ${m.titulo}${opStr}: ${cleanVal} ${m.unidade || 'unid'}${locStr}`);
+
+          if (m.titulo === 'ATIVIDADES REALIZADAS' && r.opcao) {
+            lines.push(`* ${r.opcao}: ${cleanVal} ${unit}${locStr}`);
+          } else {
+            const opStr = r.opcao ? ` (${r.opcao})` : '';
+            lines.push(`* ${m.titulo}${opStr}: ${cleanVal} ${unit}${locStr}`);
+          }
         });
       } else {
         // Medição simples
@@ -329,9 +380,11 @@ export function CustomModuloAtividadePage() {
           const locParts = [];
           if (r.faixa) locParts.push(r.faixa);
           if (r.berma) locParts.push(r.berma);
+          if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
+          const unit = r.unidade || m.unidade || 'm²';
           const cleanVal = String(r.value).replace(/,00$/, '');
-          lines.push(`* ${m.titulo}: ${cleanVal} ${m.unidade || 'm²'}${locStr}`);
+          lines.push(`* ${m.titulo}: ${cleanVal} ${unit}${locStr}`);
         });
       }
     });
@@ -706,51 +759,82 @@ export function CustomModuloAtividadePage() {
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                           </div>
 
-                          {/* Campo de Valor / Unidade */}
+                          {/* Campo de Valor / Medição */}
                           <div className="w-full sm:w-28 relative">
                             <input
                               type="text"
-                              inputMode="numeric"
+                              inputMode="decimal"
                               placeholder="0"
                               value={row.value || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'value', maskNumber(e.target.value, false))}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                              onChange={e => handleUpdateRow(model.id, idx, 'value', maskNumber(e.target.value, isCivil))}
+                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm font-semibold text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                              title="Quantidade ou metragem realizada"
                             />
                           </div>
 
-                          {/* Faixa */}
-                          <div className="w-full sm:w-32 relative">
-                            <select
-                              value={row.faixa || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                            >
-                              <option value="">Faixa</option>
-                              {FAIXAS.map(f => (
-                                <option key={f} value={f}>
-                                  {f}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                          </div>
+                          {isCivil ? (
+                            <>
+                              {/* Campo de Unidade (Civil) */}
+                              <div className="w-full sm:w-24 relative">
+                                <input
+                                  type="text"
+                                  placeholder="unid"
+                                  value={row.unidade || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'unidade', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm font-bold text-center text-amber-600 dark:text-amber-400 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                  title="Unidade de medida (ex: m², m³, kg, unid, m, dias)"
+                                />
+                              </div>
 
-                          {/* Elevado / Berma */}
-                          <div className="w-full sm:w-36 relative">
-                            <select
-                              value={row.berma || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                            >
-                              <option value="">Elevado/Berma</option>
-                              {BERMAS.map(b => (
-                                <option key={b} value={b}>
-                                  {b}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                          </div>
+                              {/* Detalhe / Eixo / Frente de Serviço (Civil) */}
+                              <div className="w-full sm:w-36 relative">
+                                <input
+                                  type="text"
+                                  placeholder="Local / Eixo (opcional)"
+                                  value={row.detalhe || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'detalhe', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                                  title="Local, eixo ou detalhe adicional da atividade"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Faixa (Reabilitação) */}
+                              <div className="w-full sm:w-32 relative">
+                                <select
+                                  value={row.faixa || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Faixa</option>
+                                  {FAIXAS.map(f => (
+                                    <option key={f} value={f}>
+                                      {f}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
+
+                              {/* Elevado / Berma (Reabilitação) */}
+                              <div className="w-full sm:w-36 relative">
+                                <select
+                                  value={row.berma || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Elevado/Berma</option>
+                                  {BERMAS.map(b => (
+                                    <option key={b} value={b}>
+                                      {b}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
+                            </>
+                          )}
 
                           {/* Botão de Excluir Linha se houver mais de uma */}
                           {rows.length > 1 && (

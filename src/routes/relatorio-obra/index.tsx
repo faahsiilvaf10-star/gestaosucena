@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { isAdmin } from '../../components/ui/VerifiedBadge';
 import { CreateModuleModal } from '../../components/rdo/CreateModuleModal';
 import { CustomRdoModulo } from '../../types/rdoCustomModule';
+import { getInitialCivilModulos } from '../../lib/civilAreasData';
 
 export const Route = createFileRoute('/relatorio-obra/')({
   component: RelatorioObraHub,
@@ -61,6 +62,43 @@ function RelatorioObraHub() {
   // Carregar módulos customizados do ambiente ativo
   const fetchCustomModulos = async () => {
     try {
+      if (isCivil) {
+        // No ambiente civil, carregar e garantir as 12 áreas oficiais
+        const { data } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', storageKey)
+          .single();
+
+        let list: CustomRdoModulo[] = [];
+        if (data && Array.isArray(data.value) && data.value.length > 0) {
+          list = data.value;
+          const initialMods = getInitialCivilModulos();
+          const existingIds = new Set(list.map(m => m.id));
+          const missing = initialMods.filter(m => !existingIds.has(m.id));
+          if (missing.length > 0) {
+            list = [...list, ...missing];
+            supabase.from('global_settings').upsert({
+              key: storageKey,
+              value: list,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'key' }).catch(console.warn);
+          }
+        } else {
+          list = getInitialCivilModulos();
+          supabase.from('global_settings').upsert({
+            key: storageKey,
+            value: list,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'key' }).catch(console.warn);
+        }
+
+        setCustomModulos(list);
+        localStorage.setItem(storageKey, JSON.stringify(list));
+        return;
+      }
+
+      // Ambiente Reabilitação (Barcarena)
       // 1. Tentar remoto
       const { data } = await supabase
         .from('global_settings')
@@ -85,13 +123,19 @@ function RelatorioObraHub() {
       setCustomModulos([]);
     } catch (e) {
       console.warn('Erro ao buscar módulos customizados:', e);
-      const local = localStorage.getItem(storageKey);
-      if (local) {
-        try {
-          setCustomModulos(JSON.parse(local));
-        } catch (err) {}
+      if (isCivil) {
+        const initial = getInitialCivilModulos();
+        setCustomModulos(initial);
+        localStorage.setItem(storageKey, JSON.stringify(initial));
       } else {
-        setCustomModulos([]);
+        const local = localStorage.getItem(storageKey);
+        if (local) {
+          try {
+            setCustomModulos(JSON.parse(local));
+          } catch (err) {}
+        } else {
+          setCustomModulos([]);
+        }
       }
     }
   };
