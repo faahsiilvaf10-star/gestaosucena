@@ -46,8 +46,19 @@ const colorMap: Record<string, string> = {
 }
 
 function VistoriaCintas() {
-  const { cintas, historico, inspecionarCinta, fetchCintas, hasHydrated } = useCintasStore()
+  const { cintas, historico, inspecionarCinta, adicionarCinta, removerCinta, fetchCintas, hasHydrated } = useCintasStore()
   const [editingCinta, setEditingCinta] = useState<any | null>(null)
+
+  // Nova Cinta modal state
+  const [isNovaCintaOpen, setIsNovaCintaOpen] = useState(false)
+  const [novaTag, setNovaTag] = useState('')
+  const [novaDescricao, setNovaDescricao] = useState('')
+  const [novaCor, setNovaCor] = useState<'Vermelho' | 'Azul' | 'Amarelo' | 'Verde'>('Vermelho')
+  const [novoStatus, setNovoStatus] = useState<'Pendente' | 'Inspecionada' | 'Não é mês de inspeção'>('Pendente')
+  const [isSubmittingNova, setIsSubmittingNova] = useState(false)
+
+  // Delete modal state
+  const [cintaToDelete, setCintaToDelete] = useState<{ id: string; tag: string } | null>(null)
 
   useEffect(() => {
     fetchCintas()
@@ -74,6 +85,50 @@ function VistoriaCintas() {
   const [fotos, setFotos] = useState<string[]>([])
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleCriarCinta = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!novaTag.trim()) {
+      toast.error('Informe a tag da cinta (ex: E-CIV-001).')
+      return
+    }
+    if (!novaDescricao.trim()) {
+      toast.error('Informe a descrição da cinta (ex: CINTA 4T - 4M).')
+      return
+    }
+
+    setIsSubmittingNova(true)
+    try {
+      await adicionarCinta({
+        tag: novaTag,
+        descricao: novaDescricao,
+        cor: novaCor,
+        status: novoStatus,
+      })
+      toast.success(`Cinta ${novaTag.trim().toUpperCase()} adicionada com sucesso!`)
+      setIsNovaCintaOpen(false)
+      setNovaTag('')
+      setNovaDescricao('')
+      setNovoStatus('Pendente')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao adicionar cinta.')
+    } finally {
+      setIsSubmittingNova(false)
+    }
+  }
+
+  const handleConfirmarExclusao = async () => {
+    if (!cintaToDelete) return
+    try {
+      await removerCinta(cintaToDelete.id)
+      toast.success(`Cinta ${cintaToDelete.tag} excluída com sucesso!`)
+      setCintaToDelete(null)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao excluir cinta.')
+    }
+  }
 
   const handleEdit = (cinta: any) => {
     setEditingCinta(cinta)
@@ -212,6 +267,7 @@ function VistoriaCintas() {
           </div>
         </div>
         <Button
+          onClick={() => setIsNovaCintaOpen(true)}
           variant="outline"
           className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-[#1c1d21] dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 rounded-full"
         >
@@ -359,9 +415,25 @@ function VistoriaCintas() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    Nenhuma cinta encontrada para os filtros selecionados.
+                    {cintas.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                        <Link2 className="w-8 h-8 text-gray-400 mb-1" />
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">Nenhuma cinta cadastrada neste ambiente</p>
+                        <p className="text-xs text-gray-500">As cintas deste ambiente são adicionadas manualmente. Clique no botão abaixo para começar.</p>
+                        <Button
+                          onClick={() => setIsNovaCintaOpen(true)}
+                          size="sm"
+                          className="mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1.5" />
+                          Cadastrar Primeira Cinta
+                        </Button>
+                      </div>
+                    ) : (
+                      'Nenhuma cinta encontrada para os filtros selecionados.'
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -468,27 +540,37 @@ function VistoriaCintas() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {isCorDoMes ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleEdit(cinta)}
-                            className="h-8 px-3 text-xs font-semibold rounded-lg shadow-xs transition-transform active:scale-95 text-white"
-                            style={{
-                              backgroundColor: rowConfig?.accentHex || '#3b82f6',
-                            }}
-                          >
-                            <Edit className="w-3.5 h-3.5 mr-1" />
-                            {cinta.status === 'Inspecionada' ? 'Editar / Foto' : 'Inspecionar'}
-                          </Button>
-                        ) : (
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          {isCorDoMes ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleEdit(cinta)}
+                              className="h-8 px-3 text-xs font-semibold rounded-lg shadow-xs transition-transform active:scale-95 text-white"
+                              style={{
+                                backgroundColor: rowConfig?.accentHex || '#3b82f6',
+                              }}
+                            >
+                              <Edit className="w-3.5 h-3.5 mr-1" />
+                              {cinta.status === 'Inspecionada' ? 'Editar / Foto' : 'Inspecionar'}
+                            </Button>
+                          ) : (
+                            <button
+                              onClick={() => handleEdit(cinta)}
+                              className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors inline-flex items-center justify-end space-x-1 text-xs px-2 py-1"
+                            >
+                              <Edit className="w-3 h-3" />
+                              <span>Editar</span>
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleEdit(cinta)}
-                            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors inline-flex items-center justify-end space-x-1 text-xs"
+                            type="button"
+                            onClick={() => setCintaToDelete({ id: cinta.id, tag: cinta.tag })}
+                            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1.5 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
+                            title="Excluir cinta"
                           >
-                            <Edit className="w-3 h-3" />
-                            <span>Editar</span>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -862,6 +944,145 @@ function VistoriaCintas() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Cadastrar Nova Cinta */}
+      <Dialog open={isNovaCintaOpen} onOpenChange={setIsNovaCintaOpen}>
+        <DialogContent className="bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10 sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Plus className="w-5 h-5 text-blue-500" />
+              Cadastrar Nova Cinta
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleCriarCinta} className="space-y-4 pt-2">
+            <div>
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Tag de Identificação *
+              </Label>
+              <Input
+                placeholder="Ex: E-CIV-001 ou CINTA-01"
+                value={novaTag}
+                onChange={(e) => setNovaTag(e.target.value)}
+                className="mt-1 font-mono uppercase bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl"
+                required
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Descrição do Equipamento *
+              </Label>
+              <Input
+                placeholder="Ex: CINTA 4T - 4M ou CINTA 2T - 6M"
+                value={novaDescricao}
+                onChange={(e) => setNovaDescricao(e.target.value)}
+                className="mt-1 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl"
+                required
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5">
+                Cor de Inspeção da Cinta *
+              </Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(['Vermelho', 'Azul', 'Amarelo', 'Verde'] as const).map((cor) => {
+                  const isSelected = novaCor === cor
+                  return (
+                    <button
+                      key={cor}
+                      type="button"
+                      onClick={() => setNovaCor(cor)}
+                      className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                        isSelected
+                          ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/50 dark:bg-blue-950/30 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      <span className={`w-3 h-3 rounded-full ${colorMap[cor]}`} />
+                      <span>{cor}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5">
+                Status Inicial
+              </Label>
+              <select
+                value={novoStatus}
+                onChange={(e) => setNovoStatus(e.target.value as any)}
+                className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white outline-none cursor-pointer"
+              >
+                <option value="Pendente" className="text-gray-900 dark:text-gray-100">
+                  Pendente de Inspeção
+                </option>
+                <option value="Inspecionada" className="text-gray-900 dark:text-gray-100">
+                  Inspecionada
+                </option>
+                <option value="Não é mês de inspeção" className="text-gray-900 dark:text-gray-100">
+                  Não é mês de inspeção
+                </option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-white/5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsNovaCintaOpen(false)}
+                className="rounded-xl border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmittingNova}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
+              >
+                {isSubmittingNova ? 'Salvando...' : 'Adicionar Cinta'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Confirmar Exclusão de Cinta */}
+      <Dialog open={!!cintaToDelete} onOpenChange={(open) => !open && setCintaToDelete(null)}>
+        <DialogContent className="bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10 sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-red-500" />
+              Excluir Cinta
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-gray-600 dark:text-gray-300 py-2">
+            Tem certeza que deseja excluir a cinta <strong className="font-mono text-gray-900 dark:text-white">{cintaToDelete?.tag}</strong> deste ambiente? O histórico vinculado a ela também será removido.
+          </p>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCintaToDelete(null)}
+              className="rounded-xl border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmarExclusao}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs"
+            >
+              Excluir
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       {/* Modal de Expansão de Foto (Lightbox) */}

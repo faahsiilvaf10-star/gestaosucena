@@ -50,10 +50,15 @@ export function DashboardCintasBanner() {
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([])
 
   useEffect(() => {
-    if (!hasHydrated) {
-      fetchCintas()
+    fetchCintas()
+    const handleEnv = () => fetchCintas()
+    window.addEventListener('sucena_environment_change', handleEnv)
+    window.addEventListener('storage', handleEnv)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnv)
+      window.removeEventListener('storage', handleEnv)
     }
-  }, [hasHydrated, fetchCintas])
+  }, [fetchCintas])
 
   const mesAtual = useMemo(() => getMesInspecaoAtual(), [])
   const corDoMes = mesAtual.cor
@@ -357,8 +362,27 @@ export function DashboardCintasBanner() {
             <span>{precisaAtencao ? '⚠️ Requer ação' : '✅ Todas inspecionadas e com foto'}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {cintasDoMes.map((c) => {
+          {cintasDoMes.length === 0 ? (
+            <div className="p-6 text-center text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+              {cintas.length === 0 ? (
+                <div>
+                  <p className="font-medium text-sm text-gray-700 dark:text-gray-300">Nenhuma cinta cadastrada neste ambiente.</p>
+                  <p className="text-xs text-gray-500 mt-1">Acesse a vistoria para cadastrar as cintas do ambiente.</p>
+                  <Link
+                    to="/seguranca/cintas"
+                    className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Cadastrar Cintas
+                  </Link>
+                </div>
+              ) : (
+                `Nenhuma cinta cadastrada com a cor ${corDoMes} para este mês.`
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {cintasDoMes.map((c) => {
               const isInspec = c.status === 'Inspecionada'
               const hasPhoto = !!c.foto
 
@@ -450,6 +474,7 @@ export function DashboardCintasBanner() {
               )
             })}
           </div>
+          )}
         </div>
       </div>
 

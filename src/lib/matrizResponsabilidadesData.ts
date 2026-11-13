@@ -279,7 +279,7 @@ export async function carregarDadosMatriz(
   env: string = 'barcarena'
 ): Promise<MatrizDbRecord> {
   const key = getStorageKey(mesKey, env)
-  const localKey = `hydro-matriz-v2-${mesKey}`
+  const localKey = `hydro-matriz-v2-${mesKey}-${env}`
 
   let result: MatrizDbRecord | null = null
 
@@ -297,7 +297,7 @@ export async function carregarDadosMatriz(
     console.warn('[Matriz] Erro ao carregar do Supabase:', err)
   }
 
-  // Fallback LocalStorage se Supabase falhar
+  // Fallback LocalStorage se Supabase falhar (estritamente com a chave do ambiente)
   if (!result && typeof window !== 'undefined') {
     try {
       const local = localStorage.getItem(localKey)
@@ -305,6 +305,15 @@ export async function carregarDadosMatriz(
         const parsed = JSON.parse(local)
         if (parsed && typeof parsed === 'object') {
           result = parsed.atividadesPorCargo ? (parsed as MatrizDbRecord) : { atividadesPorCargo: parsed }
+        }
+      } else if (env === 'barcarena') {
+        // Apenas para Barcarena pode ler a chave legada antiga
+        const legacy = localStorage.getItem(`hydro-matriz-v2-${mesKey}`)
+        if (legacy) {
+          const parsed = JSON.parse(legacy)
+          if (parsed && typeof parsed === 'object') {
+            result = parsed.atividadesPorCargo ? (parsed as MatrizDbRecord) : { atividadesPorCargo: parsed }
+          }
         }
       }
     } catch (_) {}
@@ -434,7 +443,7 @@ export async function salvarDadosMatriz(
 ): Promise<boolean> {
   const key = getStorageKey(mesKey, env)
   const masterKey = getMasterConfigKey(env)
-  const localKey = `hydro-matriz-v2-${mesKey}`
+  const localKey = `hydro-matriz-v2-${mesKey}-${env}`
   const localMasterKey = `hydro-matriz-master-${env}`
 
   // Garantir que dados.atividadesPorCargo contenha as atividades de todos os cargos

@@ -31,19 +31,46 @@ export function DashboardMatrizWidget() {
   const [nomesPorCargo, setNomesPorCargo] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState<boolean>(true)
 
-  const env = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+  const [env, setEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
 
     async function carregar() {
       try {
+        setLoading(true)
+        let rhQuery = supabase
+          .from('rh_efetivo')
+          .select('id, nome, cargo, status')
+          .order('nome', { ascending: true })
+
+        if (env === 'hydro-civil') {
+          rhQuery = rhQuery.eq('environment', 'hydro-civil')
+        } else {
+          rhQuery = rhQuery.or('environment.eq.barcarena,environment.is.null')
+        }
+
         const [matrizDb, rhRes] = await Promise.all([
           carregarDadosMatriz(mesKey, env),
-          supabase
-            .from('rh_efetivo')
-            .select('id, nome, cargo, status')
-            .order('nome', { ascending: true }),
+          rhQuery,
         ])
 
         if (!mounted) return

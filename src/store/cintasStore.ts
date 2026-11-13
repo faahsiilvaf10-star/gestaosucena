@@ -59,31 +59,52 @@ const DEFAULT_CINTAS: Cinta[] = [
 ]
 
 function getStoredCintas(): Cinta[] {
-  if (typeof window === 'undefined') return DEFAULT_CINTAS
+  const env = getCurrentEnv()
+  if (typeof window === 'undefined') {
+    return env === 'hydro-civil' ? [] : DEFAULT_CINTAS
+  }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(getStorageKey())
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) {
+        if (env === 'hydro-civil') {
+          return parsed.filter((c: any) => !c.tag?.startsWith('E-SUC-'))
+        }
+        return parsed
+      }
     }
   } catch (e) {
     // ignore
   }
-  return DEFAULT_CINTAS
+  return env === 'hydro-civil' ? [] : DEFAULT_CINTAS
 }
 
 function getStoredHistorico(): HistoricoInspecao[] {
+  const env = getCurrentEnv()
   if (typeof window === 'undefined') return []
   try {
-    const raw = localStorage.getItem(HIST_STORAGE_KEY)
+    const raw = localStorage.getItem(getHistStorageKey())
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        if (env === 'hydro-civil') {
+          return parsed.filter((h: any) => !h.tag?.startsWith('E-SUC-'))
+        }
+        return parsed
+      }
     }
   } catch (e) {
     // ignore
   }
   return []
+}
+
+interface NovaCintaInput {
+  tag: string
+  descricao: string
+  cor: 'Vermelho' | 'Azul' | 'Amarelo' | 'Verde'
+  status?: 'Inspecionada' | 'Não é mês de inspeção' | 'Pendente'
 }
 
 interface CintasState {
@@ -93,6 +114,8 @@ interface CintasState {
   isLoading: boolean
   setHasHydrated: (hasHydrated: boolean) => void
   fetchCintas: () => Promise<void>
+  adicionarCinta: (nova: NovaCintaInput) => Promise<Cinta>
+  removerCinta: (id: string) => Promise<void>
   inspecionarCinta: (
     id: string,
     dataInspecao: string,
@@ -111,51 +134,63 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
 
   fetchCintas: async () => {
     set({ isLoading: true })
+    const env = getCurrentEnv()
+    const storageKey = getStorageKey()
+    const histKey = getHistStorageKey()
+
     try {
-      const { data: cintasData, error: cintasError } = await supabase
-        .from('seguranca_cintas')
-        .select('*')
-        .order('tag', { ascending: true })
+      // 1. Tentar ler do global_settings (sincronização na nuvem por ambiente)
+      const [cintasRes, histRes] = await Promise.all([
+        supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', storageKey)
+          .maybeSingle(),
+        supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', histKey)
+          .maybeSingle(),
+      ])
 
-      if (cintasError) throw cintasError
+      if (cintasRes.data?.value && Array.isArray(cintasRes.data.value)) {
+        let cloudCintas = cintasRes.data.value as Cinta[]
+        let cloudHist = (histRes.data?.value && Array.isArray(histRes.data.value) ? histRes.data.value : []) as HistoricoInspecao[]
 
-      const { data: historicoData, error: historicoError } = await supabase
-        .from('seguranca_cintas_historico')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (historicoError) throw historicoError
-
-      if (cintasData && cintasData.length > 0) {
-        const mappedCintas: Cinta[] = cintasData.map((c: any) => ({
-          id: c.id,
-          tag: c.tag,
-          descricao: c.descricao,
-          cor: c.cor,
-          status: c.status,
-          inspecionadaEm: c.inspecionada_em,
-          foto: c.foto || null,
-        }))
+        if (env === 'hydro-civil') {
+          cloudCintas = cloudCintas.filter((c: any) => !c.tag?.startsWith('E-SUC-'))
+          cloudHist = cloudHist.filter((h: any) => !h.tag?.startsWith('E-SUC-'))
+        }
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem(getStorageKey(), JSON.stringify(mappedCintas))
-          if (historicoData) {
-            localStorage.setItem(getHistStorageKey(), JSON.stringify(historicoData))
-          }
+          localStorage.setItem(storageKey, JSON.stringify(cloudCintas))
+          localStorage.setItem(histKey, JSON.stringify(cloudHist))
         }
 
         set({
-          cintas: mappedCintas,
-          historico: (historicoData || []) as HistoricoInspecao[],
+          cintas: cloudCintas,
+          historico: cloudHist,
           hasHydrated: true,
           isLoading: false,
         })
         return
       }
 
-      // Se retornou vazio do banco, usa o fallback local
-      const localCintas = getStoredCintas()
-      const localHist = getStoredHistorico()
+      // 2. Fallback localStorage / padrão do ambiente
+      let localCintas = getStoredCintas()
+      let localHist = getStoredHistorico()
+
+      if (env === 'hydro-civil') {
+        localCintas = localCintas.filter((c: any) => !c.tag?.startsWith('E-SUC-'))
+        localHist = localHist.filter((h: any) => !h.tag?.startsWith('E-SUC-'))
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKey, JSON.stringify(localCintas))
+          localStorage.setItem(histKey, JSON.stringify(localHist))
+        }
+      } else if (env === 'barcarena' && localCintas.length > 0) {
+        supabase.from('global_settings').upsert({ key: storageKey, value: localCintas }).catch(() => {})
+      }
+
       set({
         cintas: localCintas,
         historico: localHist,
@@ -163,7 +198,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
         isLoading: false,
       })
     } catch (error) {
-      console.warn('Usando armazenamento local para cintas:', error)
+      console.warn('[Cintas] Usando armazenamento local para cintas:', error)
       const localCintas = getStoredCintas()
       const localHist = getStoredHistorico()
       set({
@@ -175,8 +210,84 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
     }
   },
 
-  inspecionarCinta: async (id, dataInspecao, observacoes, novoStatus, foto = null) => {
+  adicionarCinta: async (nova: NovaCintaInput) => {
+    const env = getCurrentEnv()
     const state = get()
+    const storageKey = getStorageKey()
+
+    const novaCinta: Cinta = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cinta-${Date.now()}`,
+      tag: nova.tag.trim().toUpperCase(),
+      descricao: nova.descricao.trim(),
+      cor: nova.cor,
+      status: nova.status || 'Pendente',
+      inspecionadaEm: nova.status === 'Inspecionada' ? new Date().toLocaleDateString('pt-BR') : null,
+      foto: null,
+    }
+
+    const updatedCintas = [...state.cintas, novaCinta]
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updatedCintas))
+      } catch (e) {
+        console.warn('Erro ao salvar cinta no localStorage:', e)
+      }
+    }
+
+    set({ cintas: updatedCintas })
+
+    // Sincronizar com a nuvem (global_settings do ambiente ativo)
+    try {
+      await supabase
+        .from('global_settings')
+        .upsert({ key: storageKey, value: updatedCintas })
+    } catch (err) {
+      console.warn('Erro ao sincronizar nova cinta com global_settings:', err)
+    }
+
+    return novaCinta
+  },
+
+  removerCinta: async (id: string) => {
+    const env = getCurrentEnv()
+    const state = get()
+    const storageKey = getStorageKey()
+    const histKey = getHistStorageKey()
+
+    const updatedCintas = state.cintas.filter((c) => c.id !== id)
+    const updatedHistorico = state.historico.filter((h) => h.cinta_id !== id)
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updatedCintas))
+        localStorage.setItem(histKey, JSON.stringify(updatedHistorico))
+      } catch (e) {
+        console.warn('Erro ao atualizar localStorage após remoção:', e)
+      }
+    }
+
+    set({
+      cintas: updatedCintas,
+      historico: updatedHistorico,
+    })
+
+    try {
+      await Promise.all([
+        supabase.from('global_settings').upsert({ key: storageKey, value: updatedCintas }),
+        supabase.from('global_settings').upsert({ key: histKey, value: updatedHistorico }),
+      ])
+    } catch (err) {
+      console.warn('Erro ao sincronizar remoção com global_settings:', err)
+    }
+  },
+
+  inspecionarCinta: async (id, dataInspecao, observacoes, novoStatus, foto = null) => {
+    const env = getCurrentEnv()
+    const state = get()
+    const storageKey = getStorageKey()
+    const histKey = getHistStorageKey()
+
     const cintaToEdit = state.cintas.find((c) => c.id === id)
     if (!cintaToEdit) return
 
@@ -187,7 +298,7 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
       ' ' +
       new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-    // Get user from supabase (if logged in) or fallback to 'Você'
+    // Obter nome do usuário inspetor
     let inspetor = 'Você'
     try {
       const {
@@ -215,7 +326,6 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
       foto: fotoFinal,
     }
 
-    // Always update local state & localStorage immediately
     const updatedCintas = state.cintas.map((c) =>
       c.id === id
         ? {
@@ -230,8 +340,8 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
 
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(getStorageKey(), JSON.stringify(updatedCintas))
-        localStorage.setItem(getHistStorageKey(), JSON.stringify(updatedHistorico))
+        localStorage.setItem(storageKey, JSON.stringify(updatedCintas))
+        localStorage.setItem(histKey, JSON.stringify(updatedHistorico))
       } catch (e) {
         console.warn('Erro ao salvar no localStorage:', e)
       }
@@ -242,19 +352,14 @@ export const useCintasStore = create<CintasState>()((set, get) => ({
       historico: updatedHistorico,
     })
 
-    // Sync to Supabase in background
+    // Sincronizar na nuvem
     try {
-      await supabase.from('seguranca_cintas_historico').insert(novoHistorico)
-      await supabase
-        .from('seguranca_cintas')
-        .update({
-          status: novoStatus,
-          inspecionada_em: novaDataFmt,
-          foto: fotoFinal,
-        })
-        .eq('id', id)
+      await Promise.all([
+        supabase.from('global_settings').upsert({ key: storageKey, value: updatedCintas }),
+        supabase.from('global_settings').upsert({ key: histKey, value: updatedHistorico }),
+      ])
     } catch (error) {
-      console.warn('Erro ao sincronizar com supabase (salvo localmente):', error)
+      console.warn('Erro ao sincronizar histórico e cinta com global_settings:', error)
     }
   },
 }))
