@@ -280,6 +280,12 @@ function JardinagemPage() {
     parsed.isLocked = false;
     localStorage.setItem(`jardinagem_rdo_${selectedDate}`, JSON.stringify(parsed));
     
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', {
+        detail: { date: selectedDate, moduloId: 'jardinagem', isLocked: false }
+      }));
+    }
+    
     try {
       await supabase.from('global_settings').upsert({
         key: `jardinagem_rdo_${selectedDate}`,

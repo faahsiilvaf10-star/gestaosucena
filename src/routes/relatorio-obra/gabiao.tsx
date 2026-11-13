@@ -161,6 +161,12 @@ function GabiaoPage() {
     parsed.isLocked = false;
     localStorage.setItem(`gabiao_rdo_${selectedDate}`, JSON.stringify(parsed));
     
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', {
+        detail: { date: selectedDate, moduloId: 'gabiao', isLocked: false }
+      }));
+    }
+    
     try {
       await supabase.from('global_settings').upsert({
         key: `gabiao_rdo_${selectedDate}`,

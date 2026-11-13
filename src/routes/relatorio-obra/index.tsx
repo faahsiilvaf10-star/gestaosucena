@@ -42,22 +42,16 @@ function RelatorioObraHub() {
 
   const isSavedCustom = (d: any) => {
     if (!d) return false;
-    if (d.isLocked !== false && d.isLocked !== undefined) return true;
-    if (d.renderedSummary && d.renderedSummary.trim() && !d.renderedSummary.startsWith('Nenhuma atividade')) return true;
-    if (d.outrasAtividades?.descricao && d.outrasAtividades.descricao.trim()) return true;
-    if (d.cardRows && Object.values(d.cardRows).some((rows: any) => Array.isArray(rows) && rows.some((r: any) => r && r.value && r.value !== '0' && r.value !== '0,00'))) return true;
-    if (d.cardCheckboxes && Object.values(d.cardCheckboxes).some((v: any) => !!v)) return true;
+    // Se estiver explicitamente desbloqueado (isLocked === false), NÃO está salvo
+    if (d.isLocked === false) return false;
+    // Somente salvo quando isLocked for explicitamente true
+    if (d.isLocked === true) return true;
     return false;
   };
 
-  const hasDataObj = (val: any) => {
+  const isSavedFixed = (val: any) => {
     if (!val) return false;
-    if (val.isLocked !== false && val.isLocked !== undefined) return true;
-    return Object.values(val).some((v: any) => {
-      if (Array.isArray(v)) return v.some((r: any) => r && r.value && r.value !== '0' && r.value !== '0,00');
-      if (typeof v === 'string') return v.trim().length > 0;
-      return false;
-    });
+    return val.isLocked === true;
   };
 
   const fetchSavedToday = async () => {
@@ -71,17 +65,17 @@ function RelatorioObraHub() {
         const rdoLocal = localStorage.getItem(rdoKey);
         if (rdoLocal) {
           const parsed = JSON.parse(rdoLocal);
-          if (parsed && parsed.isLocked !== false) newSaved.add('rdo');
+          if (parsed && parsed.isLocked === true) newSaved.add('rdo');
         }
         const jarLocal = localStorage.getItem(`jardinagem_rdo_${todayStr}`);
         if (jarLocal) {
           const parsed = JSON.parse(jarLocal);
-          if (parsed && (parsed.isLocked !== false || hasDataObj(parsed))) newSaved.add('jardinagem');
+          if (parsed && parsed.isLocked === true) newSaved.add('jardinagem');
         }
         const gabLocal = localStorage.getItem(`gabiao_rdo_${todayStr}`);
         if (gabLocal) {
           const parsed = JSON.parse(gabLocal);
-          if (parsed && (parsed.isLocked !== false || hasDataObj(parsed))) newSaved.add('gabiao');
+          if (parsed && parsed.isLocked === true) newSaved.add('gabiao');
         }
         Object.keys(localStorage).forEach(k => {
           if (k.startsWith('custom_rdo_') && k.endsWith(`_${todayStr}`)) {
@@ -111,15 +105,21 @@ function RelatorioObraHub() {
           const val = item.value;
           if (!val) return;
 
-          if (k === rdoKey && val.isLocked !== false) {
-            newSaved.add('rdo');
-          } else if (k === `jardinagem_rdo_${todayStr}` && (val.isLocked !== false || hasDataObj(val))) {
-            newSaved.add('jardinagem');
-          } else if (k === `gabiao_rdo_${todayStr}` && (val.isLocked !== false || hasDataObj(val))) {
-            newSaved.add('gabiao');
-          } else if (k.startsWith('custom_rdo_') && k.endsWith(`_${todayStr}`) && isSavedCustom(val)) {
+          if (k === rdoKey) {
+            if (val.isLocked === true) newSaved.add('rdo');
+            else newSaved.delete('rdo');
+          } else if (k === `jardinagem_rdo_${todayStr}`) {
+            if (val.isLocked === true) newSaved.add('jardinagem');
+            else newSaved.delete('jardinagem');
+          } else if (k === `gabiao_rdo_${todayStr}`) {
+            if (val.isLocked === true) newSaved.add('gabiao');
+            else newSaved.delete('gabiao');
+          } else if (k.startsWith('custom_rdo_') && k.endsWith(`_${todayStr}`)) {
             const modId = k.replace('custom_rdo_', '').replace(`_${todayStr}`, '');
-            if (modId) newSaved.add(modId);
+            if (modId) {
+              if (isSavedCustom(val)) newSaved.add(modId);
+              else newSaved.delete(modId);
+            }
           }
         });
         setSavedToday(new Set(newSaved));

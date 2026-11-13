@@ -468,8 +468,34 @@ export function CustomModuloAtividadePage() {
     }
   };
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     setIsLocked(false);
+    const storageKey = `custom_rdo_${id}_${selectedDate}`;
+    let dailyData: any = {};
+    const local = localStorage.getItem(storageKey);
+    if (local) {
+      try { dailyData = JSON.parse(local); } catch (e) {}
+    }
+    dailyData.isLocked = false;
+    dailyData.updated_at = new Date().toISOString();
+    localStorage.setItem(storageKey, JSON.stringify(dailyData));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sucena_rdo_saved', {
+        detail: { date: selectedDate, moduloId: id, isLocked: false }
+      }));
+    }
+
+    try {
+      await supabase.from('global_settings').upsert({
+        key: storageKey,
+        value: dailyData,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+    } catch (e) {
+      console.warn('Erro ao salvar desbloqueio no Supabase:', e);
+    }
+
     toast.info('Modo de edição desbloqueado');
   };
 
