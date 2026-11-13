@@ -33,6 +33,26 @@ function getDaysInMonth(year: number, month: number) {
 
 function PluviometriaPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
+
   const [year, setYear] = useState(new Date().getFullYear())
   const [data, setData] = useState<Record<string, string>>({}) // key: 'YYYY-MM-DD', value: string
   const [isLoading, setIsLoading] = useState(true)
@@ -41,10 +61,31 @@ function PluviometriaPage() {
 
   useEffect(() => {
     fetchData()
-  }, [year])
+  }, [year, currentEnv])
 
   const fetchData = async () => {
     setIsLoading(true)
+    if (currentEnv === 'hydro-civil') {
+      try {
+        const { data: gsData } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', `pluviometria_civil_${year}`)
+          .maybeSingle()
+
+        if (gsData?.value && typeof gsData.value === 'object') {
+          setData(gsData.value)
+        } else {
+          setData({})
+        }
+      } catch (err) {
+        console.error('Erro ao buscar dados civil:', err)
+        setData({})
+      }
+      setIsLoading(false)
+      return
+    }
+
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
     
@@ -87,6 +128,26 @@ function PluviometriaPage() {
 
   const saveAll = async () => {
     setIsSaving(true);
+
+    if (currentEnv === 'hydro-civil') {
+      try {
+        const { error: gsErr } = await supabase.from('global_settings').upsert({
+          key: `pluviometria_civil_${year}`,
+          value: data,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' })
+
+        if (gsErr) throw gsErr
+        toast.success('Dados salvos com sucesso no Hydro Civil!')
+      } catch (err: any) {
+        console.error('Erro ao salvar no Civil:', err)
+        toast.error('Erro ao salvar os dados no Hydro Civil.')
+      } finally {
+        setIsSaving(false)
+      }
+      return
+    }
+
     let stage = 'início';
     
     try {

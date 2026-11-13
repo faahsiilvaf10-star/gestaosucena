@@ -16,6 +16,26 @@ const MONTHS = [
 
 function CaixaDaguaPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
+
   const [year, setYear] = useState(new Date().getFullYear())
   const [data, setData] = useState<Record<string, string>>({}) // key: 'YYYY-MM-W', value: string
   const [isLoading, setIsLoading] = useState(true)
@@ -24,6 +44,7 @@ function CaixaDaguaPage() {
 
   useEffect(() => {
     fetchData()
+    if (currentEnv === 'hydro-civil') return
     // Auto-fill logic (runs once if table is empty)
     const autoFill = async () => {
       const { data: existing } = await supabase.from('caixa_dagua_registros').select('id').limit(1)
@@ -57,10 +78,32 @@ function CaixaDaguaPage() {
       }
     }
     autoFill()
-  }, [year])
+  }, [year, currentEnv])
 
   const fetchData = async () => {
     setIsLoading(true)
+
+    if (currentEnv === 'hydro-civil') {
+      try {
+        const { data: gsData } = await supabase
+          .from('global_settings')
+          .select('value')
+          .eq('key', `caixa_dagua_civil_${year}`)
+          .maybeSingle()
+
+        if (gsData?.value && typeof gsData.value === 'object') {
+          setData(gsData.value)
+        } else {
+          setData({})
+        }
+      } catch (err) {
+        console.error('Erro ao buscar dados civil:', err)
+        setData({})
+      }
+      setIsLoading(false)
+      return
+    }
+
     // Procurar por todos os registros desse ano
     const { data: dbData, error } = await supabase
       .from('caixa_dagua_registros')
@@ -97,6 +140,26 @@ function CaixaDaguaPage() {
 
   const saveAll = async () => {
     setIsSaving(true)
+
+    if (currentEnv === 'hydro-civil') {
+      try {
+        const { error: gsErr } = await supabase.from('global_settings').upsert({
+          key: `caixa_dagua_civil_${year}`,
+          value: data,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' })
+
+        if (gsErr) throw gsErr
+        toast.success('Registros salvos com sucesso no Hydro Civil!')
+      } catch (err) {
+        console.error('Erro ao salvar no Civil:', err)
+        toast.error('Erro ao salvar os registros no Hydro Civil.')
+      } finally {
+        setIsSaving(false)
+      }
+      return
+    }
+
     const records = Object.entries(data).map(([dateKey, volStr]) => ({
       data_registro: dateKey,
       volume_litros: volStr === '' ? 0 : (parseFloat(volStr.replace(',', '.')) || 0),

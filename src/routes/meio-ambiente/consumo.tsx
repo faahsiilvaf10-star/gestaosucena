@@ -24,6 +24,25 @@ export const Route = createFileRoute('/meio-ambiente/consumo')({
 
 function ConsumoAbastecimentoPage() {
   const { isDark } = useTheme()
+  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sucena_environment') || 'barcarena'
+    }
+    return 'barcarena'
+  })
+
+  useEffect(() => {
+    const handleEnvChange = (e: any) => {
+      const newEnv = e?.detail || localStorage.getItem('sucena_environment') || 'barcarena'
+      setCurrentEnv(newEnv)
+    }
+    window.addEventListener('sucena_environment_change', handleEnvChange)
+    window.addEventListener('storage', handleEnvChange)
+    return () => {
+      window.removeEventListener('sucena_environment_change', handleEnvChange)
+      window.removeEventListener('storage', handleEnvChange)
+    }
+  }, [])
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -44,7 +63,8 @@ function ConsumoAbastecimentoPage() {
         new_status,
         eq_equipments (
           name,
-          plate_tag
+          plate_tag,
+          environment
         )
       `).like('new_status', 'Abastecimento - %').order('created_at', { ascending: false })
       
@@ -58,14 +78,21 @@ function ConsumoAbastecimentoPage() {
       const { data, error } = await query
       
       if (!error && data) {
-        setHistory(data)
+        const filtered = data.filter((row: any) => {
+          const eqEnv = row.eq_equipments?.environment;
+          if (currentEnv === 'hydro-civil') {
+            return eqEnv === 'hydro-civil';
+          }
+          return eqEnv !== 'hydro-civil';
+        });
+        setHistory(filtered);
       } else {
         console.error("Erro ao buscar histórico:", error)
       }
       setIsLoading(false)
     }
     fetchData()
-  }, [startDate, endDate])
+  }, [startDate, endDate, currentEnv])
 
   const chartData = useMemo(() => {
     const counts: Record<string, number> = {}
