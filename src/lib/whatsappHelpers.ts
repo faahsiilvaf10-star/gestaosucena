@@ -255,15 +255,40 @@ export async function sendDelayedPurchaseOrderWhatsappNotification(
 
     const numStr = order.order_number ? String(order.order_number).padStart(4, '0') : 'Rascunho'
 
-    // Pega a primeira foto (se houver)
-    const firstItemWithImage = items.find((it: any) => it.image_path)
-    let imageUrl = null
-    if (firstItemWithImage && firstItemWithImage.image_path) {
-      if (firstItemWithImage.image_path.startsWith('http')) {
-        imageUrl = firstItemWithImage.image_path
+    // Coletar todas as fotos dos itens solicitados no pedido
+    let finalItems = items
+    if ((!finalItems || finalItems.length === 0) && order.id) {
+      try {
+        const { data: dbItems } = await supabase
+          .from('al_purchase_order_items')
+          .select('*')
+          .eq('purchase_order_id', order.id)
+        if (dbItems && dbItems.length > 0) {
+          finalItems = dbItems
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar itens do pedido para envio de fotos:', err)
+      }
+    }
+
+    const itemsWithImages = (finalItems || []).filter((it: any) => Boolean(it.image_path))
+    const imagesToSend: Array<{ url: string; caption: string; itemName: string }> = []
+
+    for (let i = 0; i < itemsWithImages.length; i++) {
+      const it = itemsWithImages[i]
+      let imgUrl = ''
+      if (it.image_path.startsWith('http')) {
+        imgUrl = it.image_path
       } else {
-        const { data } = supabase.storage.from('purchase-order-items').getPublicUrl(firstItemWithImage.image_path)
-        imageUrl = data.publicUrl
+        const { data } = supabase.storage.from('purchase-order-items').getPublicUrl(it.image_path)
+        imgUrl = data?.publicUrl || ''
+      }
+      if (imgUrl) {
+        imagesToSend.push({
+          url: imgUrl,
+          caption: '', // preenchida abaixo após montar msg
+          itemName: it.product_name
+        })
       }
     }
 
@@ -281,32 +306,68 @@ export async function sendDelayedPurchaseOrderWhatsappNotification(
     msg = msg.replaceAll('{observacoes}', order.notes || 'Nenhuma')
     msg = msg.replaceAll('{itens}', itemsList)
 
-    const sendMsg = async (phone: string) => {
-      if (imageUrl) {
-        try {
-          const imgRes = await fetch(imageUrl)
-          const blob = await imgRes.blob()
-          const base64DataUri = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
+    // Ajustar legendas das imagens (a primeira carrega o alerta completo; as demais o rótulo do item)
+    for (let i = 0; i < imagesToSend.length; i++) {
+      const it = itemsWithImages[i]
+      imagesToSend[i].caption =
+        i === 0
+          ? msg
+          : `📸 *Item ${i + 1}/${imagesToSend.length} do Pedido #${numStr}:*\n• ${it.quantity} ${it.unit || 'UN'} - ${it.product_name}${it.description ? ' (' + it.description + ')' : ''}`
+    }
 
-          await sendWhatsappMediaOnServer({
-            data: {
-              url: whatsappSettings.url,
-              instanceId: whatsappSettings.instanceId,
-              token: whatsappSettings.token,
-              phone: phone,
-              caption: msg,
-              base64Media: base64DataUri,
-              fileName: 'pedido_atrasado.jpg'
+    const sendMsg = async (phone: string) => {
+      if (imagesToSend.length > 0) {
+        try {
+          for (let idx = 0; idx < imagesToSend.length; idx++) {
+            const itemImg = imagesToSend[idx]
+            try {
+              const imgRes = await fetch(itemImg.url)
+              const blob = await imgRes.blob()
+              let base64DataUri = ''
+
+              if (typeof FileReader !== 'undefined') {
+                base64DataUri = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader()
+                  reader.onloadend = () => resolve(reader.result as string)
+                  reader.onerror = reject
+                  reader.readAsDataURL(blob)
+                })
+              } else if (typeof Buffer !== 'undefined') {
+                const arrayBuffer = await blob.arrayBuffer()
+                const base64 = Buffer.from(arrayBuffer).toString('base64')
+                base64DataUri = `data:${blob.type || 'image/jpeg'};base64,${base64}`
+              }
+
+              await sendWhatsappMediaOnServer({
+                data: {
+                  url: whatsappSettings.url,
+                  instanceId: whatsappSettings.instanceId,
+                  token: whatsappSettings.token,
+                  phone: phone,
+                  caption: itemImg.caption,
+                  base64Media: base64DataUri,
+                  imageUrl: itemImg.url,
+                  fileName: `pedido_${numStr}_item_${idx + 1}.jpg`
+                }
+              })
+            } catch (mediaErr) {
+              console.warn(`Falha ao enviar imagem ${idx + 1} do pedido atrasado:`, mediaErr)
+              if (idx === 0) {
+                await sendWhatsappTextOnServer({
+                  data: {
+                    url: whatsappSettings.url,
+                    instanceId: whatsappSettings.instanceId,
+                    token: whatsappSettings.token,
+                    phone: phone,
+                    text: msg
+                  }
+                })
+              }
             }
-          })
+          }
           return
         } catch (e) {
-          console.warn("Falha ao enviar media de atraso, caindo pro envio de texto", e)
+          console.warn("Falha geral ao enviar mídias de atraso, caindo pro envio de texto:", e)
         }
       }
 

@@ -93,6 +93,58 @@ describe('pedidosAtrasadosWhatsapp', () => {
     expect(groupMsg).toContain('Parafuso Suporte')
   })
 
+  it('deve enviar todas as fotos juntas quando múltiplos itens possuírem imagem cadastrada', async () => {
+    vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
+      url: 'https://api.wapi.test',
+      instanceId: 'inst_1',
+      token: 'tok_1',
+      groupId: 'default@g.us',
+      purchaseOrders: {
+        enabled_group: true,
+        enabled_individual: false,
+        specificGroupId: '120363406691114696@g.us',
+      },
+      messageTemplates: {
+        pedidoCompraAtrasado: '🚨 PEDIDO #{numero_pedido} EM ATRASO',
+      },
+    } as any)
+
+    // Mock fetch de imagens
+    const fakeBlob = new Blob(['image-binary-data'], { type: 'image/jpeg' })
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      blob: async () => fakeBlob,
+    } as any)
+
+    const pastDate = new Date()
+    pastDate.setDate(pastDate.getDate() - 3)
+
+    const orderWithMultiplePhotos = {
+      id: 'order-mult-img',
+      order_number: 2,
+      status: 'Em Compra',
+      priority: 'Urgente',
+      expected_delivery_date: pastDate.toISOString(),
+      requester_user_id: 'user-1',
+      items: [
+        { id: 'it-1', product_name: 'Suporte guidão roçadeira', quantity: 4, unit: 'UN', image_path: 'https://img.sucena/item1.jpg' },
+        { id: 'it-2', product_name: 'Carburador com bulbo prime', quantity: 4, unit: 'UN', image_path: 'https://img.sucena/item2.jpg' },
+        { id: 'it-3', product_name: 'Parafuso Suporte Guidão', quantity: 30, unit: 'UN', image_path: 'https://img.sucena/item3.jpg' },
+      ],
+    }
+
+    const result = await sendDelayedPurchaseOrderWhatsappNotification(orderWithMultiplePhotos)
+
+    expect(result.success).toBe(true)
+    // Devem ter sido disparadas 3 mídias (todas as fotos dos itens solicitados)
+    expect(sentMedia.length).toBe(3)
+    expect(sentMedia[0].phone).toBe('120363406691114696@g.us')
+    expect(sentMedia[0].caption).toContain('PEDIDO #0002 EM ATRASO')
+    expect(sentMedia[1].caption).toContain('Item 2/3 do Pedido #0002')
+    expect(sentMedia[1].caption).toContain('Carburador com bulbo prime')
+    expect(sentMedia[2].caption).toContain('Item 3/3 do Pedido #0002')
+    expect(sentMedia[2].caption).toContain('Parafuso Suporte Guidão')
+  })
+
   it('deve retornar erro claro quando configurações do WhatsApp não estiverem preenchidas', async () => {
     vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
       url: '',
