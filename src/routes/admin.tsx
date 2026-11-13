@@ -2740,6 +2740,7 @@ function AdminRoute() {
                     { key: 'equipamentoSaida', label: 'Saída de Equipamento' },
                     { key: 'pedidoCompraGrupo', label: 'Pedido de Compra (Grupo)' },
                     { key: 'pedidoCompraIndividual', label: 'Pedido de Compra (Individual)' },
+                    { key: 'pedidoCompraAtrasado', label: 'Pedido de Compra em Atraso' },
                     { key: 'asoVencendo', label: 'ASO Vencendo' },
                     { key: 'relatorioDiarioEquipamentos', label: 'Relatório Equipamentos' },
                     { key: 'estoqueMinimo', label: 'Estoque Mínimo' },
@@ -2799,7 +2800,7 @@ function AdminRoute() {
                     {selectedTemplate === 'inicioJornadaApp' && '{hora}, {data}, {equipamento}, {tag}, {placa}, {motorista}, {ajudante}, {km}, {horimetro}, {combustivel}'}
                     {selectedTemplate === 'equipamentoEntrada' && '{hora}, {equipamento}, {tag}, {placa}, {motorista}'}
                     {selectedTemplate === 'equipamentoSaida' && '{hora}, {equipamento}, {tag}, {placa}, {motivo}, {motorista}'}
-                    {selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}'}
+                    {selectedTemplate === 'pedidoCompraAtrasado' ? '{numero_pedido}, {status}, {prioridade}, {data_esperada}, {dias_atraso}, {requisitante}, {responsaveis}, {observacoes}, {itens}' : (selectedTemplate.startsWith('pedidoCompra') && '{numero_pedido}, {requisitante}, {responsaveis}, {data_esperada}, {prioridade}, {observacoes}, {itens}')}
                     {selectedTemplate === 'asoVencendo' && '{data_aviso}, {dias_vencendo}, {nome}, {cargo}, {matricula}, {tipo_aso}, {data_validade}'}
                     {selectedTemplate === 'relatorioDiarioEquipamentos' && '{data}, {hora}, {quantidade_operando}, {quantidade_manutencao}, {lista_manutencao}'}
                     {selectedTemplate === 'estoqueMinimo' && '{produto}, {codigo}, {localizacao}, {quantidade_atual}, {estoque_minimo}, {unidade}'}

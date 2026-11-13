@@ -18,6 +18,8 @@ import {
 import { DdsUploadModal } from '../components/DdsUploadModal'
 import { DashboardCintasBanner } from '../components/DashboardCintasBanner'
 import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
+import { DashboardPedidosAtrasadosWidget } from '../components/DashboardPedidosAtrasadosWidget'
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js'
 import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { DashboardVistoriasBanner } from '../components/DashboardVistoriasBanner'
 import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
@@ -525,6 +527,32 @@ function DashboardComponent() {
         vencDate.setHours(0, 0, 0, 0)
         const diff = differenceInDays(vencDate, today)
         return diff <= 5
+      })
+    },
+    staleTime: 10 * 1000,
+  })
+
+  // Pedidos de compra em atraso
+  const { data: delayedOrders = [] } = useQuery({
+    queryKey: ['delayed_purchase_orders_summary'],
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('al_purchase_orders')
+        .select('id, order_number, expected_delivery_date, status, priority')
+        .not('status', 'in', '("Recebido","Cancelado","Rascunho")')
+
+      if (error || !data) return []
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      return (data || []).filter((order: any) => {
+        if (!order.expected_delivery_date) return false
+        const expDate = parseISO(order.expected_delivery_date)
+        if (isNaN(expDate.getTime())) return false
+        expDate.setHours(0, 0, 0, 0)
+        return expDate.getTime() < today.getTime()
       })
     },
     staleTime: 10 * 1000,
@@ -1827,8 +1855,37 @@ function DashboardComponent() {
 
 
 
+        {/* Alerta de Pedidos de Compra em Atraso */}
+        {delayedOrders.length > 0 && (
+          <div
+            className="card card-pad"
+            style={{ marginBottom: '16px', background: 'var(--red-bg)', borderColor: 'var(--red-ring)', cursor: 'pointer' }}
+            onClick={() => navigate({ to: '/almoxarifado/pedidos' })}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--red-bg)', display: 'grid', placeItems: 'center' }}>
+                  <ShoppingCart style={{ width: '20px', height: '20px', color: 'var(--red)' }} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--red)' }}>
+                    Alerta de Pedidos de Compra em Atraso
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--red)', marginTop: '2px' }}>
+                    Existem {delayedOrders.length} pedido{delayedOrders.length > 1 ? 's' : ''} de compra com prazo de entrega vencido aguardando recebimento no Almoxarifado.
+                  </p>
+                </div>
+              </div>
+              <button style={{ padding: '6px 12px', background: 'var(--red)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 800 }}>
+                Ver pedidos
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Widgets Inferiores — Layout Masonry Automático sem buracos */}
         <div className="hydro-bottom-widgets-masonry">
+          <DashboardPedidosAtrasadosWidget />
           <DashboardDesviosWidget currentEnv={currentEnv} />
           <DashboardInspecaoCanteiroWidget />
           <DashboardMatrizWidget />

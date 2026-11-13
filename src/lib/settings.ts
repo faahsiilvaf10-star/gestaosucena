@@ -291,6 +291,7 @@ export type WhatsappSettings = {
     equipamentoSaida: string;
     pedidoCompraGrupo: string;
     pedidoCompraIndividual: string;
+    pedidoCompraAtrasado?: string;
     asoVencendo: string;
     relatorioDiarioEquipamentos: string;
     // Novos templates de estoque
@@ -459,6 +460,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "📦 *NOVO PEDIDO DE COMPRA #{numero_pedido}*\n\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Mensagem automática - Sucena_",
     pedidoCompraIndividual:
       "📦 *NOVO PEDIDO DE COMPRA #{numero_pedido} ATRIBUÍDO A VOCÊ*\n\n👤 *Requisitante:* {requisitante}\n📅 *Data Esperada:* {data_esperada}\n🚨 *Prioridade:* {prioridade}\n📝 *Observações:* {observacoes}\n\n*Itens do Pedido:*\n{itens}\n\n_Acesse o sistema para mais detalhes._",
+    pedidoCompraAtrasado:
+      "🚨 *ALERTA: PEDIDO DE COMPRA EM ATRASO #{numero_pedido}* 🚨\n\n⚠️ *Atenção:* Este pedido ultrapassou a data prevista de entrega e encontra-se pendente!\n\n📋 *Pedido:* #{numero_pedido}\n📊 *Status Atual:* {status}\n🚨 *Prioridade:* {prioridade}\n📅 *Data Prevista:* {data_esperada}\n⏳ *Dias em Atraso:* {dias_atraso} dia(s)\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📝 *Observações:* {observacoes}\n\n🛒 *Itens Solicitados:*\n{itens}\n\n⚠️ _Favor verificar com urgência o andamento deste pedido junto aos fornecedores/compras._\n_Mensagem automática - Sucena_",
     inicioJornadaApp:
       "🚀 *INÍCIO DE JORNADA* 🚀\n\n🕒 *Hora:* {hora}\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag:* {tag}\n🪧 *Placa:* {placa}\n\n👤 *Motorista:* {motorista}\n👷‍♂️ *Ajudante:* {ajudante}",
     asoVencendo:

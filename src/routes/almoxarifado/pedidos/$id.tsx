@@ -9,11 +9,14 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import History from 'lucide-react/dist/esm/icons/history.js';
 import Download from 'lucide-react/dist/esm/icons/download.js';
 import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2.js';
+import { WhatsAppIcon } from '@/components/WhatsAppIcon';
+import { sendDelayedPurchaseOrderWhatsappNotification } from '@/lib/whatsappHelpers';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { usePurchaseOrderById, useUpdatePurchaseOrder, useUpdatePurchaseOrderItem, useUpdateStatusWithWhatsApp, type PurchaseOrderStatus } from '@/hooks/usePurchaseOrders'
 import { StatusBadge } from '@/components/pedidos/StatusBadge'
 import { PriorityBadge } from '@/components/pedidos/PriorityBadge'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
@@ -67,6 +70,29 @@ function PedidoDetailsPage() {
   const [receiveModalOpen, setReceiveModalOpen] = useState(false)
   const [receiveData, setReceiveData] = useState<Record<string, number>>({})
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
+  const [isResendingWhatsApp, setIsResendingWhatsApp] = useState(false)
+
+  const handleResendWhatsAppDelayed = async () => {
+    if (!pedido) return
+    setIsResendingWhatsApp(true)
+    const toastId = toast.loading('Reenviando alerta de pedido em atraso no WhatsApp...')
+    try {
+      const res = await sendDelayedPurchaseOrderWhatsappNotification(
+        pedido,
+        currentUserName,
+        pedido.responsibles
+      )
+      if (res.success) {
+        toast.success('Alerta de pedido em atraso reenviado no WhatsApp!', { id: toastId })
+      } else {
+        toast.error(res.error || 'Falha ao reenviar no WhatsApp.', { id: toastId })
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao reenviar alerta no WhatsApp.', { id: toastId })
+    } finally {
+      setIsResendingWhatsApp(false)
+    }
+  }
 
   const handleDownloadImage = async (url: string) => {
     try {
@@ -252,9 +278,36 @@ function PedidoDetailsPage() {
               <PriorityBadge priority={pedido.priority} />
             </div>
             {isLate && (
-              <div className="bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 p-3 rounded-lg text-sm font-medium flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                Pedido Atrasado
+              <div className="bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300 p-3.5 rounded-xl text-sm font-medium flex flex-col gap-2.5 border border-red-200 dark:border-red-900/50 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <span className="font-semibold">Pedido Atrasado</span>
+                  </div>
+                  <span className="text-[11px] bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-200 px-2 py-0.5 rounded-full font-bold">
+                    {differenceInDays(new Date(), new Date(pedido.expected_delivery_date))}d em atraso
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleResendWhatsAppDelayed}
+                  disabled={isResendingWhatsApp}
+                  title="Reenviar cobrança/alerta deste pedido em atraso no WhatsApp"
+                  className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white border-0 font-bold text-xs h-9 flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  {isResendingWhatsApp ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Reenviando no WhatsApp...</span>
+                    </>
+                  ) : (
+                    <>
+                      <WhatsAppIcon className="w-4 h-4 fill-white shrink-0" />
+                      <span>Reenviar no WhatsApp</span>
+                    </>
+                  )}
+                </Button>
               </div>
             )}
 

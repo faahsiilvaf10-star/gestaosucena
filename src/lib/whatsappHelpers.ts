@@ -1,4 +1,4 @@
-import { getWhatsappSettings } from './settings'
+import { getWhatsappSettings, WHATSAPP_DEFAULT_GROUPS } from './settings'
 import { sendWhatsappTextOnServer, sendWhatsappMediaOnServer } from './whatsapp-api'
 import { queueWhatsappMessage } from './offline-sync'
 import { supabase } from './supabase'
@@ -190,6 +190,162 @@ export async function sendPurchaseOrderWhatsappNotification(
     }
   } catch (error: any) {
     console.error('Error sending Purchase Order WhatsApp Notification:', error)
+  }
+}
+
+export async function sendDelayedPurchaseOrderWhatsappNotification(
+  order: any,
+  requesterName?: string,
+  responsiblesList?: any[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const whatsappSettings = await getWhatsappSettings()
+    if (!whatsappSettings?.url || !whatsappSettings?.token) {
+      return { success: false, error: 'Configurações da W-API não configuradas no Admin.' }
+    }
+
+    const targetGroup = whatsappSettings.purchaseOrders?.specificGroupId || whatsappSettings.groupId || WHATSAPP_DEFAULT_GROUPS.ESTOQUE
+    if (!targetGroup) {
+      return { success: false, error: 'Nenhum grupo de WhatsApp configurado para pedidos de compra.' }
+    }
+
+    // Resolver Requisitante se não informado
+    let reqName = requesterName
+    if (!reqName) {
+      if (order.requester?.nome) {
+        reqName = order.requester.nome
+      } else if (order.requester_user_id) {
+        try {
+          const { data: usersData } = await supabase.rpc('get_active_system_users')
+          const found = (usersData || []).find((u: any) => u.id === order.requester_user_id)
+          reqName = found?.nome || 'Requisitante'
+        } catch {
+          reqName = 'Requisitante'
+        }
+      } else {
+        reqName = 'Requisitante'
+      }
+    }
+
+    // Resolver Responsáveis se não informados
+    let respList = responsiblesList
+    if (!respList || respList.length === 0) {
+      if (order.responsibles && order.responsibles.length > 0) {
+        respList = order.responsibles
+      } else if (order.responsible) {
+        respList = [order.responsible]
+      } else {
+        respList = []
+      }
+    }
+    const responsiblesNames = respList.map((r: any) => r.nome).filter(Boolean).join(', ') || 'Nenhum informado'
+
+    // Formatar itens
+    const items = order.items || []
+    const itemsList = items.length > 0
+      ? items.map((it: any) => `• ${it.quantity} ${it.unit || 'UN'} - ${it.product_name}${it.description ? ' (' + it.description + ')' : ''}`).join('\n')
+      : 'Itens não especificados'
+
+    // Formatar data esperada e calcular dias de atraso
+    const expDate = order.expected_delivery_date ? new Date(order.expected_delivery_date) : new Date()
+    const dataEsperada = expDate.toLocaleDateString('pt-BR')
+    const diffMs = new Date().getTime() - expDate.getTime()
+    const diasAtrasoCalc = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diasAtraso = diasAtrasoCalc > 0 ? diasAtrasoCalc : 1
+
+    const numStr = order.order_number ? String(order.order_number).padStart(4, '0') : 'Rascunho'
+
+    // Pega a primeira foto (se houver)
+    const firstItemWithImage = items.find((it: any) => it.image_path)
+    let imageUrl = null
+    if (firstItemWithImage && firstItemWithImage.image_path) {
+      if (firstItemWithImage.image_path.startsWith('http')) {
+        imageUrl = firstItemWithImage.image_path
+      } else {
+        const { data } = supabase.storage.from('purchase-order-items').getPublicUrl(firstItemWithImage.image_path)
+        imageUrl = data.publicUrl
+      }
+    }
+
+    const defaultTemplate =
+      "🚨 *ALERTA: PEDIDO DE COMPRA EM ATRASO #{numero_pedido}* 🚨\n\n⚠️ *Atenção:* Este pedido ultrapassou a data prevista de entrega e encontra-se pendente!\n\n📋 *Pedido:* #{numero_pedido}\n📊 *Status Atual:* {status}\n🚨 *Prioridade:* {prioridade}\n📅 *Data Prevista:* {data_esperada}\n⏳ *Dias em Atraso:* {dias_atraso} dia(s)\n👤 *Requisitante:* {requisitante}\n👥 *Responsável(is):* {responsaveis}\n📝 *Observações:* {observacoes}\n\n🛒 *Itens Solicitados:*\n{itens}\n\n⚠️ _Favor verificar com urgência o andamento deste pedido junto aos fornecedores/compras._\n_Mensagem automática - Sucena_"
+
+    let msg = whatsappSettings.messageTemplates?.pedidoCompraAtrasado || defaultTemplate
+    msg = msg.replaceAll('{numero_pedido}', numStr)
+    msg = msg.replaceAll('{status}', order.status || 'Em Aberto')
+    msg = msg.replaceAll('{prioridade}', order.priority || 'Normal')
+    msg = msg.replaceAll('{data_esperada}', dataEsperada)
+    msg = msg.replaceAll('{dias_atraso}', String(diasAtraso))
+    msg = msg.replaceAll('{requisitante}', reqName)
+    msg = msg.replaceAll('{responsaveis}', responsiblesNames)
+    msg = msg.replaceAll('{observacoes}', order.notes || 'Nenhuma')
+    msg = msg.replaceAll('{itens}', itemsList)
+
+    const sendMsg = async (phone: string) => {
+      if (imageUrl) {
+        try {
+          const imgRes = await fetch(imageUrl)
+          const blob = await imgRes.blob()
+          const base64DataUri = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+
+          await sendWhatsappMediaOnServer({
+            data: {
+              url: whatsappSettings.url,
+              instanceId: whatsappSettings.instanceId,
+              token: whatsappSettings.token,
+              phone: phone,
+              caption: msg,
+              base64Media: base64DataUri,
+              fileName: 'pedido_atrasado.jpg'
+            }
+          })
+          return
+        } catch (e) {
+          console.warn("Falha ao enviar media de atraso, caindo pro envio de texto", e)
+        }
+      }
+
+      await sendWhatsappTextOnServer({
+        data: {
+          url: whatsappSettings.url,
+          instanceId: whatsappSettings.instanceId,
+          token: whatsappSettings.token,
+          phone: phone,
+          text: msg
+        }
+      })
+    }
+
+    // 1. Enviar para o Grupo de compras/estoque
+    await sendMsg(targetGroup)
+
+    // 2. Enviar para o individual dos responsáveis se configurado
+    if (whatsappSettings.purchaseOrders?.enabled_individual && respList.length > 0) {
+      for (const resp of respList) {
+        const rawPhone = resp.telefone || resp.phone
+        if (rawPhone) {
+          const cleanPhone = String(rawPhone).replace(/\D/g, '')
+          if (cleanPhone.length >= 10) {
+            const phoneToApp = cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone
+            try {
+              await sendMsg(phoneToApp)
+            } catch (pErr) {
+              console.warn(`Falha ao enviar alerta de atraso para responsável individual ${phoneToApp}:`, pErr)
+            }
+          }
+        }
+      }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error sending Delayed Purchase Order WhatsApp Notification:', error)
+    return { success: false, error: error?.message || 'Falha ao reenviar notificação no WhatsApp' }
   }
 }
 

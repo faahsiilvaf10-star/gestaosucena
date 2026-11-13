@@ -6,6 +6,10 @@ import Package from 'lucide-react/dist/esm/icons/package.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.js';
 import User from 'lucide-react/dist/esm/icons/user.js';
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2.js';
+import { WhatsAppIcon } from '@/components/WhatsAppIcon';
+import { sendDelayedPurchaseOrderWhatsappNotification } from '@/lib/whatsappHelpers';
+import { toast } from 'sonner';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -90,6 +94,32 @@ function PedidosPage() {
       newStatus,
       changedByName: currentUserName || 'Usuário',
     })
+  }
+
+  const [resendingId, setResendingId] = useState<string | null>(null)
+
+  const handleResendWhatsApp = async (e: React.MouseEvent, pedido: any) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResendingId(pedido.id)
+    const num = pedido.order_number ? `#${String(pedido.order_number).padStart(4, '0')}` : ''
+    const toastId = toast.loading(`Reenviando alerta do pedido ${num} no WhatsApp...`)
+    try {
+      const res = await sendDelayedPurchaseOrderWhatsappNotification(
+        pedido,
+        currentUserName || undefined,
+        pedido.responsibles
+      )
+      if (res.success) {
+        toast.success('Alerta de atraso reenviado no WhatsApp!', { id: toastId })
+      } else {
+        toast.error(res.error || 'Falha ao reenviar no WhatsApp.', { id: toastId })
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao reenviar alerta no WhatsApp.', { id: toastId })
+    } finally {
+      setResendingId(null)
+    }
   }
 
   return (
@@ -280,9 +310,27 @@ function PedidosPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
-                        <Button variant="ghost" size="sm" className="no-underline text-foreground">Ver pedido</Button>
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {pedido.status !== 'Recebido' && pedido.status !== 'Cancelado' && pedido.status !== 'Rascunho' && new Date(pedido.expected_delivery_date) < new Date() && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleResendWhatsApp(e, pedido)}
+                            disabled={resendingId === pedido.id}
+                            title="Reenviar alerta de atraso no WhatsApp"
+                            className="h-8 w-8 p-0 text-[#25D366] hover:text-[#1DA851] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors"
+                          >
+                            {resendingId === pedido.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <WhatsAppIcon className="w-4 h-4 fill-current" />
+                            )}
+                          </Button>
+                        )}
+                        <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
+                          <Button variant="ghost" size="sm" className="no-underline text-foreground">Ver pedido</Button>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -358,8 +406,26 @@ function PedidosPage() {
                 </div>
               )}
 
-              <div className="pt-2">
-                <Link to={`/almoxarifado/pedidos/${pedido.id}`}>
+              <div className="pt-2 flex items-center gap-2">
+                {pedido.status !== 'Recebido' && pedido.status !== 'Cancelado' && pedido.status !== 'Rascunho' && new Date(pedido.expected_delivery_date) < new Date() && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => handleResendWhatsApp(e, pedido)}
+                    disabled={resendingId === pedido.id}
+                    title="Reenviar alerta de atraso no WhatsApp"
+                    className="bg-[#25D366] hover:bg-[#1DA851] text-white border-0 font-bold text-xs h-9 px-3 flex items-center gap-1.5 shadow-sm"
+                  >
+                    {resendingId === pedido.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <WhatsAppIcon className="w-3.5 h-3.5 fill-white" />
+                    )}
+                    <span>WhatsApp</span>
+                  </Button>
+                )}
+                <Link to={`/almoxarifado/pedidos/${pedido.id}`} className="flex-1">
                   <Button variant="outline" className="w-full no-underline text-foreground">Ver Pedido</Button>
                 </Link>
               </div>
