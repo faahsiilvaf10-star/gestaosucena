@@ -780,7 +780,7 @@ export async function saveWhatsappSettings(
           ...baseVal,
           url: settings.url,
           instanceId: settings.instanceId,
-          token: settings.token,
+          token: (settings.token && settings.token.trim().length > 0 && !settings.token.includes('••••')) ? settings.token : baseVal.token,
           interval: settings.interval,
           adminPhone: settings.adminPhone,
           messageTemplates: settings.messageTemplates || baseVal.messageTemplates,

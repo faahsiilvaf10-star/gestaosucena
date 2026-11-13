@@ -136,7 +136,7 @@ export const sendWhatsappTextOnServer = createServerFn({ method: "POST" })
 
       // If it's w-api.app, use their specific query param structure
       if (baseUrl.includes("api.w-api.app")) {
-        endpoint = `${baseUrl}/messages/send-text?instanceId=${data.instanceId}`;
+        endpoint = `${baseUrl}/message/send-text?instanceId=${data.instanceId}`;
       }
 
       const payload = {
@@ -196,7 +196,7 @@ export const sendWhatsappMediaOnServer = createServerFn({ method: "POST" })
       // If it's w-api.app
       if (baseUrl.includes("api.w-api.app")) {
         isWApiApp = true;
-        endpoint = `${baseUrl}/messages/send-image?instanceId=${data.instanceId}`;
+        endpoint = `${baseUrl}/message/send-image?instanceId=${data.instanceId}`;
       }
 
       // Base64 gerado pelo canvas vem como "data:image/png;base64,iVBORw0KGgo..."

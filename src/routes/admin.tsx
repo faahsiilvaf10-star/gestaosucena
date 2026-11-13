@@ -812,7 +812,7 @@ function AdminRoute() {
       baseUrl = baseUrl + '/v1'
     }
 
-    const endpoint = `${baseUrl}/messages/send-text?instanceId=${whatsappSettings.instanceId}`
+    const endpoint = `${baseUrl}/message/send-text?instanceId=${whatsappSettings.instanceId}`
     
     const message = isToday 
       ? `🟢 *Gestão Sucena - Lembrete Automático*\n\nBom dia! Passando para lembrar que *hoje é o seu dia* de ministrar o DDS.\nTema: *Teste de Lembrete Automático*`

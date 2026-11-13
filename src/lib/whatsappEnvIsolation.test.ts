@@ -1,30 +1,31 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock da supabase para simular global_settings em memória
-let mockDb: Record<string, any> = {};
+const state = vi.hoisted(() => ({ db: {} as Record<string, any> }));
 
 vi.mock("./supabase", () => {
   return {
+    rawSupabase: {},
     supabase: {
       from: (table: string) => ({
         select: (cols: string) => ({
           eq: (col: string, val: string) => ({
             single: async () => {
-              if (mockDb[val] !== undefined) {
-                return { data: { value: mockDb[val] }, error: null };
+              if (state.db[val] !== undefined) {
+                return { data: { value: state.db[val] }, error: null };
               }
               return { data: null, error: { code: "PGRST116" } };
             },
             maybeSingle: async () => {
-              if (mockDb[val] !== undefined) {
-                return { data: { value: mockDb[val] }, error: null };
+              if (state.db[val] !== undefined) {
+                return { data: { value: state.db[val] }, error: null };
               }
               return { data: null, error: null };
             },
           }),
         }),
         upsert: async (record: { key: string; value: any }) => {
-          mockDb[record.key] = record.value;
+          state.db[record.key] = record.value;
           return { error: null };
         },
       }),
@@ -44,7 +45,7 @@ import {
 describe("Isolamento de Grupos de WhatsApp por Ambiente", () => {
   beforeEach(() => {
     localStorage.clear();
-    mockDb = {};
+    state.db = {};
     vi.clearAllMocks();
   });
 
@@ -92,7 +93,7 @@ describe("Isolamento de Grupos de WhatsApp por Ambiente", () => {
 
   it("getWhatsappSettings para hydro-civil deve iniciar com grupos em branco sem vazar os grupos padrão de Barcarena", async () => {
     // Banco simulado com credenciais compartilhadas e grupos de Barcarena
-    mockDb["whatsapp_settings"] = {
+    state.db["whatsapp_settings"] = {
       url: "https://api.w-api.app",
       instanceId: "LITE-GU764Y-QVE8TW",
       token: "token_seguro",
@@ -118,7 +119,7 @@ describe("Isolamento de Grupos de WhatsApp por Ambiente", () => {
   });
 
   it("salvar grupos em hydro-civil salva no storage específico e não corrompe Barcarena", async () => {
-    mockDb["whatsapp_settings"] = {
+    state.db["whatsapp_settings"] = {
       url: "https://api.w-api.app",
       instanceId: "LITE-GU764Y-QVE8TW",
       token: "token_seguro",
