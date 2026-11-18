@@ -214,11 +214,10 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
       } else {
         const extra = 3
         const inset = 8
-        const sidePad = typeof window !== 'undefined' && window.innerWidth <= 1100 ? 12 : 16
         setPageStyle({
           top: targetEl.offsetTop - extra,
           left: targetEl.offsetLeft + inset,
-          width: targetEl.offsetWidth - inset + sidePad,
+          width: targetEl.offsetWidth - inset,
           height: targetEl.offsetHeight + extra * 2,
         })
       }
