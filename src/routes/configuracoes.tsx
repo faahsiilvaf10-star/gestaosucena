@@ -41,6 +41,7 @@ function ConfiguracoesRoute() {
   const [originalEmail, setOriginalEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [password, setPassword] = useState('')
+  const [showChangePassword, setShowChangePassword] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState('')
   const [role, setRole] = useState('')
   
@@ -264,10 +265,38 @@ function ConfiguracoesRoute() {
 
       // Only send email if it was actually changed to avoid Supabase errors
       if (email && email !== originalEmail) updatePayload.email = email
-      if (password) updatePayload.password = password
 
-      const { error } = await supabase.auth.updateUser(updatePayload)
-      if (error) throw error
+      // Only send password if user explicitly enabled password change and typed something
+      const isChangingPassword = showChangePassword && password.trim().length > 0
+      if (isChangingPassword) {
+        updatePayload.password = password.trim()
+      }
+
+      let error: any = null
+      const res = await supabase.auth.updateUser(updatePayload)
+      error = res.error
+
+      // Se der erro de senha idêntica (frequente por autofill ou senha repetida),
+      // faz auto-recuperação removendo a senha do payload e salvando os demais dados pessoais normalmente.
+      if (error) {
+        const errorMsg = (error.message || '').toLowerCase()
+        if (
+          errorMsg.includes('different from the old password') ||
+          errorMsg.includes('same_password') ||
+          errorMsg.includes('should be different')
+        ) {
+          delete updatePayload.password
+          const retryRes = await supabase.auth.updateUser(updatePayload)
+          if (retryRes.error) {
+            throw retryRes.error
+          }
+          error = null
+          setPassword('')
+          setShowChangePassword(false)
+        } else {
+          throw error
+        }
+      }
 
       // Sincronizar nome no social_profiles
       try {
@@ -277,12 +306,30 @@ function ConfiguracoesRoute() {
           .eq('user_id', user.id)
       } catch (_) {}
 
-      setOriginalEmail(email) // update original email reference
-      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' })
-      setPassword('') // Clear password field after success
+      // Atualiza referências locais
+      setOriginalEmail(email)
+      setPassword('')
+      setShowChangePassword(false)
+      if (name) {
+        try { localStorage.setItem('sucena_user_name', name) } catch (_) {}
+      }
+      setCurrentUser((prev: any) => ({
+        ...prev,
+        email: email || prev?.email,
+        user_metadata: {
+          ...(prev?.user_metadata || {}),
+          full_name: name,
+          whatsapp: formattedWhatsapp,
+          avatar_url: avatarUrl
+        }
+      }))
+
+      setMessage({ type: 'success', text: 'Perfil e WhatsApp atualizados com sucesso!' })
+      toast.success('Perfil atualizado com sucesso!')
     } catch (error: any) {
       console.error(error)
       setMessage({ type: 'error', text: 'Erro ao atualizar: ' + (error.message || 'Erro desconhecido') })
+      toast.error('Erro ao atualizar perfil: ' + (error.message || 'Erro desconhecido'))
     } finally {
       setSaving(false)
     }
@@ -489,6 +536,7 @@ function ConfiguracoesRoute() {
                         <label className="text-xs font-medium text-gray-700 dark:text-white/70 pl-1">E-mail de Login</label>
                         <input
                           type="email"
+                          autoComplete="username"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
                           className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-[#1c1d21] dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
@@ -496,17 +544,50 @@ function ConfiguracoesRoute() {
                         />
                       </div>
                       
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-700 dark:text-white/70 pl-1">Nova Senha</label>
-                        <input
-                          type="password"
-                          value={password}
-                          onChange={e => setPassword(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-[#1c1d21] dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
-                          placeholder="Deixe em branco para não alterar"
-                        />
-                        <p className="text-[11px] text-gray-500 dark:text-white/70 pl-1">Apenas preencha se desejar trocar sua senha atual.</p>
-                      </div>
+                      {/* Troca de Senha Opcional e Segura contra Autofill */}
+                      {!showChangePassword ? (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowChangePassword(true)}
+                            className="inline-flex items-center gap-2 text-xs font-semibold text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 py-2 px-3.5 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/15 border border-yellow-500/20 transition-all cursor-pointer"
+                          >
+                            <Lock size={13} />
+                            <span>Deseja alterar sua senha de login?</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 dark:bg-yellow-500/[0.03] space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-gray-800 dark:text-white/90 flex items-center gap-1.5">
+                              <Lock size={13} className="text-yellow-500" />
+                              Nova Senha de Acesso
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowChangePassword(false)
+                                setPassword('')
+                              }}
+                              className="text-[11px] font-medium text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors underline cursor-pointer"
+                            >
+                              Cancelar troca de senha
+                            </button>
+                          </div>
+                          <input
+                            type="password"
+                            name="new_password_account"
+                            autoComplete="new-password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            className="w-full bg-white dark:bg-black/60 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-[#1c1d21] dark:text-white text-sm focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                            placeholder="Digite sua nova senha (mínimo 6 caracteres)"
+                          />
+                          <p className="text-[11px] text-gray-500 dark:text-white/60 pl-1">
+                            A nova senha deve ser diferente da atual. Deixe de preencher ou cancele se quiser manter a senha atual.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
