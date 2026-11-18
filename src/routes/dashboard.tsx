@@ -32,7 +32,7 @@ import { DashboardMatrizWidget } from '../components/DashboardMatrizWidget'
 import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { DashboardSafetyBanner } from '../components/DashboardSafetyBanner'
 import { DashboardPlacarSeguranca } from '../components/DashboardPlacarSeguranca'
-import { DashboardGeradorHorimetroBanner } from '../components/DashboardGeradorHorimetroBanner'
+import { DashboardGeradorLokCenter } from '../components/DashboardGeradorLokCenter'
 import '../hydro-panel.css'
 
 export const Route = createFileRoute('/dashboard')({
@@ -1302,8 +1302,8 @@ function DashboardComponent() {
       {/* PLACAR DE SEGURANÇA — DIAS SEM ACIDENTES & META COMEMORATIVA */}
       <DashboardPlacarSeguranca currentEnv={currentEnv} />
 
-      {/* CONTROLE DIÁRIO DO HORÍMETRO DO GERADOR (TOPO DO DASHBOARD) */}
-      <DashboardGeradorHorimetroBanner currentEnv={currentEnv} />
+      {/* MÓDULO GERADOR LOKCENTER FIEL AO DESIGN DE REFERÊNCIA */}
+      <DashboardGeradorLokCenter currentEnv={currentEnv} />
 
       {/* 2. CARDS DE KPIS COM DONUTS */}
       <section className="kpis" aria-label="Indicadores de hoje">

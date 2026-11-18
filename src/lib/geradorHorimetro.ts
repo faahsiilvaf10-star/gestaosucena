@@ -9,15 +9,19 @@ export interface GeradorHorimetroHistoryItem {
   nextMaintenance: number
   remainingHours: number
   userName: string
+  eventType?: string
   notes?: string
 }
 
 export interface GeradorHorimetroData {
   equipmentId?: string
   name: string
+  supplier?: string
   plate_tag: string
   currentHorimeter: number
   nextMaintenanceHorimeter: number
+  preventiveInterval?: number
+  lastServiceHorimeter?: number
   nextMaintenanceDate?: string
   alertHoursThreshold: number // Default 20h
   lastUpdated: string
@@ -27,6 +31,11 @@ export interface GeradorHorimetroData {
 }
 
 const DEFAULT_ALERT_HOURS = 20
+const DEFAULT_PREVENTIVE_INTERVAL = 500
+const DEFAULT_CURRENT_HORIMETER = 4296
+const DEFAULT_NEXT_MAINTENANCE = 4418
+const DEFAULT_LAST_SERVICE = 3918
+const DEFAULT_SUPPLIER = 'LokCenter'
 
 export function calcHorasRestantes(atual: number, proximo: number): number {
   return Number((proximo - atual).toFixed(1))
@@ -81,10 +90,14 @@ export async function getGeradorHorimetro(env?: string): Promise<GeradorHorimetr
       }
       return {
         equipmentId: parsed.equipmentId || '1068c95d-23ea-448a-b1a8-bdf4b1f04d0b',
-        name: parsed.name || 'GERADOR',
+        name: parsed.name || 'Gerador Sucena',
+        supplier: parsed.supplier || DEFAULT_SUPPLIER,
         plate_tag: parsed.plate_tag || 'E9A4808',
-        currentHorimeter: Number(parsed.currentHorimeter || 0),
-        nextMaintenanceHorimeter: Number(parsed.nextMaintenanceHorimeter || 250),
+        currentHorimeter: parsed.currentHorimeter !== undefined && parsed.currentHorimeter !== null ? Number(parsed.currentHorimeter) : DEFAULT_CURRENT_HORIMETER,
+        nextMaintenanceHorimeter: parsed.nextMaintenanceHorimeter !== undefined && parsed.nextMaintenanceHorimeter !== null ? Number(parsed.nextMaintenanceHorimeter) : DEFAULT_NEXT_MAINTENANCE,
+        preventiveInterval: Number(parsed.preventiveInterval || DEFAULT_PREVENTIVE_INTERVAL),
+        lastServiceHorimeter: Number(parsed.lastServiceHorimeter !== undefined ? parsed.lastServiceHorimeter : DEFAULT_LAST_SERVICE),
+        nextMaintenanceDate: parsed.nextMaintenanceDate,
         alertHoursThreshold: Number(parsed.alertHoursThreshold || DEFAULT_ALERT_HOURS),
         lastUpdated: parsed.lastUpdated || new Date().toISOString(),
         updatedBy: parsed.updatedBy || 'Sistema',
@@ -99,10 +112,13 @@ export async function getGeradorHorimetro(env?: string): Promise<GeradorHorimetr
   // Padrão inicial caso ainda não haja registro salvo
   return {
     equipmentId: '1068c95d-23ea-448a-b1a8-bdf4b1f04d0b',
-    name: 'GERADOR',
+    name: 'Gerador Sucena',
+    supplier: DEFAULT_SUPPLIER,
     plate_tag: 'E9A4808',
-    currentHorimeter: 0,
-    nextMaintenanceHorimeter: 250,
+    currentHorimeter: DEFAULT_CURRENT_HORIMETER,
+    nextMaintenanceHorimeter: DEFAULT_NEXT_MAINTENANCE,
+    preventiveInterval: DEFAULT_PREVENTIVE_INTERVAL,
+    lastServiceHorimeter: DEFAULT_LAST_SERVICE,
     alertHoursThreshold: DEFAULT_ALERT_HOURS,
     lastUpdated: new Date().toISOString(),
     updatedBy: 'Sistema',
@@ -119,11 +135,15 @@ export async function saveGeradorHorimetro(
   payload: {
     currentHorimeter: number
     nextMaintenanceHorimeter?: number
+    preventiveInterval?: number
+    lastServiceHorimeter?: number
     nextMaintenanceDate?: string
     alertHoursThreshold?: number
     notes?: string
+    eventType?: string
     equipmentId?: string
     name?: string
+    supplier?: string
     plate_tag?: string
   },
   env?: string,
@@ -143,6 +163,18 @@ export async function saveGeradorHorimetro(
       payload.nextMaintenanceHorimeter !== undefined && payload.nextMaintenanceHorimeter !== null
         ? payload.nextMaintenanceHorimeter
         : current.nextMaintenanceHorimeter
+    )
+    const updatedInterval = Number(
+      payload.preventiveInterval !== undefined && payload.preventiveInterval !== null
+        ? payload.preventiveInterval
+        : current.preventiveInterval || DEFAULT_PREVENTIVE_INTERVAL
+    )
+    const updatedLastService = Number(
+      payload.lastServiceHorimeter !== undefined && payload.lastServiceHorimeter !== null
+        ? payload.lastServiceHorimeter
+        : current.lastServiceHorimeter !== undefined
+        ? current.lastServiceHorimeter
+        : Math.max(0, updatedNextMaintenance - updatedInterval)
     )
     const updatedNextMaintenanceDate =
       payload.nextMaintenanceDate !== undefined
@@ -171,6 +203,7 @@ export async function saveGeradorHorimetro(
       nextMaintenance: updatedNextMaintenance,
       remainingHours: remaining,
       userName: finalUserName,
+      eventType: payload.eventType || 'Leitura atualizada',
       notes: payload.notes?.trim() || undefined
     }
 
@@ -181,14 +214,12 @@ export async function saveGeradorHorimetro(
 
     // Regra de Envio do WhatsApp:
     // Dispara quando faltarem <= alertHoursThreshold (ex: 20h) OU se já estiver vencido (remaining <= 0).
-    // Para não reenviar a cada digitação no mesmo ciclo, checa se já enviou para este mesmo `nextMaintenanceHorimeter`
-    // (a menos que a manutenção tenha sido redefinida para um novo ciclo).
     const isMaintenanceCycleNew = lastWhatsappSentCycle !== updatedNextMaintenance
     const shouldAlert = remaining <= configuredAlertHours
 
     if (shouldAlert && isMaintenanceCycleNew) {
       whatsappSent = await notificarGeradorHorimetroManutencao({
-        eqName: payload.name || current.name || 'GERADOR',
+        eqName: payload.name || current.name || 'Gerador Sucena',
         plateTag: payload.plate_tag || current.plate_tag || 'E9A4808',
         currentHorimeter: updatedCurrentHorimeter,
         nextMaintenanceHorimeter: updatedNextMaintenance,
@@ -203,10 +234,13 @@ export async function saveGeradorHorimetro(
 
     const dataToSave: GeradorHorimetroData = {
       equipmentId: payload.equipmentId || current.equipmentId,
-      name: payload.name || current.name || 'GERADOR',
+      name: payload.name || current.name || 'Gerador Sucena',
+      supplier: payload.supplier || current.supplier || DEFAULT_SUPPLIER,
       plate_tag: payload.plate_tag || current.plate_tag || 'E9A4808',
       currentHorimeter: updatedCurrentHorimeter,
       nextMaintenanceHorimeter: updatedNextMaintenance,
+      preventiveInterval: updatedInterval,
+      lastServiceHorimeter: updatedLastService,
       nextMaintenanceDate: updatedNextMaintenanceDate,
       alertHoursThreshold: configuredAlertHours,
       lastUpdated: nowIso,
@@ -246,6 +280,50 @@ export async function saveGeradorHorimetro(
       whatsappSent: false,
       error: error?.message || 'Erro desconhecido ao salvar horímetro'
     }
+  }
+}
+
+/**
+ * Registra uma manutenção preventiva realizada, calculando a próxima manutenção
+ * a partir do intervalo preventivo e persistindo no histórico e banco de dados.
+ */
+export async function registrarManutencaoRealizada(
+  payload: {
+    maintenanceHorimeter: number
+    preventiveInterval?: number
+    maintenanceDate?: string
+    notes?: string
+    responsible?: string
+  },
+  env?: string
+): Promise<{
+  success: boolean
+  data: GeradorHorimetroData
+  error?: string
+}> {
+  const current = await getGeradorHorimetro(env)
+  const horimeter = Number(payload.maintenanceHorimeter)
+  const interval = Number(payload.preventiveInterval || current.preventiveInterval || DEFAULT_PREVENTIVE_INTERVAL)
+  const nextMaintenance = Number((horimeter + interval).toFixed(1))
+
+  const res = await saveGeradorHorimetro(
+    {
+      currentHorimeter: horimeter,
+      nextMaintenanceHorimeter: nextMaintenance,
+      preventiveInterval: interval,
+      lastServiceHorimeter: horimeter,
+      nextMaintenanceDate: payload.maintenanceDate,
+      notes: payload.notes || 'Manutenção preventiva realizada',
+      eventType: 'Manutenção preventiva realizada'
+    },
+    env,
+    payload.responsible || current.updatedBy
+  )
+
+  return {
+    success: res.success,
+    data: res.data,
+    error: res.error
   }
 }
 
