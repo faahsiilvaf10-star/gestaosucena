@@ -14,6 +14,7 @@ import FileDown from 'lucide-react/dist/esm/icons/file-down.js';
 import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Zap from 'lucide-react/dist/esm/icons/zap.js';
+import X from 'lucide-react/dist/esm/icons/x.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { createPortal } from 'react-dom'
 import { DateInput } from '@/components/ui/DateInput'
@@ -97,6 +98,16 @@ function EntradaSaidaPage() {
   const [reportEndDate, setReportEndDate] = useState(() => new Date().toISOString().split('T')[0])
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   
+  // Global History Modal
+  const [isGlobalHistoryOpen, setIsGlobalHistoryOpen] = useState(false)
+  const [globalHistoryMovements, setGlobalHistoryMovements] = useState<any[]>([])
+  const [loadingGlobalHistory, setLoadingGlobalHistory] = useState(false)
+  const [globalHistoryStartDate, setGlobalHistoryStartDate] = useState<string>('')
+  const [globalHistoryEndDate, setGlobalHistoryEndDate] = useState<string>('')
+  const [globalHistoryType, setGlobalHistoryType] = useState<'all' | 'entry' | 'exit'>('all')
+  const [globalHistorySearch, setGlobalHistorySearch] = useState<string>('')
+  const [deletingGlobalMovId, setDeletingGlobalMovId] = useState<string | null>(null)
+
   const [eqHistory, setEqHistory] = useState<Movement[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [deletingMovId, setDeletingMovId] = useState<string | null>(null)
@@ -218,6 +229,7 @@ function EntradaSaidaPage() {
         setIsExitModalOpen(false)
         setIsHistoryModalOpen(false)
         setIsReportModalOpen(false)
+        setIsGlobalHistoryOpen(false)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -323,6 +335,161 @@ function EntradaSaidaPage() {
       setDeletingMovId(null)
     }
   }
+
+  // Histórico Geral de todos os equipamentos
+  const fetchGlobalHistory = async (start?: string, end?: string) => {
+    setLoadingGlobalHistory(true)
+    try {
+      const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
+      let query = supabase
+        .from('eq_movements')
+        .select(`
+          id,
+          equipment_id,
+          movement_type,
+          exit_reason,
+          description,
+          created_by,
+          created_at,
+          environment,
+          eq_equipments (
+            id,
+            name,
+            plate_tag,
+            category
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (currentEnv) {
+        query = query.eq('environment', currentEnv)
+      }
+
+      if (start) {
+        query = query.gte('created_at', `${start}T00:00:00`)
+      }
+      if (end) {
+        query = query.lte('created_at', `${end}T23:59:59`)
+      }
+
+      if (!start && !end) {
+        query = query.limit(150)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+      setGlobalHistoryMovements(data || [])
+    } catch (err: any) {
+      console.error('Erro ao buscar histórico geral:', err)
+      toast.error('Erro ao carregar histórico geral: ' + (err.message || 'Erro desconhecido'))
+    } finally {
+      setLoadingGlobalHistory(false)
+    }
+  }
+
+  const handleOpenGlobalHistory = () => {
+    setIsGlobalHistoryOpen(true)
+    fetchGlobalHistory(globalHistoryStartDate, globalHistoryEndDate)
+  }
+
+  const handleApplyQuickDate = (days?: number) => {
+    if (days === undefined) {
+      setGlobalHistoryStartDate('')
+      setGlobalHistoryEndDate('')
+      fetchGlobalHistory('', '')
+      return
+    }
+    const end = new Date()
+    const start = new Date()
+    if (days > 0) {
+      start.setDate(end.getDate() - days)
+    }
+    const endStr = end.toISOString().split('T')[0]
+    const startStr = start.toISOString().split('T')[0]
+    setGlobalHistoryStartDate(startStr)
+    setGlobalHistoryEndDate(endStr)
+    fetchGlobalHistory(startStr, endStr)
+  }
+
+  const handleDeleteGlobalMovement = async (mov: any) => {
+    const eq = Array.isArray(mov.eq_equipments) ? mov.eq_equipments[0] : mov.eq_equipments
+    const eqName = eq?.name || 'Equipamento'
+    const confirmDelete = window.confirm(`Deseja realmente excluir esta movimentação de "${eqName}"?`)
+    if (!confirmDelete) return
+
+    setDeletingGlobalMovId(mov.id)
+    try {
+      const { error: delError } = await supabase
+        .from('eq_movements')
+        .delete()
+        .eq('id', mov.id)
+
+      if (delError) throw delError
+
+      setGlobalHistoryMovements(prev => prev.filter(m => m.id !== mov.id))
+
+      if (mov.equipment_id) {
+        const { data: remainingMovs } = await supabase
+          .from('eq_movements')
+          .select('id, equipment_id, movement_type, exit_reason, description, created_by, created_at')
+          .eq('equipment_id', mov.equipment_id)
+          .order('created_at', { ascending: false })
+
+        const updatedHistory = remainingMovs || []
+        const newStatus = locationFromMovements(updatedHistory) ?? 'inside'
+        const lastMov = updatedHistory[0]
+        const newReason = newStatus === 'outside' ? (lastMov?.exit_reason || null) : null
+        const newDesc = newStatus === 'outside' ? (lastMov?.description || null) : null
+
+        await supabase
+          .from('eq_equipments')
+          .update({
+            location_status: newStatus,
+            last_exit_reason: newReason,
+            last_exit_description: newDesc,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', mov.equipment_id)
+      }
+
+      fetchEquipments()
+      toast.success('Movimentação excluída e status recalculado com sucesso!')
+    } catch (err: any) {
+      console.error('Erro ao excluir movimentação:', err)
+      toast.error('Erro ao excluir movimentação: ' + (err.message || 'Erro desconhecido'))
+    } finally {
+      setDeletingGlobalMovId(null)
+    }
+  }
+
+  const filteredGlobalHistory = useMemo(() => {
+    return globalHistoryMovements.filter(mov => {
+      if (globalHistoryType !== 'all' && mov.movement_type !== globalHistoryType) {
+        return false
+      }
+      if (globalHistorySearch.trim()) {
+        const q = globalHistorySearch.toLowerCase()
+        const eq = Array.isArray(mov.eq_equipments) ? mov.eq_equipments[0] : mov.eq_equipments
+        const eqName = (eq?.name || '').toLowerCase()
+        const eqPlate = (eq?.plate_tag || '').toLowerCase()
+        const eqCat = (eq?.category || '').toLowerCase()
+        const reason = (mov.exit_reason || '').toLowerCase()
+        const desc = (mov.description || '').toLowerCase()
+        const user = (mov.created_by || '').toLowerCase()
+
+        const matches =
+          eqName.includes(q) ||
+          eqPlate.includes(q) ||
+          eqCat.includes(q) ||
+          reason.includes(q) ||
+          desc.includes(q) ||
+          user.includes(q)
+
+        if (!matches) return false
+      }
+      return true
+    })
+  }, [globalHistoryMovements, globalHistoryType, globalHistorySearch])
 
   const getUserName = async () => {
     return await getAuthenticatedUserName()
@@ -710,6 +877,14 @@ function EntradaSaidaPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto">
             <button 
+              onClick={handleOpenGlobalHistory}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-500/20 rounded-full text-sm font-semibold hover:bg-amber-500/20 transition-colors shadow-sm"
+              title="Ver histórico de entrada e saída de todos os equipamentos por data"
+            >
+              <History size={16} />
+              Histórico Geral
+            </button>
+            <button 
               onClick={() => setIsReportModalOpen(true)}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-600/20 rounded-full text-sm font-semibold hover:bg-blue-600/20 transition-colors"
             >
@@ -798,6 +973,15 @@ function EntradaSaidaPage() {
                 </>
               )}
             </div>
+
+            <button
+              onClick={handleOpenGlobalHistory}
+              className={`border px-4 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors w-full md:w-auto ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'}`}
+              title="Ver histórico de entrada e saída de todos os equipamentos e por data"
+            >
+              <History size={18} />
+              <span>Histórico</span>
+            </button>
           </div>
 
           {/* List/Table Area */}
@@ -1383,6 +1567,263 @@ function EntradaSaidaPage() {
                 {isGeneratingReport ? <RefreshCw size={18} className="animate-spin" /> : <><FileDown size={18} /> Baixar PDF</>}
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Global History Modal - Histórico Geral por Data */}
+      {isGlobalHistoryOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsGlobalHistoryOpen(false)} />
+          <div className={`relative w-full max-w-4xl my-auto rounded-3xl p-5 md:p-7 shadow-2xl flex flex-col max-h-[92vh] ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-black/10 dark:border-white/10 flex-none">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center flex-none">
+                  <History size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold leading-tight">Histórico Geral de Movimentações</h2>
+                  <p className="text-xs md:text-sm opacity-60">Entradas e saídas de todos os equipamentos filtradas por data e período</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsGlobalHistoryOpen(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-none"
+                title="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Filters Bar */}
+            <div className="py-4 space-y-3 border-b border-black/10 dark:border-white/10 flex-none">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <div className="sm:col-span-4">
+                  <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-1.5">
+                    <Calendar size={13} /> Data Inicial
+                  </label>
+                  <DateInput 
+                    value={globalHistoryStartDate}
+                    onChange={val => setGlobalHistoryStartDate(val)}
+                    className={`w-full px-3 py-2 text-sm rounded-xl border outline-none ${isDark ? 'bg-black/30 border-white/15 focus:border-white/40' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <label className="block text-xs font-semibold opacity-70 mb-1 flex items-center gap-1.5">
+                    <Calendar size={13} /> Data Final
+                  </label>
+                  <DateInput 
+                    value={globalHistoryEndDate}
+                    onChange={val => setGlobalHistoryEndDate(val)}
+                    className={`w-full px-3 py-2 text-sm rounded-xl border outline-none ${isDark ? 'bg-black/30 border-white/15 focus:border-white/40' : 'bg-black/5 border-black/10 focus:border-black/30'}`}
+                  />
+                </div>
+                <div className="sm:col-span-4 flex gap-2">
+                  <button 
+                    onClick={() => fetchGlobalHistory(globalHistoryStartDate, globalHistoryEndDate)}
+                    disabled={loadingGlobalHistory}
+                    className="flex-1 py-2 px-3 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    {loadingGlobalHistory ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
+                    <span>Filtrar</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Atalhos Rápidos de Data e Pílulas de Tipo */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="opacity-50 text-[11px] mr-1">Período:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyQuickDate(0)}
+                    className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${globalHistoryStartDate === new Date().toISOString().split('T')[0] && globalHistoryEndDate === new Date().toISOString().split('T')[0] ? 'bg-amber-500 text-white border-amber-500' : isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyQuickDate(7)}
+                    className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                  >
+                    Últimos 7 dias
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyQuickDate(30)}
+                    className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                  >
+                    Últimos 30 dias
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyQuickDate(undefined)}
+                    className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${!globalHistoryStartDate && !globalHistoryEndDate ? 'bg-amber-500/20 text-amber-500 border-amber-500/40' : isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                  >
+                    Ver Tudo
+                  </button>
+                </div>
+
+                {/* Tipo de Movimento */}
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-black/5 dark:border-white/10 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setGlobalHistoryType('all')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors ${globalHistoryType === 'all' ? 'bg-white dark:bg-white/20 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                  >
+                    Todos ({globalHistoryMovements.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGlobalHistoryType('entry')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${globalHistoryType === 'entry' ? 'bg-emerald-500 text-white shadow-sm' : 'opacity-60 hover:opacity-100 text-emerald-600 dark:text-emerald-400'}`}
+                  >
+                    <LogIn size={12} /> Entradas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGlobalHistoryType('exit')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${globalHistoryType === 'exit' ? 'bg-red-500 text-white shadow-sm' : 'opacity-60 hover:opacity-100 text-red-600 dark:text-red-400'}`}
+                  >
+                    <LogOut size={12} /> Saídas
+                  </button>
+                </div>
+              </div>
+
+              {/* Busca rápida */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
+                <input 
+                  type="text"
+                  value={globalHistorySearch}
+                  onChange={e => setGlobalHistorySearch(e.target.value)}
+                  placeholder="Buscar por equipamento, placa/tag, motivo, observação ou usuário..."
+                  className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/10 focus:border-white/30 placeholder:text-white/30' : 'bg-black/5 border-black/10 focus:border-black/30 placeholder:text-black/30'}`}
+                />
+              </div>
+            </div>
+
+            {/* List Body */}
+            <div className="overflow-y-auto pr-1 py-3 space-y-2.5 flex-1 min-h-[240px] max-h-[55vh]">
+              {loadingGlobalHistory ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3 opacity-60">
+                  <RefreshCw size={28} className="animate-spin text-amber-500" />
+                  <p className="text-sm">Carregando histórico de movimentações...</p>
+                </div>
+              ) : filteredGlobalHistory.length === 0 ? (
+                <div className="py-16 text-center opacity-60 flex flex-col items-center justify-center gap-2">
+                  <Clock size={36} className="opacity-40" />
+                  <p className="font-semibold text-base">Nenhuma movimentação encontrada</p>
+                  <p className="text-xs max-w-sm">
+                    {globalHistorySearch || globalHistoryStartDate || globalHistoryEndDate || globalHistoryType !== 'all'
+                      ? 'Nenhum registro corresponde aos filtros selecionados. Tente alterar as datas ou a busca.'
+                      : 'Não há registros de entrada ou saída no histórico.'}
+                  </p>
+                  {(globalHistorySearch || globalHistoryStartDate || globalHistoryEndDate || globalHistoryType !== 'all') && (
+                    <button
+                      onClick={() => {
+                        setGlobalHistorySearch('')
+                        setGlobalHistoryType('all')
+                        handleApplyQuickDate(undefined)
+                      }}
+                      className="mt-2 text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-semibold transition-colors"
+                    >
+                      Limpar todos os filtros
+                    </button>
+                  )}
+                </div>
+              ) : (
+                filteredGlobalHistory.map(mov => {
+                  const isEntry = mov.movement_type === 'entry'
+                  const eq = Array.isArray(mov.eq_equipments) ? mov.eq_equipments[0] : mov.eq_equipments
+                  const eqName = eq?.name || 'Equipamento não identificado'
+                  const eqPlate = eq?.plate_tag
+                  const eqCategory = eq?.category
+                  const reasonLabel = EXIT_REASONS.find(r => r.value === mov.exit_reason)?.label || mov.exit_reason || ''
+                  const isDeleting = deletingGlobalMovId === mov.id
+
+                  return (
+                    <div 
+                      key={mov.id}
+                      className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isDark ? 'bg-white/[0.03] border-white/10 hover:border-white/20' : 'bg-black/[0.02] border-black/10 hover:border-black/20'}`}
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`p-2.5 rounded-xl flex-none mt-0.5 ${isEntry ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/15 text-red-500 border border-red-500/20'}`}>
+                          {isEntry ? <LogIn size={18} /> : <LogOut size={18} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-sm tracking-tight truncate">{eqName}</span>
+                            {eqPlate && (
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${isDark ? 'bg-white/5 border-white/10 text-white/80' : 'bg-black/5 border-black/10 text-black/80'}`}>
+                                {eqPlate}
+                              </span>
+                            )}
+                            {eqCategory && (
+                              <span className="text-[10px] opacity-60 px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5">
+                                {eqCategory}
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${isEntry ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
+                              {isEntry ? 'Entrada' : 'Saída'}
+                            </span>
+                          </div>
+
+                          {!isEntry && reasonLabel && (
+                            <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1">
+                              Motivo: {reasonLabel}
+                            </div>
+                          )}
+
+                          {mov.description && (
+                            <div className="text-xs opacity-75 mt-0.5 italic">
+                              "{mov.description}"
+                            </div>
+                          )}
+
+                          <div className="text-[11px] opacity-50 mt-1.5 flex flex-wrap items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {new Date(mov.created_at).toLocaleString('pt-BR')}
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Registrado por: <strong>{mov.created_by ? (mov.created_by.includes('@') ? mov.created_by.split('@')[0] : mov.created_by) : 'Sistema'}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end sm:justify-start gap-2 flex-none self-end sm:self-center">
+                        <button
+                          onClick={() => handleDeleteGlobalMovement(mov)}
+                          disabled={isDeleting}
+                          className="p-2 rounded-xl text-red-500/70 hover:text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors"
+                          title="Excluir movimentação"
+                        >
+                          {isDeleting ? <RefreshCw size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-xs opacity-60 flex-none">
+              <span>Total de movimentações: {filteredGlobalHistory.length}</span>
+              <button 
+                onClick={() => setIsGlobalHistoryOpen(false)}
+                className={`px-4 py-2 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/10 hover:bg-white/15 text-white' : 'bg-black/5 hover:bg-black/10 text-black'}`}
+              >
+                Fechar
+              </button>
+            </div>
+
           </div>
         </div>,
         document.body
