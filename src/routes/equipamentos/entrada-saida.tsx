@@ -701,7 +701,7 @@ function EntradaSaidaPage() {
     <div className={`flex flex-col min-h-screen ${isDark ? 'bg-transparent text-white' : 'bg-[#faf9f6] text-gray-900'}`}>
       {/* Header */}
       <div className="flex-none p-4 md:p-8 pb-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="tracking-tight mb-2"
               style={{ fontSize: 'clamp(20px, 6vw, 48px)' }}
@@ -729,7 +729,7 @@ function EntradaSaidaPage() {
       </div>
 
       <div className="flex-1 px-4 md:px-8 pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="max-w-7xl mx-auto flex flex-col gap-6">
           
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -823,17 +823,17 @@ function EntradaSaidaPage() {
               </div>
             ) : (
               <>
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                {/* Desktop Table - Responsiva sem necessidade de scroll horizontal */}
+                <div className="hidden md:block w-full overflow-x-auto">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className={`border-b font-semibold text-[11px] uppercase tracking-wider ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/60'}`}>
                       <tr>
-                        <th className="p-4">EQUIPAMENTO</th>
-                        <th className="p-4">PLACA / TAG</th>
-                        <th className="p-4">CATEGORIA</th>
-                        <th className="p-4">STATUS</th>
-                        <th className="p-4">ÚLTIMA MOVIMENTAÇÃO</th>
-                        <th className="p-4 text-right">AÇÕES</th>
+                        <th className="px-3 py-2.5">EQUIPAMENTO</th>
+                        <th className="px-2 py-2.5 text-center w-24 shrink-0">PLACA / TAG</th>
+                        <th className="px-2 py-2.5 hidden lg:table-cell w-28">CATEGORIA</th>
+                        <th className="px-2 py-2.5 text-center w-28 shrink-0">STATUS</th>
+                        <th className="px-2.5 py-2.5 w-28 shrink-0">ÚLTIMA MOVIMENTAÇÃO</th>
+                        <th className="px-3 py-2.5 text-right w-44 shrink-0">AÇÕES</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
@@ -844,22 +844,22 @@ function EntradaSaidaPage() {
                         const statusHoriGerador = geradorData ? getStatusGerador(geradorData.currentHorimeter, geradorData.nextMaintenanceHorimeter, geradorData.alertHoursThreshold) : 'normal'
                         return (
                           <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
-                            <td className="p-4 font-bold text-base">
+                            <td className="px-3 py-2.5 font-bold text-xs sm:text-sm">
                               {isEqGerador ? (
                                 <div className="flex flex-col items-start gap-1">
                                   <button
                                     type="button"
                                     onClick={() => setIsGeradorModalOpen(true)}
-                                    className="text-left font-bold text-base hover:text-amber-500 transition-colors flex items-center gap-1.5 group/g"
+                                    className="text-left font-bold text-xs sm:text-sm hover:text-amber-500 transition-colors flex items-center gap-1.5 group/g"
                                     title="Clique para ver e alterar o Horímetro do Gerador"
                                   >
-                                    <span>{eq.name}</span>
-                                    <Zap size={15} className="text-amber-500 fill-amber-500 group-hover/g:scale-125 transition-transform" />
+                                    <span className="truncate max-w-[150px] sm:max-w-[200px] lg:max-w-[280px]" title={eq.name}>{eq.name}</span>
+                                    <Zap size={14} className="text-amber-500 fill-amber-500 group-hover/g:scale-125 transition-transform shrink-0" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setIsGeradorModalOpen(true)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all shadow-sm ${
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shadow-sm ${
                                       statusHoriGerador === 'vencido'
                                         ? 'bg-red-500 text-white animate-pulse'
                                         : statusHoriGerador === 'alerta'
@@ -870,22 +870,38 @@ function EntradaSaidaPage() {
                                     }`}
                                     title="Clique para ver e alterar o Horímetro do Gerador"
                                   >
-                                    <Clock size={11} />
+                                    <Clock size={10} />
                                     <span>Horímetro: {geradorData?.currentHorimeter ?? 0}h</span>
                                     <span className="opacity-80">
-                                      ({remHoriGerador <= 0 ? `Vencido +${Math.abs(remHoriGerador)}h` : `Faltam ${remHoriGerador}h`})
+                                      ({remHoriGerador <= 0 ? `+${Math.abs(remHoriGerador)}h` : `${remHoriGerador}h`})
                                     </span>
                                   </button>
+                                  <span className="lg:hidden text-[11px] font-normal text-gray-500 dark:text-white/60">
+                                    {eq.category || '-'}
+                                  </span>
                                 </div>
                               ) : (
-                                eq.name
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate block max-w-[140px] sm:max-w-[200px] lg:max-w-[280px] xl:max-w-none text-gray-900 dark:text-white" title={eq.name}>
+                                    {eq.name}
+                                  </span>
+                                  <span className="lg:hidden text-[11px] font-normal text-gray-500 dark:text-white/60 truncate">
+                                    {eq.category || '-'}
+                                  </span>
+                                </div>
                               )}
                             </td>
-                            <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}</td>
-                            <td className="p-4">{eq.category || '-'}</td>
-                            <td className="p-4">
+                            <td className="px-2 py-2.5 text-center">
+                              <span className="font-mono text-xs tracking-wider uppercase font-bold px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 whitespace-nowrap">
+                                {eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2.5 hidden lg:table-cell text-xs opacity-80 truncate max-w-[120px]" title={eq.category || '-'}>
+                              {eq.category || '-'}
+                            </td>
+                            <td className="px-2 py-2.5 text-center">
                               <div className="relative group/tooltip inline-block">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${ isInside ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' }`}>
+                                <span className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${ isInside ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 cursor-pointer' }`}>
                                   {isInside ? 'Operando' : (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')}
                                 </span>
                                 {!isInside && eq.last_exit_description && (
@@ -897,16 +913,23 @@ function EntradaSaidaPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="p-4 opacity-70 text-xs flex items-center gap-1">
-                              <Clock size={12} /> {new Date(eq.updated_at).toLocaleString('pt-BR')}
+                            <td className="px-2.5 py-2.5 text-xs">
+                              <div className="flex flex-col leading-tight">
+                                <span className="font-medium whitespace-nowrap text-gray-800 dark:text-gray-200">
+                                  {new Date(eq.updated_at).toLocaleDateString('pt-BR')}
+                                </span>
+                                <span className="text-[10px] opacity-60 flex items-center gap-0.5 whitespace-nowrap mt-0.5">
+                                  <Clock size={10} className="shrink-0" /> {new Date(eq.updated_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
                             </td>
-                            <td className="p-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="px-3 py-2.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
                                 {isEqGerador && (
                                   <button
                                     type="button"
                                     onClick={() => setIsGeradorModalOpen(true)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs transition-colors ${
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors shrink-0 ${
                                       statusHoriGerador === 'vencido'
                                         ? 'bg-red-600 text-white hover:bg-red-700'
                                         : statusHoriGerador === 'alerta'
@@ -917,30 +940,34 @@ function EntradaSaidaPage() {
                                     }`}
                                     title="Horímetro e Manutenção Preventiva do Gerador"
                                   >
-                                    <Zap size={14} className="fill-current" />
-                                    <span>HORÍMETRO</span>
+                                    <Zap size={13} className="fill-current shrink-0" />
+                                    <span className="hidden xl:inline">HORÍMETRO</span>
                                   </button>
                                 )}
                                 <button 
                                   onClick={() => handleOpenHistory(eq)}
-                                  className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
-                                  title="Histórico"
+                                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                  title="Histórico de Movimentações"
                                 >
-                                  <History size={18} />
+                                  <History size={16} />
                                 </button>
                                 {isInside ? (
                                   <button 
                                     onClick={() => handleOpenExit(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg font-bold text-xs hover:bg-red-700 transition-colors whitespace-nowrap shadow-sm active:scale-95 shrink-0"
+                                    title="Registrar Saída da Obra"
                                   >
-                                    <ArrowRightFromLine size={14} /> REGISTRAR SAÍDA
+                                    <ArrowRightFromLine size={13} className="shrink-0" />
+                                    <span><span className="hidden xl:inline">REGISTRAR </span>SAÍDA</span>
                                   </button>
                                 ) : (
                                   <button 
                                     onClick={() => handleOpenEntry(eq)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors whitespace-nowrap shadow-sm active:scale-95 shrink-0"
+                                    title="Registrar Entrada na Obra"
                                   >
-                                    <ArrowRightToLine size={14} /> REGISTRAR ENTRADA
+                                    <ArrowRightToLine size={13} className="shrink-0" />
+                                    <span><span className="hidden xl:inline">REGISTRAR </span>ENTRADA</span>
                                   </button>
                                 )}
                               </div>

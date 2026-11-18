@@ -446,42 +446,70 @@ function TodosEquipamentosPage() {
               </div>
             ) : (
               <>
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`border-b font-semibold ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/50'}`}>
+                {/* Desktop Table - Responsiva sem necessidade de scroll horizontal */}
+                <div className="hidden md:block w-full overflow-x-auto">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className={`border-b font-semibold text-[11px] uppercase tracking-wider ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/60'}`}>
                       <tr>
-                        <th className="p-4">EQUIPAMENTO</th>
-                        <th className="p-4">PLACA / TAG</th>
-                        <th className="p-4">CATEGORIA</th>
-                        <th className="p-4">STATUS</th>
-                        <th className="p-4">ÚLTIMA ATUALIZAÇÃO</th>
-                        <th className="p-4 text-right">AÇÕES</th>
+                        <th className="px-3 py-2.5">EQUIPAMENTO</th>
+                        <th className="px-2 py-2.5 text-center w-24 shrink-0">PLACA / TAG</th>
+                        <th className="px-2 py-2.5 hidden lg:table-cell w-28">CATEGORIA</th>
+                        <th className="px-2 py-2.5 text-center w-28 shrink-0">STATUS</th>
+                        <th className="px-2.5 py-2.5 w-28 shrink-0">ÚLTIMA ATUALIZAÇÃO</th>
+                        <th className="px-3 py-2.5 text-right w-24 shrink-0">AÇÕES</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
                       {filteredEquipments.map(eq => (
                         <tr key={eq.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
-                          <td className="p-4 font-medium">{eq.name}</td>
-                          <td className="p-4 font-mono text-xs tracking-wider uppercase">{eq.plate_tag}</td>
-                          <td className="p-4">{eq.category || '-'}</td>
-                          <td className="p-4">{getStatusBadge(eq)}</td>
-                          <td className="p-4 opacity-60 text-xs">{new Date(eq.updated_at).toLocaleString('pt-BR')}</td>
-                          <td className="p-4 text-right flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => handleOpenEdit(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
-                              title="Editar"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleOpenView(eq)}
-                              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
-                              title="Visualizar"
-                            >
-                              <Eye size={18} />
-                            </button>
+                          <td className="px-3 py-2.5 font-bold text-xs sm:text-sm">
+                            <div className="flex flex-col min-w-0">
+                              <span className="truncate block max-w-[150px] sm:max-w-[220px] lg:max-w-[320px] xl:max-w-none text-gray-900 dark:text-white" title={eq.name}>
+                                {eq.name}
+                              </span>
+                              <span className="lg:hidden text-[11px] font-normal text-gray-500 dark:text-white/60 truncate">
+                                {eq.category || '-'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            <span className="font-mono text-xs tracking-wider uppercase font-bold px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 whitespace-nowrap">
+                              {eq.plate_tag ? eq.plate_tag.toUpperCase() : '-'}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2.5 hidden lg:table-cell text-xs opacity-80 truncate max-w-[120px]" title={eq.category || '-'}>
+                            {eq.category || '-'}
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            {getStatusBadge(eq)}
+                          </td>
+                          <td className="px-2.5 py-2.5 text-xs">
+                            <div className="flex flex-col leading-tight">
+                              <span className="font-medium whitespace-nowrap text-gray-800 dark:text-gray-200">
+                                {new Date(eq.updated_at).toLocaleDateString('pt-BR')}
+                              </span>
+                              <span className="text-[10px] opacity-60 flex items-center gap-0.5 whitespace-nowrap mt-0.5">
+                                <Clock size={10} className="shrink-0" /> {new Date(eq.updated_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button 
+                                onClick={() => handleOpenEdit(eq)}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                title="Editar"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleOpenView(eq)}
+                                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
+                                title="Visualizar"
+                              >
+                                <Eye size={16} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
