@@ -16,9 +16,13 @@ import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
 import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left.js';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar.js';
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left.js';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { createPortal } from 'react-dom'
-import { DateInput } from '@/components/ui/DateInput'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 import { getLogicalAreaForColaborador } from '@/lib/rhAreaHelper'
 import { getWhatsappSettings } from '@/lib/settings'
 import { sendWhatsappTextOnServer } from '@/lib/whatsapp-api'
@@ -560,6 +564,27 @@ function RhListaPresencaPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   }
   const [attendanceDate, setAttendanceDate] = useState<string>(getLocalDate())
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  const handlePrevDay = () => {
+    const [y, m, d] = attendanceDate.split('-').map(Number)
+    const dt = new Date(y, m - 1, d)
+    dt.setDate(dt.getDate() - 1)
+    const newY = dt.getFullYear()
+    const newM = String(dt.getMonth() + 1).padStart(2, '0')
+    const newD = String(dt.getDate()).padStart(2, '0')
+    setAttendanceDate(`${newY}-${newM}-${newD}`)
+  }
+
+  const handleNextDay = () => {
+    const [y, m, d] = attendanceDate.split('-').map(Number)
+    const dt = new Date(y, m - 1, d)
+    dt.setDate(dt.getDate() + 1)
+    const newY = dt.getFullYear()
+    const newM = String(dt.getMonth() + 1).padStart(2, '0')
+    const newD = String(dt.getDate()).padStart(2, '0')
+    setAttendanceDate(`${newY}-${newM}-${newD}`)
+  }
 
   // Ref to track when initial data loading is done (prevents overwriting drafts during load)
   const initialLoadDone = useRef(false)
@@ -1270,12 +1295,85 @@ function RhListaPresencaPage() {
             </div>
           </div>
           
-          <div className="flex gap-2 items-center">
-            <DateInput 
-              value={attendanceDate}
-              onChange={(val) => setAttendanceDate(val)}
-              className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 outline-none"
-            />
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              title="Dia anterior"
+              className={`p-2 rounded-xl border transition-colors ${
+                isDark 
+                  ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white/80' 
+                  : 'bg-white border-black/10 hover:bg-black/5 text-gray-700 shadow-sm'
+              }`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-sm font-semibold transition-all shadow-sm ${
+                    isDark
+                      ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
+                      : 'bg-white border-black/10 hover:bg-gray-50 text-gray-800'
+                  }`}
+                  title="Clique para abrir o calendário e selecionar a data"
+                >
+                  <CalendarIcon size={16} className="text-amber-500 opacity-90" />
+                  <span>{attendanceDate.split('-').reverse().join('/')}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className={`w-auto p-0 rounded-2xl shadow-xl border ${isDark ? 'bg-[#18181b] border-white/10 text-white' : 'bg-white border-black/10'}`} align="end">
+                <Calendar
+                  mode="single"
+                  selected={attendanceDate ? new Date(attendanceDate + 'T12:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const y = date.getFullYear()
+                      const m = String(date.getMonth() + 1).padStart(2, '0')
+                      const d = String(date.getDate()).padStart(2, '0')
+                      setAttendanceDate(`${y}-${m}-${d}`)
+                      setIsCalendarOpen(false)
+                    }
+                  }}
+                  initialFocus
+                  className={isDark ? "bg-[#18181b] text-white" : "bg-white text-gray-900"}
+                />
+                <div className="p-2.5 border-t border-black/5 dark:border-white/10 flex justify-between items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttendanceDate(getLocalDate())
+                      setIsCalendarOpen(false)
+                    }}
+                    className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCalendarOpen(false)}
+                    className="text-xs px-2.5 py-1 rounded-lg opacity-60 hover:opacity-100 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <button
+              type="button"
+              onClick={handleNextDay}
+              title="Próximo dia"
+              className={`p-2 rounded-xl border transition-colors ${
+                isDark 
+                  ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white/80' 
+                  : 'bg-white border-black/10 hover:bg-black/5 text-gray-700 shadow-sm'
+              }`}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
