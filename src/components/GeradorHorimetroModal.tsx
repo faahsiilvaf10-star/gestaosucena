@@ -10,6 +10,8 @@ import Send from 'lucide-react/dist/esm/icons/send.js'
 import X from 'lucide-react/dist/esm/icons/x.js'
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.js'
 import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert.js'
+import Lock from 'lucide-react/dist/esm/icons/lock.js'
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js'
 import { toast } from 'sonner'
 import { useTheme } from '../contexts/ThemeContext'
 import {
@@ -21,7 +23,7 @@ import {
   reenviarAlertaWhatsappGerador,
   GERADOR_HORIMETRO_UPDATED_EVENT
 } from '../lib/geradorHorimetro'
-import { getAuthenticatedUserName } from '../lib/authHelpers'
+import { getAuthenticatedUserName, checkCurrentUserIsAdmin } from '../lib/authHelpers'
 
 interface GeradorHorimetroModalProps {
   isOpen: boolean
@@ -44,18 +46,25 @@ export function GeradorHorimetroModal({
   const [sendingWhatsapp, setSendingWhatsapp] = useState(false)
 
   const [data, setData] = useState<GeradorHorimetroData | null>(initialData || null)
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false)
   const [currentHoriInput, setCurrentHoriInput] = useState<string>('')
   const [nextMaintInput, setNextMaintInput] = useState<string>('')
+  const [nextMaintDateInput, setNextMaintDateInput] = useState<string>('')
   const [notesInput, setNotesInput] = useState<string>('')
   const [showHistory, setShowHistory] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
     try {
-      const res = await getGeradorHorimetro(currentEnv)
+      const [res, adminCheck] = await Promise.all([
+        getGeradorHorimetro(currentEnv),
+        checkCurrentUserIsAdmin()
+      ])
       setData(res)
+      setIsAdminUser(adminCheck)
       setCurrentHoriInput(String(res.currentHorimeter || ''))
       setNextMaintInput(String(res.nextMaintenanceHorimeter || ''))
+      setNextMaintDateInput(res.nextMaintenanceDate || '')
     } catch (err) {
       console.error(err)
       toast.error('Não foi possível carregar os dados do horímetro')
@@ -66,10 +75,12 @@ export function GeradorHorimetroModal({
 
   useEffect(() => {
     if (isOpen) {
+      checkCurrentUserIsAdmin().then((isAdm) => setIsAdminUser(isAdm))
       if (initialData) {
         setData(initialData)
         setCurrentHoriInput(String(initialData.currentHorimeter || ''))
         setNextMaintInput(String(initialData.nextMaintenanceHorimeter || ''))
+        setNextMaintDateInput(initialData.nextMaintenanceDate || '')
       } else {
         loadData()
       }
@@ -107,10 +118,15 @@ export function GeradorHorimetroModal({
       toast.error('O horímetro não pode ser negativo')
       return
     }
-    if (numNext <= 0) {
-      toast.error('Defina um horímetro de manutenção válido')
-      return
-    }
+
+    // Se for admin, valida o numNext
+    const effectiveNext = isAdminUser
+      ? (numNext > 0 ? numNext : (data?.nextMaintenanceHorimeter ?? 250))
+      : (data?.nextMaintenanceHorimeter ?? (numNext > 0 ? numNext : 250))
+
+    const effectiveNextDate = isAdminUser
+      ? (nextMaintDateInput || undefined)
+      : data?.nextMaintenanceDate
 
     setSaving(true)
     try {
@@ -118,7 +134,8 @@ export function GeradorHorimetroModal({
       const res = await saveGeradorHorimetro(
         {
           currentHorimeter: numCurrent,
-          nextMaintenanceHorimeter: numNext,
+          nextMaintenanceHorimeter: effectiveNext,
+          nextMaintenanceDate: effectiveNextDate,
           notes: notesInput
         },
         currentEnv,
@@ -300,13 +317,18 @@ export function GeradorHorimetroModal({
               </div>
             </div>
 
-            {/* Inputs de Horímetro */}
+            {/* Inputs de Horímetro e Manutenção */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Horímetro Atual */}
               <div className={`p-4 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
-                  ⏱️ Horímetro Atual (Hoje)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider opacity-70">
+                    ⏱️ Horímetro Atual (Hoje)
+                  </label>
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                    Liberado
+                  </span>
+                </div>
                 <div className="relative mt-1">
                   <input
                     type="number"
@@ -344,21 +366,39 @@ export function GeradorHorimetroModal({
               </div>
 
               {/* Próximo Horímetro de Manutenção */}
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
-                  🔧 Próx. Manutenção
-                </label>
+              <div
+                className={`p-4 rounded-2xl border transition-all ${
+                  isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+                } ${!isAdminUser ? 'opacity-85' : ''}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider opacity-70">
+                    🔧 Próx. Manutenção
+                  </label>
+                  {isAdminUser ? (
+                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                      Admin
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      <Lock size={10} /> Somente Admin
+                    </span>
+                  )}
+                </div>
                 <div className="relative mt-1">
                   <input
                     type="number"
                     step="0.1"
                     min="1"
                     required
+                    disabled={!isAdminUser}
                     value={nextMaintInput}
                     onChange={(e) => setNextMaintInput(e.target.value)}
                     placeholder="Ex: 1500"
                     className={`w-full px-4 py-3 rounded-xl border text-xl font-black tabular-nums transition-colors outline-none ${
-                      isDark
+                      !isAdminUser
+                        ? 'bg-black/5 dark:bg-white/5 border-dashed border-black/15 dark:border-white/15 cursor-not-allowed opacity-80'
+                        : isDark
                         ? 'bg-[#18181f] border-white/10 focus:border-amber-500 text-white'
                         : 'bg-white border-gray-300 focus:border-amber-500 text-gray-900'
                     }`}
@@ -367,23 +407,74 @@ export function GeradorHorimetroModal({
                     horas
                   </span>
                 </div>
-                {/* Botões rápidos de intervalo padrão */}
-                <div className="flex items-center gap-1.5 mt-2">
-                  {[250, 500].map((step) => (
-                    <button
-                      key={step}
-                      type="button"
-                      onClick={() =>
-                        setNextMaintInput(String(Math.ceil((numCurrent + 1) / step) * step))
-                      }
-                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-                      title={`Próximo múltiplo de ${step}h`}
-                    >
-                      {step}h
-                    </button>
-                  ))}
-                </div>
+                {/* Botões rápidos de intervalo padrão (apenas Admin) */}
+                {isAdminUser ? (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {[250, 500].map((step) => (
+                      <button
+                        key={step}
+                        type="button"
+                        onClick={() =>
+                          setNextMaintInput(String(Math.ceil((numCurrent + 1) / step) * step))
+                        }
+                        className="px-2 py-1 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                        title={`Próximo múltiplo de ${step}h`}
+                      >
+                        {step}h
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] opacity-60 mt-2 flex items-center gap-1">
+                    <Lock size={11} className="shrink-0" />
+                    Valor protegido para administradores
+                  </p>
+                )}
               </div>
+            </div>
+
+            {/* Próxima Data de Manutenção */}
+            <div
+              className={`p-4 rounded-2xl border transition-all ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-70">
+                  <Calendar size={13} className="text-amber-500" />
+                  Próxima Data de Manutenção Prevista
+                </label>
+                {isAdminUser ? (
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    Admin
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/20">
+                    <Lock size={10} /> Somente Admin
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type="date"
+                  disabled={!isAdminUser}
+                  value={nextMaintDateInput}
+                  onChange={(e) => setNextMaintDateInput(e.target.value)}
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors outline-none ${
+                    !isAdminUser
+                      ? 'bg-black/5 dark:bg-white/5 border-dashed border-black/15 dark:border-white/15 cursor-not-allowed opacity-80'
+                      : isDark
+                      ? 'bg-[#18181f] border-white/10 focus:border-amber-500 text-white'
+                      : 'bg-white border-gray-300 focus:border-amber-500 text-gray-900'
+                  }`}
+                />
+              </div>
+              {!isAdminUser && (
+                <p className="text-[11px] text-amber-600/90 dark:text-amber-400/90 mt-2 flex items-center gap-1.5 font-medium">
+                  <Lock size={12} className="shrink-0" />
+                  Somente administradores podem agendar ou alterar a data da próxima manutenção preventiva.
+                </p>
+              )}
             </div>
 
             {/* Observações / Notas */}

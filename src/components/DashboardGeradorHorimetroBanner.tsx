@@ -159,15 +159,18 @@ export function DashboardGeradorHorimetroBanner({
               <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
                 {status === 'vencido' ? (
                   <span className="font-bold text-red-600 dark:text-red-400">
-                    Atenção: Horímetro de manutenção ultrapassado! Programar a parada técnica para revisão imediata.
+                    Atenção: Horímetro de manutenção ultrapassado! Programar a parada técnica para revisão imediata
+                    {data?.nextMaintenanceDate ? ` (data prevista: ${new Date(data.nextMaintenanceDate + 'T00:00:00').toLocaleDateString('pt-BR')})` : ''}.
                   </span>
                 ) : status === 'alerta' ? (
                   <span className="font-semibold text-amber-700 dark:text-amber-300">
-                    Faltam menos de 20 horas para a revisão do gerador. Alerta sincronizado no WhatsApp.
+                    Faltam menos de 20 horas para a revisão do gerador. Alerta sincronizado no WhatsApp
+                    {data?.nextMaintenanceDate ? ` • Prevista para ${new Date(data.nextMaintenanceDate + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.
                   </span>
                 ) : (
                   <span>
-                    Próxima manutenção preventiva programada para {numNext}h ({remainingHours}h restantes).
+                    Próxima manutenção preventiva programada para {numNext}h ({remainingHours}h restantes)
+                    {data?.nextMaintenanceDate ? ` • Prevista para ${new Date(data.nextMaintenanceDate + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.
                   </span>
                 )}
               </p>

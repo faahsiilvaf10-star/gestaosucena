@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isAdmin } from '../components/ui/VerifiedBadge'
 
 /**
  * Retorna o nome de exibição do usuário atualmente autenticado com múltiplos fallbacks:
@@ -81,5 +82,52 @@ export async function getAuthenticatedUserName(): Promise<string> {
   } catch (err) {
     console.warn('Erro ao obter nome do usuário autenticado:', err)
     return (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null) || 'Portaria / Operador'
+  }
+}
+
+/**
+ * Verifica se o usuário autenticado atualmente possui privilégios de Administrador.
+ */
+export async function checkCurrentUserIsAdmin(): Promise<boolean> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const sessionUser = sessionData?.session?.user
+    const user = sessionUser || (await supabase.auth.getUser()).data?.user
+
+    const cachedName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+    const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_role') || '' : ''
+
+    if (!user) {
+      return isAdmin(cachedName, cachedRole)
+    }
+
+    if (user.email && (user.email === 'ffaahsiilva@gmail.com' || user.email.toLowerCase().includes('fabricio'))) {
+      return true
+    }
+
+    const meta = user.user_metadata || {}
+    const name = meta.full_name || meta.name || meta.nome || meta.display_name || cachedName || ''
+    const role = meta.role || cachedRole || ''
+
+    if (isAdmin(name, role)) return true
+
+    // Check in social_profiles
+    try {
+      const { data: profile } = await supabase
+        .from('social_profiles')
+        .select('role, display_name')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (profile && isAdmin(profile.display_name || name, profile.role || role)) {
+        return true
+      }
+    } catch (_) {}
+
+    return false
+  } catch (err) {
+    console.warn('Erro ao verificar permissão de admin:', err)
+    const cachedName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+    const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_role') || '' : ''
+    return isAdmin(cachedName, cachedRole)
   }
 }

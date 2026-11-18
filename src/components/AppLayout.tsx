@@ -215,6 +215,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       if (userName && userName !== 'Usuário') {
         try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
       }
+      if (role) {
+        try { localStorage.setItem('sucena_user_role', role) } catch (_) {}
+      }
       setCurrentUser({
         id: user.id || '',
         name: userName,
@@ -234,6 +237,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         const userName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
         if (userName && userName !== 'Usuário') {
           try { localStorage.setItem('sucena_user_name', userName) } catch (_) {}
+        }
+        if (role) {
+          try { localStorage.setItem('sucena_user_role', role) } catch (_) {}
         }
         setCurrentUser({
           id: session.user.id || '',

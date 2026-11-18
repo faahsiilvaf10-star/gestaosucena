@@ -74,4 +74,47 @@ describe('Controle de Horímetro e Manutenção do Gerador', () => {
     expect(sentPhone).toBe('120363408136247156@g.us')
     expect(sentText).toContain('GERADOR GERADOR TAG E9A4808 ATUAL 235 PROX 250 RESTA 15 POR Carlos Silva')
   })
+
+  it('saveGeradorHorimetro persiste e propaga nextMaintenanceDate', async () => {
+    let upsertPayload: any = null
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: {
+                key: 'gerador_horimetro_barcarena',
+                value: {
+                  currentHorimeter: 200,
+                  nextMaintenanceHorimeter: 300,
+                  plate_tag: 'E9A4808',
+                  history: []
+                }
+              },
+              error: null
+            })
+          })
+        }),
+        upsert: async (payload: any) => {
+          upsertPayload = payload
+          return { error: null }
+        }
+      } as any
+    })
+
+    const res = await saveGeradorHorimetro(
+      {
+        currentHorimeter: 210,
+        nextMaintenanceHorimeter: 350,
+        nextMaintenanceDate: '2026-12-15',
+        notes: 'Revisão programada pelo Admin'
+      },
+      'barcarena',
+      'Fabricio'
+    )
+
+    expect(res.success).toBe(true)
+    expect(res.data.nextMaintenanceDate).toBe('2026-12-15')
+    expect(upsertPayload.value.nextMaintenanceDate).toBe('2026-12-15')
+  })
 })

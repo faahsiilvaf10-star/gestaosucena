@@ -18,6 +18,7 @@ export interface GeradorHorimetroData {
   plate_tag: string
   currentHorimeter: number
   nextMaintenanceHorimeter: number
+  nextMaintenanceDate?: string
   alertHoursThreshold: number // Default 20h
   lastUpdated: string
   updatedBy: string
@@ -118,6 +119,7 @@ export async function saveGeradorHorimetro(
   payload: {
     currentHorimeter: number
     nextMaintenanceHorimeter?: number
+    nextMaintenanceDate?: string
     alertHoursThreshold?: number
     notes?: string
     equipmentId?: string
@@ -142,6 +144,10 @@ export async function saveGeradorHorimetro(
         ? payload.nextMaintenanceHorimeter
         : current.nextMaintenanceHorimeter
     )
+    const updatedNextMaintenanceDate =
+      payload.nextMaintenanceDate !== undefined
+        ? payload.nextMaintenanceDate
+        : current.nextMaintenanceDate
 
     // Se as configurações do WhatsApp definirem um alertHours, use-o como fallback
     let configuredAlertHours = payload.alertHoursThreshold || current.alertHoursThreshold || DEFAULT_ALERT_HOURS
@@ -201,6 +207,7 @@ export async function saveGeradorHorimetro(
       plate_tag: payload.plate_tag || current.plate_tag || 'E9A4808',
       currentHorimeter: updatedCurrentHorimeter,
       nextMaintenanceHorimeter: updatedNextMaintenance,
+      nextMaintenanceDate: updatedNextMaintenanceDate,
       alertHoursThreshold: configuredAlertHours,
       lastUpdated: nowIso,
       updatedBy: finalUserName,
