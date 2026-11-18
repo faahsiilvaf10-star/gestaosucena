@@ -1230,6 +1230,7 @@ function DashboardComponent() {
     <div
       className="hydro-dashboard-root"
       style={isIntroFade ? { animation: 'dashboardContentFade 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards' } : undefined}
+      onAnimationEnd={() => setIsIntroFade(false)}
     >
       {/* Transição suave estilo Fade ao entrar pelo login */}
       {isIntroFade && (
@@ -1249,7 +1250,7 @@ function DashboardComponent() {
         }
         @keyframes dashboardContentFade {
           0% { opacity: 0; filter: blur(4px); transform: translateY(6px); }
-          100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+          100% { opacity: 1; filter: none; transform: none; }
         }
       `}</style>
       {/* SVG DEFS GLOBAIS PARA GRADIENTES DOS DONUTS E VELOCÍMETROS */}

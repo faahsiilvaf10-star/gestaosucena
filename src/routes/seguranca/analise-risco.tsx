@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   type AnaliseRiscoItem,
@@ -1171,9 +1172,9 @@ export function AnaliseRiscoComponent() {
         </section>
 
         {/* Modal de Fechamento por Técnico de Segurança */}
-        {modalFecharItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+        {modalFecharItem && typeof document !== 'undefined' && createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl max-w-md w-full my-auto p-6 shadow-2xl border border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-lg">
                   <Lock className="w-5 h-5 text-emerald-600" />
@@ -1229,7 +1230,8 @@ export function AnaliseRiscoComponent() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Footer */}

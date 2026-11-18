@@ -15,6 +15,7 @@ import Layers from 'lucide-react/dist/esm/icons/layers.js';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.js';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
 import { createFileRoute } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -1159,9 +1160,9 @@ function JardinagemPage() {
       )}
 
       {/* History Modal */}
-      {showHistory && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      {showHistory && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
                 <History className="text-yellow-500" size={20} /> Histórico de Relatórios
@@ -1187,7 +1188,8 @@ function JardinagemPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

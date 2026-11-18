@@ -3,6 +3,7 @@ import Check from 'lucide-react/dist/esm/icons/check.js';
 import ZoomIn from 'lucide-react/dist/esm/icons/zoom-in.js';
 import ZoomOut from 'lucide-react/dist/esm/icons/zoom-out.js';
 import React, { useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Cropper from 'react-easy-crop'
 import { Point, Area } from 'react-easy-crop'
 
@@ -29,10 +30,11 @@ export function AvatarCropperModal({ isOpen, onClose, imageSrc, onCropComplete }
   }
 
   if (!isOpen) return null
+  if (typeof document === 'undefined') return null
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-md my-auto overflow-hidden shadow-2xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10">
           <h3 className="text-gray-900 dark:text-white font-bold">Ajustar Foto de Perfil</h3>
           <button onClick={onClose} className="text-gray-500 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -87,7 +89,8 @@ export function AvatarCropperModal({ isOpen, onClose, imageSrc, onCropComplete }
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

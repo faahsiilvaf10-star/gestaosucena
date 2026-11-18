@@ -17,6 +17,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text.js';
 import UserPlus from 'lucide-react/dist/esm/icons/user-plus.js';
 import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { DateInput } from '@/components/ui/DateInput'
 import { getLogicalAreaForColaborador } from '@/lib/rhAreaHelper'
 import { getWhatsappSettings } from '@/lib/settings'
@@ -149,9 +150,11 @@ function AddCollaboratorModal({
     )
   })
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#1a1c20] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1a1c20] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-xl my-auto shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/[0.02] dark:bg-white/[0.02]">
@@ -368,7 +371,8 @@ function AddCollaboratorModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -461,9 +465,12 @@ function PreviewModal({
     toast.success('Texto copiado para a área de transferência!')
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+  if (!isOpen) return null
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-lg my-auto shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         <div className="p-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
           <h2 className="text-[#1c1d21] dark:text-white font-semibold flex items-center gap-2">
@@ -490,7 +497,8 @@ function PreviewModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1553,9 +1561,9 @@ function RhListaPresencaPage() {
       />
       
       {/* Delete Area Modal */}
-      {areaToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col p-6 text-center">
+      {areaToDelete && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-sm my-auto shadow-2xl overflow-hidden flex flex-col p-6 text-center animate-in zoom-in-95 duration-200">
             <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-[#1c1d21] dark:text-white font-bold text-xl mb-2">Excluir Área?</h3>
             <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
@@ -1570,7 +1578,8 @@ function RhListaPresencaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

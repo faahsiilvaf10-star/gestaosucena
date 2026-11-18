@@ -15,6 +15,7 @@ import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Zap from 'lucide-react/dist/esm/icons/zap.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { DateInput } from '@/components/ui/DateInput'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -1057,10 +1058,10 @@ function EntradaSaidaPage() {
       </div>
 
       {/* Entry Modal */}
-      {isEntryModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEntryModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isEntryModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEntryModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-500">
               <LogIn size={28} />
               <h2 className="text-2xl">Registrar Entrada</h2>
@@ -1119,14 +1120,15 @@ function EntradaSaidaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Exit Modal */}
-      {isExitModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsExitModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isExitModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsExitModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-500">
               <LogOut size={28} />
               <h2 className="text-2xl">Registrar Saída</h2>
@@ -1219,14 +1221,15 @@ function EntradaSaidaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* History Modal */}
-      {isHistoryModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
-          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isHistoryModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
+          <div className={`relative w-full max-w-lg my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] flex flex-col ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex-none flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl">Histórico de Movimentação</h2>
@@ -1307,13 +1310,14 @@ function EntradaSaidaPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Report Modal */}
-      {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
-          <div className={`relative w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isReportModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
+          <div className={`relative w-full max-w-sm my-auto rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-[#1c1d21] dark:text-white border border-white/10' : 'bg-white text-black'}`}>
             <h2 className="text-2xl mb-2">Relatório PDF</h2>
             <p className="text-sm opacity-70 mb-6">Selecione o período das movimentações para baixar o relatório completo.</p>
             
@@ -1353,7 +1357,8 @@ function EntradaSaidaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Horímetro e Manutenção do Gerador */}

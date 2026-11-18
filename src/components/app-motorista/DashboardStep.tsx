@@ -1,4 +1,5 @@
 import Play from "lucide-react/dist/esm/icons/play.js";
+import { createPortal } from "react-dom";
 import Square from "lucide-react/dist/esm/icons/square.js";
 import Coffee from "lucide-react/dist/esm/icons/coffee.js";
 import Droplet from "lucide-react/dist/esm/icons/droplet.js";
@@ -307,9 +308,10 @@ export default function DashboardStep({
 
   const renderConfirmModal = () => {
     if (!confirmModal?.isOpen) return null;
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in">
-        <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+      <div className="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in">
+        <div className="bg-white dark:bg-zinc-900 rounded-[32px] w-full max-w-sm my-auto p-6 shadow-2xl animate-in zoom-in-95 duration-200">
           <h3 className="text-xl font-black text-[#1c1d21] dark:text-white mb-2">
             {confirmModal.title}
           </h3>
@@ -331,7 +333,8 @@ export default function DashboardStep({
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   };
 

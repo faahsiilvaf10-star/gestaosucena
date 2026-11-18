@@ -1,6 +1,7 @@
 import Search from 'lucide-react/dist/esm/icons/search.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { MENU_ITEMS } from './WindowsNavbar'
 import { useNavigate } from '@tanstack/react-router'
 import { useTheme } from '../contexts/ThemeContext'
@@ -67,8 +68,9 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
   }
 
   if (!isOpen) return null
+  if (typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
       <div 
         className="fixed inset-0 bg-black/40 backdrop-blur-sm" 
@@ -138,6 +140,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

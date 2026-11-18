@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import Zap from 'lucide-react/dist/esm/icons/zap.js'
 import Clock from 'lucide-react/dist/esm/icons/clock.js'
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js'
@@ -87,7 +88,18 @@ export function GeradorHorimetroModal({
     return Math.min(100, Math.max(0, Math.round(pct)))
   }, [numCurrent, numNext])
 
+  useEffect(() => {
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = prevOverflow
+      }
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
+  if (typeof document === 'undefined') return null
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -164,17 +176,17 @@ export function GeradorHorimetroModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={() => !saving && onClose()}
       />
 
       {/* Modal Card */}
       <div
-        className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-32px)] overflow-y-auto transition-all ${
+        className={`relative w-full max-w-lg my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-32px)] overflow-y-auto transition-all ${
           isDark
             ? 'bg-[#121217] text-white border border-white/10'
             : 'bg-white text-gray-900 border border-black/10 shadow-xl'
@@ -477,6 +489,7 @@ export function GeradorHorimetroModal({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

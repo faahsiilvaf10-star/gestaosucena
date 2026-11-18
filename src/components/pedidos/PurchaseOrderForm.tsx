@@ -7,6 +7,7 @@ import Save from 'lucide-react/dist/esm/icons/save.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import AlertTriangle from 'lucide-react/dist/esm/icons/triangle-alert.js';
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -580,9 +581,9 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
       </form>
 
       {/* Modal de Confirmação Final */}
-      {showConfirmModal && formDataForConfirm && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-card border rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+      {showConfirmModal && formDataForConfirm && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-card border rounded-2xl shadow-xl max-w-md w-full my-auto overflow-hidden">
             <div className="p-6 bg-primary/10 border-b flex justify-between items-center">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <CheckCircle2 className="w-6 h-6 text-primary" />
@@ -645,7 +646,8 @@ export function PurchaseOrderForm({ nextNumber }: PurchaseOrderFormProps) {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

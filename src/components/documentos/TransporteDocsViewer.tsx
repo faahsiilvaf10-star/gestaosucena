@@ -1,4 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import File from 'lucide-react/dist/esm/icons/file.js';
 import FileText from 'lucide-react/dist/esm/icons/file-text.js';
@@ -247,9 +248,11 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
     return drivers.filter(d => (driverDocsMap.get(d.id)?.length || 0) > 0).length;
   }, [drivers, driverDocsMap]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md bg-black/50 animate-in fade-in duration-300">
-      <div className={`relative w-full max-w-5xl h-[92vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden border ${isDark ? 'bg-[#121214] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}>
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md bg-black/50 overflow-y-auto animate-in fade-in duration-300">
+      <div className={`relative w-full max-w-5xl h-[92vh] my-auto flex flex-col rounded-3xl shadow-2xl overflow-hidden border ${isDark ? 'bg-[#121214] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}>
         
         {/* Header */}
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 sm:p-6 border-b gap-4 shrink-0 ${isDark ? 'border-white/5 bg-white/[0.03]' : 'border-gray-100 bg-gray-50/80'}`}>
@@ -1040,6 +1043,7 @@ export function TransporteDocsViewer({ onClose }: TransporteDocsViewerProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div>,
+    document.body
   );
 }

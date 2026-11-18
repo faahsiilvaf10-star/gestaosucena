@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { supabase } from '../../lib/supabase'
 import {
@@ -1824,9 +1825,9 @@ export function MatrizResponsabilidadeComponent() {
       {/* ============================================================== */}
       {/* MODAL 1: EDITAR ÍCONE E TÍTULO                                  */}
       {/* ============================================================== */}
-      {modalEditar.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+      {modalEditar.isOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full my-auto p-6 shadow-2xl border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="text-xl font-black text-black flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-amber-500" />
@@ -1922,15 +1923,16 @@ export function MatrizResponsabilidadeComponent() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 2: DUPLICAR MATRIZ / CARGO                                */}
       {/* ============================================================== */}
-      {modalDuplicar.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+      {modalDuplicar.isOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full my-auto p-6 shadow-2xl border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="text-xl font-black text-black flex items-center gap-2">
                 <CopyPlus className="w-5 h-5 text-purple-600" />
@@ -2044,15 +2046,16 @@ export function MatrizResponsabilidadeComponent() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 3: ATRIBUIR COLABORADOR A CARGO E ATIVIDADES             */}
       {/* ============================================================== */}
-      {modalAtribuirColab.isOpen && modalAtribuirColab.colab && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-200">
+      {modalAtribuirColab.isOpen && modalAtribuirColab.colab && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full my-auto p-6 shadow-2xl border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div>
                 <h3 className="text-xl font-black text-black flex items-center gap-2">
@@ -2182,7 +2185,8 @@ export function MatrizResponsabilidadeComponent() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

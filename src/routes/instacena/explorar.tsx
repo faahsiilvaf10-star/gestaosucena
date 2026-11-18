@@ -3,6 +3,7 @@ import MessageCircle from 'lucide-react/dist/esm/icons/message-circle.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
 import { createFileRoute } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 
@@ -155,9 +156,9 @@ function ExplorarRoute() {
       )}
 
       {/* Post Modal */}
-      {selectedPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
-          <div className="bg-white dark:bg-[#262626] rounded-xl max-w-5xl w-full max-h-[90vh] min-h-[500px] overflow-hidden flex flex-col md:flex-row relative animate-in zoom-in-95 shadow-2xl">
+      {selectedPost && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
+          <div className="bg-white dark:bg-[#262626] rounded-xl max-w-5xl w-full max-h-[90vh] min-h-[500px] my-auto overflow-hidden flex flex-col md:flex-row relative animate-in zoom-in-95 shadow-2xl">
             <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-[#1c1d21] dark:text-white bg-black/50 rounded-full p-2 hover:bg-black transition-colors">
               <X size={20} />
             </button>
@@ -220,7 +221,8 @@ function ExplorarRoute() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

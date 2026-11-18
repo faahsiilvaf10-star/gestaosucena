@@ -17,6 +17,7 @@ import Handshake from 'lucide-react/dist/esm/icons/handshake.js';
 import Building2 from 'lucide-react/dist/esm/icons/building-2.js';
 import Undo2 from 'lucide-react/dist/esm/icons/undo-2.js';
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -1329,10 +1330,10 @@ function EquipamentoParadoPage() {
       </div>
 
       {/* Modal Emprestar Equipamento */}
-      {isLoanModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsLoanModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isLoanModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsLoanModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-blue-600 dark:text-blue-400">
               <Handshake size={28} />
               <h2 className="text-2xl font-bold">Emprestar Equipamento</h2>
@@ -1440,14 +1441,15 @@ function EquipamentoParadoPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Marcar Quebrado */}
-      {isBrokenModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsBrokenModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isBrokenModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsBrokenModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-600">
               <TriangleAlert size={28} />
               <h2 className="text-2xl font-bold">Marcar como Quebrado</h2>
@@ -1550,14 +1552,15 @@ function EquipamentoParadoPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Marcar Funcionando / Devolução */}
-      {isWorkingModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsWorkingModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isWorkingModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsWorkingModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl max-h-[calc(100dvh-24px)] overflow-y-auto ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-green-600">
               {selectedEqIsLoaned ? <Undo2 size={28} /> : <CheckCircle2 size={28} />}
               <h2 className="text-2xl font-bold">
@@ -1662,14 +1665,15 @@ function EquipamentoParadoPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Histórico */}
-      {isHistoryModalOpen && selectedEq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
-          <div className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[85vh] ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isHistoryModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryModalOpen(false)} />
+          <div className={`relative w-full max-w-lg my-auto rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[85vh] ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
@@ -1773,14 +1777,15 @@ function EquipamentoParadoPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Relatório PDF */}
-      {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
-          <div className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
+      {isReportModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isGeneratingReport && setIsReportModalOpen(false)} />
+          <div className={`relative w-full max-w-md my-auto rounded-3xl p-6 md:p-8 shadow-2xl ${isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-black'}`}>
             <div className="flex items-center gap-3 mb-6 text-red-600">
               <FileDown size={28} />
               <h2 className="text-2xl font-bold">Relatório de Equipamentos</h2>
@@ -1828,7 +1833,8 @@ function EquipamentoParadoPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

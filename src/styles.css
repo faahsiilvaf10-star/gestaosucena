@@ -52,7 +52,7 @@
   backface-visibility: hidden;
 }
 .vt-main {
-  transform: translateZ(0);
+  /* transform removed to prevent creating a containing block that traps position: fixed modals/dialogs */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }

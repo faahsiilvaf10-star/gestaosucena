@@ -10,6 +10,7 @@ import X from 'lucide-react/dist/esm/icons/x.js';
 import Upload from 'lucide-react/dist/esm/icons/upload.js';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-circle.js';
 import { createFileRoute } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { supabase } from '@/lib/supabase'
@@ -344,9 +345,9 @@ function PermissaoTrabalhoPage() {
       )}
 
       {/* Modal de Criação */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-white/10">
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5">
               <h3 className="font-semibold text-lg text-[#1c1d21] dark:text-white">Nova Permissão</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-[#5f6472] dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
@@ -441,7 +442,8 @@ function PermissaoTrabalhoPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

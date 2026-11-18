@@ -16,6 +16,7 @@ import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import Edit2 from 'lucide-react/dist/esm/icons/pen.js';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../../lib/supabase'
 import Cropper from 'react-easy-crop'
 import { Area, Point } from 'react-easy-crop'
@@ -1237,12 +1238,12 @@ function FeedRoute() {
       </div>
 
       {/* Modal de Pessoas que Curtiram */}
-      {likesModalPost && (
+      {likesModalPost && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in"
           onClick={(e) => { if (e.target === e.currentTarget) setLikesModalPost(null) }}
         >
-          <div className="bg-white dark:bg-[#262626] rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+          <div className="bg-white dark:bg-[#262626] rounded-2xl max-w-sm w-full my-auto overflow-hidden shadow-2xl border border-black/10 dark:border-white/10 animate-in zoom-in-95 flex flex-col max-h-[80vh]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-black/10 dark:border-white/10">
               <div className="flex items-center gap-2">
@@ -1316,13 +1317,14 @@ function FeedRoute() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {postToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setPostToDelete(null) }}>
-          <div className="bg-white dark:bg-[#262626] rounded-xl p-6 max-w-sm w-full text-center shadow-xl animate-in zoom-in-95">
+      {postToDelete && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setPostToDelete(null) }}>
+          <div className="bg-white dark:bg-[#262626] rounded-xl p-6 max-w-sm w-full my-auto text-center shadow-xl animate-in zoom-in-95">
             <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} />
             </div>
@@ -1345,7 +1347,8 @@ function FeedRoute() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

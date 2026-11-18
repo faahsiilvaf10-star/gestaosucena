@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { CacaPalavrasHub } from './CacaPalavrasHub'
 
 type Modo = 'busca' | 'cruzada'
@@ -29,12 +30,14 @@ export function ModalCacaPalavras({ aberto, aoFechar, modoInicial = 'cruzada' }:
   }, [aberto, aoFechar])
 
   if (!aberto) return null
+  if (typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-0 backdrop-blur-md sm:p-4 text-slate-900">
       <div className="relative flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-[92vh] sm:rounded-3xl">
         <CacaPalavrasHub aoFechar={aoFechar} modoInicial={modoInicial} />
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -10,6 +10,7 @@ import MapPin from 'lucide-react/dist/esm/icons/map-pin.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import { createFileRoute } from '@tanstack/react-router'
+import { createPortal } from 'react-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { VerifiedBadge, isAdmin } from '../../components/ui/VerifiedBadge'
@@ -398,9 +399,9 @@ function ProfileRoute() {
         </div>
       )}
       
-      {selectedPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
-          <div className="bg-white dark:bg-[#262626] rounded-xl max-w-4xl w-full max-h-[90vh] min-h-[500px] overflow-hidden flex flex-col md:flex-row relative">
+      {selectedPost && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPost(null) }}>
+          <div className="bg-white dark:bg-[#262626] rounded-xl max-w-4xl w-full max-h-[90vh] min-h-[500px] my-auto overflow-hidden flex flex-col md:flex-row relative">
             <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 text-[#1c1d21] dark:text-white bg-black/50 rounded-full p-2 hover:bg-black">
               <X size={20} />
             </button>
@@ -477,12 +478,13 @@ function ProfileRoute() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {postToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#262626] rounded-xl p-6 max-w-sm w-full text-center shadow-xl animate-in zoom-in-95">
+      {postToDelete && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-white dark:bg-[#262626] rounded-xl p-6 max-w-sm w-full my-auto text-center shadow-xl animate-in zoom-in-95">
             <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} />
             </div>
@@ -505,7 +507,8 @@ function ProfileRoute() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
