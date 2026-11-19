@@ -78,23 +78,35 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   const { currentColor } = useMonthlyColors()
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 900)
+    }
+    checkMobile()
     try {
       const stored = localStorage.getItem('hydro_sidebar_collapsed')
-      if (stored !== null) return stored === 'true'
-      return window.innerWidth <= 900
+      if (stored !== null) {
+        setIsSidebarCollapsed(stored === 'true')
+      } else if (window.innerWidth <= 900) {
+        setIsSidebarCollapsed(true)
+      }
     } catch {
-      return false
+      // ignore
     }
-  })
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Fecha a barra lateral automaticamente no mobile ao navegar
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+    if (isMobile) {
       setIsSidebarCollapsed(true)
     }
-  }, [location.pathname])
+  }, [location.pathname, isMobile])
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
   const isDesvios = location.pathname.startsWith('/seguranca/desvios')
   const [isIOS, setIsIOS] = useState(false)
@@ -501,9 +513,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main 
         className={`vt-main relative z-0 flex flex-col min-h-full ${isDashboard ? 'p-0' : 'pt-0'}`}
         style={{ 
-          marginLeft: typeof window !== 'undefined' && window.innerWidth <= 900 ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
-          width: typeof window !== 'undefined' && window.innerWidth <= 900 ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
-          paddingLeft: isSidebarCollapsed ? (typeof window !== 'undefined' && window.innerWidth <= 900 ? '14px' : '58px') : undefined,
+          marginLeft: isMobile ? 0 : (isSidebarCollapsed ? 0 : 'var(--sbw)'),
+          width: isMobile ? '100%' : (isSidebarCollapsed ? '100%' : 'calc(100% - var(--sbw))'),
+          paddingLeft: isSidebarCollapsed ? (isMobile ? '14px' : '58px') : undefined,
           paddingBottom: 'max(32px, calc(32px + env(safe-area-inset-bottom, 0px)))',
           transition: 'margin-left .28s cubic-bezier(.16,1,.3,1), width .28s cubic-bezier(.16,1,.3,1), padding-left .28s cubic-bezier(.16,1,.3,1)',
           willChange: 'margin-left, width, padding-left',

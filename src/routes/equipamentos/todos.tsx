@@ -11,6 +11,7 @@ import Truck from 'lucide-react/dist/esm/icons/truck.js';
 import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
+import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'

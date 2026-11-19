@@ -258,12 +258,14 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
   }
 
   // Ambiente selecionado
-  const [currentEnv, setCurrentEnv] = useState<string>(() => {
+  const [currentEnv, setCurrentEnv] = useState<string>('barcarena')
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('sucena_environment') || 'barcarena'
+      const stored = localStorage.getItem('sucena_environment')
+      if (stored) setCurrentEnv(stored)
     }
-    return 'barcarena'
-  })
+  }, [])
 
   useEffect(() => {
     const handleEnvChange = (e: any) => {
