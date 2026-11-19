@@ -69,8 +69,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import * as htmlToImage from 'html-to-image'
-import { jsPDF } from 'jspdf'
 import { format, subDays, addDays, startOfDay, subHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DRIVERS } from '@/components/app-motorista/LoginStep'
@@ -970,6 +968,8 @@ function VehicleCard({ vehicle, history = [], dispatch, pendingAnomalies = [], o
     
     try {
       await new Promise(r => setTimeout(r, 500))
+      const htmlToImage = await import('html-to-image')
+      const { jsPDF } = await import('jspdf')
       const dataUrl = await htmlToImage.toPng(reportRef.current, { pixelRatio: 2, backgroundColor: '#ffffff' })
       const pdf = new jsPDF({
         orientation: 'portrait',

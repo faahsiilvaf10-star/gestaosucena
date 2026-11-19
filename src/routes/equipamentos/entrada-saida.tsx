@@ -22,8 +22,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../contexts/ThemeContext'
 import { toast } from 'sonner' // Assuming sonner is the toast library used
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
 import { Calendar as CalendarUI } from '../../components/ui/calendar'
 import { format } from 'date-fns'
@@ -141,6 +139,7 @@ function EntradaSaidaPage() {
           .from('eq_movements')
           .select('id, equipment_id, movement_type, exit_reason, description, created_at, created_by')
           .order('created_at', { ascending: false })
+          .limit(500)
       ])
 
       if (eqRes.error) throw eqRes.error

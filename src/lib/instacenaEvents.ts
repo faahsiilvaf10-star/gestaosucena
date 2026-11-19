@@ -21,6 +21,15 @@ try {
   }
 } catch (_) {}
 
+let instacenaChannel: any = null
+function getInstacenaChannel() {
+  if (!instacenaChannel) {
+    instacenaChannel = supabase.channel('instacena_global_activity')
+    instacenaChannel.subscribe()
+  }
+  return instacenaChannel
+}
+
 /**
  * Dispatches an Instacena activity notification immediately across tabs and to all users via Supabase Realtime broadcast.
  */
@@ -45,7 +54,7 @@ export async function broadcastInstacenaActivity(activity: InstacenaActivityPayl
     }
 
     // 3. Supabase Realtime Broadcast (sub-second delivery across all devices)
-    const channel = supabase.channel('instacena_global_activity')
+    const channel = getInstacenaChannel()
     await channel.send({
       type: 'broadcast',
       event: 'activity',

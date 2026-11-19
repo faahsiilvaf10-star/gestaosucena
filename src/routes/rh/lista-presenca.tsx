@@ -30,8 +30,6 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { useTheme } from '../../contexts/ThemeContext'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
 export const Route = createFileRoute('/rh/lista-presenca')({
   component: RhListaPresencaPage,

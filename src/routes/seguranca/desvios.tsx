@@ -1028,11 +1028,16 @@ function DesviosPage() {
       {/* Título Principal com Ilustração do Trabalhador EPI no Lado Esquerdo */}
       <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 bg-white border border-gray-200/80 rounded-3xl p-4 sm:p-5 shadow-xs">
         <div className="shrink-0 flex items-center justify-center">
-          <img
-            src="/trabalhador-epi-direita-v2.gif"
-            alt="Trabalhador com EPI"
-            className="w-32 sm:w-40 md:w-48 h-auto object-contain rounded-2xl drop-shadow-sm select-none"
-          />
+          <picture>
+            <source srcSet="/trabalhador-epi-direita-v2.webp" type="image/webp" />
+            <img
+              src="/trabalhador-epi-direita-v2.gif"
+              alt="Trabalhador com EPI"
+              className="w-32 sm:w-40 md:w-48 h-auto object-contain rounded-2xl drop-shadow-sm select-none"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-950 tracking-tight flex items-center gap-2.5">

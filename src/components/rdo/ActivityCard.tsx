@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import * as Icons from 'lucide-react';
+import { getRdoIcon } from './rdoIconMap';
+import Hash from 'lucide-react/dist/esm/icons/hash.js';
+import Ruler from 'lucide-react/dist/esm/icons/ruler.js';
 import { CheckCircle2, Circle, Pencil, Trash2, ChevronDown, ChevronUp, Layers, CheckSquare, Square } from 'lucide-react';
 
 export interface SubAtividadeItem {
@@ -66,7 +68,7 @@ interface ActivityCardProps {
 export function ActivityCard({ atividade, onToggleComplete, onToggleSubItem, onEdit, onDelete }: ActivityCardProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const IconComponent = (Icons as any)[atividade.icon] || Icons.Activity;
+  const IconComponent = getRdoIcon(atividade.icon);
   const subItens = getSubItens(atividade);
   const markedSubItens = subItens.filter(i => i.marcado);
 
@@ -153,14 +155,14 @@ export function ActivityCard({ atividade, onToggleComplete, onToggleSubItem, onE
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {atividade.quantidade !== undefined && atividade.quantidade !== null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                <Icons.Hash size={12} />
+                <Hash size={12} />
                 Qtd: {atividade.quantidade}
               </span>
             )}
 
             {atividade.metragem !== undefined && atividade.metragem !== null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                <Icons.Ruler size={12} />
+                <Ruler size={12} />
                 {atividade.metragem} {atividade.unidade || 'm'}
               </span>
             )}

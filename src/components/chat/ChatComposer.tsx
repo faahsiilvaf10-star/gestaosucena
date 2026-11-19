@@ -7,11 +7,13 @@ import Square from 'lucide-react/dist/esm/icons/square.js';
 import Play from 'lucide-react/dist/esm/icons/play.js';
 import Pause from 'lucide-react/dist/esm/icons/pause.js';
 import ImageIcon from 'lucide-react/dist/esm/icons/image.js';
-import { useState, useRef, useEffect, ChangeEvent } from 'react'
+import React, { useState, useRef, useEffect, ChangeEvent, lazy, Suspense } from 'react'
 import { useTheme } from '../../contexts/ThemeContext'
-import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react'
+import type { EmojiClickData } from 'emoji-picker-react'
 import { sendMessage } from '../../lib/api-chat'
 import { supabase } from '../../lib/supabase'
+
+const LazyEmojiPicker = lazy(() => import('emoji-picker-react'))
 
 interface ChatComposerProps {
   currentUserId: string
@@ -195,15 +197,17 @@ export function ChatComposer({ currentUserId, conversationId, onMessageSent }: C
 
   return (
     <div className={`relative shrink-0 p-2 sm:p-2.5 flex items-end gap-1.5 border-t z-10 ${isDark ? 'border-white/5 bg-[#111216]' : 'border-black/5 bg-[#f0f2f5]'}`}>
-      {/* EMOJI PICKER MODAL */}
+      {/* EMOJI PICKER MODAL - Carregamento sob demanda */}
       {showEmojiPicker && (
         <div className="absolute bottom-14 left-2 z-50 shadow-xl rounded-lg overflow-hidden">
-          <EmojiPicker 
-            onEmojiClick={onEmojiClick}
-            theme={isDark ? Theme.DARK : Theme.LIGHT}
-            searchPlaceHolder="Pesquisar emoji..."
-            lazyLoadEmojis={true}
-          />
+          <Suspense fallback={<div className="p-4 bg-white dark:bg-zinc-800 text-xs text-gray-500 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">Carregando emojis...</div>}>
+            <LazyEmojiPicker 
+              onEmojiClick={onEmojiClick}
+              theme={isDark ? ('dark' as any) : ('light' as any)}
+              searchPlaceHolder="Pesquisar emoji..."
+              lazyLoadEmojis={true}
+            />
+          </Suspense>
         </div>
       )}
 

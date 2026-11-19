@@ -5,7 +5,7 @@ import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2.js';
-import * as Icons from 'lucide-react';
+import { getRdoIcon } from '../../components/rdo/rdoIconMap';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -412,7 +412,7 @@ function RelatorioObraHub() {
 
           {/* Módulos Customizados Criados pelos Encarregados (igual Jardinagem e Gabião) */}
           {customModulos.map(modulo => {
-            const IconComponent = (Icons as any)[modulo.icon] || Icons.Activity;
+            const IconComponent = getRdoIcon(modulo.icon);
             const isSaved = savedToday.has(modulo.id);
 
             return (

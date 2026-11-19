@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import * as Icons from 'lucide-react';
+import Activity from 'lucide-react/dist/esm/icons/activity.js';
+import Eye from 'lucide-react/dist/esm/icons/eye.js';
 import { Plus, RefreshCw, CheckCircle2, Circle, Pencil, Trash2, ChevronDown, ChevronUp, Filter, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -242,7 +243,7 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-yellow-100 dark:bg-yellow-950/60 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
-            <Icons.Activity size={22} />
+            <Activity size={22} />
           </div>
           <div>
             <h3 className="font-bold text-gray-900 dark:text-white text-lg">Atividades da Obra</h3>
@@ -259,7 +260,7 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
                 : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50'
             }`}
           >
-            <Icons.Eye size={14} />
+            <Eye size={14} />
             <span>{showPreview ? 'Ocultar Resumo RDO' : 'Ver Resumo RDO'}</span>
           </button>
 

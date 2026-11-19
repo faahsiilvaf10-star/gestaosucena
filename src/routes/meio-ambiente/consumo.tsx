@@ -13,8 +13,6 @@ import {
 } from 'recharts'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useState, useEffect, useMemo } from 'react'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { supabase } from '../../lib/supabase'
 import { DateInput } from '../../components/ui/DateInput'
 

@@ -38,10 +38,18 @@ export type UserEnvironmentAccessMap = {
   [userId: string]: string[]
 }
 
+let cachedAccessMap: UserEnvironmentAccessMap | null = null
+let cacheTimestamp = 0
+const ACCESS_CACHE_TTL = 1000 * 60 * 5 // 5 minutos
+
 /**
- * Carrega o mapa de acessos a ambientes de todos os usuários a partir de global_settings.
+ * Carrega o mapa de acessos a ambientes de todos os usuários a partir de global_settings com cache em memória.
  */
-export async function getUserEnvironmentAccess(): Promise<UserEnvironmentAccessMap> {
+export async function getUserEnvironmentAccess(forceRefresh = false): Promise<UserEnvironmentAccessMap> {
+  if (!forceRefresh && cachedAccessMap && (Date.now() - cacheTimestamp < ACCESS_CACHE_TTL)) {
+    return cachedAccessMap
+  }
+
   try {
     const { data, error } = await supabase
       .from('global_settings')
@@ -50,20 +58,24 @@ export async function getUserEnvironmentAccess(): Promise<UserEnvironmentAccessM
       .maybeSingle()
 
     if (error || !data) {
-      return {}
+      return cachedAccessMap || {}
     }
 
-    return (data.value || {}) as UserEnvironmentAccessMap
+    cachedAccessMap = (data.value || {}) as UserEnvironmentAccessMap
+    cacheTimestamp = Date.now()
+    return cachedAccessMap
   } catch (err) {
     console.error('Erro ao buscar acessos de ambientes:', err)
-    return {}
+    return cachedAccessMap || {}
   }
 }
 
 /**
- * Salva o mapa de acessos a ambientes em global_settings.
+ * Salva o mapa de acessos a ambientes em global_settings e atualiza o cache local imediatamente.
  */
 export async function saveUserEnvironmentAccess(accessMap: UserEnvironmentAccessMap): Promise<boolean> {
+  cachedAccessMap = accessMap
+  cacheTimestamp = Date.now()
   try {
     const { error } = await supabase
       .from('global_settings')

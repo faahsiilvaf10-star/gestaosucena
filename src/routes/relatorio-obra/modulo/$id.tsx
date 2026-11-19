@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import * as Icons from 'lucide-react';
+import { getRdoIcon } from '@/components/rdo/rdoIconMap';
 import {
   Calendar as CalendarIcon,
   Save,
@@ -624,7 +624,7 @@ export function CustomModuloAtividadePage() {
     );
   }
 
-  const IconComponent = (Icons as any)[modulo.icon] || Icons.Activity;
+  const IconComponent = getRdoIcon(modulo.icon);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-transparent pb-24">

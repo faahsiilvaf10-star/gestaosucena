@@ -1,6 +1,6 @@
 /* ==========================================================
    PLACAR DE SEGURANÇA PROFISSIONAL DA OBRA — SUCENA
-   Reprodução fiel e industrial ao design de referência
+   Versão Compacta, Moderna e Proporcional ao Dashboard
    ========================================================== */
 
 :root {
@@ -15,13 +15,17 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 24px;
-  padding: 24px 30px 18px;
+  border-radius: 18px;
+  padding: 14px 20px 10px;
   background: linear-gradient(90deg, rgba(5, 9, 13, 0.60), rgba(5, 9, 13, 0.65)),
-              url("/placar-seguranca/industrial-background.png") center / cover no-repeat,
+              -webkit-image-set(
+                url("/placar-seguranca/industrial-background.webp") type("image/webp"),
+                url("/placar-seguranca/industrial-background.png") type("image/png")
+              ) center / cover no-repeat,
+              url("/placar-seguranca/industrial-background.webp") center / cover no-repeat,
               linear-gradient(115deg, #070b0f 0%, #111a20 48%, #080c11 100%);
-  border: 1px solid rgba(245, 180, 0, 0.8);
-  box-shadow: 0 18px 45px rgba(11, 17, 26, 0.45);
+  border: 1px solid rgba(245, 180, 0, 0.7);
+  box-shadow: 0 10px 28px rgba(11, 17, 26, 0.4);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #ffffff;
   width: 100%;
@@ -33,10 +37,10 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  opacity: 0.16;
+  opacity: 0.14;
   background-image: linear-gradient(120deg, transparent 0 48%, #87939b 49%, transparent 50%),
-                    repeating-linear-gradient(0deg, transparent 0 55px, #ffffff 56px, transparent 57px);
-  background-size: 100% 100%, 100% 90px;
+                    repeating-linear-gradient(0deg, transparent 0 45px, #ffffff 46px, transparent 47px);
+  background-size: 100% 100%, 100% 70px;
   mask-image: linear-gradient(90deg, #000, transparent 38%, transparent 62%, #000);
 }
 
@@ -45,8 +49,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 8px;
-  background: repeating-linear-gradient(135deg, #f5b400 0 18px, #111111 18px 36px);
+  height: 5px;
+  background: repeating-linear-gradient(135deg, #f5b400 0 12px, #111111 12px 24px);
   opacity: 0.95;
   z-index: 2;
 }
@@ -62,35 +66,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 5px 4px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  gap: 12px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .placar-brand-mark {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   font-weight: 900;
-  letter-spacing: 1.5px;
-  font-size: clamp(14px, 1.6vw, 20px);
+  letter-spacing: 1.2px;
+  font-size: clamp(12px, 1.2vw, 15px);
   color: #ffffff;
 }
 
 .placar-brand-mark img {
-  width: 38px;
+  width: 24px;
   height: auto;
   object-fit: contain;
 }
 
 .placar-live {
-  font-size: 11px;
-  letter-spacing: 1px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
   color: #ffd34d;
   font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   text-transform: uppercase;
 }
 
@@ -98,19 +102,20 @@
   border: 1px solid #0c9b6d;
   background: #063b2e;
   color: #39e8ae;
-  border-radius: 30px;
-  padding: 5px 12px;
+  border-radius: 20px;
+  padding: 3px 8px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  font-size: 9.5px;
 }
 
 .placar-pulse {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #00e59b;
-  box-shadow: 0 0 0 5px rgba(0, 229, 155, 0.25);
+  box-shadow: 0 0 0 4px rgba(0, 229, 155, 0.25);
   display: inline-block;
   animation: placarPulseAnimation 2s infinite ease-in-out;
 }
@@ -118,31 +123,31 @@
 @keyframes placarPulseAnimation {
   0%, 100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 4px rgba(0, 229, 155, 0.35);
+    box-shadow: 0 0 0 3px rgba(0, 229, 155, 0.35);
   }
   50% {
     transform: scale(1.15);
-    box-shadow: 0 0 0 7px rgba(0, 229, 155, 0.15);
+    box-shadow: 0 0 0 5px rgba(0, 229, 155, 0.15);
   }
 }
 
 .placar-edit-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.12);
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 5px 10px;
+  border-radius: 8px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .placar-edit-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.2);
   border-color: rgba(245, 180, 0, 0.8);
   transform: translateY(-1px);
 }
@@ -150,10 +155,10 @@
 /* Área central (Grid com 3 colunas) */
 .placar-hero-grid {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(360px, 2.5fr) minmax(150px, 1fr);
+  grid-template-columns: minmax(95px, 1fr) minmax(240px, 2.2fr) minmax(95px, 1fr);
   align-items: center;
-  gap: 24px;
-  padding: 26px 8px 24px;
+  gap: 14px;
+  padding: 10px 4px 10px;
 }
 
 /* Lado esquerdo: Emblema Transparente */
@@ -162,57 +167,58 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 6px;
   text-align: center;
 }
 
 .placar-security-badge {
   display: block;
-  width: clamp(125px, 14vw, 190px);
+  width: clamp(70px, 7vw, 95px);
   height: auto;
   max-width: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 16px rgba(230, 185, 0, 0.35));
+  filter: drop-shadow(0 0 10px rgba(230, 185, 0, 0.3));
   user-select: none;
   background: transparent !important;
 }
 
 .placar-seal-caption {
-  font-size: 10px;
+  font-size: 8.5px;
   color: #b5c1c9;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-align: center;
   font-weight: 800;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
 /* Centro: Contador Principal */
 .placar-main-counter {
   min-width: 0;
   text-align: center;
-  padding: 22px 20px 18px;
+  padding: 10px 14px 8px;
   border: 1px solid #22d66b;
   border-top: 2px solid #f5b400;
-  border-radius: 22px;
+  border-radius: 14px;
   background: linear-gradient(145deg, #101a20, #05090d);
-  box-shadow: 0 0 28px rgba(23, 211, 92, 0.18), inset 0 0 25px #000000;
+  box-shadow: 0 0 18px rgba(23, 211, 92, 0.14), inset 0 0 16px #000000;
 }
 
 .placar-counter-kicker {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 7px;
   color: #f7c32b;
-  font-size: clamp(11px, 1.25vw, 15px);
+  font-size: clamp(9.5px, 0.95vw, 11.5px);
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
 }
 
 .placar-generated-shield {
-  width: 27px;
-  height: 27px;
+  width: 17px;
+  height: 17px;
   object-fit: contain;
 }
 
@@ -220,48 +226,48 @@
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 14px;
+  gap: 8px;
   line-height: 1;
-  margin: 12px 0 16px;
+  margin: 4px 0 7px;
 }
 
 .placar-number-line strong {
-  font-size: clamp(74px, 9vw, 136px);
+  font-size: clamp(40px, 4.2vw, 58px);
   font-weight: 900;
-  letter-spacing: -5px;
+  letter-spacing: -2px;
   color: #ffffff;
-  text-shadow: 0 4px 0 #8b96a0, 0 12px 28px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 3px 0 #8b96a0, 0 8px 18px rgba(0, 0, 0, 0.85);
   font-family: inherit;
 }
 
 .placar-number-line span {
-  font-size: clamp(22px, 3vw, 42px);
+  font-size: clamp(14px, 1.5vw, 19px);
   font-weight: 900;
   color: var(--placar-yellow);
-  text-shadow: 0 2px 10px rgba(245, 180, 0, 0.3);
+  text-shadow: 0 2px 8px rgba(245, 180, 0, 0.25);
 }
 
 .placar-safe-ribbon {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   margin: auto;
-  max-width: 560px;
-  padding: 9px 16px;
+  max-width: 400px;
+  padding: 4px 12px;
   border: 1px solid #16dc55;
-  border-radius: 10px;
+  border-radius: 7px;
   background: linear-gradient(90deg, #06411e, #087b24, #06411e);
   font-weight: 900;
-  font-size: clamp(12px, 1.3vw, 16px);
-  letter-spacing: 0.6px;
+  font-size: clamp(10px, 0.95vw, 11.5px);
+  letter-spacing: 0.5px;
   color: #ffffff;
-  box-shadow: 0 2px 10px rgba(8, 123, 36, 0.4);
+  box-shadow: 0 2px 8px rgba(8, 123, 36, 0.35);
 }
 
 .placar-safe-ribbon img {
-  width: 26px;
-  height: 26px;
+  width: 17px;
+  height: 17px;
   object-fit: contain;
 }
 
@@ -269,11 +275,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  margin-top: 13px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 13px;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
   color: #aeb8c1;
   font-weight: 600;
 }
@@ -290,41 +296,42 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 7px;
+  gap: 4px;
 }
 
 .placar-goal-side img {
-  width: clamp(55px, 6vw, 82px);
+  width: clamp(34px, 3.6vw, 44px);
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 14px rgba(245, 189, 22, 0.3));
+  filter: drop-shadow(0 0 10px rgba(245, 189, 22, 0.25));
 }
 
 .placar-goal-side strong {
-  font-size: clamp(19px, 2.2vw, 30px);
+  font-size: clamp(12.5px, 1.3vw, 16px);
   line-height: 1.05;
   color: #f5bd16;
   font-weight: 900;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .placar-goal-side span {
-  font-size: clamp(10px, 1.05vw, 13px);
+  font-size: clamp(8px, 0.8vw, 9.5px);
   font-weight: 800;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.1px;
   color: #ffffff;
   text-transform: uppercase;
-  max-width: 170px;
+  max-width: 120px;
+  line-height: 1.2;
 }
 
 /* Painel de Progresso Inferior (Card Claro) */
 .placar-progress-panel {
   background: linear-gradient(135deg, #ffffff, #e9edf0);
   color: #121820;
-  border-radius: 17px;
-  padding: 17px 22px 15px;
-  border: 2px solid #f5c324;
-  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 8px 14px 7px;
+  border: 1.5px solid #f5c324;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;
 }
 
@@ -332,22 +339,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 6px;
   font-weight: 800;
-  font-size: clamp(12px, 1.25vw, 16px);
+  font-size: clamp(10px, 0.95vw, 12px);
 }
 
 .placar-goal-label,
 .placar-remaining {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
 }
 
 .placar-goal-label img {
-  width: 28px;
-  height: 28px;
+  width: 19px;
+  height: 19px;
   object-fit: contain;
 }
 
@@ -364,10 +371,10 @@
 }
 
 .placar-progress-track {
-  height: 26px;
-  border-radius: 30px;
+  height: 13px;
+  border-radius: 20px;
   background: #b8bec4;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   border: 1px solid #9ca5ad;
   position: relative;
@@ -376,19 +383,19 @@
 .placar-progress-fill {
   height: 100%;
   min-width: 0;
-  border-radius: 30px;
+  border-radius: 20px;
   background: linear-gradient(90deg, #08a83c, #20e66b);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 12px;
+  padding-right: 6px;
   transition: width 0.4s ease;
-  box-shadow: 0 0 14px rgba(11, 189, 76, 0.5);
+  box-shadow: 0 0 10px rgba(11, 189, 76, 0.4);
   box-sizing: border-box;
 }
 
 .placar-progress-fill span {
-  font-size: 12px;
+  font-size: 8.5px;
   font-weight: 900;
   color: #ffffff;
   text-shadow: 0 1px 2px #00551d;
@@ -399,24 +406,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 18px;
-  margin-top: 14px;
-  padding-top: 12px;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 5px;
   border-top: 1px solid #c4cbd0;
 }
 
 .placar-progress-foot div {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: clamp(11px, 1.1vw, 14px);
+  gap: 6px;
+  font-size: clamp(9.5px, 0.95vw, 11px);
   font-weight: 800;
   color: #1a242f;
 }
 
 .placar-progress-foot img {
-  width: 26px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
 }
 
@@ -429,22 +436,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  padding: 14px 4px 0;
+  gap: 12px;
+  padding: 6px 2px 0;
   color: #aeb8c1;
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 500;
 }
 
 .placar-board-footer span:first-child {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
 }
 
 .placar-board-footer img {
-  width: 17px;
-  height: 17px;
+  width: 13px;
+  height: 13px;
   object-fit: contain;
 }
 
@@ -452,8 +459,8 @@
 @media (max-width: 900px) {
   .placar-hero-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 18px 4px;
+    gap: 12px;
+    padding: 10px 2px;
   }
 
   .placar-side-seal {
@@ -462,103 +469,103 @@
 
   .placar-main-counter {
     order: 1;
-    padding: 20px 14px;
+    padding: 10px 10px;
   }
 
   .placar-goal-side {
     order: 3;
     flex-direction: row;
     justify-content: center;
-    gap: 14px;
+    gap: 10px;
   }
 
   .placar-goal-side img {
-    width: 48px;
+    width: 32px;
   }
 
   .placar-goal-side strong {
-    font-size: 20px;
+    font-size: 14px;
     text-align: left;
   }
 
   .placar-goal-side span {
-    font-size: 11px;
+    font-size: 9px;
     text-align: left;
   }
 }
 
 @media (max-width: 640px) {
   .placar-seguranca-board {
-    padding: 18px 14px 14px;
-    border-radius: 18px;
+    padding: 10px 10px 8px;
+    border-radius: 14px;
   }
 
   .placar-topline {
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
   }
 
   .placar-brand-mark {
     width: 100%;
     justify-content: center;
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .placar-live {
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .placar-edit-btn {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 10px;
   }
 
   .placar-security-badge {
-    width: 130px;
+    width: 75px;
   }
 
   .placar-generated-shield {
-    width: 22px;
-    height: 22px;
+    width: 15px;
+    height: 15px;
   }
 
   .placar-number-line strong {
-    font-size: clamp(64px, 20vw, 96px);
-    letter-spacing: -3px;
+    font-size: clamp(34px, 12vw, 48px);
+    letter-spacing: -2px;
   }
 
   .placar-number-line span {
-    font-size: 24px;
+    font-size: 15px;
   }
 
   .placar-safe-ribbon {
-    font-size: 12px;
-    padding: 8px 10px;
+    font-size: 10px;
+    padding: 4px 8px;
   }
 
   .placar-progress-panel {
-    padding: 14px 14px;
-    border-radius: 14px;
+    padding: 8px 10px;
+    border-radius: 10px;
   }
 
   .placar-progress-head {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
-    font-size: 13px;
+    gap: 5px;
+    font-size: 10px;
   }
 
   .placar-progress-foot {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-    font-size: 12px;
+    gap: 6px;
+    font-size: 9.5px;
   }
 
   .placar-board-footer {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
-    font-size: 10px;
+    gap: 4px;
+    font-size: 8.5px;
   }
 }

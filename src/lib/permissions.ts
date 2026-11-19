@@ -21,7 +21,15 @@ export const MODULES = [
   { id: 'permissao-trabalho', label: 'Permissão de Trabalho' }
 ]
 
-export async function getAllPermissions(): Promise<AllUsersPermissions> {
+let cachedPermissions: AllUsersPermissions | null = null
+let permissionsTimestamp = 0
+const PERMISSIONS_CACHE_TTL = 1000 * 60 * 5 // 5 minutos
+
+export async function getAllPermissions(forceRefresh = false): Promise<AllUsersPermissions> {
+  if (!forceRefresh && cachedPermissions && (Date.now() - permissionsTimestamp < PERMISSIONS_CACHE_TTL)) {
+    return cachedPermissions
+  }
+
   try {
     const { data, error } = await supabase
       .from('global_settings')
@@ -30,17 +38,21 @@ export async function getAllPermissions(): Promise<AllUsersPermissions> {
       .maybeSingle()
 
     if (error || !data) {
-      return {}
+      return cachedPermissions || {}
     }
 
-    return data.value as AllUsersPermissions
+    cachedPermissions = (data.value || {}) as AllUsersPermissions
+    permissionsTimestamp = Date.now()
+    return cachedPermissions
   } catch (err) {
     console.error('Erro ao buscar permissões:', err)
-    return {}
+    return cachedPermissions || {}
   }
 }
 
 export async function saveAllPermissions(permissions: AllUsersPermissions): Promise<boolean> {
+  cachedPermissions = permissions
+  permissionsTimestamp = Date.now()
   try {
     const { error } = await supabase
       .from('global_settings')

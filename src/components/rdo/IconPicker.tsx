@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import * as Icons from 'lucide-react';
+import { getRdoIcon } from './rdoIconMap';
+import Search from 'lucide-react/dist/esm/icons/search.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Ícones mais usados para atividades do RDO
@@ -375,10 +376,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon = 'Activity'
   };
 
   const renderIcon = (iconName: string) => {
-    const IconComponent = (Icons as any)[iconName];
-    if (!IconComponent) {
-      return <Icons.Activity size={20} />;
-    }
+    const IconComponent = getRdoIcon(iconName);
     return <IconComponent size={20} />;
   };
 
@@ -390,7 +388,7 @@ export function IconPicker({ isOpen, onClose, onSelect, currentIcon = 'Activity'
         </DialogHeader>
 
         <div className="relative">
-          <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
             placeholder="Buscar ícone..."
@@ -448,8 +446,8 @@ export function IconSelector({ value, onChange, size = 'md' }: IconSelectorProps
     lg: 'w-12 h-12'
   };
 
-  const IconComponent = (Icons as any)[value];
-  const renderedIcon = IconComponent ? <IconComponent size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} /> : <Icons.Activity size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} />;
+  const IconComponent = getRdoIcon(value);
+  const renderedIcon = <IconComponent size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} />;
 
   return (
     <>

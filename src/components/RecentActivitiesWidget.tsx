@@ -62,7 +62,7 @@ export function RecentActivitiesWidget() {
 
   const modules = ['TODAS', 'RDO', 'RH', 'Equipamentos', 'Almoxarifado', 'Segurança', 'Meio Ambiente']
 
-  const fetchActivities = async () => {
+  const fetchActivities = async (full = false) => {
     try {
       const environment = typeof window !== 'undefined'
         ? localStorage.getItem('sucena_environment') || 'barcarena'
@@ -76,13 +76,13 @@ export function RecentActivitiesWidget() {
           .neq('module', 'System')
           .not('action', 'ilike', 'CRASH:%')
           .order('created_at', { ascending: false })
-          .limit(200),
+          .limit(full ? 200 : 35),
         supabase
           .from('eq_movements')
           .select('id, movement_type, created_by, created_at, eq_equipments!inner(name, plate_tag, environment)')
           .eq('eq_equipments.environment', environment)
           .order('created_at', { ascending: false })
-          .limit(100)
+          .limit(full ? 100 : 25)
       ])
 
       if (activitiesRes.error) {
@@ -212,6 +212,7 @@ export function RecentActivitiesWidget() {
     setModalModuleFilter(module)
     setModalSearch('')
     setIsModalOpen(true)
+    fetchActivities(true)
   }
 
   return (

@@ -308,10 +308,15 @@ export function DashboardGeradorLokCenter({ currentEnv }: DashboardGeradorLokCen
         <div className="gen-body">
           {/* Ilustração original flutuante do gerador LokCenter */}
           <div className="gen-visual generator-visual">
-            <img
-              alt="Ilustração do gerador industrial vermelho LokCenter"
-              src="/images/generator-lokcenter.png"
-            />
+            <picture>
+              <source srcSet="/images/generator-lokcenter.webp" type="image/webp" />
+              <img
+                alt="Ilustração do gerador industrial vermelho LokCenter"
+                src="/images/generator-lokcenter.png"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
           </div>
 
           {/* Dados numéricos e progresso */}

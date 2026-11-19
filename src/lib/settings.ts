@@ -92,7 +92,15 @@ export type GlobalAppearanceSettings = {
   lightCardOpacity?: number;
 };
 
-export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSettings> {
+let cachedAppearance: GlobalAppearanceSettings | null = null;
+let appearanceTimestamp = 0;
+const APPEARANCE_CACHE_TTL = 1000 * 60 * 5; // 5 minutos
+
+export async function getGlobalAppearanceSettings(forceRefresh = false): Promise<GlobalAppearanceSettings> {
+  if (!forceRefresh && cachedAppearance && (Date.now() - appearanceTimestamp < APPEARANCE_CACHE_TTL)) {
+    return cachedAppearance;
+  }
+
   try {
     const { data, error } = await supabase
       .from("global_settings")
@@ -101,12 +109,14 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
       .single();
 
     if (error || !data) {
-      return {
+      cachedAppearance = {
         backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
         opacity: 100,
         darkCardOpacity: 35,
         lightCardOpacity: 75,
       };
+      appearanceTimestamp = Date.now();
+      return cachedAppearance;
     }
 
     let parsed = data.value;
@@ -116,7 +126,7 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
       } catch (e) {}
     }
 
-    return {
+    cachedAppearance = {
       backgroundCss:
         parsed?.backgroundCss ||
         `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
@@ -124,8 +134,10 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
       darkCardOpacity: parsed?.darkCardOpacity !== undefined ? parsed.darkCardOpacity : 35,
       lightCardOpacity: parsed?.lightCardOpacity !== undefined ? parsed.lightCardOpacity : 75,
     };
+    appearanceTimestamp = Date.now();
+    return cachedAppearance;
   } catch (err) {
-    return {
+    return cachedAppearance || {
       backgroundCss: `linear-gradient(rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(130, 140, 170, 0.08) 1px, transparent 1px), linear-gradient(135deg, #d0d5ea 0%, #e6e3ee 45%, #fbe1ce 100%)`,
       opacity: 100,
       darkCardOpacity: 35,
@@ -137,6 +149,8 @@ export async function getGlobalAppearanceSettings(): Promise<GlobalAppearanceSet
 export async function saveGlobalAppearanceSettings(
   settings: GlobalAppearanceSettings,
 ): Promise<boolean> {
+  cachedAppearance = settings;
+  appearanceTimestamp = Date.now();
   try {
     const { error } = await supabase.from("global_settings").upsert(
       {

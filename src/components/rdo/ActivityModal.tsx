@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import * as Icons from 'lucide-react';
 import {
   X,
   Save,
@@ -13,6 +12,7 @@ import {
   Hash,
   MessageSquare,
   Sparkles,
+  Activity,
   Layers,
   CheckSquare,
   Square
@@ -299,7 +299,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
           <div className="flex items-center justify-between pr-6">
             <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-gray-900 dark:text-white">
               <div className="w-8 h-8 rounded-lg bg-yellow-500/20 text-yellow-600 flex items-center justify-center">
-                <Icons.Activity size={20} />
+                <Activity size={20} />
               </div>
               <span>{atividade ? 'Editar Atividade & Área' : 'Nova Atividade da Obra'}</span>
             </DialogTitle>
@@ -358,7 +358,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
               {/* Ícone */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                  <Icons.Activity size={15} className="text-gray-400" />
+                  <Activity size={15} className="text-gray-400" />
                   Ícone Representativo
                 </label>
                 <div className="flex items-center gap-3">

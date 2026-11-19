@@ -310,11 +310,15 @@ function DashboardComponent() {
         { event: '*', schema: 'public', table: 'reminder_mentions' },
         () => triggerRefresh(['user_mentioned_reminders'])
       )
-      // 10. Atividades recentes registradas por usuários
+      // 10. Atividades recentes registradas por usuários (atualiza apenas widgets de atividades e desvios)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'system_activities' },
-        () => triggerRefresh()
+        () => {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sucena_dashboard_realtime_update'))
+          }
+        }
       )
       // 11. Configurações e cadastros dinâmicos (Matriz de Responsabilidades, Desvios, Inspeção de Canteiro, Banners)
       .on(
@@ -741,7 +745,8 @@ function DashboardComponent() {
         supabase
           .from('eq_movements')
           .select('id, equipment_id, movement_type, exit_reason, description, created_at')
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(300),
       ])
 
       if (eqRes.error) throw eqRes.error

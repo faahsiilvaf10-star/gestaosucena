@@ -34,8 +34,6 @@ import {
   queueWhatsappMessage as realQueueWhatsappMessage,
   queueWhatsappMedia as realQueueWhatsappMedia,
 } from "../../lib/offline-sync";
-import * as htmlToImage from "html-to-image";
-import { jsPDF } from "jspdf";
 import FuelGauge from "./FuelGauge";
 import MercosulPlate from "./MercosulPlate";
 import ParteDiariaReport from "./ParteDiariaReport";
@@ -208,6 +206,8 @@ export default function DashboardStep({
     await new Promise((r) => setTimeout(r, 500));
 
     try {
+      const htmlToImage = await import("html-to-image");
+      const { jsPDF } = await import("jspdf");
       const imgData = await htmlToImage.toPng(reportRef.current, {
         pixelRatio: 2,
         backgroundColor: "#ffffff",
@@ -1059,6 +1059,7 @@ export default function DashboardStep({
               if (reportRef.current) {
                 try {
                   await new Promise((r) => setTimeout(r, 800));
+                  const htmlToImage = await import("html-to-image");
                   const dataUrlCanvas = await htmlToImage.toPng(reportRef.current, {
                     pixelRatio: 1.5,
                     backgroundColor: "#ffffff",

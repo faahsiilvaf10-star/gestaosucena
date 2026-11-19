@@ -349,7 +349,7 @@ export function DashboardPlacarSeguranca({
   return (
     <>
       <section
-        className={`placar-seguranca-board ${modoCompacto ? 'my-3' : 'my-5'}`}
+        className={`placar-seguranca-board ${modoCompacto ? 'my-2' : 'my-2 sm:my-3'}`}
         aria-label="Placar de Segurança da Obra"
       >
         {/* Faixa Hazard Superior */}
@@ -379,7 +379,7 @@ export function DashboardPlacarSeguranca({
               className="placar-edit-btn"
               title="Ajustar indicadores do placar de segurança"
             >
-              <Settings className="w-4 h-4 text-[#f5b400]" />
+              <Settings className="w-3.5 h-3.5 text-[#f5b400]" />
               <span>Ajustar Placar</span>
             </button>
           )}
@@ -389,22 +389,32 @@ export function DashboardPlacarSeguranca({
         <div className="placar-hero-grid">
           {/* LADO ESQUERDO: EMBLEMA TRANSPARENTE */}
           <aside className="placar-side-seal">
-            <img
-              src="/placar-seguranca/security-badge.png"
-              alt="Emblema de Segurança do Trabalho"
-              className="placar-security-badge"
-            />
+            <picture>
+              <source srcSet="/placar-seguranca/security-badge.webp" type="image/webp" />
+              <img
+                src="/placar-seguranca/security-badge.png"
+                alt="Emblema de Segurança do Trabalho"
+                className="placar-security-badge"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
             <span className="placar-seal-caption">{dadosAtuais.fraseDestaque}</span>
           </aside>
 
           {/* CENTRO: DIAS SEM ACIDENTES COM AFASTAMENTO */}
           <section className="placar-main-counter">
             <div className="placar-counter-kicker">
-              <img
-                src="/placar-seguranca/generated-shield.png"
-                alt=""
-                className="placar-generated-shield"
-              />
+              <picture>
+                <source srcSet="/placar-seguranca/generated-shield.webp" type="image/webp" />
+                <img
+                  src="/placar-seguranca/generated-shield.png"
+                  alt=""
+                  className="placar-generated-shield"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
               <span className="placar-pulse" aria-hidden="true" />
               <span>DIAS SEM ACIDENTES COM AFASTAMENTO</span>
             </div>

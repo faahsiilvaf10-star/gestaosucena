@@ -10,8 +10,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getLogicalAreaForColaborador } from '../../lib/rhAreaHelper'
 import { useTheme } from '../../contexts/ThemeContext'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/rh/relatorio-presenca')({

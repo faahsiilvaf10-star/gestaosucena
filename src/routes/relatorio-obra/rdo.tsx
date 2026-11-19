@@ -6,7 +6,7 @@ import Copy from 'lucide-react/dist/esm/icons/copy.js';
 import Phone from 'lucide-react/dist/esm/icons/phone.js';
 import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import Sun from 'lucide-react/dist/esm/icons/sun.js';
-import * as Icons from 'lucide-react';
+import Activity from 'lucide-react/dist/esm/icons/activity.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { Calendar } from '@/components/ui/calendar'
@@ -1165,7 +1165,7 @@ function RDOPage() {
                 ${showActivitiesPanel ? 'bg-yellow-100 border-yellow-400 text-yellow-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
               title="Atividades Customizadas"
             >
-              <Icons.Activity size={16} className={showActivitiesPanel ? 'text-yellow-600' : ''} />
+              <Activity size={16} className={showActivitiesPanel ? 'text-yellow-600' : ''} />
               Atividades
             </button>
           </div>

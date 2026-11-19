@@ -16,8 +16,6 @@ import { supabase } from '../../lib/supabase'
 import { getLogicalAreaForColaborador } from '../../lib/rhAreaHelper'
 import { DateInput } from '../../components/ui/DateInput'
 import { toast } from 'sonner'
-import * as XLSX from 'xlsx'
-import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { useTheme } from '../../contexts/ThemeContext'
 
@@ -268,6 +266,7 @@ function RhEfetivoPage() {
       const reader = new FileReader()
       reader.onload = async (event) => {
         try {
+          const XLSX = await import('xlsx')
           const data = event.target?.result
           const workbook = XLSX.read(data, { type: 'binary' })
 
@@ -458,13 +457,18 @@ function RhEfetivoPage() {
             successMessage += `${uniqueNewProcessedData.length} novos. `
           }
 
-          // Update existing records individually
+          // Update existing records in efficient parallel chunks
           if (recordsToUpdate.length > 0) {
-            // Processing updates in parallel chunks could be faster, but sequential is safer for small numbers
-            for (const rec of recordsToUpdate) {
-              const { id, ...updateData } = rec
-              const { error: upError } = await supabase.from('rh_efetivo').update(updateData).eq('id', id)
-              if (!upError) totalUpdated++
+            const chunkSize = 25
+            for (let i = 0; i < recordsToUpdate.length; i += chunkSize) {
+              const chunk = recordsToUpdate.slice(i, i + chunkSize)
+              await Promise.all(
+                chunk.map(async (rec) => {
+                  const { id, ...updateData } = rec
+                  const { error: upError } = await supabase.from('rh_efetivo').update(updateData).eq('id', id)
+                  if (!upError) totalUpdated++
+                })
+              )
             }
             if (totalUpdated > 0) successMessage += `${totalUpdated} atualizados (mantendo matrícula).`
           }
@@ -567,6 +571,7 @@ function RhEfetivoPage() {
   const handleExportExcel = async () => {
     setIsExporting(true)
     try {
+      const { default: ExcelJS } = await import('exceljs')
       const workbook = new ExcelJS.Workbook()
       const sheet = workbook.addWorksheet('Efetivo ASO')
       

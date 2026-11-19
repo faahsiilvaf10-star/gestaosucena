@@ -15,8 +15,6 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
 export const Route = createFileRoute('/meio-ambiente/pluviometria')({
   component: PluviometriaPage,
@@ -280,6 +278,8 @@ function PluviometriaPage() {
   }, [monthTotals])
 
   const generatePDF = async () => {
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
     const doc = new jsPDF('landscape', 'mm', 'a4')
 
     const createDocument = (logoImg?: HTMLImageElement) => {

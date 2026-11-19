@@ -1,6 +1,6 @@
 import LogOut from 'lucide-react/dist/esm/icons/log-out.js';
 import Shield from 'lucide-react/dist/esm/icons/shield.js';
-import { useState, useEffect, useRef, ReactNode } from 'react'
+import { useState, useEffect, useRef, ReactNode, lazy, Suspense } from 'react'
 import { useNavigate, useLocation, Link } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 import { LogoutOverlay } from './LogoutOverlay'
@@ -17,7 +17,8 @@ import { useGlobalPresenceSync } from '../hooks/useGlobalPresenceSync'
 import { ChatSidebar } from './ChatSidebar'
 import { HydroSidebar } from './HydroSidebar'
 import '../hydro-panel.css'
-import { ChatWindow } from './chat/ChatWindow'
+
+const ChatWindow = lazy(() => import('./chat/ChatWindow').then(m => ({ default: m.ChatWindow })))
 import { DdsUploadModal } from './DdsUploadModal'
 import { isAdmin } from './ui/VerifiedBadge'
 import { toast } from 'sonner'
@@ -743,9 +744,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div 
         className={`fixed bottom-6 z-[105] flex items-end gap-3 pointer-events-none transition-all duration-300 ${ isSidebarOpen ? 'right-[392px]' : 'right-[92px]' } max-md:right-2 max-md:bottom-[74px]`}
       >
-        {currentUser.id && activeChats.map(chatId => (
-          <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
-        ))}
+        {currentUser.id && activeChats.length > 0 && (
+          <Suspense fallback={null}>
+            {activeChats.map(chatId => (
+              <ChatWindow key={chatId} currentUserId={currentUser.id} conversationId={chatId} />
+            ))}
+          </Suspense>
+        )}
       </div>
 
       {/* Logout Confirmation Modal */}

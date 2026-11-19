@@ -646,6 +646,7 @@ function PosChuvaPage() {
       const p = pos(e)
       ctx.beginPath()
       ctx.moveTo(p.x, p.y)
+      window.addEventListener('mouseup', end)
     }
 
     const move = (e: MouseEvent | TouchEvent) => {
@@ -657,6 +658,7 @@ function PosChuvaPage() {
     }
 
     const end = () => {
+      window.removeEventListener('mouseup', end)
       if (isDrawingRef.current[id]) {
         isDrawingRef.current[id] = false
         const imgData = cv.toDataURL('image/png')
@@ -669,7 +671,6 @@ function PosChuvaPage() {
 
     cv.addEventListener('mousedown', start)
     cv.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', end)
 
     cv.addEventListener('touchstart', start, { passive: false })
     cv.addEventListener('touchmove', move, { passive: false })
