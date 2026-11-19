@@ -4,9 +4,30 @@ import {
   calcularProgressoMeta,
   obterFeitoSeguranca,
   CONFIG_PADRAO_PLACAR,
+  formatarDataBr,
+  normalizarDataIso,
 } from './diasSemAcidentesData'
 
 describe('diasSemAcidentesData utils', () => {
+  it('formatarDataBr e normalizarDataIso convertem datas corretamente', () => {
+    expect(formatarDataBr('2026-07-20')).toBe('20/07/2026')
+    expect(formatarDataBr('')).toBe('—')
+    expect(formatarDataBr(null)).toBe('—')
+
+    expect(normalizarDataIso('20/07/2026')).toBe('2026-07-20')
+    expect(normalizarDataIso('2026-07-20')).toBe('2026-07-20')
+    expect(normalizarDataIso('')).toBe('')
+    expect(normalizarDataIso(null)).toBe('')
+  })
+
+  it('CONFIG_PADRAO_PLACAR possui os valores padrão alinhados à referência', () => {
+    expect(CONFIG_PADRAO_PLACAR.nomeObra).toBe('PLACAR DA OBRA')
+    expect(CONFIG_PADRAO_PLACAR.fraseDestaque).toBe('NOSSO MAIOR VALOR É A VIDA')
+    expect(CONFIG_PADRAO_PLACAR.metaDias).toBe(365)
+    expect(CONFIG_PADRAO_PLACAR.recordeHistoricoDias).toBe(365)
+    expect(CONFIG_PADRAO_PLACAR.diasSemAcidentesComAfastamento).toBe(290)
+    expect(CONFIG_PADRAO_PLACAR.diasSemAfastamento).toBe(90)
+  })
   it('calcularDiasSemAcidente calcula dias corridos corretamente', () => {
     const hoje = new Date(2026, 10, 4, 12, 0, 0) // 04/11/2026
     // 4 dias antes

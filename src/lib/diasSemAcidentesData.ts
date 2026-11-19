@@ -1,10 +1,14 @@
 import { supabase } from './supabase'
 
 export interface PlacarSegurancaConfig {
-  dataUltimoAcidenteComAfastamento: string // 'YYYY-MM-DD'
-  dataUltimoAcidenteSemAfastamento?: string // 'YYYY-MM-DD'
+  dataUltimoAcidenteComAfastamento: string // 'YYYY-MM-DD' (Início da contagem / data último acidente com afastamento)
+  dataUltimoAcidenteSemAfastamento?: string // 'YYYY-MM-DD' (Data último sem afastamento)
+  diasSemAcidentesComAfastamento?: number // Valor manual/calculado de dias sem afastamento
+  diasSemAfastamento?: number // Valor de dias sem afastamento
   metaDias: number // Padrão: 365
   recordeHistoricoDias: number // Padrão: 365
+  nomeObra?: string // Padrão: "PLACAR DA OBRA"
+  fraseDestaque?: string // Padrão: "NOSSO MAIOR VALOR É A VIDA"
   observacao?: string
   atualizadoEm?: string
 }
@@ -34,11 +38,41 @@ export function getDataPadraoInicio(diasAtras = 145): string {
 }
 
 export const CONFIG_PADRAO_PLACAR: PlacarSegurancaConfig = {
-  dataUltimoAcidenteComAfastamento: getDataPadraoInicio(180),
-  dataUltimoAcidenteSemAfastamento: getDataPadraoInicio(45),
+  dataUltimoAcidenteComAfastamento: '2026-07-20',
+  dataUltimoAcidenteSemAfastamento: getDataPadraoInicio(90),
+  diasSemAcidentesComAfastamento: 290,
+  diasSemAfastamento: 90,
   metaDias: 365,
-  recordeHistoricoDias: 420,
+  recordeHistoricoDias: 365,
+  nomeObra: 'PLACAR DA OBRA',
+  fraseDestaque: 'NOSSO MAIOR VALOR É A VIDA',
   observacao: 'Foco contínuo em zero acidentes na frente de serviço.',
+}
+
+/**
+ * Formata data ISO (YYYY-MM-DD) para padrão brasileiro DD/MM/YYYY
+ */
+export function formatarDataBr(dataIso?: string | null): string {
+  if (!dataIso) return '—'
+  const match = String(dataIso).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!match) return dataIso
+  const [, ano, mes, dia] = match
+  return `${dia}/${mes}/${ano}`
+}
+
+/**
+ * Converte data DD/MM/YYYY ou YYYY-MM-DD em string ISO YYYY-MM-DD para input[type="date"]
+ */
+export function normalizarDataIso(dataStr?: string | null): string {
+  if (!dataStr) return ''
+  const brMatch = String(dataStr).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (brMatch) {
+    const [, dia, mes, ano] = brMatch
+    return `${ano}-${mes}-${dia}`
+  }
+  const isoMatch = String(dataStr).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) return isoMatch[0]
+  return ''
 }
 
 /**

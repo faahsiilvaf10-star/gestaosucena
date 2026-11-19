@@ -1,0 +1,564 @@
+/* ==========================================================
+   PLACAR DE SEGURANÇA PROFISSIONAL DA OBRA — SUCENA
+   Reprodução fiel e industrial ao design de referência
+   ========================================================== */
+
+:root {
+  --placar-yellow: #f5b400;
+  --placar-green: #20d66b;
+  --placar-deep: #080d12;
+  --placar-panel: #101923;
+  --placar-muted: #9aa6b2;
+}
+
+.placar-seguranca-board {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 24px 30px 18px;
+  background: linear-gradient(90deg, rgba(5, 9, 13, 0.60), rgba(5, 9, 13, 0.65)),
+              url("/placar-seguranca/industrial-background.png") center / cover no-repeat,
+              linear-gradient(115deg, #070b0f 0%, #111a20 48%, #080c11 100%);
+  border: 1px solid rgba(245, 180, 0, 0.8);
+  box-shadow: 0 18px 45px rgba(11, 17, 26, 0.45);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.placar-seguranca-board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.16;
+  background-image: linear-gradient(120deg, transparent 0 48%, #87939b 49%, transparent 50%),
+                    repeating-linear-gradient(0deg, transparent 0 55px, #ffffff 56px, transparent 57px);
+  background-size: 100% 100%, 100% 90px;
+  mask-image: linear-gradient(90deg, #000, transparent 38%, transparent 62%, #000);
+}
+
+/* Faixas de sinalização amarela e preta */
+.placar-hazard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(135deg, #f5b400 0 18px, #111111 18px 36px);
+  opacity: 0.95;
+  z-index: 2;
+}
+.placar-hazard-top {
+  top: 0;
+}
+.placar-hazard-bottom {
+  bottom: 0;
+}
+
+/* Linha superior (Cabeçalho) */
+.placar-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 5px 4px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.placar-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  font-size: clamp(14px, 1.6vw, 20px);
+  color: #ffffff;
+}
+
+.placar-brand-mark img {
+  width: 38px;
+  height: auto;
+  object-fit: contain;
+}
+
+.placar-live {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #ffd34d;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-transform: uppercase;
+}
+
+.placar-live b {
+  border: 1px solid #0c9b6d;
+  background: #063b2e;
+  color: #39e8ae;
+  border-radius: 30px;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.placar-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00e59b;
+  box-shadow: 0 0 0 5px rgba(0, 229, 155, 0.25);
+  display: inline-block;
+  animation: placarPulseAnimation 2s infinite ease-in-out;
+}
+
+@keyframes placarPulseAnimation {
+  0%, 100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 4px rgba(0, 229, 155, 0.35);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 7px rgba(0, 229, 155, 0.15);
+  }
+}
+
+.placar-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.placar-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(245, 180, 0, 0.8);
+  transform: translateY(-1px);
+}
+
+/* Área central (Grid com 3 colunas) */
+.placar-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(360px, 2.5fr) minmax(150px, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 26px 8px 24px;
+}
+
+/* Lado esquerdo: Emblema Transparente */
+.placar-side-seal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.placar-security-badge {
+  display: block;
+  width: clamp(125px, 14vw, 190px);
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(230, 185, 0, 0.35));
+  user-select: none;
+  background: transparent !important;
+}
+
+.placar-seal-caption {
+  font-size: 10px;
+  color: #b5c1c9;
+  letter-spacing: 1px;
+  text-align: center;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Centro: Contador Principal */
+.placar-main-counter {
+  min-width: 0;
+  text-align: center;
+  padding: 22px 20px 18px;
+  border: 1px solid #22d66b;
+  border-top: 2px solid #f5b400;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #101a20, #05090d);
+  box-shadow: 0 0 28px rgba(23, 211, 92, 0.18), inset 0 0 25px #000000;
+}
+
+.placar-counter-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #f7c32b;
+  font-size: clamp(11px, 1.25vw, 15px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.placar-generated-shield {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+}
+
+.placar-number-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  line-height: 1;
+  margin: 12px 0 16px;
+}
+
+.placar-number-line strong {
+  font-size: clamp(74px, 9vw, 136px);
+  font-weight: 900;
+  letter-spacing: -5px;
+  color: #ffffff;
+  text-shadow: 0 4px 0 #8b96a0, 0 12px 28px rgba(0, 0, 0, 0.9);
+  font-family: inherit;
+}
+
+.placar-number-line span {
+  font-size: clamp(22px, 3vw, 42px);
+  font-weight: 900;
+  color: var(--placar-yellow);
+  text-shadow: 0 2px 10px rgba(245, 180, 0, 0.3);
+}
+
+.placar-safe-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: auto;
+  max-width: 560px;
+  padding: 9px 16px;
+  border: 1px solid #16dc55;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #06411e, #087b24, #06411e);
+  font-weight: 900;
+  font-size: clamp(12px, 1.3vw, 16px);
+  letter-spacing: 0.6px;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(8, 123, 36, 0.4);
+}
+
+.placar-safe-ribbon img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.placar-secondary-stat {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 13px;
+  color: #aeb8c1;
+  font-weight: 600;
+}
+
+.placar-secondary-stat strong {
+  color: #ffd34d;
+  font-weight: 800;
+}
+
+/* Lado direito: Alvo Zero Acidente */
+.placar-goal-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 7px;
+}
+
+.placar-goal-side img {
+  width: clamp(55px, 6vw, 82px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px rgba(245, 189, 22, 0.3));
+}
+
+.placar-goal-side strong {
+  font-size: clamp(19px, 2.2vw, 30px);
+  line-height: 1.05;
+  color: #f5bd16;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.placar-goal-side span {
+  font-size: clamp(10px, 1.05vw, 13px);
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #ffffff;
+  text-transform: uppercase;
+  max-width: 170px;
+}
+
+/* Painel de Progresso Inferior (Card Claro) */
+.placar-progress-panel {
+  background: linear-gradient(135deg, #ffffff, #e9edf0);
+  color: #121820;
+  border-radius: 17px;
+  padding: 17px 22px 15px;
+  border: 2px solid #f5c324;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.placar-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-weight: 800;
+  font-size: clamp(12px, 1.25vw, 16px);
+}
+
+.placar-goal-label,
+.placar-remaining {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.placar-goal-label img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.placar-goal-label b {
+  color: #b87900;
+}
+
+.placar-remaining {
+  color: #18222c;
+}
+
+.placar-remaining b {
+  color: #087b3d;
+}
+
+.placar-progress-track {
+  height: 26px;
+  border-radius: 30px;
+  background: #b8bec4;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border: 1px solid #9ca5ad;
+  position: relative;
+}
+
+.placar-progress-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: 30px;
+  background: linear-gradient(90deg, #08a83c, #20e66b);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 14px rgba(11, 189, 76, 0.5);
+  box-sizing: border-box;
+}
+
+.placar-progress-fill span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 2px #00551d;
+  white-space: nowrap;
+}
+
+.placar-progress-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #c4cbd0;
+}
+
+.placar-progress-foot div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: clamp(11px, 1.1vw, 14px);
+  font-weight: 800;
+  color: #1a242f;
+}
+
+.placar-progress-foot img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.placar-progress-foot b {
+  color: #087b3d;
+}
+
+/* Rodapé do Placar */
+.placar-board-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 4px 0;
+  color: #aeb8c1;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.placar-board-footer span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.placar-board-footer img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
+/* Responsividade Mobile e Telas Menores */
+@media (max-width: 900px) {
+  .placar-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 18px 4px;
+  }
+
+  .placar-side-seal {
+    order: 2;
+  }
+
+  .placar-main-counter {
+    order: 1;
+    padding: 20px 14px;
+  }
+
+  .placar-goal-side {
+    order: 3;
+    flex-direction: row;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .placar-goal-side img {
+    width: 48px;
+  }
+
+  .placar-goal-side strong {
+    font-size: 20px;
+    text-align: left;
+  }
+
+  .placar-goal-side span {
+    font-size: 11px;
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .placar-seguranca-board {
+    padding: 18px 14px 14px;
+    border-radius: 18px;
+  }
+
+  .placar-topline {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .placar-brand-mark {
+    width: 100%;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  .placar-live {
+    font-size: 10px;
+  }
+
+  .placar-edit-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .placar-security-badge {
+    width: 130px;
+  }
+
+  .placar-generated-shield {
+    width: 22px;
+    height: 22px;
+  }
+
+  .placar-number-line strong {
+    font-size: clamp(64px, 20vw, 96px);
+    letter-spacing: -3px;
+  }
+
+  .placar-number-line span {
+    font-size: 24px;
+  }
+
+  .placar-safe-ribbon {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .placar-progress-panel {
+    padding: 14px 14px;
+    border-radius: 14px;
+  }
+
+  .placar-progress-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .placar-progress-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .placar-board-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 10px;
+  }
+}

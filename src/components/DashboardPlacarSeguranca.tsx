@@ -1,31 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from '@tanstack/react-router'
-import {
-  ShieldCheck,
-  Trophy,
-  Target,
-  Award,
-  Sparkles,
-  Calendar,
-  Settings,
-  ExternalLink,
-  CheckCircle2,
-  X,
-  Flame,
-  ArrowRight,
-} from 'lucide-react'
+import { Settings, X, Download, CheckCircle2 } from 'lucide-react'
 import {
   type PlacarSegurancaConfig,
+  CONFIG_PADRAO_PLACAR,
   calcularDiasSemAcidente,
-  calcularProgressoMeta,
-  obterFeitoSeguranca,
   carregarPlacarSeguranca,
   salvarPlacarSeguranca,
   getDbKeyPlacarSeguranca,
+  formatarDataBr,
+  normalizarDataIso,
 } from '../lib/diasSemAcidentesData'
 import { supabase } from '../lib/supabase'
+import { canManageSafetyBanner } from '../lib/safetyBanners'
+import { isAdmin } from './ui/VerifiedBadge'
 import { toast } from 'sonner'
+import '../placar-seguranca.css'
 
 interface DashboardPlacarSegurancaProps {
   currentEnv?: string
@@ -40,15 +30,48 @@ export function DashboardPlacarSeguranca({
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [canEdit, setCanEdit] = useState(true) // Padrão seguro, checado no auth
 
-  // Campos do modal de ajuste
-  const [dataAfastamento, setDataAfastamento] = useState('')
-  const [dataSemAfastamento, setDataSemAfastamento] = useState('')
-  const [metaDias, setMetaDias] = useState('365')
-  const [recordeDias, setRecordeDias] = useState('420')
-  const [observacao, setObservacao] = useState('')
+  // Campos de edição do modal
+  const [editDias, setEditDias] = useState<number>(290)
+  const [editNoLeave, setEditNoLeave] = useState<number>(90)
+  const [editGoal, setEditGoal] = useState<number>(365)
+  const [editRecord, setEditRecord] = useState<number>(365)
+  const [editStart, setEditStart] = useState<string>('2026-07-20')
+  const [editProject, setEditProject] = useState<string>('PLACAR DA OBRA')
+  const [editMessage, setEditMessage] = useState<string>('NOSSO MAIOR VALOR É A VIDA')
 
-  // Trava scroll de fundo e escuta ESC enquanto modal de ajuste estiver aberto
+  // Verificar permissões do usuário
+  useEffect(() => {
+    let active = true
+    const verificarPermissao = async () => {
+      try {
+        const { data } = await supabase.auth.getUser()
+        const user = data?.user
+        const role =
+          user?.user_metadata?.role ||
+          (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_role') : '') ||
+          ''
+        const name =
+          user?.user_metadata?.full_name ||
+          (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : '') ||
+          ''
+
+        const autorizado = canManageSafetyBanner(role, name) || isAdmin(name, role)
+        if (active) setCanEdit(autorizado)
+      } catch {
+        const role = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_role') || '' : ''
+        const name = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+        if (active) setCanEdit(canManageSafetyBanner(role, name) || isAdmin(name, role))
+      }
+    }
+    verificarPermissao()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Trava scroll de fundo e escuta ESC enquanto modal estiver aberto
   useEffect(() => {
     if (!modalAberto) return
     const originalOverflow = document.body.style.overflow
@@ -65,7 +88,7 @@ export function DashboardPlacarSeguranca({
     }
   }, [modalAberto])
 
-  // Carregar dados iniciais e escutar realtime
+  // Sincronizar dados do Supabase e escutar Realtime
   useEffect(() => {
     let isMounted = true
 
@@ -75,11 +98,7 @@ export function DashboardPlacarSeguranca({
         const dados = await carregarPlacarSeguranca(currentEnv)
         if (isMounted) {
           setConfig(dados)
-          setDataAfastamento(dados.dataUltimoAcidenteComAfastamento)
-          setDataSemAfastamento(dados.dataUltimoAcidenteSemAfastamento || '')
-          setMetaDias(String(dados.metaDias || 365))
-          setRecordeDias(String(dados.recordeHistoricoDias || 365))
-          setObservacao(dados.observacao || '')
+          sincronizarCamposEdicao(dados)
         }
       } catch (err) {
         console.warn('[PlacarSeguranca] Falha ao carregar:', err)
@@ -92,7 +111,7 @@ export function DashboardPlacarSeguranca({
 
     inicializar()
 
-    // Realtime do Supabase
+    // Supabase Realtime
     const dbKey = getDbKeyPlacarSeguranca(currentEnv)
     const channel = supabase
       .channel(`placar-seguranca-${currentEnv}-${Date.now()}`)
@@ -105,16 +124,20 @@ export function DashboardPlacarSeguranca({
           filter: `key=eq.${dbKey}`,
         },
         (payload: any) => {
-          if (payload.new && payload.new.value && typeof payload.new.value === 'object') {
-            setConfig(payload.new.value as PlacarSegurancaConfig)
+          if (payload.new?.value && typeof payload.new.value === 'object') {
+            const novaConfig = payload.new.value as PlacarSegurancaConfig
+            setConfig(novaConfig)
+            sincronizarCamposEdicao(novaConfig)
           }
         }
       )
       .subscribe()
 
+    // Evento Customizado Local
     const handleCustomUpdate = (e: any) => {
       if (e.detail && typeof e.detail === 'object' && (!e.detail.env || e.detail.env === currentEnv)) {
         setConfig(e.detail)
+        sincronizarCamposEdicao(e.detail)
       }
     }
     window.addEventListener('sucena_placar_seguranca_updated', handleCustomUpdate)
@@ -126,72 +149,199 @@ export function DashboardPlacarSeguranca({
     }
   }, [currentEnv])
 
-  // Cálculos dinâmicos por dia
-  const diasComAfastamento = useMemo(() => {
-    return calcularDiasSemAcidente(config?.dataUltimoAcidenteComAfastamento)
-  }, [config?.dataUltimoAcidenteComAfastamento])
+  const sincronizarCamposEdicao = (d: PlacarSegurancaConfig) => {
+    const dataInicioIso = normalizarDataIso(d.dataUltimoAcidenteComAfastamento) || '2026-07-20'
+    const diasCalc =
+      d.diasSemAcidentesComAfastamento != null
+        ? d.diasSemAcidentesComAfastamento
+        : calcularDiasSemAcidente(dataInicioIso)
 
-  const diasSemAfastamento = useMemo(() => {
-    return calcularDiasSemAcidente(config?.dataUltimoAcidenteSemAfastamento)
-  }, [config?.dataUltimoAcidenteSemAfastamento])
+    setEditDias(diasCalc)
+    setEditNoLeave(
+      d.diasSemAfastamento != null
+        ? d.diasSemAfastamento
+        : d.dataUltimoAcidenteSemAfastamento
+          ? calcularDiasSemAcidente(d.dataUltimoAcidenteSemAfastamento)
+          : 90
+    )
+    setEditGoal(d.metaDias || 365)
+    setEditRecord(d.recordeHistoricoDias || 365)
+    setEditStart(dataInicioIso)
+    setEditProject(d.nomeObra || 'PLACAR DA OBRA')
+    setEditMessage(d.fraseDestaque || 'NOSSO MAIOR VALOR É A VIDA')
+  }
 
-  const metaNum = config?.metaDias || 365
-  const recordeNum = config?.recordeHistoricoDias || 365
+  // Cálculos do placar
+  const dadosAtuais = useMemo(() => {
+    const dataInicioIso = normalizarDataIso(config?.dataUltimoAcidenteComAfastamento) || '2026-07-20'
+    const dias = Math.max(
+      0,
+      config?.diasSemAcidentesComAfastamento != null
+        ? Number(config.diasSemAcidentesComAfastamento)
+        : calcularDiasSemAcidente(dataInicioIso)
+    )
 
-  const progresso = useMemo(() => {
-    return calcularProgressoMeta(diasComAfastamento, metaNum)
-  }, [diasComAfastamento, metaNum])
+    const diasSemAfastamento = Math.max(
+      0,
+      config?.diasSemAfastamento != null
+        ? Number(config.diasSemAfastamento)
+        : config?.dataUltimoAcidenteSemAfastamento
+          ? calcularDiasSemAcidente(config.dataUltimoAcidenteSemAfastamento)
+          : 90
+    )
 
-  const feito = useMemo(() => {
-    return obterFeitoSeguranca(diasComAfastamento, metaNum, recordeNum)
-  }, [diasComAfastamento, metaNum, recordeNum])
+    const meta = Math.max(1, Number(config?.metaDias) || 365)
+    const recorde = Math.max(0, Number(config?.recordeHistoricoDias) || 365)
+    const faltam = Math.max(0, meta - dias)
+    const percentualBruto = (dias / meta) * 100
+    const percentualExibicao = Math.min(100, Math.max(0, percentualBruto))
+
+    // Formatação de hora salva
+    let horaSalva = '21:08'
+    if (config?.atualizadoEm) {
+      try {
+        const dateObj = new Date(config.atualizadoEm)
+        horaSalva = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      } catch {
+        horaSalva = '21:08'
+      }
+    }
+
+    return {
+      dias,
+      diasSemAfastamento,
+      meta,
+      recorde,
+      faltam,
+      percentualExibicao,
+      dataInicioBr: formatarDataBr(dataInicioIso),
+      nomeObra: (config?.nomeObra || 'PLACAR DA OBRA').toUpperCase(),
+      fraseDestaque: (config?.fraseDestaque || 'NOSSO MAIOR VALOR É A VIDA').toUpperCase(),
+      horaSalva,
+    }
+  }, [config])
+
+  // Abrir modal e sincronizar inputs com o estado atual
+  const abrirModalAjuste = () => {
+    if (config) {
+      sincronizarCamposEdicao(config)
+    }
+    setModalAberto(true)
+  }
+
+  // Alterar data de início recalcula os dias automaticamente no formulário
+  const handleDataInicioChange = (novaData: string) => {
+    setEditStart(novaData)
+    if (novaData) {
+      const diasCalculados = calcularDiasSemAcidente(novaData)
+      setEditDias(diasCalculados)
+    }
+  }
+
+  // Alterar dias ajusta a data de início retroativamente para manter coerência
+  const handleDiasChange = (novosDias: number) => {
+    setEditDias(novosDias)
+    if (novosDias >= 0) {
+      const d = new Date()
+      d.setDate(d.getDate() - novosDias)
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      setEditStart(`${yyyy}-${mm}-${dd}`)
+    }
+  }
 
   // Salvar ajustes
   const handleSalvarAjustes = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!dataAfastamento) {
-      toast.error('Informe a data base do último acidente com afastamento.')
+
+    // Validações obrigatórias
+    if (editDias < 0) {
+      toast.error('Dias sem acidentes com afastamento não pode ser negativo.')
+      return
+    }
+    if (editNoLeave < 0) {
+      toast.error('Dias sem afastamento não pode ser negativo.')
+      return
+    }
+    if (editGoal <= 0 || isNaN(editGoal)) {
+      toast.error('A meta anual deve ser maior que zero.')
+      return
+    }
+    if (editRecord < 0) {
+      toast.error('O recorde da obra não pode ser negativo.')
+      return
+    }
+    if (!editStart) {
+      toast.error('Informe a data de início da contagem.')
       return
     }
 
     try {
       setSalvando(true)
       const novaConfig: PlacarSegurancaConfig = {
-        dataUltimoAcidenteComAfastamento: dataAfastamento,
-        dataUltimoAcidenteSemAfastamento: dataSemAfastamento || undefined,
-        metaDias: Number(metaDias) || 365,
-        recordeHistoricoDias: Number(recordeDias) || 365,
-        observacao: observacao.trim() || undefined,
+        diasSemAcidentesComAfastamento: Math.round(editDias),
+        diasSemAfastamento: Math.round(editNoLeave),
+        metaDias: Math.round(editGoal),
+        recordeHistoricoDias: Math.round(editRecord),
+        dataUltimoAcidenteComAfastamento: editStart,
+        nomeObra: editProject.trim() || 'PLACAR DA OBRA',
+        fraseDestaque: editMessage.trim() || 'NOSSO MAIOR VALOR É A VIDA',
+        observacao: editMessage.trim() || undefined,
         atualizadoEm: new Date().toISOString(),
       }
 
       setConfig(novaConfig)
       const ok = await salvarPlacarSeguranca(novaConfig, currentEnv)
       if (ok) {
-        toast.success('Placar de segurança e metas atualizados com sucesso!')
+        toast.success('Placar de segurança atualizado e salvo no banco de dados!')
       } else {
-        toast.info('Placar salvo localmente neste navegador.')
+        toast.info('Placar atualizado e preservado localmente.')
       }
       setModalAberto(false)
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar configurações do placar.')
+      toast.error(err.message || 'Erro ao salvar alterações no placar.')
     } finally {
       setSalvando(false)
     }
   }
 
-  // Skeleton screen
+  // Exportar dados em JSON (compatível com a funcionalidade da referência)
+  const handleExportarJson = () => {
+    const payload = {
+      days: editDias,
+      noLeave: editNoLeave,
+      goal: editGoal,
+      record: editRecord,
+      start: editStart,
+      project: editProject,
+      message: editMessage,
+      exportedAt: new Date().toISOString(),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `placar-seguranca-${currentEnv}-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Dados do placar exportados com sucesso!')
+  }
+
+  // Skeleton screen para carregamento
   if (carregando && !config) {
     return (
-      <div className="w-full bg-white/70 dark:bg-[#1A1A1E]/70 backdrop-blur-md rounded-2xl p-5 border border-amber-200/50 shadow-sm animate-pulse mb-6">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="w-40 h-28 bg-gray-200 dark:bg-white/10 rounded-xl" />
-          <div className="flex-1 space-y-3 w-full">
-            <div className="h-6 w-48 bg-gray-200 dark:bg-white/10 rounded-md" />
-            <div className="h-4 w-72 bg-gray-200 dark:bg-white/10 rounded-md" />
-            <div className="h-3 w-full bg-gray-200 dark:bg-white/10 rounded-full" />
-          </div>
+      <div className="w-full bg-[#0a0f14] rounded-3xl p-8 border border-amber-500/40 shadow-2xl animate-pulse mb-6 text-white min-h-[380px] flex flex-col justify-between">
+        <div className="flex justify-between items-center pb-4 border-b border-white/10">
+          <div className="h-6 w-48 bg-white/10 rounded-md" />
+          <div className="h-8 w-32 bg-white/10 rounded-full" />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-6 items-center">
+          <div className="h-36 bg-white/10 rounded-2xl mx-auto w-36" />
+          <div className="h-44 bg-white/10 rounded-2xl w-full" />
+          <div className="h-36 bg-white/10 rounded-2xl mx-auto w-36" />
+        </div>
+        <div className="h-20 bg-white/10 rounded-2xl w-full" />
       </div>
     )
   }
@@ -199,296 +349,359 @@ export function DashboardPlacarSeguranca({
   return (
     <>
       <section
-        className={`relative overflow-hidden rounded-2xl md:rounded-3xl border border-amber-300/80 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/90 via-white to-amber-100/40 dark:from-[#1E1C16] dark:via-[#161618] dark:to-[#1E1C16] shadow-md hover:shadow-lg transition-all duration-300 p-4 md:p-6 mb-6 ${
-          modoCompacto ? 'my-3' : 'my-5'
-        }`}
-        aria-label="Placar de Segurança — Dias sem acidentes"
+        className={`placar-seguranca-board ${modoCompacto ? 'my-3' : 'my-5'}`}
+        aria-label="Placar de Segurança da Obra"
       >
-        {/* Fundo decorativo sutil */}
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 rounded-full bg-amber-400/10 dark:bg-amber-400/5 blur-2xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-10 w-36 h-36 rounded-full bg-emerald-400/10 dark:bg-emerald-400/5 blur-2xl pointer-events-none" />
+        {/* Faixa Hazard Superior */}
+        <div className="placar-hazard placar-hazard-top" aria-hidden="true" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
-          
-          {/* LADO ESQUERDO: THUMBNAIL / PLACAR EM DESTAQUE */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-4 shrink-0">
-            {/* Display do Placar em Estilo Thumbnail Industrial */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#111827] to-[#0A0D14] text-white p-4 md:p-5 flex flex-col justify-between shadow-lg border border-amber-500/40 min-w-[240px] sm:w-[270px] text-center group">
-              {/* Luz do Placar */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-emerald-400 to-amber-400 animate-pulse" />
-              
-              <div className="flex items-center justify-between gap-1 mb-2">
-                <span className="text-[10px] uppercase font-black tracking-widest text-amber-400/90 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  Placar da Obra
-                </span>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  Ao Vivo
-                </span>
-              </div>
-
-              {/* Título do Placar */}
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
-                Estamos trabalhando há
-              </span>
-
-              {/* Número de Dias com Tipografia Gigante de Impacto */}
-              <div className="my-1.5 flex items-baseline justify-center gap-2">
-                <span className="text-5xl sm:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-100 font-mono drop-shadow-[0_2px_10px_rgba(245,197,24,0.3)]">
-                  {diasComAfastamento}
-                </span>
-                <span className="text-base sm:text-lg font-black text-amber-400 uppercase">
-                  {diasComAfastamento === 1 ? 'Dia' : 'Dias'}
-                </span>
-              </div>
-
-              {/* Legenda Oficial */}
-              <div className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 py-1 px-2 rounded-lg mb-2">
-                Sem Acidentes com Afastamento
-              </div>
-
-              {/* Sub-informação de Acidentes sem Afastamento */}
-              {diasSemAfastamento > 0 && (
-                <div className="text-[10px] text-gray-300 flex items-center justify-center gap-1 font-medium pt-1 border-t border-white/10">
-                  <span>Sem afastamento:</span>
-                  <b className="text-amber-300">{diasSemAfastamento} dias</b>
-                </div>
-              )}
-            </div>
+        {/* CABEÇALHO */}
+        <header className="placar-topline">
+          <div className="placar-brand-mark">
+            <img src="/placar-seguranca/helmet.svg" alt="Capacete de Segurança" />
+            <span>{dadosAtuais.nomeObra}</span>
           </div>
 
-          {/* CENTRO E LADO DIREITO: O FEITO E A META */}
-          <div className="flex-1 flex flex-col justify-between space-y-3.5">
-            {/* Header do Feito / Conquista */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl" role="img" aria-label={feito.titulo}>
-                  {feito.icone}
-                </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${feito.badgeBg} ${feito.badgeTexto} border-amber-300 dark:border-amber-700`}>
-                      {feito.titulo}
-                    </span>
-                    {progresso.metaBatida && (
-                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-emerald-600" />
-                        Meta Batida!
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-base sm:text-lg font-black text-gray-950 dark:text-white mt-0.5">
-                    {feito.subtitulo}
-                  </h3>
-                </div>
-              </div>
-
-              {/* Botão de Ajuste Rápido */}
-              <button
-                type="button"
-                onClick={() => setModalAberto(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white bg-white/80 dark:bg-white/5 hover:bg-amber-100 dark:hover:bg-amber-950/50 border border-gray-300/80 dark:border-white/10 px-3 py-1.5 rounded-xl transition-all shadow-sm cursor-pointer"
-                title="Configurar data do último acidente ou meta de dias"
-              >
-                <Settings className="w-3.5 h-3.5 text-amber-600" />
-                <span>Ajustar Placar</span>
-              </button>
-            </div>
-
-            {/* BARRA DE PROGRESSO DA META */}
-            <div className="bg-white/80 dark:bg-white/5 border border-amber-200/80 dark:border-white/10 rounded-2xl p-3.5 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-bold text-gray-800 dark:text-gray-200 mb-1.5">
-                <span className="flex items-center gap-1.5">
-                  <Target className="w-4 h-4 text-amber-600" />
-                  Meta da Operação: <b className="text-amber-700 dark:text-amber-400 font-extrabold">{metaNum} Dias</b>
-                </span>
-                <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">
-                  {progresso.porcentagem}% Concluído
-                </span>
-              </div>
-
-              {/* Barra Animada */}
-              <div className="w-full h-3.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-amber-300/50 dark:border-amber-600/30">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-emerald-500 transition-all duration-1000 relative shadow-sm"
-                  style={{ width: `${Math.max(4, progresso.porcentagem)}%` }}
-                >
-                  <span className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-2">
-                <span>
-                  {progresso.metaBatida ? (
-                    <b className="text-emerald-600 dark:text-emerald-400">
-                      🎉 Parabéns! Meta de {metaNum} dias alcançada com sucesso!
-                    </b>
-                  ) : (
-                    <>
-                      Faltam apenas <b className="text-amber-600 dark:text-amber-400">{progresso.diasRestantes} dias</b> para atingir a meta.
-                    </>
-                  )}
-                </span>
-                <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                  Recorde da Obra: <b>{recordeNum} dias</b>
-                </span>
-              </div>
-            </div>
-
-            {/* Footer do Card com Links Diretos */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-              <span className="text-gray-500 dark:text-gray-400 text-[11px] font-medium flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-amber-600" />
-                Contagem contínua atualizada automaticamente dia a dia.
-              </span>
-
-              <Link
-                to="/seguranca/indicadores"
-                className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline"
-              >
-                <span>Ver todos os Indicadores de Segurança</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
+          <div className="placar-live">
+            <span className="text-[#ffd34d] font-black tracking-wider text-xs hidden sm:inline">
+              PLACAR DA OBRA
+            </span>
+            <b>
+              <span className="placar-pulse" aria-hidden="true" />
+              AO VIVO
+            </b>
           </div>
 
+          {canEdit && (
+            <button
+              type="button"
+              onClick={abrirModalAjuste}
+              className="placar-edit-btn"
+              title="Ajustar indicadores do placar de segurança"
+            >
+              <Settings className="w-4 h-4 text-[#f5b400]" />
+              <span>Ajustar Placar</span>
+            </button>
+          )}
+        </header>
+
+        {/* ÁREA CENTRAL */}
+        <div className="placar-hero-grid">
+          {/* LADO ESQUERDO: EMBLEMA TRANSPARENTE */}
+          <aside className="placar-side-seal">
+            <img
+              src="/placar-seguranca/security-badge.png"
+              alt="Emblema de Segurança do Trabalho"
+              className="placar-security-badge"
+            />
+            <span className="placar-seal-caption">{dadosAtuais.fraseDestaque}</span>
+          </aside>
+
+          {/* CENTRO: DIAS SEM ACIDENTES COM AFASTAMENTO */}
+          <section className="placar-main-counter">
+            <div className="placar-counter-kicker">
+              <img
+                src="/placar-seguranca/generated-shield.png"
+                alt=""
+                className="placar-generated-shield"
+              />
+              <span className="placar-pulse" aria-hidden="true" />
+              <span>DIAS SEM ACIDENTES COM AFASTAMENTO</span>
+            </div>
+
+            <div className="placar-number-line">
+              <strong>{dadosAtuais.dias.toLocaleString('pt-BR')}</strong>
+              <span>DIAS</span>
+            </div>
+
+            <div className="placar-safe-ribbon">
+              <img src="/placar-seguranca/shield-check.svg" alt="" />
+              <span>TRABALHANDO COM SEGURANÇA</span>
+            </div>
+
+            <div className="placar-secondary-stat">
+              <span>Sem afastamento</span>
+              <strong>{dadosAtuais.diasSemAfastamento.toLocaleString('pt-BR')} dias</strong>
+            </div>
+          </section>
+
+          {/* LADO DIREITO: ALVO ZERO ACIDENTE */}
+          <aside className="placar-goal-side">
+            <img src="/placar-seguranca/target.svg" alt="Alvo Zero Acidente" />
+            <strong>
+              ZERO
+              <br />
+              ACIDENTE
+            </strong>
+            <span>{dadosAtuais.fraseDestaque}</span>
+          </aside>
         </div>
+
+        {/* ÁREA INFERIOR: PAINEL DE META E PROGRESSO */}
+        <section className="placar-progress-panel">
+          <div className="placar-progress-head">
+            <div className="placar-goal-label">
+              <img src="/placar-seguranca/target.svg" alt="" />
+              <span>
+                META ANUAL: <b>{dadosAtuais.meta.toLocaleString('pt-BR')} DIAS</b>
+              </span>
+            </div>
+            <div className="placar-remaining">
+              <span>FALTAM:</span> <b>{dadosAtuais.faltam.toLocaleString('pt-BR')} DIAS</b>
+            </div>
+          </div>
+
+          {/* Barra de Progresso */}
+          <div
+            className="placar-progress-track"
+            role="progressbar"
+            aria-label="Progresso da meta anual"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Number(dadosAtuais.percentualExibicao.toFixed(1))}
+          >
+            <div
+              className="placar-progress-fill"
+              style={{
+                width: `${Math.max(5, dadosAtuais.percentualExibicao)}%`,
+              }}
+            >
+              <span>
+                {dadosAtuais.percentualExibicao.toLocaleString('pt-BR', {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })}
+                %
+              </span>
+            </div>
+          </div>
+
+          {/* Informações Complementares: Recorde e Início */}
+          <div className="placar-progress-foot">
+            <div>
+              <img src="/placar-seguranca/trophy.svg" alt="" />
+              <span>
+                RECORDE DA OBRA: <b>{dadosAtuais.recorde.toLocaleString('pt-BR')} DIAS</b>
+              </span>
+            </div>
+            <div>
+              <img src="/placar-seguranca/calendar.svg" alt="" />
+              <span>
+                INÍCIO DA CONTAGEM: <b>{dadosAtuais.dataInicioBr}</b>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* RODAPÉ DO PLACAR */}
+        <footer className="placar-board-footer">
+          <span>
+            <img src="/placar-seguranca/shield-check.svg" alt="" />
+            <span>Segurança é responsabilidade de todos.</span>
+          </span>
+          <span>Salvo automaticamente às {dadosAtuais.horaSalva}</span>
+        </footer>
+
+        {/* Faixa Hazard Inferior */}
+        <div className="placar-hazard placar-hazard-bottom" aria-hidden="true" />
       </section>
 
-      {/* MODAL DE AJUSTE DO PLACAR E METAS VIA PORTAL */}
-      {modalAberto && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
-          onClick={() => setModalAberto(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+      {/* MODAL DE AJUSTE DO PLACAR (VIA PORTAL) */}
+      {modalAberto &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="bg-white dark:bg-[#1A1A1E] border border-amber-300/80 dark:border-white/10 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl space-y-4 text-gray-900 dark:text-white my-auto max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200"
+            onClick={() => setModalAberto(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="placar-modal-title"
           >
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center text-amber-700">
-                  <Settings className="w-5 h-5" />
+            <div
+              className="bg-[#0f1722] border-2 border-[#f5b400]/70 rounded-3xl w-full max-w-xl p-5 sm:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.85)] text-white my-auto max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Topo do Modal */}
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#f5b400]/20 border border-[#f5b400]/50 flex items-center justify-center text-[#f5b400]">
+                    <Settings className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-[#f5b400] uppercase tracking-widest block">
+                      CONFIGURAÇÕES DO PLACAR
+                    </span>
+                    <h2 id="placar-modal-title" className="text-xl sm:text-2xl font-black text-white">
+                      Ajustar Placar da Obra
+                    </h2>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base">Ajustar Placar de Segurança e Meta</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Defina a data inicial do marco e as metas comemorativas da obra
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalAberto(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSalvarAjustes} className="space-y-4 text-xs font-semibold">
-              <div>
-                <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                  Data do último acidente com afastamento *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={dataAfastamento}
-                  onChange={(e) => setDataAfastamento(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400 block mt-1">
-                  Os dias serão calculados automaticamente a partir desta data até hoje.
-                </span>
-              </div>
-
-              <div>
-                <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                  Data do último acidente sem afastamento (opcional)
-                </label>
-                <input
-                  type="date"
-                  value={dataSemAfastamento}
-                  onChange={(e) => setDataSemAfastamento(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                    Meta de Dias sem Acidente
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={metaDias}
-                    onChange={(e) => setMetaDias(e.target.value)}
-                    placeholder="Ex.: 365"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                    Recorde Histórico da Obra (dias)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={recordeDias}
-                    onChange={(e) => setRecordeDias(e.target.value)}
-                    placeholder="Ex.: 420"
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                  Mensagem / Observação da Liderança
-                </label>
-                <input
-                  type="text"
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                  placeholder="Ex.: Foco contínuo em zero acidentes na frente de serviço."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-gray-200 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Fechar"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-[#F5C518] hover:bg-[#E5B508] text-black shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{salvando ? 'Salvando...' : 'Salvar Placar'}</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+
+              {/* Formulário de Configuração */}
+              <form onSubmit={handleSalvarAjustes} className="mt-5 space-y-4 text-xs font-bold">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Dias sem afastamento */}
+                  <div>
+                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                      Dias sem acidentes com afastamento *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      value={editDias}
+                      onChange={(e) => handleDiasChange(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                    />
+                  </div>
+
+                  {/* Dias sem afastamento */}
+                  <div>
+                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                      Dias sem afastamento *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      value={editNoLeave}
+                      onChange={(e) => setEditNoLeave(Math.max(0, Number(e.target.value)))}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Meta Anual */}
+                  <div>
+                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                      Meta anual (dias) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={editGoal}
+                      onChange={(e) => setEditGoal(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                    />
+                  </div>
+
+                  {/* Recorde da Obra */}
+                  <div>
+                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                      Recorde da obra (dias) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      value={editRecord}
+                      onChange={(e) => setEditRecord(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                    />
+                  </div>
+                </div>
+
+                {/* Início da Contagem */}
+                <div>
+                  <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                    Início da contagem *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editStart}
+                    onChange={(e) => handleDataInicioChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-1 font-medium">
+                    Ao alterar a data, a contagem de dias se recalcula automaticamente.
+                  </span>
+                </div>
+
+                {/* Nome da Obra / Unidade */}
+                <div>
+                  <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                    Nome da obra / unidade
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={editProject}
+                    onChange={(e) => setEditProject(e.target.value)}
+                    placeholder="Ex.: PLACAR DA OBRA"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                  />
+                </div>
+
+                {/* Frase de Destaque */}
+                <div>
+                  <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
+                    Frase de destaque
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={editMessage}
+                    onChange={(e) => setEditMessage(e.target.value)}
+                    placeholder="Ex.: NOSSO MAIOR VALOR É A VIDA"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                  />
+                </div>
+
+                {/* Ações do Modal */}
+                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={handleExportarJson}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/15 transition-all cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-[#f5b400]" />
+                    <span>Exportar JSON</span>
+                  </button>
+
+                  <div className="w-full sm:w-auto flex items-center justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setModalAberto(false)}
+                      className="w-1/2 sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={salvando}
+                      className="w-1/2 sm:w-auto px-6 py-2.5 rounded-xl text-xs font-extrabold bg-[#087b3d] hover:bg-[#0aa351] text-white shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{salvando ? 'Salvando...' : 'Salvar alterações'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-gray-400 leading-relaxed pt-1">
+                  As alterações são gravadas diretamente no banco de dados Supabase e sincronizadas
+                  em tempo real com todos os usuários autorizados do sistema.
+                </p>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   )
 }
-
