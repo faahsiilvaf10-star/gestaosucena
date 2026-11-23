@@ -5,6 +5,7 @@ import {
   type PlacarSegurancaConfig,
   CONFIG_PADRAO_PLACAR,
   calcularDiasSemAcidente,
+  calcularDataRetroativa,
   carregarPlacarSeguranca,
   salvarPlacarSeguranca,
   getDbKeyPlacarSeguranca,
@@ -37,7 +38,8 @@ export function DashboardPlacarSeguranca({
   const [editNoLeave, setEditNoLeave] = useState<number>(90)
   const [editGoal, setEditGoal] = useState<number>(365)
   const [editRecord, setEditRecord] = useState<number>(365)
-  const [editStart, setEditStart] = useState<string>('2026-07-20')
+  const [editDateComAfastamento, setEditDateComAfastamento] = useState<string>('2026-07-20')
+  const [editDateSemAfastamento, setEditDateSemAfastamento] = useState<string>(() => calcularDataRetroativa(90))
   const [editProject, setEditProject] = useState<string>('PLACAR DA OBRA')
   const [editMessage, setEditMessage] = useState<string>('NOSSO MAIOR VALOR É A VIDA')
 
@@ -150,45 +152,43 @@ export function DashboardPlacarSeguranca({
   }, [currentEnv])
 
   const sincronizarCamposEdicao = (d: PlacarSegurancaConfig) => {
-    const dataInicioIso = normalizarDataIso(d.dataUltimoAcidenteComAfastamento) || '2026-07-20'
-    const diasCalc =
-      d.diasSemAcidentesComAfastamento != null
-        ? d.diasSemAcidentesComAfastamento
-        : calcularDiasSemAcidente(dataInicioIso)
+    const dataComIso =
+      normalizarDataIso(d.dataUltimoAcidenteComAfastamento) ||
+      calcularDataRetroativa(d.diasSemAcidentesComAfastamento ?? 290)
+    const diasCalc = calcularDiasSemAcidente(dataComIso)
+
+    const dataSemIso =
+      normalizarDataIso(d.dataUltimoAcidenteSemAfastamento) ||
+      calcularDataRetroativa(d.diasSemAfastamento ?? 90)
+    const diasSemCalc = calcularDiasSemAcidente(dataSemIso)
 
     setEditDias(diasCalc)
-    setEditNoLeave(
-      d.diasSemAfastamento != null
-        ? d.diasSemAfastamento
-        : d.dataUltimoAcidenteSemAfastamento
-          ? calcularDiasSemAcidente(d.dataUltimoAcidenteSemAfastamento)
-          : 90
-    )
+    setEditNoLeave(diasSemCalc)
+    setEditDateComAfastamento(dataComIso)
+    setEditDateSemAfastamento(dataSemIso)
     setEditGoal(d.metaDias || 365)
     setEditRecord(d.recordeHistoricoDias || 365)
-    setEditStart(dataInicioIso)
     setEditProject(d.nomeObra || 'PLACAR DA OBRA')
     setEditMessage(d.fraseDestaque || 'NOSSO MAIOR VALOR É A VIDA')
   }
 
   // Cálculos do placar
   const dadosAtuais = useMemo(() => {
-    const dataInicioIso = normalizarDataIso(config?.dataUltimoAcidenteComAfastamento) || '2026-07-20'
-    const dias = Math.max(
-      0,
-      config?.diasSemAcidentesComAfastamento != null
-        ? Number(config.diasSemAcidentesComAfastamento)
-        : calcularDiasSemAcidente(dataInicioIso)
-    )
+    const dataComAfastamentoIso =
+      normalizarDataIso(config?.dataUltimoAcidenteComAfastamento) ||
+      (config?.diasSemAcidentesComAfastamento != null
+        ? calcularDataRetroativa(config.diasSemAcidentesComAfastamento)
+        : '2026-07-20')
 
-    const diasSemAfastamento = Math.max(
-      0,
-      config?.diasSemAfastamento != null
-        ? Number(config.diasSemAfastamento)
-        : config?.dataUltimoAcidenteSemAfastamento
-          ? calcularDiasSemAcidente(config.dataUltimoAcidenteSemAfastamento)
-          : 90
-    )
+    const dias = Math.max(0, calcularDiasSemAcidente(dataComAfastamentoIso))
+
+    const dataSemAfastamentoIso =
+      normalizarDataIso(config?.dataUltimoAcidenteSemAfastamento) ||
+      (config?.diasSemAfastamento != null
+        ? calcularDataRetroativa(config.diasSemAfastamento)
+        : calcularDataRetroativa(90))
+
+    const diasSemAfastamento = Math.max(0, calcularDiasSemAcidente(dataSemAfastamentoIso))
 
     const meta = Math.max(1, Number(config?.metaDias) || 365)
     const recorde = Math.max(0, Number(config?.recordeHistoricoDias) || 365)
@@ -214,7 +214,8 @@ export function DashboardPlacarSeguranca({
       recorde,
       faltam,
       percentualExibicao,
-      dataInicioBr: formatarDataBr(dataInicioIso),
+      dataComAfastamentoBr: formatarDataBr(dataComAfastamentoIso),
+      dataSemAfastamentoBr: formatarDataBr(dataSemAfastamentoIso),
       nomeObra: (config?.nomeObra || 'PLACAR DA OBRA').toUpperCase(),
       fraseDestaque: (config?.fraseDestaque || 'NOSSO MAIOR VALOR É A VIDA').toUpperCase(),
       horaSalva,
@@ -229,26 +230,36 @@ export function DashboardPlacarSeguranca({
     setModalAberto(true)
   }
 
-  // Alterar data de início recalcula os dias automaticamente no formulário
-  const handleDataInicioChange = (novaData: string) => {
-    setEditStart(novaData)
+  // Alterar data com afastamento recalcula os dias automaticamente no formulário
+  const handleDataComAfastamentoChange = (novaData: string) => {
+    setEditDateComAfastamento(novaData)
     if (novaData) {
       const diasCalculados = calcularDiasSemAcidente(novaData)
       setEditDias(diasCalculados)
     }
   }
 
-  // Alterar dias ajusta a data de início retroativamente para manter coerência
-  const handleDiasChange = (novosDias: number) => {
-    setEditDias(novosDias)
-    if (novosDias >= 0) {
-      const d = new Date()
-      d.setDate(d.getDate() - novosDias)
-      const yyyy = d.getFullYear()
-      const mm = String(d.getMonth() + 1).padStart(2, '0')
-      const dd = String(d.getDate()).padStart(2, '0')
-      setEditStart(`${yyyy}-${mm}-${dd}`)
+  // Alterar dias com afastamento ajusta a data retroativamente para manter coerência
+  const handleDiasComAfastamentoChange = (novosDias: number) => {
+    const val = Math.max(0, Number.isFinite(novosDias) ? novosDias : 0)
+    setEditDias(val)
+    setEditDateComAfastamento(calcularDataRetroativa(val))
+  }
+
+  // Alterar data sem afastamento recalcula os dias automaticamente no formulário
+  const handleDataSemAfastamentoChange = (novaData: string) => {
+    setEditDateSemAfastamento(novaData)
+    if (novaData) {
+      const diasCalculados = calcularDiasSemAcidente(novaData)
+      setEditNoLeave(diasCalculados)
     }
+  }
+
+  // Alterar dias sem afastamento ajusta a data retroativamente para manter coerência
+  const handleDiasSemAfastamentoChange = (novosDias: number) => {
+    const val = Math.max(0, Number.isFinite(novosDias) ? novosDias : 0)
+    setEditNoLeave(val)
+    setEditDateSemAfastamento(calcularDataRetroativa(val))
   }
 
   // Salvar ajustes
@@ -256,6 +267,14 @@ export function DashboardPlacarSeguranca({
     e.preventDefault()
 
     // Validações obrigatórias
+    if (!editDateComAfastamento) {
+      toast.error('Informe a data do último acidente com afastamento.')
+      return
+    }
+    if (!editDateSemAfastamento) {
+      toast.error('Informe a data do último acidente sem afastamento.')
+      return
+    }
     if (editDias < 0) {
       toast.error('Dias sem acidentes com afastamento não pode ser negativo.')
       return
@@ -272,19 +291,16 @@ export function DashboardPlacarSeguranca({
       toast.error('O recorde da obra não pode ser negativo.')
       return
     }
-    if (!editStart) {
-      toast.error('Informe a data de início da contagem.')
-      return
-    }
 
     try {
       setSalvando(true)
       const novaConfig: PlacarSegurancaConfig = {
+        dataUltimoAcidenteComAfastamento: editDateComAfastamento,
+        dataUltimoAcidenteSemAfastamento: editDateSemAfastamento,
         diasSemAcidentesComAfastamento: Math.round(editDias),
         diasSemAfastamento: Math.round(editNoLeave),
         metaDias: Math.round(editGoal),
         recordeHistoricoDias: Math.round(editRecord),
-        dataUltimoAcidenteComAfastamento: editStart,
         nomeObra: editProject.trim() || 'PLACAR DA OBRA',
         fraseDestaque: editMessage.trim() || 'NOSSO MAIOR VALOR É A VIDA',
         observacao: editMessage.trim() || undefined,
@@ -309,11 +325,15 @@ export function DashboardPlacarSeguranca({
   // Exportar dados em JSON (compatível com a funcionalidade da referência)
   const handleExportarJson = () => {
     const payload = {
+      dataUltimoAcidenteComAfastamento: editDateComAfastamento,
+      dataUltimoAcidenteSemAfastamento: editDateSemAfastamento,
+      diasSemAcidentesComAfastamento: editDias,
+      diasSemAfastamento: editNoLeave,
       days: editDias,
       noLeave: editNoLeave,
       goal: editGoal,
       record: editRecord,
-      start: editStart,
+      start: editDateComAfastamento,
       project: editProject,
       message: editMessage,
       exportedAt: new Date().toISOString(),
@@ -486,7 +506,7 @@ export function DashboardPlacarSeguranca({
             </div>
           </div>
 
-          {/* Informações Complementares: Recorde e Início */}
+          {/* Informações Complementares: Recorde e Datas dos Acidentes */}
           <div className="placar-progress-foot">
             <div>
               <img src="/placar-seguranca/trophy.svg" alt="" />
@@ -497,7 +517,13 @@ export function DashboardPlacarSeguranca({
             <div>
               <img src="/placar-seguranca/calendar.svg" alt="" />
               <span>
-                INÍCIO DA CONTAGEM: <b>{dadosAtuais.dataInicioBr}</b>
+                ÚLTIMO C/ AFAST.: <b>{dadosAtuais.dataComAfastamentoBr}</b>
+              </span>
+            </div>
+            <div>
+              <img src="/placar-seguranca/calendar.svg" alt="" />
+              <span>
+                ÚLTIMO S/ AFAST.: <b>{dadosAtuais.dataSemAfastamentoBr}</b>
               </span>
             </div>
           </div>
@@ -558,38 +584,92 @@ export function DashboardPlacarSeguranca({
 
               {/* Formulário de Configuração */}
               <form onSubmit={handleSalvarAjustes} className="mt-5 space-y-4 text-xs font-bold">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Dias sem afastamento */}
-                  <div>
-                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
-                      Dias sem acidentes com afastamento *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      value={editDias}
-                      onChange={(e) => handleDiasChange(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
-                    />
+                {/* GRUPO: ACIDENTE COM AFASTAMENTO */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-emerald-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Acidente com Afastamento
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium">
+                      Conta {editDias} dias até hoje
+                    </span>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1 text-gray-300 font-extrabold uppercase tracking-wider text-[10.5px]">
+                        Última data com afastamento *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={editDateComAfastamento}
+                        onChange={(e) => handleDataComAfastamentoChange(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-300 font-extrabold uppercase tracking-wider text-[10.5px]">
+                        Dias sem acidentes com afastamento *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={editDias}
+                        onChange={(e) => handleDiasComAfastamentoChange(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-400 block font-normal">
+                    Ao alterar a data, a contagem de dias se recalcula automaticamente até a data atual.
+                  </span>
+                </div>
 
-                  {/* Dias sem afastamento */}
-                  <div>
-                    <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
-                      Dias sem afastamento *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      value={editNoLeave}
-                      onChange={(e) => setEditNoLeave(Math.max(0, Number(e.target.value)))}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
-                    />
+                {/* GRUPO: ACIDENTE SEM AFASTAMENTO */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-amber-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      Acidente sem Afastamento
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium">
+                      Conta {editNoLeave} dias até hoje
+                    </span>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1 text-gray-300 font-extrabold uppercase tracking-wider text-[10.5px]">
+                        Última data sem afastamento *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={editDateSemAfastamento}
+                        onChange={(e) => handleDataSemAfastamentoChange(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-300 font-extrabold uppercase tracking-wider text-[10.5px]">
+                        Dias sem afastamento *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={editNoLeave}
+                        onChange={(e) => handleDiasSemAfastamentoChange(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-400 block font-normal">
+                    Ao alterar a data, a contagem de dias se recalcula automaticamente até a data atual.
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -624,23 +704,6 @@ export function DashboardPlacarSeguranca({
                       className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
                     />
                   </div>
-                </div>
-
-                {/* Início da Contagem */}
-                <div>
-                  <label className="block mb-1.5 text-gray-300 font-extrabold uppercase tracking-wider text-[11px]">
-                    Início da contagem *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={editStart}
-                    onChange={(e) => handleDataInicioChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 bg-[#16212d] text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-[#f5b400] focus:border-[#f5b400]"
-                  />
-                  <span className="text-[10px] text-gray-400 block mt-1 font-medium">
-                    Ao alterar a data, a contagem de dias se recalcula automaticamente.
-                  </span>
                 </div>
 
                 {/* Nome da Obra / Unidade */}

@@ -31,10 +31,20 @@ export function getLsKeyPlacarSeguranca(env = 'barcarena'): string {
 
 export const LS_KEY_PLACAR_SEGURANCA = 'hydro-placar-seguranca-v1'
 
+/**
+ * Calcula a data ISO (YYYY-MM-DD) retroativa a partir de uma quantidade de dias
+ */
+export function calcularDataRetroativa(dias: number, hoje = new Date()): string {
+  const d = new Date(hoje)
+  d.setDate(d.getDate() - Math.max(0, Math.floor(dias)))
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export function getDataPadraoInicio(diasAtras = 145): string {
-  const d = new Date()
-  d.setDate(d.getDate() - diasAtras)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return calcularDataRetroativa(diasAtras)
 }
 
 export const CONFIG_PADRAO_PLACAR: PlacarSegurancaConfig = {

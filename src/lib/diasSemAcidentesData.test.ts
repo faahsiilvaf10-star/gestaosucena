@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   calcularDiasSemAcidente,
+  calcularDataRetroativa,
   calcularProgressoMeta,
   obterFeitoSeguranca,
   CONFIG_PADRAO_PLACAR,
@@ -18,6 +19,24 @@ describe('diasSemAcidentesData utils', () => {
     expect(normalizarDataIso('2026-07-20')).toBe('2026-07-20')
     expect(normalizarDataIso('')).toBe('')
     expect(normalizarDataIso(null)).toBe('')
+  })
+
+  it('calcularDataRetroativa calcula a data ISO corretamente a partir dos dias', () => {
+    const hoje = new Date(2026, 10, 4, 12, 0, 0) // 04/11/2026
+    expect(calcularDataRetroativa(0, hoje)).toBe('2026-11-04')
+    expect(calcularDataRetroativa(4, hoje)).toBe('2026-10-31')
+    expect(calcularDataRetroativa(30, hoje)).toBe('2026-10-05')
+  })
+
+  it('calcularDataRetroativa e calcularDiasSemAcidente sao operacoes inversas', () => {
+    const hoje = new Date(2026, 10, 23, 9, 0, 0)
+    const diasComAfastamento = 290
+    const dataComAfastamento = calcularDataRetroativa(diasComAfastamento, hoje)
+    expect(calcularDiasSemAcidente(dataComAfastamento, hoje)).toBe(290)
+
+    const diasSemAfastamento = 90
+    const dataSemAfastamento = calcularDataRetroativa(diasSemAfastamento, hoje)
+    expect(calcularDiasSemAcidente(dataSemAfastamento, hoje)).toBe(90)
   })
 
   it('CONFIG_PADRAO_PLACAR possui os valores padrão alinhados à referência', () => {
