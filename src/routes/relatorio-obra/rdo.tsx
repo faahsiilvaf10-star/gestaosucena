@@ -126,6 +126,10 @@ function RDOPage() {
   const [lideranca, setLideranca] = useState('Eng. Luís Araújo');
   const [tst, setTst] = useState('Itamar Junior e Alexssandro Chaves');
   const [local, setLocal] = useState('Alunorte Barcarena');
+  const [climaManha, setClimaManha] = useState('Sol');
+  const [climaTarde, setClimaTarde] = useState('Sol');
+  const [temperatura, setTemperatura] = useState('');
+  const [dificuldades, setDificuldades] = useState('Não Houve.');
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     const y = today.getFullYear();
