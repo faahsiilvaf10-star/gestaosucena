@@ -1380,7 +1380,7 @@ function EquipamentoParadoPage() {
                         <Calendar size={16} className="opacity-50" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-[10000000]" align="start">
                       <CalendarUI
                         mode="single"
                         selected={parsedActionDate}
@@ -1478,7 +1478,7 @@ function EquipamentoParadoPage() {
                         <Calendar size={16} className="opacity-50" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-[10000000]" align="start">
                       <CalendarUI
                         mode="single"
                         selected={parsedActionDate}
@@ -1598,7 +1598,7 @@ function EquipamentoParadoPage() {
                         <Calendar size={16} className="opacity-50" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-[10000000]" align="start">
                       <CalendarUI
                         mode="single"
                         selected={parsedActionDate}
