@@ -6,6 +6,7 @@ import {
   resolveRdoHorario,
   type RdoInfoGerais
 } from '../routes/relatorio-obra/rdo';
+import { isFeriadoHydro, getFeriadoHydroName } from './calendarioHydro';
 
 describe('RDO - Informações Gerais Isoladas por Ambiente', () => {
   beforeEach(() => {
@@ -58,25 +59,52 @@ describe('RDO - Informações Gerais Isoladas por Ambiente', () => {
     expect(loadedCivil.horario).toBe('07:00 as 16:00');
   });
 
-  it('horário padrão deve ser 07:00 as 16:00 exclusivamente na sexta e sábado, e 07:00 as 17:00 nos demais dias', () => {
-    // 2026-11-15: Domingo (day 0)
-    expect(getStandardRdoHorario('2026-11-15')).toBe('07:00 as 17:00');
-    // 2026-11-16: Segunda-feira (day 1)
+  it('horário padrão deve ser 07:00 as 16:00 na sexta e sábado, e 07:00 as 17:00 nos demais dias úteis normais', () => {
+    // 2026-11-15: Domingo (day 0) - observação: 15/11 é feriado Proclamação da República
+    expect(isFeriadoHydro('2026-11-15')).toBe(true);
+    expect(getStandardRdoHorario('2026-11-15')).toBe('07:00 as 16:00');
+
+    // 2026-11-16: Segunda-feira (dia útil normal)
+    expect(isFeriadoHydro('2026-11-16')).toBe(false);
     expect(getStandardRdoHorario('2026-11-16')).toBe('07:00 as 17:00');
-    // 2026-11-17: Terça-feira (day 2)
+
+    // 2026-11-17: Terça-feira (dia útil normal)
+    expect(isFeriadoHydro('2026-11-17')).toBe(false);
     expect(getStandardRdoHorario('2026-11-17')).toBe('07:00 as 17:00');
-    // 2026-11-18: Quarta-feira (day 3)
+
+    // 2026-11-18: Quarta-feira (dia útil normal)
+    expect(isFeriadoHydro('2026-11-18')).toBe(false);
     expect(getStandardRdoHorario('2026-11-18')).toBe('07:00 as 17:00');
-    // 2026-11-19: Quinta-feira (day 4)
+
+    // 2026-11-19: Quinta-feira (dia útil normal)
+    expect(isFeriadoHydro('2026-11-19')).toBe(false);
     expect(getStandardRdoHorario('2026-11-19')).toBe('07:00 as 17:00');
-    // 2026-11-20: Sexta-feira (day 5)
+
+    // 2026-11-20: Sexta-feira
     expect(getStandardRdoHorario('2026-11-20')).toBe('07:00 as 16:00');
-    // 2026-11-21: Sábado (day 6)
+
+    // 2026-11-21: Sábado
     expect(getStandardRdoHorario('2026-11-21')).toBe('07:00 as 16:00');
   });
 
-  it('resolveRdoHorario deve forçar 07:00 as 17:00 em dias úteis mesmo se salvo com 07:00 as 16:00', () => {
-    // Terça-feira (17/11/2026) que estava incorretamente aparecendo 16:00
+  it('feriados conforme o Calendário Hydro devem ser sempre 07:00 as 16:00 mesmo caindo em dia de semana', () => {
+    // 2026-04-21: Terça-feira (Tiradentes)
+    expect(isFeriadoHydro('2026-04-21')).toBe(true);
+    expect(getFeriadoHydroName('2026-04-21')).toBe('Tiradentes');
+    expect(getStandardRdoHorario('2026-04-21')).toBe('07:00 as 16:00');
+    expect(resolveRdoHorario('2026-04-21', '07:00 as 17:00')).toBe('07:00 as 16:00');
+
+    // 2026-09-07: Segunda-feira (Independência do Brasil)
+    expect(isFeriadoHydro('2026-09-07')).toBe(true);
+    expect(getStandardRdoHorario('2026-09-07')).toBe('07:00 as 16:00');
+
+    // 2026-12-03: Quinta-feira (Feriado Municipal - São Francisco Xavier)
+    expect(isFeriadoHydro('2026-12-03')).toBe(true);
+    expect(getStandardRdoHorario('2026-12-03')).toBe('07:00 as 16:00');
+  });
+
+  it('resolveRdoHorario deve forçar 07:00 as 17:00 em dias úteis normais mesmo se salvo com 07:00 as 16:00', () => {
+    // Terça-feira (17/11/2026) normal -> 07:00 as 17:00
     expect(resolveRdoHorario('2026-11-17', '07:00 as 16:00')).toBe('07:00 as 17:00');
     expect(resolveRdoHorario('2026-11-17', '07:00 às 16:00')).toBe('07:00 as 17:00');
 

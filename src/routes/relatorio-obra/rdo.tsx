@@ -19,6 +19,7 @@ import { ActivitiesPanel } from '@/components/rdo/ActivitiesPanel'
 import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
 import { isVehicle } from '@/lib/equipamentos/equipmentTypes'
 import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData'
+import { isFeriadoHydro } from '@/lib/calendarioHydro'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -81,14 +82,16 @@ export const DEFAULT_RDO_INFO_CIVIL: RdoInfoGerais = {
 };
 
 /**
- * Retorna o horário padrão de acordo com o dia da semana:
- * - Sexta-feira e Sábado: 07:00 as 16:00
- * - Demais dias (Domingo a Quinta): 07:00 as 17:00
+ * Retorna o horário padrão de acordo com o dia da semana e feriados Hydro:
+ * - Sexta-feira (5), Sábado (6) ou Feriado conforme o Calendário Hydro: 07:00 as 16:00
+ * - Demais dias da semana (Domingo a Quinta, não feriados): 07:00 as 17:00
  */
 export const getStandardRdoHorario = (dateStr: string): string => {
   const day = new Date(dateStr + 'T12:00:00Z').getUTCDay();
   // 5 = Sexta-feira, 6 = Sábado
-  return (day === 5 || day === 6) ? '07:00 as 16:00' : '07:00 as 17:00';
+  const isFridayOrSaturday = day === 5 || day === 6;
+  const isFeriado = isFeriadoHydro(dateStr);
+  return (isFridayOrSaturday || isFeriado) ? '07:00 as 16:00' : '07:00 as 17:00';
 };
 
 /**

@@ -15,35 +15,11 @@ import {
   getISOWeek,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { FERIADOS_HYDRO as feriados, PRENSADOS_HYDRO as prensados } from '@/lib/calendarioHydro'
 
 export const Route = createFileRoute('/rh/calendario-hydro')({
   component: CalendarioHydroPage,
 })
-
-const feriados: Record<string, string> = {
-  '2026-01-01': 'Confraternização Universal',
-  '2026-04-03': 'Paixão de Cristo',
-  '2026-04-21': 'Tiradentes',
-  '2026-05-01': 'Dia do Trabalhador',
-  '2026-06-04': 'Corpus Christi',
-  '2026-08-15': 'Adesão do Pará',
-  '2026-09-07': 'Independência do Brasil',
-  '2026-10-12': 'Nossa Sra. Aparecida / Dias das Crianças',
-  '2026-11-02': 'Finados',
-  '2026-11-15': 'Proclamação da República',
-  '2026-11-20': 'Dia da Consciência Negra',
-  '2026-12-03': 'Feriado Municipal - São Francisco Xavier',
-  '2026-12-25': 'Natal',
-}
-
-const prensados: Record<string, string> = {
-  '2026-02-16': 'Carnaval',
-  '2026-02-17': 'Carnaval',
-  '2026-02-18': 'Quarta Cinzas (dia compensado)',
-  '2026-04-20': 'Dia Compensado',
-  '2026-06-05': 'Dia Compensado',
-  '2026-12-04': 'Dia Compensado',
-}
 
 function CalendarioHydroPage() {
   const { isDark } = useTheme()
