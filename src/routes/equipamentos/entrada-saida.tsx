@@ -88,6 +88,8 @@ function EntradaSaidaPage() {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [isGeradorModalOpen, setIsGeradorModalOpen] = useState(false)
+  const [isEntryCalendarOpen, setIsEntryCalendarOpen] = useState(false)
+  const [isExitCalendarOpen, setIsExitCalendarOpen] = useState(false)
   const [geradorData, setGeradorData] = useState<GeradorHorimetroData | null>(null)
 
   // Report Modal
@@ -243,6 +245,7 @@ function EntradaSaidaPage() {
   const handleOpenEntry = (eq: Equipment) => {
     setSelectedEq(eq)
     setActionDateTime(getLocalDatetime())
+    setIsEntryCalendarOpen(false)
     setIsEntryModalOpen(true)
   }
 
@@ -251,6 +254,7 @@ function EntradaSaidaPage() {
     setExitReason('')
     setExitDescription('')
     setActionDateTime(getLocalDatetime())
+    setIsExitCalendarOpen(false)
     setIsExitModalOpen(true)
   }
 
@@ -1287,19 +1291,31 @@ function EntradaSaidaPage() {
               <div className="flex flex-col gap-2 pb-3 border-b border-black/10 dark:border-white/10">
                 <label className="text-sm opacity-70 font-semibold">Data / Hora da Entrada</label>
                 <div className="flex gap-2 w-full">
-                  <Popover>
+                  <Popover open={isEntryCalendarOpen} onOpenChange={setIsEntryCalendarOpen}>
                     <PopoverTrigger asChild>
                       <button className={cn("flex-1 p-3 rounded-xl border flex items-center justify-between font-semibold", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}>
                         {format(parsedActionDate, 'dd/MM/yyyy', { locale: ptBR })}
                         <Calendar className="w-4 h-4 opacity-50" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent 
+                      className={cn(
+                        "w-auto p-0 z-[10000000] border shadow-2xl rounded-2xl overflow-hidden", 
+                        isDark ? "bg-[#18181b] border-white/10 text-white" : "bg-white border-black/10 text-black"
+                      )} 
+                      align="start"
+                    >
                       <CalendarUI
                         mode="single"
                         selected={parsedActionDate}
-                        onSelect={(d) => d && updateActionDateTime(d, undefined)}
+                        onSelect={(d) => {
+                          if (d) {
+                            updateActionDateTime(d, undefined)
+                            setIsEntryCalendarOpen(false)
+                          }
+                        }}
                         initialFocus
+                        className={isDark ? "bg-[#18181b] text-white" : "bg-white text-black"}
                       />
                     </PopoverContent>
                   </Popover>
@@ -1353,19 +1369,31 @@ function EntradaSaidaPage() {
             <div className="mb-6 pb-4 border-b border-black/10 dark:border-white/10">
               <label className="block text-sm font-semibold mb-2">Data / Hora da Saída</label>
               <div className="flex gap-2 w-full">
-                <Popover>
+                <Popover open={isExitCalendarOpen} onOpenChange={setIsExitCalendarOpen}>
                   <PopoverTrigger asChild>
                     <button className={cn("flex-1 p-3 rounded-xl border flex items-center justify-between font-semibold", isDark ? 'bg-black/20 border-white/20' : 'bg-black/5 border-black/10')}>
                       {format(parsedActionDate, 'dd/MM/yyyy', { locale: ptBR })}
                       <Calendar className="w-4 h-4 opacity-50" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent 
+                    className={cn(
+                      "w-auto p-0 z-[10000000] border shadow-2xl rounded-2xl overflow-hidden", 
+                      isDark ? "bg-[#18181b] border-white/10 text-white" : "bg-white border-black/10 text-black"
+                    )} 
+                    align="start"
+                  >
                     <CalendarUI
                       mode="single"
                       selected={parsedActionDate}
-                      onSelect={(d) => d && updateActionDateTime(d, undefined)}
+                      onSelect={(d) => {
+                        if (d) {
+                          updateActionDateTime(d, undefined)
+                          setIsExitCalendarOpen(false)
+                        }
+                      }}
                       initialFocus
+                      className={isDark ? "bg-[#18181b] text-white" : "bg-white text-black"}
                     />
                   </PopoverContent>
                 </Popover>
