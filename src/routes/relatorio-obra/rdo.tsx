@@ -80,6 +80,40 @@ export const DEFAULT_RDO_INFO_CIVIL: RdoInfoGerais = {
   horario: '07:00 as 17:00'
 };
 
+/**
+ * Retorna o horário padrão de acordo com o dia da semana:
+ * - Sexta-feira e Sábado: 07:00 as 16:00
+ * - Demais dias (Domingo a Quinta): 07:00 as 17:00
+ */
+export const getStandardRdoHorario = (dateStr: string): string => {
+  const day = new Date(dateStr + 'T12:00:00Z').getUTCDay();
+  // 5 = Sexta-feira, 6 = Sábado
+  return (day === 5 || day === 6) ? '07:00 as 16:00' : '07:00 as 17:00';
+};
+
+/**
+ * Resolve o horário para a data informada.
+ * Se o horário for um dos padrões do sistema (07:00 as 16:00 ou 07:00 as 17:00),
+ * aplica estritamente a regra do dia da semana (Sexta e Sábado: 16:00, outros dias: 17:00).
+ * Se for um horário customizado pelo usuário (ex: plantão específico), mantém o customizado.
+ */
+export const resolveRdoHorario = (dateStr: string, currentOrSavedHorario?: string): string => {
+  const standard = getStandardRdoHorario(dateStr);
+  if (!currentOrSavedHorario) return standard;
+
+  const isStandardOption =
+    currentOrSavedHorario === '07:00 as 16:00' ||
+    currentOrSavedHorario === '07:00 as 17:00' ||
+    currentOrSavedHorario === '07:00 às 16:00' ||
+    currentOrSavedHorario === '07:00 às 17:00';
+
+  if (isStandardOption) {
+    return standard;
+  }
+
+  return currentOrSavedHorario;
+};
+
 function RDOPage() {
   const { colors } = useMonthlyColors();
 
@@ -89,19 +123,19 @@ function RDOPage() {
   const [lideranca, setLideranca] = useState('Eng. Luís Araújo');
   const [tst, setTst] = useState('Itamar Junior e Alexssandro Chaves');
   const [local, setLocal] = useState('Alunorte Barcarena');
-  const [horario, setHorario] = useState('07:00 as 17:00');
-  
-  const [climaManha, setClimaManha] = useState('Sol');
-  const [climaTarde, setClimaTarde] = useState('Sol');
-  const [temperatura, setTemperatura] = useState('');
-  const [dificuldades, setDificuldades] = useState('Não Houve.');
-
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
     const d = String(today.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  });
+  const [horario, setHorario] = useState(() => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return getStandardRdoHorario(`${y}-${m}-${d}`);
   });
 
   const [showHistory, setShowHistory] = useState(false);
@@ -555,8 +589,7 @@ function RDOPage() {
       setDdsText('A definir');
     }
     
-    const isFriday = new Date(dateStr + 'T12:00:00Z').getUTCDay() === 5;
-    const defaultHorario = isFriday ? '07:00 as 16:00' : '07:00 as 17:00';
+    const defaultHorario = getStandardRdoHorario(dateStr);
     
     let mainData: any = null;
     let jarData: any = null;
@@ -598,9 +631,8 @@ function RDOPage() {
       setLideranca(mainData.lideranca || resolvedInfo.lideranca);
       setTst(mainData.tst || resolvedInfo.tst);
       setLocal(mainData.local || resolvedInfo.local);
-      let savedHorario = mainData.horario || resolvedInfo.horario;
-      if (savedHorario === '07:00 as 17:00' && isFriday) savedHorario = '07:00 as 16:00';
-      setHorario(savedHorario || defaultHorario);
+      const chosenHorario = resolveRdoHorario(dateStr, mainData.horario || resolvedInfo.horario);
+      setHorario(chosenHorario);
       setClimaManha(mainData.climaManha || 'Sol');
       setClimaTarde(mainData.climaTarde || 'Sol');
       setTemperatura(mainData.temperatura || '');
@@ -615,8 +647,7 @@ function RDOPage() {
       setLideranca(resolvedInfo.lideranca);
       setTst(resolvedInfo.tst);
       setLocal(resolvedInfo.local);
-      let currentHorario = resolvedInfo.horario || defaultHorario;
-      if (currentHorario === '07:00 as 17:00' && isFriday) currentHorario = '07:00 as 16:00';
+      const currentHorario = resolveRdoHorario(dateStr, resolvedInfo.horario);
       setHorario(currentHorario);
       setClimaManha('Sol');
       setClimaTarde('Sol');
