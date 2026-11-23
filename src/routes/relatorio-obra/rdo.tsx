@@ -827,7 +827,8 @@ function RDOPage() {
       valid.forEach((row:any) => {
         const b = formatBerma(row.berma);
         const cleanVal = String(row.value).replace(/,00$/, '');
-        lines.push(`* ${title}: ${cleanVal} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}`);
+        const obsStr = row.observacao && String(row.observacao).trim() ? ` (Obs: ${String(row.observacao).trim()})` : '';
+        lines.push(`* ${title}: ${cleanVal} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}${obsStr}`);
       });
     }
 

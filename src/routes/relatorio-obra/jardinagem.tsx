@@ -14,6 +14,7 @@ import Lock from 'lucide-react/dist/esm/icons/lock.js';
 import Layers from 'lucide-react/dist/esm/icons/layers.js';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.js';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.js';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
@@ -91,7 +92,8 @@ function ActivityRow({
   icon,
   containerClassName = '',
   extraHeader,
-  extraFooter
+  extraFooter,
+  allowObservacao = false
 }: { 
   title: string; 
   data: any[]; 
@@ -101,8 +103,9 @@ function ActivityRow({
   containerClassName?: string;
   extraHeader?: React.ReactNode;
   extraFooter?: React.ReactNode;
+  allowObservacao?: boolean;
 }) {
-  const addRow = () => setData([...data, {value: '', faixa: '', berma: ''}]);
+  const addRow = () => setData([...data, {value: '', faixa: '', berma: '', observacao: ''}]);
   
   return (
     <div className={`p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm ${containerClassName}`}>
@@ -111,59 +114,94 @@ function ActivityRow({
           {icon}
           <h3 className="uppercase text-[11px] tracking-wider font-bold text-gray-800">{title}</h3>
         </div>
-        <button onClick={addRow} className="text-gray-500 hover:text-gray-900 transition-colors p-1 rounded-md hover:bg-gray-100">
+        <button onClick={addRow} className="text-gray-500 hover:text-gray-900 transition-colors p-1 rounded-md hover:bg-gray-100 cursor-pointer" title="Adicionar item">
           <Plus size={18} />
         </button>
       </div>
       {extraHeader}
       {data.map((row, idx) => (
-        <div key={idx} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex-1 w-full relative">
-            <input 
-              type="text"
-              inputMode="numeric"
-              value={row.value}
-              onChange={(e) => {
-                const newData = [...data];
-                newData[idx].value = maskNumber(e.target.value, isFloat);
-                setData(newData);
-              }}
-              className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors placeholder-gray-400"
-              placeholder={isFloat ? "0,00" : "0"}
-            />
-          </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-32">
-              <select
-                value={row.faixa}
+        <div key={idx} className="flex flex-col gap-2 p-3 rounded-xl bg-gray-50/70 border border-gray-200/80 transition-all">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex-1 w-full relative">
+              <input 
+                type="text"
+                inputMode="numeric"
+                value={row.value}
                 onChange={(e) => {
                   const newData = [...data];
-                  newData[idx].faixa = e.target.value;
+                  newData[idx].value = maskNumber(e.target.value, isFloat);
                   setData(newData);
                 }}
-                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="">Faixa</option>
-                {faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors placeholder-gray-400 font-medium"
+                placeholder={isFloat ? "0,00" : "0"}
+              />
             </div>
-            <div className="relative flex-1 sm:w-32">
-              <select
-                value={row.berma}
-                onChange={(e) => {
-                  const newData = [...data];
-                  newData[idx].berma = e.target.value;
-                  setData(newData);
-                }}
-                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="">Elevado/Berma</option>
-                {bermas.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-32">
+                <select
+                  value={row.faixa}
+                  onChange={(e) => {
+                    const newData = [...data];
+                    newData[idx].faixa = e.target.value;
+                    setData(newData);
+                  }}
+                  className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
+                >
+                  <option value="">Faixa</option>
+                  {faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+              </div>
+              <div className="relative flex-1 sm:w-32">
+                <select
+                  value={row.berma}
+                  onChange={(e) => {
+                    const newData = [...data];
+                    newData[idx].berma = e.target.value;
+                    setData(newData);
+                  }}
+                  className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
+                >
+                  <option value="">Elevado/Berma</option>
+                  {bermas.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+              </div>
+              {data.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newData = data.filter((_, i) => i !== idx);
+                    setData(newData);
+                  }}
+                  title="Remover linha"
+                  className="text-gray-400 hover:text-red-500 p-2.5 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
           </div>
+
+          {allowObservacao && (
+            <div className="w-full flex items-center gap-2 pt-1 border-t border-gray-200/60">
+              <span className="text-[11px] text-teal-800 font-bold shrink-0 flex items-center gap-1">
+                <FileText size={13} className="text-teal-600" />
+                Obs:
+              </span>
+              <input
+                type="text"
+                value={row.observacao || ''}
+                onChange={(e) => {
+                  const newData = [...data];
+                  newData[idx].observacao = e.target.value;
+                  setData(newData);
+                }}
+                placeholder="Observação da limpeza manual (opcional, ex.: trecho específico, detalhes...)"
+                className="w-full bg-white border border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 placeholder-gray-400 outline-none transition-all"
+              />
+            </div>
+          )}
         </div>
       ))}
       {extraFooter}
@@ -179,7 +217,7 @@ function JardinagemPage() {
   const [coroamento, setCoroamento] = useState([{value: '', faixa: '', berma: ''}]);
   const [adubagem, setAdubagem] = useState([{value: '', faixa: '', berma: ''}]);
   const [plantio, setPlantio] = useState([{especie: '', value: '', faixa: '', berma: ''}]);
-  const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: ''}]);
+  const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: '', observacao: ''}]);
   const [limpezaSoprador, setLimpezaSoprador] = useState([{value: '', faixa: '', berma: ''}]);
   const [invasoras, setInvasoras] = useState([{nome: '', value: '', berma: '', faixa: ''}]);
   const [retiradaMudas, setRetiradaMudas] = useState([{value: '', faixa: '', berma: ''}]);
@@ -368,7 +406,8 @@ function JardinagemPage() {
       const normRows = (rows: any[]) => (rows || []).map(r => ({ 
         ...r, 
         value: r.value ? maskNumber(r.value, false) : '',
-        berma: normalizeBermaElevado(r.berma) 
+        berma: normalizeBermaElevado(r.berma),
+        observacao: r.observacao || ''
       }));
       setRocagem(normRows(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]));
       setRocagemAsp(normRows(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]));
@@ -377,7 +416,7 @@ function JardinagemPage() {
       setCoroamento(normRows(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]));
       setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]));
       setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]));
-      setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', value: '' }]));
+      setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', value: '', observacao: '' }]));
       setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]));
       setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]));
       setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]));
@@ -401,7 +440,7 @@ function JardinagemPage() {
       setCoroamento([{ faixa: '', berma: '', value: '' }]);
       setAdubagem([{ faixa: '', berma: '', value: '' }]);
       setPlantio([{ faixa: '', berma: '', value: '', especie: '' }]);
-      setLimpezaManual([{ faixa: '', berma: '', value: '' }]);
+      setLimpezaManual([{ faixa: '', berma: '', value: '', observacao: '' }]);
       setLimpezaSoprador([{ faixa: '', berma: '', value: '' }]);
       setInvasoras([{ faixa: '', berma: '', value: '', nome: '' }]);
       setRetiradaMudas([{ faixa: '', berma: '', value: '' }]);
@@ -484,7 +523,8 @@ function JardinagemPage() {
       if (r.berma) loc.push(r.berma);
       const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
       const cleanVal = String(r.value || '').replace(/,00$/, '');
-      return <div key={`${name}-${idx}`}>- {name}: {cleanVal} {unit}{locStr}</div>
+      const obsStr = r.observacao && String(r.observacao).trim() ? ` - Obs: ${String(r.observacao).trim()}` : '';
+      return <div key={`${name}-${idx}`}>- {name}: {cleanVal} {unit}{locStr}{obsStr}</div>
     });
   }
 
@@ -795,6 +835,7 @@ function JardinagemPage() {
               title="LIMPEZA MANUAL (m²)" 
               data={limpezaManual} 
               setData={setLimpezaManual}
+              allowObservacao={true}
               extraHeader={
                 <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-green-50 border border-teal-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-start gap-3">

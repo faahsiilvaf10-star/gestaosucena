@@ -78,6 +78,24 @@ describe('jardinagemRocagem - Ciclos Contratuais e Cálculos', () => {
     expect(sopradorResult.totalM2).toBe(1600);
   });
 
+  it('deve suportar observacao em cada registro de limpeza manual', () => {
+    const entryComObs: RocagemEntry = {
+      activityType: 'limpeza_manual',
+      date: '2026-10-22',
+      faixa: 'Faixa 5',
+      berma: 'Elevado 27',
+      value: 1126,
+      rawString: '1.126',
+      observacao: 'Limpeza manual da borda do canal'
+    };
+    expect(entryComObs.observacao).toBe('Limpeza manual da borda do canal');
+
+    const result = calculatePeriodActivityTotal('2026-10-25', [entryComObs], [
+      { faixa: 'Faixa 5', berma: 'Elevado 27', value: '1.200' }
+    ]);
+    expect(result.totalM2).toBe(2326);
+  });
+
   it('deve ter as 3 atividades configuradas com nomes e unidades corretas', () => {
     expect(JARDINAGEM_ACTIVITIES.rocagem.name).toBe('Roçagem');
     expect(JARDINAGEM_ACTIVITIES.limpeza_manual.name).toBe('Limpeza Manual');

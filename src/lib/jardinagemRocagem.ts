@@ -49,6 +49,7 @@ export interface RocagemEntry {
   berma: string // "Berma 28", "GABIÃO 1", etc.
   value: number // Em m²
   rawString: string // Como digitado (ex: "1.200" ou "1.240,00")
+  observacao?: string
 }
 
 export interface AllJardinagemRecords {
@@ -164,7 +165,8 @@ function extractEntriesFromRows(
       faixa: r.faixa || 'Sem Faixa',
       berma: r.berma || 'Sem Berma',
       value: parseNumber(r.value),
-      rawString: String(r.value || '')
+      rawString: String(r.value || ''),
+      observacao: r.observacao && String(r.observacao).trim() ? String(r.observacao).trim() : undefined,
     }));
 }
 

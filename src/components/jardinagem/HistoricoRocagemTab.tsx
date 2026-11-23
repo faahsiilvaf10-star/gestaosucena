@@ -670,9 +670,16 @@ export function HistoricoRocagemTab({
                           </span>
                         </td>
                         <td className="px-6 py-3.5">
-                          <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-700 border border-gray-200">
-                            {rec.berma}
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-700 border border-gray-200">
+                              {rec.berma}
+                            </span>
+                            {rec.observacao && (
+                              <span className="text-[11px] text-teal-800 font-medium italic max-w-xs truncate" title={rec.observacao}>
+                                Obs: {rec.observacao}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-3.5 text-right font-extrabold text-gray-900">
                           {formatM2(rec.value)} m²
