@@ -795,9 +795,11 @@ function DashboardComponent() {
     queryFn: async () => {
       if (!currentUser?.id) return []
       const allReminders = await fetchReminders()
-      // Filtrar: apenas lembretes de hoje onde o usuário foi mencionado
+      // Filtrar: apenas lembretes pendentes de hoje onde o usuário foi mencionado (ou para todos)
       return allReminders.filter((r: any) => {
         if (r.due_date !== todayStr) return false
+        if (r.status === 'Concluído' || r.status === 'Cancelado') return false
+        if (r.recurrence_config?.isAll) return true
         if (!r.reminder_mentions || r.reminder_mentions.length === 0) return false
         return r.reminder_mentions.some((m: any) => m.user_id === currentUser.id)
       })

@@ -8,11 +8,21 @@ import CheckCircle2 from 'lucide-react/dist/esm/icons/circle-check.js';
 import Circle from 'lucide-react/dist/esm/icons/circle.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
 import UserIcon from 'lucide-react/dist/esm/icons/user.js';
+import Users from 'lucide-react/dist/esm/icons/users.js';
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { fetchReminders, createReminder, toggleReminderCompletion, fetchUsers, type Reminder } from '../lib/api-reminders'
+import {
+  fetchReminders,
+  createReminder,
+  toggleReminderCompletion,
+  fetchUsers,
+  getReminderResponsibleIds,
+  isReminderForAllUsers,
+  type Reminder,
+  type UserProfile,
+} from '../lib/api-reminders'
 import { format, isPast, isToday, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ReminderSheet } from '../components/ReminderSheet'
@@ -50,6 +60,7 @@ function LembretesComponent() {
   const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar'>('list')
   const [currentFilter, setCurrentFilter] = useState('Todos')
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   
   const queryClient = useQueryClient()
 
@@ -116,6 +127,12 @@ function LembretesComponent() {
   ]
 
   const filteredReminders = reminders.filter(r => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      const matchesTitle = r.title.toLowerCase().includes(q)
+      const matchesDesc = (r.description || '').toLowerCase().includes(q)
+      if (!matchesTitle && !matchesDesc) return false
+    }
     if (currentFilter === 'Concluídos') return r.status === 'Concluído'
     if (currentFilter === 'Atrasados') return atrasados.includes(r)
     if (currentFilter === 'Hoje') return r.due_date && isToday(parseISO(r.due_date))
@@ -184,6 +201,8 @@ function LembretesComponent() {
               <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
               <input 
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Pesquisar..."
                 className={`border rounded-xl h-10 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 w-full sm:w-64 transition-all ${ isDark ? 'bg-black/20 border-white/10 text-[#1c1d21] dark:text-white placeholder:text-white/30' : 'bg-[#faf9f6]/70 border-black/10 text-gray-900 placeholder:text-gray-500' }`}
               />
@@ -230,7 +249,11 @@ function LembretesComponent() {
               <div className="space-y-2">
                 {filteredReminders.map((reminder) => {
                   const isCompleted = reminder.status === 'Concluído'
-                  const assignee = getUserDetails(reminder.assigned_user_id)
+                  const isEveryone = isReminderForAllUsers(reminder, users)
+                  const responsibleIds = getReminderResponsibleIds(reminder)
+                  const responsibleUsers = responsibleIds
+                    .map(id => getUserDetails(id))
+                    .filter((u): u is UserProfile => Boolean(u))
                   const customColor = reminder.recurrence_config?.cardColor || reminder.card_color
                   const isPulsing = !isCompleted && !!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing)
 
@@ -314,18 +337,65 @@ function LembretesComponent() {
                         </div>
                       </div>
 
-                      {assignee && (
-                        <div 
-                          className="w-8 h-8 rounded-full bg-white/10 border border-white/10 overflow-hidden flex items-center justify-center shrink-0"
-                          title={assignee.name}
+                      {isEveryone ? (
+                        <div
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0 transition-colors ${
+                            isDark
+                              ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/30'
+                              : 'bg-white/90 text-indigo-700 border-indigo-200 shadow-2xs'
+                          }`}
+                          title={`Todos os usuários (${users.length || responsibleUsers.length})`}
                         >
-                          {assignee.avatar_url ? (
-                            <img src={assignee.avatar_url} alt={assignee.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <UserIcon size={14} className="text-white/50" />
+                          <Users size={13} />
+                          <span>Todos</span>
+                        </div>
+                      ) : responsibleUsers.length > 1 ? (
+                        <div
+                          className="flex items-center -space-x-2 shrink-0"
+                          title={responsibleUsers.map(u => u.name).join(', ')}
+                        >
+                          {responsibleUsers.slice(0, 4).map((u) => (
+                            <div
+                              key={u.id}
+                              className={`w-7 h-7 rounded-full overflow-hidden flex items-center justify-center ring-2 transition-transform hover:scale-105 hover:z-10 border ${
+                                isDark ? 'bg-zinc-800 ring-[#101014] border-white/15' : 'bg-white ring-white border-black/10'
+                              }`}
+                              title={u.name}
+                            >
+                              {u.avatar_url ? (
+                                <img src={u.avatar_url} alt={u.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <UserIcon size={12} className={isDark ? 'text-white/60' : 'text-gray-500'} />
+                              )}
+                            </div>
+                          ))}
+                          {responsibleUsers.length > 4 && (
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 border ${
+                                isDark
+                                  ? 'bg-indigo-500/30 text-indigo-200 ring-[#101014] border-indigo-400/30'
+                                  : 'bg-indigo-50 text-indigo-700 ring-white border-indigo-200'
+                              }`}
+                              title={responsibleUsers.slice(4).map(u => u.name).join(', ')}
+                            >
+                              +{responsibleUsers.length - 4}
+                            </div>
                           )}
                         </div>
-                      )}
+                      ) : responsibleUsers.length === 1 ? (
+                        <div
+                          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 border ${
+                            isDark ? 'bg-white/10 border-white/10' : 'bg-white/90 border-black/10 shadow-2xs'
+                          }`}
+                          title={responsibleUsers[0].name}
+                        >
+                          {responsibleUsers[0].avatar_url ? (
+                            <img src={responsibleUsers[0].avatar_url} alt={responsibleUsers[0].name} className="w-full h-full object-cover" />
+                          ) : (
+                            <UserIcon size={14} className={isDark ? 'text-white/50' : 'text-gray-500'} />
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })}

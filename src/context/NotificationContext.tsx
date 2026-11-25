@@ -302,19 +302,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // 2. Fallback proativo: carregar lembretes pendentes/em andamento atribuídos ou criados pelo usuário
+        // 2. Fallback proativo: carregar lembretes pendentes/em andamento atribuídos, mencionados ou criados pelo usuário
         const todayStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-')
         const { data: dueReminders } = await supabase
           .from('reminders')
-          .select('id, title, description, due_date, due_time, priority, status, creator_id, assigned_user_id, created_at')
-          .or(`creator_id.eq.${currentUser.id},assigned_user_id.eq.${currentUser.id}`)
+          .select('id, title, description, due_date, due_time, priority, status, creator_id, assigned_user_id, recurrence_config, created_at, reminder_mentions(user_id)')
           .in('status', ['Pendente', 'Em andamento'])
           .lte('due_date', todayStr)
           .order('due_date', { ascending: true })
-          .limit(15)
+          .limit(30)
 
         if (dueReminders) {
           for (const rem of dueReminders) {
+            const isRelated =
+              rem.creator_id === currentUser.id ||
+              rem.assigned_user_id === currentUser.id ||
+              Boolean((rem as any).recurrence_config?.isAll) ||
+              (rem as any).reminder_mentions?.some((m: { user_id: string }) => m.user_id === currentUser.id)
+
+            if (!isRelated) continue
             if (coveredReminderIds.has(rem.id)) continue
             const isReadLocal = typeof window !== 'undefined' && localStorage.getItem(`read_reminder_due_${rem.id}`) === 'true'
             let timeLabel = ''

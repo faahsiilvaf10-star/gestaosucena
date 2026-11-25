@@ -11,7 +11,16 @@ import Palette from 'lucide-react/dist/esm/icons/palette.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Reminder, UserProfile, updateReminder, createReminder, deleteReminder, uploadReminderImage } from '../lib/api-reminders'
+import {
+  Reminder,
+  UserProfile,
+  updateReminder,
+  createReminder,
+  deleteReminder,
+  uploadReminderImage,
+  resolveReminderInitialMentions,
+  buildReminderMentionsPayload,
+} from '../lib/api-reminders'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { DateInput } from './ui/DateInput'
@@ -74,7 +83,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       setTitle(reminder.title)
       setDescription(reminder.description || '')
       setPriority(reminder.priority)
-      setMentions(reminder.reminder_mentions?.map(m => m.user_id) || (reminder.assigned_user_id ? [reminder.assigned_user_id] : []))
+      setMentions(resolveReminderInitialMentions(reminder, users))
       setDueDate(reminder.due_date || '')
       setDueTime(reminder.due_time || '')
       setShowDeleteConfirm(false)
@@ -112,6 +121,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] })
+      queryClient.invalidateQueries({ queryKey: ['user_mentioned_reminders'] })
       onClose()
     },
     onError: (err: any) => {
@@ -122,14 +132,19 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
 
   const handleSave = () => {
     if (!title.trim()) return
-    
-    let finalMentions = mentions
-    if (mentions.includes('ALL')) {
-      finalMentions = users.map(u => u.id)
-      if (currentUserId && !finalMentions.includes(currentUserId)) {
-        finalMentions.push(currentUserId)
-      }
-    }
+
+    const { isAll, assignedUserId, mentionUserIds } = buildReminderMentionsPayload({
+      mentions,
+      users,
+      currentUserId,
+    })
+
+    const scheduleChanged = isEditing && reminder && (
+      (dueDate || '') !== (reminder.due_date || '') ||
+      (dueTime || '').slice(0, 5) !== (reminder.due_time || '').slice(0, 5) ||
+      isRecurring !== Boolean(reminder.is_recurring) ||
+      isAll !== Boolean(reminder.recurrence_config?.isAll)
+    )
 
     const triggerSave = (uploadedUrl: string) => {
       saveMutation.mutate({
@@ -137,20 +152,22 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           title,
           description,
           priority,
-          assigned_user_id: finalMentions.length > 0 ? finalMentions[0] : undefined,
-          due_date: dueDate || undefined,
-          due_time: dueTime || undefined,
+          assigned_user_id: assignedUserId,
+          due_date: dueDate || null,
+          due_time: dueTime || null,
           is_recurring: isRecurring,
           recurrence_type: isRecurring ? 'weekly' : undefined,
           recurrence_config: {
             days: isRecurring ? recurringDays : undefined,
             advanceNotice: advanceNotice > 0 ? advanceNotice : undefined,
             cardColor: cardColor || undefined,
-            isPulsing: isPulsing || false
+            isPulsing: isPulsing || false,
+            isAll: isAll ? true : undefined,
           },
+          ...(scheduleChanged ? { last_notified_at: null } : {}),
           image_url: uploadedUrl || undefined
         },
-        mentions: finalMentions
+        mentions: mentionUserIds
       })
     }
 
@@ -253,12 +270,15 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
                   {mentions.includes('ALL') ? (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-medium border border-indigo-500/20">
                       (Todos)
-                      <button 
-                        onClick={() => setMentions([])}
-                        className="hover:text-white transition-colors ml-1"
-                      >
-                        <X size={12} />
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => setMentions([])}
+                          className="hover:text-white transition-colors ml-1"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     mentions.map(userId => {

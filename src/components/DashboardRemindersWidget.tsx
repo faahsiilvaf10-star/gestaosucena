@@ -7,7 +7,15 @@ import Users from 'lucide-react/dist/esm/icons/users.js';
 import Edit3 from 'lucide-react/dist/esm/icons/pen-tool.js';
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchReminders, toggleReminderCompletion, updateReminder, fetchUsers, Reminder } from '../lib/api-reminders'
+import {
+  fetchReminders,
+  toggleReminderCompletion,
+  updateReminder,
+  fetchUsers,
+  getReminderResponsibleIds,
+  isReminderForAllUsers,
+  Reminder,
+} from '../lib/api-reminders'
 import { format, parseISO, isPast, isToday, getDay, getDate } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '../lib/supabase'
@@ -51,7 +59,8 @@ export function DashboardRemindersWidget() {
     if (r.status === 'Concluído' || r.status === 'Cancelado') return false
     
     const isMentioned = r.reminder_mentions?.some(m => m.user_id === currentUserId)
-    const isMine = r.creator_id === currentUserId || r.assigned_user_id === currentUserId || isMentioned
+    const isEveryone = isReminderForAllUsers(r, users)
+    const isMine = r.creator_id === currentUserId || r.assigned_user_id === currentUserId || isMentioned || isEveryone
     if (!isMine) return false
 
     // Se é recorrente, usamos a regra de recorrência para saber se é hoje
@@ -92,7 +101,7 @@ export function DashboardRemindersWidget() {
 
   const snoozeMutation = useMutation({
     mutationFn: (data: { id: string, date: string, time?: string }) => 
-      updateReminder(data.id, { due_date: data.date, due_time: data.time || undefined }),
+      updateReminder(data.id, { due_date: data.date, due_time: data.time || null, last_notified_at: null }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] })
       setSnoozeReminderId(null)
@@ -122,8 +131,7 @@ export function DashboardRemindersWidget() {
         {activeReminders.map(reminder => {
           const isSnoozing = snoozeReminderId === reminder.id
           const isCrossedOut = crossedOutIds.has(reminder.id)
-          const mentionedUserIds = reminder.reminder_mentions?.map(m => m.user_id) || []
-          const allResponsibleIds = Array.from(new Set([reminder.assigned_user_id, ...mentionedUserIds].filter(Boolean) as string[]))
+          const allResponsibleIds = getReminderResponsibleIds(reminder)
 
           const customColor = reminder.recurrence_config?.cardColor || reminder.card_color
           const isPulsing = !!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing)
@@ -225,9 +233,7 @@ export function DashboardRemindersWidget() {
 
                     {/* Mention Tags */}
                     {(() => {
-                      // Se tem pelo menos 1 usuário e o número de responsáveis é igual (ou maior, por segurança) ao total de usuários, 
-                      // ou se contém a string 'ALL' explicitamente (legado/fallback).
-                      const isEveryone = (users.length > 0 && allResponsibleIds.length >= users.length) || allResponsibleIds.includes('ALL')
+                      const isEveryone = isReminderForAllUsers(reminder, users)
 
                       if (isEveryone) {
                         return (

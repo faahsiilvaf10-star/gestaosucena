@@ -1,18 +1,28 @@
 import { supabase } from './supabase'
 
+export type ReminderRecurrenceConfig = {
+  days?: number[]
+  advanceNotice?: number
+  cardColor?: string
+  isPulsing?: boolean
+  isAll?: boolean
+  [key: string]: any
+}
+
 export type Reminder = {
   id: string
   title: string
   description?: string
   creator_id: string
-  assigned_user_id?: string
+  assigned_user_id?: string | null
   status: 'Pendente' | 'Em andamento' | 'Concluído' | 'Cancelado'
   priority: 'Baixa' | 'Normal' | 'Alta' | 'Urgente'
-  due_date?: string
-  due_time?: string
+  due_date?: string | null
+  due_time?: string | null
   is_recurring: boolean
   recurrence_type?: string
-  recurrence_config?: any
+  recurrence_config?: ReminderRecurrenceConfig | null
+  last_notified_at?: string | null
   completed_at?: string
   created_at: string
   updated_at: string
@@ -21,6 +31,92 @@ export type Reminder = {
   image_url?: string
   card_color?: string
   is_pulsing?: boolean
+}
+
+/**
+ * Retorna a lista deduplicada de IDs de usuários responsáveis por um lembrete
+ * (combinando `assigned_user_id` e `reminder_mentions`, sem o sentinela `'ALL'`).
+ */
+export function getReminderResponsibleIds(reminder?: Partial<Reminder> | null): string[] {
+  if (!reminder) return []
+  const mentionedIds = reminder.reminder_mentions?.map(m => m.user_id) || []
+  const combined = [reminder.assigned_user_id, ...mentionedIds]
+    .filter((id): id is string => Boolean(id) && id !== 'ALL')
+  return Array.from(new Set(combined))
+}
+
+/**
+ * Determina se um lembrete foi direcionado a todos os usuários (envio em grupo).
+ * Considera a flag explícita `recurrence_config.isAll`, o sentinela `'ALL'` ou todos os usuários listados.
+ */
+export function isReminderForAllUsers(
+  reminder?: Partial<Reminder> | null,
+  users: Pick<UserProfile, 'id'>[] = []
+): boolean {
+  if (!reminder) return false
+  if (reminder.recurrence_config?.isAll) return true
+  if (reminder.assigned_user_id === 'ALL') return true
+  if (reminder.reminder_mentions?.some(m => m.user_id === 'ALL')) return true
+
+  if (users.length === 0) return false
+
+  const responsibleIds = getReminderResponsibleIds(reminder)
+  if (responsibleIds.length === 0) return false
+
+  const responsibleSet = new Set(responsibleIds)
+  return responsibleIds.length >= users.length || users.every(u => responsibleSet.has(u.id))
+}
+
+/**
+ * Resolve o estado inicial do campo de responsáveis no formulário de edição do lembrete.
+ */
+export function resolveReminderInitialMentions(
+  reminder?: Partial<Reminder> | null,
+  users: Pick<UserProfile, 'id'>[] = []
+): string[] {
+  if (!reminder) return []
+  if (isReminderForAllUsers(reminder, users)) return ['ALL']
+  return getReminderResponsibleIds(reminder)
+}
+
+/**
+ * Prepara os campos `assigned_user_id`, `isAll` e `mentionUserIds` (UUIDs válidos) para persistência.
+ * Expande `'ALL'` em IDs reais de usuários para respeitar a FK UUID de `reminder_mentions`,
+ * evitando atribuir o lembrete a apenas um usuário em `assigned_user_id`.
+ */
+export function buildReminderMentionsPayload(params: {
+  mentions: string[]
+  users: Pick<UserProfile, 'id'>[]
+  currentUserId?: string | null
+}): {
+  isAll: boolean
+  assignedUserId: string | null
+  mentionUserIds: string[]
+} {
+  const { mentions, users, currentUserId } = params
+  const isAll = mentions.includes('ALL')
+
+  if (isAll) {
+    const allIds = users.map(u => u.id).filter(Boolean)
+    if (currentUserId && !allIds.includes(currentUserId)) {
+      allIds.push(currentUserId)
+    }
+    return {
+      isAll: true,
+      assignedUserId: null,
+      mentionUserIds: Array.from(new Set(allIds)),
+    }
+  }
+
+  const specificIds = Array.from(
+    new Set(mentions.filter((id): id is string => Boolean(id) && id !== 'ALL'))
+  )
+
+  return {
+    isAll: false,
+    assignedUserId: specificIds.length > 0 ? specificIds[0] : null,
+    mentionUserIds: specificIds,
+  }
 }
 
 export function getReminderCardColor(reminder?: Reminder | null): string | undefined {
@@ -78,8 +174,9 @@ export async function createReminder(reminder: Partial<Reminder>, mentions?: str
   
   if (error) throw error
 
-  if (mentions && mentions.length > 0) {
-    const mentionsData = mentions.map(userId => ({
+  const uniqueMentions = Array.from(new Set((mentions || []).filter(id => Boolean(id) && id !== 'ALL')))
+  if (uniqueMentions.length > 0) {
+    const mentionsData = uniqueMentions.map(userId => ({
       reminder_id: data.id,
       user_id: userId,
       mentioned_by: userData.user.id
@@ -95,7 +192,7 @@ export async function createReminder(reminder: Partial<Reminder>, mentions?: str
   return data
 }
 
-export async function updateReminder(id: string, updates: Partial<Reminder>, mentions: string[] = []) {
+export async function updateReminder(id: string, updates: Partial<Reminder>, mentions?: string[]) {
   // 1. Atualizar lembrete principal
   const { data, error } = await supabase
     .from('reminders')
@@ -106,15 +203,28 @@ export async function updateReminder(id: string, updates: Partial<Reminder>, men
 
   if (error) throw error
 
-  // 2. Atualizar mencoes
-  await supabase.from('reminder_mentions').delete().eq('reminder_id', id)
-  
-  if (mentions.length > 0) {
-    const mentionsData = mentions.map(userId => ({
-      reminder_id: id,
-      user_id: userId
-    }))
-    await supabase.from('reminder_mentions').insert(mentionsData)
+  // 2. Atualizar menções apenas quando explicitamente informadas (preserva menções em ações como Adiar/Concluir)
+  if (mentions !== undefined) {
+    const { error: deleteError } = await supabase.from('reminder_mentions').delete().eq('reminder_id', id)
+    if (deleteError) {
+      console.error("Erro ao limpar menções:", deleteError)
+      throw deleteError
+    }
+
+    const uniqueMentions = Array.from(new Set(mentions.filter(uid => Boolean(uid) && uid !== 'ALL')))
+    if (uniqueMentions.length > 0) {
+      const { data: userData } = await supabase.auth.getUser()
+      const mentionsData = uniqueMentions.map(userId => ({
+        reminder_id: id,
+        user_id: userId,
+        ...(userData.user?.id ? { mentioned_by: userData.user.id } : {})
+      }))
+      const { error: mentionsError } = await supabase.from('reminder_mentions').insert(mentionsData)
+      if (mentionsError) {
+        console.error("Erro ao atualizar menções:", mentionsError)
+        throw mentionsError
+      }
+    }
   }
 
   return data

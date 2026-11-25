@@ -1,23 +1,29 @@
--- =========================================================================
--- FUNÇÃO DE LEMBRETE AUTOMÁTICO DE TAREFAS/LEMBRETES (SUPABASE PG_CRON)
--- =========================================================================
+-- =============================================================================
+-- FIX: Envio automático de Lembretes para Grupo WhatsApp quando marcado "Todos"
+-- =============================================================================
+-- Causa raiz 1: No envio para grupo, cron_send_reminders() montava o payload JSON
+--               com 'groupId' sem o campo 'phone', fazendo a W-API responder 400:
+--               "O número de telefone ou ID do grupo é obrigatório."
+-- Causa raiz 2: Endpoint primário W-API deve usar /message/send-text (singular)
+--               com fallback em /messages/send-text (plural).
+-- Melhorias:
+--   - Suporte explícito a recurrence_config->>'isAll', legado 'ALL' e contagem
+--     total de usuários em auth.users.
+--   - Isolamento por ambiente (hydro-civil vs barcarena) com fallback seguro.
+--   - Inclusão do nome do criador na mensagem e notificações in-app para todos.
+-- =============================================================================
 
--- 1. Habilitar extensões
 CREATE EXTENSION IF NOT EXISTS "pg_net";
 CREATE EXTENSION IF NOT EXISTS "pg_cron";
 
--- 2. Adicionar controle de notificação
-ALTER TABLE reminders ADD COLUMN IF NOT EXISTS last_notified_at timestamptz;
+ALTER TABLE public.reminders ADD COLUMN IF NOT EXISTS last_notified_at timestamptz;
 
--- 2b. Garantir que a política de INSERT em reminder_notifications permite
--- que o pg_cron (roda como role postgres, não autenticado) insira notificações.
--- Sem isso, o cron insere no WhatsApp mas NUNCA cria a notificação in-app,
--- portanto o Realtime nunca dispara e o usuário não vê o alerta no app.
 DROP POLICY IF EXISTS "Sistema pode inserir notificacoes" ON public.reminder_notifications;
 CREATE POLICY "Sistema pode inserir notificacoes"
   ON public.reminder_notifications
   FOR INSERT
   WITH CHECK (true);
+
 GRANT INSERT ON public.reminder_notifications TO service_role;
 GRANT INSERT ON public.reminder_notifications TO postgres;
 GRANT SELECT ON public.reminder_notifications TO postgres;
@@ -25,15 +31,14 @@ GRANT UPDATE ON public.reminders TO postgres;
 GRANT SELECT ON public.reminders TO postgres;
 GRANT SELECT ON public.reminder_mentions TO postgres;
 
--- Garantir que a tabela está no Realtime
 DO $$
 BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE public.reminder_notifications;
-EXCEPTION WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
 END $$;
 
--- 3. Função principal
-CREATE OR REPLACE FUNCTION cron_send_reminders()
+CREATE OR REPLACE FUNCTION public.cron_send_reminders()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -41,86 +46,88 @@ SET search_path = public
 AS $$
 DECLARE
   v_settings jsonb;
+  v_civil_groups jsonb;
   v_reminders_enabled boolean;
-  v_default_group text;
+  v_base_url text;
   v_endpoint text;
-  v_endpoint_fallback text; -- Fallback para compatibilidade com diferentes versões da API
-  
+  v_endpoint_fallback text;
+
   v_current_ts timestamptz;
   v_current_date date;
-  v_current_time text; -- HH:MM
-  v_current_dow integer; -- 0 (Sun) to 6 (Sat)
-  
+  v_current_time text;
+  v_current_dow integer;
+
   r record;
   m record;
   v_payload jsonb;
   v_message text;
-  v_target text;
-  v_mentions_all boolean;
+  v_creator_name text;
+  v_creator_phone text;
   v_is_advance boolean;
   v_advance_days integer;
 BEGIN
-  -- Carregar configurações
+  -- 1. Carregar configurações globais do WhatsApp
   SELECT value INTO v_settings FROM global_settings WHERE key = 'whatsapp_settings';
-  
-  IF v_settings IS NULL OR v_settings->>'url' IS NULL OR v_settings->>'token' IS NULL THEN
+
+  IF v_settings IS NULL
+     OR NULLIF(trim(v_settings->>'url'), '') IS NULL
+     OR NULLIF(trim(v_settings->>'token'), '') IS NULL
+     OR NULLIF(trim(v_settings->>'instanceId'), '') IS NULL THEN
     RETURN;
   END IF;
 
-  v_reminders_enabled := (v_settings->'reminders'->>'enabled')::boolean;
-  v_default_group := COALESCE(v_settings->'reminders'->>'specificGroupId', v_settings->>'groupId');
-
-  IF v_reminders_enabled IS NULL OR NOT v_reminders_enabled THEN
+  v_reminders_enabled := COALESCE((v_settings->'reminders'->>'enabled')::boolean, false);
+  IF NOT v_reminders_enabled THEN
     RETURN;
   END IF;
 
-  -- Horários atuais (Fuso do Pará UTC-3, America/Belem)
+  SELECT value INTO v_civil_groups FROM global_settings WHERE key = 'whatsapp_groups_hydro-civil';
+
+  -- 2. Horário atual (Fuso Pará/Brasília UTC-3)
   v_current_ts := now() AT TIME ZONE 'America/Belem';
   v_current_date := v_current_ts::date;
   v_current_time := to_char(v_current_ts, 'HH24:MI');
-  
-  -- Dia da semana (0=Dom, 1=Seg...6=Sáb) compatível com o Javascript getDay()
   v_current_dow := EXTRACT(DOW FROM v_current_ts);
 
-  -- Preparar o Endpoint e Headers (mesma lógica do frontend whatsapp-api.ts)
-  v_endpoint := trim(trailing '/' from (v_settings->>'url'));
-  
-  -- Converter URL se for W-API
-  IF v_endpoint LIKE '%painel.w-api.app%' THEN
-    v_endpoint := 'https://api.w-api.app/v1';
-  ELSIF v_endpoint LIKE '%api.w-api.app%' AND v_endpoint NOT LIKE '%/v1%' THEN
-    v_endpoint := v_endpoint || '/v1';
+  -- 3. Preparar endpoints W-API (/message/send-text primário, /messages/send-text fallback) / Evolution
+  v_base_url := trim(trailing '/' from (v_settings->>'url'));
+
+  IF v_base_url LIKE '%painel.w-api.app%' THEN
+    v_base_url := 'https://api.w-api.app/v1';
+  ELSIF v_base_url LIKE '%api.w-api.app%' AND v_base_url NOT LIKE '%/v1%' THEN
+    v_base_url := v_base_url || '/v1';
   END IF;
 
-  -- Montar endpoint final
-  -- NOTA: A W-API usa /messages/ (plural) com /send-text.
-  -- O frontend (whatsapp-api.ts linha 28) já usa plural corretamente.
-  -- O cron também deve usar plural como endpoint principal.
-  IF v_endpoint LIKE '%api.w-api.app%' THEN
-    -- W-API: endpoint correto usa plural /messages/send-text
-    v_endpoint := v_endpoint || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
+  IF v_base_url LIKE '%api.w-api.app%' THEN
+    v_endpoint := v_base_url || '/message/send-text?instanceId=' || (v_settings->>'instanceId');
+    v_endpoint_fallback := v_base_url || '/messages/send-text?instanceId=' || (v_settings->>'instanceId');
   ELSE
-    -- Padrão da Evolution API v1 original
-    v_endpoint := v_endpoint || '/message/sendText/' || (v_settings->>'instanceId');
+    v_endpoint := v_base_url || '/message/sendText/' || (v_settings->>'instanceId');
+    v_endpoint_fallback := v_base_url || '/messages/sendText/' || (v_settings->>'instanceId');
   END IF;
 
-  -- Percorrer todos os lembretes pendentes ou em andamento
-  FOR r IN 
-    SELECT * FROM reminders 
+  -- 4. Percorrer todos os lembretes pendentes ou em andamento
+  FOR r IN
+    SELECT * FROM reminders
     WHERE status IN ('Pendente', 'Em andamento')
   LOOP
     v_is_advance := false;
     v_advance_days := COALESCE((r.recurrence_config->>'advanceNotice')::integer, 0);
 
-    -- VERIFICAR SE DEVE DISPARAR AGORA
     DECLARE
       v_trigger_now boolean := false;
       v_is_target_day boolean := false;
       v_is_advance_day boolean := false;
+      v_is_all_flag boolean := false;
+      v_is_group_reminder boolean := false;
+      v_group_id text;
+      v_mention_count integer := 0;
+      v_total_users integer := 0;
+      v_all_users_count integer := 0;
       v_phones text[] := '{}';
       v_phone text;
     BEGIN
-      -- 1. Verificar se hoje é o dia do lembrete
+      -- Verificar se hoje é o dia do lembrete
       IF r.is_recurring THEN
         IF r.recurrence_config->'days' @> to_jsonb(v_current_dow) THEN
           v_is_target_day := true;
@@ -131,7 +138,7 @@ BEGIN
         END IF;
       END IF;
 
-      -- 2. Verificar se hoje é o dia de AVISO ANTECIPADO
+      -- Verificar se hoje é o dia de aviso antecipado
       IF v_advance_days > 0 THEN
         IF r.is_recurring THEN
           IF r.recurrence_config->'days' @> to_jsonb((v_current_dow + v_advance_days) % 7) THEN
@@ -144,7 +151,7 @@ BEGIN
         END IF;
       END IF;
 
-      -- 3. Bateu o horário?
+      -- Verificar horário
       IF v_is_target_day THEN
         IF r.due_time IS NOT NULL THEN
           IF to_char(r.due_time, 'HH24:MI') <= v_current_time THEN
@@ -170,128 +177,241 @@ BEGIN
         CONTINUE;
       END IF;
 
-      IF r.last_notified_at IS NOT NULL 
+      -- Evitar reenvio no mesmo dia
+      IF r.last_notified_at IS NOT NULL
          AND (r.last_notified_at AT TIME ZONE 'America/Belem')::date = v_current_date THEN
         CONTINUE;
       END IF;
 
-      -- MONTAR A MENSAGEM
+      -- Montar mensagem a partir dos templates configurados no Admin
       IF v_is_advance THEN
         v_message := COALESCE(
-          v_settings->'messageTemplates'->>'lembreteAmanha',
+          NULLIF(v_settings->'messageTemplates'->>'lembreteAmanha', ''),
           '⏳ *Aviso Antecipado de Lembrete*' || chr(10) || chr(10) || '📌 *{titulo}*' || chr(10) || '_{descricao}_' || chr(10) || chr(10) || '📅 Data: {data}' || chr(10) || '⏰ Horário: {hora}'
         );
       ELSE
         v_message := COALESCE(
-          v_settings->'messageTemplates'->>'lembreteHoje',
+          NULLIF(v_settings->'messageTemplates'->>'lembreteHoje', ''),
           '🔔 *Lembrete Automático*' || chr(10) || chr(10) || '📌 *{titulo}*' || chr(10) || '_{descricao}_' || chr(10) || chr(10) || '📅 Data: {data}' || chr(10) || '⏰ Horário: {hora}'
         );
       END IF;
 
-      v_message := replace(v_message, '{titulo}', r.title);
-      v_message := replace(v_message, '{descricao}',COALESCE(r.description, ''));
-      v_message := replace(v_message, '{data}',     COALESCE(
-        to_char(r.due_date::date, 'DD/MM/YYYY'), 
+      SELECT
+        COALESCE(
+          NULLIF(trim(raw_user_meta_data->>'name'), ''),
+          NULLIF(trim(raw_user_meta_data->>'nome'), ''),
+          NULLIF(trim(raw_user_meta_data->>'full_name'), ''),
+          'Usuário'
+        ),
+        COALESCE(
+          raw_user_meta_data->>'whatsapp',
+          raw_user_meta_data->>'phone',
+          raw_user_meta_data->>'telefone'
+        )
+      INTO v_creator_name, v_creator_phone
+      FROM auth.users
+      WHERE id = r.creator_id;
+
+      v_creator_name := COALESCE(v_creator_name, 'Usuário');
+
+      v_message := replace(v_message, '{titulo}', COALESCE(r.title, ''));
+      v_message := replace(v_message, '{descricao}', COALESCE(r.description, ''));
+      v_message := replace(v_message, '{data}', COALESCE(
+        to_char(r.due_date::date, 'DD/MM/YYYY'),
         to_char(v_current_date + (CASE WHEN v_is_advance THEN v_advance_days ELSE 0 END), 'DD/MM/YYYY')
       ));
-      v_message := replace(v_message, '{hora}',     COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
+      v_message := replace(v_message, '{hora}', COALESCE(to_char(r.due_time, 'HH24:MI'), '-'));
 
-      -- 1. Incluir o criador (se tiver WhatsApp configurado)
-      SELECT raw_user_meta_data->>'whatsapp' INTO v_phone FROM auth.users WHERE id = r.creator_id;
-      IF v_phone IS NOT NULL AND trim(v_phone) != '' THEN
-        v_phones := array_append(v_phones, trim(v_phone));
+      IF position('{criador}' in v_message) > 0 THEN
+        v_message := replace(v_message, '{criador}', v_creator_name);
+      ELSE
+        v_message := v_message || E'\n\n👤 Criado por: ' || v_creator_name;
       END IF;
 
-      -- 2. Incluir os mencionados (se tiverem WhatsApp configurado)
-      FOR m IN 
-        SELECT u.raw_user_meta_data->>'whatsapp' as phone
-        FROM reminder_mentions rm
-        JOIN auth.users u ON u.id = rm.user_id
-        WHERE rm.reminder_id = r.id
-      LOOP
-        IF m.phone IS NOT NULL AND trim(m.phone) != '' AND NOT (v_phones @> ARRAY[trim(m.phone)]) THEN
-          v_phones := array_append(v_phones, trim(m.phone));
+      -- Resolver grupo do ambiente do lembrete
+      IF r.environment = 'hydro-civil' THEN
+        v_group_id := COALESCE(
+          NULLIF(trim(v_civil_groups->>'reminders'), ''),
+          NULLIF(trim(v_civil_groups->>'groupId'), '')
+        );
+      ELSE
+        v_group_id := COALESCE(
+          NULLIF(trim(v_settings->'reminders'->>'specificGroupId'), ''),
+          NULLIF(trim(v_settings->>'groupId'), '')
+        );
+      END IF;
+
+      -- Detectar se é lembrete para Todos (grupo) ou para usuários específicos (privado)
+      SELECT COUNT(*) INTO v_mention_count
+      FROM reminder_mentions
+      WHERE reminder_id = r.id;
+
+      SELECT COUNT(*) INTO v_total_users
+      FROM auth.users;
+
+      SELECT COUNT(*) INTO v_all_users_count
+      FROM auth.users
+      WHERE NULLIF(trim(COALESCE(
+        raw_user_meta_data->>'whatsapp',
+        raw_user_meta_data->>'phone',
+        raw_user_meta_data->>'telefone',
+        ''
+      )), '') IS NOT NULL;
+
+      v_is_all_flag := COALESCE((r.recurrence_config->>'isAll')::boolean, false)
+        OR EXISTS (
+          SELECT 1 FROM reminder_mentions
+          WHERE reminder_id = r.id AND user_id::text = 'ALL'
+        );
+
+      v_is_group_reminder := v_is_all_flag
+        OR (v_mention_count > 0 AND v_total_users > 0 AND v_mention_count >= v_total_users)
+        OR (v_mention_count > 0 AND v_all_users_count > 0 AND v_mention_count >= v_all_users_count);
+
+      IF v_group_id IS NULL THEN
+        v_is_group_reminder := false;
+      END IF;
+
+      IF v_is_group_reminder THEN
+        -- ===== ENVIO PARA O GRUPO CONFIGURADO =====
+        -- IMPORTANTE: W-API exige o campo 'phone' preenchido com o ID do grupo (ex: 120363...@g.us)
+        v_payload := jsonb_build_object(
+          'number', v_group_id,
+          'phone', v_group_id,
+          'groupId', v_group_id,
+          'text', v_message,
+          'message', v_message
+        );
+
+        PERFORM net.http_post(
+          url := v_endpoint,
+          body := v_payload,
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'Authorization', 'Bearer ' || (v_settings->>'token'),
+            'apikey', (v_settings->>'token')
+          ),
+          timeout_milliseconds := 10000
+        );
+
+        PERFORM net.http_post(
+          url := v_endpoint_fallback,
+          body := v_payload,
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'Authorization', 'Bearer ' || (v_settings->>'token'),
+            'apikey', (v_settings->>'token')
+          ),
+          timeout_milliseconds := 10000
+        );
+      ELSE
+        -- ===== ENVIO INDIVIDUAL (CRIADOR + MENCIONADOS) =====
+        IF v_creator_phone IS NOT NULL AND trim(v_creator_phone) != '' THEN
+          v_phones := array_append(v_phones, trim(v_creator_phone));
         END IF;
-      END LOOP;
 
-      -- 3. Disparar individualmente para cada número encontrado
-      FOREACH v_phone IN ARRAY v_phones
-      LOOP
-        v_phone := regexp_replace(v_phone, '\D', '', 'g');
-        -- Só enviar se tiver um número válido (mínimo 10 dígitos)
-        IF length(v_phone) >= 10 THEN
-          IF v_phone NOT LIKE '55%' THEN
-            v_phone := '55' || v_phone;
+        FOR m IN
+          SELECT COALESCE(
+            u.raw_user_meta_data->>'whatsapp',
+            u.raw_user_meta_data->>'phone',
+            u.raw_user_meta_data->>'telefone'
+          ) as phone
+          FROM reminder_mentions rm
+          JOIN auth.users u ON u.id::text = rm.user_id::text
+          WHERE rm.reminder_id = r.id AND rm.user_id::text != 'ALL'
+        LOOP
+          IF m.phone IS NOT NULL AND trim(m.phone) != '' AND NOT (v_phones @> ARRAY[trim(m.phone)]) THEN
+            v_phones := array_append(v_phones, trim(m.phone));
           END IF;
+        END LOOP;
 
-          v_payload := jsonb_build_object(
-            'number', v_phone,
-            'phone', v_phone,
-            'text', v_message,
-            'message', v_message
-          );
+        FOREACH v_phone IN ARRAY v_phones
+        LOOP
+          v_phone := regexp_replace(v_phone, '\D', '', 'g');
+          IF length(v_phone) >= 10 THEN
+            IF v_phone NOT LIKE '55%' THEN
+              v_phone := '55' || v_phone;
+            END IF;
 
-          -- Endpoint principal
-          PERFORM net.http_post(
-            url := v_endpoint,
-            body := v_payload,
-            headers := jsonb_build_object(
+            v_payload := jsonb_build_object(
+              'number', v_phone,
+              'phone', v_phone,
+              'text', v_message,
+              'message', v_message
+            );
+
+            PERFORM net.http_post(
+              url := v_endpoint,
+              body := v_payload,
+              headers := jsonb_build_object(
                 'Content-Type', 'application/json',
                 'Authorization', 'Bearer ' || (v_settings->>'token'),
                 'apikey', (v_settings->>'token')
-            ),
-            timeout_milliseconds := 10000
-          );
+              ),
+              timeout_milliseconds := 10000
+            );
 
-          -- Fallback (endpoint alternativo) para compatibilidade com versões diferentes da API
-          -- W-API: testa singular caso o plural não funcione (e vice-versa para Evolution)
-          IF v_endpoint LIKE '%api.w-api.app%' THEN
-            v_endpoint_fallback := replace(v_endpoint, '/messages/send-text', '/message/send-text');
-          ELSE
-            v_endpoint_fallback := replace(v_endpoint, '/message/sendText/', '/messages/sendText/');
-          END IF;
-
-          PERFORM net.http_post(
-            url := v_endpoint_fallback,
-            body := v_payload,
-            headers := jsonb_build_object(
+            PERFORM net.http_post(
+              url := v_endpoint_fallback,
+              body := v_payload,
+              headers := jsonb_build_object(
                 'Content-Type', 'application/json',
                 'Authorization', 'Bearer ' || (v_settings->>'token'),
                 'apikey', (v_settings->>'token')
-            ),
-            timeout_milliseconds := 10000
-          );
-        END IF;
-      END LOOP;
+              ),
+              timeout_milliseconds := 10000
+            );
+          END IF;
+        END LOOP;
+      END IF;
 
-      -- INSERIR NOTIFICAÇÃO IN-APP PARA OS ENVOLVIDOS
-      -- SECURITY DEFINER + SET search_path garantem que isso funciona sem usuário autenticado
-      INSERT INTO reminder_notifications (user_id, reminder_id, type, title, message)
-      SELECT u, r.id, 'lembrete', '🔔 Lembrete: ' || r.title, COALESCE(r.description, 'Você tem um lembrete pendente.')
-      FROM unnest(ARRAY(
-          SELECT user_id FROM reminder_mentions WHERE reminder_id = r.id
+      -- Inserir notificação in-app para os envolvidos (todos se isAll, ou mencionados + criador)
+      IF v_is_all_flag THEN
+        INSERT INTO reminder_notifications (user_id, reminder_id, type, title, message)
+        SELECT u, r.id, 'lembrete',
+               '🔔 Lembrete: ' || r.title,
+               COALESCE(r.description, 'Você tem um lembrete pendente.')
+        FROM unnest(ARRAY(
+          SELECT id FROM auth.users
+          UNION
+          SELECT user_id FROM reminder_mentions WHERE reminder_id = r.id AND user_id::text != 'ALL'
           UNION
           SELECT r.creator_id
-      )) AS u;
+        )) AS u
+        WHERE u IS NOT NULL;
+      ELSE
+        INSERT INTO reminder_notifications (user_id, reminder_id, type, title, message)
+        SELECT u, r.id, 'lembrete',
+               '🔔 Lembrete: ' || r.title,
+               COALESCE(r.description, 'Você tem um lembrete pendente.')
+        FROM unnest(ARRAY(
+          SELECT user_id FROM reminder_mentions WHERE reminder_id = r.id AND user_id::text != 'ALL'
+          UNION
+          SELECT r.creator_id
+        )) AS u
+        WHERE u IS NOT NULL;
+      END IF;
 
-      -- Marcar como notificado para evitar repetição no mesmo minuto
+      -- Marcar como notificado hoje
       UPDATE reminders SET last_notified_at = now() WHERE id = r.id;
-
     END;
   END LOOP;
 END;
 $$;
 
--- 4. Agendar para rodar A CADA MINUTO
+GRANT EXECUTE ON FUNCTION public.cron_send_reminders() TO postgres;
+GRANT EXECUTE ON FUNCTION public.cron_send_reminders() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.cron_send_reminders() TO service_role;
+
 DO $$
 BEGIN
   PERFORM cron.unschedule('reminders_minutely');
 EXCEPTION WHEN OTHERS THEN
-  -- Ignorar se não existir
+  NULL;
 END $$;
 
 SELECT cron.schedule(
-    'reminders_minutely',
-    '* * * * *',
-    $$ SELECT cron_send_reminders(); $$
+  'reminders_minutely',
+  '* * * * *',
+  $$ SELECT public.cron_send_reminders(); $$
 );
