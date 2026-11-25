@@ -24,6 +24,7 @@ import { getGlobalAppearanceSettings } from "../lib/settings";
 import { DailySessionWatcher } from "../components/DailySessionWatcher";
 import { ComunicadoViewer } from "../components/comunicados/ComunicadoViewer";
 import { CampanhaComunicadoModal } from "../components/seguranca/CampanhaComunicadoModal";
+import { BirthdayAnnouncementModal } from "../components/BirthdayAnnouncementModal";
 
 function RootContent() {
   // Registra Service Worker para suporte PWA Standalone
@@ -57,6 +58,7 @@ function RootContent() {
         <>
           <GlobalEquipmentAlert />
           <ReminderAlertNotification />
+          <BirthdayAnnouncementModal />
         </>
       )}
       {/* Comunicados: exibidos em qualquer rota, inclusive após o login */}

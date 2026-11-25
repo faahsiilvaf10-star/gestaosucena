@@ -4,11 +4,12 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { subDays, addDays, format, getMonth, parseISO, differenceInDays } from 'date-fns'
+import { subDays, addDays, format, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { getUserEnvironmentAccess, hasEnvironmentAccess } from '../lib/environmentAccess'
 import { fetchReminders } from '../lib/api-reminders'
+import { filtrarAniversariantesDoMes } from '../lib/aniversariantes'
 import {
   MAINTENANCE_REASONS,
   isUnderMaintenance,
@@ -104,7 +105,6 @@ function DashboardComponent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isDdsModalOpen, setIsDdsModalOpen] = useState(false)
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
-  const [showBirthdayModal, setShowBirthdayModal] = useState(false)
   const [isMentionsOpen, setIsMentionsOpen] = useState(false)
 
   // Animation Refs
@@ -870,76 +870,10 @@ function DashboardComponent() {
   }, [fleetData])
 
   // Aniversariantes reais (apenas colaboradores ativos do efetivo)
-  const aniversariantesMes = useMemo(() => {
-    const currentMonth = getMonth(new Date())
-
-    return (activeEmployees || [])
-      .map((emp: any) => {
-        if (!emp.raw_data) return null
-
-        const nascKey = Object.keys(emp.raw_data).find((k) => {
-          const upper = k.toUpperCase()
-          return upper.includes('NASCIMENTO') || upper.includes('NASC')
-        })
-        if (!nascKey) return null
-
-        const val = emp.raw_data[nascKey]
-        let day = 0
-        let month = -1
-        let valid = false
-
-        if (typeof val === 'number') {
-          // Serial Excel: 25569 = 01/01/1970
-          const d = new Date((val - 25569) * 86400 * 1000)
-          d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-          if (!isNaN(d.getTime())) {
-            day = d.getDate()
-            month = d.getMonth()
-            valid = true
-          }
-        } else if (typeof val === 'string') {
-          const s = val.trim()
-          if (s.includes('/')) {
-            const parts = s.split('/')
-            if (parts.length === 3) {
-              day = Number(parts[0])
-              month = Number(parts[1]) - 1
-              valid = !isNaN(day) && !isNaN(month)
-            }
-          } else if (s.includes('-')) {
-            const parts = s.split('-')
-            if (parts.length === 3) {
-              day = Number(parts[2])
-              month = Number(parts[1]) - 1
-              valid = !isNaN(day) && !isNaN(month)
-            }
-          }
-        }
-
-        if (!valid || month !== currentMonth) return null
-
-        return {
-          id: emp.id,
-          nome: emp.nome,
-          cargo: emp.cargo || '',
-          day,
-          month,
-        }
-      })
-      .filter(Boolean)
-      .sort((a: any, b: any) => a.day - b.day)
-  }, [activeEmployees])
-
-  const aniversariantesHoje = useMemo(
-    () => aniversariantesMes.filter((a: any) => a.day === hojeDay),
-    [aniversariantesMes, hojeDay]
+  const aniversariantesMes = useMemo(
+    () => filtrarAniversariantesDoMes(activeEmployees),
+    [activeEmployees]
   )
-
-  useEffect(() => {
-    if (aniversariantesHoje.length > 0) {
-      setShowBirthdayModal(true)
-    }
-  }, [aniversariantesHoje])
 
   // Data formatada
   const dayNumber = format(new Date(), 'dd')
@@ -1952,53 +1886,6 @@ function DashboardComponent() {
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {showBirthdayModal && aniversariantesHoje.length > 0 && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[999999] p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 max-w-md w-full my-auto max-h-[92vh] overflow-y-auto relative animate-in zoom-in-95 duration-200">
-            <button
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
-              onClick={() => setShowBirthdayModal(false)}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 mb-4 animate-bounce">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-10 h-10 text-amber-500">
-                  <rect x="3" y="8" width="18" height="14" rx="2" />
-                  <path d="M12 8v14M8 8V4a2 2 0 0 1 4 0v4M12 4a2 2 0 0 1 4 0v4" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tem festa hoje! 🎉</h2>
-              <p className="text-gray-600 mb-6">Hoje é o aniversário de:</p>
-
-              <div className="w-full flex flex-col gap-3 mb-8">
-                {aniversariantesHoje.map((aniv: any, i: number) => (
-                  <div
-                    key={i}
-                    className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center justify-center"
-                  >
-                    <span className="font-bold text-lg text-gray-900 capitalize">
-                      {typeof aniv.nome === 'string' ? aniv.nome.toLowerCase() : aniv.nome}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors"
-                onClick={() => setShowBirthdayModal(false)}
-              >
-                Parabenizar
-              </button>
-            </div>
           </div>
         </div>,
         document.body
