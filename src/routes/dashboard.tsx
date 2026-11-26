@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
@@ -22,26 +22,37 @@ import {
   isOutside,
   MovementRecord,
 } from '../lib/equipamentos/locationStatus'
-import { DdsUploadModal } from '../components/DdsUploadModal'
 import { DashboardCintasBanner } from '../components/DashboardCintasBanner'
-import { DashboardStockAlertWidget } from '../components/DashboardStockAlertWidget'
-import { DashboardPedidosAtrasadosWidget } from '../components/DashboardPedidosAtrasadosWidget'
 import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.js'
-import { DashboardVistoriasWidget } from '../components/DashboardVistoriasWidget'
 import { DashboardVistoriasBanner } from '../components/DashboardVistoriasBanner'
-import { DashboardInspecaoCanteiroWidget } from '../components/DashboardInspecaoCanteiroWidget'
 import { DashboardInspecaoCanteiroBanner } from '../components/DashboardInspecaoCanteiroBanner'
-import { DashboardDesviosWidget } from '../components/DashboardDesviosWidget'
 import { DashboardDesviosBanner } from '../components/DashboardDesviosBanner'
 import { DashboardAnaliseRiscoBanner } from '../components/DashboardAnaliseRiscoBanner'
 import { DashboardCampanhaMesWidget } from '../components/DashboardCampanhaMesWidget'
-import { DashboardMatrizWidget } from '../components/DashboardMatrizWidget'
-import { RecentActivitiesWidget } from '../components/RecentActivitiesWidget'
 import { DashboardSafetyBanner } from '../components/DashboardSafetyBanner'
 import { DashboardPlacarSeguranca } from '../components/DashboardPlacarSeguranca'
 import { DashboardGeradorLokCenter } from '../components/DashboardGeradorLokCenter'
 import { DashboardRemindersPremium } from '../components/DashboardRemindersPremium'
 import '../hydro-panel.css'
+
+// Lazy loading para componentes operacionais e modais abaixo da dobra
+const DdsUploadModal = lazy(() => import('../components/DdsUploadModal').then(m => ({ default: m.DdsUploadModal })))
+const DashboardPedidosAtrasadosWidget = lazy(() => import('../components/DashboardPedidosAtrasadosWidget').then(m => ({ default: m.DashboardPedidosAtrasadosWidget })))
+const DashboardDesviosWidget = lazy(() => import('../components/DashboardDesviosWidget').then(m => ({ default: m.DashboardDesviosWidget })))
+const DashboardInspecaoCanteiroWidget = lazy(() => import('../components/DashboardInspecaoCanteiroWidget').then(m => ({ default: m.DashboardInspecaoCanteiroWidget })))
+const DashboardMatrizWidget = lazy(() => import('../components/DashboardMatrizWidget').then(m => ({ default: m.DashboardMatrizWidget })))
+const DashboardVistoriasWidget = lazy(() => import('../components/DashboardVistoriasWidget').then(m => ({ default: m.DashboardVistoriasWidget })))
+const RecentActivitiesWidget = lazy(() => import('../components/RecentActivitiesWidget').then(m => ({ default: m.RecentActivitiesWidget })))
+const DashboardStockAlertWidget = lazy(() => import('../components/DashboardStockAlertWidget').then(m => ({ default: m.DashboardStockAlertWidget })))
+
+function WidgetSkeleton() {
+  return (
+    <div className="card card-pad animate-pulse" style={{ minHeight: '160px', background: 'var(--surface2)', borderRadius: '16px' }}>
+      <div className="h-4 w-1/3 bg-black/10 dark:bg-white/10 rounded mb-4" />
+      <div className="h-20 w-full bg-black/5 dark:bg-white/5 rounded" />
+    </div>
+  )
+}
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardComponent,
@@ -215,8 +226,8 @@ function DashboardComponent() {
         records: todayRecords,
       }
     },
-    refetchInterval: 30000,
-    staleTime: 10 * 1000,
+    refetchInterval: 60000,
+    staleTime: 60 * 1000,
   })
 
   // Sincronização em Tempo Real Global do Dashboard (Auto-refresh instantâneo para qualquer atividade de usuário)
@@ -382,8 +393,8 @@ function DashboardComponent() {
       if (error) throw error
       return data || []
     },
-    refetchInterval: 20000,
-    staleTime: 5 * 1000,
+    refetchInterval: 60000,
+    staleTime: 60 * 1000,
   })
 
   // Total de colaboradores ativos reais do ambiente selecionado
@@ -519,12 +530,12 @@ function DashboardComponent() {
   // Permissões de Trabalho reais
   const { data: expiringPTs = [] } = useQuery({
     queryKey: ['expiring_pts', currentEnv],
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     queryFn: async () => {
       if (currentEnv === 'hydro-civil') return []
       const { data, error } = await supabase
         .from('permissao_trabalho')
-        .select('*')
+        .select('id, data_vencimento')
         .order('data_vencimento', { ascending: true })
 
       if (error || !data) return []
@@ -547,7 +558,7 @@ function DashboardComponent() {
   // Pedidos de compra em atraso
   const { data: delayedOrders = [] } = useQuery({
     queryKey: ['delayed_purchase_orders_summary'],
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('al_purchase_orders')
@@ -567,7 +578,7 @@ function DashboardComponent() {
         return expDate.getTime() < today.getTime()
       })
     },
-    staleTime: 10 * 1000,
+    staleTime: 60 * 1000,
   })
 
   // DDS do dia real
@@ -1798,16 +1809,18 @@ function DashboardComponent() {
           </div>
         )}
 
-        {/* Widgets Inferiores — Layout Masonry Automático sem buracos */}
-        <div className="hydro-bottom-widgets-masonry">
-          <DashboardPedidosAtrasadosWidget />
-          <DashboardDesviosWidget currentEnv={currentEnv} />
-          <DashboardInspecaoCanteiroWidget />
-          <DashboardMatrizWidget />
-          <DashboardVistoriasWidget />
-          <RecentActivitiesWidget />
-          <DashboardStockAlertWidget />
-        </div>
+        {/* Widgets Inferiores — Layout Masonry Automático sem buracos (Lazy Loaded) */}
+        <Suspense fallback={<WidgetSkeleton />}>
+          <div className="hydro-bottom-widgets-masonry">
+            <DashboardPedidosAtrasadosWidget />
+            <DashboardDesviosWidget currentEnv={currentEnv} />
+            <DashboardInspecaoCanteiroWidget />
+            <DashboardMatrizWidget />
+            <DashboardVistoriasWidget />
+            <RecentActivitiesWidget />
+            <DashboardStockAlertWidget />
+          </div>
+        </Suspense>
       </section>
 
       {/* Rodapé da Operação */}
@@ -1823,16 +1836,20 @@ function DashboardComponent() {
       </footer>
 
       {/* Modais */}
-      <DdsUploadModal
-        key={`dds-modal-${currentEnv}-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
-        isOpen={isDdsModalOpen}
-        onClose={() => setIsDdsModalOpen(false)}
-        tema={ddsData?.hoje?.tema || 'DDS Livre'}
-        palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
-        }}
-      />
+      {isDdsModalOpen && (
+        <Suspense fallback={null}>
+          <DdsUploadModal
+            key={`dds-modal-${currentEnv}-${ddsData?.hoje?.palestrante?.nome}-${ddsData?.hoje?.tema}-${isDdsModalOpen}`}
+            isOpen={isDdsModalOpen}
+            onClose={() => setIsDdsModalOpen(false)}
+            tema={ddsData?.hoje?.tema || 'DDS Livre'}
+            palestrante={ddsData?.hoje?.palestrante?.nome ? ddsData.hoje.palestrante.nome.trim() : ''}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['dds_dashboard'] })
+            }}
+          />
+        </Suspense>
+      )}
 
       {expandedImage && typeof document !== 'undefined' && createPortal(
         <div
