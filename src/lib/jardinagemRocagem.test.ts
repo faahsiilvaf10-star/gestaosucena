@@ -3,6 +3,8 @@ import {
   getRocagemCycleForDate,
   calculatePeriodActivityTotal,
   extractEntriesFromRows,
+  extractCopyableText,
+  sumActivitiesTotals,
   parseNumber,
   formatM2,
   JARDINAGEM_ACTIVITIES,
@@ -123,5 +125,41 @@ describe('jardinagemRocagem - Ciclos Contratuais e Cálculos', () => {
     expect(JARDINAGEM_ACTIVITIES.limpeza_soprador.name).toBe('Limpeza com Soprador');
     expect(JARDINAGEM_ACTIVITIES.limpeza_manual.unit).toBe('m²');
     expect(JARDINAGEM_ACTIVITIES.limpeza_soprador.unit).toBe('m²');
+  });
+
+  it('sumActivitiesTotals deve somar Roçagem, Limpeza Manual e Soprador corretamente', () => {
+    const total = sumActivitiesTotals({
+      rocagem: 350,
+      limpeza_manual: 23146,
+      limpeza_soprador: 5000,
+    });
+    expect(total).toBe(28496);
+    expect(formatM2(total)).toBe('28.496');
+  });
+
+  it('extractCopyableText deve ignorar caixas de período com data-no-copy="true" ao copiar/enviar para WhatsApp', () => {
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div>Data: 26/11/2026</div>
+      <div>🌱 *Atividades Realizadas:*</div>
+      <div>
+        <div>- Roçagem: 350 m² (Faixa 2, Berma 28)</div>
+        <div data-no-copy="true"><span>📐 Roçagem no Período (11/16 a 12/15):</span><span>350 m²</span></div>
+        <div>- Limpeza Manual: 3.620 m² (Faixa 5, Berma 34, Elevado 35)</div>
+        <div data-no-copy="true"><span>🧹 Limp. Manual no Período (11/16 a 12/15):</span><span>23.146 m²</span></div>
+        <div>- Limpeza com Soprador: 5.000 m² (Faixa 3, Berma 30)</div>
+        <div data-no-copy="true"><span>💨 Soprador no Período (11/16 a 12/15):</span><span>5.000 m²</span></div>
+      </div>
+    `;
+
+    const text = extractCopyableText(container);
+    expect(text).toBe([
+      'Data: 26/11/2026',
+      '🌱 *Atividades Realizadas:*',
+      '- Roçagem: 350 m² (Faixa 2, Berma 28)',
+      '- Limpeza Manual: 3.620 m² (Faixa 5, Berma 34, Elevado 35)',
+      '- Limpeza com Soprador: 5.000 m² (Faixa 3, Berma 30)',
+    ].join('\n'));
+    expect(text).not.toContain('no Período');
   });
 });

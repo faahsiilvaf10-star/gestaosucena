@@ -325,6 +325,56 @@ export function calculatePeriodActivityTotal(
 }
 
 /**
+ * Soma os totais das 3 atividades de medição (Roçagem, Limpeza Manual e Limpeza com Soprador).
+ */
+export function sumActivitiesTotals(totals: {
+  rocagem: number;
+  limpeza_manual: number;
+  limpeza_soprador: number;
+}): number {
+  return (totals.rocagem || 0) + (totals.limpeza_manual || 0) + (totals.limpeza_soprador || 0);
+}
+
+/**
+ * Extrai o texto copiável do resumo ignorando elementos marcados com data-no-copy="true"
+ * (ex.: caixas visuais de total acumulado do período).
+ */
+export function extractCopyableText(root: HTMLElement | null): string {
+  if (!root) return '';
+  const lines: string[] = [];
+
+  const walk = (node: Node) => {
+    if (node.nodeType === 1) {
+      const el = node as HTMLElement;
+      if (el.getAttribute('data-no-copy') === 'true') return;
+
+      const hasBlockChildren = Array.from(el.children).some(child =>
+        ['DIV', 'P', 'LI', 'SECTION', 'HEADER', 'FOOTER'].includes(child.tagName)
+      );
+
+      if (hasBlockChildren) {
+        Array.from(el.childNodes).forEach(walk);
+      } else {
+        const rawLines = (el.textContent || '').split('\n');
+        rawLines.forEach(raw => {
+          const txt = raw.replace(/[ \t]+/g, ' ').trim();
+          if (txt) lines.push(txt);
+        });
+      }
+    } else if (node.nodeType === 3) {
+      const rawLines = (node.textContent || '').split('\n');
+      rawLines.forEach(raw => {
+        const txt = raw.replace(/[ \t]+/g, ' ').trim();
+        if (txt) lines.push(txt);
+      });
+    }
+  };
+
+  Array.from(root.childNodes).forEach(walk);
+  return lines.join('\n');
+}
+
+/**
  * Alias mantido para compatibilidade com código existente
  */
 export const calculatePeriodRocagemTotal = calculatePeriodActivityTotal;

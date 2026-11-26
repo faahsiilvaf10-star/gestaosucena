@@ -29,6 +29,8 @@ import {
   getAllJardinagemRecords,
   formatM2,
   getRocagemCycleForDate,
+  extractCopyableText,
+  sumActivitiesTotals,
   AllJardinagemRecords,
   JardinagemActivityType
 } from '../../lib/jardinagemRocagem'
@@ -474,7 +476,8 @@ function JardinagemPage() {
 
   const handleCopy = () => {
     if (previewRef.current) {
-      navigator.clipboard.writeText(previewRef.current.innerText).then(() => {
+      const text = extractCopyableText(previewRef.current);
+      navigator.clipboard.writeText(text).then(() => {
         toast.success('Resumo copiado para a área de transferência!');
       }).catch(err => {
         console.error('Falha ao copiar: ', err);
@@ -485,7 +488,7 @@ function JardinagemPage() {
 
   const handleWhatsApp = () => {
     if (previewRef.current) {
-      const text = previewRef.current.innerText;
+      const text = extractCopyableText(previewRef.current);
       const encodedText = encodeURIComponent(text);
       window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
     }
@@ -705,6 +708,17 @@ function JardinagemPage() {
                   : 'bg-sky-100 text-sky-800'
               }`} title="Total de Limpeza com Soprador no ciclo">
                 Soprador: {formatM2(limpezaSopradorPeriodInfo.totalM2)} m²
+              </span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold transition-colors ${
+                activeMainTab === 'historico_rocagem'
+                  ? 'bg-amber-300 text-amber-950'
+                  : 'bg-amber-100 text-amber-900 border border-amber-300/80'
+              }`} title="Total somado (Roçagem + Limpeza Manual + Soprador)">
+                Total: {formatM2(sumActivitiesTotals({
+                  rocagem: rocagemPeriodInfo.totalM2,
+                  limpeza_manual: limpezaManualPeriodInfo.totalM2,
+                  limpeza_soprador: limpezaSopradorPeriodInfo.totalM2
+                }))} m²
               </span>
             </div>
           </button>
@@ -1195,7 +1209,7 @@ function JardinagemPage() {
               <div className="flex flex-col gap-1">
                 {renderRows('Roçagem', rocagem, 'm²')}
                 {rocagemPeriodInfo.totalM2 > 0 && (
-                  <div className="text-emerald-800 bg-emerald-50/90 px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center justify-between my-1">
+                  <div data-no-copy="true" className="select-none text-emerald-800 bg-emerald-50/90 px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs font-semibold flex items-center justify-between my-1">
                     <span>📐 Roçagem no Período ({rocagemPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {rocagemPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
                     <span className="font-bold text-emerald-950">{formatM2(rocagemPeriodInfo.totalM2)} m²</span>
                   </div>
@@ -1208,14 +1222,14 @@ function JardinagemPage() {
                 {renderPlantio()}
                 {renderRows('Limpeza Manual', limpezaManual, 'm²')}
                 {limpezaManualPeriodInfo.totalM2 > 0 && (
-                  <div className="text-teal-800 bg-teal-50/90 px-2.5 py-1.5 rounded-lg border border-teal-200 text-xs font-semibold flex items-center justify-between my-1">
+                  <div data-no-copy="true" className="select-none text-teal-800 bg-teal-50/90 px-2.5 py-1.5 rounded-lg border border-teal-200 text-xs font-semibold flex items-center justify-between my-1">
                     <span>🧹 Limp. Manual no Período ({limpezaManualPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {limpezaManualPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
                     <span className="font-bold text-teal-950">{formatM2(limpezaManualPeriodInfo.totalM2)} m²</span>
                   </div>
                 )}
                 {renderRows('Limpeza com Soprador', limpezaSoprador, 'm²')}
                 {limpezaSopradorPeriodInfo.totalM2 > 0 && (
-                  <div className="text-sky-800 bg-sky-50/90 px-2.5 py-1.5 rounded-lg border border-sky-200 text-xs font-semibold flex items-center justify-between my-1">
+                  <div data-no-copy="true" className="select-none text-sky-800 bg-sky-50/90 px-2.5 py-1.5 rounded-lg border border-sky-200 text-xs font-semibold flex items-center justify-between my-1">
                     <span>💨 Soprador no Período ({limpezaSopradorPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {limpezaSopradorPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
                     <span className="font-bold text-sky-950">{formatM2(limpezaSopradorPeriodInfo.totalM2)} m²</span>
                   </div>

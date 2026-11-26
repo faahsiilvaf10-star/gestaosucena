@@ -15,6 +15,7 @@ import {
   RocagemEntry,
   RocagemCycle,
   formatM2,
+  sumActivitiesTotals,
   getAvailableCycles,
   JardinagemActivityType,
   JARDINAGEM_ACTIVITIES,
@@ -306,6 +307,19 @@ export function HistoricoRocagemTab({
               {formatM2(activityTotals.limpeza_soprador)} m²
             </span>
           </button>
+
+          <div className="hidden sm:block w-px h-6 bg-gray-200 mx-0.5" aria-hidden="true" />
+
+          <div
+            data-testid="atividades-medicao-total"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-950 border border-amber-300 shadow-2xs"
+            title="Soma total de Roçagem + Limpeza Manual + Limpeza com Soprador no período"
+          >
+            <span>📊 Total Geral</span>
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-amber-200/90 text-amber-950">
+              {formatM2(sumActivitiesTotals(activityTotals))} m²
+            </span>
+          </div>
         </div>
       </div>
       {/* Barra Superior de Seleção do Ciclo e Ações */}
