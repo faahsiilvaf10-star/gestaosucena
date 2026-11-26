@@ -33,14 +33,21 @@ export function DashboardRemindersPremium({
   return (
     <section
       className="animate-in fade-in slide-in-from-top-3 duration-500"
-      style={{ marginTop: 20, marginBottom: 8 }}
+      style={{
+        marginTop: 20,
+        marginBottom: 8,
+        background: '#ffffff',
+        borderRadius: 32,
+        padding: 6,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+      }}
     >
       {/* ── OUTER CARD ── */}
       <div
         className="relative overflow-hidden transition-transform duration-300 hover:-translate-y-0.5"
         style={{
           background: 'linear-gradient(135deg, #101010 0%, #1a1a1a 40%, #0d0d0d 100%)',
-          borderRadius: 28,
+          borderRadius: 26,
           border: '1.5px solid rgba(255,255,255,0.08)',
           boxShadow:
             '0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
