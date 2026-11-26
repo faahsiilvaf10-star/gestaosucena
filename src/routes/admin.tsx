@@ -1778,7 +1778,7 @@ function AdminRoute() {
               <div className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Quando habilitado, o sistema envia automaticamente os lembretes respeitando o agendamento:
                 <ul className="list-disc ml-5 mt-2 space-y-1">
-                  <li>Lembretes <strong>com horário definido</strong> são enviados no horário escolhido (Pará UTC-4).</li>
+                  <li>Lembretes <strong>com horário definido</strong> são enviados no horário escolhido (Pará/Brasília UTC-3).</li>
                   <li>Lembretes <strong>sem horário</strong> são enviados às 06:00h da manhã.</li>
                   <li>Se houver aviso antecipado (ex: 1 dia antes), o envio antecipado é realizado às <strong>16:00h</strong> daquele dia.</li>
                   <li>Lembretes <strong>recorrentes</strong> (dias da semana) são enviados no horário configurado.</li>

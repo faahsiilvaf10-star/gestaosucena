@@ -54,9 +54,12 @@ vi.mock('./supabase', () => ({
 import {
   buildReminderMentionsPayload,
   createReminder,
+  getLocalDateStr,
   getReminderResponsibleIds,
   isReminderForAllUsers,
   resolveReminderInitialMentions,
+  shouldAutoExpireReminderNotification,
+  shouldDisplayReminderNotification,
   updateReminder,
   type Reminder,
   type UserProfile,
@@ -156,5 +159,95 @@ describe('Lembretes - Responsáveis, Todos (Grupo) e Persistência de Menções'
       { reminder_id: 'rem-new', user_id: 'u-alex', mentioned_by: 'u-fabricio' },
       { reminder_id: 'rem-new', user_id: 'u-jose', mentioned_by: 'u-fabricio' },
     ])
+  })
+})
+
+describe('Lembretes - Expiração de data única e exibição no modal', () => {
+  it('getLocalDateStr deve converter UTC para dia local no fuso America/Belem (UTC-3)', () => {
+    // 2026-11-26T01:30:00Z = 2026-11-25 22:30:00 em Belém (ainda dia 25)
+    expect(getLocalDateStr(new Date('2026-11-26T01:30:00Z'))).toBe('2026-11-25')
+    // 2026-11-26T04:00:00Z = 2026-11-26 01:00:00 em Belém (já dia 26)
+    expect(getLocalDateStr(new Date('2026-11-26T04:00:00Z'))).toBe('2026-11-26')
+  })
+
+  it('lembrete pontual (não recorrente) deve exibir apenas na data agendada e expirar nos dias seguintes', () => {
+    const oneTimeReminder: Partial<Reminder> = {
+      is_recurring: false,
+      due_date: '2026-11-25',
+      status: 'Pendente',
+    }
+
+    // No dia anterior (aviso prévio) e no próprio dia agendado: NÃO expira
+    expect(shouldAutoExpireReminderNotification(oneTimeReminder, '2026-11-24')).toBe(false)
+    expect(shouldAutoExpireReminderNotification(oneTimeReminder, '2026-11-25')).toBe(false)
+    expect(shouldDisplayReminderNotification({
+      reminder: oneTimeReminder,
+      todayStr: '2026-11-25',
+    })).toBe(true)
+
+    // No dia seguinte (26/11): deve expirar automaticamente e NÃO aparecer no comunicado/modal
+    expect(shouldAutoExpireReminderNotification(oneTimeReminder, '2026-11-26')).toBe(true)
+    expect(shouldDisplayReminderNotification({
+      reminder: oneTimeReminder,
+      todayStr: '2026-11-26',
+    })).toBe(false)
+  })
+
+  it('lembrete recorrente deve continuar elegível mesmo quando due_date original for antigo', () => {
+    const recurringReminder: Partial<Reminder> = {
+      is_recurring: true,
+      due_date: '2026-10-21',
+      status: 'Pendente',
+    }
+
+    expect(shouldAutoExpireReminderNotification(recurringReminder, '2026-11-26')).toBe(false)
+    expect(shouldDisplayReminderNotification({
+      reminder: recurringReminder,
+      todayStr: '2026-11-26',
+    })).toBe(true)
+  })
+
+  it('lembrete concluído ou cancelado nunca deve exibir no modal', () => {
+    expect(shouldAutoExpireReminderNotification({
+      is_recurring: false,
+      due_date: '2026-11-26',
+      status: 'Concluído',
+    }, '2026-11-26')).toBe(true)
+
+    expect(shouldAutoExpireReminderNotification({
+      is_recurring: true,
+      due_date: null,
+      status: 'Cancelado',
+    }, '2026-11-26')).toBe(true)
+  })
+
+  it('deve respeitar snooze com timestamp futuro e voltar a exibir após vencer', () => {
+    const activeReminder: Partial<Reminder> = {
+      is_recurring: false,
+      due_date: '2026-11-26',
+      status: 'Pendente',
+    }
+
+    const nowMs = new Date('2026-11-26T13:00:00-03:00').getTime()
+    expect(shouldDisplayReminderNotification({
+      reminder: activeReminder,
+      snoozedVal: '2026-11-26T14:00:00-03:00',
+      todayStr: '2026-11-26',
+      nowMs,
+    })).toBe(false)
+
+    expect(shouldDisplayReminderNotification({
+      reminder: activeReminder,
+      snoozedVal: '2026-11-26T12:00:00-03:00',
+      todayStr: '2026-11-26',
+      nowMs,
+    })).toBe(true)
+
+    expect(shouldDisplayReminderNotification({
+      reminder: activeReminder,
+      snoozedVal: '2026-11-26',
+      todayStr: '2026-11-26',
+      nowMs,
+    })).toBe(false)
   })
 })

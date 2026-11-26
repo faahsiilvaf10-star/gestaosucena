@@ -7,6 +7,11 @@ import Check from 'lucide-react/dist/esm/icons/check.js';
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
+import {
+  getLocalDateStr,
+  shouldAutoExpireReminderNotification,
+  shouldDisplayReminderNotification,
+} from '../lib/api-reminders'
 
 function playReminderSound() {
   try {
@@ -21,6 +26,7 @@ interface ReminderData {
   title: string
   description?: string
   priority: string
+  status?: 'Pendente' | 'Em andamento' | 'Concluído' | 'Cancelado'
   due_date?: string
   due_time?: string
   is_recurring: boolean
@@ -37,18 +43,6 @@ interface ReminderNotif {
   exiting?: boolean
 }
 
-function isStillSnoozed(snoozedVal: string | null): boolean {
-  if (!snoozedVal) return false;
-  if (snoozedVal.includes('T')) {
-    const snoozeTime = new Date(snoozedVal).getTime();
-    if (!isNaN(snoozeTime)) {
-      return Date.now() < snoozeTime;
-    }
-  }
-  const todayStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
-  return snoozedVal === todayStr;
-}
-
 export function ReminderAlertNotification() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<ReminderNotif[]>([])
@@ -59,7 +53,7 @@ export function ReminderAlertNotification() {
   const [postponeTime, setPostponeTime] = useState<string>('')
   const [isSavingPostpone, setIsSavingPostpone] = useState<boolean>(false)
 
-  const todayDateStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-')
+  const todayDateStr = getLocalDateStr()
   
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -81,26 +75,43 @@ export function ReminderAlertNotification() {
         .select(`
           *,
           reminder:reminders (
-            id, title, description, priority, due_date, due_time, is_recurring, image_url
+            id, title, description, priority, status, due_date, due_time, is_recurring, image_url
           )
         `)
         .eq('user_id', currentUserId)
         .eq('read', false)
       
       if (!error && data) {
+        const currentToday = getLocalDateStr()
         const pending: ReminderNotif[] = []
+        const expiredIds: string[] = []
         for (const notif of data) {
+          const reminderData = notif.reminder as ReminderData | undefined
+          if (shouldAutoExpireReminderNotification(reminderData, currentToday)) {
+            expiredIds.push(notif.id)
+            continue
+          }
           const snoozedVal = localStorage.getItem(`snoozed_notif_${notif.id}`)
-          if (!isStillSnoozed(snoozedVal)) {
+          if (shouldDisplayReminderNotification({
+            reminder: reminderData,
+            snoozedVal,
+            todayStr: currentToday,
+          })) {
             pending.push({
               id: notif.id,
               reminder_id: notif.reminder_id,
               title: notif.title || 'Lembrete',
               message: notif.message || 'Você tem um novo lembrete!',
               created_at: notif.created_at,
-              reminder: notif.reminder as ReminderData
+              reminder: reminderData
             })
           }
+        }
+        if (expiredIds.length > 0) {
+          void supabase
+            .from('reminder_notifications')
+            .update({ read: true })
+            .in('id', expiredIds)
         }
         if (pending.length > 0) {
           setNotifications(prev => {
@@ -121,20 +132,30 @@ export function ReminderAlertNotification() {
         filter: `user_id=eq.${currentUserId}` 
       }, async (payload: any) => {
         const notif = payload.new
+        const currentToday = getLocalDateStr()
         const snoozedVal = localStorage.getItem(`snoozed_notif_${notif.id}`)
         
-        if (!isStillSnoozed(snoozedVal)) {
-          // Busca os detalhes do lembrete para notificações em tempo real
-          let reminderData = undefined
-          if (notif.reminder_id) {
-            const { data } = await supabase
-              .from('reminders')
-              .select('id, title, description, priority, due_date, due_time, is_recurring, image_url')
-              .eq('id', notif.reminder_id)
-              .single()
-            if (data) reminderData = data
-          }
+        // Busca os detalhes do lembrete para notificações em tempo real
+        let reminderData: ReminderData | undefined = undefined
+        if (notif.reminder_id) {
+          const { data } = await supabase
+            .from('reminders')
+            .select('id, title, description, priority, status, due_date, due_time, is_recurring, image_url')
+            .eq('id', notif.reminder_id)
+            .single()
+          if (data) reminderData = data as ReminderData
+        }
 
+        if (shouldAutoExpireReminderNotification(reminderData, currentToday)) {
+          void supabase.from('reminder_notifications').update({ read: true }).eq('id', notif.id)
+          return
+        }
+
+        if (shouldDisplayReminderNotification({
+          reminder: reminderData,
+          snoozedVal,
+          todayStr: currentToday,
+        })) {
           const newNotif: ReminderNotif = {
             id: notif.id,
             reminder_id: notif.reminder_id,
@@ -159,21 +180,48 @@ export function ReminderAlertNotification() {
     }
   }, [currentUserId, todayDateStr])
 
-  const dismissNotification = (id: string) => {
+  const dismissNotification = (id: string, alsoMatchReminderId?: string) => {
+    const matches = (n: ReminderNotif) =>
+      n.id === id || (alsoMatchReminderId && (n.reminder?.id || n.reminder_id) === alsoMatchReminderId)
+
     setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, exiting: true } : n)
+      prev.map(n => matches(n) ? { ...n, exiting: true } : n)
     )
     setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id))
+      setNotifications(prev => prev.filter(n => !matches(n)))
     }, 400)
   }
 
   const handleVisto = async (id: string) => {
-    await supabase.from('reminder_notifications').update({ read: true }).eq('id', id)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('hydro_reminder_read', { detail: { id } }))
+    const target = notifications.find(n => n.id === id)
+    const reminderId = target?.reminder?.id || target?.reminder_id
+
+    const { error } = await supabase
+      .from('reminder_notifications')
+      .update({ read: true })
+      .eq('id', id)
+
+    if (error) {
+      console.warn('Erro ao marcar notificação como lida:', error)
     }
-    dismissNotification(id)
+
+    if (reminderId && currentUserId) {
+      await supabase
+        .from('reminder_notifications')
+        .update({ read: true })
+        .eq('user_id', currentUserId)
+        .eq('reminder_id', reminderId)
+        .eq('read', false)
+
+      try {
+        localStorage.setItem(`read_reminder_due_${reminderId}`, 'true')
+      } catch (_) {}
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hydro_reminder_read', { detail: { id, reminderId } }))
+    }
+    dismissNotification(id, reminderId)
   }
 
   const handleStartAdiar = (notif: ReminderNotif) => {

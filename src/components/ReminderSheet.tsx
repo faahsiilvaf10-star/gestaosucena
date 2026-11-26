@@ -139,10 +139,14 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
       currentUserId,
     })
 
+    const sortedNewDays = [...recurringDays].sort().join(',')
+    const sortedOldDays = [...(reminder?.recurrence_config?.days || [])].sort().join(',')
     const scheduleChanged = isEditing && reminder && (
       (dueDate || '') !== (reminder.due_date || '') ||
       (dueTime || '').slice(0, 5) !== (reminder.due_time || '').slice(0, 5) ||
       isRecurring !== Boolean(reminder.is_recurring) ||
+      sortedNewDays !== sortedOldDays ||
+      advanceNotice !== Number(reminder.recurrence_config?.advanceNotice || 0) ||
       isAll !== Boolean(reminder.recurrence_config?.isAll)
     )
 
@@ -156,7 +160,7 @@ export function ReminderSheet({ isOpen, onClose, reminder, users }: ReminderShee
           due_date: dueDate || null,
           due_time: dueTime || null,
           is_recurring: isRecurring,
-          recurrence_type: isRecurring ? 'weekly' : undefined,
+          recurrence_type: isRecurring ? 'weekly' : null,
           recurrence_config: {
             days: isRecurring ? recurringDays : undefined,
             advanceNotice: advanceNotice > 0 ? advanceNotice : undefined,

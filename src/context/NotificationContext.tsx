@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useUsersPresence } from '../hooks/useUsersPresence'
+import { getLocalDateStr } from '../lib/api-reminders'
 
 export interface NotificationItem {
   id: string
@@ -191,6 +192,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const markAllAsRead = useCallback(() => {
     dispatch({ type: 'MARK_ALL_AS_READ' })
 
+    try {
+      for (const n of state.notifications) {
+        if (n.id.startsWith('reminder_due_')) {
+          localStorage.setItem(`read_reminder_due_${n.id.replace('reminder_due_', '')}`, 'true')
+        }
+      }
+    } catch (_) {}
+
     if (currentUser?.id) {
       supabase
         .from('reminder_notifications')
@@ -201,7 +210,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           if (error) console.warn('Erro ao marcar todas notificações de lembrete como lidas:', error)
         })
     }
-  }, [currentUser?.id])
+  }, [currentUser?.id, state.notifications])
 
   const removeNotification = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_NOTIFICATION', payload: id })
@@ -302,13 +311,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // 2. Fallback proativo: carregar lembretes pendentes/em andamento atribuídos, mencionados ou criados pelo usuário
-        const todayStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-')
+        // 2. Fallback proativo: carregar lembretes do dia atribuídos, mencionados ou criados pelo usuário
+        const todayStr = getLocalDateStr()
         const { data: dueReminders } = await supabase
           .from('reminders')
-          .select('id, title, description, due_date, due_time, priority, status, creator_id, assigned_user_id, recurrence_config, created_at, reminder_mentions(user_id)')
+          .select('id, title, description, due_date, due_time, priority, status, is_recurring, creator_id, assigned_user_id, recurrence_config, created_at, reminder_mentions(user_id)')
           .in('status', ['Pendente', 'Em andamento'])
-          .lte('due_date', todayStr)
+          .eq('due_date', todayStr)
           .order('due_date', { ascending: true })
           .limit(30)
 

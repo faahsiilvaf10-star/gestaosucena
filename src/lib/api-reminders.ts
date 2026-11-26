@@ -20,7 +20,7 @@ export type Reminder = {
   due_date?: string | null
   due_time?: string | null
   is_recurring: boolean
-  recurrence_type?: string
+  recurrence_type?: string | null
   recurrence_config?: ReminderRecurrenceConfig | null
   last_notified_at?: string | null
   completed_at?: string
@@ -127,6 +127,71 @@ export function getReminderCardColor(reminder?: Reminder | null): string | undef
 export function getReminderIsPulsing(reminder?: Reminder | null): boolean {
   if (!reminder) return false
   return !!(reminder.recurrence_config?.isPulsing ?? reminder.is_pulsing ?? false)
+}
+
+/**
+ * Retorna a data local (YYYY-MM-DD) no fuso America/Belem (Pará/Brasília UTC-3).
+ */
+export function getLocalDateStr(date: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Belem',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date)
+  } catch {
+    return date.toISOString().slice(0, 10)
+  }
+}
+
+/**
+ * Indica se a notificação em modal de um lembrete deve expirar automaticamente
+ * (lembrete concluído/cancelado ou lembrete pontual de data já passada).
+ */
+export function shouldAutoExpireReminderNotification(
+  reminder?: Partial<Reminder> | null,
+  todayStr: string = getLocalDateStr()
+): boolean {
+  if (!reminder) return false
+  if (reminder.status === 'Concluído' || reminder.status === 'Cancelado') {
+    return true
+  }
+  if (!reminder.is_recurring && reminder.due_date && reminder.due_date < todayStr) {
+    return true
+  }
+  return false
+}
+
+/**
+ * Determina se uma notificação de lembrete deve ser exibida no modal em tela,
+ * respeitando expiração de data única, status concluído/cancelado e snooze ativo.
+ */
+export function shouldDisplayReminderNotification(params: {
+  reminder?: Partial<Reminder> | null
+  snoozedVal?: string | null
+  todayStr?: string
+  nowMs?: number
+}): boolean {
+  const {
+    reminder,
+    snoozedVal,
+    todayStr = getLocalDateStr(),
+    nowMs = Date.now(),
+  } = params
+
+  if (shouldAutoExpireReminderNotification(reminder, todayStr)) {
+    return false
+  }
+
+  if (!snoozedVal) return true
+  if (snoozedVal.includes('T')) {
+    const snoozeTime = new Date(snoozedVal).getTime()
+    if (!isNaN(snoozeTime)) {
+      return nowMs >= snoozeTime
+    }
+  }
+  return snoozedVal !== todayStr
 }
 
 export type UserProfile = {

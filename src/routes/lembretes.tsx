@@ -325,7 +325,23 @@ function LembretesComponent() {
                           {reminder.due_date && (
                             <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                               <Clock size={12} />
-                              <span>{format(parseISO(reminder.due_date), "dd 'de' MMM", { locale: ptBR })}</span>
+                              <span>
+                                {format(parseISO(reminder.due_date), "dd 'de' MMM", { locale: ptBR })}
+                                {reminder.due_time ? ` às ${reminder.due_time.substring(0, 5)}` : ''}
+                              </span>
+                            </div>
+                          )}
+
+                          {!reminder.due_date && reminder.due_time && (
+                            <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                              <Clock size={12} />
+                              <span>{reminder.due_time.substring(0, 5)}</span>
+                            </div>
+                          )}
+
+                          {reminder.is_recurring && (
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              Recorrente
                             </div>
                           )}
 
