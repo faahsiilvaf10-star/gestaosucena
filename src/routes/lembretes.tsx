@@ -80,6 +80,7 @@ function LembretesComponent() {
     mutationFn: (variables: { reminder: Partial<Reminder>; mentions?: string[] }) => createReminder(variables.reminder, variables.mentions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', currentEnv] })
+      queryClient.invalidateQueries({ queryKey: ['user_mentioned_reminders'] })
       setNewTaskTitle('')
     }
   })
@@ -88,6 +89,7 @@ function LembretesComponent() {
     mutationFn: ({ id, status }: { id: string, status: string }) => toggleReminderCompletion(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', currentEnv] })
+      queryClient.invalidateQueries({ queryKey: ['user_mentioned_reminders'] })
     }
   })
 

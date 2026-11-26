@@ -54,7 +54,9 @@ vi.mock('./supabase', () => ({
 import {
   buildReminderMentionsPayload,
   createReminder,
+  filterDashboardRemindersForToday,
   getLocalDateStr,
+  getLocalDayOfWeek,
   getReminderResponsibleIds,
   isReminderForAllUsers,
   resolveReminderInitialMentions,
@@ -249,5 +251,124 @@ describe('Lembretes - Expiração de data única e exibição no modal', () => {
       todayStr: '2026-11-26',
       nowMs,
     })).toBe(false)
+  })
+})
+
+describe('getLocalDayOfWeek e filterDashboardRemindersForToday', () => {
+  const makeReminder = (overrides: Partial<Reminder>): Reminder => ({
+    id: 'rem-1',
+    title: 'Lembrete',
+    description: null,
+    creator_id: 'creator-1',
+    assigned_user_id: null,
+    due_date: '2026-11-26',
+    due_time: '09:00:00',
+    priority: 'Normal',
+    status: 'Pendente',
+    is_recurring: false,
+    recurrence_config: null,
+    created_at: '2026-11-26T10:00:00Z',
+    updated_at: '2026-11-26T10:00:00Z',
+    reminder_mentions: [],
+    ...overrides,
+  })
+
+  it('retorna o dia da semana correto no fuso America/Belem', () => {
+    // 2026-11-26T01:30:00Z corresponde a 25/11 22:30 (quarta = 3)
+    expect(getLocalDayOfWeek(new Date('2026-11-26T01:30:00Z'))).toBe(3)
+    // 2026-11-26T04:00:00Z corresponde a 26/11 01:00 (quinta = 4)
+    expect(getLocalDayOfWeek(new Date('2026-11-26T04:00:00Z'))).toBe(4)
+  })
+
+  it('inclui lembrete criado pelo usuário para outro responsável, filtra por data/status/recorrência e ordena por horário', () => {
+    const todayStr = '2026-11-26'
+    const todayDow = 4 // quinta-feira
+
+    const createdForOther = makeReminder({
+      id: 'rem-creator',
+      title: 'TESTE',
+      creator_id: 'user-current',
+      assigned_user_id: 'user-other',
+      due_date: '2026-11-26',
+      due_time: '13:34:00',
+      reminder_mentions: [{ user_id: 'user-other' }],
+    })
+
+    const assignedDirect = makeReminder({
+      id: 'rem-assigned',
+      title: 'Atribuído direto',
+      creator_id: 'user-other',
+      assigned_user_id: 'user-current',
+      due_date: '2026-11-26',
+      due_time: '08:00:00',
+    })
+
+    const recurringToday = makeReminder({
+      id: 'rem-rec-today',
+      title: 'Recorrente Quinta',
+      creator_id: 'user-other',
+      assigned_user_id: null,
+      due_date: null,
+      due_time: '10:30:00',
+      is_recurring: true,
+      recurrence_config: { isAll: true, days: [4] },
+    })
+
+    const recurringWrongDay = makeReminder({
+      id: 'rem-rec-other',
+      title: 'Recorrente Sexta',
+      creator_id: 'user-current',
+      due_date: null,
+      due_time: '07:00:00',
+      is_recurring: true,
+      recurrence_config: { days: [5] },
+    })
+
+    const futureReminder = makeReminder({
+      id: 'rem-future',
+      title: 'Data futura',
+      creator_id: 'user-current',
+      due_date: '2026-11-30',
+      due_time: '07:30:00',
+    })
+
+    const completedReminder = makeReminder({
+      id: 'rem-done',
+      title: 'Já concluído',
+      creator_id: 'user-current',
+      status: 'Concluído',
+      due_date: '2026-11-26',
+      due_time: '06:00:00',
+    })
+
+    const canceledReminder = makeReminder({
+      id: 'rem-cancel',
+      title: 'Cancelado',
+      creator_id: 'user-current',
+      status: 'Cancelado',
+      due_date: '2026-11-26',
+      due_time: '06:30:00',
+    })
+
+    const result = filterDashboardRemindersForToday(
+      [
+        createdForOther,
+        futureReminder,
+        completedReminder,
+        canceledReminder,
+        recurringToday,
+        recurringWrongDay,
+        assignedDirect,
+      ],
+      'user-current',
+      todayStr,
+      todayDow,
+    )
+
+    expect(result.map((r) => r.id)).toEqual([
+      'rem-assigned',
+      'rem-rec-today',
+      'rem-creator',
+    ])
   })
 })

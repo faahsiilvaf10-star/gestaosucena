@@ -8,7 +8,17 @@ import { subDays, addDays, format, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { getUserEnvironmentAccess, hasEnvironmentAccess } from '../lib/environmentAccess'
-import { fetchReminders } from '../lib/api-reminders'
+import {
+  fetchReminders,
+  filterDashboardRemindersForToday,
+  getLocalDateStr,
+  getLocalDayOfWeek,
+  getReminderCardColor,
+  getReminderIsPulsing,
+  isReminderForAllUsers,
+  getReminderResponsibleIds,
+  fetchUsers,
+} from '../lib/api-reminders'
 import { filtrarAniversariantesDoMes } from '../lib/aniversariantes'
 import {
   MAINTENANCE_REASONS,
@@ -178,8 +188,8 @@ function DashboardComponent() {
     })
   }, [navigate])
 
-  // Data de hoje formatada
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  // Data de hoje formatada (fuso America/Belem)
+  const todayStr = getLocalDateStr()
 
   // Presenças reais do dia atual (busca estritamente a lista de presença salva de hoje no ambiente ativo)
   const { data: attendanceInfo } = useQuery({
@@ -789,24 +799,31 @@ function DashboardComponent() {
     refetchInterval: 20000,
   })
 
-  // Lembretes do dia onde o usuário foi mencionado
+  const { data: dashboardUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Lembretes do dia do usuário (criador, atribuído, mencionado ou Todos)
   const { data: userMentionedReminders = [] } = useQuery({
     queryKey: ['user_mentioned_reminders', currentEnv, todayStr, currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return []
       const allReminders = await fetchReminders()
-      // Filtrar: apenas lembretes pendentes de hoje onde o usuário foi mencionado (ou para todos)
-      return allReminders.filter((r: any) => {
-        if (r.due_date !== todayStr) return false
-        if (r.status === 'Concluído' || r.status === 'Cancelado') return false
-        if (r.recurrence_config?.isAll) return true
-        if (!r.reminder_mentions || r.reminder_mentions.length === 0) return false
-        return r.reminder_mentions.some((m: any) => m.user_id === currentUser.id)
-      })
+      const currentTodayStr = getLocalDateStr()
+      const currentTodayDow = getLocalDayOfWeek()
+      return filterDashboardRemindersForToday(
+        allReminders,
+        currentUser.id,
+        currentTodayStr,
+        currentTodayDow
+      )
     },
     enabled: !!currentUser?.id,
-    staleTime: 30 * 1000,
-    refetchInterval: 60000,
+    staleTime: 10 * 1000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   })
 
   // Métricas da frota: somente equipamentos pesados em operação
@@ -1237,8 +1254,183 @@ function DashboardComponent() {
         <div className="hero-script" aria-hidden="true">Segurança<br/>é o nosso maior<br/>resultado!</div>
       </section>
 
-    
-    
+      {/* LEMBRETES PARA HOJE — EXIBIDO ACIMA DO PLACAR DA OBRA */}
+      {userMentionedReminders.length > 0 && (
+        <section
+          className="card card-pad animate-in fade-in slide-in-from-top-2 duration-300"
+          aria-label="Lembretes para hoje"
+          style={{ marginTop: '20px', marginBottom: '8px' }}
+        >
+          <div className="card-head">
+            <div className="ch-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            </div>
+            <div>
+              <h2>Lembretes para hoje</h2>
+              <p>
+                {userMentionedReminders.length} lembrete{userMentionedReminders.length > 1 ? 's' : ''} agendado{userMentionedReminders.length > 1 ? 's' : ''} para hoje
+              </p>
+            </div>
+            <a
+              className="link-all"
+              href="/lembretes"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate({ to: '/lembretes' })
+              }}
+            >
+              Ver todos{' '}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </a>
+          </div>
+
+          <div className={userMentionedReminders.length > 1 ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-3'}>
+            {userMentionedReminders.map((reminder: any) => {
+              const customColor = getReminderCardColor(reminder)
+              const isPulsing = getReminderIsPulsing(reminder)
+              const isAll = isReminderForAllUsers(reminder, dashboardUsers)
+              const responsibleIds = getReminderResponsibleIds(reminder)
+              const responsibleNames = responsibleIds
+                .map((id) => dashboardUsers.find((u: any) => u.id === id)?.name)
+                .filter(Boolean)
+
+              const cardStyle: React.CSSProperties = {
+                padding: '12px 16px',
+                borderRadius: '12px',
+                background: customColor ? `color-mix(in srgb, ${customColor} 14%, #ffffff)` : 'var(--surface2)',
+                border: customColor ? `1.5px solid ${customColor}` : '1px solid var(--line)',
+                boxShadow: customColor ? `0 4px 16px color-mix(in srgb, ${customColor} 18%, transparent)` : undefined,
+                transition: 'border-color .15s, transform .15s',
+                cursor: 'pointer',
+              }
+              if (isPulsing) {
+                (cardStyle as any)['--reminder-pulse-shadow'] = customColor || 'rgba(59, 130, 246, 0.45)'
+              }
+
+              return (
+                <div
+                  key={reminder.id}
+                  className={`pend hover:-translate-y-0.5 ${isPulsing ? 'reminder-card-pulse' : ''}`}
+                  style={cardStyle}
+                  onClick={() => navigate({ to: '/lembretes' })}
+                  title="Clique para abrir no módulo de Lembretes"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div
+                      className={`pend-ico flex-shrink-0 ${
+                        customColor
+                          ? ''
+                          : reminder.priority === 'Urgente'
+                            ? 'tag-red'
+                            : reminder.priority === 'Alta'
+                              ? 'tag-orange'
+                              : reminder.priority === 'Baixa'
+                                ? 'tag-blue'
+                                : 'tag-amber'
+                      }`}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        ...(customColor
+                          ? {
+                              backgroundColor: `color-mix(in srgb, ${customColor} 20%, #ffffff)`,
+                              color: customColor,
+                            }
+                          : {}),
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isPulsing && (
+                          <span className="relative flex h-2 w-2 shrink-0" title="Alerta pulsante">
+                            <span
+                              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                              style={{ backgroundColor: customColor || '#2563eb' }}
+                            />
+                            <span
+                              className="relative inline-flex rounded-full h-2 w-2"
+                              style={{ backgroundColor: customColor || '#2563eb' }}
+                            />
+                          </span>
+                        )}
+                        <p style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {reminder.title}
+                        </p>
+                        {reminder.due_time && (
+                          <span
+                            className="inline-flex items-center gap-1 font-bold"
+                            style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              backgroundColor: customColor ? `color-mix(in srgb, ${customColor} 16%, #ffffff)` : 'var(--yellow-soft)',
+                              color: customColor || 'var(--yellow-dark)',
+                            }}
+                          >
+                            🕒 {String(reminder.due_time).substring(0, 5)}
+                          </span>
+                        )}
+                        {reminder.priority !== 'Normal' && (
+                          <span
+                            className={`pend-tag ${reminder.priority === 'Urgente' ? 'tag-red' : reminder.priority === 'Alta' ? 'tag-orange' : reminder.priority === 'Baixa' ? 'tag-blue' : 'tag-amber'}`}
+                            style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}
+                          >
+                            {reminder.priority}
+                          </span>
+                        )}
+                        {reminder.is_recurring && (
+                          <span className="tag-blue" style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>
+                            Recorrente
+                          </span>
+                        )}
+                        {isAll ? (
+                          <span className="tag-blue" style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>
+                            Todos
+                          </span>
+                        ) : responsibleNames.length > 0 ? (
+                          <span
+                            style={{
+                              fontSize: '10.5px',
+                              fontWeight: 600,
+                              color: 'var(--muted)',
+                            }}
+                          >
+                            • {responsibleNames.slice(0, 2).join(', ')}{responsibleNames.length > 2 ? ` (+${responsibleNames.length - 2})` : ''}
+                          </span>
+                        ) : null}
+                      </div>
+                      {reminder.description && (
+                        <p style={{ marginTop: '4px', fontSize: '12.5px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {reminder.description}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ color: 'var(--faint)', flexShrink: 0 }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '16px', height: '16px' }}>
+                        <path d="m9 6 6 6-6 6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* PLACAR DE SEGURANÇA — DIAS SEM ACIDENTES & META COMEMORATIVA */}
       <DashboardPlacarSeguranca currentEnv={currentEnv} />
@@ -1551,57 +1743,9 @@ function DashboardComponent() {
       </div>
     </section>
 
-      {/* 5. CONTENT GRID (LEMBRETES + SEGURANÇA E CLIMA) */}
+      {/* 5. CONTENT GRID (PENDÊNCIAS + SEGURANÇA E CLIMA) */}
       <div className="content-grid" style={{ marginTop: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {userMentionedReminders.length > 0 && (
-          <section className="card card-pad" aria-label="Lembretes para hoje">
-            <div className="card-head">
-              <div className="ch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-              <div><h2>Lembretes para hoje</h2><p>{userMentionedReminders.length} lembrete{userMentionedReminders.length > 1 ? 's' : ''} onde você foi mencionado</p></div>
-              <a className="link-all" href="/lembretes" onClick={(e) => e.preventDefault()}>Ver todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg></a>
-            </div>
-
-            <div className="space-y-3">
-              {userMentionedReminders.map((reminder: any) => (
-                <div key={reminder.id} className="pend" style={{ padding: '12px 16px', borderRadius: '12px', background: 'var(--surface2)', border: '1px solid var(--line)', transition: 'border-color .15s', cursor: 'pointer' }} onClick={() => navigate({ to: '/lembretes' })}>
-                  <div className="flex items-center gap-3">
-                    <div className={`pend-ico flex-shrink-0 ${reminder.priority === 'Urgente' ? 'tag-red' : reminder.priority === 'Alta' ? 'tag-orange' : reminder.priority === 'Baixa' ? 'tag-blue' : 'tag-amber'}`} style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                      </svg>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="flex items-center gap-2">
-                        <p style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reminder.title}</p>
-                        {reminder.priority !== 'Normal' && (
-                          <span className={`pend-tag ${reminder.priority === 'Urgente' ? 'tag-red' : reminder.priority === 'Alta' ? 'tag-orange' : reminder.priority === 'Baixa' ? 'tag-blue' : 'tag-amber'}`} style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>
-                            {reminder.priority}
-                          </span>
-                        )}
-                        {reminder.is_recurring && (
-                          <span className="tag-blue" style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}>Recorrente</span>
-                        )}
-                      </div>
-                      {reminder.description && (
-                        <p style={{ marginTop: '4px', fontSize: '12.5px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {reminder.description}
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ color: 'var(--faint)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '16px', height: '16px' }}>
-                        <path d="m9 6 6 6-6 6"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {pendencias.length > 0 && (
           <section className="card card-pad pendencias-alert" aria-label="Vencimentos e pendências">
             <div className="section-divider flex items-center justify-between">

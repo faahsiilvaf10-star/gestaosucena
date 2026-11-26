@@ -146,6 +146,72 @@ export function getLocalDateStr(date: Date = new Date()): string {
 }
 
 /**
+ * Retorna o dia da semana (0=Dom .. 6=Sáb) no fuso America/Belem (UTC-3).
+ */
+export function getLocalDayOfWeek(date: Date = new Date()): number {
+  try {
+    const weekday = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Belem',
+      weekday: 'short',
+    }).format(date)
+    const map: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    }
+    if (map[weekday] !== undefined) return map[weekday]
+  } catch {
+    // fallback local
+  }
+  return date.getDay()
+}
+
+/**
+ * Filtra os lembretes ativos agendados para a data de hoje (ou recorrência do dia)
+ * onde o usuário logado é criador, atribuído, mencionado ou direcionado a Todos.
+ */
+export function filterDashboardRemindersForToday(
+  reminders: Reminder[],
+  currentUserId?: string | null,
+  todayStr: string = getLocalDateStr(),
+  todayDow: number = getLocalDayOfWeek()
+): Reminder[] {
+  if (!currentUserId) return []
+
+  return reminders
+    .filter((r) => {
+      if (r.status === 'Concluído' || r.status === 'Cancelado') return false
+
+      const isRelated =
+        r.creator_id === currentUserId ||
+        r.assigned_user_id === currentUserId ||
+        isReminderForAllUsers(r) ||
+        Boolean(
+          r.reminder_mentions?.some(
+            (m) => m.user_id === currentUserId || m.user_id === 'ALL'
+          )
+        )
+
+      if (!isRelated) return false
+
+      if (r.is_recurring) {
+        if (r.recurrence_type === 'daily') return true
+        if (Array.isArray(r.recurrence_config?.days) && r.recurrence_config.days.length > 0) {
+          return r.recurrence_config.days.some((d: any) => Number(d) === todayDow)
+        }
+        return r.due_date === todayStr
+      }
+
+      return r.due_date === todayStr
+    })
+    .sort((a, b) => (a.due_time || '99:99').localeCompare(b.due_time || '99:99'))
+}
+
+/**
  * Indica se a notificação em modal de um lembrete deve expirar automaticamente
  * (lembrete concluído/cancelado ou lembrete pontual de data já passada).
  */
