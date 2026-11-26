@@ -7,8 +7,9 @@ async function fetchWithSslBypass(url: string, options: RequestInit): Promise<Re
   // Só aplica o bypass no Node.js (server-side), não no browser
   if (typeof window === 'undefined' && url.includes('w-api.app')) {
     try {
-      // Usa undici (embutido no Node.js 18+) com rejectUnauthorized: false
-      const { Agent } = await import('undici' as any);
+      // Usa undici (embutido no Node.js 18+) com rejectUnauthorized: false apenas no servidor
+      const modName = 'undici';
+      const { Agent } = await import(/* @vite-ignore */ modName);
       const agent = new Agent({ connect: { rejectUnauthorized: false } });
       return fetch(url, { ...options, dispatcher: agent } as any);
     } catch {

@@ -36,6 +36,24 @@ export default defineConfig({
     define: {
       __APP_VERSION__: JSON.stringify(appVersion)
     },
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+              return 'charts';
+            }
+            if (id.includes('node_modules/exceljs') || id.includes('node_modules/xlsx')) {
+              return 'excel-vendor';
+            }
+            if (id.includes('node_modules/jspdf') || id.includes('node_modules/jspdf-autotable') || id.includes('node_modules/html2canvas')) {
+              return 'pdf-vendor';
+            }
+          }
+        }
+      }
+    },
     plugins: [
       generateVersionPlugin(),
       VitePWA({

@@ -19,7 +19,8 @@ interface WhatsAppProxyRequest {
 async function fetchWithSslBypass(url: string, options: RequestInit): Promise<Response> {
   if (url.includes("w-api.app") || url.includes("painel.w-api.app")) {
     try {
-      const { Agent } = await import("undici");
+      const modName = "undici";
+      const { Agent } = await import(/* @vite-ignore */ modName);
       const agent = new Agent({ connect: { rejectUnauthorized: false } });
       return fetch(url, { ...options, dispatcher: agent } as any);
     } catch {
