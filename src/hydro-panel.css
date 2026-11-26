@@ -80,11 +80,8 @@ a{text-decoration:none} button{font:inherit;cursor:pointer}
 .nav-item.active svg{color:#1A1400}
 .nav-badge{margin-left:auto;background:var(--yellow);color:#1A1400;font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:grid;place-items:center;padding:0 6px}
 .nav-item.active .nav-badge{background:#0B0B0C;color:#FFFFFF}
-.sidebar-foot{margin-top:auto;background:linear-gradient(160deg,#FFD84D,var(--yellow));color:#1A1400;border-radius:14px;padding:16px;position:relative;z-index:1;overflow:hidden}
-.sidebar-foot:after{content:"";position:absolute;right:-18px;bottom:-22px;width:84px;height:84px;border-radius:50%;background:rgba(11,11,12,.10)}
-.sidebar-foot svg{width:24px;height:24px;color:#1A1400}
-.sidebar-foot p{margin:8px 0 0;font-size:13.5px;line-height:1.45;font-weight:700;position:relative;z-index:1}
-.sidebar-foot small{display:block;margin-top:6px;color:#4A3D00;font-weight:500;font-size:12px;position:relative;z-index:1}
+.sidebar-foot{margin-top:auto;background:transparent;border-radius:10px;padding:0;position:relative;z-index:1;overflow:hidden;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.sidebar-foot-img{display:block;width:100%;height:auto;border-radius:10px;object-fit:cover;user-select:none;-webkit-user-drag:none}
 
 /* ---------- BOTÃO PEQUENO DE ESCONDER / EXPANDIR A BARRA ---------- */
 /* Botãozinho redondo amarelo sentado na borda direita da barra, na altura
@@ -608,22 +605,19 @@ footer .foot-brand{text-align:right} footer .foot-brand span{display:block;margi
 @media(max-width:520px){.people{grid-template-columns:1fr}.hero-content{padding:22px 18px}.hero{min-height:0}.weather-main b{font-size:36px}.meeting-top time{margin-left:0}}
 /* Telas baixas: a barra fixa se compacta para caber inteira sem precisar rolar */
 @media(min-width:901px) and (max-height:840px){
-  .sidebar{--sb-pr:14px;padding:18px var(--sb-pr) 16px 14px;gap:4px}
-  .brand{padding-bottom:12px}
-  .nav-label{padding:9px 10px 4px}
-  .nav-item{padding:8px 12px;font-size:14px}
-  .sidebar-foot{padding:13px}
-  .sidebar-foot p{font-size:12.5px}
+  .sidebar{--sb-pr:14px;padding:18px var(--sb-pr) 14px 14px;gap:4px}
+  .brand{padding-bottom:10px}
+  .nav-label{padding:8px 10px 4px}
+  .nav-item{padding:7px 12px;font-size:14px}
+  .sidebar-foot{padding:0}
 }
-@media(min-width:901px) and (max-height:700px){
-  .sidebar{--sb-pr:12px;padding:14px var(--sb-pr) 12px 12px}
-  .brand{padding-bottom:8px}
+@media(min-width:901px) and (max-height:760px){
+  .sidebar{--sb-pr:12px;padding:12px var(--sb-pr) 10px 12px;gap:2px}
+  .brand{padding-bottom:6px}
   .brand-name b{font-size:19px}
-  .nav-label{padding:6px 10px 3px}
-  .nav-item{padding:6px 12px;font-size:13.5px}
-  .sidebar-foot{padding:11px 13px}
-  .sidebar-foot small{display:none}
-  .sidebar-foot p{margin-top:5px}
+  .nav-label{padding:5px 10px 2px}
+  .nav-item{padding:5.5px 12px;font-size:13.5px}
+  .sidebar-foot{padding:0}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
@@ -1194,28 +1188,12 @@ html.dark .topbar-wrapper,
   /* Rodapé completo do menu lateral no mobile */
   .sidebar .sidebar-foot {
     display: block !important;
-    margin-top: 14px !important;
-    background: linear-gradient(160deg, #FFD84D, var(--yellow)) !important;
-    color: #1A1400 !important;
-    border-radius: 14px !important;
-    padding: 14px !important;
+    margin-top: 12px !important;
+    background: transparent !important;
+    border-radius: 10px !important;
+    padding: 0 !important;
     position: relative !important;
     overflow: hidden !important;
-  }
-
-  .sidebar .sidebar-foot p {
-    font-size: 12.5px !important;
-    font-weight: 700 !important;
-    line-height: 1.4 !important;
-    margin: 6px 0 0 !important;
-  }
-
-  .sidebar .sidebar-foot small {
-    display: block !important;
-    font-size: 11px !important;
-    font-weight: 500 !important;
-    color: #4A3D00 !important;
-    margin-top: 4px !important;
   }
 
   /* Botão amarelo flutuante de toggle no mobile */

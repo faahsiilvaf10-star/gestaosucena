@@ -383,12 +383,12 @@ export function HydroSidebar({ isSidebarCollapsed, setIsSidebarCollapsed }: Hydr
         </div>
 
         <div className="sidebar-foot">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z" />
-            <path d="m9 11.5 2 2 4-4" />
-          </svg>
-          <p>Juntos por um ambiente mais seguro</p>
-          <small>Segurança é responsabilidade de todos, todos os dias.</small>
+          <img
+            src="/layout/sidebar-seguranca-card.jpg"
+            alt="Juntos por um ambiente mais seguro — Segurança é responsabilidade de todos!"
+            className="sidebar-foot-img"
+            loading="eager"
+          />
         </div>
       </aside>
       <ModalCacaPalavras
