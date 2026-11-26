@@ -3,6 +3,7 @@ import { getRdoIcon } from './rdoIconMap';
 import Hash from 'lucide-react/dist/esm/icons/hash.js';
 import Ruler from 'lucide-react/dist/esm/icons/ruler.js';
 import { CheckCircle2, Circle, Pencil, Trash2, ChevronDown, ChevronUp, Layers, CheckSquare, Square } from 'lucide-react';
+import { splitBermaElevado } from '@/lib/rdoLocations';
 
 export interface SubAtividadeItem {
   id: string;
@@ -13,6 +14,7 @@ export interface SubAtividadeItem {
   unidade?: string;
   faixa?: string;
   berma?: string;
+  elevado?: string;
   detalhe?: string;
 }
 
@@ -203,16 +205,20 @@ export function ActivityCard({ atividade, onToggleComplete, onToggleSubItem, onE
                       <span className="font-semibold truncate">{item.nome}</span>
                     </div>
 
-                    {item.tipo === 'medicao' && item.valor && (
-                      <span className="text-[11px] font-bold shrink-0">
-                        {item.valor} {item.unidade || ''}
-                        {(item.faixa || item.berma) && (
-                          <span className="text-[10px] font-normal opacity-80 ml-1">
-                            ({[item.faixa, item.berma].filter(Boolean).join(', ')})
-                          </span>
-                        )}
-                      </span>
-                    )}
+                    {item.tipo === 'medicao' && item.valor && (() => {
+                      const { berma, elevado } = splitBermaElevado(item.berma, item.elevado);
+                      const locParts = [item.faixa, berma, elevado].filter(Boolean);
+                      return (
+                        <span className="text-[11px] font-bold shrink-0">
+                          {item.valor} {item.unidade || ''}
+                          {locParts.length > 0 && (
+                            <span className="text-[10px] font-normal opacity-80 ml-1">
+                              ({locParts.join(', ')})
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </button>
                 ))}
               </div>

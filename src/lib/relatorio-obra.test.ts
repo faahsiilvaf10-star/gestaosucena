@@ -1,59 +1,106 @@
 import { describe, it, expect } from 'vitest';
+import {
+  BERMAS_OPTIONS,
+  ELEVADOS_OPTIONS,
+  normalizeBermaElevado,
+  splitBermaElevado,
+  formatBermaElevadoPair,
+  formatRdoLocation,
+} from './rdoLocations';
 
-describe('Atividades RDO Gabião e Jardinagem - Elevado e Berma', () => {
-  const bermas = [
-    ...Array.from({length: 32}, (_, i) => {
-      const num = i + 26;
-      return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
-    }),
-    'MIRANTE',
-    'GABIÃO 1',
-    'GABIÃO 2',
-    'GABIÃO 3'
-  ];
+describe('Atividades RDO Gabião, Jardinagem, Módulos e RDO Principal - Berma e Elevado separados', () => {
+  it('deve separar corretamente Bermas (pares + locais especiais) de Elevados (ímpares)', () => {
+    expect(BERMAS_OPTIONS.length).toBe(16 + 4);
+    expect(ELEVADOS_OPTIONS.length).toBe(16);
 
-  it('deve conter 32 itens numerados de 26 a 57 mais os locais especiais', () => {
-    expect(bermas.length).toBe(32 + 4);
-    expect(bermas).toContain('Berma 26');
-    expect(bermas).toContain('Elevado 27');
-    expect(bermas).toContain('Berma 56');
-    expect(bermas).toContain('Elevado 57');
-    expect(bermas).toContain('MIRANTE');
-    expect(bermas).toContain('GABIÃO 1');
-    expect(bermas).toContain('GABIÃO 2');
-    expect(bermas).toContain('GABIÃO 3');
-  });
-
-  it('todos os números pares devem ser Berma e ímpares devem ser Elevado', () => {
     for (let n = 26; n <= 57; n++) {
       if (n % 2 === 0) {
-        expect(bermas).toContain(`Berma ${n}`);
-        expect(bermas).not.toContain(`Elevado ${n}`);
+        expect(BERMAS_OPTIONS).toContain(`Berma ${n}`);
+        expect(ELEVADOS_OPTIONS).not.toContain(`Berma ${n}`);
+        expect(ELEVADOS_OPTIONS).not.toContain(`Elevado ${n}`);
       } else {
-        expect(bermas).toContain(`Elevado ${n}`);
-        expect(bermas).not.toContain(`Berma ${n}`);
+        expect(ELEVADOS_OPTIONS).toContain(`Elevado ${n}`);
+        expect(BERMAS_OPTIONS).not.toContain(`Elevado ${n}`);
+        expect(BERMAS_OPTIONS).not.toContain(`Berma ${n}`);
       }
     }
+
+    expect(BERMAS_OPTIONS).toContain('MIRANTE');
+    expect(BERMAS_OPTIONS).toContain('GABIÃO 1');
+    expect(BERMAS_OPTIONS).toContain('GABIÃO 2');
+    expect(BERMAS_OPTIONS).toContain('GABIÃO 3');
   });
 
   it('normalizador deve converter formatos legados corretamente', () => {
-    const normalize = (val: string) => {
-      if (!val || val === 'Nenhum') return val;
-      const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
-      if (match) {
-        const n = parseInt(match[1], 10);
-        return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
-      }
-      return val;
-    };
+    expect(normalizeBermaElevado('Berma 41')).toBe('Elevado 41');
+    expect(normalizeBermaElevado('Berma 42')).toBe('Berma 42');
+    expect(normalizeBermaElevado('41')).toBe('Elevado 41');
+    expect(normalizeBermaElevado('56')).toBe('Berma 56');
+    expect(normalizeBermaElevado('57')).toBe('Elevado 57');
+    expect(normalizeBermaElevado('MIRANTE')).toBe('MIRANTE');
+    expect(normalizeBermaElevado('GABIÃO 1')).toBe('GABIÃO 1');
+    expect(normalizeBermaElevado('Nenhum')).toBe('');
+    expect(normalizeBermaElevado('Nenhuma')).toBe('');
+  });
 
-    expect(normalize('Berma 41')).toBe('Elevado 41');
-    expect(normalize('Berma 42')).toBe('Berma 42');
-    expect(normalize('41')).toBe('Elevado 41');
-    expect(normalize('56')).toBe('Berma 56');
-    expect(normalize('57')).toBe('Elevado 57');
-    expect(normalize('MIRANTE')).toBe('MIRANTE');
-    expect(normalize('GABIÃO 1')).toBe('GABIÃO 1');
+  it('splitBermaElevado deve suportar Berma e Elevado juntos, isolados e registros legados', () => {
+    // Ambos preenchidos (caso da imagem: Berma 36 + Elevado 37)
+    expect(splitBermaElevado('Berma 36', 'Elevado 37')).toEqual({
+      berma: 'Berma 36',
+      elevado: 'Elevado 37',
+    });
+
+    // Somente Berma
+    expect(splitBermaElevado('Berma 36', '')).toEqual({
+      berma: 'Berma 36',
+      elevado: '',
+    });
+
+    // Somente Elevado (novo campo)
+    expect(splitBermaElevado('', 'Elevado 37')).toEqual({
+      berma: '',
+      elevado: 'Elevado 37',
+    });
+
+    // Legado Jardinagem/Módulo onde Elevado ficava salvo dentro do campo berma
+    expect(splitBermaElevado('Elevado 37', undefined)).toEqual({
+      berma: '',
+      elevado: 'Elevado 37',
+    });
+    expect(splitBermaElevado('Berma 41', undefined)).toEqual({
+      berma: '',
+      elevado: 'Elevado 41',
+    });
+
+    // Legado Gabião onde Berma/MIRANTE ficava salvo dentro de localElevado
+    expect(splitBermaElevado(undefined, 'Berma 36')).toEqual({
+      berma: 'Berma 36',
+      elevado: '',
+    });
+    expect(splitBermaElevado(undefined, 'MIRANTE')).toEqual({
+      berma: 'MIRANTE',
+      elevado: '',
+    });
+
+    // Nenhum selecionado
+    expect(splitBermaElevado('Nenhuma', 'Nenhum')).toEqual({
+      berma: '',
+      elevado: '',
+    });
+  });
+
+  it('formatBermaElevadoPair e formatRdoLocation devem formatar para atividades e RDO principal', () => {
+    expect(formatBermaElevadoPair('Berma 36', 'Elevado 37')).toBe('Berma 36 e Elevado 37');
+    expect(formatBermaElevadoPair('Berma 36', '')).toBe('Berma 36');
+    expect(formatBermaElevadoPair('', 'Elevado 37')).toBe('Elevado 37');
+
+    expect(formatRdoLocation('Faixa 5', 'Berma 36', 'Elevado 37')).toBe(
+      'Faixa 5 Berma 36 e Elevado 37'
+    );
+    expect(formatRdoLocation('Faixa 5', 'Berma 36', '')).toBe('Faixa 5 Berma 36');
+    expect(formatRdoLocation('Faixa 5', '', 'Elevado 37')).toBe('Faixa 5 Elevado 37');
+    expect(formatRdoLocation('', 'Berma 36', 'Elevado 37')).toBe('Berma 36 e Elevado 37');
+    expect(formatRdoLocation('Faixa 5', '', '')).toBe('Faixa 5');
   });
 
   it('máscara de contagem em m² deve ser inteira com ponto e sem vírgula, igual roçagem', () => {

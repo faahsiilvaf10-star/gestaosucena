@@ -20,6 +20,7 @@ import type { CustomRdoDailyData } from '@/types/rdoCustomModule'
 import { isVehicle } from '@/lib/equipamentos/equipmentTypes'
 import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData'
 import { isFeriadoHydro } from '@/lib/calendarioHydro'
+import { formatRdoLocation, splitBermaElevado } from '@/lib/rdoLocations'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -811,24 +812,14 @@ function RDOPage() {
     
     const d = jardinagemData;
     
-    const formatBerma = (b?: string) => {
-      if (!b) return '';
-      const match = b.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
-      if (match) {
-        const n = parseInt(match[1], 10);
-        return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
-      }
-      return b;
-    };
-    
     const addRows = (title: string, data: any[], unit: string) => {
       if (!data) return;
       const valid = data.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        const b = formatBerma(row.berma);
+        const loc = formatRdoLocation(row.faixa, row.berma, row.elevado);
         const cleanVal = String(row.value).replace(/,00$/, '');
         const obsStr = row.observacao && String(row.observacao).trim() ? ` (Obs: ${String(row.observacao).trim()})` : '';
-        lines.push(`* ${title}: ${cleanVal} ${unit} - ${row.faixa}${b ? ` ${b}` : ''}${obsStr}`);
+        lines.push(`* ${title}: ${cleanVal} ${unit}${loc ? ` - ${loc}` : ''}${obsStr}`);
       });
     }
 
@@ -842,8 +833,8 @@ function RDOPage() {
     if (d.plantio) {
       const valid = d.plantio.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        const b = formatBerma(row.berma);
-        lines.push(`* Plantio (${row.especie}): ${row.value} unid - ${row.faixa}${b ? ` ${b}` : ''}`);
+        const loc = formatRdoLocation(row.faixa, row.berma, row.elevado);
+        lines.push(`* Plantio (${row.especie}): ${row.value} unid${loc ? ` - ${loc}` : ''}`);
       });
     }
     
@@ -853,8 +844,8 @@ function RDOPage() {
     if (d.invasoras) {
       const valid = d.invasoras.filter((x:any) => x.value && x.value !== '0' && x.value !== '0,00' && x.value !== '0.00');
       valid.forEach((row:any) => {
-        const b = formatBerma(row.berma);
-        lines.push(`* Retirada de Invasoras (${row.nome}): ${row.value} m² - ${row.faixa}${b ? ` ${b}` : ''}`);
+        const loc = formatRdoLocation(row.faixa, row.berma, row.elevado);
+        lines.push(`* Retirada de Invasoras (${row.nome}): ${row.value} m²${loc ? ` - ${loc}` : ''}`);
       });
     }
     
@@ -862,8 +853,8 @@ function RDOPage() {
     addRows('Plantio de Grama', d.plantioGrama, 'm²');
     
     if (d.outrasDesc && d.outrasDesc.trim() !== '') {
-      const b = formatBerma(d.outrasBerma);
-      lines.push(`* ${d.outrasDesc.trim()} - ${d.outrasFaixa}${b ? ` ${b}` : ''}`);
+      const loc = formatRdoLocation(d.outrasFaixa, d.outrasBerma, d.outrasElevado);
+      lines.push(`* ${d.outrasDesc.trim()}${loc ? ` - ${loc}` : ''}`);
     }
     
     if (d.canteiroDesc && d.canteiroDesc.trim() !== '') {
@@ -911,18 +902,18 @@ function RDOPage() {
     let lines = [];
     const d = gabiaoData;
     
-    if (d.localFaixa) {
-      const formatElevado = (val?: string) => {
-        if (!val || val === 'Nenhum') return '';
-        const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
-        if (match) {
-          const n = parseInt(match[1], 10);
-          return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
-        }
-        return val;
-      };
-      const elStr = formatElevado(d.localElevado);
-      lines.push(`📍 Local: ${d.localFaixa}${d.localFase && d.localFase !== 'Nenhuma' ? ` - ${d.localFase}` : ''}${elStr ? ` - ${elStr}` : ''}`);
+    const { berma: gBerma, elevado: gElevado } = splitBermaElevado(
+      d.localBerma === 'Nenhuma' ? '' : d.localBerma,
+      d.localElevado === 'Nenhum' ? '' : d.localElevado
+    );
+    if (d.localFaixa || gBerma || gElevado || (d.localFase && d.localFase !== 'Nenhuma')) {
+      const localParts = [
+        d.localFaixa,
+        d.localFase && d.localFase !== 'Nenhuma' ? d.localFase : '',
+        gBerma,
+        gElevado,
+      ].filter(Boolean);
+      lines.push(`📍 Local: ${localParts.join(' - ')}`);
       lines.push('');
     }
     
@@ -976,8 +967,10 @@ function RDOPage() {
     const lines: string[] = [];
 
     const locParts: string[] = [];
+    const { berma: locB, elevado: locE } = splitBermaElevado(d.localBerma, d.localElevado);
     if (!isCivil && d.localFaixa) locParts.push(`Faixa: ${d.localFaixa}`);
-    if (!isCivil && d.localElevado) locParts.push(`Local: ${d.localElevado}`);
+    if (!isCivil && locB) locParts.push(`Berma: ${locB}`);
+    if (!isCivil && locE) locParts.push(`Elevado: ${locE}`);
     if (locParts.length > 0) {
       lines.push(`📍 Localização: ${locParts.join(' | ')}`);
     }
@@ -988,9 +981,11 @@ function RDOPage() {
       if (it.tipo === 'medicao' && it.valor) {
         itemLine += `: ${it.valor} ${it.unidade || 'm²'}`;
       }
+      const { berma: itB, elevado: itE } = splitBermaElevado(it.berma, it.elevado);
       const loc: string[] = [];
       if (!isCivil && it.faixa) loc.push(it.faixa);
-      if (!isCivil && it.berma) loc.push(it.berma);
+      if (!isCivil && itB) loc.push(itB);
+      if (!isCivil && itE) loc.push(itE);
       if (loc.length > 0) itemLine += ` (${loc.join(' - ')})`;
       if (it.detalhe) itemLine += ` - ${it.detalhe}`;
       lines.push(itemLine);
@@ -1443,7 +1438,9 @@ function RDOPage() {
                         {markedSubItens.length > 0 ? (
                           <div className="ml-4 mt-1 space-y-0.5 text-xs sm:text-sm font-normal text-gray-700">
                             {markedSubItens.map(si => {
-                              const bStr = !isCivil && si.berma ? ` (${si.berma})` : '';
+                              const { berma: siBerma, elevado: siElevado } = splitBermaElevado(si.berma, si.elevado);
+                              const beParts = [siBerma, siElevado].filter(Boolean);
+                              const bStr = !isCivil && beParts.length > 0 ? ` (${beParts.join(', ')})` : '';
                               const fStr = !isCivil && si.faixa ? ` - ${si.faixa}` : '';
                               const vStr = si.tipo === 'medicao' && si.valor ? `: ${si.valor} ${si.unidade || 'm²'}` : '';
                               const dStr = si.detalhe ? ` (${si.detalhe})` : '';

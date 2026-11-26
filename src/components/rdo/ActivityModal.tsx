@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner';
 import { IconSelector } from './IconPicker';
 import { RdoAtividade, SubAtividadeItem, getSubItens } from './ActivityCard';
+import { BERMAS_OPTIONS, ELEVADOS_OPTIONS, splitBermaElevado } from '@/lib/rdoLocations';
 
 interface ActivityModalProps {
   isOpen: boolean;
@@ -58,19 +59,8 @@ const SUGESTOES_AREAS = [
   'Drenagem',
 ];
 
-// Faixas e Bermas (idêntico à Jardinagem)
+// Faixas (idêntico à Jardinagem)
 const FAIXAS = ['Faixa 1', 'Faixa 2', 'Faixa 3', 'Faixa 4', 'Faixa 5'];
-
-const BERMAS = [
-  ...Array.from({ length: 32 }, (_, i) => {
-    const num = i + 26;
-    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
-  }),
-  'MIRANTE',
-  'GABIÃO 1',
-  'GABIÃO 2',
-  'GABIÃO 3',
-];
 
 // Modelos rápidos de sub-atividades
 const TEMPLATES_SUBATIVIDADES = [
@@ -120,8 +110,11 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
           concluido: atividade.concluido || false,
         });
 
-        // Carregar sub-atividades salvas
-        const savedSub = getSubItens(atividade);
+        // Carregar sub-atividades salvas normalizando Berma/Elevado legados
+        const savedSub = getSubItens(atividade).map(item => {
+          const { berma, elevado } = splitBermaElevado(item.berma, item.elevado);
+          return { ...item, berma, elevado };
+        });
         setSubItens(savedSub);
       } else {
         setFormData({
@@ -172,6 +165,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
       valor: '',
       faixa: '',
       berma: '',
+      elevado: '',
       detalhe: '',
     };
     setSubItens(prev => [...prev, newItem]);
@@ -218,7 +212,8 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
       } else {
         const val = item.valor?.trim() || '0';
         const un = item.unidade || 'm²';
-        const locParts = [item.faixa, item.berma].filter(Boolean);
+        const { berma, elevado } = splitBermaElevado(item.berma, item.elevado);
+        const locParts = [item.faixa, berma, elevado].filter(Boolean);
         const locStr = locParts.length > 0 ? ` (${locParts.join(' - ')})` : '';
         lines.push(`• ${item.nome.trim()}: ${val} ${un}${locStr}`);
       }
@@ -499,7 +494,7 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                               type="button"
                               onClick={() => handleUpdateSubItem(item.id, { tipo: 'medicao' })}
                               className="text-[11px] px-2.5 py-1 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-white/5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 transition-colors whitespace-nowrap cursor-pointer shrink-0"
-                              title="Adicionar medição (m², faixa, berma)"
+                              title="Adicionar medição (m², faixa, berma, elevado)"
                             >
                               + Medição
                             </button>
@@ -525,20 +520,20 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                           </button>
                         </div>
 
-                        {/* Se for com medição (conforme Jardinagem: Faixa, Berma, Valor) */}
+                        {/* Se for com medição (conforme Jardinagem: Faixa, Berma, Elevado, Valor) */}
                         {item.tipo === 'medicao' && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-gray-100 dark:border-white/5 animate-in fade-in duration-200">
+                          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 pt-2 border-t border-gray-100 dark:border-white/5 animate-in fade-in duration-200">
                             <input
                               type="text"
                               value={item.valor || ''}
                               onChange={e => handleUpdateSubItem(item.id, { valor: e.target.value })}
                               placeholder="Valor (ex: 150)"
-                              className="px-2.5 py-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs font-mono outline-none"
+                              className="col-span-1 sm:col-span-2 px-2.5 py-1.5 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs font-mono outline-none"
                             />
                             <select
                               value={item.unidade || 'm²'}
                               onChange={e => handleUpdateSubItem(item.id, { unidade: e.target.value })}
-                              className="px-2 py-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
+                              className="col-span-1 sm:col-span-2 px-2 py-1.5 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
                             >
                               {UNIDADES.map(u => (
                                 <option key={u.value} value={u.value}>
@@ -547,9 +542,10 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                               ))}
                             </select>
                             <select
+                              aria-label="Faixa"
                               value={item.faixa || ''}
                               onChange={e => handleUpdateSubItem(item.id, { faixa: e.target.value })}
-                              className="px-2 py-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
+                              className="col-span-2 sm:col-span-2 px-2 py-1.5 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
                             >
                               <option value="">Faixa (opc)</option>
                               {FAIXAS.map(f => (
@@ -559,14 +555,28 @@ export function ActivityModal({ isOpen, onClose, onSave, atividade, dataAtual }:
                               ))}
                             </select>
                             <select
+                              aria-label="Berma"
                               value={item.berma || ''}
                               onChange={e => handleUpdateSubItem(item.id, { berma: e.target.value })}
-                              className="px-2 py-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
+                              className="col-span-1 sm:col-span-3 px-2 py-1.5 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
                             >
-                              <option value="">Berma/Elevado</option>
-                              {BERMAS.map(b => (
+                              <option value="">Berma</option>
+                              {BERMAS_OPTIONS.map(b => (
                                 <option key={b} value={b}>
                                   {b}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              aria-label="Elevado"
+                              value={item.elevado || ''}
+                              onChange={e => handleUpdateSubItem(item.id, { elevado: e.target.value })}
+                              className="col-span-1 sm:col-span-3 px-2 py-1.5 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-md text-xs outline-none cursor-pointer"
+                            >
+                              <option value="">Elevado</option>
+                              {ELEVADOS_OPTIONS.map(el => (
+                                <option key={el} value={el}>
+                                  {el}
                                 </option>
                               ))}
                             </select>

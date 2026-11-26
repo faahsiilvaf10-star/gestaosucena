@@ -33,6 +33,11 @@ import {
   JardinagemActivityType
 } from '../../lib/jardinagemRocagem'
 import { HistoricoRocagemTab } from '../../components/jardinagem/HistoricoRocagemTab'
+import {
+  BERMAS_OPTIONS,
+  ELEVADOS_OPTIONS,
+  splitBermaElevado,
+} from '../../lib/rdoLocations'
 
 const maskNumber = (val: string, isFloat: boolean) => {
   if (!isFloat) {
@@ -62,26 +67,6 @@ export const Route = createFileRoute('/relatorio-obra/jardinagem')({
 })
 
 const faixas = Array.from({length: 4}, (_, i) => i + 2);
-const bermas = [
-  ...Array.from({length: 32}, (_, i) => {
-    const num = i + 26;
-    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
-  }),
-  'MIRANTE',
-  'GABIÃO 1',
-  'GABIÃO 2',
-  'GABIÃO 3'
-];
-
-const normalizeBermaElevado = (val: string) => {
-  if (!val) return val;
-  const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
-  if (match) {
-    const n = parseInt(match[1], 10);
-    return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
-  }
-  return val;
-};
 
 // Generic Row Component
 function ActivityRow({ 
@@ -105,7 +90,7 @@ function ActivityRow({
   extraFooter?: React.ReactNode;
   allowObservacao?: boolean;
 }) {
-  const addRow = () => setData([...data, {value: '', faixa: '', berma: '', observacao: ''}]);
+  const addRow = () => setData([...data, {value: '', faixa: '', berma: '', elevado: '', observacao: ''}]);
   
   return (
     <div className={`p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm ${containerClassName}`}>
@@ -121,51 +106,71 @@ function ActivityRow({
       {extraHeader}
       {data.map((row, idx) => (
         <div key={idx} className="flex flex-col gap-2 p-3 rounded-xl bg-gray-50/70 border border-gray-200/80 transition-all">
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <div className="flex-1 w-full relative">
+          <div className="flex flex-col xl:flex-row gap-2.5 items-stretch xl:items-center">
+            <div className="flex-1 min-w-[100px] relative">
               <input 
                 type="text"
                 inputMode="numeric"
                 value={row.value}
                 onChange={(e) => {
                   const newData = [...data];
-                  newData[idx].value = maskNumber(e.target.value, isFloat);
+                  newData[idx] = { ...newData[idx], value: maskNumber(e.target.value, isFloat) };
                   setData(newData);
                 }}
                 className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors placeholder-gray-400 font-medium"
                 placeholder={isFloat ? "0,00" : "0"}
               />
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-32">
-                <select
-                  value={row.faixa}
-                  onChange={(e) => {
-                    const newData = [...data];
-                    newData[idx].faixa = e.target.value;
-                    setData(newData);
-                  }}
-                  className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="">Faixa</option>
-                  {faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
-              </div>
-              <div className="relative flex-1 sm:w-32">
-                <select
-                  value={row.berma}
-                  onChange={(e) => {
-                    const newData = [...data];
-                    newData[idx].berma = e.target.value;
-                    setData(newData);
-                  }}
-                  className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="">Elevado/Berma</option>
-                  {bermas.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+            <div className="flex items-center gap-2 w-full xl:w-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex gap-2.5 flex-1">
+                <div className="relative col-span-2 sm:col-span-1 xl:w-28">
+                  <select
+                    value={row.faixa || ''}
+                    onChange={(e) => {
+                      const newData = [...data];
+                      newData[idx] = { ...newData[idx], faixa: e.target.value };
+                      setData(newData);
+                    }}
+                    aria-label="Faixa"
+                    className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="">Faixa</option>
+                    {faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                </div>
+                <div className="relative xl:w-32">
+                  <select
+                    value={row.berma || ''}
+                    onChange={(e) => {
+                      const newData = [...data];
+                      newData[idx] = { ...newData[idx], berma: e.target.value };
+                      setData(newData);
+                    }}
+                    aria-label="Berma"
+                    className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="">Berma</option>
+                    {BERMAS_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                </div>
+                <div className="relative xl:w-36">
+                  <select
+                    value={row.elevado || ''}
+                    onChange={(e) => {
+                      const newData = [...data];
+                      newData[idx] = { ...newData[idx], elevado: e.target.value };
+                      setData(newData);
+                    }}
+                    aria-label="Elevado"
+                    className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="">Elevado</option>
+                    {ELEVADOS_OPTIONS.map(el => <option key={el} value={el}>{el}</option>)}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                </div>
               </div>
               {data.length > 1 && (
                 <button
@@ -175,7 +180,7 @@ function ActivityRow({
                     setData(newData);
                   }}
                   title="Remover linha"
-                  className="text-gray-400 hover:text-red-500 p-2.5 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                  className="text-gray-400 hover:text-red-500 p-2.5 rounded-xl hover:bg-red-50 transition-colors cursor-pointer shrink-0"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -194,7 +199,7 @@ function ActivityRow({
                 value={row.observacao || ''}
                 onChange={(e) => {
                   const newData = [...data];
-                  newData[idx].observacao = e.target.value;
+                  newData[idx] = { ...newData[idx], observacao: e.target.value };
                   setData(newData);
                 }}
                 placeholder="Observação da limpeza manual (opcional, ex.: trecho específico, detalhes...)"
@@ -210,21 +215,22 @@ function ActivityRow({
 }
 
 function JardinagemPage() {
-  const [rocagem, setRocagem] = useState([{value: '', faixa: '', berma: ''}]);
-  const [rocagemAsp, setRocagemAsp] = useState([{value: '', faixa: '', berma: ''}]);
-  const [podagem, setPodagem] = useState([{value: '', faixa: '', berma: ''}]);
-  const [cova, setCova] = useState([{value: '', faixa: '', berma: ''}]);
-  const [coroamento, setCoroamento] = useState([{value: '', faixa: '', berma: ''}]);
-  const [adubagem, setAdubagem] = useState([{value: '', faixa: '', berma: ''}]);
-  const [plantio, setPlantio] = useState([{especie: '', value: '', faixa: '', berma: ''}]);
-  const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: '', observacao: ''}]);
-  const [limpezaSoprador, setLimpezaSoprador] = useState([{value: '', faixa: '', berma: ''}]);
-  const [invasoras, setInvasoras] = useState([{nome: '', value: '', berma: '', faixa: ''}]);
-  const [retiradaMudas, setRetiradaMudas] = useState([{value: '', faixa: '', berma: ''}]);
-  const [plantioGrama, setPlantioGrama] = useState([{value: '', faixa: '', berma: ''}]);
+  const [rocagem, setRocagem] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [rocagemAsp, setRocagemAsp] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [podagem, setPodagem] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [cova, setCova] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [coroamento, setCoroamento] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [adubagem, setAdubagem] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [plantio, setPlantio] = useState([{especie: '', value: '', faixa: '', berma: '', elevado: ''}]);
+  const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: '', elevado: '', observacao: ''}]);
+  const [limpezaSoprador, setLimpezaSoprador] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [invasoras, setInvasoras] = useState([{nome: '', value: '', berma: '', elevado: '', faixa: ''}]);
+  const [retiradaMudas, setRetiradaMudas] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
+  const [plantioGrama, setPlantioGrama] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
   
   const [outrasFaixa, setOutrasFaixa] = useState('');
   const [outrasBerma, setOutrasBerma] = useState('');
+  const [outrasElevado, setOutrasElevado] = useState('');
   const [outrasDesc, setOutrasDesc] = useState('');
   
   const [canteiroDesc, setCanteiroDesc] = useState('');
@@ -345,7 +351,7 @@ function JardinagemPage() {
   const handleSave = async () => {
     const dataToSave = {
       rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
-      outrasFaixa, outrasBerma, outrasDesc, canteiroDesc, irrigacaoPipas, irrigacaoApoioPipa, irrigacaoCarretel, irrigacaoCarretelBermas,
+      outrasFaixa, outrasBerma, outrasElevado, outrasDesc, canteiroDesc, irrigacaoPipas, irrigacaoApoioPipa, irrigacaoCarretel, irrigacaoCarretelBermas,
       manutencaoIrrigacao,
       isLocked: true
     };
@@ -403,26 +409,32 @@ function JardinagemPage() {
     }
     
     if (parsed) {
-      const normRows = (rows: any[]) => (rows || []).map(r => ({ 
-        ...r, 
-        value: r.value ? maskNumber(r.value, false) : '',
-        berma: normalizeBermaElevado(r.berma),
-        observacao: r.observacao || ''
-      }));
-      setRocagem(normRows(parsed.rocagem || [{ faixa: '', berma: '', value: '' }]));
-      setRocagemAsp(normRows(parsed.rocagemAsp || [{ faixa: '', berma: '', value: '' }]));
-      setPodagem(normRows(parsed.podagem || [{ faixa: '', berma: '', value: '' }]));
-      setCova(normRows(parsed.cova || [{ faixa: '', berma: '', value: '' }]));
-      setCoroamento(normRows(parsed.coroamento || [{ faixa: '', berma: '', value: '' }]));
-      setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', value: '' }]));
-      setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', value: '', especie: '' }]));
-      setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', value: '', observacao: '' }]));
-      setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', value: '' }]));
-      setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', value: '', nome: '' }]));
-      setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', value: '' }]));
-      setPlantioGrama(normRows(parsed.plantioGrama || [{ faixa: '', berma: '', value: '' }]));
+      const normRows = (rows: any[]) => (rows || []).map(r => {
+        const { berma, elevado } = splitBermaElevado(r.berma, r.elevado);
+        return {
+          ...r, 
+          value: r.value ? maskNumber(r.value, false) : '',
+          berma,
+          elevado,
+          observacao: r.observacao || ''
+        };
+      });
+      setRocagem(normRows(parsed.rocagem || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setRocagemAsp(normRows(parsed.rocagemAsp || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setPodagem(normRows(parsed.podagem || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setCova(normRows(parsed.cova || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setCoroamento(normRows(parsed.coroamento || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', elevado: '', value: '', especie: '' }]));
+      setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', elevado: '', value: '', observacao: '' }]));
+      setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', elevado: '', value: '', nome: '' }]));
+      setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', elevado: '', value: '' }]));
+      setPlantioGrama(normRows(parsed.plantioGrama || [{ faixa: '', berma: '', elevado: '', value: '' }]));
       setOutrasFaixa(parsed.outrasFaixa !== undefined ? parsed.outrasFaixa : '');
-      setOutrasBerma(normalizeBermaElevado(parsed.outrasBerma !== undefined ? parsed.outrasBerma : ''));
+      const { berma: ob, elevado: oe } = splitBermaElevado(parsed.outrasBerma, parsed.outrasElevado);
+      setOutrasBerma(ob);
+      setOutrasElevado(oe);
       setOutrasDesc(parsed.outrasDesc !== undefined ? parsed.outrasDesc : '');
       setCanteiroDesc(parsed.canteiroDesc !== undefined ? parsed.canteiroDesc : '');
       setIrrigacaoPipas(parsed.irrigacaoPipas || false);
@@ -433,20 +445,21 @@ function JardinagemPage() {
       setIsLocked(parsed.isLocked !== false);
       setShowHistory(false);
     } else {
-      setRocagem([{ faixa: '', berma: '', value: '' }]);
-      setRocagemAsp([{ faixa: '', berma: '', value: '' }]);
-      setPodagem([{ faixa: '', berma: '', value: '' }]);
-      setCova([{ faixa: '', berma: '', value: '' }]);
-      setCoroamento([{ faixa: '', berma: '', value: '' }]);
-      setAdubagem([{ faixa: '', berma: '', value: '' }]);
-      setPlantio([{ faixa: '', berma: '', value: '', especie: '' }]);
-      setLimpezaManual([{ faixa: '', berma: '', value: '', observacao: '' }]);
-      setLimpezaSoprador([{ faixa: '', berma: '', value: '' }]);
-      setInvasoras([{ faixa: '', berma: '', value: '', nome: '' }]);
-      setRetiradaMudas([{ faixa: '', berma: '', value: '' }]);
-      setPlantioGrama([{ faixa: '', berma: '', value: '' }]);
+      setRocagem([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setRocagemAsp([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setPodagem([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setCova([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setCoroamento([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setAdubagem([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setPlantio([{ faixa: '', berma: '', elevado: '', value: '', especie: '' }]);
+      setLimpezaManual([{ faixa: '', berma: '', elevado: '', value: '', observacao: '' }]);
+      setLimpezaSoprador([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setInvasoras([{ faixa: '', berma: '', elevado: '', value: '', nome: '' }]);
+      setRetiradaMudas([{ faixa: '', berma: '', elevado: '', value: '' }]);
+      setPlantioGrama([{ faixa: '', berma: '', elevado: '', value: '' }]);
       setOutrasFaixa('');
       setOutrasBerma('');
+      setOutrasElevado('');
       setOutrasDesc('');
       setCanteiroDesc('');
       setIrrigacaoPipas(false);
@@ -516,12 +529,18 @@ function JardinagemPage() {
     isFilled(invasoras) || isFilled(retiradaMudas) || isFilled(plantioGrama) || 
     outrasDesc.trim() !== '' || canteiroDesc.trim() !== '' || irrigacaoPipas || irrigacaoApoioPipa || irrigacaoCarretel || manutencaoIrrigacao;
 
+  const formatLocList = (faixa?: string, rawBerma?: string, rawElevado?: string) => {
+    const { berma, elevado } = splitBermaElevado(rawBerma, rawElevado);
+    const loc: string[] = [];
+    if (faixa) loc.push(faixa);
+    if (berma) loc.push(berma);
+    if (elevado) loc.push(elevado);
+    return loc.length > 0 ? ` (${loc.join(', ')})` : '';
+  };
+
   const renderRows = (name: string, data: any[], unit: string) => {
     return data.filter(r => parseNumber(r.value || '0') > 0).map((r, idx) => {
-      let loc = [];
-      if (r.faixa) loc.push(r.faixa);
-      if (r.berma) loc.push(r.berma);
-      const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
+      const locStr = formatLocList(r.faixa, r.berma, r.elevado);
       const cleanVal = String(r.value || '').replace(/,00$/, '');
       const obsStr = r.observacao && String(r.observacao).trim() ? ` - Obs: ${String(r.observacao).trim()}` : '';
       return <div key={`${name}-${idx}`}>- {name}: {cleanVal} {unit}{locStr}{obsStr}</div>
@@ -529,33 +548,24 @@ function JardinagemPage() {
   }
 
   const renderPlantio = () => {
-    return plantio.filter(r => parseFloat(r.value || '0') > 0).map((r, idx) => {
-      let loc = [];
-      if (r.faixa) loc.push(r.faixa);
-      if (r.berma) loc.push(r.berma);
-      const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
+    return plantio.filter(r => parseNumber(r.value || '0') > 0).map((r, idx) => {
+      const locStr = formatLocList(r.faixa, r.berma, r.elevado);
       const esp = r.especie ? ` (${r.especie})` : '';
       return <div key={`plantio-${idx}`}>- Plantio{esp}: {r.value} unid{locStr}</div>
     });
   }
 
   const renderInvasoras = () => {
-    return invasoras.filter(r => parseFloat(r.value || '0') > 0).map((r, idx) => {
-      let loc = [];
-      if (r.faixa) loc.push(r.faixa);
-      if (r.berma) loc.push(r.berma);
-      const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
+    return invasoras.filter(r => parseNumber(r.value || '0') > 0).map((r, idx) => {
+      const locStr = formatLocList(r.faixa, r.berma, r.elevado);
       const esp = r.nome ? ` (${r.nome})` : '';
       return <div key={`invasoras-${idx}`}>- Controle de Invasoras{esp}: {r.value} unid{locStr}</div>
     });
   }
 
-  const renderTextActivity = (name: string, desc: string, faixa: string, berma: string) => {
+  const renderTextActivity = (name: string, desc: string, faixa: string, berma: string, elevado = '') => {
     if (!desc.trim()) return null;
-    let loc = [];
-    if (faixa) loc.push(faixa);
-    if (berma) loc.push(berma);
-    const locStr = loc.length > 0 ? ` (${loc.join(', ')})` : '';
+    const locStr = formatLocList(faixa, berma, elevado);
     return <div>- {name}: {desc}{locStr}</div>
   }
 
@@ -788,44 +798,66 @@ function JardinagemPage() {
             <div className="p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl flex flex-col gap-4 shadow-sm">
               <div className="flex justify-between items-center">
                 <h3 className="uppercase text-[11px] tracking-wider font-bold text-gray-800">PLANTIO (Unidade)</h3>
-                <button onClick={() => setPlantio([...plantio, {especie: '', value: '0', faixa: '', berma: ''}])} className="text-gray-500 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100 transition-colors"><Plus size={18} /></button>
+                <button type="button" onClick={() => setPlantio([...plantio, {especie: '', value: '0', faixa: '', berma: '', elevado: ''}])} className="text-gray-500 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"><Plus size={18} /></button>
               </div>
               {plantio.map((row, idx) => (
-                <div key={idx} className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <select
-                      value={row.especie}
-                      onChange={(e) => {
-                        const newData = [...plantio];
-                        newData[idx].especie = e.target.value;
-                        setPlantio(newData);
-                      }}
-                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none cursor-pointer"
-                    >
-                      <option value="">Espécie</option>
-                      <option value="Ipê">Ipê</option>
-                      <option value="Quaresmeira">Quaresmeira</option>
-                      <option value="Grama">Grama</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                <div key={idx} className="flex flex-col gap-2.5 p-3 rounded-xl bg-gray-50/70 border border-gray-200/80">
+                  <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                    <div className="relative flex-1">
+                      <select
+                        value={row.especie}
+                        onChange={(e) => {
+                          const newData = [...plantio];
+                          newData[idx] = { ...newData[idx], especie: e.target.value };
+                          setPlantio(newData);
+                        }}
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none cursor-pointer"
+                      >
+                        <option value="">Espécie</option>
+                        <option value="Ipê">Ipê</option>
+                        <option value="Quaresmeira">Quaresmeira</option>
+                        <option value="Grama">Grama</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" inputMode="numeric" value={row.value}
+                        onChange={(e) => { const n = [...plantio]; n[idx] = { ...n[idx], value: maskNumber(e.target.value, false) }; setPlantio(n); }}
+                        className="flex-1 sm:w-24 bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                        placeholder="0"
+                      />
+                      {plantio.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPlantio(plantio.filter((_, i) => i !== idx))}
+                          title="Remover linha"
+                          className="text-gray-400 hover:text-red-500 p-2.5 rounded-xl hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <input 
-                    type="text" inputMode="numeric" value={row.value}
-                    onChange={(e) => { const n = [...plantio]; n[idx].value = maskNumber(e.target.value, false); setPlantio(n); }}
-                    className="w-full sm:w-24 bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
-                    placeholder="0"
-                  />
-                  <div className="relative w-full sm:w-32">
-                    <select value={row.faixa} onChange={(e) => { const n = [...plantio]; n[idx].faixa = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
-                      <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
-                  </div>
-                  <div className="relative w-full sm:w-36">
-                    <select value={row.berma} onChange={(e) => { const n = [...plantio]; n[idx].berma = e.target.value; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none">
-                      <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <div className="relative col-span-2 sm:col-span-1">
+                      <select aria-label="Faixa" value={row.faixa || ''} onChange={(e) => { const n = [...plantio]; n[idx] = { ...n[idx], faixa: e.target.value }; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none cursor-pointer">
+                        <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
+                    <div className="relative">
+                      <select aria-label="Berma" value={row.berma || ''} onChange={(e) => { const n = [...plantio]; n[idx] = { ...n[idx], berma: e.target.value }; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none cursor-pointer">
+                        <option value="">Berma</option>{BERMAS_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
+                    <div className="relative">
+                      <select aria-label="Elevado" value={row.elevado || ''} onChange={(e) => { const n = [...plantio]; n[idx] = { ...n[idx], elevado: e.target.value }; setPlantio(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 appearance-none cursor-pointer">
+                        <option value="">Elevado</option>{ELEVADOS_OPTIONS.map(el => <option key={el} value={el}>{el}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -935,45 +967,70 @@ function JardinagemPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-gray-500 text-sm">Faixa:</span>
                   <div className="relative w-32">
-                    <select value={invasoras[0].faixa} onChange={(e) => { const n = [...invasoras]; n[0].faixa = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-2 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
+                    <select value={invasoras[0]?.faixa || ''} onChange={(e) => { const v = e.target.value; setInvasoras(invasoras.map(item => ({ ...item, faixa: v }))); }} className="w-full bg-white border border-gray-300 rounded-xl p-2 pr-7 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
                       <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                   </div>
-                  <button onClick={() => setInvasoras([...invasoras, {nome: '', value: '0', berma: '', faixa: invasoras[0].faixa}])} className="flex items-center gap-1 bg-white border border-gray-300 px-3 py-2 rounded-xl text-sm hover:bg-gray-50 transition-colors whitespace-nowrap text-gray-700 font-medium">
+                  <button type="button" onClick={() => setInvasoras([...invasoras, {nome: '', value: '0', berma: '', elevado: '', faixa: invasoras[0]?.faixa || ''}])} className="flex items-center gap-1 bg-white border border-gray-300 px-3 py-2 rounded-xl text-sm hover:bg-gray-50 transition-colors whitespace-nowrap text-gray-700 font-medium cursor-pointer">
                     <Plus size={14} /> Adicionar mais
                   </button>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
                 {invasoras.map((row, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1 flex flex-col gap-1">
-                      {idx === 0 && <label className="text-gray-500 text-xs ml-1">Nome da Invasora</label>}
-                      <div className="relative">
-                        <select value={row.nome} onChange={(e) => { const n = [...invasoras]; n[idx].nome = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                          <option value="">Selecione a invasora</option>
-                          <option value="Acácia">Acácia</option>
-                          <option value="Crotalária">Crotalária</option>
-                          <option value="Erva Daninha">Erva Daninha</option>
-                          <option value="Erva-de-passarinho">Erva-de-passarinho</option>
-                          <option value="Juqueri">Juqueri</option>
-                          <option value="Leucena">Leucena</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                  <div key={idx} className="flex flex-col gap-2.5 p-3 rounded-xl bg-gray-50/70 border border-gray-200/80">
+                    <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-end">
+                      <div className="flex-1 flex flex-col gap-1">
+                        {idx === 0 && <label className="text-gray-500 text-xs ml-1">Nome da Invasora</label>}
+                        <div className="relative">
+                          <select value={row.nome} onChange={(e) => { const n = [...invasoras]; n[idx] = { ...n[idx], nome: e.target.value }; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
+                            <option value="">Selecione a invasora</option>
+                            <option value="Acácia">Acácia</option>
+                            <option value="Crotalária">Crotalária</option>
+                            <option value="Erva Daninha">Erva Daninha</option>
+                            <option value="Erva-de-passarinho">Erva-de-passarinho</option>
+                            <option value="Juqueri">Juqueri</option>
+                            <option value="Leucena">Leucena</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                        </div>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1 sm:w-28 flex flex-col gap-1">
+                          {idx === 0 && <label className="text-gray-500 text-xs ml-1">Unidade</label>}
+                          <input type="text" inputMode="numeric" value={row.value} onChange={(e) => { const n = [...invasoras]; n[idx] = { ...n[idx], value: maskNumber(e.target.value, false) }; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500" placeholder="0" />
+                        </div>
+                        {invasoras.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setInvasoras(invasoras.filter((_, i) => i !== idx))}
+                            title="Remover linha"
+                            className="text-gray-400 hover:text-red-500 p-2.5 rounded-xl hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="sm:w-32 flex flex-col gap-1">
-                      {idx === 0 && <label className="text-gray-500 text-xs ml-1">Unidade</label>}
-                      <input type="text" inputMode="numeric" value={row.value} onChange={(e) => { const n = [...invasoras]; n[idx].value = maskNumber(e.target.value, false); setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500" placeholder="0" />
-                    </div>
-                    <div className="sm:w-40 flex flex-col gap-1">
-                      {idx === 0 && <label className="text-gray-500 text-xs ml-1">Elevado/Berma</label>}
-                      <div className="relative">
-                        <select value={row.berma} onChange={(e) => { const n = [...invasoras]; n[idx].berma = e.target.value; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                          <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="flex flex-col gap-1">
+                        {idx === 0 && <label className="text-gray-500 text-xs ml-1">Berma</label>}
+                        <div className="relative">
+                          <select aria-label="Berma" value={row.berma || ''} onChange={(e) => { const n = [...invasoras]; n[idx] = { ...n[idx], berma: e.target.value }; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
+                            <option value="">Berma</option>{BERMAS_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {idx === 0 && <label className="text-gray-500 text-xs ml-1">Elevado</label>}
+                        <div className="relative">
+                          <select aria-label="Elevado" value={row.elevado || ''} onChange={(e) => { const n = [...invasoras]; n[idx] = { ...n[idx], elevado: e.target.value }; setInvasoras(n); }} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-gray-900 appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
+                            <option value="">Elevado</option>{ELEVADOS_OPTIONS.map(el => <option key={el} value={el}>{el}</option>)}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -993,16 +1050,22 @@ function JardinagemPage() {
                   <h3 className="uppercase text-[14px] leading-tight tracking-wider font-bold text-yellow-600 w-32">OUTRAS ATIVIDADES<br/><span className="text-[10px] text-yellow-600/70 capitalize">(Preenchimento Manual)</span></h3>
                 </div>
                 <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-                  <div className="flex gap-2 w-full">
-                    <div className="relative flex-1 sm:w-32">
-                      <select value={outrasFaixa} onChange={e => setOutrasFaixa(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
+                  <div className="grid grid-cols-2 sm:flex gap-2 w-full">
+                    <div className="relative col-span-2 sm:w-28">
+                      <select aria-label="Faixa" value={outrasFaixa} onChange={e => setOutrasFaixa(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 pr-7 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
                         <option value="">Faixa</option>{faixas.map(f => <option key={f} value={`Faixa ${f}`}>Faixa {f}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
-                    <div className="relative flex-1 sm:w-36">
-                      <select value={outrasBerma} onChange={e => setOutrasBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
-                        <option value="">Elevado/Berma</option>{bermas.map(b => <option key={b} value={b}>{b}</option>)}
+                    <div className="relative sm:w-32">
+                      <select aria-label="Berma" value={outrasBerma} onChange={e => setOutrasBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 pr-7 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
+                        <option value="">Berma</option>{BERMAS_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
+                    <div className="relative sm:w-36">
+                      <select aria-label="Elevado" value={outrasElevado} onChange={e => setOutrasElevado(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-2.5 pr-7 text-gray-900 appearance-none text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer">
+                        <option value="">Elevado</option>{ELEVADOS_OPTIONS.map(el => <option key={el} value={el}>{el}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
@@ -1160,7 +1223,7 @@ function JardinagemPage() {
                 {renderInvasoras()}
                 {renderRows('Retirada de Mudas - Árvores', retiradaMudas, 'unid')}
                 {renderRows('Plantio de Grama', plantioGrama, 'm²')}
-                {renderTextActivity('Outras Atividades', outrasDesc, outrasFaixa, outrasBerma)}
+                {renderTextActivity('Outras Atividades', outrasDesc, outrasFaixa, outrasBerma, outrasElevado)}
                 {renderTextActivity('Manutenção de Canteiro', canteiroDesc, '', '')}
                 {irrigacaoPipas && <div>- Irrigação com Pipas nas Faixas 3, 4 e 5 e Mirante</div>}
                 {irrigacaoApoioPipa && <div>- Apoio com Pipa Sistema de irrigação.</div>}

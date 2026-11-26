@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Calendar from 'lucide-react/dist/esm/icons/calendar.js'
 import Layers from 'lucide-react/dist/esm/icons/layers.js'
 import MapPin from 'lucide-react/dist/esm/icons/map-pin.js'
@@ -129,6 +129,7 @@ export function HistoricoRocagemTab({
       const matchesSearch = !term ||
         r.faixa.toLowerCase().includes(term) ||
         r.berma.toLowerCase().includes(term) ||
+        (r.elevado || '').toLowerCase().includes(term) ||
         r.date.includes(term)
 
       const matchesFaixa = selectedFaixaFilter === 'todas' || r.faixa === selectedFaixaFilter
@@ -495,7 +496,7 @@ export function HistoricoRocagemTab({
             <Search size={14} className="text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Buscar berma, faixa..."
+              placeholder="Buscar berma, elevado, faixa..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="bg-transparent outline-none w-full text-xs text-gray-800 placeholder-gray-400"
@@ -644,7 +645,7 @@ export function HistoricoRocagemTab({
                   <th className="px-6 py-3.5">Data (Crescente)</th>
                   <th className="px-6 py-3.5">Dia da Semana</th>
                   <th className="px-6 py-3.5">Faixa</th>
-                  <th className="px-6 py-3.5">Berma</th>
+                  <th className="px-6 py-3.5">Berma / Elevado</th>
                   <th className="px-6 py-3.5 text-right">Quantidade (m²)</th>
                   <th className="px-6 py-3.5 text-right">Acumulado no Ciclo</th>
                   <th className="px-6 py-3.5 text-center">Ações</th>
@@ -734,7 +735,7 @@ export function HistoricoRocagemTab({
               <thead className="bg-gray-50 text-xs uppercase text-gray-500 border-b border-gray-200 font-semibold">
                 <tr>
                   <th className="px-6 py-3.5">Faixa</th>
-                  <th className="px-6 py-3.5">Berma</th>
+                  <th className="px-6 py-3.5">Berma / Elevado</th>
                   <th className="px-6 py-3.5 text-center">Dias Atendidos</th>
                   <th className="px-6 py-3.5 text-right">Área Total Roçada (m²)</th>
                   <th className="px-6 py-3.5 text-right">% do Período</th>

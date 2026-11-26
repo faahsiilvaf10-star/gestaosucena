@@ -188,7 +188,7 @@ export function CreateModuleModal({ isOpen, onClose, onSave, initialData, isEdit
             </DialogTitle>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Configure os mesmos cards e modelos de Jardinagem (medições, faixas, bermas e opções) de forma 100% visual.
+            Configure os mesmos cards e modelos de Jardinagem (medições, faixas, bermas, elevados e opções) de forma 100% visual.
           </p>
         </DialogHeader>
 
@@ -290,7 +290,7 @@ export function CreateModuleModal({ isOpen, onClose, onSave, initialData, isEdit
                   Cards &amp; Modelos da Atividade ({models.length})
                 </label>
                 <p className="text-[11px] text-gray-500">
-                  Cada item vira um card na tela com botão &quot;+&quot;, Faixa e Elevado/Berma igual Jardinagem.
+                  Cada item vira um card na tela com botão &quot;+&quot;, Faixa, Berma e Elevado igual Jardinagem.
                 </p>
               </div>
 
@@ -300,15 +300,15 @@ export function CreateModuleModal({ isOpen, onClose, onSave, initialData, isEdit
                   type="button"
                   onClick={() => handleAddModel('medicao')}
                   className="px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-amber-400 text-xs font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 shadow-2xs"
-                  title="Card com campo de medição + Faixa + Elevado/Berma (Ex: Roçagem, Limpeza, Podagem)"
+                  title="Card com campo de medição + Faixa + Berma + Elevado (Ex: Roçagem, Limpeza, Podagem)"
                 >
-                  <Plus size={13} /> + Medição (Faixa/Berma)
+                  <Plus size={13} /> + Medição (Faixa/Berma/Elevado)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleAddModel('selecao')}
                   className="px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-amber-400 text-xs font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 shadow-2xs"
-                  title="Card com dropdown de opções + quantidade + Faixa/Berma (Ex: Plantio de Mudas, Invasoras)"
+                  title="Card com dropdown de opções + quantidade + Faixa/Berma/Elevado (Ex: Plantio de Mudas, Invasoras)"
                 >
                   <Plus size={13} /> + Seleção (Espécies/Itens)
                 </button>
@@ -413,7 +413,7 @@ export function CreateModuleModal({ isOpen, onClose, onSave, initialData, isEdit
                 Card de &quot;Outras Atividades (Preenchimento Manual)&quot;
               </div>
               <div className="text-[11px] text-gray-600 dark:text-gray-400">
-                Inclui o card amarelo com seleção de Faixa, Elevado/Berma e campo de texto livre para anotações do dia.
+                Inclui o card amarelo com seleção de Faixa, Berma, Elevado e campo de texto livre para anotações do dia.
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">

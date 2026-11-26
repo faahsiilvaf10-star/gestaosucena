@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getRocagemCycleForDate,
   calculatePeriodActivityTotal,
+  extractEntriesFromRows,
   parseNumber,
   formatM2,
   JARDINAGEM_ACTIVITIES,
@@ -94,6 +95,26 @@ describe('jardinagemRocagem - Ciclos Contratuais e Cálculos', () => {
       { faixa: 'Faixa 5', berma: 'Elevado 27', value: '1.200' }
     ]);
     expect(result.totalM2).toBe(2326);
+  });
+
+  it('extractEntriesFromRows deve preservar Berma e Elevado juntos ou separados no histórico', () => {
+    const entries = extractEntriesFromRows(
+      [
+        { faixa: 'Faixa 5', berma: 'Berma 36', elevado: 'Elevado 37', value: '3.650', observacao: 'Trecho completo' },
+        { faixa: 'Faixa 4', berma: '', elevado: 'Elevado 35', value: '800' },
+        { faixa: 'Faixa 3', berma: 'Berma 32', elevado: '', value: '500' },
+      ],
+      '2026-11-26',
+      'limpeza_manual'
+    );
+
+    expect(entries).toHaveLength(3);
+    expect(entries[0].berma).toBe('Berma 36 e Elevado 37');
+    expect(entries[0].elevado).toBe('Elevado 37');
+    expect(entries[1].berma).toBe('Elevado 35');
+    expect(entries[1].elevado).toBe('Elevado 35');
+    expect(entries[2].berma).toBe('Berma 32');
+    expect(entries[2].elevado).toBeUndefined();
   });
 
   it('deve ter as 3 atividades configuradas com nomes e unidades corretas', () => {

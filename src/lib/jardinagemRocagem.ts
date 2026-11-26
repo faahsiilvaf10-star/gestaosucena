@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { formatBermaElevadoPair, splitBermaElevado } from './rdoLocations'
 
 export type JardinagemActivityType = 'rocagem' | 'limpeza_manual' | 'limpeza_soprador';
 
@@ -46,7 +47,8 @@ export interface RocagemEntry {
   activityType?: JardinagemActivityType;
   date: string // "YYYY-MM-DD"
   faixa: string // "Faixa 2", "Faixa 3", etc.
-  berma: string // "Berma 28", "GABIÃO 1", etc.
+  berma: string // "Berma 28", "Elevado 27", "Berma 36 e Elevado 37", etc.
+  elevado?: string
   value: number // Em m²
   rawString: string // Como digitado (ex: "1.200" ou "1.240,00")
   observacao?: string
@@ -151,7 +153,7 @@ export function getRocagemCycleForDate(dateStr: string): RocagemCycle {
 /**
  * Função utilitária para extrair entradas de um array salvo (rocagem, limpezaManual, limpezaSoprador).
  */
-function extractEntriesFromRows(
+export function extractEntriesFromRows(
   rows: any,
   date: string,
   activityType: JardinagemActivityType
@@ -159,15 +161,20 @@ function extractEntriesFromRows(
   if (!Array.isArray(rows)) return [];
   return rows
     .filter((r: any) => parseNumber(r?.value) > 0)
-    .map((r: any) => ({
-      activityType,
-      date,
-      faixa: r.faixa || 'Sem Faixa',
-      berma: r.berma || 'Sem Berma',
-      value: parseNumber(r.value),
-      rawString: String(r.value || ''),
-      observacao: r.observacao && String(r.observacao).trim() ? String(r.observacao).trim() : undefined,
-    }));
+    .map((r: any) => {
+      const { elevado } = splitBermaElevado(r.berma, r.elevado);
+      const localLabel = formatBermaElevadoPair(r.berma, r.elevado) || 'Sem Berma';
+      return {
+        activityType,
+        date,
+        faixa: r.faixa || 'Sem Faixa',
+        berma: localLabel,
+        elevado: elevado || undefined,
+        value: parseNumber(r.value),
+        rawString: String(r.value || ''),
+        observacao: r.observacao && String(r.observacao).trim() ? String(r.observacao).trim() : undefined,
+      };
+    });
 }
 
 /**
@@ -268,7 +275,7 @@ export function getAvailableCycles(records: RocagemEntry[], currentDateStr?: str
 export function calculatePeriodActivityTotal(
   referenceDateStr: string,
   allSavedRecords: RocagemEntry[],
-  currentDayRows?: Array<{ value: string; faixa: string; berma: string }>
+  currentDayRows?: Array<{ value: string; faixa: string; berma?: string; elevado?: string }>
 ): {
   cycle: RocagemCycle
   totalM2: number

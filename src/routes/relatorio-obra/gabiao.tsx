@@ -18,6 +18,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/logActivity'
+import {
+  BERMAS_OPTIONS,
+  ELEVADOS_OPTIONS,
+  splitBermaElevado,
+} from '../../lib/rdoLocations'
 
 export const Route = createFileRoute('/relatorio-obra/gabiao')({
   component: GabiaoPage,
@@ -25,27 +30,8 @@ export const Route = createFileRoute('/relatorio-obra/gabiao')({
 
 const faixas = Array.from({length: 5}, (_, i) => i + 1); // FAIXA 1 a 5
 const fases = ['Nenhuma', 'Fase 1', 'Fase 2', 'Fase 3'];
-const elevados = [
-  'Nenhum',
-  ...Array.from({length: 32}, (_, i) => {
-    const num = i + 26;
-    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
-  }),
-  'MIRANTE',
-  'GABIÃO 1',
-  'GABIÃO 2',
-  'GABIÃO 3'
-];
-
-const normalizeGabiaoElevado = (val: string) => {
-  if (!val || val === 'Nenhum') return 'Nenhum';
-  const match = val.match(/^(?:Berma|Elevado)?\s*(\d+)$/i);
-  if (match) {
-    const n = parseInt(match[1], 10);
-    return n % 2 === 0 ? `Berma ${n}` : `Elevado ${n}`;
-  }
-  return val;
-};
+const gabiaoBermas = ['Nenhuma', ...BERMAS_OPTIONS];
+const gabiaoElevados = ['Nenhum', ...ELEVADOS_OPTIONS];
 
 function ActivityItem({
   title,
@@ -93,6 +79,7 @@ function ActivityItem({
 function GabiaoPage() {
   const [localFaixa, setLocalFaixa] = useState('');
   const [localFase, setLocalFase] = useState('Nenhuma');
+  const [localBerma, setLocalBerma] = useState('Nenhuma');
   const [localElevado, setLocalElevado] = useState('Nenhum');
 
   const [escavacao, setEscavacao] = useState(false);
@@ -185,7 +172,7 @@ function GabiaoPage() {
 
   const handleSave = async () => {
     const dataToSave = {
-      localFaixa, localFase, localElevado,
+      localFaixa, localFase, localBerma, localElevado,
       escavacao, manta, silte, limpeza, retTela, retCascalho, lavVert, lavBacias,
       repGeotextil, retGeotextil, retGeomembrana, repGeomembrana, recTela, recCascalho, recSilte,
       transporte, atividadesManuais, observacoes,
@@ -240,7 +227,12 @@ function GabiaoPage() {
     if (parsed) {
       setLocalFaixa(parsed.localFaixa || '');
       setLocalFase(parsed.localFase || 'Nenhuma');
-      setLocalElevado(normalizeGabiaoElevado(parsed.localElevado || 'Nenhum'));
+      const { berma: resolvedBerma, elevado: resolvedElevado } = splitBermaElevado(
+        parsed.localBerma === 'Nenhuma' ? '' : parsed.localBerma,
+        parsed.localElevado === 'Nenhum' ? '' : parsed.localElevado
+      );
+      setLocalBerma(resolvedBerma || 'Nenhuma');
+      setLocalElevado(resolvedElevado || 'Nenhum');
       setEscavacao(parsed.escavacao || false);
       setManta(parsed.manta || { checked: false, value: '' });
       setSilte(parsed.silte || { checked: false, value: '' });
@@ -264,6 +256,7 @@ function GabiaoPage() {
     } else {
       setLocalFaixa('');
       setLocalFase('Nenhuma');
+      setLocalBerma('Nenhuma');
       setLocalElevado('Nenhum');
       setEscavacao(false);
       setManta({ checked: false, value: '' });
@@ -424,11 +417,11 @@ function GabiaoPage() {
                   <MapPin className="text-orange-600" size={18} />
                   <h3 className="uppercase text-[12px] tracking-wider font-bold text-gray-800">LOCAL DO SERVIÇO</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Faixa</label>
                     <div className="relative">
-                      <select value={localFaixa} onChange={e => setLocalFaixa(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none">
+                      <select value={localFaixa} onChange={e => setLocalFaixa(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none cursor-pointer">
                         <option value="">Selecione...</option>
                         {faixas.map(f => <option key={f} value={`FAIXA ${f}`}>FAIXA {f}</option>)}
                       </select>
@@ -438,17 +431,26 @@ function GabiaoPage() {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Fase</label>
                     <div className="relative">
-                      <select value={localFase} onChange={e => setLocalFase(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none">
+                      <select value={localFase} onChange={e => setLocalFase(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none cursor-pointer">
                         {fases.map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Elevado/Berma</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Berma</label>
                     <div className="relative">
-                      <select value={localElevado} onChange={e => setLocalElevado(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none">
-                        {elevados.map(e => <option key={e} value={e}>{e}</option>)}
+                      <select aria-label="Berma" value={localBerma} onChange={e => setLocalBerma(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none cursor-pointer">
+                        {gabiaoBermas.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Elevado</label>
+                    <div className="relative">
+                      <select aria-label="Elevado" value={localElevado} onChange={e => setLocalElevado(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl p-3 pr-7 text-sm text-gray-900 outline-none focus:border-yellow-500 appearance-none cursor-pointer">
+                        {gabiaoElevados.map(e => <option key={e} value={e}>{e}</option>)}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5f6472] dark:text-gray-400 text-xs">▼</div>
                     </div>
@@ -524,13 +526,24 @@ function GabiaoPage() {
             <div ref={previewRef} className="bg-[#faf9f6] border border-gray-200 p-4 rounded-xl font-mono text-sm text-gray-800 whitespace-pre-wrap flex flex-col gap-2 relative">
               <div className="font-bold text-gray-700 mb-1">Data: {formatDateDisplay(selectedDate)}</div>
               
-              {localFaixa && (
-                <div className="font-bold text-orange-600 mb-2">
-                  📍 Local: {localFaixa}
-                  {localFase && localFase !== 'Nenhuma' ? ` - ${localFase}` : ''}
-                  {localElevado && localElevado !== 'Nenhum' ? ` - ${normalizeGabiaoElevado(localElevado)}` : ''}
-                </div>
-              )}
+              {(() => {
+                const { berma: gBerma, elevado: gElevado } = splitBermaElevado(
+                  localBerma === 'Nenhuma' ? '' : localBerma,
+                  localElevado === 'Nenhum' ? '' : localElevado
+                );
+                const locParts = [
+                  localFaixa,
+                  localFase && localFase !== 'Nenhuma' ? localFase : '',
+                  gBerma,
+                  gElevado,
+                ].filter(Boolean);
+                if (locParts.length === 0) return null;
+                return (
+                  <div className="font-bold text-orange-600 mb-2">
+                    📍 Local: {locParts.join(' - ')}
+                  </div>
+                );
+              })()}
 
               <div className="font-bold text-orange-600 mb-1 mt-2">🔨 *Atividades Realizadas:*</div>
               

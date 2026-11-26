@@ -32,23 +32,13 @@ import {
 } from '@/types/rdoCustomModule';
 import { CreateModuleModal } from '@/components/rdo/CreateModuleModal';
 import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData';
+import { BERMAS_OPTIONS, ELEVADOS_OPTIONS, splitBermaElevado } from '@/lib/rdoLocations';
 
 export const Route = createFileRoute('/relatorio-obra/modulo/$id')({
   component: CustomModuloAtividadePage,
 });
 
 const FAIXAS = ['Faixa 1', 'Faixa 2', 'Faixa 3', 'Faixa 4', 'Faixa 5'];
-
-const BERMAS = [
-  ...Array.from({ length: 32 }, (_, i) => {
-    const num = i + 26;
-    return num % 2 === 0 ? `Berma ${num}` : `Elevado ${num}`;
-  }),
-  'MIRANTE',
-  'GABIÃO 1',
-  'GABIÃO 2',
-  'GABIÃO 3',
-];
 
 function maskNumber(val: string, isFloat = false): string {
   if (!val) return '';
@@ -85,6 +75,7 @@ export function CustomModuloAtividadePage() {
   const [cardCheckboxes, setCardCheckboxes] = useState<Record<string, boolean>>({});
   const [outrasFaixa, setOutrasFaixa] = useState('');
   const [outrasBerma, setOutrasBerma] = useState('');
+  const [outrasElevado, setOutrasElevado] = useState('');
   const [outrasDesc, setOutrasDesc] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [isLocked, setIsLocked] = useState(false);
@@ -249,10 +240,23 @@ export function CustomModuloAtividadePage() {
     }
 
     if (dailyData) {
-      setCardRows(dailyData.cardRows || {});
+      const rawRows = dailyData.cardRows || {};
+      const normalizedRows: Record<string, CustomCardRowData[]> = {};
+      Object.keys(rawRows).forEach(k => {
+        normalizedRows[k] = (rawRows[k] || []).map(r => {
+          const { berma, elevado } = splitBermaElevado(r.berma, r.elevado);
+          return { ...r, berma, elevado };
+        });
+      });
+      setCardRows(normalizedRows);
       setCardCheckboxes(dailyData.cardCheckboxes || {});
       setOutrasFaixa(dailyData.outrasAtividades?.faixa || '');
-      setOutrasBerma(dailyData.outrasAtividades?.berma || '');
+      const { berma: ob, elevado: oe } = splitBermaElevado(
+        dailyData.outrasAtividades?.berma,
+        dailyData.outrasAtividades?.elevado
+      );
+      setOutrasBerma(ob);
+      setOutrasElevado(oe);
       setOutrasDesc(dailyData.outrasAtividades?.descricao || '');
       setObservacoes(dailyData.observacoes || '');
       setIsLocked(dailyData.isLocked !== false);
@@ -266,7 +270,7 @@ export function CustomModuloAtividadePage() {
           if (m.tipo === 'checkbox') {
             initialChecks[m.id] = false;
           } else {
-            initialRows[m.id] = [{ value: '', faixa: '', berma: '', opcao: m.opcoes?.[0] || '' }];
+            initialRows[m.id] = [{ value: '', faixa: '', berma: '', elevado: '', opcao: m.opcoes?.[0] || '' }];
           }
         });
       }
@@ -275,6 +279,7 @@ export function CustomModuloAtividadePage() {
       setCardCheckboxes(initialChecks);
       setOutrasFaixa('');
       setOutrasBerma('');
+      setOutrasElevado('');
       setOutrasDesc('');
       setObservacoes('');
       setIsLocked(false);
@@ -305,16 +310,16 @@ export function CustomModuloAtividadePage() {
       const autoUnit = defaultOpcao && civilActivityUnitMap[defaultOpcao] ? civilActivityUnitMap[defaultOpcao] : '';
       return {
         ...prev,
-        [modelId]: [...current, { value: '', faixa: '', berma: '', opcao: defaultOpcao || '', unidade: autoUnit, detalhe: '' }],
+        [modelId]: [...current, { value: '', faixa: '', berma: '', elevado: '', opcao: defaultOpcao || '', unidade: autoUnit, detalhe: '' }],
       };
     });
   };
 
   const handleUpdateRow = (modelId: string, rowIndex: number, field: keyof CustomCardRowData, val: string) => {
     setCardRows(prev => {
-      const current = prev[modelId] ? [...prev[modelId]] : [{ value: '', faixa: '', berma: '' }];
+      const current = prev[modelId] ? [...prev[modelId]] : [{ value: '', faixa: '', berma: '', elevado: '' }];
       if (!current[rowIndex]) {
-        current[rowIndex] = { value: '', faixa: '', berma: '' };
+        current[rowIndex] = { value: '', faixa: '', berma: '', elevado: '' };
       }
       current[rowIndex] = { ...current[rowIndex], [field]: val };
 
@@ -336,7 +341,7 @@ export function CustomModuloAtividadePage() {
       const updated = current.filter((_, idx) => idx !== rowIndex);
       return {
         ...prev,
-        [modelId]: updated.length > 0 ? updated : [{ value: '', faixa: '', berma: '', unidade: '', detalhe: '' }],
+        [modelId]: updated.length > 0 ? updated : [{ value: '', faixa: '', berma: '', elevado: '', unidade: '', detalhe: '' }],
       };
     });
   };
@@ -364,9 +369,11 @@ export function CustomModuloAtividadePage() {
         const rows = cardRows[m.id] || [];
         const valid = rows.filter(r => r.value && r.value !== '0' && r.value !== '0,00');
         valid.forEach(r => {
+          const { berma, elevado } = splitBermaElevado(r.berma, r.elevado);
           const locParts = [];
           if (!isCivil && r.faixa) locParts.push(r.faixa);
-          if (!isCivil && r.berma) locParts.push(r.berma);
+          if (!isCivil && berma) locParts.push(berma);
+          if (!isCivil && elevado) locParts.push(elevado);
           if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
           const unit = r.unidade || m.unidade || 'unid';
@@ -384,9 +391,11 @@ export function CustomModuloAtividadePage() {
         const rows = cardRows[m.id] || [];
         const valid = rows.filter(r => r.value && r.value !== '0' && r.value !== '0,00');
         valid.forEach(r => {
+          const { berma, elevado } = splitBermaElevado(r.berma, r.elevado);
           const locParts = [];
           if (!isCivil && r.faixa) locParts.push(r.faixa);
-          if (!isCivil && r.berma) locParts.push(r.berma);
+          if (!isCivil && berma) locParts.push(berma);
+          if (!isCivil && elevado) locParts.push(elevado);
           if (r.detalhe) locParts.push(r.detalhe);
           const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
           const unit = r.unidade || m.unidade || 'm²';
@@ -398,9 +407,11 @@ export function CustomModuloAtividadePage() {
 
     // Outras Atividades manuais
     if (outrasDesc.trim()) {
+      const { berma: ob, elevado: oe } = splitBermaElevado(outrasBerma, outrasElevado);
       const locParts = [];
       if (!isCivil && outrasFaixa) locParts.push(outrasFaixa);
-      if (!isCivil && outrasBerma) locParts.push(outrasBerma);
+      if (!isCivil && ob) locParts.push(ob);
+      if (!isCivil && oe) locParts.push(oe);
       const locStr = locParts.length > 0 ? ` - ${locParts.join(' ')}` : '';
       lines.push(`* ${outrasDesc.trim()}${locStr}`);
     }
@@ -415,7 +426,7 @@ export function CustomModuloAtividadePage() {
     }
 
     return lines.join('\n');
-  }, [modulo, cardRows, cardCheckboxes, outrasFaixa, outrasBerma, outrasDesc, observacoes]);
+  }, [modulo, cardRows, cardCheckboxes, outrasFaixa, outrasBerma, outrasElevado, outrasDesc, observacoes, isCivil]);
 
   // Salvar registro diário
   const handleSave = async () => {
@@ -435,6 +446,7 @@ export function CustomModuloAtividadePage() {
       outrasAtividades: {
         faixa: outrasFaixa,
         berma: outrasBerma,
+        elevado: outrasElevado,
         descricao: outrasDesc,
       },
       renderedSummary: renderedSummaryText,
@@ -758,7 +770,7 @@ export function CustomModuloAtividadePage() {
               }
 
               if (model.tipo === 'selecao') {
-                const rows = cardRows[model.id] || [{ value: '', faixa: '', berma: '', opcao: model.opcoes?.[0] || '' }];
+                const rows = cardRows[model.id] || [{ value: '', faixa: '', berma: '', elevado: '', opcao: model.opcoes?.[0] || '' }];
                 return (
                   <div
                     key={model.id}
@@ -784,41 +796,57 @@ export function CustomModuloAtividadePage() {
 
                     <div className="space-y-3">
                       {rows.map((row, idx) => (
-                        <div key={idx} className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                          {/* Dropdown de Opção / Espécie / Invasora */}
-                          <div className="flex-1 relative">
-                            <select
-                              value={row.opcao || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'opcao', e.target.value)}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                            >
-                              <option value="">{model.labelOpcao ? `Selecione: ${model.labelOpcao}` : 'Selecione a opção'}</option>
-                              {(model.opcoes || []).map(op => (
-                                <option key={op} value={op}>
-                                  {op}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                          </div>
+                        <div key={idx} className="flex flex-col gap-2.5 p-3 rounded-xl bg-gray-50/70 dark:bg-zinc-800/40 border border-gray-200/80 dark:border-zinc-700/80">
+                          <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                            {/* Dropdown de Opção / Espécie / Invasora */}
+                            <div className="flex-1 relative">
+                              <select
+                                value={row.opcao || ''}
+                                onChange={e => handleUpdateRow(model.id, idx, 'opcao', e.target.value)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                              >
+                                <option value="">{model.labelOpcao ? `Selecione: ${model.labelOpcao}` : 'Selecione a opção'}</option>
+                                {(model.opcoes || []).map(op => (
+                                  <option key={op} value={op}>
+                                    {op}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                            </div>
 
-                          {/* Campo de Valor / Medição */}
-                          <div className="w-full sm:w-28 relative">
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="0"
-                              value={row.value || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'value', maskNumber(e.target.value, isCivil))}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm font-semibold text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
-                              title="Quantidade ou metragem realizada"
-                            />
+                            {/* Campo de Valor / Medição */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 sm:w-28 relative">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="0"
+                                  value={row.value || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'value', maskNumber(e.target.value, isCivil))}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm font-semibold text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                                  title="Quantidade ou metragem realizada"
+                                />
+                              </div>
+
+                              {/* Botão de Excluir Linha se houver mais de uma */}
+                              {rows.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveRow(model.id, idx)}
+                                  className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                                  title="Remover linha"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {isCivil ? (
-                            <>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                               {/* Campo de Unidade (Civil) */}
-                              <div className="w-full sm:w-24 relative">
+                              <div className="relative">
                                 <input
                                   type="text"
                                   placeholder="unid"
@@ -830,7 +858,7 @@ export function CustomModuloAtividadePage() {
                               </div>
 
                               {/* Detalhe / Eixo / Frente de Serviço (Civil) */}
-                              <div className="w-full sm:w-36 relative">
+                              <div className="sm:col-span-2 relative">
                                 <input
                                   type="text"
                                   placeholder="Local / Eixo (opcional)"
@@ -840,15 +868,16 @@ export function CustomModuloAtividadePage() {
                                   title="Local, eixo ou detalhe adicional da atividade"
                                 />
                               </div>
-                            </>
+                            </div>
                           ) : (
-                            <>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                               {/* Faixa (Reabilitação) */}
-                              <div className="w-full sm:w-32 relative">
+                              <div className="col-span-2 sm:col-span-1 relative">
                                 <select
+                                  aria-label="Faixa"
                                   value={row.faixa || ''}
                                   onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
-                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
                                 >
                                   <option value="">Faixa</option>
                                   {FAIXAS.map(f => (
@@ -860,15 +889,16 @@ export function CustomModuloAtividadePage() {
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                               </div>
 
-                              {/* Elevado / Berma (Reabilitação) */}
-                              <div className="w-full sm:w-36 relative">
+                              {/* Berma (Reabilitação) */}
+                              <div className="relative">
                                 <select
+                                  aria-label="Berma"
                                   value={row.berma || ''}
                                   onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
-                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
                                 >
-                                  <option value="">Elevado/Berma</option>
-                                  {BERMAS.map(b => (
+                                  <option value="">Berma</option>
+                                  {BERMAS_OPTIONS.map(b => (
                                     <option key={b} value={b}>
                                       {b}
                                     </option>
@@ -876,19 +906,25 @@ export function CustomModuloAtividadePage() {
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                               </div>
-                            </>
-                          )}
 
-                          {/* Botão de Excluir Linha se houver mais de uma */}
-                          {rows.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveRow(model.id, idx)}
-                              className="p-2 text-gray-400 hover:text-red-500 transition-colors self-end sm:self-center"
-                              title="Remover linha"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                              {/* Elevado (Reabilitação) */}
+                              <div className="relative">
+                                <select
+                                  aria-label="Elevado"
+                                  value={row.elevado || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'elevado', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Elevado</option>
+                                  {ELEVADOS_OPTIONS.map(el => (
+                                    <option key={el} value={el}>
+                                      {el}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -898,7 +934,7 @@ export function CustomModuloAtividadePage() {
               }
 
               // Medição Padrão (Igual Roçagem, Podagem, Limpeza Manual da foto)
-              const rows = cardRows[model.id] || [{ value: '', faixa: '', berma: '' }];
+              const rows = cardRows[model.id] || [{ value: '', faixa: '', berma: '', elevado: '' }];
               const isFloat = model.unidade === 'm²' || model.unidade === 'm³' || model.unidade === 'm';
 
               return (
@@ -922,9 +958,9 @@ export function CustomModuloAtividadePage() {
 
                   <div className="space-y-3">
                     {rows.map((row, idx) => (
-                      <div key={idx} className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                      <div key={idx} className="flex flex-col xl:flex-row gap-2.5 items-stretch xl:items-center p-3 rounded-xl bg-gray-50/70 dark:bg-zinc-800/40 border border-gray-200/80 dark:border-zinc-700/80">
                         {/* Input Numérico */}
-                        <div className="flex-1 relative">
+                        <div className="flex-1 min-w-[100px] relative">
                           <input
                             type="text"
                             inputMode="numeric"
@@ -935,66 +971,88 @@ export function CustomModuloAtividadePage() {
                           />
                         </div>
 
-                        {!isCivil ? (
-                          <>
-                            {/* Faixa */}
-                            <div className="w-full sm:w-36 relative">
-                              <select
-                                value={row.faixa || ''}
-                                onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
-                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                              >
-                                <option value="">Faixa</option>
-                                {FAIXAS.map(f => (
-                                  <option key={f} value={f}>
-                                    {f}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                            </div>
+                        <div className="flex items-center gap-2 w-full xl:w-auto">
+                          {!isCivil ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex gap-2.5 flex-1">
+                              {/* Faixa */}
+                              <div className="col-span-2 sm:col-span-1 xl:w-28 relative">
+                                <select
+                                  aria-label="Faixa"
+                                  value={row.faixa || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'faixa', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Faixa</option>
+                                  {FAIXAS.map(f => (
+                                    <option key={f} value={f}>
+                                      {f}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
 
-                            {/* Elevado / Berma */}
-                            <div className="w-full sm:w-40 relative">
-                              <select
-                                value={row.berma || ''}
-                                onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
-                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
-                              >
-                                <option value="">Elevado/Berma</option>
-                                {BERMAS.map(b => (
-                                  <option key={b} value={b}>
-                                    {b}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="w-full sm:w-44 relative">
-                            <input
-                              type="text"
-                              placeholder="Local / Eixo (opcional)"
-                              value={row.detalhe || ''}
-                              onChange={e => handleUpdateRow(model.id, idx, 'detalhe', e.target.value)}
-                              className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
-                              title="Local ou eixo (opcional)"
-                            />
-                          </div>
-                        )}
+                              {/* Berma */}
+                              <div className="xl:w-32 relative">
+                                <select
+                                  aria-label="Berma"
+                                  value={row.berma || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'berma', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Berma</option>
+                                  {BERMAS_OPTIONS.map(b => (
+                                    <option key={b} value={b}>
+                                      {b}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
 
-                        {/* Botão de Excluir Linha se houver mais de uma */}
-                        {rows.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveRow(model.id, idx)}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors self-end sm:self-center"
-                            title="Remover linha"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                              {/* Elevado */}
+                              <div className="xl:w-34 relative">
+                                <select
+                                  aria-label="Elevado"
+                                  value={row.elevado || ''}
+                                  onChange={e => handleUpdateRow(model.id, idx, 'elevado', e.target.value)}
+                                  className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 pr-7 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none cursor-pointer"
+                                >
+                                  <option value="">Elevado</option>
+                                  {ELEVADOS_OPTIONS.map(el => (
+                                    <option key={el} value={el}>
+                                      {el}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex-1 xl:w-44 relative">
+                              <input
+                                type="text"
+                                placeholder="Local / Eixo (opcional)"
+                                value={row.detalhe || ''}
+                                onChange={e => handleUpdateRow(model.id, idx, 'detalhe', e.target.value)}
+                                className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-gray-400"
+                                title="Local ou eixo (opcional)"
+                              />
+                            </div>
+                          )}
+
+                          {/* Botão de Excluir Linha se houver mais de uma */}
+                          {rows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRow(model.id, idx)}
+                              className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                              title="Remover linha"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1020,12 +1078,13 @@ export function CustomModuloAtividadePage() {
                   </div>
 
                   {!isCivil && (
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <div className="relative flex-1 sm:w-32">
+                    <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+                      <div className="relative col-span-2 sm:w-28">
                         <select
+                          aria-label="Faixa"
                           value={outrasFaixa}
                           onChange={e => setOutrasFaixa(e.target.value)}
-                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 pr-7 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer"
                         >
                           <option value="">Faixa</option>
                           {FAIXAS.map(f => (
@@ -1037,16 +1096,34 @@ export function CustomModuloAtividadePage() {
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
                       </div>
 
-                      <div className="relative flex-1 sm:w-36">
+                      <div className="relative sm:w-32">
                         <select
+                          aria-label="Berma"
                           value={outrasBerma}
                           onChange={e => setOutrasBerma(e.target.value)}
-                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 pr-7 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer"
                         >
-                          <option value="">Elevado/Berma</option>
-                          {BERMAS.map(b => (
+                          <option value="">Berma</option>
+                          {BERMAS_OPTIONS.map(b => (
                             <option key={b} value={b}>
                               {b}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                      </div>
+
+                      <div className="relative sm:w-36">
+                        <select
+                          aria-label="Elevado"
+                          value={outrasElevado}
+                          onChange={e => setOutrasElevado(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl p-2.5 pr-7 text-xs sm:text-sm text-gray-900 dark:text-white appearance-none outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 cursor-pointer"
+                        >
+                          <option value="">Elevado</option>
+                          {ELEVADOS_OPTIONS.map(el => (
+                            <option key={el} value={el}>
+                              {el}
                             </option>
                           ))}
                         </select>

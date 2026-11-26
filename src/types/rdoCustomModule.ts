@@ -15,6 +15,7 @@ export interface CustomCardRowData {
   value?: string;
   faixa?: string;
   berma?: string;
+  elevado?: string;
   opcao?: string;
   unidade?: string;
   detalhe?: string;
@@ -29,6 +30,7 @@ export interface CustomRdoItem {
   unidade?: string;
   faixa?: string;
   berma?: string;
+  elevado?: string;
   detalhe?: string;
 }
 
@@ -56,9 +58,11 @@ export interface CustomRdoDailyData {
   outrasAtividades?: {
     faixa?: string;
     berma?: string;
+    elevado?: string;
     descricao?: string;
   };
   localFaixa?: string;
+  localBerma?: string;
   localElevado?: string;
   itens?: CustomRdoItem[];
   observacoes?: string;

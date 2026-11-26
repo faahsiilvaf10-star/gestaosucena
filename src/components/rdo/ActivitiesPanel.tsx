@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { ActivityCard, RdoAtividade, getSubItens } from './ActivityCard';
 import { ActivityModal } from './ActivityModal';
+import { splitBermaElevado } from '@/lib/rdoLocations';
 
 interface ActivitiesPanelProps {
   dataAtual: string;
@@ -198,7 +199,8 @@ export function ActivitiesPanel({ dataAtual, obraId, onIntegrateWithRDO }: Activ
       if (marked.length > 0) {
         marked.forEach(item => {
           if (item.tipo === 'medicao') {
-            const loc = [item.faixa, item.berma].filter(Boolean).join(' - ');
+            const { berma, elevado } = splitBermaElevado(item.berma, item.elevado);
+            const loc = [item.faixa, berma, elevado].filter(Boolean).join(' - ');
             const locStr = loc ? ` (${loc})` : '';
             lines.push(`  • ${item.nome}: ${item.valor || '0'} ${item.unidade || 'm²'}${locStr}`);
           } else {
