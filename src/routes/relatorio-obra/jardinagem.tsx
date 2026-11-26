@@ -225,6 +225,7 @@ function JardinagemPage() {
   const [adubagem, setAdubagem] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
   const [plantio, setPlantio] = useState([{especie: '', value: '', faixa: '', berma: '', elevado: ''}]);
   const [limpezaManual, setLimpezaManual] = useState([{value: '', faixa: '', berma: '', elevado: '', observacao: ''}]);
+  const [capinaManual, setCapinaManual] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
   const [limpezaSoprador, setLimpezaSoprador] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
   const [invasoras, setInvasoras] = useState([{nome: '', value: '', berma: '', elevado: '', faixa: ''}]);
   const [retiradaMudas, setRetiradaMudas] = useState([{value: '', faixa: '', berma: '', elevado: ''}]);
@@ -259,9 +260,10 @@ function JardinagemPage() {
   const [allJardinagemRecords, setAllJardinagemRecords] = useState<AllJardinagemRecords>({
     rocagem: [],
     limpezaManual: [],
+    capinaManual: [],
     limpezaSoprador: []
   });
-  const [historicoInitialActivity, setHistoricoInitialActivity] = useState<JardinagemActivityType>('rocagem');
+  const [historicoInitialActivity, setHistoricoInitialActivity] = useState<'todas' | JardinagemActivityType>('todas');
   const [loadingRocagem, setLoadingRocagem] = useState<boolean>(true);
 
   const [showHistory, setShowHistory] = useState(false);
@@ -289,6 +291,10 @@ function JardinagemPage() {
   const limpezaManualPeriodInfo = useMemo(() => {
     return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.limpezaManual, limpezaManual);
   }, [selectedDate, allJardinagemRecords.limpezaManual, limpezaManual]);
+
+  const capinaManualPeriodInfo = useMemo(() => {
+    return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.capinaManual, capinaManual);
+  }, [selectedDate, allJardinagemRecords.capinaManual, capinaManual]);
 
   const limpezaSopradorPeriodInfo = useMemo(() => {
     return calculatePeriodActivityTotal(selectedDate, allJardinagemRecords.limpezaSoprador, limpezaSoprador);
@@ -352,7 +358,7 @@ function JardinagemPage() {
 
   const handleSave = async () => {
     const dataToSave = {
-      rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
+      rocagem, rocagemAsp, podagem, cova, coroamento, adubagem, plantio, limpezaManual, capinaManual, limpezaSoprador, invasoras, retiradaMudas, plantioGrama,
       outrasFaixa, outrasBerma, outrasElevado, outrasDesc, canteiroDesc, irrigacaoPipas, irrigacaoApoioPipa, irrigacaoCarretel, irrigacaoCarretelBermas,
       manutencaoIrrigacao,
       isLocked: true
@@ -366,9 +372,10 @@ function JardinagemPage() {
 
     const cycleTotalRocagem = rocagemPeriodInfo.totalM2;
     const cycleTotalManual = limpezaManualPeriodInfo.totalM2;
+    const cycleTotalCapina = capinaManualPeriodInfo.totalM2;
     const cycleTotalSoprador = limpezaSopradorPeriodInfo.totalM2;
     toast.success(
-      `Relatório salvo para ${formatDateDisplay(selectedDate)}! Ciclo (${rocagemPeriodInfo.cycle.startDate.slice(8)} a ${rocagemPeriodInfo.cycle.endDate.slice(8)}): Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²`
+      `Relatório salvo para ${formatDateDisplay(selectedDate)}! Ciclo (${rocagemPeriodInfo.cycle.startDate.slice(8)} a ${rocagemPeriodInfo.cycle.endDate.slice(8)}): Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Capina Manual: ${formatM2(cycleTotalCapina)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²`
     );
     
     try {
@@ -381,7 +388,7 @@ function JardinagemPage() {
       const localUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') : null;
       await logActivity({
         module: 'RDO',
-        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Ciclo 16-15 — Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²)`,
+        action: `Relatório de Jardinagem salvo para ${formatDateDisplay(selectedDate)} (Ciclo 16-15 — Roçagem: ${formatM2(cycleTotalRocagem)} m² | Limp. Manual: ${formatM2(cycleTotalManual)} m² | Capina Manual: ${formatM2(cycleTotalCapina)} m² | Soprador: ${formatM2(cycleTotalSoprador)} m²)`,
         user_name: localUserName || 'Fabrício Silva'
       });
     } catch (e) {}
@@ -429,6 +436,7 @@ function JardinagemPage() {
       setAdubagem(normRows(parsed.adubagem || [{ faixa: '', berma: '', elevado: '', value: '' }]));
       setPlantio(normRows(parsed.plantio || [{ faixa: '', berma: '', elevado: '', value: '', especie: '' }]));
       setLimpezaManual(normRows(parsed.limpezaManual || [{ faixa: '', berma: '', elevado: '', value: '', observacao: '' }]));
+      setCapinaManual(normRows(parsed.capinaManual || [{ faixa: '', berma: '', elevado: '', value: '' }]));
       setLimpezaSoprador(normRows(parsed.limpezaSoprador || [{ faixa: '', berma: '', elevado: '', value: '' }]));
       setInvasoras(normRows(parsed.invasoras || [{ faixa: '', berma: '', elevado: '', value: '', nome: '' }]));
       setRetiradaMudas(normRows(parsed.retiradaMudas || [{ faixa: '', berma: '', elevado: '', value: '' }]));
@@ -455,6 +463,7 @@ function JardinagemPage() {
       setAdubagem([{ faixa: '', berma: '', elevado: '', value: '' }]);
       setPlantio([{ faixa: '', berma: '', elevado: '', value: '', especie: '' }]);
       setLimpezaManual([{ faixa: '', berma: '', elevado: '', value: '', observacao: '' }]);
+      setCapinaManual([{ faixa: '', berma: '', elevado: '', value: '' }]);
       setLimpezaSoprador([{ faixa: '', berma: '', elevado: '', value: '' }]);
       setInvasoras([{ faixa: '', berma: '', elevado: '', value: '', nome: '' }]);
       setRetiradaMudas([{ faixa: '', berma: '', elevado: '', value: '' }]);
@@ -528,7 +537,7 @@ function JardinagemPage() {
   const hasAnyData = 
     isFilled(rocagem) || isFilled(rocagemAsp) || isFilled(podagem) || 
     isFilled(cova) || isFilled(coroamento) || isFilled(adubagem) || 
-    isFilled(plantio) || isFilled(limpezaManual) || isFilled(limpezaSoprador) || 
+    isFilled(plantio) || isFilled(limpezaManual) || isFilled(capinaManual) || isFilled(limpezaSoprador) || 
     isFilled(invasoras) || isFilled(retiradaMudas) || isFilled(plantioGrama) || 
     outrasDesc.trim() !== '' || canteiroDesc.trim() !== '' || irrigacaoPipas || irrigacaoApoioPipa || irrigacaoCarretel || manutencaoIrrigacao;
 
@@ -676,7 +685,7 @@ function JardinagemPage() {
           </button>
           <button
             onClick={() => {
-              setHistoricoInitialActivity('rocagem');
+              setHistoricoInitialActivity('todas');
               setActiveMainTab('historico_rocagem');
             }}
             className={`flex flex-wrap items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
@@ -705,6 +714,13 @@ function JardinagemPage() {
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                 activeMainTab === 'historico_rocagem'
                   ? 'bg-white/20 text-white'
+                  : 'bg-lime-100 text-lime-800'
+              }`} title="Total de Capina Manual no ciclo">
+                Capina M.: {formatM2(capinaManualPeriodInfo.totalM2)} m²
+              </span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                activeMainTab === 'historico_rocagem'
+                  ? 'bg-white/20 text-white'
                   : 'bg-sky-100 text-sky-800'
               }`} title="Total de Limpeza com Soprador no ciclo">
                 Soprador: {formatM2(limpezaSopradorPeriodInfo.totalM2)} m²
@@ -713,10 +729,11 @@ function JardinagemPage() {
                 activeMainTab === 'historico_rocagem'
                   ? 'bg-amber-300 text-amber-950'
                   : 'bg-amber-100 text-amber-900 border border-amber-300/80'
-              }`} title="Total somado (Roçagem + Limpeza Manual + Soprador)">
+              }`} title="Total somado (Roçagem + Limpeza Manual + Capina Manual + Soprador)">
                 Total: {formatM2(sumActivitiesTotals({
                   rocagem: rocagemPeriodInfo.totalM2,
                   limpeza_manual: limpezaManualPeriodInfo.totalM2,
+                  capina_manual: capinaManualPeriodInfo.totalM2,
                   limpeza_soprador: limpezaSopradorPeriodInfo.totalM2
                 }))} m²
               </span>
@@ -730,6 +747,7 @@ function JardinagemPage() {
           <HistoricoRocagemTab
             allRecords={allJardinagemRecords}
             initialActivity={historicoInitialActivity}
+            referenceDate={selectedDate}
             loading={loadingRocagem}
             onSelectDate={(date) => {
               loadDate(date);
@@ -917,6 +935,52 @@ function JardinagemPage() {
                       setActiveMainTab('historico_rocagem');
                     }}
                     className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-teal-800 hover:text-teal-950 bg-white hover:bg-teal-100/70 px-3 py-2 rounded-lg border border-teal-300 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Ver Histórico por Faixa/Berma</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              }
+            />
+            <ActivityRow 
+              title="CAPINA MANUAL (m²)" 
+              data={capinaManual} 
+              setData={setCapinaManual}
+              extraHeader={
+                <div className="bg-gradient-to-r from-lime-50 via-green-50 to-emerald-50 border border-lime-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-lime-600 text-white rounded-lg shadow-xs mt-0.5 sm:mt-0 shrink-0">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold tracking-wider uppercase text-lime-900 bg-lime-100/80 px-2 py-0.5 rounded-md border border-lime-200">
+                          Período Contratual: {capinaManualPeriodInfo.cycle.label}
+                        </span>
+                        <span className="text-xs text-lime-700 font-medium">
+                          (dia 16 ao dia 15)
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                        <span className="text-xs text-gray-600">Total acumulado no período:</span>
+                        <span className="text-lg font-black text-lime-950 tracking-tight">
+                          {formatM2(capinaManualPeriodInfo.totalM2)} m²
+                        </span>
+                        {capinaManualPeriodInfo.currentDayM2 > 0 && (
+                          <span className="text-xs text-lime-800 font-bold bg-white/90 px-2 py-0.5 rounded-md border border-lime-300 shadow-2xs">
+                            +{formatM2(capinaManualPeriodInfo.currentDayM2)} m² hoje
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistoricoInitialActivity('capina_manual');
+                      setActiveMainTab('historico_rocagem');
+                    }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-bold text-lime-800 hover:text-lime-950 bg-white hover:bg-lime-100/70 px-3 py-2 rounded-lg border border-lime-300 transition-colors shadow-2xs cursor-pointer"
                   >
                     <span>Ver Histórico por Faixa/Berma</span>
                     <ArrowRight size={14} />
@@ -1225,6 +1289,13 @@ function JardinagemPage() {
                   <div data-no-copy="true" className="select-none text-teal-800 bg-teal-50/90 px-2.5 py-1.5 rounded-lg border border-teal-200 text-xs font-semibold flex items-center justify-between my-1">
                     <span>🧹 Limp. Manual no Período ({limpezaManualPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {limpezaManualPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
                     <span className="font-bold text-teal-950">{formatM2(limpezaManualPeriodInfo.totalM2)} m²</span>
+                  </div>
+                )}
+                {renderRows('Capina Manual', capinaManual, 'm²')}
+                {capinaManualPeriodInfo.totalM2 > 0 && (
+                  <div data-no-copy="true" className="select-none text-lime-800 bg-lime-50/90 px-2.5 py-1.5 rounded-lg border border-lime-200 text-xs font-semibold flex items-center justify-between my-1">
+                    <span>🌾 Capina Manual no Período ({capinaManualPeriodInfo.cycle.startDate.slice(5).replace('-', '/')} a {capinaManualPeriodInfo.cycle.endDate.slice(5).replace('-', '/')}):</span>
+                    <span className="font-bold text-lime-950">{formatM2(capinaManualPeriodInfo.totalM2)} m²</span>
                   </div>
                 )}
                 {renderRows('Limpeza com Soprador', limpezaSoprador, 'm²')}

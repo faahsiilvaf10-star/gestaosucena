@@ -119,22 +119,37 @@ describe('jardinagemRocagem - Ciclos Contratuais e Cálculos', () => {
     expect(entries[2].elevado).toBeUndefined();
   });
 
-  it('deve ter as 3 atividades configuradas com nomes e unidades corretas', () => {
+  it('deve ter as 4 atividades configuradas com nomes e unidades corretas', () => {
     expect(JARDINAGEM_ACTIVITIES.rocagem.name).toBe('Roçagem');
     expect(JARDINAGEM_ACTIVITIES.limpeza_manual.name).toBe('Limpeza Manual');
+    expect(JARDINAGEM_ACTIVITIES.capina_manual.name).toBe('Capina Manual');
     expect(JARDINAGEM_ACTIVITIES.limpeza_soprador.name).toBe('Limpeza com Soprador');
     expect(JARDINAGEM_ACTIVITIES.limpeza_manual.unit).toBe('m²');
+    expect(JARDINAGEM_ACTIVITIES.capina_manual.unit).toBe('m²');
     expect(JARDINAGEM_ACTIVITIES.limpeza_soprador.unit).toBe('m²');
   });
 
-  it('sumActivitiesTotals deve somar Roçagem, Limpeza Manual e Soprador corretamente', () => {
+  it('sumActivitiesTotals deve somar Roçagem, Limpeza Manual, Capina Manual e Soprador corretamente', () => {
     const total = sumActivitiesTotals({
       rocagem: 350,
       limpeza_manual: 23146,
+      capina_manual: 1500,
       limpeza_soprador: 5000,
     });
-    expect(total).toBe(28496);
-    expect(formatM2(total)).toBe('28.496');
+    expect(total).toBe(29996);
+    expect(formatM2(total)).toBe('29.996');
+  });
+
+  it('extractEntriesFromRows deve suportar capina_manual corretamente', () => {
+    const entries = extractEntriesFromRows(
+      [{ faixa: 'Faixa 4', berma: 'Berma 32', elevado: 'Elevado 33', value: '1.500' }],
+      '2026-11-26',
+      'capina_manual'
+    );
+    expect(entries).toHaveLength(1);
+    expect(entries[0].activityType).toBe('capina_manual');
+    expect(entries[0].berma).toBe('Berma 32 e Elevado 33');
+    expect(entries[0].value).toBe(1500);
   });
 
   it('extractCopyableText deve ignorar caixas de período com data-no-copy="true" ao copiar/enviar para WhatsApp', () => {

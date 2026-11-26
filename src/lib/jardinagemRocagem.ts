@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { formatBermaElevadoPair, splitBermaElevado } from './rdoLocations'
 
-export type JardinagemActivityType = 'rocagem' | 'limpeza_manual' | 'limpeza_soprador';
+export type JardinagemActivityType = 'rocagem' | 'limpeza_manual' | 'capina_manual' | 'limpeza_soprador';
 
 export interface ActivityConfig {
   type: JardinagemActivityType;
@@ -9,7 +9,7 @@ export interface ActivityConfig {
   shortName: string;
   unit: string;
   icon: string;
-  dbKey: 'rocagem' | 'limpezaManual' | 'limpezaSoprador';
+  dbKey: 'rocagem' | 'limpezaManual' | 'capinaManual' | 'limpezaSoprador';
   color: string;
 }
 
@@ -31,6 +31,15 @@ export const JARDINAGEM_ACTIVITIES: Record<JardinagemActivityType, ActivityConfi
     icon: '🧹',
     dbKey: 'limpezaManual',
     color: 'teal'
+  },
+  capina_manual: {
+    type: 'capina_manual',
+    name: 'Capina Manual',
+    shortName: 'Capina Manual',
+    unit: 'm²',
+    icon: '🌾',
+    dbKey: 'capinaManual',
+    color: 'lime'
   },
   limpeza_soprador: {
     type: 'limpeza_soprador',
@@ -57,6 +66,7 @@ export interface RocagemEntry {
 export interface AllJardinagemRecords {
   rocagem: RocagemEntry[];
   limpezaManual: RocagemEntry[];
+  capinaManual: RocagemEntry[];
   limpezaSoprador: RocagemEntry[];
 }
 
@@ -184,7 +194,29 @@ export function extractEntriesFromRows(
 export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
   const rocagemMap: Record<string, RocagemEntry[]> = {};
   const manualMap: Record<string, RocagemEntry[]> = {};
+  const capinaMap: Record<string, RocagemEntry[]> = {};
   const sopradorMap: Record<string, RocagemEntry[]> = {};
+  const customCapinaMap: Record<string, RocagemEntry[]> = {};
+
+  const collectCustomCapina = (key: string, val: any) => {
+    if (!val || val.environment === 'hydro-civil') return;
+    const modName = String(val.moduloName || val.moduloNome || '');
+    const isCapinaModule = /capina/i.test(modName) || /capina/i.test(key);
+    if (!isCapinaModule) return;
+    const matchDate = key.match(/_(\d{4}-\d{2}-\d{2})$/);
+    const date = val.data || (matchDate ? matchDate[1] : '');
+    if (!date) return;
+    const allRows: any[] = [];
+    if (val.cardRows && typeof val.cardRows === 'object') {
+      Object.values(val.cardRows).forEach(rows => {
+        if (Array.isArray(rows)) allRows.push(...rows);
+      });
+    }
+    const extracted = extractEntriesFromRows(allRows, date, 'capina_manual');
+    if (extracted.length > 0) {
+      customCapinaMap[date] = [...(customCapinaMap[date] || []), ...extracted];
+    }
+  };
 
   // 1. Carregar do localStorage
   try {
@@ -196,7 +228,16 @@ export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
           const val = JSON.parse(localStorage.getItem(k) || '{}');
           if (val.rocagem) rocagemMap[date] = extractEntriesFromRows(val.rocagem, date, 'rocagem');
           if (val.limpezaManual) manualMap[date] = extractEntriesFromRows(val.limpezaManual, date, 'limpeza_manual');
+          if (val.capinaManual) capinaMap[date] = extractEntriesFromRows(val.capinaManual, date, 'capina_manual');
           if (val.limpezaSoprador) sopradorMap[date] = extractEntriesFromRows(val.limpezaSoprador, date, 'limpeza_soprador');
+        } catch (e) {}
+      }
+
+      const customKeys = Object.keys(localStorage).filter(k => k.startsWith('custom_rdo_'));
+      for (const k of customKeys) {
+        try {
+          const val = JSON.parse(localStorage.getItem(k) || '{}');
+          collectCustomCapina(k, val);
         } catch (e) {}
       }
     }
@@ -204,10 +245,16 @@ export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
 
   // 2. Carregar do Supabase (global_settings)
   try {
-    const { data, error } = await supabase
-      .from('global_settings')
-      .select('key, value')
-      .like('key', 'jardinagem_rdo_%');
+    const [{ data, error }, { data: customData }] = await Promise.all([
+      supabase
+        .from('global_settings')
+        .select('key, value')
+        .like('key', 'jardinagem_rdo_%'),
+      supabase
+        .from('global_settings')
+        .select('key, value')
+        .like('key', 'custom_rdo_%'),
+    ]);
 
     if (!error && data) {
       data.forEach(item => {
@@ -216,13 +263,27 @@ export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
         if (val) {
           if (val.rocagem) rocagemMap[date] = extractEntriesFromRows(val.rocagem, date, 'rocagem');
           if (val.limpezaManual) manualMap[date] = extractEntriesFromRows(val.limpezaManual, date, 'limpeza_manual');
+          if (val.capinaManual) capinaMap[date] = extractEntriesFromRows(val.capinaManual, date, 'capina_manual');
           if (val.limpezaSoprador) sopradorMap[date] = extractEntriesFromRows(val.limpezaSoprador, date, 'limpeza_soprador');
         }
+      });
+    }
+
+    if (customData) {
+      customData.forEach(item => {
+        collectCustomCapina(item.key, item.value);
       });
     }
   } catch (err) {
     console.error('Erro ao buscar registros de jardinagem do banco:', err);
   }
+
+  // Fallback para módulos customizados de Capina Manual quando não houver entrada direta em jardinagem_rdo_
+  Object.keys(customCapinaMap).forEach(date => {
+    if (!capinaMap[date] || capinaMap[date].length === 0) {
+      capinaMap[date] = customCapinaMap[date];
+    }
+  });
 
   const flatten = (map: Record<string, RocagemEntry[]>) => {
     const list: RocagemEntry[] = [];
@@ -233,6 +294,7 @@ export async function getAllJardinagemRecords(): Promise<AllJardinagemRecords> {
   return {
     rocagem: flatten(rocagemMap),
     limpezaManual: flatten(manualMap),
+    capinaManual: flatten(capinaMap),
     limpezaSoprador: flatten(sopradorMap)
   };
 }
@@ -325,14 +387,20 @@ export function calculatePeriodActivityTotal(
 }
 
 /**
- * Soma os totais das 3 atividades de medição (Roçagem, Limpeza Manual e Limpeza com Soprador).
+ * Soma os totais das atividades de medição (Roçagem, Limpeza Manual, Capina Manual e Limpeza com Soprador).
  */
 export function sumActivitiesTotals(totals: {
   rocagem: number;
   limpeza_manual: number;
+  capina_manual?: number;
   limpeza_soprador: number;
 }): number {
-  return (totals.rocagem || 0) + (totals.limpeza_manual || 0) + (totals.limpeza_soprador || 0);
+  return (
+    (totals.rocagem || 0) +
+    (totals.limpeza_manual || 0) +
+    (totals.capina_manual || 0) +
+    (totals.limpeza_soprador || 0)
+  );
 }
 
 /**

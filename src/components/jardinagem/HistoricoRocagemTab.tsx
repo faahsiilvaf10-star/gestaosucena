@@ -22,24 +22,62 @@ import {
   AllJardinagemRecords
 } from '../../lib/jardinagemRocagem'
 
+export type ActivityFilter = 'todas' | JardinagemActivityType;
+
 interface HistoricoRocagemTabProps {
   records?: RocagemEntry[]
   allRecords?: AllJardinagemRecords
-  initialActivity?: JardinagemActivityType
+  initialActivity?: ActivityFilter
+  referenceDate?: string
   loading: boolean
   onSelectDate: (date: string) => void
   onRefresh: () => void
 }
 
+const ACTIVITY_META: Record<
+  JardinagemActivityType,
+  { icon: string; name: string; short: string; badgeClass: string }
+> = {
+  rocagem: {
+    icon: '🌿',
+    name: 'Roçagem',
+    short: 'Roçagem',
+    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  },
+  limpeza_manual: {
+    icon: '🧹',
+    name: 'Limpeza Manual',
+    short: 'Limp. Manual',
+    badgeClass: 'bg-teal-50 text-teal-700 border-teal-200',
+  },
+  capina_manual: {
+    icon: '🌾',
+    name: 'Capina Manual',
+    short: 'Capina Manual',
+    badgeClass: 'bg-lime-50 text-lime-800 border-lime-300',
+  },
+  limpeza_soprador: {
+    icon: '💨',
+    name: 'Limpeza com Soprador',
+    short: 'Soprador',
+    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+  },
+};
+
+function getActivityMeta(type?: JardinagemActivityType) {
+  return ACTIVITY_META[type || 'rocagem'] || ACTIVITY_META.rocagem;
+}
+
 export function HistoricoRocagemTab({
   records,
   allRecords,
-  initialActivity = 'rocagem',
+  initialActivity = 'todas',
+  referenceDate,
   loading,
   onSelectDate,
   onRefresh
 }: HistoricoRocagemTabProps) {
-  const [selectedActivity, setSelectedActivity] = useState<JardinagemActivityType>(initialActivity);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityFilter>(initialActivity);
 
   useEffect(() => {
     if (initialActivity) {
@@ -49,7 +87,16 @@ export function HistoricoRocagemTab({
 
   const activeRecords = useMemo(() => {
     if (allRecords) {
+      if (selectedActivity === 'todas') {
+        return [
+          ...(allRecords.rocagem || []),
+          ...(allRecords.limpezaManual || []),
+          ...(allRecords.capinaManual || []),
+          ...(allRecords.limpezaSoprador || [])
+        ];
+      }
       if (selectedActivity === 'limpeza_manual') return allRecords.limpezaManual || [];
+      if (selectedActivity === 'capina_manual') return allRecords.capinaManual || [];
       if (selectedActivity === 'limpeza_soprador') return allRecords.limpezaSoprador || [];
       return allRecords.rocagem || [];
     }
@@ -61,6 +108,7 @@ export function HistoricoRocagemTab({
       return [
         ...(allRecords.rocagem || []),
         ...(allRecords.limpezaManual || []),
+        ...(allRecords.capinaManual || []),
         ...(allRecords.limpezaSoprador || [])
       ];
     }
@@ -69,8 +117,8 @@ export function HistoricoRocagemTab({
 
   // Lista de ciclos disponíveis
   const availableCycles = useMemo(() => {
-    return getAvailableCycles(combinedRecordsForCycles);
-  }, [combinedRecordsForCycles]);
+    return getAvailableCycles(combinedRecordsForCycles, referenceDate);
+  }, [combinedRecordsForCycles, referenceDate]);
 
   // Ciclo selecionado (padrão é o mais recente)
   const [selectedCycleId, setSelectedCycleId] = useState<string>(() => {
@@ -88,10 +136,10 @@ export function HistoricoRocagemTab({
   const [selectedFaixaFilter, setSelectedFaixaFilter] = useState<string>('todas');
   const [copied, setCopied] = useState(false);
 
-  // Totais das 3 atividades no ciclo atual para os badges do seletor
+  // Totais das atividades no ciclo atual para os badges do seletor
   const activityTotals = useMemo(() => {
     if (!currentCycle) {
-      return { rocagem: 0, limpeza_manual: 0, limpeza_soprador: 0 };
+      return { rocagem: 0, limpeza_manual: 0, capina_manual: 0, limpeza_soprador: 0 };
     }
     const sumInCycle = (list: RocagemEntry[]) =>
       list
@@ -102,17 +150,27 @@ export function HistoricoRocagemTab({
       return {
         rocagem: sumInCycle(allRecords.rocagem || []),
         limpeza_manual: sumInCycle(allRecords.limpezaManual || []),
+        capina_manual: sumInCycle(allRecords.capinaManual || []),
         limpeza_soprador: sumInCycle(allRecords.limpezaSoprador || [])
       };
     }
     return {
       rocagem: sumInCycle(records || []),
       limpeza_manual: 0,
+      capina_manual: 0,
       limpeza_soprador: 0
     };
   }, [currentCycle, allRecords, records]);
 
-  const currentActivityConfig = JARDINAGEM_ACTIVITIES[selectedActivity] || JARDINAGEM_ACTIVITIES.rocagem;
+  const currentActivityConfig =
+    selectedActivity === 'todas'
+      ? {
+          name: 'Geral (Todas as Atividades)',
+          shortName: 'Total Geral',
+          unit: 'm²',
+          icon: '📊',
+        }
+      : JARDINAGEM_ACTIVITIES[selectedActivity] || JARDINAGEM_ACTIVITIES.rocagem;
 
   // Registros pertencentes ao ciclo atual
   const cycleRecords = useMemo(() => {
@@ -127,10 +185,12 @@ export function HistoricoRocagemTab({
   const filteredRecords = useMemo(() => {
     return cycleRecords.filter(r => {
       const term = searchTerm.toLowerCase().trim()
+      const actName = getActivityMeta(r.activityType).name.toLowerCase();
       const matchesSearch = !term ||
         r.faixa.toLowerCase().includes(term) ||
         r.berma.toLowerCase().includes(term) ||
         (r.elevado || '').toLowerCase().includes(term) ||
+        actName.includes(term) ||
         r.date.includes(term)
 
       const matchesFaixa = selectedFaixaFilter === 'todas' || r.faixa === selectedFaixaFilter
@@ -229,7 +289,8 @@ export function HistoricoRocagemTab({
         const bData = fData.bermas[berma]
         text += `  • *${berma}:* ${formatM2(bData.totalBermaM2)} m²\n`
         bData.items.forEach(it => {
-          text += `    - ${formatDateDisplay(it.date)}: ${formatM2(it.value)} m²\n`
+          const actLabel = getActivityMeta(it.activityType).name;
+          text += `    - ${formatDateDisplay(it.date)} (${actLabel}): ${formatM2(it.value)} m²\n`
         })
       })
       text += `\n`
@@ -293,6 +354,23 @@ export function HistoricoRocagemTab({
 
           <button
             type="button"
+            onClick={() => setSelectedActivity('capina_manual')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              selectedActivity === 'capina_manual'
+                ? 'bg-lime-600 text-white shadow-sm'
+                : 'bg-lime-50 text-lime-800 hover:bg-lime-100'
+            }`}
+          >
+            <span>🌾 Capina Manual</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
+              selectedActivity === 'capina_manual' ? 'bg-white/20 text-white' : 'bg-lime-200/80 text-lime-900'
+            }`}>
+              {formatM2(activityTotals.capina_manual)} m²
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setSelectedActivity('limpeza_soprador')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedActivity === 'limpeza_soprador'
@@ -310,16 +388,24 @@ export function HistoricoRocagemTab({
 
           <div className="hidden sm:block w-px h-6 bg-gray-200 mx-0.5" aria-hidden="true" />
 
-          <div
+          <button
+            type="button"
+            onClick={() => setSelectedActivity('todas')}
             data-testid="atividades-medicao-total"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-950 border border-amber-300 shadow-2xs"
-            title="Soma total de Roçagem + Limpeza Manual + Limpeza com Soprador no período"
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold border transition-all cursor-pointer ${
+              selectedActivity === 'todas'
+                ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-950 border-amber-300 hover:bg-amber-100 shadow-2xs'
+            }`}
+            title="Ver todas as faixas e bermas somando Roçagem + Limpeza Manual + Capina Manual + Soprador"
           >
-            <span>📊 Total Geral</span>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-amber-200/90 text-amber-950">
+            <span>📊 Total Geral (Todas)</span>
+            <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-black ${
+              selectedActivity === 'todas' ? 'bg-white/25 text-white' : 'bg-amber-200/90 text-amber-950'
+            }`}>
               {formatM2(sumActivitiesTotals(activityTotals))} m²
             </span>
-          </div>
+          </button>
         </div>
       </div>
       {/* Barra Superior de Seleção do Ciclo e Ações */}
@@ -510,7 +596,7 @@ export function HistoricoRocagemTab({
             <Search size={14} className="text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Buscar berma, elevado, faixa..."
+              placeholder="Buscar berma, elevado, faixa, atividade..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="bg-transparent outline-none w-full text-xs text-gray-800 placeholder-gray-400"
@@ -594,36 +680,49 @@ export function HistoricoRocagemTab({
                               </span>
                             </div>
 
-                            {/* Entradas organizadas em ordem na data crescente */}
+                            {/* Entradas organizadas em ordem na data crescente com data, atividade e quantidade */}
                             <div className="flex flex-col gap-2">
-                              {bermaGroup.items.map((item, itIdx) => (
-                                <div
-                                  key={`${item.date}-${itIdx}`}
-                                  className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-gray-100 text-xs hover:border-gray-300 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-gray-700">
-                                      {formatDateDisplay(item.date)}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400">
-                                      {formatLongDate(item.date).split('(')[1]?.replace(')', '') || ''}
-                                    </span>
-                                  </div>
+                              {bermaGroup.items.map((item, itIdx) => {
+                                const meta = getActivityMeta(item.activityType);
+                                return (
+                                  <div
+                                    key={`${item.date}-${item.activityType || 'roc'}-${itIdx}`}
+                                    className="flex flex-col gap-1 bg-white px-3 py-2 rounded-xl border border-gray-100 text-xs hover:border-gray-300 transition-colors group"
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                        <span className="font-semibold text-gray-800">
+                                          {formatDateDisplay(item.date)}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400">
+                                          {formatLongDate(item.date).split('(')[1]?.replace(')', '') || ''}
+                                        </span>
+                                        <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md border ${meta.badgeClass}`}>
+                                          {meta.icon} {meta.short}
+                                        </span>
+                                      </div>
 
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-extrabold text-gray-900">
-                                      {formatM2(item.value)} m²
-                                    </span>
-                                    <button
-                                      onClick={() => onSelectDate(item.date)}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded"
-                                      title="Abrir RDO desta data"
-                                    >
-                                      <ExternalLink size={12} />
-                                    </button>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <span className="font-extrabold text-gray-900">
+                                          {formatM2(item.value)} m²
+                                        </span>
+                                        <button
+                                          onClick={() => onSelectDate(item.date)}
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded"
+                                          title="Abrir RDO desta data"
+                                        >
+                                          <ExternalLink size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    {item.observacao && (
+                                      <span className="text-[11px] text-teal-800 font-medium italic truncate" title={item.observacao}>
+                                        Obs: {item.observacao}
+                                      </span>
+                                    )}
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -658,6 +757,7 @@ export function HistoricoRocagemTab({
                 <tr>
                   <th className="px-6 py-3.5">Data (Crescente)</th>
                   <th className="px-6 py-3.5">Dia da Semana</th>
+                  <th className="px-6 py-3.5">Atividade</th>
                   <th className="px-6 py-3.5">Faixa</th>
                   <th className="px-6 py-3.5">Berma / Elevado</th>
                   <th className="px-6 py-3.5 text-right">Quantidade (m²)</th>
@@ -670,14 +770,20 @@ export function HistoricoRocagemTab({
                   let runningTotal = 0
                   return filteredRecords.map((rec, idx) => {
                     runningTotal += rec.value
+                    const meta = getActivityMeta(rec.activityType);
 
                     return (
-                      <tr key={`${rec.date}-${idx}`} className="hover:bg-emerald-50/40 transition-colors">
+                      <tr key={`${rec.date}-${rec.activityType || 'roc'}-${idx}`} className="hover:bg-emerald-50/40 transition-colors">
                         <td className="px-6 py-3.5 font-bold text-gray-900">
                           {formatDateDisplay(rec.date)}
                         </td>
                         <td className="px-6 py-3.5 text-xs text-gray-500 capitalize">
                           {formatLongDate(rec.date).split('(')[1]?.replace(')', '') || ''}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${meta.badgeClass}`}>
+                            {meta.icon} {meta.name}
+                          </span>
                         </td>
                         <td className="px-6 py-3.5">
                           <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -719,7 +825,7 @@ export function HistoricoRocagemTab({
               </tbody>
               <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-gray-700 uppercase text-xs">
+                  <td colSpan={5} className="px-6 py-4 text-gray-700 uppercase text-xs">
                     Total Acumulado Filtrado
                   </td>
                   <td className="px-6 py-4 text-right text-emerald-800 text-base font-extrabold">
@@ -750,8 +856,9 @@ export function HistoricoRocagemTab({
                 <tr>
                   <th className="px-6 py-3.5">Faixa</th>
                   <th className="px-6 py-3.5">Berma / Elevado</th>
+                  <th className="px-6 py-3.5">Atividades</th>
                   <th className="px-6 py-3.5 text-center">Dias Atendidos</th>
-                  <th className="px-6 py-3.5 text-right">Área Total Roçada (m²)</th>
+                  <th className="px-6 py-3.5 text-right">Área Total Medida (m²)</th>
                   <th className="px-6 py-3.5 text-right">% do Período</th>
                 </tr>
               </thead>
@@ -761,6 +868,9 @@ export function HistoricoRocagemTab({
                   return Object.keys(fData.bermas).sort().map((berma, bIdx) => {
                     const bData = fData.bermas[berma]
                     const pct = totalGeralM2 > 0 ? (bData.totalBermaM2 / totalGeralM2) * 100 : 0
+                    const uniqueActivities = Array.from(
+                      new Set(bData.items.map(it => it.activityType || 'rocagem'))
+                    ) as JardinagemActivityType[];
 
                     return (
                       <tr key={`${faixa}-${berma}`} className="hover:bg-gray-50 transition-colors">
@@ -770,8 +880,20 @@ export function HistoricoRocagemTab({
                         <td className="px-6 py-3 font-medium text-gray-700">
                           {berma}
                         </td>
+                        <td className="px-6 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {uniqueActivities.map(act => {
+                              const meta = getActivityMeta(act);
+                              return (
+                                <span key={act} className={`px-2 py-0.5 text-[11px] font-bold rounded-md border ${meta.badgeClass}`}>
+                                  {meta.icon} {meta.short}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </td>
                         <td className="px-6 py-3 text-center text-xs text-gray-500">
-                          {bData.items.length} {bData.items.length === 1 ? 'dia' : 'dias'}
+                          {bData.items.length} {bData.items.length === 1 ? 'registro' : 'registros'}
                         </td>
                         <td className="px-6 py-3 text-right font-extrabold text-emerald-800">
                           {formatM2(bData.totalBermaM2)} m²
@@ -786,7 +908,7 @@ export function HistoricoRocagemTab({
               </tbody>
               <tfoot className="bg-emerald-50/70 font-extrabold text-emerald-950 border-t-2 border-emerald-200">
                 <tr>
-                  <td colSpan={3} className="px-6 py-4 uppercase text-xs">
+                  <td colSpan={4} className="px-6 py-4 uppercase text-xs">
                     Total Geral do Período ({currentCycle?.label})
                   </td>
                   <td className="px-6 py-4 text-right text-base text-emerald-900 font-extrabold">
