@@ -1,19 +1,17 @@
-import { useMemo } from 'react'
+import React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import type { Reminder } from '../lib/api-reminders'
+import type { Reminder, UserProfile } from '../lib/api-reminders'
 import {
   getReminderCardColor,
   getReminderIsPulsing,
   isReminderForAllUsers,
-  getReminderResponsibleIds,
 } from '../lib/api-reminders'
-import type { UserProfile } from '../lib/api-reminders'
 
 /* ─────── constants ─────── */
 const GOLD = '#FFC400'
 const GOLD_DARK = '#E5A800'
-const RED_NEON = '#ff2d2d'
-const RED_DARK_BG = 'rgba(180,20,20,0.35)'
+const GOLD_TEXT = '#D97706'
+const RED_ACCENT = '#DC2626'
 
 /* ─────── component ─────── */
 interface DashboardRemindersPremiumProps {
@@ -33,113 +31,95 @@ export function DashboardRemindersPremium({
   return (
     <section
       className="animate-in fade-in slide-in-from-top-3 duration-500"
-      style={{
-        marginTop: 20,
-        marginBottom: 8,
-        background: '#ffffff',
-        borderRadius: 32,
-        padding: 6,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-      }}
+      style={{ marginTop: 20, marginBottom: 8 }}
     >
-      {/* ── OUTER CARD ── */}
+      {/* ── CARD PRINCIPAL COM FUNDO BRANCO ── */}
       <div
         className="relative overflow-hidden transition-transform duration-300 hover:-translate-y-0.5"
         style={{
-          background: 'linear-gradient(135deg, #101010 0%, #1a1a1a 40%, #0d0d0d 100%)',
-          borderRadius: 26,
-          border: '1.5px solid rgba(255,255,255,0.08)',
+          background: '#FFFFFF',
+          borderRadius: 28,
+          border: '1.5px solid #E5E7EB',
           boxShadow:
-            '0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
+            '0 4px 24px -2px rgba(0,0,0,0.06), 0 2px 8px -2px rgba(0,0,0,0.04)',
         }}
       >
-        {/* gold corner accent top-right */}
+        {/* Detalhe dourado suave no canto superior direito */}
         <div
           className="pointer-events-none absolute"
           style={{
             top: -40,
             right: -40,
-            width: 220,
-            height: 220,
-            background: `radial-gradient(circle at 70% 30%, ${GOLD}18, transparent 70%)`,
+            width: 240,
+            height: 240,
+            background: `radial-gradient(circle at 70% 30%, rgba(255,196,0,0.14), transparent 70%)`,
           }}
         />
 
-        {/* glassmorphism overlay */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(120deg, rgba(255,255,255,0.03) 0%, transparent 50%)',
-            borderRadius: 28,
-          }}
-        />
-
-        {/* ── HEADER ── */}
+        {/* ── CABEÇALHO ── */}
         <div
           className="relative z-10 flex items-center justify-between gap-4 flex-wrap"
           style={{ padding: '20px 24px 14px 24px' }}
         >
           <div className="flex items-center gap-4 min-w-0">
-            {/* Calendar + bell 3D icon */}
+            {/* Ícone 3D de calendário com sino */}
             <div className="relative flex-shrink-0" style={{ width: 54, height: 54 }}>
-              {/* gold base glow */}
+              {/* Brilho dourado atrás */}
               <div
-                className="absolute inset-0 rounded-xl"
+                className="absolute inset-0 rounded-2xl"
                 style={{
-                  background: `radial-gradient(circle, ${GOLD}44, transparent 70%)`,
-                  transform: 'scale(1.3)',
-                  filter: 'blur(6px)',
+                  background: `radial-gradient(circle, rgba(255,196,0,0.45), transparent 70%)`,
+                  transform: 'scale(1.25)',
+                  filter: 'blur(5px)',
                 }}
               />
-              {/* icon body */}
+              {/* Corpo do ícone */}
               <div
-                className="relative flex items-center justify-center rounded-xl"
+                className="relative flex items-center justify-center rounded-2xl"
                 style={{
                   width: 54,
                   height: 54,
                   background: `linear-gradient(145deg, ${GOLD}, ${GOLD_DARK})`,
-                  boxShadow: `0 4px 16px ${GOLD}55`,
+                  boxShadow: `0 4px 14px rgba(255,196,0,0.4)`,
                 }}
               >
-                {/* calendar body */}
                 <svg
                   width="30"
                   height="30"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#000"
-                  strokeWidth="2"
+                  stroke="#1A1400"
+                  strokeWidth="2.2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
-                  {/* bell inside */}
+                  {/* Sino no centro do calendário */}
                   <path
                     d="M15 14a3 3 0 0 0-6 0c0 3.5-1.5 4.5-1.5 4.5h9S15 17.5 15 14z"
-                    fill="#000"
-                    stroke="#000"
+                    fill="#1A1400"
+                    stroke="#1A1400"
                     strokeWidth="1.5"
                   />
-                  <path d="M13.37 20a1 1 0 0 1-2.74 0" stroke="#000" strokeWidth="1.5" />
+                  <path d="M13.37 20a1 1 0 0 1-2.74 0" stroke="#1A1400" strokeWidth="1.5" />
                 </svg>
               </div>
             </div>
 
-            {/* gold vertical separator */}
+            {/* Separador vertical dourado */}
             <div
               style={{
                 width: 3,
                 height: 40,
                 borderRadius: 2,
                 background: `linear-gradient(180deg, ${GOLD}, ${GOLD_DARK})`,
-                boxShadow: `0 0 8px ${GOLD}55`,
+                boxShadow: `0 0 8px rgba(255,196,0,0.45)`,
                 flexShrink: 0,
               }}
             />
 
-            {/* title + subtitle */}
+            {/* Título + Subtítulo */}
             <div className="min-w-0">
               <h2
                 style={{
@@ -148,19 +128,19 @@ export function DashboardRemindersPremium({
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
                   lineHeight: 1.2,
-                  color: '#fff',
+                  color: '#111827',
                   textTransform: 'uppercase',
                 }}
               >
                 Lembretes para{' '}
-                <span style={{ color: GOLD }}>hoje</span>
+                <span style={{ color: GOLD_TEXT }}>hoje</span>
               </h2>
               <p
                 className="flex items-center gap-1.5"
                 style={{
                   margin: '4px 0 0',
                   fontSize: 13,
-                  color: 'rgba(255,255,255,0.5)',
+                  color: '#6B7280',
                   fontWeight: 500,
                 }}
               >
@@ -184,7 +164,7 @@ export function DashboardRemindersPremium({
             </div>
           </div>
 
-          {/* "Ver todos" button */}
+          {/* Botão "Ver todos" com acabamento dourado */}
           <button
             type="button"
             onClick={() => navigate({ to: '/lembretes' })}
@@ -192,24 +172,25 @@ export function DashboardRemindersPremium({
             style={{
               padding: '8px 20px',
               borderRadius: 999,
-              background: 'rgba(0,0,0,0.6)',
-              border: `1.5px solid ${GOLD}88`,
-              color: '#fff',
+              background: '#FFFFFF',
+              border: `1.5px solid ${GOLD_DARK}`,
+              color: '#1F2937',
               fontSize: 13,
               fontWeight: 600,
-              boxShadow: `0 0 12px ${GOLD}22`,
-              backdropFilter: 'blur(8px)',
+              boxShadow: `0 1px 4px rgba(0,0,0,0.05)`,
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
               const t = e.currentTarget
-              t.style.boxShadow = `0 0 20px ${GOLD}55`
+              t.style.background = '#FFFBEB'
+              t.style.boxShadow = `0 2px 12px rgba(229,168,0,0.3)`
               t.style.borderColor = GOLD
             }}
             onMouseLeave={(e) => {
               const t = e.currentTarget
-              t.style.boxShadow = `0 0 12px ${GOLD}22`
-              t.style.borderColor = `${GOLD}88`
+              t.style.background = '#FFFFFF'
+              t.style.boxShadow = `0 1px 4px rgba(0,0,0,0.05)`
+              t.style.borderColor = GOLD_DARK
             }}
           >
             Ver todos
@@ -218,7 +199,7 @@ export function DashboardRemindersPremium({
               height="14"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={GOLD}
+              stroke={GOLD_TEXT}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -229,7 +210,7 @@ export function DashboardRemindersPremium({
           </button>
         </div>
 
-        {/* ── REMINDER ITEMS ── */}
+        {/* ── LISTA DE LEMBRETES ── */}
         <div
           className="relative z-10"
           style={{ padding: '0 24px 0 24px' }}
@@ -246,7 +227,7 @@ export function DashboardRemindersPremium({
           </div>
         </div>
 
-        {/* ── SAFETY STRIPE BOTTOM ── */}
+        {/* ── FAIXA DE SEGURANÇA INFERIOR (AMARELA E PRETA) ── */}
         <div
           style={{
             marginTop: 16,
@@ -256,10 +237,10 @@ export function DashboardRemindersPremium({
               -45deg,
               ${GOLD},
               ${GOLD} 12px,
-              #050505 12px,
-              #050505 24px
+              #18181B 12px,
+              #18181B 24px
             )`,
-            boxShadow: `inset 0 2px 6px rgba(0,0,0,0.5)`,
+            boxShadow: `inset 0 2px 4px rgba(0,0,0,0.2)`,
           }}
         />
       </div>
@@ -267,7 +248,7 @@ export function DashboardRemindersPremium({
   )
 }
 
-/* ─────── REMINDER ITEM ─────── */
+/* ─────── CARD INDIVIDUAL DO LEMBRETE ─────── */
 function ReminderItem({
   reminder,
   users,
@@ -281,11 +262,16 @@ function ReminderItem({
   const isPulsing = getReminderIsPulsing(reminder)
   const isAll = isReminderForAllUsers(reminder, users)
 
-  // Pick red or custom color
-  const accentColor = customColor || RED_NEON
+  // Cor de destaque (cor customizada ou vermelho padrão)
+  const accentColor = customColor || RED_ACCENT
+
   const bgGradient = customColor
-    ? `linear-gradient(135deg, color-mix(in srgb, ${customColor} 25%, #0a0a0a), color-mix(in srgb, ${customColor} 10%, #111))`
-    : `linear-gradient(135deg, rgba(180,20,20,0.3) 0%, rgba(100,10,10,0.15) 100%)`
+    ? `linear-gradient(135deg, color-mix(in srgb, ${customColor} 10%, #FFFFFF) 0%, color-mix(in srgb, ${customColor} 4%, #FFFFFF) 100%)`
+    : `linear-gradient(135deg, #FFF5F5 0%, #FEF2F2 100%)`
+
+  const borderColor = customColor
+    ? `color-mix(in srgb, ${customColor} 50%, #FFFFFF)`
+    : '#FECACA'
 
   return (
     <div
@@ -294,33 +280,33 @@ function ReminderItem({
       className={`group/item cursor-pointer transition-all duration-300 hover:-translate-y-0.5 ${isPulsing ? 'reminder-card-pulse' : ''}`}
       style={{
         background: bgGradient,
-        border: `1.5px solid ${accentColor}66`,
+        border: `1.5px solid ${borderColor}`,
         borderRadius: 22,
         padding: '12px 16px',
-        boxShadow: `0 0 20px ${accentColor}18, inset 0 1px 0 rgba(255,255,255,0.03)`,
+        boxShadow: `0 2px 10px ${accentColor}12, inset 0 1px 0 rgba(255,255,255,0.8)`,
         ...(isPulsing
           ? ({ '--reminder-pulse-shadow': accentColor } as React.CSSProperties)
           : {}),
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 0 28px ${accentColor}33, inset 0 1px 0 rgba(255,255,255,0.05)`
-        e.currentTarget.style.borderColor = `${accentColor}99`
+        e.currentTarget.style.boxShadow = `0 4px 18px ${accentColor}25, inset 0 1px 0 rgba(255,255,255,1)`
+        e.currentTarget.style.borderColor = accentColor
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = `0 0 20px ${accentColor}18, inset 0 1px 0 rgba(255,255,255,0.03)`
-        e.currentTarget.style.borderColor = `${accentColor}66`
+        e.currentTarget.style.boxShadow = `0 2px 10px ${accentColor}12, inset 0 1px 0 rgba(255,255,255,0.8)`
+        e.currentTarget.style.borderColor = borderColor
       }}
     >
       <div className="flex items-center gap-3 w-full">
-        {/* Bell icon square */}
+        {/* Quadrado com ícone de sino e efeito luminoso */}
         <div
           className="flex-shrink-0 flex items-center justify-center"
           style={{
             width: 40,
             height: 40,
             borderRadius: 12,
-            background: `linear-gradient(145deg, ${accentColor}44, ${accentColor}22)`,
-            boxShadow: `0 0 14px ${accentColor}33`,
+            background: `linear-gradient(145deg, ${accentColor}, color-mix(in srgb, ${accentColor} 80%, #000))`,
+            boxShadow: `0 2px 10px ${accentColor}40`,
           }}
         >
           <svg
@@ -328,7 +314,7 @@ function ReminderItem({
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#fff"
+            stroke="#FFFFFF"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -338,20 +324,20 @@ function ReminderItem({
           </svg>
         </div>
 
-        {/* Red vertical separator */}
+        {/* Separador vertical com cor do alerta */}
         <div
           className="flex-shrink-0"
           style={{
             width: 2,
             height: 28,
             borderRadius: 1,
-            background: `${accentColor}55`,
+            background: `color-mix(in srgb, ${accentColor} 35%, transparent)`,
           }}
         />
 
-        {/* Content */}
+        {/* Conteúdo horizontal */}
         <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
-          {/* Pulsing dot alert */}
+          {/* Bolinha pulsante de alerta */}
           <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
             <span
               className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
@@ -363,39 +349,41 @@ function ReminderItem({
             />
           </span>
 
-          {/* Title */}
+          {/* Nome do lembrete */}
           <p
-            className="font-bold text-white truncate"
+            className="font-bold truncate"
             style={{
               fontSize: 15,
-              letterSpacing: '0.02em',
+              letterSpacing: '0.01em',
               textTransform: 'uppercase',
-              maxWidth: '30%',
+              color: '#111827',
+              maxWidth: '32%',
               minWidth: 60,
             }}
           >
             {reminder.title}
           </p>
 
-          {/* Separator */}
+          {/* Separador vertical */}
           <div
             className="flex-shrink-0 hidden sm:block"
             style={{
               width: 1.5,
               height: 22,
-              background: 'rgba(255,255,255,0.12)',
+              background: '#E5E7EB',
             }}
           />
 
-          {/* Time capsule */}
+          {/* Cápsula de horário */}
           {reminder.due_time && (
             <div
               className="flex items-center gap-1.5 flex-shrink-0"
               style={{
                 padding: '4px 12px',
                 borderRadius: 999,
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
               <svg
@@ -403,8 +391,8 @@ function ReminderItem({
                 height="13"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={GOLD}
-                strokeWidth="2"
+                stroke={GOLD_TEXT}
+                strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -415,7 +403,7 @@ function ReminderItem({
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: '#fff',
+                  color: '#111827',
                 }}
               >
                 {String(reminder.due_time).substring(0, 5)}
@@ -423,27 +411,28 @@ function ReminderItem({
             </div>
           )}
 
-          {/* Separator */}
+          {/* Separador vertical se tiver recorrência */}
           {reminder.is_recurring && (
             <div
               className="flex-shrink-0 hidden sm:block"
               style={{
                 width: 1.5,
                 height: 22,
-                background: 'rgba(255,255,255,0.12)',
+                background: '#E5E7EB',
               }}
             />
           )}
 
-          {/* Recorrente capsule */}
+          {/* Cápsula "Recorrente" */}
           {reminder.is_recurring && (
             <div
               className="flex items-center gap-1.5 flex-shrink-0"
               style={{
                 padding: '4px 12px',
                 borderRadius: 999,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
               <svg
@@ -451,7 +440,7 @@ function ReminderItem({
                 height="13"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="rgba(255,255,255,0.7)"
+                stroke="#6B7280"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -465,7 +454,7 @@ function ReminderItem({
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: 'rgba(255,255,255,0.7)',
+                  color: '#4B5563',
                 }}
               >
                 Recorrente
@@ -473,7 +462,7 @@ function ReminderItem({
             </div>
           )}
 
-          {/* Priority tag */}
+          {/* Tag de Prioridade */}
           {reminder.priority !== 'Normal' && (
             <div
               className="flex-shrink-0"
@@ -485,22 +474,22 @@ function ReminderItem({
                 textTransform: 'uppercase',
                 background:
                   reminder.priority === 'Urgente'
-                    ? 'rgba(220,38,38,0.25)'
+                    ? '#FEF2F2'
                     : reminder.priority === 'Alta'
-                      ? 'rgba(234,88,12,0.25)'
-                      : 'rgba(37,99,235,0.25)',
+                      ? '#FFF7ED'
+                      : '#EFF6FF',
                 color:
                   reminder.priority === 'Urgente'
-                    ? '#fca5a5'
+                    ? '#DC2626'
                     : reminder.priority === 'Alta'
-                      ? '#fdba74'
-                      : '#93c5fd',
+                      ? '#EA580C'
+                      : '#2563EB',
                 border: `1px solid ${
                   reminder.priority === 'Urgente'
-                    ? 'rgba(220,38,38,0.4)'
+                    ? '#FECACA'
                     : reminder.priority === 'Alta'
-                      ? 'rgba(234,88,12,0.4)'
-                      : 'rgba(37,99,235,0.4)'
+                      ? '#FED7AA'
+                      : '#BFDBFE'
                 }`,
               }}
             >
@@ -508,7 +497,7 @@ function ReminderItem({
             </div>
           )}
 
-          {/* "Todos" tag */}
+          {/* Tag "Todos" */}
           {isAll && (
             <div
               className="flex-shrink-0"
@@ -517,9 +506,9 @@ function ReminderItem({
                 borderRadius: 6,
                 fontSize: 10,
                 fontWeight: 700,
-                background: 'rgba(37,99,235,0.2)',
-                color: '#93c5fd',
-                border: '1px solid rgba(37,99,235,0.3)',
+                background: '#EFF6FF',
+                color: '#2563EB',
+                border: '1px solid #BFDBFE',
               }}
             >
               Todos
@@ -527,15 +516,16 @@ function ReminderItem({
           )}
         </div>
 
-        {/* Arrow button */}
+        {/* Botão com seta de navegação à direita */}
         <div
           className="flex-shrink-0 flex items-center justify-center transition-colors duration-200"
           style={{
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}
         >
           <svg
@@ -543,7 +533,7 @@ function ReminderItem({
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="rgba(255,255,255,0.5)"
+            stroke="#6B7280"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -554,13 +544,13 @@ function ReminderItem({
         </div>
       </div>
 
-      {/* Description row */}
+      {/* Descrição do lembrete */}
       {reminder.description && (
         <p
           style={{
             margin: '6px 0 0 56px',
             fontSize: 12,
-            color: 'rgba(255,255,255,0.4)',
+            color: '#6B7280',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
