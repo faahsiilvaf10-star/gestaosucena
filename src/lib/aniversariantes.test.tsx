@@ -213,9 +213,14 @@ describe('Aniversariantes - Consulta Real, Regras de Sessão e Modal', () => {
       )
     })
 
+    const backdrop = container.querySelector('[data-testid="birthday-announcement-backdrop"]')
+    expect(backdrop?.className).toContain('inset-0')
+    expect(backdrop?.getAttribute('role')).toBeNull()
+
     const modal = container.querySelector('[data-testid="birthday-announcement-modal"]')
-    expect(modal?.innerHTML).toContain('max-h-[92vh]')
-    expect(modal?.innerHTML).toContain('rounded-[30px]')
+    expect(modal?.getAttribute('role')).toBe('dialog')
+    expect(modal?.className).toContain('max-h-[92vh]')
+    expect(modal?.className).toContain('rounded-[30px]')
 
     const cardsList = container.querySelector('[data-testid="birthday-cards-list"]')
     expect(cardsList?.children).toHaveLength(10)

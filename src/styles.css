@@ -368,7 +368,12 @@
     height: auto;
   }
 
-  /* Inputs mobile com font-size mínimo para evitar zoom no iOS */
+  /* Modais com largura própria sem alterar outros diálogos */
+.birthday-modal-dialog[role="dialog"] {
+  max-width: min(92vw, 460px) !important;
+}
+
+/* Inputs mobile com font-size mínimo para evitar zoom no iOS */
   input,
   textarea,
   select {

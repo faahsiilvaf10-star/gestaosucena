@@ -78,10 +78,7 @@ export function BirthdayAnnouncementView({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
         className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 bg-black/65 backdrop-blur-sm overflow-y-auto"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="birthday-modal-title"
-        data-testid="birthday-announcement-modal"
+        data-testid="birthday-announcement-backdrop"
       >
         <motion.div
           key="birthday-dialog"
@@ -89,7 +86,11 @@ export function BirthdayAnnouncementView({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 8 }}
           transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-[440px] sm:max-w-[468px] my-auto bg-white rounded-[30px] shadow-[0_32px_80px_-14px_rgba(0,0,0,0.42),0_0_0_1px_rgba(15,23,42,0.06)] px-6 sm:px-8 pt-8 pb-7 sm:pb-8 max-h-[92vh] flex flex-col overflow-hidden text-[#111827]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="birthday-modal-title"
+          data-testid="birthday-announcement-modal"
+          className="birthday-modal-dialog relative w-full max-w-[460px] my-auto bg-white rounded-[30px] shadow-[0_32px_80px_-14px_rgba(0,0,0,0.42),0_0_0_1px_rgba(15,23,42,0.06)] px-6 sm:px-8 pt-8 pb-7 sm:pb-8 max-h-[92vh] flex flex-col overflow-hidden text-[#111827]"
         >
           {/* Botão X no canto superior direito */}
           <button
@@ -199,9 +200,9 @@ export function BirthdayAnnouncementView({
           <div className="text-center shrink-0">
             <h2
               id="birthday-modal-title"
-              className="text-[26px] sm:text-[28px] font-extrabold tracking-tight text-[#111827] leading-tight"
+              className="text-[26px] sm:text-[28px] tracking-tight text-[#111827] leading-tight"
             >
-              Tem festa hoje! 🎉
+              <span style={{ fontWeight: 800 }}>Tem festa hoje! 🎉</span>
             </h2>
             <p className="mt-2 text-[15px] sm:text-[15.5px] font-medium text-[#6B7280] leading-relaxed">
               Hoje é o aniversário dos nossos colaboradores:
@@ -250,16 +251,16 @@ export function BirthdayAnnouncementView({
           <button
             type="button"
             onClick={congratulated ? onClose : onCongratulate}
-            className="w-full min-h-[65px] rounded-[18px] bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.985] text-white font-bold text-[17px] tracking-tight shadow-[0_12px_28px_-6px_rgba(37,99,235,0.48)] hover:shadow-[0_16px_34px_-6px_rgba(37,99,235,0.58)] transition-all duration-200 flex items-center justify-center gap-2.5 px-6 cursor-pointer shrink-0"
+            className="w-full min-h-[65px] rounded-[18px] bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.985] text-white text-[17px] tracking-tight shadow-[0_12px_28px_-6px_rgba(37,99,235,0.48)] hover:shadow-[0_16px_34px_-6px_rgba(37,99,235,0.58)] transition-all duration-200 flex items-center justify-center gap-2.5 px-6 cursor-pointer shrink-0"
           >
             {congratulated ? (
-              <span>Fechar</span>
+              <span style={{ fontWeight: 700 }}>Fechar</span>
             ) : (
               <>
                 <span className="text-xl leading-none" aria-hidden="true">
                   🎉
                 </span>
-                <span>Parabenizar</span>
+                <span style={{ fontWeight: 700 }}>Parabenizar</span>
               </>
             )}
           </button>
