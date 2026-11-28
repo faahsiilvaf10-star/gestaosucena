@@ -35,7 +35,7 @@ import {
   isEquipmentDemobilized,
   EquipmentMobilizationRecord
 } from '../../lib/equipamentos/mobilizacao'
-import { notificarEquipamentoMobilizado } from '../../lib/equipamentosStatusWhatsapp'
+import { notificarEquipamentoMobilizado, notificarEquipamentoDesmobilizado } from '../../lib/equipamentosStatusWhatsapp'
 
 const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
 
@@ -286,6 +286,24 @@ function TodosEquipamentosPage() {
         demobilizedAt: demobIso,
         reason: demobilizeReason,
       })
+
+      // Dispara notificação no WhatsApp de equipamento desmobilizado na hora
+      const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+      notificarEquipamentoDesmobilizado({
+        equipment: {
+          id: selectedEq.id,
+          name: selectedEq.name,
+          plate_tag: selectedEq.plate_tag,
+          category: selectedEq.category,
+          type: selectedEq.type
+        },
+        demobilizedAt: demobIso,
+        demobilizedReason: demobilizeReason || 'Desmobilização da obra',
+        actionDateTime: new Date().toISOString(),
+        userName: currentUserName || undefined,
+        observacoes: demobilizeReason || 'Equipamento desmobilizado da obra'
+      }).catch(e => console.error('Erro ao disparar WhatsApp de desmobilização:', e))
+
       setIsDemobilizeModalOpen(false)
       fetchEquipments()
     } catch (err) {

@@ -42,6 +42,21 @@ export interface EquipamentoMobilizadoNotificationParams {
   observacoes?: string | null
 }
 
+export interface EquipamentoDesmobilizadoNotificationParams {
+  equipment: {
+    id?: string
+    name: string
+    plate_tag?: string | null
+    category?: string | null
+    type?: string | null
+  }
+  demobilizedAt: string | Date
+  demobilizedReason?: string | null
+  actionDateTime?: string | Date
+  userName?: string
+  observacoes?: string | null
+}
+
 /**
  * Formata a data/hora no padrão amigável pt-BR
  */
@@ -231,6 +246,62 @@ export async function notificarEquipamentoMobilizado(
     return { success: result?.success ?? true }
   } catch (err: any) {
     console.error('[WhatsApp] Falha ao disparar alerta de equipamento mobilizado:', err)
+    return { success: false, error: err?.message || String(err) }
+  }
+}
+
+/**
+ * Envia notificação automática de equipamento desmobilizado para o grupo de Avisos no WhatsApp.
+ */
+export async function notificarEquipamentoDesmobilizado(
+  params: EquipamentoDesmobilizadoNotificationParams
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const whatsappSettings = await getWhatsappSettings()
+
+    // Verificar se envio para desmobilizado está habilitado (padrão true se não definido)
+    if (whatsappSettings.equipamentosStatusAlerts?.enabled_desmobilizado === false) {
+      return { success: false, error: 'Notificação de equipamento desmobilizado desativada nas configurações.' }
+    }
+
+    const targetGroupId =
+      whatsappSettings.equipamentosStatusAlerts?.specificGroupId?.trim() ||
+      whatsappSettings.reminders?.specificGroupId?.trim() ||
+      WHATSAPP_DEFAULT_GROUPS.AVISOS
+
+    if (!targetGroupId) {
+      return { success: false, error: 'Nenhum grupo de avisos configurado.' }
+    }
+
+    const template =
+      whatsappSettings.messageTemplates?.equipamentoDesmobilizado ||
+      '🚚 *AVISO: EQUIPAMENTO DESMOBILIZADO DA OBRA* 🚚\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {tag}\n📂 *Categoria:* {categoria}\n⚙️ *Tipo / Modelo:* {tipo}\n📅 *Data da Desmobilização:* {data_desmobilizacao}\n⏰ *Data e Hora do Registro:* {data_hora}\n👤 *Registrado por:* {responsavel}\n⚠️ *Motivo:* {motivo}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento desmobilizado da obra. Não constará mais na lista ativa de operação nem no RDO em datas futuras._\n_Mensagem automática - Sucena / Gestão de Equipamentos_'
+
+    const eqName = params.equipment.name || 'Equipamento'
+    const eqTag = params.equipment.plate_tag ? params.equipment.plate_tag.toUpperCase() : 'S/ Tag'
+    const eqCategory = params.equipment.category || 'Geral'
+    const eqType = params.equipment.type || 'Padrão'
+    const dataDesmobilizacao = formatDataMobilizacao(params.demobilizedAt)
+    const dataHora = formatDataHora(params.actionDateTime || new Date())
+    const responsavel = params.userName?.trim() || (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : '') || 'Sistema'
+    const motivo = params.demobilizedReason?.trim() || 'Desmobilização da obra'
+    const observacoes = params.observacoes?.trim() ? params.observacoes.trim() : (params.demobilizedReason?.trim() || 'Equipamento desmobilizado')
+
+    let message = template
+      .replaceAll('{equipamento}', eqName)
+      .replaceAll('{tag}', eqTag)
+      .replaceAll('{categoria}', eqCategory)
+      .replaceAll('{tipo}', eqType)
+      .replaceAll('{data_desmobilizacao}', dataDesmobilizacao)
+      .replaceAll('{data_hora}', dataHora)
+      .replaceAll('{responsavel}', responsavel)
+      .replaceAll('{motivo}', motivo)
+      .replaceAll('{observacoes}', observacoes)
+
+    const result = await queueWhatsappMessage(whatsappSettings, targetGroupId, message)
+    return { success: result?.success ?? true }
+  } catch (err: any) {
+    console.error('[WhatsApp] Falha ao disparar alerta de equipamento desmobilizado:', err)
     return { success: false, error: err?.message || String(err) }
   }
 }

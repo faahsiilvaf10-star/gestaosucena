@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   notificarEquipamentoQuebrado,
   notificarEquipamentoEmprestado,
-  notificarEquipamentoMobilizado
+  notificarEquipamentoMobilizado,
+  notificarEquipamentoDesmobilizado
 } from './equipamentosStatusWhatsapp'
 import * as settingsMod from './settings'
 import * as offlineSyncMod from './offline-sync'
@@ -186,6 +187,68 @@ describe('equipamentosStatusWhatsapp', () => {
     const res = await notificarEquipamentoMobilizado({
       equipment: { name: 'TRATOR ESTEIRA' },
       mobilizedAt: new Date(),
+      userName: 'Luciano'
+    })
+
+    expect(res.success).toBe(false)
+    expect(queuedMessages).toHaveLength(0)
+  })
+
+  it('deve disparar notificação de equipamento desmobilizado substituindo todas as variáveis dinâmicas', async () => {
+    vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
+      equipamentosStatusAlerts: {
+        enabled_quebrado: true,
+        enabled_emprestado: true,
+        enabled_mobilizado: true,
+        enabled_desmobilizado: true,
+        specificGroupId: '120363408136247156@g.us'
+      },
+      messageTemplates: {
+        equipamentoDesmobilizado:
+          'DESMOBILIZADO: {equipamento} ({tag}) | Categoria: {categoria} | Tipo: {tipo} | Desmobilizado em: {data_desmobilizacao} | Registro: {data_hora} | Por: {responsavel} | Motivo: {motivo} | Obs: {observacoes}'
+      }
+    } as any)
+
+    const res = await notificarEquipamentoDesmobilizado({
+      equipment: {
+        name: 'SUC 01',
+        plate_tag: 'SNJ9G70',
+        category: 'Leve',
+        type: 'Pick Up/Toro'
+      },
+      demobilizedAt: '2026-11-20T12:40:00Z',
+      demobilizedReason: 'Desmobilizado da obra',
+      actionDateTime: '2026-11-28T09:41:00Z',
+      userName: 'Luciano Gestor',
+      observacoes: 'Veículo liberado da frente de serviço'
+    })
+
+    expect(res.success).toBe(true)
+    expect(queuedMessages).toHaveLength(1)
+    expect(queuedMessages[0].phone).toBe('120363408136247156@g.us')
+    expect(queuedMessages[0].message).toContain('SUC 01')
+    expect(queuedMessages[0].message).toContain('SNJ9G70')
+    expect(queuedMessages[0].message).toContain('Leve')
+    expect(queuedMessages[0].message).toContain('Pick Up/Toro')
+    expect(queuedMessages[0].message).toContain('Luciano Gestor')
+    expect(queuedMessages[0].message).toContain('Desmobilizado da obra')
+    expect(queuedMessages[0].message).toContain('Veículo liberado da frente de serviço')
+  })
+
+  it('não deve enviar notificação de equipamento desmobilizado se enabled_desmobilizado for false', async () => {
+    vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
+      equipamentosStatusAlerts: {
+        enabled_quebrado: true,
+        enabled_emprestado: true,
+        enabled_mobilizado: true,
+        enabled_desmobilizado: false,
+        specificGroupId: '120363408136247156@g.us'
+      }
+    } as any)
+
+    const res = await notificarEquipamentoDesmobilizado({
+      equipment: { name: 'SUC 01' },
+      demobilizedAt: new Date(),
       userName: 'Luciano'
     })
 
