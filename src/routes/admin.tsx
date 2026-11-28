@@ -2847,7 +2847,7 @@ function AdminRoute() {
                     { key: 'matrizAcompanhamentoQuintaFeira', label: 'Matriz - Acompanhamento Semanal (Quinta)' },
                     { key: 'analiseRiscoVencendo5Dias', label: 'Análise de Risco (5 Dias)' },
                     { key: 'analiseRiscoVencendoHoje', label: 'Análise de Risco (Hoje)' },
-                    { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (20 Dias)' },
+                    { key: 'vistoriaEquipamentoVencendo20Dias', label: 'Vistoria Equipamento (Dias Restantes)' },
                     { key: 'vistoriaEquipamentoVencendo1Dia', label: 'Vistoria Equipamento (1 Dia Antes)' },
                     { key: 'viradaCorDoMesFerramentas', label: 'Virada Cor do Mês (Ferramentas)' },
                     { key: 'geradorHorimetroManutencao', label: 'Horímetro Gerador (Manutenção)' },

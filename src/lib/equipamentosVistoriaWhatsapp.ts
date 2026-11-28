@@ -35,7 +35,12 @@ export async function notificarVistoriaEquipamento20Dias(params: {
 
     let msg =
       settings.messageTemplates?.vistoriaEquipamentoVencendo20Dias ||
-      "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM 20 DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_"
+      "⏳ *AVISO: VISTORIA DE EQUIPAMENTO VENCENDO EM {dias_restantes} DIAS* ⏳\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {placa_tag}\n📋 *Tipo de Vistoria / Laudo:* {tipo_vistoria}\n📅 *Data de Vencimento:* {data_vencimento}\n⏳ *Prazo Restante:* Faltam {dias_restantes} dia(s) para o vencimento!\n\n⚠️ _Por favor, providencie a renovação do laudo/manutenção com antecedência para evitar paralisação do equipamento na obra._\n_Mensagem automática - Sucena / Hydro Reabilitação_"
+
+    // Se o template legado contiver a frase estática com 20 dias, ajusta dinamicamente para {dias_restantes}
+    if (msg.includes('VENCENDO EM 20 DIAS')) {
+      msg = msg.replace('VENCENDO EM 20 DIAS', 'VENCENDO EM {dias_restantes} DIAS')
+    }
 
     msg = msg.replaceAll('{equipamento}', params.eqName || 'Equipamento')
     msg = msg.replaceAll('{placa_tag}', params.plateTag || '-')
