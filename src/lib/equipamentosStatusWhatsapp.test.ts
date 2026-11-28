@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   notificarEquipamentoQuebrado,
-  notificarEquipamentoEmprestado
+  notificarEquipamentoEmprestado,
+  notificarEquipamentoMobilizado
 } from './equipamentosStatusWhatsapp'
 import * as settingsMod from './settings'
 import * as offlineSyncMod from './offline-sync'
@@ -128,6 +129,64 @@ describe('equipamentosStatusWhatsapp', () => {
       company: 'Terceirizada X',
       actionDateTime: new Date(),
       userName: 'Marcos'
+    })
+
+    expect(res.success).toBe(false)
+    expect(queuedMessages).toHaveLength(0)
+  })
+
+  it('deve disparar notificação de equipamento novo mobilizado substituindo todas as variáveis dinâmicas', async () => {
+    vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
+      equipamentosStatusAlerts: {
+        enabled_quebrado: true,
+        enabled_emprestado: true,
+        enabled_mobilizado: true,
+        specificGroupId: '120363408136247156@g.us'
+      },
+      messageTemplates: {
+        equipamentoMobilizado:
+          'NOVO MOBILIZADO: {equipamento} | Tag: {tag} | Categoria: {categoria} | Tipo: {tipo} | Data Mobilizacao: {data_mobilizacao} | Data Registro: {data_hora} | Por: {responsavel} | Obs: {observacoes}'
+      }
+    } as any)
+
+    const res = await notificarEquipamentoMobilizado({
+      equipment: {
+        name: 'CAMINHÃO PIPA 05',
+        plate_tag: 'RQN-2D45',
+        category: 'Equipamento Pesado',
+        type: 'Caminhão Pipa'
+      },
+      mobilizedAt: '2026-11-28T08:00:00Z',
+      actionDateTime: '2026-11-28T09:45:00Z',
+      userName: 'Luciano Gestor',
+      observacoes: 'Mobilizado para apoio às frentes de terraplenagem'
+    })
+
+    expect(res.success).toBe(true)
+    expect(queuedMessages).toHaveLength(1)
+    expect(queuedMessages[0].phone).toBe('120363408136247156@g.us')
+    expect(queuedMessages[0].message).toContain('CAMINHÃO PIPA 05')
+    expect(queuedMessages[0].message).toContain('RQN-2D45')
+    expect(queuedMessages[0].message).toContain('Equipamento Pesado')
+    expect(queuedMessages[0].message).toContain('Caminhão Pipa')
+    expect(queuedMessages[0].message).toContain('Luciano Gestor')
+    expect(queuedMessages[0].message).toContain('Mobilizado para apoio às frentes de terraplenagem')
+  })
+
+  it('não deve enviar notificação de equipamento mobilizado se enabled_mobilizado for false', async () => {
+    vi.spyOn(settingsMod, 'getWhatsappSettings').mockResolvedValue({
+      equipamentosStatusAlerts: {
+        enabled_quebrado: true,
+        enabled_emprestado: true,
+        enabled_mobilizado: false,
+        specificGroupId: '120363408136247156@g.us'
+      }
+    } as any)
+
+    const res = await notificarEquipamentoMobilizado({
+      equipment: { name: 'TRATOR ESTEIRA' },
+      mobilizedAt: new Date(),
+      userName: 'Luciano'
     })
 
     expect(res.success).toBe(false)

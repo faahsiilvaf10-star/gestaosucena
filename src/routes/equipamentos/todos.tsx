@@ -35,6 +35,7 @@ import {
   isEquipmentDemobilized,
   EquipmentMobilizationRecord
 } from '../../lib/equipamentos/mobilizacao'
+import { notificarEquipamentoMobilizado } from '../../lib/equipamentosStatusWhatsapp'
 
 const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
 
@@ -309,6 +310,23 @@ function TodosEquipamentosPage() {
         eqName: selectedEq.name,
         plateTag: selectedEq.plate_tag,
       })
+
+      // Dispara notificação no WhatsApp (grupo de avisos)
+      const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+      notificarEquipamentoMobilizado({
+        equipment: {
+          id: selectedEq.id,
+          name: selectedEq.name,
+          plate_tag: selectedEq.plate_tag,
+          category: selectedEq.category,
+          type: selectedEq.type
+        },
+        mobilizedAt: new Date().toISOString(),
+        actionDateTime: new Date().toISOString(),
+        userName: currentUserName || undefined,
+        observacoes: 'Equipamento remobilizado na obra'
+      }).catch(e => console.error('Erro ao disparar WhatsApp de remobilização:', e))
+
       setIsRemobilizeModalOpen(false)
       fetchEquipments()
     } catch (err) {
@@ -379,6 +397,22 @@ function TodosEquipamentosPage() {
           equipment_id: newId,
           mobilized_at: mobIso,
         })
+
+        // Dispara notificação automática de novo equipamento mobilizado para o WhatsApp (grupo de avisos)
+        const currentUserName = typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : ''
+        notificarEquipamentoMobilizado({
+          equipment: {
+            id: newId,
+            name: newName.trim(),
+            plate_tag: newPlate.trim(),
+            category: newCategory,
+            type: newType.trim() || 'Caminhão Pipa'
+          },
+          mobilizedAt: mobIso,
+          actionDateTime: new Date().toISOString(),
+          userName: currentUserName || undefined,
+          observacoes: 'Novo equipamento cadastrado e mobilizado'
+        }).catch(e => console.error('Erro ao disparar WhatsApp de mobilização:', e))
       }
       
       setIsAddModalOpen(false)

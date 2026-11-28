@@ -267,6 +267,7 @@ export type WhatsappSettings = {
   equipamentosStatusAlerts?: {
     enabled_quebrado: boolean;
     enabled_emprestado: boolean;
+    enabled_mobilizado?: boolean;
     specificGroupId: string;
   };
   estoqueTransferencia?: {
@@ -318,6 +319,7 @@ export type WhatsappSettings = {
     estoqueAlteracao: string;
     equipamentoQuebrado?: string;
     equipamentoEmprestado?: string;
+    equipamentoMobilizado?: string;
     estoqueTransferencia?: string;
     geradorHorimetroManutencao?: string;
   };
@@ -435,6 +437,7 @@ const defaultWhatsappSettings: WhatsappSettings = {
   equipamentosStatusAlerts: {
     enabled_quebrado: true,
     enabled_emprestado: true,
+    enabled_mobilizado: true,
     specificGroupId: WHATSAPP_DEFAULT_GROUPS.AVISOS,
   },
   geradorManutencao: {
@@ -520,6 +523,8 @@ const defaultWhatsappSettings: WhatsappSettings = {
       "🚨 *ALERTA: EQUIPAMENTO MARCADO COMO QUEBRADO* 🚨\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n⚠️ *Motivo do Defeito:* {motivo}\n📅 *Data e Hora:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n⚠️ _Equipamento paralisado. Não contará no RDO principal até ser regularizado._\n_Mensagem automática - Sucena / Gestão Operacional_",
     equipamentoEmprestado:
       "🤝 *AVISO: EQUIPAMENTO EMPRESTADO* 🤝\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Tag / Identificação:* {tag}\n📂 *Categoria:* {categoria}\n🏢 *Empresa Destino:* {empresa}\n📅 *Data e Hora do Empréstimo:* {data_hora}\n👤 *Registrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\nℹ️ _Equipamento cedido temporariamente à empresa informada._\n_Mensagem automática - Sucena / Gestão Operacional_",
+    equipamentoMobilizado:
+      "🚜 *NOVO EQUIPAMENTO MOBILIZADO NA OBRA* 🚜\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {tag}\n📂 *Categoria:* {categoria}\n⚙️ *Tipo / Modelo:* {tipo}\n📅 *Data de Mobilização:* {data_mobilizacao}\n⏰ *Data e Hora do Registro:* {data_hora}\n👤 *Cadastrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n✅ _Equipamento mobilizado com sucesso e liberado para exibição operacional e no RDO._\n_Mensagem automática - Sucena / Gestão de Equipamentos_",
     estoqueTransferencia:
       "🔄 *TRANSFERÊNCIA DE ESTOQUE ENTRE AMBIENTES* 🔄\n\n📦 *Produto:* {produto}\n🏷️ *Código:* {codigo}\n📂 *Categoria:* {categoria}\n🔢 *Quantidade Transferida:* {quantidade} {unidade}\n\n📤 *Origem:* {ambiente_origem}\n📥 *Destino:* {ambiente_destino}\n\n📊 *Saldos Atualizados:*\n• Saldo restante na Origem: {saldo_origem} {unidade}\n• Novo saldo no Destino: {saldo_destino} {unidade}\n\n📅 *Data e Hora:* {data_hora}\n👤 *Responsável:* {responsavel}\n📝 *Observações:* {observacoes}\n\n_Mensagem automática - Sucena Almoxarifado / Estoque_",
     geradorHorimetroManutencao:

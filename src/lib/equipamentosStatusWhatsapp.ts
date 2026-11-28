@@ -28,6 +28,20 @@ export interface EquipamentoEmprestadoNotificationParams {
   userName: string
 }
 
+export interface EquipamentoMobilizadoNotificationParams {
+  equipment: {
+    id?: string
+    name: string
+    plate_tag?: string | null
+    category?: string | null
+    type?: string | null
+  }
+  mobilizedAt: string | Date
+  actionDateTime?: string | Date
+  userName?: string
+  observacoes?: string | null
+}
+
 /**
  * Formata a data/hora no padrão amigável pt-BR
  */
@@ -40,6 +54,26 @@ function formatDataHora(actionDateTime: string | Date): string {
     return `${dataStr} às ${horaStr}`
   } catch {
     return String(actionDateTime)
+  }
+}
+
+/**
+ * Formata a data de mobilização no padrão amigável pt-BR
+ */
+function formatDataMobilizacao(val: string | Date): string {
+  try {
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return String(val)
+    const dataStr = d.toLocaleDateString('pt-BR')
+    const hours = d.getHours()
+    const minutes = d.getMinutes()
+    if (hours !== 0 || minutes !== 0) {
+      const horaStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      return `${dataStr} às ${horaStr}`
+    }
+    return dataStr
+  } catch {
+    return String(val)
   }
 }
 
@@ -143,6 +177,60 @@ export async function notificarEquipamentoEmprestado(
     return { success: result?.success ?? true }
   } catch (err: any) {
     console.error('[WhatsApp] Falha ao disparar alerta de equipamento emprestado:', err)
+    return { success: false, error: err?.message || String(err) }
+  }
+}
+
+/**
+ * Envia notificação automática de novo equipamento mobilizado para o grupo de Avisos no WhatsApp.
+ */
+export async function notificarEquipamentoMobilizado(
+  params: EquipamentoMobilizadoNotificationParams
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const whatsappSettings = await getWhatsappSettings()
+
+    // Verificar se envio para mobilizado está habilitado (padrão true se não definido)
+    if (whatsappSettings.equipamentosStatusAlerts?.enabled_mobilizado === false) {
+      return { success: false, error: 'Notificação de equipamento mobilizado desativada nas configurações.' }
+    }
+
+    const targetGroupId =
+      whatsappSettings.equipamentosStatusAlerts?.specificGroupId?.trim() ||
+      whatsappSettings.reminders?.specificGroupId?.trim() ||
+      WHATSAPP_DEFAULT_GROUPS.AVISOS
+
+    if (!targetGroupId) {
+      return { success: false, error: 'Nenhum grupo de avisos configurado.' }
+    }
+
+    const template =
+      whatsappSettings.messageTemplates?.equipamentoMobilizado ||
+      '🚜 *NOVO EQUIPAMENTO MOBILIZADO NA OBRA* 🚜\n\n🚜 *Equipamento:* {equipamento}\n🏷️ *Placa / TAG:* {tag}\n📂 *Categoria:* {categoria}\n⚙️ *Tipo / Modelo:* {tipo}\n📅 *Data de Mobilização:* {data_mobilizacao}\n⏰ *Data e Hora do Registro:* {data_hora}\n👤 *Cadastrado por:* {responsavel}\n📝 *Observações:* {observacoes}\n\n✅ _Equipamento mobilizado com sucesso e liberado para exibição operacional e no RDO._\n_Mensagem automática - Sucena / Gestão de Equipamentos_'
+
+    const eqName = params.equipment.name || 'Equipamento'
+    const eqTag = params.equipment.plate_tag ? params.equipment.plate_tag.toUpperCase() : 'S/ Tag'
+    const eqCategory = params.equipment.category || 'Geral'
+    const eqType = params.equipment.type || 'Padrão'
+    const dataMobilizacao = formatDataMobilizacao(params.mobilizedAt)
+    const dataHora = formatDataHora(params.actionDateTime || new Date())
+    const responsavel = params.userName?.trim() || (typeof window !== 'undefined' ? localStorage.getItem('sucena_user_name') || '' : '') || 'Sistema'
+    const observacoes = params.observacoes?.trim() ? params.observacoes.trim() : 'Equipamento mobilizado para a obra'
+
+    let message = template
+      .replaceAll('{equipamento}', eqName)
+      .replaceAll('{tag}', eqTag)
+      .replaceAll('{categoria}', eqCategory)
+      .replaceAll('{tipo}', eqType)
+      .replaceAll('{data_mobilizacao}', dataMobilizacao)
+      .replaceAll('{data_hora}', dataHora)
+      .replaceAll('{responsavel}', responsavel)
+      .replaceAll('{observacoes}', observacoes)
+
+    const result = await queueWhatsappMessage(whatsappSettings, targetGroupId, message)
+    return { success: result?.success ?? true }
+  } catch (err: any) {
+    console.error('[WhatsApp] Falha ao disparar alerta de equipamento mobilizado:', err)
     return { success: false, error: err?.message || String(err) }
   }
 }
