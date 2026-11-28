@@ -51,7 +51,7 @@ export function VistoriaEquipamentoAlertManager() {
   const [alertasComunicado, setAlertasComunicado] = useState<VistoriaAlerta[]>([])
 
   useEffect(() => {
-    const verificar = async () => {
+    const verificar = async (permitirDisparoWa: boolean = true) => {
       if (executando.current) return
 
       const env =
@@ -77,6 +77,11 @@ export function VistoriaEquipamentoAlertManager() {
         if (error || !equipments) return
 
         const alertasEncontrados: VistoriaAlerta[] = []
+        const agora = new Date()
+        const hojeStr = format(agora, 'yyyy-MM-dd')
+        // O disparo automático de WhatsApp ocorre estritamente na janela matinal programada (06:00 às 07:59)
+        // Nunca dispara quando o usuário atualiza dados, recarrega o sistema ou em outros horários do dia
+        const isHorarioAutomaticoWa = permitirDisparoWa && agora.getHours() >= 6 && agora.getHours() < 8
 
         for (const eq of equipments) {
           const ins = Array.isArray(eq.equipment_inspections)
@@ -108,31 +113,28 @@ export function VistoriaEquipamentoAlertManager() {
               }
               alertasEncontrados.push(itemAlerta)
 
-              const hojeStr = format(new Date(), 'yyyy-MM-dd')
+              // WhatsApp só deve ser enviado no horário automático matinal programado
+              if (!isHorarioAutomaticoWa) {
+                continue
+              }
 
               // 1) Disparo URGENTE no WhatsApp quando faltar exatamente 1 dia (amanhã)
               if (dias === 1 && settings.vistoriasEquipamentos?.enabled_1_dia !== false) {
                 const chaveLocal1d = `vistoria_alerta_1d_${env}_${eq.id}_${doc.type}_${doc.expiry}_${hojeStr}`
 
                 if (!localStorage.getItem(chaveLocal1d)) {
-                  const acaoMarca1d = `[ALERTA 1 DIA] Vistoria ${doc.type} de ${eq.name} (${eq.plate_tag}) vence amanhã (${doc.expiry})`
-
                   const { data: jaDisparado1d } = await supabase
                     .from('system_activities')
                     .select('id')
                     .eq('environment', env)
                     .ilike('action', `%[WHATSAPP 1 DIA] Vistoria ${doc.type} de ${eq.name}%`)
                     .gte('created_at', `${hojeStr}T00:00:00.000Z`)
-                    .maybeSingle()
+                    .limit(1)
 
-                  if (!jaDisparado1d) {
-                    await supabase.from('system_activities').insert({
-                      module: 'Equipamentos',
-                      action: acaoMarca1d,
-                      user_name: 'Sistema Automático',
-                      environment: env,
-                    })
-
+                  if (jaDisparado1d && jaDisparado1d.length > 0) {
+                    localStorage.setItem(chaveLocal1d, 'true')
+                  } else {
+                    localStorage.setItem(chaveLocal1d, 'true')
                     await notificarVistoriaEquipamento1Dia({
                       eqName: eq.name,
                       plateTag: eq.plate_tag,
@@ -141,7 +143,6 @@ export function VistoriaEquipamentoAlertManager() {
                       daysRemaining: dias,
                     })
                   }
-                  localStorage.setItem(chaveLocal1d, 'true')
                 }
               }
 
@@ -150,24 +151,18 @@ export function VistoriaEquipamentoAlertManager() {
                 const chaveLocal20d = `vistoria_alerta_20d_${env}_${eq.id}_${doc.type}_${doc.expiry}_${hojeStr}`
 
                 if (!localStorage.getItem(chaveLocal20d)) {
-                  const acaoMarca20d = `[ALERTA 20 DIAS] Vistoria ${doc.type} de ${eq.name} (${eq.plate_tag}) vence em ${dias} dias (${doc.expiry})`
-
-                  const { data: jaDisparado } = await supabase
+                  const { data: jaDisparado20d } = await supabase
                     .from('system_activities')
                     .select('id')
                     .eq('environment', env)
                     .ilike('action', `%[WHATSAPP 20 DIAS] Vistoria ${doc.type} de ${eq.name}%`)
                     .gte('created_at', `${hojeStr}T00:00:00.000Z`)
-                    .maybeSingle()
+                    .limit(1)
 
-                  if (!jaDisparado) {
-                    await supabase.from('system_activities').insert({
-                      module: 'Equipamentos',
-                      action: acaoMarca20d,
-                      user_name: 'Sistema Automático',
-                      environment: env,
-                    })
-
+                  if (jaDisparado20d && jaDisparado20d.length > 0) {
+                    localStorage.setItem(chaveLocal20d, 'true')
+                  } else {
+                    localStorage.setItem(chaveLocal20d, 'true')
                     await notificarVistoriaEquipamento20Dias({
                       eqName: eq.name,
                       plateTag: eq.plate_tag,
@@ -176,16 +171,14 @@ export function VistoriaEquipamentoAlertManager() {
                       daysRemaining: dias,
                     })
                   }
-                  localStorage.setItem(chaveLocal20d, 'true')
                 }
               }
             }
           }
         }
 
-        // Se houver vistorias vencendo em 20 dias, exibe o comunicado diário ao usuário
+        // Se houver vistorias vencendo em 20 dias, exibe o comunicado diário ao usuário na tela
         if (alertasEncontrados.length > 0) {
-          const hojeStr = format(new Date(), 'yyyy-MM-dd')
           const ultimoVisto = localStorage.getItem('last_vistoria_comunicado_date')
           if (ultimoVisto !== hojeStr) {
             setAlertasComunicado(alertasEncontrados)
@@ -203,13 +196,15 @@ export function VistoriaEquipamentoAlertManager() {
       }
     }
 
-    verificar()
-    const timer = setInterval(verificar, INTERVALO_MS)
+    // Na inicialização da aplicação
+    verificar(true)
+    const timer = setInterval(() => verificar(true), INTERVALO_MS)
 
+    // Ao atualizar equipamentos/inspeções em tempo real: NÃO dispara WhatsApp, apenas atualiza comunicado visual se necessário
     const sub = supabase
       .channel('vistorias_alert_manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment_inspections' }, () => {
-        verificar()
+        verificar(false)
       })
       .subscribe()
 
