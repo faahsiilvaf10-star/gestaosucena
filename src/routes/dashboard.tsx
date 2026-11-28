@@ -749,7 +749,7 @@ function DashboardComponent() {
       let eqQuery = supabase
         .from('eq_equipments')
         .select(
-          'id, name, plate_tag, category, location_status, last_exit_reason, last_exit_description, updated_at'
+          'id, name, plate_tag, category, location_status, last_exit_reason, last_exit_description, status, updated_at'
         )
 
       if (currentEnv === 'hydro-civil') {
@@ -782,7 +782,9 @@ function DashboardComponent() {
         movementsByEq.set(m.equipment_id, list)
       })
 
-      const reconciled: DashboardEquipment[] = (eqRes.data || []).map((eq: any) => {
+      const reconciled: DashboardEquipment[] = (eqRes.data || [])
+        .filter((eq: any) => eq.status !== 'Desmobilizado' && eq.last_exit_reason !== 'demobilized')
+        .map((eq: any) => {
         const movements = movementsByEq.get(eq.id) || []
         const lastMov = movements[0]
         const outside = isOutside(eq, movements)

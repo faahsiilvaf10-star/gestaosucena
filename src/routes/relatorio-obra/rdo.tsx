@@ -21,6 +21,7 @@ import { isVehicle } from '@/lib/equipamentos/equipmentTypes'
 import { CIVIL_AREAS_DEFINITIONS } from '@/lib/civilAreasData'
 import { isFeriadoHydro } from '@/lib/calendarioHydro'
 import { formatRdoLocation, splitBermaElevado } from '@/lib/rdoLocations'
+import { getEquipmentMobilizationMap, getEquipmentRdoStatus } from '@/lib/equipamentos/mobilizacao'
 
 const COLOR_NAMES: Record<string, string> = {
   red: 'Vermelha',
@@ -309,28 +310,49 @@ function RDOPage() {
 
   const fetchEquipamentos = async (dateStr: string) => {
     try {
-      const { data: allEqs, error } = await supabase
-        .from('eq_equipments').select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason').eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .order('name', { ascending: true });
-        
-      if (error) throw error;
-      
       // Calculate start and end of the specified date in Brazil time (UTC-3)
       const startDate = new Date(`${dateStr}T00:00:00-03:00`).toISOString();
       const endDate = new Date(`${dateStr}T23:59:59.999-03:00`).toISOString();
-      
-      const { data: movements } = await supabase
-        .from('eq_movements')
-        .select('equipment_id, movement_type, created_at')
-        .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
-        .lte('created_at', endDate)
-        .order('created_at', { ascending: false });
-        
-      const movs = movements || [];
 
-      const filtered = (allEqs || []).map(eq => {
+      const [eqRes, movRes, mobMap] = await Promise.all([
+        supabase
+          .from('eq_equipments')
+          .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
+          .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+          .order('name', { ascending: true }),
+        supabase
+          .from('eq_movements')
+          .select('equipment_id, movement_type, created_at')
+          .eq('environment', typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena')
+          .lte('created_at', endDate)
+          .order('created_at', { ascending: false }),
+        getEquipmentMobilizationMap()
+      ]);
+
+      if (eqRes.error) throw eqRes.error;
+      const allEqs = eqRes.data || [];
+      const movs = movRes.data || [];
+
+      const filtered = allEqs.map(eq => {
+        const rdoStatus = getEquipmentRdoStatus(eq.id, dateStr, mobMap);
+
+        // Se o equipamento ainda não foi mobilizado na data OU já foi desmobilizado antes desta data, não aparece no RDO
+        if (rdoStatus.status === 'hidden_not_mobilized' || rdoStatus.status === 'hidden_demobilized') {
+          return null;
+        }
+
         const eqMovs = movs.filter(m => m.equipment_id === eq.id);
         const lastMov = eqMovs[0];
+
+        let base: any = { ...eq };
+        if (rdoStatus.status === 'demobilized_today') {
+          base.isDesmobilizadoHoje = true;
+          base.desmobilizadoTime = rdoStatus.demobilizedTime;
+          base.desmobilizadoDateTime = rdoStatus.demobilizedDateTime;
+        } else if (rdoStatus.status === 'mobilized_today') {
+          base.isMobilizadoHoje = true;
+          base.mobilizadoTime = rdoStatus.mobilizedTime;
+        }
 
         if (lastMov?.movement_type === 'exit') {
           const brokenDateObj = new Date(lastMov.created_at);
@@ -341,23 +363,23 @@ function RDOPage() {
               dateStyle: 'short',
               timeStyle: 'short',
             });
-            return { ...eq, outsideSince: since, brokenDateTime };
+            return { ...base, outsideSince: since, brokenDateTime };
           }
           const time = new Date(lastMov.created_at).toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
           });
-          return { ...eq, exitTime: time, brokenDateTime };
+          return { ...base, exitTime: time, brokenDateTime };
         }
 
         if (eq.location_status === 'outside' || eq.status === 'Quebrado') {
           const brokenDateObj = eq.updated_at ? new Date(eq.updated_at) : new Date();
           const brokenDateTime = `${brokenDateObj.toLocaleDateString('pt-BR')} às ${brokenDateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-          return { ...eq, outsideSince: brokenDateTime, brokenDateTime };
+          return { ...base, outsideSince: brokenDateTime, brokenDateTime };
         }
 
-        return eq;
-      });
+        return base;
+      }).filter(Boolean);
 
       setEquipamentos(filtered);
     } catch(e) {
@@ -1014,25 +1036,31 @@ function RDOPage() {
     };
     const isJardinagem = (eq: any) => (eq.category || '').toLowerCase().includes('jardinagem');
 
+    // Equipamento desmobilizado no dia exato
+    const isDesmobilizadoHoje = (eq: any) => !!eq.isDesmobilizadoHoje;
+
     // Equipamento quebrado (sem ser veículo): não conta no RDO e mostra data/hora da quebra
-    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime);
+    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime) && !isDesmobilizadoHoje(eq);
     // Veículo fora desde antes
-    const isVeiculoForaAntes = (eq: any) => isVehicle(eq) && !!eq.outsideSince;
+    const isVeiculoForaAntes = (eq: any) => isVehicle(eq) && !!eq.outsideSince && !isDesmobilizadoHoje(eq);
 
     const eqPesados = equipamentos.filter(eq => !isJardinagem(eq) && !isLeveOuCanteiro(eq));
     const eqLeves = equipamentos.filter(eq => isLeveOuCanteiro(eq));
 
     // Na obra / operando:
+    // Não pode estar desmobilizado hoje
     // Para veículos: não está fora desde antes
     // Para equipamentos não-veículos: NÃO está quebrado
-    const eqPesadosNaObra = eqPesados.filter(eq => isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq));
-    const eqLevesNaObra = eqLeves.filter(eq => isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq));
+    const eqPesadosNaObra = eqPesados.filter(eq => !isDesmobilizadoHoje(eq) && (isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq)));
+    const eqLevesNaObra = eqLeves.filter(eq => !isDesmobilizadoHoje(eq) && (isVehicle(eq) ? !isVeiculoForaAntes(eq) : !isEqQuebrado(eq)));
 
     lines.push(`✅ EQUIPAMENTOS EM OPERAÇÃO (${eqPesadosNaObra.length})`);
     if (eqPesadosNaObra.length > 0) {
       eqPesadosNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if (eq.exitTime && isVehicle(eq)) {
+        if (eq.isMobilizadoHoje) {
+          eqNameStr += ` (Mobilizado na obra)`;
+        } else if (eq.exitTime && isVehicle(eq)) {
           eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
@@ -1060,13 +1088,24 @@ function RDOPage() {
       });
     }
 
+    const eqPesadosDesmobilizados = eqPesados.filter(isDesmobilizadoHoje);
+    if (eqPesadosDesmobilizados.length > 0) {
+      lines.push('');
+      lines.push(`🚚 DESMOBILIZADOS NO DIA (${eqPesadosDesmobilizados.length})`);
+      eqPesadosDesmobilizados.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Desmobilizado às ${eq.desmobilizadoTime || '12:00'})`);
+      });
+    }
+
     lines.push('');
 
     lines.push(`✅ EQUIPAMENTOS LEVES E CANTEIRO (${eqLevesNaObra.length})`);
     if (eqLevesNaObra.length > 0) {
       eqLevesNaObra.forEach(eq => {
         let eqNameStr = `• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''}`;
-        if (eq.exitTime && isVehicle(eq)) {
+        if (eq.isMobilizadoHoje) {
+          eqNameStr += ` (Mobilizado na obra)`;
+        } else if (eq.exitTime && isVehicle(eq)) {
           eqNameStr += ` (Saiu às ${eq.exitTime})`;
         }
         lines.push(eqNameStr);
@@ -1094,16 +1133,27 @@ function RDOPage() {
       });
     }
 
+    const eqLevesDesmobilizados = eqLeves.filter(isDesmobilizadoHoje);
+    if (eqLevesDesmobilizados.length > 0) {
+      lines.push('');
+      lines.push(`🚚 VEÍCULOS LEVES DESMOBILIZADOS NO DIA (${eqLevesDesmobilizados.length})`);
+      eqLevesDesmobilizados.forEach(eq => {
+        lines.push(`• ${eq.name} - ${eq.plate_tag ? eq.plate_tag.toUpperCase() : ''} (Desmobilizado às ${eq.desmobilizadoTime || '12:00'})`);
+      });
+    }
+
     return lines.join('\n');
   }
 
   const renderEquipamentosJardinagemText = () => {
     let lines = [];
+    const isDesmobilizadoHoje = (eq: any) => !!eq.isDesmobilizadoHoje;
     const eqJardim = equipamentos.filter(eq => eq.category === 'Jardinagem');
-    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime);
+    const isEqQuebrado = (eq: any) => !isVehicle(eq) && (!!eq.outsideSince || !!eq.exitTime) && !isDesmobilizadoHoje(eq);
 
+    const eqJardimDesmobilizados = eqJardim.filter(isDesmobilizadoHoje);
     const eqJardimQuebrados = eqJardim.filter(isEqQuebrado);
-    const eqJardimFuncionando = eqJardim.filter(eq => !isEqQuebrado(eq));
+    const eqJardimFuncionando = eqJardim.filter(eq => !isDesmobilizadoHoje(eq) && !isEqQuebrado(eq));
 
     lines.push(`✅ Equipamentos Jardinagem na Obra (${eqJardimFuncionando.length})`);
     if (eqJardimFuncionando.length > 0) {
@@ -1126,6 +1176,14 @@ function RDOPage() {
       eqJardimQuebrados.forEach(eq => {
         const isLoan = eq.last_exit_reason === 'loaned' || eq.status === 'Emprestado';
         lines.push(`• ${eq.name}${eq.plate_tag ? ` (${eq.plate_tag.toUpperCase()})` : ''} - ${isLoan ? 'Emprestado' : 'Quebrado'} em ${eq.brokenDateTime || eq.outsideSince}`);
+      });
+    }
+
+    if (eqJardimDesmobilizados.length > 0) {
+      lines.push('');
+      lines.push(`🚚 DESMOBILIZADOS NO DIA (${eqJardimDesmobilizados.length})`);
+      eqJardimDesmobilizados.forEach(eq => {
+        lines.push(`• ${eq.name}${eq.plate_tag ? ` (${eq.plate_tag.toUpperCase()})` : ''} (Desmobilizado às ${eq.desmobilizadoTime || '12:00'})`);
       });
     }
 

@@ -156,7 +156,9 @@ function EntradaSaidaPage() {
         }
       }
 
-      const reconciledEquipments = (eqRes.data || []).map(eq => {
+      const reconciledEquipments = (eqRes.data || [])
+        .filter(eq => eq.status !== 'Desmobilizado' && eq.last_exit_reason !== 'demobilized')
+        .map(eq => {
         const movements = movementsByEq.get(eq.id) || []
         const lastMov = movements[0]
         

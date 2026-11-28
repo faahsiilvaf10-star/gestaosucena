@@ -233,9 +233,9 @@ function ParteDiariaPage() {
 
       if (pesadosError) throw pesadosError
       
-      const total = pesados?.length || 0
-      // Mostrar todos os equipamentos pesados na lista, mantendo o status apontado pelo motorista
-      const operandoList = pesados || []
+      // Mostrar todos os equipamentos pesados ativos na lista, excluindo os desmobilizados
+      const operandoList = (pesados || []).filter(eq => eq.status !== 'Desmobilizado' && eq.last_exit_reason !== 'demobilized')
+      const total = operandoList.length
       
       setTotalPesadosCount(total)
       setActiveVehicles(operandoList)

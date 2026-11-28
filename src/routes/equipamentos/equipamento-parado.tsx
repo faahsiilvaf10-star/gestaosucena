@@ -174,8 +174,8 @@ function EquipamentoParadoPage() {
         }
       }
 
-      // Regra fundamental: SOMENTE EQUIPAMENTOS (sem ser veículos)
-      const rawEquipments = (eqRes.data || []).filter(eq => !isVehicle(eq))
+      // Regra fundamental: SOMENTE EQUIPAMENTOS ATIVOS (sem ser veículos e sem estar desmobilizado)
+      const rawEquipments = (eqRes.data || []).filter(eq => !isVehicle(eq) && eq.status !== 'Desmobilizado' && eq.last_exit_reason !== 'demobilized')
 
       const reconciledEquipments = rawEquipments.map(eq => {
         const movements = movementsByEq.get(eq.id) || []

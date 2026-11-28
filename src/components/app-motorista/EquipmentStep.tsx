@@ -38,12 +38,13 @@ export default function EquipmentStep({ onSelect, onBack }: { onSelect: (equipme
         .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason')
         .eq('environment', currentEnv)
         .neq('category', 'Jardinagem')
+        .neq('status', 'Desmobilizado')
         .order('name', { ascending: true })
       
       if (error) throw error
 
       // Check active dispatches to ensure correct 'Operando' status
-      let enrichedData = data || []
+      let enrichedData = (data || []).filter((eq: any) => eq.last_exit_reason !== 'demobilized')
       if (navigator.onLine) {
         try {
           const yesterday = new Date()

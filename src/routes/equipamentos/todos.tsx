@@ -12,6 +12,10 @@ import Plus from 'lucide-react/dist/esm/icons/plus.js';
 import Check from 'lucide-react/dist/esm/icons/check.js';
 import X from 'lucide-react/dist/esm/icons/x.js';
 import Clock from 'lucide-react/dist/esm/icons/clock.js';
+import ArchiveX from 'lucide-react/dist/esm/icons/archive-x.js';
+import RotateCcw from 'lucide-react/dist/esm/icons/rotate-ccw.js';
+import Ban from 'lucide-react/dist/esm/icons/ban.js';
+import Calendar from 'lucide-react/dist/esm/icons/calendar.js';
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
@@ -23,6 +27,14 @@ import {
   locationFromMovements,
   MovementRecord
 } from '../../lib/equipamentos/locationStatus'
+import {
+  getEquipmentMobilizationMap,
+  saveEquipmentMobilization,
+  desmobilizarEquipamento,
+  remobilizarEquipamento,
+  isEquipmentDemobilized,
+  EquipmentMobilizationRecord
+} from '../../lib/equipamentos/mobilizacao'
 
 const EXIT_REASONS = LOCATION_EXIT_REASONS as unknown as Array<{ value: string; label: string }>
 
@@ -42,6 +54,9 @@ interface Equipment {
   last_exit_description?: string | null
   created_at: string
   updated_at: string
+  mobilized_at?: string | null
+  demobilized_at?: string | null
+  demobilized_reason?: string | null
 }
 
 function TodosEquipamentosPage() {
@@ -60,10 +75,15 @@ function TodosEquipamentosPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isDemobilizeModalOpen, setIsDemobilizeModalOpen] = useState(false)
+  const [isRemobilizeModalOpen, setIsRemobilizeModalOpen] = useState(false)
+  const [demobilizeDate, setDemobilizeDate] = useState('')
+  const [demobilizeReason, setDemobilizeReason] = useState('')
+  const [mobMap, setMobMap] = useState<Record<string, EquipmentMobilizationRecord>>({})
 
   // Trava scroll de fundo e reseta scroll da janela ao abrir modal
   useEffect(() => {
-    const isAnyModalOpen = isViewModalOpen || isEditModalOpen || isAddModalOpen
+    const isAnyModalOpen = isViewModalOpen || isEditModalOpen || isAddModalOpen || isDemobilizeModalOpen || isRemobilizeModalOpen
     if (!isAnyModalOpen) return
     window.scrollTo({ top: 0, behavior: 'instant' as any })
     const prevOverflow = document.body.style.overflow
@@ -71,13 +91,14 @@ function TodosEquipamentosPage() {
     return () => {
       document.body.style.overflow = prevOverflow
     }
-  }, [isViewModalOpen, isEditModalOpen, isAddModalOpen])
+  }, [isViewModalOpen, isEditModalOpen, isAddModalOpen, isDemobilizeModalOpen, isRemobilizeModalOpen])
 
   
   // Edit Form
   const [editName, setEditName] = useState('')
   const [editPlate, setEditPlate] = useState('')
   const [editCategory, setEditCategory] = useState('Equipamento Pesado')
+  const [editMobilizedAt, setEditMobilizedAt] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   // Add Form
@@ -85,6 +106,10 @@ function TodosEquipamentosPage() {
   const [newPlate, setNewPlate] = useState('')
   const [newType, setNewType] = useState('Caminhão Pipa')
   const [newCategory, setNewCategory] = useState('Equipamento Pesado')
+  const [newMobilizedAt, setNewMobilizedAt] = useState(() => {
+    const now = new Date()
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+  })
 
   const fetchEquipments = async () => {
     try {
@@ -93,19 +118,21 @@ function TodosEquipamentosPage() {
       
       const currentEnv = typeof window !== 'undefined' ? localStorage.getItem('sucena_environment') || 'barcarena' : 'barcarena'
 
-      const [eqRes, movRes] = await Promise.all([
+      const [eqRes, movRes, loadedMobMap] = await Promise.all([
         supabase
           .from('eq_equipments')
-          .select('id, name, plate_tag, category, type, location_status, environment, updated_at, last_exit_reason, last_exit_description')
+          .select('id, name, plate_tag, category, type, location_status, environment, status, updated_at, last_exit_reason, last_exit_description')
           .eq('environment', currentEnv)
           .order('name', { ascending: true }),
         supabase
           .from('eq_movements')
           .select('id, equipment_id, movement_type, exit_reason, description, created_at, created_by')
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+        getEquipmentMobilizationMap()
       ])
 
       if (eqRes.error) throw eqRes.error
+      setMobMap(loadedMobMap)
 
       const movementsByEq = new Map<string, MovementRecord[]>()
       if (movRes.data) {
@@ -118,17 +145,28 @@ function TodosEquipamentosPage() {
       }
 
       const reconciledEquipments = (eqRes.data || []).map(eq => {
+        const mob = loadedMobMap[eq.id]
+        const isDemob = isEquipmentDemobilized(eq, loadedMobMap)
+
         const movements = movementsByEq.get(eq.id) || []
         const lastMov = movements[0]
-        const derivedStatus = locationFromMovements(movements) ?? 'inside'
-        const derivedReason = derivedStatus === 'outside' ? (lastMov?.exit_reason || eq.last_exit_reason) : null
-        const derivedDesc = derivedStatus === 'outside' ? (lastMov?.description || eq.last_exit_description) : null
+        const derivedStatus = isDemob ? 'outside' : (locationFromMovements(movements) ?? 'inside')
+        const derivedReason = isDemob
+          ? 'demobilized'
+          : (derivedStatus === 'outside' ? (lastMov?.exit_reason || eq.last_exit_reason) : null)
+        const derivedDesc = isDemob
+          ? (mob?.demobilized_reason || eq.last_exit_description || 'Desmobilizado da obra')
+          : (derivedStatus === 'outside' ? (lastMov?.description || eq.last_exit_description) : null)
 
         return {
           ...eq,
+          status: isDemob ? 'Desmobilizado' : eq.status,
           location_status: derivedStatus,
           last_exit_reason: derivedReason,
-          last_exit_description: derivedDesc
+          last_exit_description: derivedDesc,
+          mobilized_at: mob?.mobilized_at || null,
+          demobilized_at: mob?.demobilized_at || null,
+          demobilized_reason: mob?.demobilized_reason || null,
         }
       })
 
@@ -195,6 +233,8 @@ function TodosEquipamentosPage() {
         setIsViewModalOpen(false)
         setIsEditModalOpen(false)
         setIsAddModalOpen(false)
+        setIsDemobilizeModalOpen(false)
+        setIsRemobilizeModalOpen(false)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -216,7 +256,67 @@ function TodosEquipamentosPage() {
     setEditName(eq.name || '')
     setEditPlate(eq.plate_tag || '')
     setEditCategory(eq.category || 'Equipamento Pesado')
+    const mobDate = eq.mobilized_at ? new Date(eq.mobilized_at) : (eq.created_at ? new Date(eq.created_at) : new Date())
+    const localMob = !isNaN(mobDate.getTime())
+      ? new Date(mobDate.getTime() - mobDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+      : ''
+    setEditMobilizedAt(localMob)
     setIsEditModalOpen(true)
+  }
+
+  const handleOpenDemobilize = (eq: Equipment) => {
+    setSelectedEq(eq)
+    const now = new Date()
+    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    setDemobilizeDate(localNow)
+    setDemobilizeReason('')
+    setIsDemobilizeModalOpen(true)
+  }
+
+  const handleConfirmDemobilize = async () => {
+    if (!selectedEq) return
+    setIsSaving(true)
+    try {
+      const demobIso = demobilizeDate ? new Date(demobilizeDate).toISOString() : new Date().toISOString()
+      await desmobilizarEquipamento({
+        equipmentId: selectedEq.id,
+        eqName: selectedEq.name,
+        plateTag: selectedEq.plate_tag,
+        demobilizedAt: demobIso,
+        reason: demobilizeReason,
+      })
+      setIsDemobilizeModalOpen(false)
+      fetchEquipments()
+    } catch (err) {
+      console.error('Erro ao desmobilizar equipamento:', err)
+      alert('Erro ao desmobilizar equipamento.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleOpenRemobilize = (eq: Equipment) => {
+    setSelectedEq(eq)
+    setIsRemobilizeModalOpen(true)
+  }
+
+  const handleConfirmRemobilize = async () => {
+    if (!selectedEq) return
+    setIsSaving(true)
+    try {
+      await remobilizarEquipamento({
+        equipmentId: selectedEq.id,
+        eqName: selectedEq.name,
+        plateTag: selectedEq.plate_tag,
+      })
+      setIsRemobilizeModalOpen(false)
+      fetchEquipments()
+    } catch (err) {
+      console.error('Erro ao remobilizar equipamento:', err)
+      alert('Erro ao remobilizar equipamento.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -234,6 +334,13 @@ function TodosEquipamentosPage() {
         .eq('id', selectedEq.id)
 
       if (updateError) throw updateError
+
+      if (editMobilizedAt) {
+        await saveEquipmentMobilization({
+          equipment_id: selectedEq.id,
+          mobilized_at: new Date(editMobilizedAt).toISOString()
+        })
+      }
       
       setIsEditModalOpen(false)
       fetchEquipments()
@@ -252,7 +359,7 @@ function TodosEquipamentosPage() {
     }
     setIsSaving(true)
     try {
-      const { error: insertError } = await supabase
+      const { data: insertedList, error: insertError } = await supabase
         .from('eq_equipments')
         .insert({
           name: newName.trim(),
@@ -261,14 +368,26 @@ function TodosEquipamentosPage() {
           category: newCategory,
           location_status: 'inside'
         })
+        .select('id')
 
       if (insertError) throw insertError
+
+      const newId = insertedList?.[0]?.id
+      if (newId) {
+        const mobIso = newMobilizedAt ? new Date(newMobilizedAt).toISOString() : new Date().toISOString()
+        await saveEquipmentMobilization({
+          equipment_id: newId,
+          mobilized_at: mobIso,
+        })
+      }
       
       setIsAddModalOpen(false)
       setNewName('')
       setNewPlate('')
       setNewType('Caminhão Pipa')
       setNewCategory('Equipamento Pesado')
+      const now = new Date()
+      setNewMobilizedAt(new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16))
       fetchEquipments()
     } catch (err: any) {
       console.error('Error adding equipment:', err)
@@ -280,15 +399,19 @@ function TodosEquipamentosPage() {
 
   const filteredEquipments = useMemo(() => {
     return equipments.filter(eq => {
-      // Fora da obra = existe registro de saída. Sem movimento => dentro.
-      const outside = isOutside(eq)
-      const eqStatus = outside
-        ? (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
-        : 'Operando'
+      const isDemob = isEquipmentDemobilized(eq, mobMap)
 
-      if (filterStatus !== 'Todos' && eqStatus !== filterStatus) {
-        return false
+      if (filterStatus === 'Desmobilizados') {
+        if (!isDemob) return false
+      } else if (filterStatus !== 'Todos') {
+        if (isDemob) return false
+        const outside = isOutside(eq)
+        const eqStatus = outside
+          ? (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
+          : 'Operando'
+        if (eqStatus !== filterStatus) return false
       }
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matchName = eq.name?.toLowerCase().includes(query)
@@ -297,30 +420,59 @@ function TodosEquipamentosPage() {
       }
       return true
     })
-  }, [equipments, filterStatus, searchQuery])
+  }, [equipments, filterStatus, searchQuery, mobMap])
 
   // Derived Metrics
   const metrics = useMemo(() => {
     let operation = 0
     let maintenance = 0
     let stopped = 0
+    let demobilized = 0
 
     equipments.forEach(eq => {
-      if (isOutside(eq)) {
+      if (isEquipmentDemobilized(eq, mobMap)) {
+        demobilized++
+      } else if (isOutside(eq)) {
         if (eq.last_exit_reason === 'preventive_maintenance' || eq.last_exit_reason === 'corrective_maintenance') maintenance++
         else stopped++
-      } else operation++
+      } else {
+        operation++
+      }
     })
 
     return {
-      total: equipments.length,
+      total: equipments.length - demobilized,
       operation,
       maintenance,
-      stopped
+      stopped,
+      demobilized
     }
-  }, [equipments])
+  }, [equipments, mobMap])
 
   const getStatusBadge = (eq: Equipment) => {
+    const isDemob = isEquipmentDemobilized(eq, mobMap)
+    if (isDemob) {
+      const demobDateObj = eq.demobilized_at ? new Date(eq.demobilized_at) : null
+      const demobFormatted = demobDateObj && !isNaN(demobDateObj.getTime())
+        ? `${demobDateObj.toLocaleDateString('pt-BR')} às ${demobDateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        : (eq.last_exit_description || 'Desmobilizado')
+
+      return (
+        <div className="relative group/tooltip inline-block">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-300">
+            <Ban size={12} className="text-slate-500" />
+            Desmobilizado
+          </span>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-white text-black text-xs rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-20 shadow-2xl pointer-events-none">
+            <div className="font-bold mb-1 opacity-50 text-[10px] uppercase">Equipamento Desmobilizado</div>
+            <div className="text-gray-700">Data: {demobFormatted}</div>
+            {eq.demobilized_reason && <div className="mt-1 text-gray-500 italic">{eq.demobilized_reason}</div>}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+          </div>
+        </div>
+      )
+    }
+
     const outside = isOutside(eq)
     const statusText = outside
       ? (EXIT_REASONS.find(r => r.value === eq.last_exit_reason)?.label || 'Fora da Obra')
@@ -379,11 +531,12 @@ function TodosEquipamentosPage() {
         <div className="max-w-6xl mx-auto flex flex-col gap-6">
           
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <MetricCard title="Total" value={metrics.total} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <MetricCard title="Total Ativos" value={metrics.total} />
             <MetricCard title="Em Operação" value={metrics.operation} />
             <MetricCard title="Em Manutenção" value={metrics.maintenance} />
             <MetricCard title="Outros Parados" value={metrics.stopped} />
+            <MetricCard title="Desmobilizados" value={metrics.demobilized} />
           </div>
 
           {/* Controls */}
@@ -409,7 +562,7 @@ function TodosEquipamentosPage() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
                   <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl border z-50 overflow-hidden py-1 ${isDark ? 'bg-[#1a1a1b] border-white/10' : 'bg-white border-black/10'}`}>
-                    {['Todos', 'Operando', 'Manutenção Preventiva', 'Manutenção Corretiva', 'Vistoria', 'Serviço Externo', 'Outro', 'Fora da Obra'].map(f => (
+                    {['Todos', 'Operando', 'Manutenção Preventiva', 'Manutenção Corretiva', 'Vistoria', 'Serviço Externo', 'Outro', 'Fora da Obra', 'Desmobilizados'].map(f => (
                       <button 
                         key={f}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterStatus === f ? 'font-bold bg-black/5 dark:bg-white/5' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
@@ -457,7 +610,7 @@ function TodosEquipamentosPage() {
                         <th className="px-2 py-2.5 hidden lg:table-cell w-28">CATEGORIA</th>
                         <th className="px-2 py-2.5 text-center w-28 shrink-0">STATUS</th>
                         <th className="px-2.5 py-2.5 w-28 shrink-0">ÚLTIMA ATUALIZAÇÃO</th>
-                        <th className="px-3 py-2.5 text-right w-24 shrink-0">AÇÕES</th>
+                        <th className="px-3 py-2.5 text-right w-28 shrink-0">AÇÕES</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-black/5'}`}>
@@ -496,6 +649,23 @@ function TodosEquipamentosPage() {
                           </td>
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              {!isEquipmentDemobilized(eq, mobMap) ? (
+                                <button 
+                                  onClick={() => handleOpenDemobilize(eq)}
+                                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
+                                  title="Desmobilizar Equipamento"
+                                >
+                                  <ArchiveX size={16} />
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => handleOpenRemobilize(eq)}
+                                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-emerald-500/20 text-emerald-400' : 'hover:bg-emerald-100 text-emerald-600'}`}
+                                  title="Remobilizar Equipamento"
+                                >
+                                  <RotateCcw size={16} />
+                                </button>
+                              )}
                               <button 
                                 onClick={() => handleOpenEdit(eq)}
                                 className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/70 hover:text-white' : 'hover:bg-black/10 text-black/70 hover:text-black'}`}
@@ -536,6 +706,23 @@ function TodosEquipamentosPage() {
                           {new Date(eq.updated_at).toLocaleString('pt-BR')}
                         </div>
                         <div className="flex gap-2">
+                          {!isEquipmentDemobilized(eq, mobMap) ? (
+                            <button 
+                              onClick={() => handleOpenDemobilize(eq)} 
+                              className={`p-2 rounded-lg ${isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-600'}`} 
+                              title="Desmobilizar"
+                            >
+                              <ArchiveX size={16} />
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => handleOpenRemobilize(eq)} 
+                              className={`p-2 rounded-lg ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`} 
+                              title="Remobilizar"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                          )}
                           <button onClick={() => handleOpenEdit(eq)} className={`p-2 rounded-lg bg-black/5 dark:bg-white/5`} title="Editar">
                             <Pencil size={16} />
                           </button>
@@ -630,7 +817,22 @@ function TodosEquipamentosPage() {
                     <div>{getStatusBadge(selectedEq)}</div>
                   </div>
 
-                  {isOutside(selectedEq.location_status) && (
+                  <div className="flex justify-between items-center pb-2 border-b border-black/5 dark:border-white/5">
+                    <span className="text-sm opacity-70 font-medium">Data de Mobilização</span>
+                    <span className="text-sm font-semibold">
+                      {selectedEq.mobilized_at ? new Date(selectedEq.mobilized_at).toLocaleString('pt-BR') : 'Não informada'}
+                    </span>
+                  </div>
+
+                  {isEquipmentDemobilized(selectedEq, mobMap) && (
+                    <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-700 dark:text-red-300">
+                      <span className="font-bold block mb-1">Equipamento Desmobilizado</span>
+                      <div>Data: {selectedEq.demobilized_at ? new Date(selectedEq.demobilized_at).toLocaleString('pt-BR') : 'Não registrada'}</div>
+                      {selectedEq.demobilized_reason && <div className="mt-1 italic">Motivo: {selectedEq.demobilized_reason}</div>}
+                    </div>
+                  )}
+
+                  {!isEquipmentDemobilized(selectedEq, mobMap) && isOutside(selectedEq.location_status) && (
                     <>
                       <div className="flex justify-between items-start pb-2 border-b border-black/5 dark:border-white/5">
                         <span className="text-sm opacity-70 font-medium">Motivo da Saída</span>
@@ -746,6 +948,15 @@ function TodosEquipamentosPage() {
                   <option value="Canteiro">Canteiro</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">Data de Mobilização na Obra</label>
+                <input 
+                  type="datetime-local"
+                  value={editMobilizedAt}
+                  onChange={e => setEditMobilizedAt(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
+                />
+              </div>
             </div>
             
             <div className="flex gap-3 mt-8">
@@ -845,6 +1056,20 @@ function TodosEquipamentosPage() {
                   <option value="Canteiro">Canteiro</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">
+                  Data de Mobilização na Obra <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="datetime-local"
+                  value={newMobilizedAt}
+                  onChange={e => setNewMobilizedAt(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
+                />
+                <span className="text-[11px] opacity-60 mt-1 block">
+                  O equipamento passará a constar no RDO a partir desta data.
+                </span>
+              </div>
             </div>
             
             <div className="flex gap-3 mt-8">
@@ -863,6 +1088,158 @@ function TodosEquipamentosPage() {
                 className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.99]"
               >
                 {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Demobilize Modal */}
+      {isDemobilizeModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
+            onClick={() => !isSaving && setIsDemobilizeModalOpen(false)} 
+          />
+          <div 
+            className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl my-auto animate-in zoom-in-95 duration-200 overflow-y-auto ${
+              isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-gray-900 border border-black/10'
+            }`}
+            style={{ maxHeight: 'min(90vh, calc(100dvh - 32px))' }}
+          >
+            <div className="flex items-center justify-between pb-3 mb-5 border-b border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <ArchiveX size={22} className="text-red-500" />
+                <h2 className="text-xl font-bold tracking-tight">Desmobilizar Equipamento</h2>
+              </div>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsDemobilizeModalOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+                <div className="text-xs opacity-60">Equipamento selecionado:</div>
+                <div className="font-bold text-base mt-0.5">{selectedEq.name}</div>
+                <div className="font-mono text-xs font-semibold opacity-75">{selectedEq.plate_tag ? selectedEq.plate_tag.toUpperCase() : ''} • {selectedEq.category || 'Equipamento'}</div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">
+                  Data e Horário de Desmobilização <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="datetime-local"
+                  value={demobilizeDate}
+                  onChange={e => setDemobilizeDate(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none font-medium ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold opacity-70 mb-1">
+                  Motivo da Desmobilização (Opcional)
+                </label>
+                <input 
+                  type="text"
+                  placeholder="Ex: Fim de contrato, desmobilização da obra..."
+                  value={demobilizeReason}
+                  onChange={e => setDemobilizeReason(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none ${isDark ? 'bg-black/20 border-white/20 focus:border-white/50 text-white' : 'bg-black/5 border-black/10 focus:border-black/30 text-black'}`}
+                />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                ⚠️ <strong>Atenção:</strong> Ao desmobilizar, o equipamento registrará esta data e hora. Ele <strong>não aparecerá no RDO</strong> nos dias seguintes (aparecendo apenas no dia exato da desmobilização com a hora) e ficará <strong>desativado</strong> para outros status em todo o sistema.
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button 
+                type="button"
+                onClick={() => setIsDemobilizeModalOpen(false)}
+                disabled={isSaving}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-gray-800'}`}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={handleConfirmDemobilize}
+                disabled={isSaving}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.99]"
+              >
+                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Confirmar Desmobilização'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Remobilize Modal */}
+      {isRemobilizeModalOpen && selectedEq && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
+            onClick={() => !isSaving && setIsRemobilizeModalOpen(false)} 
+          />
+          <div 
+            className={`relative w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl my-auto animate-in zoom-in-95 duration-200 overflow-y-auto ${
+              isDark ? 'bg-[#101014] text-white border border-white/10' : 'bg-white text-gray-900 border border-black/10'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 mb-5 border-b border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <RotateCcw size={22} className="text-emerald-500" />
+                <h2 className="text-xl font-bold tracking-tight">Remobilizar Equipamento</h2>
+              </div>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsRemobilizeModalOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-sm opacity-80 leading-relaxed mb-6">
+              Deseja reativar e remobilizar o equipamento <strong>{selectedEq.name}</strong> ({selectedEq.plate_tag}) na obra? Ele retornará ao status <strong>Operando</strong> e voltará a constar nas operações ativas do sistema e no RDO.
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                type="button"
+                onClick={() => setIsRemobilizeModalOpen(false)}
+                disabled={isSaving}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-gray-800'}`}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={handleConfirmRemobilize}
+                disabled={isSaving}
+                className="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.99]"
+              >
+                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : 'Confirmar Remobilização'}
               </button>
             </div>
           </div>
